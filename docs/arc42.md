@@ -179,3 +179,25 @@ To reinforce the advanced royalty model: Likelee’s royalty system works like a
 ---
 
 Appendix: Add diagrams (C4/arc42) as needed: Context, Container, Component, Runtime, Deployment.
+
+---
+
+## 13. Team Member Functionality
+
+See [Team Member Functionality](./team-member-functionality.md) for comprehensive documentation on:
+
+- Database schema and organization ID pattern
+- Role-Based Access Control (RBAC)
+- Invitation flow and lifecycle
+- Data access patterns for backend and frontend
+- Row-Level Security (RLS) policies
+- Shared data between owner and team members
+- Security considerations
+- Implementation checklist
+
+Key points:
+
+- Team members share the same account data as the organization owner (subscriptions, plan_tier, settings)
+- The organization ID equals the owner's auth.users.id
+- Team members access data via organization_memberships.organization_id
+- RLS policies use helper functions is_agency_team_member() and is_brand_team_member()

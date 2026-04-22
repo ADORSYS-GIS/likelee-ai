@@ -18,12 +18,13 @@ import { Switch } from "@/components/ui/switch";
 import { ArrowRight, Check, Gift } from "lucide-react";
 import {
   changeAgencySubscriptionPlan,
+  createAgencyBillingPortal,
   createAgencyIrlBookingAddonCheckout,
+  createAgencyStudioAddonCheckout,
   createOrUpdateAgencySeatAddon,
   createAgencySubscriptionCheckout,
   getAgencySeatBreakdown,
   getAgencyProfile,
-  startAgencyProTrial,
 } from "@/api/functions";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
@@ -38,6 +39,7 @@ const PRO_BASE_PLAN_COST = 489;
 const BASIC_ROSTER_RATE = 5;
 const PRO_ROSTER_RATE = 10;
 const IRL_BOOKING_COST = 489;
+const STUDIO_ADDON_INITIAL_CREDITS = 2000;
 
 function parseBooleanFlag(value: unknown) {
   if (typeof value === "boolean") return value;
@@ -114,6 +116,7 @@ export default function AgencySubscribe() {
     String(DEFAULT_ROSTER_MODELS),
   );
   const [hasIrlBookingAddon, setHasIrlBookingAddon] = React.useState(false);
+  const [hasStudioAddon, setHasStudioAddon] = React.useState(false);
   const [includeIrlBookingInPlan, setIncludeIrlBookingInPlan] =
     React.useState(false);
   const includeSeatsInPlan = true;
@@ -126,8 +129,9 @@ export default function AgencySubscribe() {
   } | null>(null);
   const [checkingOut, setCheckingOut] = React.useState(false);
   const [checkingOutIrlAddon, setCheckingOutIrlAddon] = React.useState(false);
+  const [checkingOutStudioAddon, setCheckingOutStudioAddon] =
+    React.useState(false);
   const [checkingOutSeats, setCheckingOutSeats] = React.useState(false);
-  const [startingTrial, setStartingTrial] = React.useState(false);
   const [seatBreakdownOpen, setSeatBreakdownOpen] = React.useState(false);
   const [seatBreakdownLoading, setSeatBreakdownLoading] = React.useState(false);
   const [seatAddonModalOpen, setSeatAddonModalOpen] = React.useState(false);
@@ -244,7 +248,7 @@ export default function AgencySubscribe() {
 
       try {
         const resp = (await getAgencyProfile()) as any;
-        const tier = resp?.plan_tier || "free";
+        const tier = resp?.plan_tier || "none";
         const trialEndsAt = resp?.trial_ends_at
           ? String(resp.trial_ends_at)
           : null;
@@ -265,6 +269,7 @@ export default function AgencySubscribe() {
         setHasIrlBookingAddon(
           parseBooleanFlag(resp?.addon_irl_booking_enabled),
         );
+        setHasStudioAddon(parseBooleanFlag(resp?.studio_addon_active));
         setIncludeIrlBookingInPlan(false);
       } catch (e) {
         console.error("Failed to fetch agency profile:", e);
@@ -286,6 +291,7 @@ export default function AgencySubscribe() {
     setRosterModels(DEFAULT_ROSTER_MODELS);
     setRosterInput(String(DEFAULT_ROSTER_MODELS));
     setHasIrlBookingAddon(false);
+    setHasStudioAddon(false);
     setIncludeIrlBookingInPlan(false);
   }, [authenticated, initialized, isAgencyUser]);
 
@@ -357,9 +363,47 @@ export default function AgencySubscribe() {
     (currentPlanTier === plan &&
       currentPlanInterval === "year" &&
       billingInterval === "month");
+  const alreadySubscribedToPlan =
+    !requiresContactSales &&
+    ((plan === "basic" &&
+      currentPlanTier === "basic" &&
+      currentPlanInterval === billingInterval &&
+      !(includeSeatsInPlan && seatCountChanged)) ||
+      (plan === "pro" &&
+        currentPlanTier === "pro" &&
+        currentPlanInterval === billingInterval &&
+        !(includeSeatsInPlan && seatCountChanged)));
+  const checkoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading ||
+    requiresContactSales;
+  const irlAddonCheckoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading ||
+    requiresContactSales;
+  const studioAddonCheckoutDisabled =
+    checkingOut ||
+    checkingOutIrlAddon ||
+    checkingOutStudioAddon ||
+    checkingOutSeats ||
+    !initialized ||
+    profileLoading ||
+    requiresContactSales;
+  const studioAddonCtaLabel = checkingOutStudioAddon
+    ? "Processing..."
+    : hasStudioAddon
+      ? "Open Studio"
+      : "Activate Studio Add-on";
   const planChangeRaisesCost =
     currentPlanTier !== null &&
-    currentPlanTier !== "free" &&
     (selectedPlanRank > currentPlanRank ||
       (currentPlanTier === plan &&
         currentPlanInterval === "month" &&
@@ -545,11 +589,7 @@ export default function AgencySubscribe() {
     }
   };
 
-  const onBack = () => {
-    navigate(isAgencyUser ? "/AgencyDashboard" : "/");
-  };
-
-  const onStartTrial = async () => {
+  const onCheckoutStudioAddon = async () => {
     if (!initialized || profileLoading) {
       return;
     }
@@ -561,7 +601,8 @@ export default function AgencySubscribe() {
       });
       toast({
         title: "Sign in required",
-        description: "Sign in with your agency account to start the Pro trial.",
+        description:
+          "Sign in with your agency account to activate the Studio add-on.",
       });
       navigate(`/Login?${loginParams.toString()}`);
       return;
@@ -569,47 +610,101 @@ export default function AgencySubscribe() {
     if (!isAgencyUser) {
       toast({
         title: "Agency account required",
-        description: "Use an agency account to start the Pro trial.",
+        description: "Use an agency account to activate the Studio add-on.",
         variant: "destructive",
       });
       return;
     }
 
-    setStartingTrial(true);
+    setCheckingOutStudioAddon(true);
     try {
-      await startAgencyProTrial();
-      toast({
-        title: "Pro trial started",
-        description:
-          "Your 30-day Pro trial is now active. After it ends, your account will automatically return to the Free plan.",
-      });
-      navigate("/AgencyDashboard");
-    } catch (e: any) {
-      const msg = String(e?.message || e || "");
-      if (msg.includes("trial_already_active")) {
+      const resp = await createAgencyStudioAddonCheckout();
+      const url = (resp as any)?.checkout_url as string | undefined;
+      if (!url) {
         toast({
-          title: "Trial already active",
-          description: "Your agency already has an active Pro trial.",
-        });
-        navigate("/AgencyDashboard");
-        return;
-      }
-      if (msg.includes("trial_only_available_for_free_accounts")) {
-        toast({
-          title: "Trial unavailable",
-          description:
-            "The Pro trial is only available while your agency is on the Free plan.",
+          title: "Checkout failed",
+          description: "No checkout URL returned.",
           variant: "destructive",
         });
         return;
       }
+      window.location.href = url;
+    } catch (e: any) {
       toast({
-        title: "Could not start trial",
-        description: msg || "Please try again.",
+        title: "Checkout failed",
+        description: String(e?.message || e || "Please try again."),
         variant: "destructive",
       });
     } finally {
-      setStartingTrial(false);
+      setCheckingOutStudioAddon(false);
+    }
+  };
+
+  const onBack = () => {
+    navigate(isAgencyUser ? "/AgencyDashboard" : "/");
+  };
+
+  const onStartTrial = async (planOverride?: "basic" | "pro") => {
+    const targetPlan = planOverride || plan;
+    if (!initialized || profileLoading) {
+      return;
+    }
+    if (!authenticated) {
+      const next = `${location.pathname}${location.search}${location.hash}`;
+      const loginParams = new URLSearchParams({
+        next,
+        role: "agency",
+      });
+      toast({
+        title: "Sign in required",
+        description:
+          "Sign in with your agency account to start a trial for your chosen plan.",
+      });
+      navigate(`/Login?${loginParams.toString()}`);
+      return;
+    }
+    if (!isAgencyUser) {
+      toast({
+        title: "Agency account required",
+        description: "Use an agency account to start a subscription trial.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCheckingOut(true);
+    try {
+      const resp = await createAgencySubscriptionCheckout({
+        plan: targetPlan,
+        roster_models: rosterModels,
+        interval: billingInterval,
+        start_trial: true,
+        agreement_accepted: true,
+        addons: {
+          irl_booking: shouldBillIrlBookingInPlan,
+          seats_in_plan: includeSeatsInPlan,
+          deepfake_protection_models: 0,
+          additional_team_members: 0,
+        },
+      });
+      const url = (resp as any)?.checkout_url as string | undefined;
+      if (!url) {
+        toast({
+          title: "Checkout failed",
+          description: "No checkout URL returned.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.location.href = url;
+    } catch (e: any) {
+      toast({
+        title: "Could not start trial",
+        description: String(e?.message || e || "Please try again."),
+        variant: "destructive",
+      });
+    } finally {
+      setCheckingOut(false);
     }
   };
 
@@ -754,82 +849,96 @@ export default function AgencySubscribe() {
   };
 
   const isPlanDisabled = (targetPlan: "basic" | "pro") => {
-    // Disable: Pro -> Basic downgrade
-    if (currentPlanTier === "pro" && targetPlan === "basic") return true;
-    // Disable: Annual -> Monthly switch
+    const trialIsActiveNow = (trialDaysLeft ?? 0) > 0;
+
+    // Disable: Annual -> Monthly switch (but allow during trial so user can switch interval)
     if (
+      !trialIsActiveNow &&
       currentPlanTier === targetPlan &&
       currentPlanInterval === "year" &&
       billingInterval === "month"
     )
       return true;
-    // Disable: already on this exact plan
+
+    // Disable: already on this exact plan (during trial, allow changing interval)
     if (
       currentPlanTier === targetPlan &&
-      currentPlanInterval === billingInterval &&
-      !(includeSeatsInPlan && seatCountChanged)
-    )
-      return true;
+      currentPlanInterval === billingInterval
+    ) {
+      if (!(includeSeatsInPlan && seatCountChanged)) return true;
+    }
+
     return false;
   };
 
-  const getPlanCtaLabel = (targetPlan: "basic" | "pro") => {
-    if (!initialized || profileLoading) return "Loading...";
-    if (requiresContactSales) return "Contact Sales";
-    if (!authenticated || !isAgencyUser) {
-      return targetPlan === "basic" ? "Get Basic" : "Get Pro";
+  const openAgencyBillingPortal = async () => {
+    try {
+      const resp: any = await createAgencyBillingPortal();
+      const url =
+        resp?.checkout_url ||
+        resp?.data?.checkout_url ||
+        resp?.data?.url ||
+        resp?.url;
+      if (typeof url === "string" && url.trim()) {
+        window.location.assign(url);
+        return;
+      }
+      toast({
+        title: "Billing portal unavailable",
+        description: "Could not open billing portal. Please try again.",
+        variant: "destructive",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Billing portal unavailable",
+        description: e?.message || "Could not open billing portal.",
+        variant: "destructive",
+      });
     }
-
-    if (isPlanDisabled(targetPlan) && currentPlanTier === targetPlan) {
-      return "Current";
-    }
-
-    const isCurrentTier = currentPlanTier === targetPlan;
-    const isCurrentInterval = currentPlanInterval === billingInterval;
-
-    if (
-      isCurrentTier &&
-      isCurrentInterval &&
-      !(includeSeatsInPlan && seatCountChanged)
-    ) {
-      return "Current";
-    }
-    if (currentPlanTier === "free" || currentPlanTier === null) {
-      return targetPlan === "basic" ? "Get Basic" : "Get Pro";
-    }
-    if (targetPlan === "pro" && currentPlanTier === "basic") {
-      return "Upgrade to Pro";
-    }
-    if (isCurrentTier && !isCurrentInterval) {
-      return billingInterval === "year"
-        ? "Switch to Annual"
-        : "Switch to Monthly";
-    }
-    return "Select";
   };
 
-  const checkoutDisabled =
-    checkingOut ||
-    checkingOutIrlAddon ||
-    checkingOutSeats ||
-    !initialized ||
-    profileLoading;
-  const irlAddonCheckoutDisabled =
-    checkingOut ||
-    checkingOutIrlAddon ||
-    checkingOutSeats ||
-    !initialized ||
-    profileLoading;
-  const alreadySubscribedToPlan =
-    !requiresContactSales &&
-    ((plan === "basic" &&
-      currentPlanTier === "basic" &&
-      currentPlanInterval === billingInterval &&
-      !(includeSeatsInPlan && seatCountChanged)) ||
-      (plan === "pro" &&
-        currentPlanTier === "pro" &&
-        currentPlanInterval === billingInterval &&
-        !(includeSeatsInPlan && seatCountChanged)));
+  const getPlanCtaLabel = (targetPlan: "basic" | "pro") => {
+    if (!initialized || profileLoading) {
+      return "Loading";
+    }
+    if (!authenticated) {
+      return "Sign in";
+    }
+    if (!isAgencyUser) return "Agency account required";
+    if (currentPlanTier === "none" || currentPlanTier === null) {
+      return targetPlan === "basic" ? "Start Basic Trial" : "Start Pro Trial";
+    }
+
+    const trialIsActiveNow = (trialDaysLeft ?? 0) > 0;
+
+    if (
+      trialIsActiveNow &&
+      currentTrialEndsAt &&
+      (currentPlanTier === "basic" || currentPlanTier === "pro") &&
+      currentPlanTier === targetPlan &&
+      currentPlanInterval &&
+      currentPlanInterval !== billingInterval
+    ) {
+      const days = trialDaysLeft ?? 0;
+      return `Switch to ${billingInterval === "year" ? "Annual" : "Monthly"} for ${days} ${days === 1 ? "day" : "days"}`;
+    }
+
+    if (
+      currentTrialEndsAt &&
+      (currentPlanTier === "basic" || currentPlanTier === "pro") &&
+      currentPlanTier !== targetPlan
+    ) {
+      const days = trialDaysLeft ?? 0;
+      return `Try ${targetPlan === "basic" ? "Basic" : "Pro"} for ${days} ${days === 1 ? "day" : "days"}`;
+    }
+
+    return targetPlan === "basic" ? "Get Basic" : "Get Pro";
+  };
+
+  const getCheckoutButtonLabel = () => {
+    if (!initialized || profileLoading) return "Loading";
+  };
+
   const footerCtaLabel = (() => {
     if (!initialized || profileLoading) return "Loading...";
     if (requiresContactSales) return "Contact Sales";
@@ -837,11 +946,12 @@ export default function AgencySubscribe() {
     if (!isAgencyUser) return "Agency account required";
     if (isDowngradeSelection || alreadySubscribedToPlan) return "Current Plan";
     if (checkingOut) return "Processing...";
-    if (currentPlanTier === "free" || currentPlanTier === null)
+    if (currentPlanTier === "none" || currentPlanTier === null)
       return "Get Started";
     if (includeSeatsInPlan && seatCountChanged) return "Update Plan";
     return "Upgrade Plan";
   })();
+
   const irlAddonCtaLabel = (() => {
     if (!initialized || profileLoading) {
       return "Loading...";
@@ -866,8 +976,77 @@ export default function AgencySubscribe() {
     // Silently ignore disabled actions (downgrade / already on plan)
     if (isPlanDisabled(targetPlan)) return;
     setPlan(targetPlan);
+
+    const trialIsActiveNow = (trialDaysLeft ?? 0) > 0;
+    const periodEndDowngrade =
+      !trialIsActiveNow && currentPlanTier === "pro" && targetPlan === "basic";
+    const periodEndAnnualToMonthly =
+      !trialIsActiveNow &&
+      currentPlanTier === targetPlan &&
+      currentPlanInterval === "year" &&
+      billingInterval === "month";
+
+    if (periodEndDowngrade || periodEndAnnualToMonthly) {
+      toast({
+        title: "Scheduled for period end",
+        description:
+          "This change will take effect at the end of your current billing period. Manage it in the billing portal.",
+      });
+      void openAgencyBillingPortal();
+      return;
+    }
+
+    const switchingIntervalDuringTrial =
+      trialIsActiveNow &&
+      currentTrialEndsAt &&
+      (currentPlanTier === "basic" || currentPlanTier === "pro") &&
+      currentPlanTier === targetPlan &&
+      currentPlanInterval &&
+      currentPlanInterval !== billingInterval;
+
+    if (
+      currentPlanTier === "none" ||
+      currentPlanTier === null ||
+      switchingIntervalDuringTrial ||
+      (currentTrialEndsAt &&
+        (currentPlanTier === "basic" || currentPlanTier === "pro") &&
+        currentPlanTier !== targetPlan)
+    ) {
+      void onStartTrial(targetPlan);
+      return;
+    }
     void onCheckout(targetPlan);
   };
+
+  const trialCountdown = React.useMemo(() => {
+    if (!currentTrialEndsAt) return "";
+    const end = new Date(currentTrialEndsAt).getTime();
+    if (!Number.isFinite(end) || end <= 0) return "";
+    const ms = Math.max(0, end - Date.now());
+    const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+    if (days <= 0) return "Trial ended";
+    return `${days} ${days === 1 ? "day" : "days"} left in trial`;
+  }, [currentTrialEndsAt]);
+
+  const trialDaysLeft = React.useMemo(() => {
+    if (!currentTrialEndsAt) return null;
+    const end = new Date(currentTrialEndsAt).getTime();
+    if (!Number.isFinite(end) || end <= 0) return null;
+    const ms = Math.max(0, end - Date.now());
+    const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
+    return days > 0 ? days : 0;
+  }, [currentTrialEndsAt]);
+
+  const showBasicTrialCountdown =
+    !!currentTrialEndsAt &&
+    (currentPlanTier === "basic" ||
+      ((currentPlanTier === "none" || currentPlanTier === null) &&
+        plan === "basic"));
+  const showProTrialCountdown =
+    !!currentTrialEndsAt &&
+    (currentPlanTier === "pro" ||
+      ((currentPlanTier === "none" || currentPlanTier === null) &&
+        plan === "pro"));
 
   return (
     <div className="min-h-screen bg-[#F6F3EF] text-[#1B1C23]">
@@ -1002,7 +1181,7 @@ export default function AgencySubscribe() {
             )}
             {postSignup && !success && (
               <Badge className="bg-[#EEF4FF] text-[#17315F] border border-[#D9E4F1]">
-                Finish setup with a trial or continue on free
+                Finish setup by starting a trial
               </Badge>
             )}
             {canceled && (
@@ -1015,72 +1194,9 @@ export default function AgencySubscribe() {
 
         {authenticated &&
           isAgencyUser &&
-          currentPlanTier === "free" &&
+          currentPlanTier === "none" &&
           !success &&
           null}
-
-        {currentPlanTier === "free" &&
-          currentTrialEndsAt === null &&
-          !success && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="mt-10 overflow-hidden rounded-[28px] border border-emerald-200 bg-gradient-to-r from-[#0F172A] via-[#102A43] to-[#0B9DA2] text-white shadow-[0_24px_80px_rgba(11,157,162,0.16)]"
-            >
-              <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-start gap-4">
-                  <motion.div
-                    animate={{ y: [0, -5, 0], rotate: [0, -4, 4, 0] }}
-                    transition={{
-                      duration: 3.6,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/12 ring-1 ring-white/20 backdrop-blur"
-                  >
-                    <Gift className="h-7 w-7 text-[#9FF5D6]" />
-                  </motion.div>
-                  <div className="max-w-3xl">
-                    <div className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.22em] text-[#C8FFF0]">
-                      Optional Pro Trial
-                    </div>
-                    <h2 className="mt-4 text-2xl font-black tracking-tight sm:text-3xl">
-                      Start a 30-day Pro trial only when you are ready
-                    </h2>
-                    <p className="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
-                      Your agency stays on the Free plan by default. If you want
-                      full Pro access, start the trial from here and move into a
-                      Pro setup flow only when you choose it.
-                    </p>
-                  </div>
-                </div>
-                <div className="w-full max-w-sm rounded-[24px] border border-white/15 bg-white/10 p-4 backdrop-blur">
-                  <div className="text-xs font-black uppercase tracking-[0.18em] text-[#C8FFF0]">
-                    Trial Offer
-                  </div>
-                  <div className="mt-3 space-y-2 text-sm text-white/85">
-                    <div>30 days of Pro access</div>
-                    <div>Instant access with no payment step</div>
-                    <div>Falls back to Free automatically after the trial</div>
-                  </div>
-                  <Button
-                    type="button"
-                    className="mt-4 w-full rounded-2xl bg-white text-[#102A43] hover:bg-[#E8FFFA] font-black"
-                    disabled={startingTrial}
-                    onClick={() => {
-                      void onStartTrial();
-                    }}
-                  >
-                    {startingTrial
-                      ? "Starting Trial..."
-                      : "Start 30-Day Pro Trial"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
         <div className="mt-12">
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
@@ -1160,7 +1276,7 @@ export default function AgencySubscribe() {
 
         <div
           id="agency-plan-cards"
-          className="mt-10 grid grid-cols-1 xl:grid-cols-3 gap-8"
+          className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto"
         >
           {/* Card 1: Free */}
           <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#00BFA5] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
@@ -1246,6 +1362,7 @@ export default function AgencySubscribe() {
                 "Agency dashboard access",
                 "Agency profile and organization setup",
                 "Read-only platform exploration",
+                "1 team seat (owner only)",
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
@@ -1260,22 +1377,22 @@ export default function AgencySubscribe() {
           </Card>
 
           {/* Card 2: Basic */}
-          <Card className="rounded-2xl border-none bg-[#0B1828] text-white p-8 relative flex flex-col shadow-xl">
+          <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#3B82F6] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
             <div className="absolute top-6 left-8 flex justify-between items-center w-[calc(100%-4rem)]">
-              <span className="px-2 py-1 bg-[#1A2E44] text-emerald-300 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+              <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
                 Basic
               </span>
-              <span className="px-2 py-1 bg-[#1A2E44] text-white font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+              <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
                 Most Popular
               </span>
             </div>
 
             <div className="mt-8 pt-4 flex justify-between items-start">
               <div className="pr-4">
-                <div className="text-3xl font-black font-display text-white">
+                <div className="text-3xl font-black font-display text-gray-900">
                   Basic
                 </div>
-                <div className="text-gray-300 mt-2 text-sm leading-relaxed min-h-[40px]">
+                <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
                   Get started with licensing
                 </div>
               </div>
@@ -1284,132 +1401,25 @@ export default function AgencySubscribe() {
               </Badge>
             </div>
 
-            <div className="mt-6 flex flex-col gap-1">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-                <span className="text-5xl font-black font-display tracking-tight text-white">
-                  ${formatNumber(displayedMonthlyBasic)}
-                </span>
-                <span className="text-gray-400 font-medium pb-1 tracking-tight text-sm">
-                  per month
-                </span>
-              </div>
-              {billingInterval === "year" && (
-                <div className="text-emerald-400 text-xs font-bold mt-1">
-                  Billed annually (20% discount applied)
+            {showBasicTrialCountdown && (
+              <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.14em] text-blue-700">
+                  Trial
                 </div>
-              )}
-            </div>
-
-            <div className="mt-6 text-sm text-gray-400 font-medium space-y-2">
-              <div className="flex justify-between">
-                <span>Base plan</span>
-                <span className="text-white font-semibold">
-                  ${formatNumber(basePlanBasic)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Roster seats</span>
-                <span className="text-emerald-300 font-semibold">
-                  {`${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostBasic)} in plan`}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>IRL Booking</span>
-                <span className="text-white font-semibold">
-                  {irlAddonLineItemLabel}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <Button
-                type="button"
-                className={`w-full h-12 rounded-lg font-bold transition-colors ${
-                  currentPlanTier === "basic"
-                    ? "bg-white/10 text-white cursor-default hover:bg-white/10 border-none"
-                    : "bg-white text-[#0B1828] hover:bg-gray-100 shadow-sm"
-                }`}
-                onClick={() => {
-                  void onSelectPlan("basic");
-                }}
-                disabled={
-                  checkoutDisabled ||
-                  isPlanDisabled("basic") ||
-                  (!requiresContactSales &&
-                    currentPlanTier === "basic" &&
-                    currentPlanInterval === billingInterval) ||
-                  (!requiresContactSales && currentPlanTier === "pro")
-                }
-              >
-                {currentPlanTier === "basic" &&
-                currentPlanInterval === billingInterval ? (
-                  <span className="flex items-center gap-2 text-white">
-                    <Check className="w-5 h-5 text-white" />
-                    Current
-                  </span>
-                ) : (
-                  getPlanCtaLabel("basic")
-                )}
-              </Button>
-            </div>
-
-            <hr className="my-8 border-white/10" />
-
-            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/40 mb-4">
-              Included
-            </div>
-            <div className="space-y-4 flex-grow">
-              {[
-                "Roster Management & Performance Tiers",
-                "Licensing Requests",
-                "Active Licenses",
-                "License Templates",
-                "Basic Analytics Dashboard",
-                "Invoice Generation & Management",
-                "Payment Tracking",
-                "Talent Statements",
-              ].map((label) => (
-                <div key={label} className="flex items-start gap-3">
-                  <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-[#20C5B0] flex items-center justify-center flex-shrink-0">
-                    <Check className="w-3 h-3 text-[#0B1828]" strokeWidth={3} />
-                  </div>
-                  <div className="leading-snug text-sm text-gray-200">
-                    {label}
-                  </div>
+                <div className="mt-1 text-sm font-bold text-blue-900">
+                  {trialCountdown}
                 </div>
-              ))}
-            </div>
-            <div className="mt-6 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-              10% fee applied on all licensing bookings
-            </div>
-          </Card>
-
-          {/* Card 3: Pro */}
-          <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#3B82F6] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
-            <div className="absolute top-6 left-8">
-              <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
-                Pro
-              </span>
-            </div>
-
-            <div className="mt-8 pt-4 flex justify-between items-start">
-              <div className="pr-4">
-                <div className="text-3xl font-black font-display text-gray-900">
-                  Pro
-                </div>
-                <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
-                  Full licensing power
+                <div className="mt-1 text-xs text-blue-800">
+                  After the trial ends, you’ll be charged for the Basic plan
+                  unless you cancel.
                 </div>
               </div>
-              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none shrink-0 font-bold text-xs px-2 py-0.5">
-                5% fee
-              </Badge>
-            </div>
+            )}
 
             <div className="mt-6 flex flex-col gap-1">
               <div className="flex flex-col sm:flex-row sm:items-end gap-2">
                 <span className="text-5xl font-black font-display tracking-tight text-gray-900">
-                  ${formatNumber(displayedMonthlyPro)}
+                  ${formatNumber(displayedMonthlyBasic)}
                 </span>
                 <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">
                   per month
@@ -1426,13 +1436,13 @@ export default function AgencySubscribe() {
               <div className="flex justify-between">
                 <span>Base plan</span>
                 <span className="text-gray-900 font-semibold">
-                  ${formatNumber(basePlanPro)}
+                  ${formatNumber(basePlanBasic)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Roster seats</span>
                 <span className="text-[#3B82F6] font-semibold">
-                  {`${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostPro)} in plan`}
+                  {`${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostBasic)} in plan`}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1448,28 +1458,32 @@ export default function AgencySubscribe() {
                 type="button"
                 variant="outline"
                 className={`w-full h-12 rounded-lg font-bold border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors ${
-                  currentPlanTier === "pro"
+                  currentPlanTier === "basic" &&
+                  currentPlanInterval === billingInterval &&
+                  !(includeSeatsInPlan && seatCountChanged)
                     ? "bg-slate-50 text-slate-400 cursor-default"
                     : ""
                 }`}
                 onClick={() => {
-                  void onSelectPlan("pro");
+                  void onSelectPlan("basic");
                 }}
                 disabled={
                   checkoutDisabled ||
+                  isPlanDisabled("basic") ||
                   (!requiresContactSales &&
-                    currentPlanTier === "pro" &&
-                    currentPlanInterval === billingInterval)
+                    currentPlanTier === "basic" &&
+                    currentPlanInterval === billingInterval) ||
+                  (!requiresContactSales && currentPlanTier === "pro")
                 }
               >
-                {currentPlanTier === "pro" &&
+                {currentPlanTier === "basic" &&
                 currentPlanInterval === billingInterval ? (
                   <span className="flex items-center gap-2 text-gray-500">
                     <Check className="w-5 h-5 text-gray-400" />
                     Current
                   </span>
                 ) : (
-                  getPlanCtaLabel("pro")
+                  getPlanCtaLabel("basic")
                 )}
               </Button>
             </div>
@@ -1477,16 +1491,19 @@ export default function AgencySubscribe() {
             <hr className="my-8 border-gray-100" />
 
             <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-4">
-              Everything in Basic, plus
+              Included
             </div>
             <div className="space-y-4 flex-grow">
               {[
-                "Job invites & applications",
-                "Direct messaging with talents",
-                "Advanced Analytics",
-                "Royalties & Payouts Dashboard",
-                "Financial Reports & Expense Tracking",
-                "Calendly integration",
+                "Roster Management & Performance Tiers",
+                "Licensing Requests",
+                "Active Licenses",
+                "License Templates",
+                "Basic Analytics Dashboard",
+                "Invoice Generation & Management",
+                "Payment Tracking",
+                "Talent Statements",
+                "5 team seats",
               ].map((label) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
@@ -1499,6 +1516,143 @@ export default function AgencySubscribe() {
               ))}
             </div>
             <div className="mt-6 text-[#3B82F6] font-bold text-xs uppercase tracking-wider">
+              10% fee applied on all licensing bookings
+            </div>
+          </Card>
+
+          {/* Card 3: Pro */}
+          <Card className="rounded-2xl border-none bg-[#0B1828] text-white p-8 relative flex flex-col shadow-xl">
+            <div className="absolute top-6 left-8">
+              <span className="px-2 py-1 bg-[#1A2E44] text-emerald-300 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+                Pro
+              </span>
+            </div>
+
+            <div className="mt-8 pt-4 flex justify-between items-start">
+              <div className="pr-4">
+                <div className="text-3xl font-black font-display text-white">
+                  Pro
+                </div>
+                <div className="text-gray-300 mt-2 text-sm leading-relaxed min-h-[40px]">
+                  Full licensing power
+                </div>
+              </div>
+              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none shrink-0 font-bold text-xs px-2 py-0.5">
+                5% fee
+              </Badge>
+            </div>
+
+            {showProTrialCountdown && (
+              <div className="mt-4 rounded-xl border border-emerald-200/40 bg-[#10263E] px-4 py-3">
+                <div className="text-xs font-black uppercase tracking-[0.14em] text-emerald-200">
+                  Trial
+                </div>
+                <div className="mt-1 text-sm font-bold text-white">
+                  {trialCountdown}
+                </div>
+                <div className="mt-1 text-xs text-gray-300">
+                  After the trial ends, you’ll be charged for the Pro plan
+                  unless you cancel.
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col gap-1">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                <span className="text-5xl font-black font-display tracking-tight text-white">
+                  ${formatNumber(displayedMonthlyPro)}
+                </span>
+                <span className="text-gray-400 font-medium pb-1 tracking-tight text-sm">
+                  per month
+                </span>
+              </div>
+              {billingInterval === "year" && (
+                <div className="text-emerald-400 text-xs font-bold mt-1">
+                  Billed annually (20% discount applied)
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 text-sm text-gray-400 font-medium space-y-2">
+              <div className="flex justify-between">
+                <span>Base plan</span>
+                <span className="text-white font-semibold">
+                  ${formatNumber(basePlanPro)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Roster seats</span>
+                <span className="text-emerald-300 font-semibold">
+                  {`${formatNumber(inPlanSeatCount)} seats · $${formatNumber(rosterCostPro)} in plan`}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>IRL Booking</span>
+                <span className="text-white font-semibold">
+                  {irlAddonLineItemLabel}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <Button
+                type="button"
+                className={`w-full h-12 rounded-lg font-bold transition-colors ${
+                  currentPlanTier === "pro" &&
+                  currentPlanInterval === billingInterval &&
+                  !(includeSeatsInPlan && seatCountChanged)
+                    ? "bg-white/10 text-white cursor-default hover:bg-white/10 border-none"
+                    : "bg-white text-[#0B1828] hover:bg-gray-100 shadow-sm"
+                }`}
+                onClick={() => {
+                  void onSelectPlan("pro");
+                }}
+                disabled={
+                  checkoutDisabled ||
+                  isPlanDisabled("pro") ||
+                  (!requiresContactSales &&
+                    currentPlanTier === "pro" &&
+                    currentPlanInterval === billingInterval)
+                }
+              >
+                {currentPlanTier === "pro" &&
+                currentPlanInterval === billingInterval ? (
+                  <span className="flex items-center gap-2 text-white">
+                    <Check className="w-5 h-5 text-white" />
+                    Current
+                  </span>
+                ) : (
+                  getPlanCtaLabel("pro")
+                )}
+              </Button>
+            </div>
+
+            <hr className="my-8 border-white/10" />
+
+            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-white/40 mb-4">
+              Everything in Basic, plus
+            </div>
+            <div className="space-y-4 flex-grow">
+              {[
+                "Job invites & applications",
+                "Direct messaging with talents",
+                "Advanced Analytics",
+                "Royalties & Payouts Dashboard",
+                "Financial Reports & Expense Tracking",
+                "Calendly integration",
+                "10 team seats",
+              ].map((label) => (
+                <div key={label} className="flex items-start gap-3">
+                  <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-[#20C5B0] flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-[#0B1828]" strokeWidth={3} />
+                  </div>
+                  <div className="leading-snug text-sm text-gray-200">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 text-emerald-400 font-bold text-xs uppercase tracking-wider">
               Only 5% fee on licensing bookings
             </div>
           </Card>
@@ -1686,6 +1840,60 @@ export default function AgencySubscribe() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-2xl font-black font-display">
+                    Likelee Studio Access
+                  </div>
+                  <div className="text-gray-500 mt-1">
+                    One-time activation for your agency Studio workspace with an
+                    initial wallet allocation.
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline" className="bg-white/70">
+                    {hasStudioAddon ? "Active" : "One-time"}
+                  </Badge>
+                </div>
+              </div>
+              <div className="mt-6 grid gap-3 text-sm text-gray-600 sm:grid-cols-2">
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Grants access to{" "}
+                  <span className="font-semibold">/studio</span> for this
+                  agency.
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Includes {formatNumber(STUDIO_ADDON_INITIAL_CREDITS)} initial
+                  Studio credits.
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  Charged once. It is not a recurring monthly add-on.
+                </div>
+                <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  If already active, clicking subscribe redirects directly to
+                  Studio.
+                </div>
+              </div>
+              <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="text-sm text-gray-500">
+                  <div className="font-bold">
+                    Includes Studio Pro wallet plan
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  className="rounded-2xl font-black"
+                  disabled={studioAddonCheckoutDisabled}
+                  onClick={() => {
+                    void onCheckoutStudioAddon();
+                  }}
+                >
+                  {studioAddonCtaLabel}
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-2xl font-black font-display">
                     Deepfake Detection & Protection
                   </div>
                   <div className="text-gray-500 mt-1">
@@ -1729,19 +1937,6 @@ export default function AgencySubscribe() {
               </div>
             </Card>
           </div>
-        </div>
-
-        <div className="mt-10 flex justify-center">
-          {currentPlanTier === "free" && isAgencyUser && (
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-2xl font-bold bg-white text-gray-600 px-6 py-2 border-gray-200 hover:bg-gray-50"
-              onClick={() => navigate("/AgencyDashboard")}
-            >
-              Skip Trial for Now
-            </Button>
-          )}
         </div>
 
         <div className="mt-10">

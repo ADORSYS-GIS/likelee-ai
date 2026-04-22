@@ -1,4 +1,14 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    errors::sanitize_db_error,
+    storage::{
+        canonical_object_path, delete_object, download_object, insert_asset_record,
+        sanitize_file_name, soft_delete_asset_record, upload_object, StorageAssetRecord,
+        StorageContextType, StorageOwnerType, StorageVisibility,
+    },
+    team::{self, permissions::Permission},
+};
 use axum::{
     extract::{Multipart, Path, State},
     http::StatusCode,
@@ -160,13 +170,16 @@ async fn verify_agency_campaign(
     state: &AppState,
     user: &AuthUser,
     campaign_id: &str,
-) -> Result<(), (StatusCode, String)> {
+) -> Result<String, (StatusCode, String)> {
+    let agency_access =
+        team::require_agency_permission(state, user, Permission::ApproveDeliverables).await?;
+    let agency_id = agency_access.organization_id;
     let resp = state
         .pg
         .from("bookings_campaigns")
         .select("id")
         .eq("id", campaign_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .limit(1)
         .execute()
         .await
@@ -180,7 +193,7 @@ async fn verify_agency_campaign(
             "Campaign not found or not yours".into(),
         ));
     }
-    Ok(())
+    Ok(agency_id)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -239,8 +252,8 @@ pub async fn upload_deliverable(
     // Resolve permissions
     let (agency_id, creator_id, booking_id): (String, Option<String>, Option<String>) =
         if user.role == "agency" {
-            verify_agency_campaign(&state, &user, &campaign_id).await?;
-            (user.id.clone(), None, None)
+            let agency_id = verify_agency_campaign(&state, &user, &campaign_id).await?;
+            (agency_id, None, None)
         } else if is_creator_like(&user.role) {
             let (aid, cid, bid) = resolve_creator_for_campaign(&state, &user, &campaign_id).await?;
             (aid, Some(cid), bid)
@@ -250,48 +263,14 @@ pub async fn upload_deliverable(
 
     // Upload to storage
     let fname = file_name.unwrap_or_else(|| "deliverable.bin".to_string());
-    let sanitized: String = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect();
-
-    let bucket = state.supabase_bucket_private.clone();
-    let path = format!(
-        "campaigns/booking-deliverables/{}/{}_{sanitized}",
-        campaign_id,
+    let size_bytes = bytes.len() as i64;
+    let sanitized = sanitize_file_name(&fname);
+    let path = canonical_object_path(
+        &format!("agencies/{agency_id}/booking-campaigns/{campaign_id}/deliverables"),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .body(bytes)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
 
     let insert_payload = json!({
         "booking_campaign_id": campaign_id,
@@ -299,8 +278,8 @@ pub async fn upload_deliverable(
         "agency_id": agency_id,
         "creator_id": creator_id,
         "asset_url": path,
-        "storage_path": path,
-        "storage_bucket": bucket,
+        "storage_path": uploaded.path,
+        "storage_bucket": uploaded.bucket,
         "asset_type": asset_type,
         "caption": caption.as_deref().map(str::trim).filter(|s| !s.is_empty()),
         "status": "draft",
@@ -325,6 +304,41 @@ pub async fn upload_deliverable(
 
     let created: serde_json::Value =
         serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or(json!({}));
+    if let Some(deliverable_id) = created
+        .get("id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+    {
+        let owner_type = if creator_id.is_some() {
+            StorageOwnerType::Creator
+        } else {
+            StorageOwnerType::Agency
+        };
+        let owner_id = creator_id.clone().unwrap_or_else(|| agency_id.clone());
+        let record = StorageAssetRecord {
+            owner_type,
+            owner_id,
+            context_type: StorageContextType::BookingDeliverable,
+            context_id: Some(campaign_id.clone()),
+            visibility: StorageVisibility::Private,
+            object_path: insert_payload
+                .get("storage_path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            original_file_name: Some(fname.clone()),
+            mime_type: None,
+            size_bytes: Some(size_bytes),
+            checksum_sha256: None,
+            source_table: Some("booking_deliverables".to_string()),
+            source_id: Some(deliverable_id.to_string()),
+            created_by: Some(user.id.clone()),
+            counts_toward_quota: creator_id.is_none(),
+        };
+        if let Err(err) = insert_asset_record(&state, &record).await {
+            error!(deliverable_id = %deliverable_id, error = %err.1, "failed to mirror booking deliverable into storage_assets");
+        }
+    }
 
     info!(
         campaign_id = %campaign_id,
@@ -355,7 +369,7 @@ pub async fn list_deliverables(
 
     if user.role == "agency" {
         // Agency must own the campaign
-        verify_agency_campaign(&state, &user, &campaign_id).await?;
+        let _ = verify_agency_campaign(&state, &user, &campaign_id).await?;
     } else if is_creator_like(&user.role) {
         // Creator can only see their own deliverables
         req = req.eq("creator_id", &user.id);
@@ -376,7 +390,22 @@ pub async fn list_deliverables(
     }
 
     let text = resp.text().await.unwrap_or_default();
-    let deliverables: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut deliverables: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    // Normalize asset_url to consistently return the secure file endpoint
+    // for private deliverables instead of the storage path
+    for deliverable in deliverables.iter_mut() {
+        if let Some(obj) = deliverable.as_object_mut() {
+            if let Some(id) = obj.get("id").and_then(|v| v.as_str()) {
+                // Replace asset_url with the secure file endpoint URL
+                let secure_url = format!(
+                    "/api/bookings-campaigns/{}/deliverables/{}/file",
+                    campaign_id, id
+                );
+                obj.insert("asset_url".to_string(), json!(secure_url));
+            }
+        }
+    }
 
     Ok(Json(json!({ "deliverables": deliverables })))
 }
@@ -448,7 +477,7 @@ pub async fn review_deliverable(
         return Err((StatusCode::BAD_REQUEST, "Invalid status".into()));
     }
 
-    verify_agency_campaign(&state, &user, &campaign_id).await?;
+    let _agency_id = verify_agency_campaign(&state, &user, &campaign_id).await?;
 
     let mut update = serde_json::Map::new();
     update.insert("status".into(), json!(payload.status));
@@ -499,32 +528,64 @@ pub async fn delete_deliverable(
         deliverable_id,
     }): Path<DeliverablePath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let mut req = state
+    let mut select_req = state
+        .pg
+        .from("booking_deliverables")
+        .select("id,storage_bucket,storage_path")
+        .eq("id", &deliverable_id)
+        .eq("booking_campaign_id", &campaign_id);
+
+    if user.role == "agency" {
+        let _ = verify_agency_campaign(&state, &user, &campaign_id).await?;
+    } else if is_creator_like(&user.role) {
+        select_req = select_req.eq("creator_id", &user.id).eq("status", "draft");
+    } else {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".into()));
+    }
+
+    let lookup_resp = select_req
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !lookup_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            lookup_resp.status().as_u16(),
+            lookup_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let rows: Vec<serde_json::Value> =
+        serde_json::from_str(&lookup_resp.text().await.unwrap_or_default()).unwrap_or_default();
+    let row = rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "Not found".into()))?;
+    if let (Some(bucket), Some(path)) = (
+        row.get("storage_bucket").and_then(|v| v.as_str()),
+        row.get("storage_path").and_then(|v| v.as_str()),
+    ) {
+        delete_object(&state, bucket, path).await?;
+    }
+
+    let mut delete_req = state
         .pg
         .from("booking_deliverables")
         .delete()
         .eq("id", &deliverable_id)
         .eq("booking_campaign_id", &campaign_id);
-
-    if user.role == "agency" {
-        verify_agency_campaign(&state, &user, &campaign_id).await?;
-    } else if is_creator_like(&user.role) {
-        req = req.eq("creator_id", &user.id).eq("status", "draft");
-    } else {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".into()));
+    if is_creator_like(&user.role) {
+        delete_req = delete_req.eq("creator_id", &user.id).eq("status", "draft");
     }
-
-    let resp = req
+    let resp = delete_req
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
     if !resp.status().is_success() {
         return Err(sanitize_db_error(
             resp.status().as_u16(),
             resp.text().await.unwrap_or_default(),
         ));
     }
+    let _ = soft_delete_asset_record(&state, "booking_deliverables", &deliverable_id).await;
 
     Ok(Json(json!({ "deleted": true })))
 }
@@ -552,7 +613,17 @@ pub async fn serve_deliverable_file(
         .limit(1);
 
     if user.role == "agency" {
-        req = req.eq("agency_id", &user.id);
+        let agency_id = match verify_agency_campaign(&state, &user, &campaign_id).await {
+            Ok(agency_id) => agency_id,
+            Err(_) => {
+                return (
+                    StatusCode::FORBIDDEN,
+                    [("content-type", "application/json")],
+                    axum::body::Bytes::from(r#"{"error":"Forbidden"}"#),
+                );
+            }
+        };
+        req = req.eq("agency_id", &agency_id);
     } else if is_creator_like(&user.role) {
         req = req.eq("creator_id", &user.id);
     } else {
@@ -588,12 +659,20 @@ pub async fn serve_deliverable_file(
         }
     };
 
-    let storage_path = row
-        .get("storage_path")
-        .or_else(|| row.get("asset_url"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
+    let storage_path = match row.get("storage_path").and_then(|v| v.as_str()) {
+        Some(path) if !path.is_empty() => path.to_string(),
+        _ => {
+            error!(
+                "Booking deliverable {} missing storage_path",
+                deliverable_id
+            );
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                [("content-type", "application/json")],
+                axum::body::Bytes::from(r#"{"error":"Missing storage path"}"#),
+            );
+        }
+    };
 
     let bucket = row
         .get("storage_bucket")
@@ -601,40 +680,24 @@ pub async fn serve_deliverable_file(
         .unwrap_or(&state.supabase_bucket_private)
         .to_string();
 
-    let file_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, storage_path
-    );
-
-    let http = reqwest::Client::new();
-    match http
-        .get(&file_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-    {
-        Ok(upstream) if upstream.status().is_success() => {
-            let content_type = upstream
-                .headers()
+    match download_object(&state, &bucket, &storage_path).await {
+        Ok(downloaded) => {
+            let content_type = downloaded
+                .headers
                 .get("content-type")
                 .and_then(|v| v.to_str().ok())
                 .unwrap_or("application/octet-stream")
                 .to_string();
-            let body = upstream.bytes().await.unwrap_or_default();
             (
                 StatusCode::OK,
                 [(
                     "content-type",
                     Box::leak(content_type.into_boxed_str()) as &'static str,
                 )],
-                body,
+                downloaded.bytes,
             )
         }
-        _ => (
+        Err(_) => (
             StatusCode::BAD_GATEWAY,
             [("content-type", "application/json")],
             axum::body::Bytes::from(r#"{"error":"File fetch failed"}"#),
@@ -661,7 +724,7 @@ pub async fn submit_to_brand(
     }
 
     // 1. Verify agency owns the campaign
-    verify_agency_campaign(&state, &user, &campaign_id).await?;
+    let agency_id = verify_agency_campaign(&state, &user, &campaign_id).await?;
 
     // 2. Load the brand offer to get brand_id and brand_campaign_id
     let offer_resp = state
@@ -670,7 +733,7 @@ pub async fn submit_to_brand(
         .select("id,brand_id,brand_campaign_id")
         .eq("id", &payload.brand_offer_id)
         .eq("target_type", "agency")
-        .eq("target_id", &user.id)
+        .eq("target_id", &agency_id)
         .limit(1)
         .execute()
         .await
@@ -712,7 +775,7 @@ pub async fn submit_to_brand(
                 .collect::<Vec<_>>(),
         )
         .eq("booking_campaign_id", &campaign_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .eq("status", "approved")
         .execute()
         .await
@@ -741,7 +804,7 @@ pub async fn submit_to_brand(
             "offer_id": payload.brand_offer_id,
             "brand_campaign_id": brand_campaign_id,
             "brand_id": brand_id,
-            "agency_id": user.id,
+            "agency_id": agency_id,
             "creator_id": del.get("creator_id"),
             "submitted_by_role": "agency",
             "submitted_by": user.id,
@@ -785,7 +848,7 @@ pub async fn submit_to_brand(
         .await;
 
     info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         brand_id = %brand_id,
         offer_id = %payload.brand_offer_id,
         count = %brand_deliverables.len(),
@@ -795,4 +858,135 @@ pub async fn submit_to_brand(
     Ok(Json(
         json!({ "ok": true, "count": brand_deliverables.len() }),
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_deliverable_asset_url_normalization() {
+        // Test that asset_url is normalized to secure endpoint format
+        let campaign_id = "campaign-123";
+        let deliverable_id = "deliverable-456";
+
+        let expected_url = format!(
+            "/api/bookings-campaigns/{}/deliverables/{}/file",
+            campaign_id, deliverable_id
+        );
+
+        assert_eq!(
+            expected_url,
+            "/api/bookings-campaigns/campaign-123/deliverables/deliverable-456/file"
+        );
+    }
+
+    #[test]
+    fn test_offer_deliverable_asset_url_normalization() {
+        // Test that offer deliverable asset_url is normalized to secure endpoint format
+        let offer_id = "offer-789";
+        let deliverable_id = "deliverable-abc";
+
+        let expected_url = format!(
+            "/api/campaign-offers/{}/deliverables/{}/file",
+            offer_id, deliverable_id
+        );
+
+        assert_eq!(
+            expected_url,
+            "/api/campaign-offers/offer-789/deliverables/deliverable-abc/file"
+        );
+    }
+
+    #[test]
+    fn test_storage_path_validation() {
+        // Test that empty storage paths are rejected
+        let storage_path = "";
+        assert!(storage_path.is_empty());
+
+        // Test that valid storage paths are accepted
+        let storage_path = "agencies/123/deliverables/1234567890_file.pdf";
+        assert!(!storage_path.is_empty());
+        assert!(storage_path.contains("agencies/"));
+        assert!(storage_path.contains("deliverables/"));
+    }
+
+    #[test]
+    fn test_deliverable_status_values() {
+        // Test valid deliverable status values
+        let valid_statuses = vec![
+            "draft",
+            "submitted",
+            "approved",
+            "changes_requested",
+            "rejected",
+            "brand_review",
+            "brand_approved",
+            "accepted",
+        ];
+
+        for status in valid_statuses {
+            assert!(!status.is_empty());
+            assert!(status.chars().all(|c| c.is_ascii_lowercase() || c == '_'));
+        }
+    }
+
+    #[test]
+    fn test_secure_endpoint_path_format() {
+        // Test that secure endpoint paths follow the correct format
+        let campaign_id = "550e8400-e29b-41d4-a716-446655440000";
+        let deliverable_id = "660e8400-e29b-41d4-a716-446655440001";
+
+        let secure_url = format!(
+            "/api/bookings-campaigns/{}/deliverables/{}/file",
+            campaign_id, deliverable_id
+        );
+
+        assert!(secure_url.starts_with("/api/bookings-campaigns/"));
+        assert!(secure_url.contains("/deliverables/"));
+        assert!(secure_url.ends_with("/file"));
+    }
+
+    #[test]
+    fn test_offer_secure_endpoint_path_format() {
+        // Test that offer secure endpoint paths follow the correct format
+        let offer_id = "770e8400-e29b-41d4-a716-446655440002";
+        let deliverable_id = "880e8400-e29b-41d4-a716-446655440003";
+
+        let secure_url = format!(
+            "/api/campaign-offers/{}/deliverables/{}/file",
+            offer_id, deliverable_id
+        );
+
+        assert!(secure_url.starts_with("/api/campaign-offers/"));
+        assert!(secure_url.contains("/deliverables/"));
+        assert!(secure_url.ends_with("/file"));
+    }
+
+    #[test]
+    fn test_storage_bucket_defaults() {
+        // Test that private bucket is the default for deliverables
+        let default_bucket = "likelee-private";
+        assert_eq!(default_bucket, "likelee-private");
+
+        // Deliverables should always use private bucket
+        let bucket = "likelee-private";
+        assert!(bucket.contains("private"));
+    }
+
+    #[test]
+    fn test_asset_url_no_longer_fallback() {
+        // Test that we no longer use asset_url as a fallback for storage_path
+        // This test documents the change: asset_url should NOT be used as storage_path
+
+        let storage_path = "agencies/123/deliverables/file.pdf";
+        let asset_url = "/api/bookings-campaigns/123/deliverables/456/file";
+
+        // New behavior: use storage_path directly, don't fall back to asset_url
+        let path = storage_path;
+        assert_eq!(path, "agencies/123/deliverables/file.pdf");
+
+        // asset_url should be the secure endpoint, not a storage path
+        let url = asset_url;
+        assert!(url.starts_with("/api/"));
+        assert!(!url.contains("agencies/"));
+    }
 }

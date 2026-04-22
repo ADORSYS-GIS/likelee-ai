@@ -1,7 +1,10 @@
 use axum::http::StatusCode;
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use serde_json::json;
 
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState, face_profiles::resolve_effective_creator_id};
+
+const CREATOR_FULL_ACCESS_TRIAL_DAYS: i64 = 30;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanTier {
@@ -14,6 +17,7 @@ pub enum PlanTier {
 impl PlanTier {
     pub fn from_db(value: &str) -> Self {
         match value.trim().to_lowercase().as_str() {
+            "none" => PlanTier::Free,
             // New tiers
             "basic" => PlanTier::Basic,
             "pro" => PlanTier::Pro,
@@ -51,7 +55,7 @@ impl AgencyAccessState {
             PlanTier::Pro => "Pro".to_string(),
             PlanTier::Basic => "Basic".to_string(),
             PlanTier::Free if self.trial_active => "Trial".to_string(),
-            PlanTier::Free => "Free".to_string(),
+            PlanTier::Free => "Unsubscribed".to_string(),
         };
 
         if self.trial_active {
@@ -133,11 +137,7 @@ pub async fn get_agency_access_state(
     let trial_active = trial_ends_at
         .map(|dt| dt > chrono::Utc::now())
         .unwrap_or(false);
-    let effective_tier = if trial_active && billed_tier == PlanTier::Free {
-        PlanTier::Pro
-    } else {
-        billed_tier
-    };
+    let effective_tier = billed_tier;
 
     Ok(AgencyAccessState {
         billed_tier,
@@ -189,6 +189,69 @@ pub async fn get_agency_plan_tier(
         .effective_tier)
 }
 
+pub async fn get_brand_plan_tier(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<PlanTier, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("brands")
+        .select("plan_tier")
+        .eq("id", brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
+    }
+
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let tier = rows
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("plan_tier"))
+        .and_then(|v| v.as_str())
+        .map(PlanTier::from_db)
+        .unwrap_or(PlanTier::Free);
+
+    Ok(tier)
+}
+
+pub fn brand_campaign_limit(tier: PlanTier) -> Option<usize> {
+    match tier {
+        PlanTier::Free => Some(0),
+        PlanTier::Basic => Some(3),
+        PlanTier::Pro => Some(10),
+        PlanTier::Enterprise => None,
+    }
+}
+
+pub fn brand_seat_limit(tier: PlanTier) -> Option<usize> {
+    match tier {
+        PlanTier::Free => Some(0),
+        PlanTier::Basic => Some(2),
+        PlanTier::Pro => Some(5),
+        PlanTier::Enterprise => None,
+    }
+}
+
+pub fn brand_allows_campaign_collaboration(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn brand_includes_studio_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Enterprise)
+}
+
 pub fn docuseal_template_limit(tier: PlanTier) -> Option<usize> {
     match tier {
         PlanTier::Free => Some(3),
@@ -203,4 +266,401 @@ pub fn voice_clone_limit(tier: PlanTier) -> u32 {
         PlanTier::Pro => 20,
         PlanTier::Enterprise => 20,
     }
+}
+
+pub struct SeatLimitInfo {
+    pub limit: Option<usize>,
+    pub current_members: usize,
+    pub pending_invites: usize,
+    pub current_usage: usize,
+    pub available: usize,
+    pub plan_tier: PlanTier,
+}
+
+impl SeatLimitInfo {
+    pub fn can_add_member(&self) -> bool {
+        match self.limit {
+            Some(limit) => self.current_usage < limit,
+            None => true,
+        }
+    }
+
+    pub fn seats_remaining(&self) -> Option<usize> {
+        self.limit
+            .map(|limit| limit.saturating_sub(self.current_usage))
+    }
+}
+
+pub async fn get_brand_seat_limit_info(
+    state: &AppState,
+    brand_id: &str,
+    current_members: usize,
+    pending_invites: usize,
+) -> Result<SeatLimitInfo, (StatusCode, String)> {
+    let tier = get_brand_plan_tier(state, brand_id).await?;
+    let limit = brand_seat_limit(tier);
+    let current_usage = current_members.saturating_add(pending_invites);
+    let available = match limit {
+        Some(l) => l.saturating_sub(current_usage),
+        None => usize::MAX,
+    };
+    Ok(SeatLimitInfo {
+        limit,
+        current_members,
+        pending_invites,
+        current_usage,
+        available,
+        plan_tier: tier,
+    })
+}
+
+pub async fn get_agency_seat_limit_info(
+    state: &AppState,
+    agency_id: &str,
+    current_members: usize,
+    pending_invites: usize,
+) -> Result<SeatLimitInfo, (StatusCode, String)> {
+    let access = get_agency_access_state(state, agency_id).await?;
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("seats_limit")
+        .eq("id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let db_seats_limit = rows
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("seats_limit"))
+        .and_then(|v| v.as_i64());
+
+    let limit = match db_seats_limit {
+        Some(n) if n > 0 => Some(n as usize),
+        _ => match access.billed_tier {
+            PlanTier::Free => Some(1),
+            PlanTier::Basic => Some(5),
+            PlanTier::Pro | PlanTier::Enterprise => Some(10),
+        },
+    };
+
+    let current_usage = current_members.saturating_add(pending_invites);
+    let available = match limit {
+        Some(l) => l.saturating_sub(current_usage),
+        None => usize::MAX,
+    };
+
+    Ok(SeatLimitInfo {
+        limit,
+        current_members,
+        pending_invites,
+        current_usage,
+        available,
+        plan_tier: access.billed_tier,
+    })
+}
+
+pub async fn get_creator_plan_tier(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<PlanTier, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("plan_tier")
+        .eq("id", creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            text,
+        ));
+    }
+
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let plan_tier_str = rows
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("plan_tier"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("free");
+
+    Ok(PlanTier::from_db(plan_tier_str))
+}
+
+pub fn format_seat_limit_error(info: &SeatLimitInfo) -> String {
+    match info.limit {
+        Some(limit) => {
+            format!(
+                "SEAT_LIMIT_EXCEEDED: Your current plan allows {} team seat(s). You currently have {} member(s) and {} pending invite(s). Please upgrade your plan to add more team members.",
+                limit,
+                info.current_members,
+                info.pending_invites
+            )
+        }
+        None => "SEAT_LIMIT_EXCEEDED: Unable to add team member.".to_string(),
+    }
+}
+
+pub fn format_seat_limit_error_with_upgrade(
+    info: &SeatLimitInfo,
+    organization_type: &str,
+) -> String {
+    match info.limit {
+        Some(limit) => {
+            let upgrade_hint = match organization_type {
+                "brand" => match info.plan_tier {
+                    PlanTier::Free => "Upgrade to Basic or Pro to unlock team seats.",
+                    PlanTier::Basic => {
+                        "Upgrade to Pro for 5 seats or Enterprise for unlimited seats."
+                    }
+                    PlanTier::Pro => "Upgrade to Enterprise for unlimited seats.",
+                    PlanTier::Enterprise => "",
+                },
+                "agency" => "Purchase additional seats or upgrade your plan.",
+                _ => "Please upgrade your plan.",
+            };
+            format!(
+                "SEAT_LIMIT_EXCEEDED: Your current plan allows {} team seat(s). You currently have {} member(s) and {} pending invite(s). {}",
+                limit,
+                info.current_members,
+                info.pending_invites,
+                upgrade_hint
+            )
+        }
+        None => "SEAT_LIMIT_EXCEEDED: Unable to add team member.".to_string(),
+    }
+}
+
+pub async fn get_creator_plan_tier_for_user(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<(String, PlanTier), (StatusCode, String)> {
+    let creator_id = resolve_effective_creator_id(state, user).await?;
+    let tier = get_creator_plan_tier(state, &creator_id).await?;
+    Ok((creator_id, tier))
+}
+
+struct CreatorTrialState {
+    pub trial_started_at: Option<DateTime<Utc>>,
+    pub trial_basic_started_at: Option<DateTime<Utc>>,
+    pub trial_pro_started_at: Option<DateTime<Utc>>,
+}
+
+async fn get_creator_trial_state(
+    state: &AppState,
+    creator_id: &str,
+) -> Result<CreatorTrialState, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("trial_started_at,trial_basic_started_at,trial_pro_started_at")
+        .eq("id", creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let row = rows.first();
+
+    let parse_dt = |key: &str| {
+        row.and_then(|r| r.get(key))
+            .and_then(|v| v.as_str())
+            .and_then(|s| {
+                DateTime::parse_from_rfc3339(s)
+                    .map(|dt| dt.with_timezone(&Utc))
+                    .ok()
+                    .or_else(|| {
+                        NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
+                            .ok()
+                            .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+                    })
+                    .or_else(|| {
+                        NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                            .ok()
+                            .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+                    })
+            })
+    };
+
+    Ok(CreatorTrialState {
+        trial_started_at: parse_dt("trial_started_at"),
+        trial_basic_started_at: parse_dt("trial_basic_started_at"),
+        trial_pro_started_at: parse_dt("trial_pro_started_at"),
+    })
+}
+
+pub async fn get_creator_entitlement_tier(
+    state: &AppState,
+    creator_id: &str,
+    billed_tier: PlanTier,
+) -> Result<PlanTier, (StatusCode, String)> {
+    if billed_tier != PlanTier::Free {
+        return Ok(billed_tier);
+    }
+
+    let state_res = get_creator_trial_state(state, creator_id).await?;
+    let now = Utc::now();
+    let duration = Duration::days(CREATOR_FULL_ACCESS_TRIAL_DAYS);
+
+    // 1. Check Pro Trial
+    if let Some(started_at) = state_res.trial_pro_started_at {
+        if now - started_at < duration {
+            return Ok(PlanTier::Pro);
+        }
+    }
+
+    // 2. Check Basic Trial
+    if let Some(started_at) = state_res.trial_basic_started_at {
+        if now - started_at < duration {
+            return Ok(PlanTier::Basic);
+        }
+    }
+
+    // 3. Fallback to legacy trial_started_at (defaults to Pro)
+    if let Some(started_at) = state_res.trial_started_at {
+        if now - started_at < duration {
+            return Ok(PlanTier::Pro);
+        }
+    }
+
+    Ok(PlanTier::Free)
+}
+
+pub async fn get_creator_entitlement_tier_for_user(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<(String, PlanTier, PlanTier), (StatusCode, String)> {
+    let (creator_id, billed_tier) = get_creator_plan_tier_for_user(state, user).await?;
+    let entitlement_tier = get_creator_entitlement_tier(state, &creator_id, billed_tier).await?;
+    Ok((creator_id, billed_tier, entitlement_tier))
+}
+
+pub fn creator_category_limit(tier: PlanTier) -> Option<usize> {
+    match tier {
+        PlanTier::Basic => Some(15),
+        PlanTier::Free => None,
+        PlanTier::Pro | PlanTier::Enterprise => None,
+    }
+}
+
+pub fn creator_voice_tone_limit(tier: PlanTier) -> usize {
+    match tier {
+        PlanTier::Pro | PlanTier::Enterprise => 6,
+        _ => 0,
+    }
+}
+
+pub fn creator_has_cameo_uploads(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_unauthorized_use_monitoring(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_advanced_analytics(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_voice_profiles(tier: PlanTier) -> bool {
+    creator_voice_tone_limit(tier) > 0
+}
+
+pub fn creator_has_basic_access(tier: PlanTier) -> bool {
+    !matches!(tier, PlanTier::Free)
+}
+
+pub fn creator_has_likeness_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_kyc_access(tier: PlanTier) -> bool {
+    creator_has_likeness_access(tier)
+}
+
+pub fn creator_has_agency_connection_access(tier: PlanTier) -> bool {
+    creator_has_likeness_access(tier)
+}
+
+pub fn creator_has_brand_connection_access(tier: PlanTier) -> bool {
+    creator_has_likeness_access(tier)
+}
+
+pub fn creator_has_payouts_access(tier: PlanTier) -> bool {
+    creator_has_likeness_access(tier)
+}
+
+pub fn creator_has_jobs_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_rules_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_talent_portal_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_campaign_archive_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn creator_has_active_campaigns_access(tier: PlanTier) -> bool {
+    matches!(tier, PlanTier::Pro | PlanTier::Enterprise)
+}
+
+pub fn enforce_creator_entitlement(
+    tier: PlanTier,
+    allowed: impl FnOnce(PlanTier) -> bool,
+    feature_key: &'static str,
+    upgrade_to: &'static str,
+) -> Result<(), (StatusCode, String)> {
+    if allowed(tier) {
+        return Ok(());
+    }
+    Err((
+        StatusCode::FORBIDDEN,
+        json!({
+            "error": "feature_not_available_for_plan",
+            "feature": feature_key,
+            "current_plan": match tier {
+                PlanTier::Free => "free",
+                PlanTier::Basic => "basic",
+                PlanTier::Pro => "pro",
+                PlanTier::Enterprise => "enterprise",
+            },
+            "upgrade_to": upgrade_to,
+        })
+        .to_string(),
+    ))
 }

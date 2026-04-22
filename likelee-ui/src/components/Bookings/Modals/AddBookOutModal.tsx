@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
-import { getAgencyTalents } from "@/api/functions";
+import { getAgencyRoster } from "@/api/functions";
 
 export const AddBookOutModal = ({
   open,
@@ -53,12 +53,23 @@ export const AddBookOutModal = ({
     let cancelled = false;
     const load = async () => {
       try {
-        const rows = await getAgencyTalents();
+        const resp = await getAgencyRoster();
         if (cancelled) return;
+        const rows = Array.isArray(resp)
+          ? resp
+          : Array.isArray((resp as any)?.talents)
+            ? (resp as any).talents
+            : Array.isArray((resp as any)?.data?.talents)
+              ? (resp as any).data.talents
+              : [];
         const mapped = Array.isArray(rows)
           ? rows.map((r: any) => ({
-              id: r.id || r.user_id || r.creator_id,
+              id: r.id,
               name: r.full_name || r.name || r.stage_name || "Unnamed",
+              creator_id: r.creator_id || null,
+              relationship_id: r.relationship_id || null,
+              relationship_type: r.relationship_type || "internal",
+              contract_controlled: Boolean(r.contract_controlled),
             }))
           : [];
         setTalents(mapped);
@@ -81,6 +92,9 @@ export const AddBookOutModal = ({
     const newBookOut = {
       id: `bo-${Date.now()}`,
       talentId,
+      creator_id: talents.find((talent) => talent.id === talentId)?.creator_id,
+      relationship_id: talents.find((talent) => talent.id === talentId)
+        ?.relationship_id,
       reason,
       startDate,
       endDate,

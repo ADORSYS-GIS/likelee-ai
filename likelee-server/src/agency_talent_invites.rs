@@ -1,4 +1,10 @@
-use crate::{auth::AuthUser, auth::RoleGuard, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    auth::RoleGuard,
+    config::AppState,
+    errors::sanitize_db_error,
+    team::{permissions::Permission, require_agency_permission},
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -124,7 +130,7 @@ async fn creator_id_by_email(state: &AppState, email: &str) -> Option<String> {
 async fn upsert_agency_talent_connection(
     state: &AppState,
     agency_id: &str,
-    talent_id: &str,
+    talent_id: Option<&str>,
     creator_id: Option<&str>,
     status: &str,
 ) -> Result<(), (StatusCode, String)> {
@@ -179,8 +185,7 @@ async fn upsert_agency_talent_connection(
     let resp = state
         .pg
         .from("agency_talent_relationships")
-        .upsert(payload.to_string())
-        .on_conflict("agency_id,talent_id")
+        .insert(payload.to_string())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -452,6 +457,8 @@ pub async fn list_for_agency(
     user: AuthUser,
 ) -> Result<Json<ListAgencyTalentInvitesResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let access = require_agency_permission(&state, &user, Permission::InviteTeamMembers).await?;
+    let agency_id = &access.organization_id;
 
     let resp = state
         .pg
@@ -459,7 +466,7 @@ pub async fn list_for_agency(
         .select(
             "id,agency_id,email,invited_name,status,expires_at,created_at,responded_at,updated_at",
         )
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(500)
         .execute()
@@ -532,6 +539,8 @@ pub async fn create_for_agency(
     Json(payload): Json<CreateAgencyTalentInvitePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let access = require_agency_permission(&state, &user, Permission::InviteTeamMembers).await?;
+    let agency_id = &access.organization_id;
 
     let email = payload.email.trim().to_lowercase();
     if email.is_empty() {
@@ -545,7 +554,7 @@ pub async fn create_for_agency(
             .pg
             .from("agency_talent_relationships")
             .select("id")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .eq("creator_id", creator_id)
             .eq("status", "active")
             .limit(1)
@@ -564,7 +573,7 @@ pub async fn create_for_agency(
             let _ = state
                 .pg
                 .from("agency_talent_invites")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("email", &email)
                 .eq("status", "pending")
                 .update(
@@ -590,7 +599,7 @@ pub async fn create_for_agency(
     let _ = state
         .pg
         .from("agency_talent_invites")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("email", &email)
         .eq("status", "pending")
         .update(
@@ -606,7 +615,7 @@ pub async fn create_for_agency(
     let token = uuid::Uuid::new_v4().to_string();
 
     let row = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "email": email,
         "invited_name": payload.invited_name,
         "token": token,
@@ -713,12 +722,14 @@ pub async fn revoke_for_agency(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let access = require_agency_permission(&state, &user, Permission::InviteTeamMembers).await?;
+    let agency_id = &access.organization_id;
 
     state
         .pg
         .from("agency_talent_invites")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("status", "pending")
         .update(
             json!({
@@ -952,7 +963,11 @@ pub async fn get_magic_link_by_token(
     })))
 }
 
-async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id: &str) {
+async fn ensure_creator_row_exists(
+    state: &AppState,
+    user: &AuthUser,
+    creator_id: &str,
+) -> Result<(), (StatusCode, String)> {
     let resp = state
         .pg
         .from("creators")
@@ -961,19 +976,22 @@ async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id
         .limit(1)
         .execute()
         .await
-        .ok();
-    if let Some(resp) = resp {
-        if resp.status().is_success() {
-            if let Ok(txt) = resp.text().await {
-                let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
-                if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
-                    return;
-                }
-            }
-        }
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
     }
 
-    let _ = state
+    let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
+    if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+        return Ok(());
+    }
+
+    let resp = state
         .pg
         .from("creators")
         .insert(
@@ -981,12 +999,25 @@ async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id
                 "id": creator_id,
                 "email": user.email,
                 "full_name": user.email.clone().unwrap_or_default(),
+                "onboarding_step": "profile_details",
+                "public_profile_visible": false,
+                "visibility": "private",
                 "updated_at": now_rfc3339(),
             })
             .to_string(),
         )
         .execute()
-        .await;
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if resp.status().is_success() {
+        return Ok(());
+    }
+    let status = resp.status();
+    let txt = resp.text().await.unwrap_or_default();
+    if txt.contains("\"23505\"") {
+        return Ok(());
+    }
+    Err(sanitize_db_error(status.as_u16(), txt))
 }
 
 pub async fn accept_by_token(
@@ -1031,7 +1062,29 @@ pub async fn accept_by_token(
         ));
     }
 
-    ensure_creator_row_exists(&state, &user, &creator_id).await;
+    ensure_creator_row_exists(&state, &user, &creator_id).await?;
+
+    let resp = state
+        .pg
+        .from("creators")
+        .eq("id", &creator_id)
+        .update(
+            json!({
+                "onboarding_step": "profile_details",
+                "public_profile_visible": false,
+                "visibility": "private",
+                "updated_at": now_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let txt = resp.text().await.unwrap_or_default();
+        return Err(sanitize_db_error(status.as_u16(), txt));
+    }
 
     let mut existing_agency_user_id: Option<String> = None;
     let mut matched_agency_row: Option<Value> = None;
@@ -1040,6 +1093,7 @@ pub async fn accept_by_token(
         .pg
         .from("agency_users")
         .select("*")
+        .eq("agency_id", &inv.agency_id)
         .eq("creator_id", &creator_id)
         .eq("role", "talent")
         .order("updated_at.desc")
@@ -1067,6 +1121,7 @@ pub async fn accept_by_token(
             .pg
             .from("agency_users")
             .select("*")
+            .eq("agency_id", &inv.agency_id)
             .eq("email", &invited_email)
             .eq("role", "talent")
             .order("updated_at.desc")
@@ -1094,6 +1149,7 @@ pub async fn accept_by_token(
             .pg
             .from("agency_users")
             .eq("id", &agency_user_id)
+            .eq("agency_id", &inv.agency_id)
             .update(
                 json!({
                     "creator_id": creator_id,
@@ -1107,93 +1163,16 @@ pub async fn accept_by_token(
             .execute()
             .await;
         existing_agency_user_id = Some(agency_user_id);
-    } else {
-        // Compute full_legal_name
-        let creator_resp = state
-            .pg
-            .from("creators")
-            .select("full_name,email")
-            .eq("id", &creator_id)
-            .single()
-            .execute()
-            .await
-            .ok();
-        let mut full_legal_name = user.email.clone().unwrap_or_else(|| "Unknown".to_string());
-        if let Some(cresp) = creator_resp {
-            if cresp.status().is_success() {
-                if let Ok(ctxt) = cresp.text().await {
-                    let v: serde_json::Value = serde_json::from_str(&ctxt).unwrap_or(json!({}));
-                    full_legal_name = v
-                        .get("full_name")
-                        .and_then(|x| x.as_str())
-                        .filter(|s| !s.trim().is_empty())
-                        .map(|s| s.to_string())
-                        .or_else(|| user.email.clone())
-                        .or_else(|| {
-                            v.get("email")
-                                .and_then(|x| x.as_str())
-                                .map(|s| s.to_string())
-                        })
-                        .unwrap_or_else(|| "Unknown".to_string());
-                }
-            }
-        }
-
-        let _ = state
-            .pg
-            .from("agency_users")
-            .insert(
-                json!({
-                    "agency_id": inv.agency_id,
-                    "creator_id": creator_id,
-                    "full_legal_name": full_legal_name,
-                    "email": user.email.clone().unwrap_or_else(|| inv.email.clone()),
-                    "status": "active",
-                    "role": "talent",
-                    "updated_at": now_rfc3339(),
-                })
-                .to_string(),
-            )
-            .execute()
-            .await;
-
-        let lookup_resp = state
-            .pg
-            .from("agency_users")
-            .select("id")
-            .eq("creator_id", &creator_id)
-            .eq("role", "talent")
-            .order("updated_at.desc")
-            .limit(1)
-            .execute()
-            .await
-            .ok();
-        if let Some(lookup_resp) = lookup_resp {
-            if lookup_resp.status().is_success() {
-                if let Ok(lookup_text) = lookup_resp.text().await {
-                    let rows: Vec<Value> = serde_json::from_str(&lookup_text).unwrap_or_default();
-                    if let Some(id) = rows
-                        .first()
-                        .and_then(|r| r.get("id"))
-                        .and_then(|v| v.as_str())
-                    {
-                        existing_agency_user_id = Some(id.to_string());
-                    }
-                }
-            }
-        }
     }
 
-    if let Some(agency_user_id) = existing_agency_user_id.as_deref() {
-        let _ = upsert_agency_talent_connection(
-            &state,
-            &inv.agency_id,
-            agency_user_id,
-            Some(&creator_id),
-            "active",
-        )
-        .await;
-    }
+    let _ = upsert_agency_talent_connection(
+        &state,
+        &inv.agency_id,
+        existing_agency_user_id.as_deref(),
+        Some(&creator_id),
+        "active",
+    )
+    .await;
 
     if let Some(row) = matched_agency_row.as_ref() {
         hydrate_creator_from_agency_row(&state, &creator_id, &inv.email, row).await;
@@ -1257,11 +1236,8 @@ async fn resolve_effective_creator_id(
 
 pub async fn decline_by_token(
     State(state): State<AppState>,
-    user: AuthUser,
     Path(token): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
-    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
-
     let resp = state
         .pg
         .from("agency_talent_invites")
@@ -1286,14 +1262,6 @@ pub async fn decline_by_token(
     }
     if is_expired(&inv.expires_at) {
         return Err((StatusCode::BAD_REQUEST, "invite expired".to_string()));
-    }
-
-    let user_email = user.email.clone().unwrap_or_default().trim().to_lowercase();
-    if user_email.is_empty() || user_email != inv.email.trim().to_lowercase() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "email does not match invite".to_string(),
-        ));
     }
 
     let _ = state

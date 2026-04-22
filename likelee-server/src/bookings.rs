@@ -1,8 +1,13 @@
 use crate::{
-    agencies::{resolve_effective_agency_id, resolve_effective_agency_talent_id},
+    agency_talent_refs::resolve_agency_talent_ref,
     auth::AuthUser,
     config::AppState,
     errors::sanitize_db_error,
+    storage::{
+        canonical_object_path, download_object, insert_asset_record, sanitize_file_name,
+        upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+    },
+    team::resolve_effective_agency_id,
 };
 use axum::extract::Multipart;
 use axum::{
@@ -14,6 +19,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::warn;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreateBookingPayload {
@@ -21,6 +27,8 @@ pub struct CreateBookingPayload {
     pub status: Option<String>,
     pub client_id: Option<String>,
     pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
+    pub relationship_id: Option<String>,
     pub talent_name: Option<String>,
     pub client_name: Option<String>,
     pub date: String,
@@ -90,15 +98,36 @@ pub async fn create_with_files(
 
     let payload = payload.ok_or((StatusCode::BAD_REQUEST, "missing data part".to_string()))?;
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    let resolved_talent_id = match payload
+    let resolved_talent_ref = match payload
         .talent_id
         .as_deref()
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
-        Some(value) => Some(resolve_effective_agency_talent_id(&state, &agency_id, value).await?),
+        Some(value) => Some(resolve_agency_talent_ref(&state, &agency_id, value).await?),
         None => None,
     };
+    let resolved_talent_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.agency_user_id.clone());
+    let resolved_creator_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.creator_id.clone())
+        .or_else(|| {
+            payload
+                .creator_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
+    let resolved_relationship_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.relationship_id.clone())
+        .or_else(|| {
+            payload
+                .relationship_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
 
     // Reuse create logic: normalize times
     let is_all_day = payload.all_day.unwrap_or(false);
@@ -109,16 +138,29 @@ pub async fn create_with_files(
     };
 
     // Validate: if talent is booked out on this date, block the booking
-    if let (Some(tid), date) = (resolved_talent_id.as_ref(), &payload.date) {
+    if let Some(talent_ref) = resolved_talent_ref.as_ref() {
         // Overlap when date is within [start_date, end_date]
-        let resp = state
+        let mut req = state
             .pg
             .from("book_outs")
             .select("id")
-            .eq("agency_user_id", &user.id)
-            .eq("talent_id", tid)
-            .lte("start_date", date)
-            .gte("end_date", date)
+            .lte("start_date", &payload.date)
+            .gte("end_date", &payload.date);
+        req = if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {
+            if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+                req.or(format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    agency_user_id, creator_id
+                ))
+            } else {
+                req.eq("talent_id", agency_user_id)
+            }
+        } else if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+            req.eq("creator_id", creator_id)
+        } else {
+            req.eq("talent_id", &talent_ref.id)
+        };
+        let resp = req
             .limit(1)
             .execute()
             .await
@@ -146,8 +188,11 @@ pub async fn create_with_files(
 
     let row = json!({
         "agency_user_id": user.id,
+        "agency_id": agency_id,
         "client_id": payload.client_id,
         "talent_id": resolved_talent_id,
+        "creator_id": resolved_creator_id,
+        "relationship_id": resolved_relationship_id,
         "talent_name": payload.talent_name,
         "client_name": payload.client_name,
         "date": payload.date,
@@ -207,55 +252,22 @@ pub async fn create_with_files(
         .to_string();
 
     // Upload files and insert booking_files rows
-    let http = reqwest::Client::new();
-    let bucket = state.supabase_bucket_private.clone();
     let mut uploaded: Vec<serde_json::Value> = Vec::new();
     for (fname, data) in files.into_iter() {
-        let sanitized = fname
-            .chars()
-            .map(|c| {
-                if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                    c
-                } else {
-                    '_'
-                }
-            })
-            .collect::<String>();
-        let path = format!(
-            "agencies/{}/bookings/{}/files/{}_{}",
-            user.id,
-            booking_id,
+        let sanitized = sanitize_file_name(&fname);
+        let path = canonical_object_path(
+            &format!("agencies/{agency_id}/bookings/{booking_id}/files"),
+            &sanitized,
             chrono::Utc::now().timestamp_millis(),
-            sanitized
         );
-        let storage_url = format!(
-            "{}/storage/v1/object/{}/{}",
-            state.supabase_url, bucket, path
-        );
-        let up = http
-            .post(&storage_url)
-            .header(
-                "Authorization",
-                format!("Bearer {}", state.supabase_service_key),
-            )
-            .header("apikey", state.supabase_service_key.clone())
-            .body(data)
-            .send()
-            .await
-            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-        if !up.status().is_success() {
-            let msg = up.text().await.unwrap_or_default();
-            return Err((
-                StatusCode::BAD_GATEWAY,
-                format!("storage upload failed: {}", msg),
-            ));
-        }
+        let uploaded_object =
+            upload_object(&state, StorageVisibility::Private, &path, data, None).await?;
 
         let rec_body = json!({
             "booking_id": booking_id,
             "file_name": fname,
-            "storage_bucket": bucket,
-            "storage_path": path,
+            "storage_bucket": uploaded_object.bucket,
+            "storage_path": uploaded_object.path,
             "public_url": null,
         });
         let ins = state
@@ -271,6 +283,35 @@ pub async fn create_with_files(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
         if let Some(v) = arr.first() {
+            if let Some(file_id) = v
+                .get("id")
+                .and_then(|id| id.as_str())
+                .filter(|id| !id.is_empty())
+            {
+                let record = StorageAssetRecord {
+                    owner_type: StorageOwnerType::Agency,
+                    owner_id: agency_id.clone(),
+                    context_type: StorageContextType::BookingFile,
+                    context_id: Some(booking_id.clone()),
+                    visibility: StorageVisibility::Private,
+                    object_path: rec_body
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string(),
+                    original_file_name: Some(fname.clone()),
+                    mime_type: None,
+                    size_bytes: None,
+                    checksum_sha256: None,
+                    source_table: Some("booking_files".to_string()),
+                    source_id: Some(file_id.to_string()),
+                    created_by: Some(user.id.clone()),
+                    counts_toward_quota: true,
+                };
+                if let Err(err) = insert_asset_record(&state, &record).await {
+                    warn!(booking_id = %booking_id, file_id = %file_id, error = %err.1, "failed to mirror booking file into storage_assets");
+                }
+            }
             uploaded.push(v.clone());
         }
     }
@@ -295,6 +336,37 @@ pub async fn create(
     user: AuthUser,
     Json(payload): Json<CreateBookingPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let resolved_talent_ref = match payload
+        .talent_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(value) => Some(resolve_agency_talent_ref(&state, &agency_id, value).await?),
+        None => None,
+    };
+    let resolved_talent_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.agency_user_id.clone());
+    let resolved_creator_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.creator_id.clone())
+        .or_else(|| {
+            payload
+                .creator_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
+    let resolved_relationship_id = resolved_talent_ref
+        .as_ref()
+        .and_then(|talent_ref| talent_ref.relationship_id.clone())
+        .or_else(|| {
+            payload
+                .relationship_id
+                .clone()
+                .filter(|value| !value.trim().is_empty())
+        });
     // Enforce full-day booking times if all_day=true
     let is_all_day = payload.all_day.unwrap_or(false);
     let (call_time, wrap_time) = if is_all_day {
@@ -304,15 +376,29 @@ pub async fn create(
     };
 
     // Validate: if talent is booked out on this date, block the booking
-    if let (Some(tid), date) = (payload.talent_id.as_ref(), &payload.date) {
-        let resp = state
+    if let Some(talent_ref) = resolved_talent_ref.as_ref() {
+        let mut req = state
             .pg
             .from("book_outs")
             .select("id")
             .eq("agency_user_id", &user.id)
-            .eq("talent_id", tid)
-            .lte("start_date", date)
-            .gte("end_date", date)
+            .lte("start_date", &payload.date)
+            .gte("end_date", &payload.date);
+        req = if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {
+            if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+                req.or(format!(
+                    "talent_id.eq.{},creator_id.eq.{}",
+                    agency_user_id, creator_id
+                ))
+            } else {
+                req.eq("talent_id", agency_user_id)
+            }
+        } else if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+            req.eq("creator_id", creator_id)
+        } else {
+            req.eq("talent_id", &talent_ref.id)
+        };
+        let resp = req
             .limit(1)
             .execute()
             .await
@@ -341,8 +427,11 @@ pub async fn create(
     // Compose row
     let row = json!({
         "agency_user_id": user.id,
+        "agency_id": agency_id,
         "client_id": payload.client_id,
-        "talent_id": payload.talent_id,
+        "talent_id": resolved_talent_id,
+        "creator_id": resolved_creator_id,
+        "relationship_id": resolved_relationship_id,
         "talent_name": payload.talent_name,
         "client_name": payload.client_name,
         "date": payload.date,
@@ -402,6 +491,26 @@ pub async fn upload_booking_file(
     Path(booking_id): Path<String>,
     mut multipart: Multipart,
 ) -> Result<Json<BookingFileUploadResponse>, (StatusCode, String)> {
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let booking_resp = state
+        .pg
+        .from("bookings")
+        .select("id")
+        .eq("id", &booking_id)
+        .eq("agency_user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !booking_resp.status().is_success() {
+        return Err((StatusCode::FORBIDDEN, "booking_not_found".into()));
+    }
+    let booking_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&booking_resp.text().await.unwrap_or_default()).unwrap_or_default();
+    if booking_rows.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "booking_not_found".into()));
+    }
+
     // Expect a single part named "file"
     let mut file_name = None;
     let mut bytes: Vec<u8> = vec![];
@@ -424,62 +533,23 @@ pub async fn upload_booking_file(
     if bytes.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing file".into()));
     }
+    let size_bytes = bytes.len() as i64;
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
-    let sanitized = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
-
-    // Storage target (private bucket)
-    let bucket = state.supabase_bucket_private.clone();
-    let path = format!(
-        "agencies/{}/bookings/{}/files/{}_{}",
-        user.id,
-        booking_id,
+    let sanitized = sanitize_file_name(&fname);
+    let path = canonical_object_path(
+        &format!("agencies/{agency_id}/bookings/{booking_id}/files"),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
-        sanitized
     );
-
-    // Upload to Supabase Storage using service key
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .body(bytes)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
-
-    // No public URL for private bucket
-    let public_url = None;
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
+    let public_url = uploaded.public_url.clone();
 
     // Insert row into booking_files
     let insert = serde_json::json!({
         "booking_id": booking_id,
         "file_name": fname,
-        "storage_bucket": bucket,
-        "storage_path": path,
+        "storage_bucket": uploaded.bucket,
+        "storage_path": uploaded.path,
         "public_url": public_url,
     });
     let resp = state
@@ -504,12 +574,46 @@ pub async fn upload_booking_file(
         .unwrap_or("")
         .to_string();
 
+    if !id.is_empty() {
+        let record = StorageAssetRecord {
+            owner_type: StorageOwnerType::Agency,
+            owner_id: agency_id,
+            context_type: StorageContextType::BookingFile,
+            context_id: Some(booking_id.clone()),
+            visibility: StorageVisibility::Private,
+            object_path: insert
+                .get("storage_path")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            original_file_name: Some(fname.clone()),
+            mime_type: None,
+            size_bytes: Some(size_bytes),
+            checksum_sha256: None,
+            source_table: Some("booking_files".to_string()),
+            source_id: Some(id.clone()),
+            created_by: Some(user.id.clone()),
+            counts_toward_quota: true,
+        };
+        if let Err(err) = insert_asset_record(&state, &record).await {
+            warn!(booking_id = %booking_id, file_id = %id, error = %err.1, "failed to mirror uploaded booking file into storage_assets");
+        }
+    }
+
     Ok(Json(BookingFileUploadResponse {
         id,
         file_name: fname,
         public_url,
-        storage_bucket: bucket,
-        storage_path: path,
+        storage_bucket: insert
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        storage_path: insert
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
     }))
 }
 
@@ -760,7 +864,7 @@ pub async fn serve_booking_file(
         let b_resp = state
             .pg
             .from("bookings")
-            .select("id,talent_id")
+            .select("id,talent_id,creator_id")
             .eq("id", &booking_id)
             .single()
             .execute()
@@ -777,63 +881,50 @@ pub async fn serve_booking_file(
             .unwrap_or("")
             .trim()
             .to_string();
-        if talent_id.is_empty() {
-            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
-        }
+        let creator_id = b_row
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
 
-        let au_resp = state
-            .pg
-            .from("agency_users")
-            .select("id")
-            .eq("id", &talent_id)
-            .eq("creator_id", &user.id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !au_resp.status().is_success() {
-            return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
-        }
-        let txt = au_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-        if rows.is_empty() {
+        if !creator_id.is_empty() {
+            if creator_id != user.id {
+                return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+            }
+        } else if !talent_id.is_empty() {
+            let au_resp = state
+                .pg
+                .from("agency_users")
+                .select("id")
+                .eq("id", &talent_id)
+                .eq("creator_id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !au_resp.status().is_success() {
+                return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+            }
+            let txt = au_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+            if rows.is_empty() {
+                return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
+            }
+        } else {
             return Err((StatusCode::FORBIDDEN, "forbidden".to_string()));
         }
     }
 
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, storage_bucket, storage_path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .get(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let downloaded = download_object(&state, &storage_bucket, &storage_path).await?;
 
-    if !up.status().is_success() {
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            "failed_to_fetch_from_storage".to_string(),
-        ));
-    }
-
-    let content_type = up
-        .headers()
+    let content_type = downloaded
+        .headers
         .get("content-type")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("application/octet-stream")
         .to_string();
-    let bytes = up
-        .bytes()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bytes = downloaded.bytes;
 
     let mut resp = Response::new(Body::from(bytes));
     resp.headers_mut().insert(

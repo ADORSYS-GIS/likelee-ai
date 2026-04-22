@@ -78,10 +78,12 @@ import UploadProject from "./UploadProject";
 import DemoTalentDashboard from "./DemoTalentDashboard";
 
 import CreatorDashboard from "./CreatorDashboard";
+import CreatorSubscribe from "./CreatorSubscribe";
 
 import AgencyDashboard from "./AgencyDashboard";
 
 import AgencySubscribe from "./AgencySubscribe";
+import BrandSubscribe from "./BrandSubscribe";
 
 import StripeConnectReturn from "./StripeConnectReturn";
 import StripeConnectRefresh from "./StripeConnectRefresh";
@@ -124,14 +126,15 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-const __pagesQueryClient = new QueryClient();
+import BrandStudioAddonRoute from "@/auth/BrandStudioAddonRoute";
+
 import ProtectedRoute from "@/auth/ProtectedRoute";
 import Login from "./Login";
 import Register from "./Register";
 import ForgotPassword from "./ForgotPassword";
 import UpdatePassword from "./UpdatePassword";
 import AgencyInviteLanding from "./AgencyInviteLanding";
+import TeamInviteLanding from "./TeamInviteLanding";
 import TwoFactorSetup from "./TwoFactorSetup";
 import LicensingSettings from "./LicensingSettings";
 import Unauthorized from "./Unauthorized";
@@ -217,10 +220,13 @@ const PAGES = {
   DemoTalentDashboard: DemoTalentDashboard,
 
   CreatorDashboard: CreatorDashboard,
+  CreatorSubscribe: CreatorSubscribe,
 
   AgencyDashboard: AgencyDashboard,
 
   AgencySubscribe: AgencySubscribe,
+
+  BrandSubscribe: BrandSubscribe,
 
   AddTalent: AddTalent,
 
@@ -263,6 +269,13 @@ function _getCurrentPage(url) {
   if (loweredUrl === "/bookdemothanks" || loweredUrl === "/book-demo/thanks") {
     return "BookDemoThanks";
   }
+  if (
+    loweredUrl === "/brandpricing" ||
+    loweredUrl === "/brand-pricing" ||
+    loweredUrl === "/brandsubscribe"
+  ) {
+    return "BrandSubscribe";
+  }
 
   if (url.endsWith("/")) {
     url = url.slice(0, -1);
@@ -278,12 +291,29 @@ function _getCurrentPage(url) {
   return pageName || Object.keys(PAGES)[0];
 }
 
+function BrandPricingRedirect() {
+  const location = useLocation();
+
+  return (
+    <Navigate
+      to={{
+        pathname: "/brandpricing",
+        search: location.search,
+        hash: location.hash,
+      }}
+      replace
+    />
+  );
+}
+
 // Create a wrapper component that uses useLocation inside the Router context
 function AppRoutes() {
   const location = useLocation();
   const isPublicPackage = location.pathname.startsWith("/share/package/");
   const isPublicCatalog = location.pathname.startsWith("/share/catalog/");
-  const isInviteFlow = location.pathname.startsWith("/invite/agency/");
+  const isInviteFlow =
+    location.pathname.startsWith("/invite/agency/") ||
+    location.pathname.startsWith("/invite/team/");
   const isPasswordRecoveryFlow = location.pathname === "/update-password";
 
   const currentPage = _getCurrentPage(location.pathname);
@@ -321,27 +351,106 @@ function AppRoutes() {
 
       <Route path="/GetAccess" element={<GetAccess />} />
 
-      <Route path="/Studio" element={<Studio />} />
+      <Route
+        path="/Studio"
+        element={
+          <BrandStudioAddonRoute>
+            <Studio />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioVideo" element={<StudioVideo />} />
+      <Route
+        path="/StudioVideo"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioVideo />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioImage" element={<StudioImage />} />
+      <Route
+        path="/StudioImage"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioImage />
+          </BrandStudioAddonRoute>
+        }
+      />
 
       <Route path="/AdminCredits" element={<AdminCredits />} />
 
-      <Route path="/StudioSubscribe" element={<StudioSubscribe />} />
+      <Route
+        path="/StudioSubscribe"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioSubscribe />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioVideoOptions" element={<StudioVideoOptions />} />
+      <Route path="/CreatorSubscribe" element={<CreatorSubscribe />} />
 
-      <Route path="/StudioImageOptions" element={<StudioImageOptions />} />
+      <Route
+        path="/StudioVideoOptions"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioVideoOptions />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/studiotemplates" element={<StudioTemplates />} />
-      <Route path="/StudioTemplates" element={<StudioTemplates />} />
+      <Route
+        path="/StudioImageOptions"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioImageOptions />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/studiopresets" element={<StudioPresets />} />
-      <Route path="/StudioPresets" element={<StudioPresets />} />
+      <Route
+        path="/studiotemplates"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioTemplates />
+          </BrandStudioAddonRoute>
+        }
+      />
+      <Route
+        path="/StudioTemplates"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioTemplates />
+          </BrandStudioAddonRoute>
+        }
+      />
 
-      <Route path="/StudioImageToVideo" element={<StudioImageToVideo />} />
+      <Route
+        path="/studiopresets"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioPresets />
+          </BrandStudioAddonRoute>
+        }
+      />
+      <Route
+        path="/StudioPresets"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioPresets />
+          </BrandStudioAddonRoute>
+        }
+      />
+
+      <Route
+        path="/StudioImageToVideo"
+        element={
+          <BrandStudioAddonRoute>
+            <StudioImageToVideo />
+          </BrandStudioAddonRoute>
+        }
+      />
 
       <Route path="/TestFalAPI" element={<TestFalAPI />} />
 
@@ -439,9 +548,34 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      <Route path="/AgencySubscribe" element={<AgencySubscribe />} />
+      <Route
+        path="/AgencySubscribe"
+        element={
+          <ProtectedRoute
+            allowedRoles={["agency"]}
+            requiredPermissions={["manage_billing"]}
+          >
+            <AgencySubscribe />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/agencysubscribe" element={<AgencySubscribe />} />
+      <Route
+        path="/agencysubscribe"
+        element={
+          <ProtectedRoute
+            allowedRoles={["agency"]}
+            requiredPermissions={["manage_billing"]}
+          >
+            <AgencySubscribe />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="/brandpricing" element={<BrandSubscribe />} />
+      <Route path="/BrandSubscribe" element={<BrandPricingRedirect />} />
+      <Route path="/brandsubscribe" element={<BrandPricingRedirect />} />
+      <Route path="/brand-pricing" element={<BrandPricingRedirect />} />
 
       <Route path="/stripe/connect/return" element={<StripeConnectReturn />} />
       <Route
@@ -470,7 +604,10 @@ function AppRoutes() {
       <Route
         path="/BrandCampaignDashboard"
         element={
-          <ProtectedRoute allowedRoles={["brand"]}>
+          <ProtectedRoute
+            allowedRoles={["brand"]}
+            requiredPermissions={["create_campaigns"]}
+          >
             <BrandCampaignDashboard />
           </ProtectedRoute>
         }
@@ -550,6 +687,7 @@ function AppRoutes() {
       <Route path="/update-password" element={<UpdatePassword />} />
 
       <Route path="/invite/agency/:token" element={<AgencyInviteLanding />} />
+      <Route path="/invite/team/:token" element={<TeamInviteLanding />} />
       <Route
         path="/TwoFactorSetup"
         element={
@@ -590,10 +728,8 @@ function AppRoutes() {
 
 export default function Pages() {
   return (
-    <QueryClientProvider client={__pagesQueryClient}>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </QueryClientProvider>
+    <Router>
+      <AppRoutes />
+    </Router>
   );
 }

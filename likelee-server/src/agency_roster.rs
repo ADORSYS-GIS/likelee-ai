@@ -1,4 +1,9 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    agency_talent_refs::list_agency_talent_refs,
+    auth::AuthUser,
+    config::AppState,
+    team::{permissions::Permission, require_agency_access, require_agency_permission},
+};
 use axum::http::StatusCode;
 use axum::{
     extract::{Path, State},
@@ -134,6 +139,9 @@ pub struct TalentRow {
     pub id: String,
     pub talent_id: Option<String>,
     pub creator_id: Option<String>,
+    pub relationship_id: Option<String>,
+    pub relationship_type: String,
+    pub contract_controlled: bool,
     pub name: String,
     pub stage_name: String,
     pub role: String,
@@ -193,78 +201,31 @@ pub struct AgencyRosterResponse {
     pub talents: Vec<TalentRow>,
 }
 
-async fn resolve_effective_agency_id(
-    state: &AppState,
-    user: &AuthUser,
-) -> Result<String, (StatusCode, String)> {
-    let by_id_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_id_status = by_id_resp.status();
-    let by_id_text = by_id_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_id_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
-    }
-    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
-    if !by_id_rows.is_empty() {
-        return Ok(user.id.clone());
-    }
-
-    let by_user_resp = state
-        .pg
-        .from("agencies")
-        .select("id")
-        .eq("user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let by_user_status = by_user_resp.status();
-    let by_user_text = by_user_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !by_user_status.is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_user_text));
-    }
-    let by_user_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&by_user_text).unwrap_or_default();
-    let agency_id = by_user_rows
-        .first()
-        .and_then(|r| r.get("id"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    if agency_id.is_empty() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Agency profile not found".to_string(),
-        ));
-    }
-    Ok(agency_id)
-}
-
 pub async fn get_roster(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencyRosterResponse>, (StatusCode, String)> {
-    let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, &agency_id).await?;
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
+    crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
+    let talent_refs = list_agency_talent_refs(&state, agency_id, None).await?;
+    let mut ref_by_key: HashMap<String, crate::agency_talent_refs::AgencyTalentRef> =
+        HashMap::new();
+    for talent_ref in talent_refs {
+        ref_by_key.insert(talent_ref.id.clone(), talent_ref.clone());
+        if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {
+            ref_by_key.insert(agency_user_id.clone(), talent_ref.clone());
+        }
+        if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+            ref_by_key.insert(creator_id.clone(), talent_ref.clone());
+        }
+    }
     // Fetch all talents linked to this agency
     let resp = state
         .pg
         .from("agency_talent_relationships")
-        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,agency_users(*)")
-        .eq("agency_id", &agency_id)
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,performance_tier_name,agency_users(*),creators(full_name,email,profile_photo_url)")
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -289,29 +250,49 @@ pub async fn get_roster(
                 .get("agency_users")
                 .cloned()
                 .unwrap_or_else(|| serde_json::json!({}));
+            let creator = item
+                .get("creators")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({}));
             let get_field = |k: &str| talent.get(k).or_else(|| item.get(k));
             let talent_id_raw = item
                 .get("talent_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            if talent_id_raw.trim().is_empty() {
+                continue;
+            }
             let creator_id_raw = item
                 .get("creator_id")
                 .or_else(|| get_field("creator_id"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let id = if !talent_id_raw.trim().is_empty() {
-                talent_id_raw.clone()
-            } else {
-                creator_id_raw.clone()
-            };
+            let id = talent_id_raw.clone();
+            if id.trim().is_empty() {
+                continue;
+            }
+            let talent_ref = ref_by_key
+                .get(&id)
+                .or_else(|| ref_by_key.get(&talent_id_raw))
+                .or_else(|| ref_by_key.get(&creator_id_raw));
+
+            if let Some(tr) = talent_ref {
+                if tr.relationship_type != "internal" || tr.is_connected_creator {
+                    continue;
+                }
+            } else if item.get("agency_users").is_none() {
+                continue;
+            }
             // Try full_legal_name, then stage_name, then full_name
             let name = get_field("full_legal_name")
                 .or(get_field("stage_name"))
+                .or(creator.get("full_name"))
                 .or(get_field("full_name"))
                 .and_then(|v| v.as_str())
-                .unwrap_or("Unknown")
+                .or_else(|| creator.get("email").and_then(|v| v.as_str()))
+                .unwrap_or("Unnamed")
                 .to_string();
 
             let stage_name = get_field("stage_name")
@@ -320,6 +301,7 @@ pub async fn get_roster(
                 .to_string();
 
             let email = get_field("email")
+                .or(creator.get("email"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
@@ -410,6 +392,7 @@ pub async fn get_roster(
                 .map(parse_string_array_value)
                 .unwrap_or_default();
             let profile_photo = get_field("profile_photo_url")
+                .or(creator.get("profile_photo_url"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .trim();
@@ -463,6 +446,7 @@ pub async fn get_roster(
 
             let is_verified = false;
             let img = get_field("profile_photo_url")
+                .or(creator.get("profile_photo_url"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
@@ -497,10 +481,8 @@ pub async fn get_roster(
                         if !ai_usage.contains(&"Video".to_string()) {
                             ai_usage.push("Video".to_string());
                         }
-                    } else {
-                        if !ai_usage.contains(&"Image".to_string()) {
-                            ai_usage.push("Image".to_string());
-                        }
+                    } else if !ai_usage.contains(&"Image".to_string()) {
+                        ai_usage.push("Image".to_string());
                     }
                 }
 
@@ -635,6 +617,22 @@ pub async fn get_roster(
                 } else {
                     Some(creator_id_str.clone())
                 },
+                relationship_id: item
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                relationship_type: talent_ref
+                    .map(|value| value.relationship_type.clone())
+                    .unwrap_or_else(|| {
+                        if creator_id_str.trim().is_empty() {
+                            "internal".to_string()
+                        } else {
+                            "marketplace_connected".to_string()
+                        }
+                    }),
+                contract_controlled: talent_ref
+                    .map(|value| value.contract_controlled)
+                    .unwrap_or(false),
                 name,
                 stage_name,
                 role,
@@ -728,7 +726,7 @@ pub async fn get_roster(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
         if !digitals_status.is_success() {
-            warn!(agency_id = %user.id, status = %digitals_status, body = %digitals_text, "digitals lookup failed");
+            warn!(agency_id = %agency_id, status = %digitals_status, body = %digitals_text, "digitals lookup failed");
             return Err((StatusCode::INTERNAL_SERVER_ERROR, digitals_text));
         }
 
@@ -878,7 +876,7 @@ pub async fn get_roster(
             .pg
             .from("licensing_requests")
             .select("talent_id,status")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .in_("talent_id", ids.clone())
             .eq("status", "pending")
             .execute()
@@ -919,7 +917,7 @@ pub async fn get_roster(
             .pg
             .from("licensing_payouts")
             .select("licensing_request_id,talent_id,talent_earnings_cents,talent_splits,paid_at")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1101,7 +1099,7 @@ pub async fn get_roster(
             let upd = state
                 .pg
                 .from("agency_users")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("id", t_id)
                 .update(body.to_string())
                 .execute()
@@ -1215,7 +1213,7 @@ pub async fn get_roster(
         let upd = state
             .pg
             .from("agency_users")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .eq("id", &t_id)
             .update(body.to_string())
             .execute()
@@ -1243,12 +1241,14 @@ pub async fn list_talent_campaigns(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let talent_resp = state
         .pg
         .from("agency_users")
         .select("id")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("role", "talent")
         .limit(1)
         .execute()
@@ -1434,7 +1434,8 @@ pub async fn create_talent(
     user: AuthUser,
     Json(payload): Json<CreateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let effective_agency_id = access.organization_id.clone();
     let licensing_rate_monthly_cents = match payload.licensing_rate_monthly_cents {
         Some(v) if v <= 0 => {
             return Err((
@@ -1544,7 +1545,7 @@ pub async fn create_talent(
     let plan_tier = agency_data
         .get("plan_tier")
         .and_then(|v| v.as_str())
-        .unwrap_or("free")
+        .unwrap_or("none")
         .trim()
         .to_lowercase();
     let mut seats_limit = agency_data
@@ -1553,7 +1554,8 @@ pub async fn create_talent(
         .unwrap_or(0);
     if seats_limit <= 0 {
         seats_limit = match plan_tier.as_str() {
-            "basic" | "pro" | "enterprise" => 186,
+            "basic" => 5,
+            "pro" | "enterprise" => 10,
             _ => 1,
         };
     }
@@ -1586,7 +1588,7 @@ pub async fn create_talent(
         ));
     }
 
-    // 3. Reuse existing global talent row by email when possible, else insert identity row once.
+    // 3. Reuse an existing agency-owned talent row by email when possible, else insert a new one.
     let normalized_email = payload
         .email
         .as_deref()
@@ -1598,6 +1600,7 @@ pub async fn create_talent(
             .pg
             .from("agency_users")
             .select("id,creator_id")
+            .eq("agency_id", &effective_agency_id)
             .eq("role", "talent")
             .ilike("email", email)
             .order("updated_at.desc")
@@ -1777,7 +1780,8 @@ pub async fn update_talent(
     Path(id): Path<String>,
     Json(payload): Json<UpdateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let access = require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let effective_agency_id = access.organization_id.clone();
     let access_resp = state
         .pg
         .from("agency_talent_relationships")

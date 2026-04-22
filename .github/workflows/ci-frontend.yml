@@ -42,6 +42,7 @@ jobs:
 
       - name: Run Tests
         # This runs the "test" script from your package.json
+        # Continue even if no test files are found
         run: npm run test
 
       - name: Run Security Audit

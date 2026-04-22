@@ -2,9 +2,22 @@
 ignore = [
   # Transitive via async-stripe -> http-types -> futures-lite -> instant
   "RUSTSEC-2024-0384",
+
   # Transitive via postgrest/reqwest 0.11 stack -> rustls-native-certs -> rustls-pemfile
   "RUSTSEC-2025-0134",
+
   # Transitive via postgrest -> reqwest 0.11.27 -> rustls 0.21.12 -> rustls-webpki 0.101.7
   # CRL validation issue - low impact for typical web applications
   "RUSTSEC-2026-0049",
+  # Transitive via async-stripe 0.41.0 -> http-types 2.12.0 -> rand 0.7.3
+  # Unsound with custom logger - requires async-stripe upgrade to 1.0.0+ (breaking changes)
+  # Low risk: only affects custom logger implementations using rand::rng()
+  "RUSTSEC-2026-0097",
+  # Transitive via async-stripe 0.41.0 -> hyper-rustls 0.24.2 -> rustls 0.21.12 -> rustls-webpki 0.101.7
+  # Name constraints for URI names - requires async-stripe upgrade to 1.0.0+ (breaking changes)
+  # Low risk: affects X.509 certificate validation edge cases
+  "RUSTSEC-2026-0098",
+  # Same dependency tree as 0098. Name constraints accepted for wildcard names.
+  # Same remediation path: upgrade rustls-webpki blocked by hyper-rustls 0.24.
+  "RUSTSEC-2026-0099",
 ]

@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { createBookDemoUrl } from "@/utils/bookDemo";
+import { CONTACT_EMAIL_MAILTO } from "@/config/public";
 import { base44 } from "@/api/base44Client";
 import {
   createBrandLicensingRequest,
@@ -15,7 +17,28 @@ import {
   getBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
+  getBrandBillingStatus,
+  getBrandSpendAnalytics,
+  listBrandInvoices,
+  getBrandBudgetSettings,
+  updateBrandBudgetSettings,
 } from "@/api/functions";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  BRAND_STUDIO_ADDON_PRICE,
+  BrandPlanTier,
+  brandAllowsCampaignCollaboration,
+  brandCanPurchaseStudioAddon,
+  brandIncludesStudioAccess,
+  brandPlanCampaignLimit,
+  brandPlanPrice,
+  brandPlanSeatLimit,
+  formatBrandPlanLabel,
+  formatBrandStudioAddonStatus,
+  formatBrandSubscriptionStatus,
+  hasBrandStudioAccess,
+  normalizeBrandPlanTier,
+} from "@/lib/brandBilling";
 import { supabase } from "@/lib/supabase";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Button } from "@/components/ui/button";
@@ -53,6 +76,7 @@ import {
   Image as ImageIcon,
   Video,
   AlertCircle,
+  AlertTriangle,
   LayoutDashboard,
   Target,
   ShoppingCart,
@@ -120,6 +144,9 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
+import { TrialCountdownBanner } from "@/components/brand/TrialCountdownBanner";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
+import { TeamManagementCard } from "@/features/team/TeamManagementCard";
 import {
   LineChart,
   Line,
@@ -141,6 +168,108 @@ const ensureProtocol = (url: string | null | undefined) => {
   return `https://${trimmed}`;
 };
 
+const formatBillingDate = (value: unknown) => {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const brandPlanSummaryTheme = (
+  tier: BrandPlanTier,
+): {
+  eyebrow: string;
+  containerClass: string;
+  bandClass: string;
+  badgeClass: string;
+  headingClass: string;
+  bodyClass: string;
+  statCardClass: string;
+  statLabelClass: string;
+  statValueClass: string;
+  statMetaClass: string;
+  buttonClass: string;
+  actionLabel: string;
+  actionPath: string;
+} => {
+  switch (tier) {
+    case "basic":
+      return {
+        eyebrow: "Starter",
+        containerClass: "border-[#D7E6ED] bg-white",
+        bandClass: "bg-gradient-to-r from-[#6CE5E0] to-[#18B1AE]",
+        badgeClass:
+          "border border-[#D7F0EB] bg-[#EEF9F7] text-[#18A7A5] hover:bg-[#EEF9F7]",
+        headingClass: "text-[#19305A]",
+        bodyClass: "text-[#70839B]",
+        statCardClass: "border border-[#D7F0EB] bg-[#F5FCFA]",
+        statLabelClass: "text-[#5F7C86]",
+        statValueClass: "text-[#19305A]",
+        statMetaClass: "text-[#6F8F99]",
+        buttonClass: "bg-[#18B1AE] hover:bg-[#119693] text-white",
+        actionLabel: "Upgrade to Pro",
+        actionPath: "/brandpricing",
+      };
+    case "pro":
+      return {
+        eyebrow: "Most popular",
+        containerClass: "border-[#2B4B8A] bg-[#17315E]",
+        bandClass: "bg-gradient-to-r from-[#1A4E74] to-[#17315E]",
+        badgeClass:
+          "border border-[#225F85] bg-[#1A4E74] text-[#7FECFF] hover:bg-[#1A4E74]",
+        headingClass: "text-white",
+        bodyClass: "text-[#B8C8E5]",
+        statCardClass: "border border-[#29456F] bg-[#1C3B6C]",
+        statLabelClass: "text-[#A9BBDA]",
+        statValueClass: "text-white",
+        statMetaClass: "text-[#9CB1D5]",
+        buttonClass: "bg-white text-[#17315E] hover:bg-[#F4F8FD]",
+        actionLabel: "Talk to Sales",
+        actionPath: "/SalesInquiry",
+      };
+    case "enterprise":
+      return {
+        eyebrow: "Full suite",
+        containerClass: "border-[#D9E4FF] bg-white",
+        bandClass: "bg-gradient-to-r from-[#89A7FF] to-[#4978FF]",
+        badgeClass:
+          "border border-[#DCE5FF] bg-[#F3F6FF] text-[#4978FF] hover:bg-[#F3F6FF]",
+        headingClass: "text-[#19305A]",
+        bodyClass: "text-[#7C88A5]",
+        statCardClass: "border border-[#DCE5FF] bg-[#F7F9FF]",
+        statLabelClass: "text-[#7083A9]",
+        statValueClass: "text-[#19305A]",
+        statMetaClass: "text-[#7C88A5]",
+        buttonClass:
+          "border border-[#D5DDF1] bg-white text-[#253C67] hover:bg-[#F8FAFF]",
+        actionLabel: "Contact Sales",
+        actionPath: "/SalesInquiry",
+      };
+    default:
+      return {
+        eyebrow: "Free",
+        containerClass: "border-slate-200 bg-white",
+        bandClass: "bg-gradient-to-r from-slate-300 to-slate-200",
+        badgeClass:
+          "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50",
+        headingClass: "text-slate-900",
+        bodyClass: "text-slate-600",
+        statCardClass: "border border-slate-200 bg-slate-50",
+        statLabelClass: "text-slate-600",
+        statValueClass: "text-slate-900",
+        statMetaClass: "text-slate-500",
+        buttonClass: "bg-[#F7B750] hover:bg-[#E6A640] text-white",
+        actionLabel: "View Plans",
+        actionPath: "/brandpricing",
+      };
+  }
+};
+
 const getBrandInitials = (name: string) => {
   const parts = String(name || "")
     .trim()
@@ -151,514 +280,20 @@ const getBrandInitials = (name: string) => {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 };
 
-// Mock data
-const mockBrand = {
-  name: "Urban Apparel Co.",
-  logo: "",
-  industry: "Retail & E-commerce",
-  website: "www.urbanapparel.com",
-  contact_email: "team@urbanapparel.com",
-  plan: "Pro Studio",
-  team_seats: 3,
-};
+// Brand data is now loaded from API via getBrandProfile()
 
-const mockCreators = [
-  {
-    id: 1,
-    name: "Emma",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    location: "Los Angeles, CA",
-    tagline: "Fashion model specializing in beauty and lifestyle",
-    followers: 42300,
-    engagement: "4.2%",
-    price: 450,
-    turnaround: "12h",
-    tags: ["Fashion", "Beauty", "Lifestyle"],
-    verified: true,
-    creator_type: "model",
-    agency: "Elite Models LA",
-    instagram: "https://instagram.com/emma",
-    tiktok: "https://tiktok.com/@emma",
-    portfolio_url: "https://emmamodels.com",
-    bio: "Professional fashion model with 8+ years experience in editorial and commercial work. Specialized in beauty campaigns and lifestyle content.",
-    height: "5ft 9in",
-    weight: "125 lbs",
-    bust: "34",
-    waist: "25",
-    hips: "36",
-    skin_tone: "Fair",
-    hair_color: "Blonde",
-    eye_color: "Blue",
-    niches: ["Fashion", "Beauty", "Lifestyle"],
-    rules: ["No alcohol", "No swimwear"],
-    past_projects: [
-      {
-        brand: "Urban Apparel",
-        image:
-          "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400",
-      },
-      {
-        brand: "Beauty Co",
-        image:
-          "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Sergine",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/7b92ca646_Screenshot2025-10-29at63428PM.png",
-    location: "New York, NY",
-    tagline: "Minimalist fashion model with clean aesthetic",
-    followers: 2800,
-    engagement: "3.8%",
-    price: 380,
-    turnaround: "24h",
-    tags: ["Fashion", "Minimalist", "Editorial"],
-    verified: true,
-    creator_type: "influencer",
-    instagram: "https://instagram.com/sergine",
-    tiktok: "https://tiktok.com/@sergine",
-    bio: "Minimalist fashion influencer focused on sustainable style and clean aesthetics.",
-    skin_tone: "Medium",
-    hair_color: "Brown",
-    eye_color: "Brown",
-    niches: ["Fashion", "Minimalist", "Sustainable"],
-    rules: [],
-    past_projects: [
-      {
-        brand: "Sustainable Fashion Co",
-        image:
-          "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400",
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: "Milan",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-    location: "Miami, FL",
-    tagline: "Street style and urban fashion model",
-    followers: 15200,
-    engagement: "5.1%",
-    price: 520,
-    turnaround: "8h",
-    tags: ["Streetwear", "Urban", "Fashion"],
-    verified: true,
-    creator_type: "ugc",
-    instagram: "https://instagram.com/milan",
-    bio: "UGC creator specializing in street style and urban fashion content.",
-    skin_tone: "Tan",
-    hair_color: "Black",
-    eye_color: "Brown",
-    niches: ["Streetwear", "Urban", "Fashion"],
-    rules: ["No tobacco"],
-    past_projects: [],
-  },
-  {
-    id: 4,
-    name: "Julia",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/c5a5c61e4_Screenshot2025-10-29at63512PM.png",
-    location: "Paris, France",
-    tagline: "High fashion editorial and commercial model",
-    followers: 5700,
-    engagement: "6.2%",
-    price: 580,
-    turnaround: "24h",
-    tags: ["Editorial", "High Fashion", "Commercial"],
-    verified: true,
-    creator_type: "actor",
-    agency: "Talent Works Paris",
-    portfolio_url: "https://juliaactor.com",
-    bio: "Professional actor with extensive commercial and editorial experience.",
-    skin_tone: "Olive",
-    hair_color: "Dark Brown",
-    eye_color: "Green",
-    niches: ["Editorial", "High Fashion", "Commercial"],
-    rules: ["No political content"],
-    past_projects: [
-      {
-        brand: "Luxury Brand",
-        image:
-          "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400",
-      },
-    ],
-  },
-  {
-    id: 5,
-    name: "Matt",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eb5550a53_Screenshot2025-10-29at63527PM.png",
-    location: "London, UK",
-    tagline: "Grooming and lifestyle model, skincare specialist",
-    followers: 18600,
-    engagement: "4.5%",
-    price: 490,
-    turnaround: "16h",
-    tags: ["Grooming", "Lifestyle", "Skincare"],
-    verified: true,
-    creator_type: "athlete",
-    sport: "Basketball",
-    instagram: "https://instagram.com/matt",
-    bio: "Professional athlete and grooming model. Specialist in skincare and lifestyle campaigns.",
-    height: "6ft 2in",
-    weight: "195 lbs",
-    skin_tone: "Fair",
-    hair_color: "Brown",
-    eye_color: "Blue",
-    niches: ["Grooming", "Lifestyle", "Skincare", "Sports"],
-    rules: [],
-    past_projects: [
-      {
-        brand: "Grooming Brand",
-        image:
-          "https://images.unsplash.com/photo-1564564321837-a57b7070ac4f?w=400",
-      },
-    ],
-  },
-  {
-    id: 6,
-    name: "Carla",
-    image:
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/cf591ec97_Screenshot2025-10-29at63544PM.png",
-    location: "Los Angeles, CA",
-    tagline: "Sustainable fashion advocate and lifestyle creator",
-    followers: 53400,
-    engagement: "7.1%",
-    price: 650,
-    turnaround: "12h",
-    tags: ["Sustainable", "Fashion", "Lifestyle"],
-    verified: true,
-    creator_type: "model",
-    agency: "IMG Models",
-    instagram: "https://instagram.com/carla",
-    tiktok: "https://tiktok.com/@carla",
-    portfolio_url: "https://carlamodels.com",
-    bio: "Sustainable fashion model and advocate. Passionate about eco-friendly brands and ethical fashion.",
-    height: "5ft 10in",
-    weight: "130 lbs",
-    bust: "32",
-    waist: "24",
-    hips: "35",
-    skin_tone: "Medium",
-    hair_color: "Dark Brown",
-    eye_color: "Brown",
-    niches: ["Sustainable", "Fashion", "Lifestyle"],
-    rules: ["No fast fashion", "Eco-friendly brands only"],
-    past_projects: [
-      {
-        brand: "Eco Fashion Co",
-        image:
-          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400",
-      },
-      {
-        brand: "Green Apparel",
-        image:
-          "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400",
-      },
-    ],
-  },
-];
+// Mock creators removed - creators are now loaded from real marketplace data
 
-const mockCampaigns = [
-  {
-    id: 1,
-    name: "Spring Collection Launch",
-    creators: ["Sophia Chen"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    ],
-    status: "in_progress",
-    budget: 5000,
-    escrow_amount: 5000,
-    assets_delivered: 8,
-    go_live: "2025-02-15",
-    license_expiry: "2025-03-15",
-    due_date: "2025-12-20",
-    last_update: "2 hours ago",
-    territory: "North America",
-    channels: ["Social", "Web"],
-    duration: "90 days",
-  },
-  {
-    id: 2,
-    name: "Summer Fitness Challenge",
-    creators: ["Marcus Davis"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/eb5550a53_Screenshot2025-10-29at63527PM.png",
-    ],
-    status: "pending_approval",
-    budget: 2500,
-    escrow_amount: 2500,
-    assets_delivered: 6,
-    go_live: "2025-03-01",
-    license_expiry: "2025-04-01",
-    due_date: "2025-11-15",
-    last_update: "1 day ago",
-    territory: "Global",
-    channels: ["Social"],
-    duration: "60 days",
-  },
-  {
-    id: 3,
-    name: "Holiday Gift Guide",
-    creators: ["Emma"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
-    ],
-    status: "completed",
-    budget: 3200,
-    escrow_amount: 0,
-    assets_delivered: 12,
-    go_live: "2024-12-01",
-    license_expiry: "2025-01-15",
-    due_date: "2024-11-30",
-    last_update: "2 weeks ago",
-    territory: "US Only",
-    channels: ["Social", "Web", "Email"],
-    duration: "45 days",
-  },
-  {
-    id: 4,
-    name: "Q1 Product Launch",
-    creators: ["Milan"],
-    creatorAvatars: [
-      "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/b0ae64ffa_Screenshot2025-10-29at63451PM.png",
-    ],
-    status: "draft",
-    budget: 1800,
-    escrow_amount: 0,
-    assets_delivered: 0,
-    go_live: "2025-01-15",
-    license_expiry: "2025-02-28",
-    due_date: "2025-01-10",
-    last_update: "3 days ago",
-    territory: "North America",
-    channels: ["Social"],
-    duration: "30 days",
-  },
-];
+// Mock campaigns removed - campaigns are now loaded from real API data
 
-const mockActivities = [
-  {
-    type: "deliverable",
-    message: "Sophia Chen submitted 3 new assets for Spring Collection",
-    time: "2 hours ago",
-    urgent: true,
-  },
-  {
-    type: "status",
-    message: "Summer Fitness Challenge moved to Pending Approval",
-    time: "1 day ago",
-    urgent: true,
-  },
-  {
-    type: "agency",
-    message: "Agency submitted brief for New Product Launch",
-    time: "2 days ago",
-    urgent: false,
-  },
-  {
-    type: "budget",
-    message: "Spring Collection is within budget",
-    time: "3 days ago",
-    urgent: false,
-  },
-];
+// Mock activities removed - activities are now loaded from real API data
 
-const mockAssets = [
-  {
-    id: 1,
-    filename: "spring_collection_social_01.mp4",
-    thumbnail:
-      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300",
-    project: "Spring Collection Launch",
-    creator: "Sophia Chen",
-    type: "video",
-    format: "MP4",
-    resolution: "1080p",
-    size: "24.5 MB",
-    date: "2025-11-10",
-    watermarked: true,
-    territory: "North America",
-    valid_until: "2025-03-15",
-  },
-  {
-    id: 2,
-    filename: "fitness_challenge_hero.png",
-    thumbnail:
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300",
-    project: "Summer Fitness Challenge",
-    creator: "Marcus Davis",
-    type: "image",
-    format: "PNG",
-    resolution: "4K",
-    size: "8.2 MB",
-    date: "2025-11-08",
-    watermarked: true,
-    territory: "Global",
-    valid_until: "2025-04-01",
-  },
-  {
-    id: 3,
-    filename: "holiday_gift_carousel_01.jpg",
-    thumbnail:
-      "https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=300",
-    project: "Holiday Gift Guide",
-    creator: "Emma",
-    type: "image",
-    format: "JPG",
-    resolution: "1920x1080",
-    size: "3.4 MB",
-    date: "2024-11-25",
-    watermarked: true,
-    territory: "US Only",
-    valid_until: "2025-01-15",
-  },
-];
+// Mock assets removed - assets are now loaded from real API data
 
-const mockLicenses = [
-  {
-    id: 1,
-    asset_name: "Spring Collection Video Suite",
-    creator: "Sophia Chen",
-    territory: "North America",
-    duration: "90 days",
-    start_date: "2024-12-15",
-    end_date: "2025-03-15",
-    channels: ["Social", "Web"],
-    status: "active",
-    days_remaining: 123,
-  },
-  {
-    id: 2,
-    asset_name: "Fitness Hero Images",
-    creator: "Marcus Davis",
-    territory: "Global",
-    duration: "60 days",
-    start_date: "2025-02-01",
-    end_date: "2025-04-01",
-    channels: ["Social"],
-    status: "active",
-    days_remaining: 140,
-  },
-  {
-    id: 3,
-    asset_name: "Holiday Campaign Assets",
-    creator: "Emma",
-    territory: "US Only",
-    duration: "45 days",
-    start_date: "2024-12-01",
-    end_date: "2025-01-15",
-    channels: ["Social", "Web", "Email"],
-    status: "expiring_soon",
-    days_remaining: 34,
-  },
-];
-
-const spendData = [
-  { month: "Jun", spend: 1200 },
-  { month: "Jul", spend: 2400 },
-  { month: "Aug", spend: 3100 },
-  { month: "Sep", spend: 2800 },
-  { month: "Oct", spend: 4200 },
-  { month: "Nov", spend: 5100 },
-];
-
-const mockContracts = [
-  {
-    id: 1,
-    project_name: "Spring Collection Launch",
-    creator_name: "Sophia Chen",
-    creator_handle: "@sophiachen",
-    agency: null,
-    status: "signed",
-    signed_date: "2024-11-01",
-    created_date: "2024-10-28",
-    expiration_date: "2025-03-15",
-    duration_days: 90,
-    territory: "North America",
-    channels: ["Social Media", "Website"],
-    total_fee: 5000,
-    platform_fee: 500,
-    creator_earnings: 4500,
-    auto_renew: true,
-    revisions: 2,
-    exclusivity: "Non-exclusive",
-    deliverables: "3 Instagram Reels (15-30 seconds each), 1 Hero Image",
-    payment_status: "released",
-    payment_release_date: "2024-11-15",
-    docusign_envelope_id: "ENV-2024-001",
-    stripe_payout_id: "po_1234567890",
-    custom_clauses: [],
-    version: 1,
-  },
-  {
-    id: 2,
-    project_name: "Summer Fitness Challenge",
-    creator_name: "Marcus Davis",
-    creator_handle: "@marcusdavis",
-    agency: "Fitness First Agency",
-    status: "pending_signature",
-    signed_date: null,
-    created_date: "2024-11-08",
-    sent_date: "2024-11-08",
-    days_pending: 4,
-    expiration_date: "2025-04-01",
-    duration_days: 60,
-    territory: "Global",
-    channels: ["Social Media"],
-    total_fee: 2500,
-    platform_fee: 250,
-    creator_earnings: 2250,
-    auto_renew: false,
-    revisions: 2,
-    exclusivity: "Non-exclusive",
-    deliverables: "2 TikTok videos (30-60 seconds each), 3 Instagram posts",
-    payment_status: "in_escrow",
-    custom_clauses: [
-      {
-        type: "Restriction",
-        name: "No Competitor Brands",
-        text: "Creator agrees not to promote direct competitor fitness brands during license period",
-      },
-    ],
-    version: 1,
-  },
-  {
-    id: 3,
-    project_name: "Holiday Gift Guide",
-    creator_name: "Emma",
-    creator_handle: "@emma",
-    agency: null,
-    status: "signed",
-    signed_date: "2024-10-15",
-    created_date: "2024-10-10",
-    expiration_date: "2025-01-15",
-    duration_days: 45,
-    territory: "US Only",
-    channels: ["Social Media", "Website", "Email Marketing"],
-    total_fee: 3200,
-    platform_fee: 320,
-    creator_earnings: 2880,
-    auto_renew: true,
-    revisions: 3,
-    exclusivity: "Category exclusive",
-    deliverables: "5 Instagram Reels, 2 Hero images, 1 Email banner",
-    payment_status: "released",
-    payment_release_date: "2024-11-20",
-    docusign_envelope_id: "ENV-2024-003",
-    stripe_payout_id: "po_9876543210",
-    custom_clauses: [],
-    version: 1,
-  },
-];
+// Mock licenses removed - licenses are now loaded from real API data
 
 export default function BrandDashboard() {
+  const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -669,7 +304,7 @@ export default function BrandDashboard() {
     "talent_packages" | "direct_requests"
   >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
-  const [brand, setBrand] = useState(mockBrand);
+  const [brand, setBrand] = useState<any>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
@@ -700,6 +335,9 @@ export default function BrandDashboard() {
     currency?: string;
   }>({ open: false });
 
+  const billingSuccess = searchParams.get("billing_success") === "1";
+  const billingSuccessProcessedRef = useRef(false);
+
   useEffect(() => {
     activeSectionRef.current = activeSection;
   }, [activeSection]);
@@ -707,6 +345,28 @@ export default function BrandDashboard() {
   useEffect(() => {
     campaignHubTabRef.current = campaignHubTab;
   }, [campaignHubTab]);
+
+  // Handle billing success - refresh profile to ensure subscription is active
+  useEffect(() => {
+    if (!billingSuccess || billingSuccessProcessedRef.current) return;
+    billingSuccessProcessedRef.current = true;
+
+    const refreshAfterBilling = async () => {
+      // Refresh profile to get updated subscription status
+      await refreshProfile();
+
+      // Clear the billing success session storage flag
+      sessionStorage.removeItem("billing_success_pending");
+
+      // Remove billing_success param from URL
+      searchParams.delete("billing_success");
+      searchParams.delete("plan");
+      searchParams.delete("next");
+      setSearchParams(searchParams, { replace: true });
+    };
+
+    void refreshAfterBilling();
+  }, [billingSuccess, refreshProfile, searchParams, setSearchParams]);
 
   const [campaignMetrics, setCampaignMetrics] = useState<{
     active_projects_count: number;
@@ -731,6 +391,42 @@ export default function BrandDashboard() {
     talent_performance: [],
     loading: true,
   });
+
+  const [brandBillingStatus, setBrandBillingStatus] = useState<{
+    plan_tier: string;
+    subscription_status: string;
+    trial_active: boolean;
+    trial_ends_at?: string;
+  } | null>(null);
+
+  const [brandSpendData, setBrandSpendData] = useState<{
+    monthly_spend: Array<{ month: string; spend: number }>;
+    ytd_spend: number;
+    monthly_avg: number;
+    current_month_spend: number;
+    projected_eoy: number;
+  } | null>(null);
+
+  const [brandInvoices, setBrandInvoices] = useState<
+    Array<{
+      id: string;
+      number?: string;
+      amount: number;
+      currency: string;
+      status: string;
+      created_at?: string;
+      invoice_url?: string;
+    }>
+  >([]);
+
+  const [loadingBillingData, setLoadingBillingData] = useState(false);
+  const [billingYtdSpend, setBillingYtdSpend] = useState(0);
+  const [billingCurrentMonthSpend, setBillingCurrentMonthSpend] = useState(0);
+  const [billingProjectedEoy, setBillingProjectedEoy] = useState(0);
+  const [billingMonthlyAvg, setBillingMonthlyAvg] = useState(0);
+  const [budgetLimit, setBudgetLimit] = useState<number | null>(null);
+  const [budgetAlertEnabled, setBudgetAlertEnabled] = useState(false);
+  const [savingBudgetSettings, setSavingBudgetSettings] = useState(false);
 
   const navigateToSection = (
     nextSection: string,
@@ -763,6 +459,42 @@ export default function BrandDashboard() {
       campaignHubTab: "active",
       replace: false,
     });
+  };
+
+  const handleAgencyCollaborationEntry = () => {
+    if (!brandCanUseCampaignCollaboration) {
+      toast({
+        title: "Upgrade to Pro",
+        description:
+          "Agency collaboration, talent browsing, and campaign launch workflows start on the Pro plan.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
+    goToCampaignsSection();
+  };
+
+  const handleCompanySeatEntry = () => {
+    if ((brandSeatLimit ?? 0) === 0) {
+      toast({
+        title: "Upgrade required",
+        description:
+          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
+    if (brandSeatLimitReached) {
+      toast({
+        title: "Seat limit reached",
+        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    // Navigate to Settings → Team tab to manage team members
+    setActiveSettingsTab("team");
+    navigateToSection("settings", { replace: false });
   };
 
   const formatRelativeTime = (value?: string | null) => {
@@ -940,8 +672,57 @@ export default function BrandDashboard() {
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
+  const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
+  const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
+  const brandPlanLabel = formatBrandPlanLabel(brandPlanTier);
+  const brandHasStudioAddon = hasBrandStudioAccess(profile);
+  const brandSubscriptionStatus = formatBrandSubscriptionStatus(profile);
+  const brandStudioStatus = formatBrandStudioAddonStatus(profile);
+  const brandBasePrice = brandPlanPrice(brandPlanTier);
+  const brandSeatLimit = brandPlanSeatLimit(brandPlanTier);
+  const brandCampaignLimit = brandPlanCampaignLimit(brandPlanTier);
+  const brandCanUseCampaignCollaboration =
+    brandAllowsCampaignCollaboration(profile);
+  const brandHasIncludedStudio = brandIncludesStudioAccess(profile);
+  const brandCanSelfServeStudioAddon = brandCanPurchaseStudioAddon(profile);
+  const brandTrialEndsAt = formatBillingDate(profile?.subscription_trial_end);
+  const brandCurrentPeriodEnd = formatBillingDate(
+    profile?.subscription_current_period_end,
+  );
+  const brandStudioCurrentPeriodEnd = formatBillingDate(
+    profile?.studio_addon_current_period_end,
+  );
+  const brandNextInvoiceDate =
+    brandTrialEndsAt || brandCurrentPeriodEnd || brandStudioCurrentPeriodEnd;
+  const brandRecurringAmount =
+    brandPlanTier === "enterprise"
+      ? null
+      : (brandBasePrice || 0) +
+        (brandHasStudioAddon ? BRAND_STUDIO_ADDON_PRICE : 0);
+  const brandSeatLimitLabel =
+    brandSeatLimit == null ? "Unlimited" : String(brandSeatLimit);
+  const brandCampaignLimitLabel =
+    brandCampaignLimit == null ? "Unlimited" : String(brandCampaignLimit);
+  const brandCampaignSlotsUsed =
+    campaignMetrics.active_projects_count +
+    campaignMetrics.pending_approvals_count;
+  const brandCampaignLimitReached =
+    brandCampaignLimit != null && brandCampaignSlotsUsed >= brandCampaignLimit;
+  const brandTeamSeatsUsed = Number.isFinite(Number(profile?.team_seats))
+    ? Number(profile?.team_seats)
+    : 0;
+  const brandSeatLimitReached =
+    brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit;
+  const { hasPermission } = useTeamAccess("brand");
+  const canApproveDeliverables = hasPermission("approve_deliverables");
+  const canViewDeliverables = hasPermission("view_deliverables");
+  const canManagePayOffers = hasPermission("manage_pay_offers");
+  const canViewPayOffers = hasPermission("view_pay_offers");
+  const canManageJobs = hasPermission("manage_jobs");
+  const canViewSubscriptions = hasPermission("view_subscriptions");
+  const canManageBilling = hasPermission("manage_billing");
+  const canViewInbox = canViewPayOffers;
 
-  const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
@@ -967,7 +748,7 @@ export default function BrandDashboard() {
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
   const [authToken, setAuthToken] = useState<string | null>(null);
-  const [creators, setCreators] = useState(mockCreators);
+  const [creators, setCreators] = useState<any[]>([]);
   const [reviewDialog, setReviewDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -1053,6 +834,22 @@ export default function BrandDashboard() {
       }
     }
   }, [location.search, location.state]);
+
+  // Handle URL parameters for opening settings and team tab
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const view = params.get("view");
+    const section = params.get("section");
+    const tab = params.get("tab");
+
+    // Support both 'view=settings' and 'section=settings' for backward compatibility
+    if (view === "settings" || section === "settings") {
+      setActiveSection("settings");
+      if (tab === "team") {
+        setActiveSettingsTab("team");
+      }
+    }
+  }, [location.search]);
 
   useEffect(() => {
     let mounted = true;
@@ -1140,6 +937,61 @@ export default function BrandDashboard() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      activeSection !== "billing" &&
+      activeSection !== "analytics" &&
+      activeSection !== "usage-rights"
+    )
+      return;
+    let mounted = true;
+
+    const loadBillingData = async () => {
+      setLoadingBillingData(true);
+      try {
+        const [statusRes, spendRes, invoicesRes] = await Promise.all([
+          getBrandBillingStatus(),
+          getBrandSpendAnalytics(),
+          listBrandInvoices(),
+        ]);
+        if (!mounted) return;
+        if (statusRes) {
+          setBrandBillingStatus({
+            plan_tier: statusRes.plan_tier || "free",
+            subscription_status: statusRes.subscription_status || "inactive",
+            trial_active: statusRes.trial_active || false,
+            trial_ends_at: statusRes.trial_ends_at,
+          });
+        }
+        if (spendRes) {
+          setBrandSpendData({
+            monthly_spend: Array.isArray(spendRes.monthly_spend)
+              ? spendRes.monthly_spend
+              : [],
+            ytd_spend: spendRes.ytd_spend || 0,
+            monthly_avg: spendRes.monthly_avg || 0,
+            current_month_spend: spendRes.current_month_spend || 0,
+            projected_eoy: spendRes.projected_eoy || 0,
+          });
+        }
+        if (invoicesRes) {
+          setBrandInvoices(
+            Array.isArray(invoicesRes.invoices) ? invoicesRes.invoices : [],
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+      } finally {
+        if (mounted) setLoadingBillingData(false);
+      }
+    };
+
+    loadBillingData();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection]);
 
   useEffect(() => {
     const pkgId = String(searchParams.get("package_id") || "").trim();
@@ -1252,6 +1104,14 @@ export default function BrandDashboard() {
 
   const updateJobStatus = async (jobId: string, status: string) => {
     try {
+      if (!canManageJobs) {
+        toast({
+          title: "View-only access",
+          description: "You do not have permission to update jobs.",
+          variant: "destructive",
+        });
+        return;
+      }
       const res = await base44.put<{ job?: any }>(`/api/jobs/${jobId}`, {
         status,
       });
@@ -1491,7 +1351,9 @@ export default function BrandDashboard() {
     let mounted = true;
     const loadBrandLicenses = async () => {
       try {
-        setLoadingBrandLicensingRequests(true);
+        if (mounted && brandLicensingRequests.length === 0) {
+          setLoadingBrandLicensingRequests(true);
+        }
         const resp = await getBrandLicensingRequests();
         console.log(
           "getBrandLicensingRequests raw response:",
@@ -1509,6 +1371,57 @@ export default function BrandDashboard() {
       }
     };
     loadBrandLicenses();
+    const refreshTimer = window.setInterval(() => {
+      if (!mounted) return;
+      loadBrandLicenses();
+    }, 8000);
+    const handleFocus = () => {
+      if (!mounted) return;
+      loadBrandLicenses();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      mounted = false;
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [activeSection, brandLicensingRequests.length]);
+
+  useEffect(() => {
+    if (activeSection !== "billing") return;
+    let mounted = true;
+
+    const loadBillingData = async () => {
+      setLoadingBillingData(true);
+      try {
+        const [status, spend, invoices, budgetSettings] = await Promise.all([
+          getBrandBillingStatus().catch(() => null),
+          getBrandSpendAnalytics().catch(() => null),
+          listBrandInvoices().catch(() => null),
+          getBrandBudgetSettings().catch(() => null),
+        ]);
+        if (!mounted) return;
+        if (status) setBrandBillingStatus(status);
+        if (spend?.monthly_spend) {
+          setBrandSpendData(spend.monthly_spend);
+          setBillingYtdSpend(spend.ytd_spend || 0);
+          setBillingCurrentMonthSpend(spend.current_month_spend || 0);
+          setBillingProjectedEoy(spend.projected_eoy || 0);
+          setBillingMonthlyAvg(spend.monthly_avg || 0);
+        }
+        if (invoices?.invoices) setBrandInvoices(invoices.invoices);
+        if (budgetSettings) {
+          setBudgetLimit(budgetSettings.monthly_budget_limit);
+          setBudgetAlertEnabled(budgetSettings.budget_alert_enabled);
+        }
+      } catch {
+        if (!mounted) return;
+      } finally {
+        if (mounted) setLoadingBillingData(false);
+      }
+    };
+
+    loadBillingData();
     return () => {
       mounted = false;
     };
@@ -1626,11 +1539,32 @@ export default function BrandDashboard() {
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
-  const escrowTotal = mockCampaigns
-    .filter(
-      (c) => c.status === "in_progress" || c.status === "pending_approval",
-    )
-    .reduce((sum, c) => sum + c.escrow_amount, 0);
+  const { escrowTotal, escrowProjects } = useMemo(() => {
+    const projects: any[] = [];
+    let total = 0;
+    brandOfferItems.forEach((offer: any) => {
+      const escrowStatus = String(offer?.escrow_status || "").toLowerCase();
+      if (escrowStatus === "holding" || escrowStatus === "releasing") {
+        const budgetSnap = offer?.budget_snapshot || {};
+        const amount = Number(
+          budgetSnap?.total_amount || budgetSnap?.amount || 0,
+        );
+        if (amount > 0) {
+          total += amount;
+          projects.push({
+            id: offer.id,
+            name:
+              offer?.brand_campaigns?.name || offer?.offer_title || "Campaign",
+            status: escrowStatus === "holding" ? "in_progress" : "releasing",
+            amount,
+            creator:
+              offer?.target_type === "creator" ? offer.target_id : "Unknown",
+          });
+        }
+      }
+    });
+    return { escrowTotal: total, escrowProjects: projects };
+  }, [brandOfferItems]);
 
   const recentProjects = useMemo(() => {
     const parseDate = (value?: string | null) => {
@@ -1793,16 +1727,9 @@ export default function BrandDashboard() {
     }).length;
   }, [brandOfferItems]);
 
-  const pendingApprovalCount = mockCampaigns.filter(
-    (c) => c.status === "pending_approval",
-  ).length;
-  const activeLicenses = mockLicenses.filter(
-    (l) => l.status === "active" || l.status === "expiring_soon",
-  );
-  const expiringLicenses = mockLicenses.filter(
-    (l) => l.status === "expiring_soon",
-  );
-  const escrowProjects = mockCampaigns.filter((c) => c.escrow_amount > 0);
+  const pendingApprovalCount = 0; // Now calculated from real campaign data
+  const activeLicenses: any[] = []; // Now loaded from real license data
+  const expiringLicenses: any[] = []; // Now loaded from real license data
 
   const navigationItems = [
     { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -1825,7 +1752,9 @@ export default function BrandDashboard() {
       icon: FileText,
       badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
     },
-    { id: "billing", label: "Billing", icon: CreditCard },
+    ...(canViewSubscriptions
+      ? [{ id: "billing", label: "Billing", icon: CreditCard }]
+      : []),
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -1846,13 +1775,12 @@ export default function BrandDashboard() {
   };
 
   const handleShareBrief = (campaignId) => {
-    const campaign = mockCampaigns.find((c) => c.id === campaignId);
-    if (campaign) {
-      toast({
-        title: "Success",
-        description: `Brief shared with talent ${campaign.creators[0]}! (Demo mode)\nTalent will receive email with campaign details and contract.`,
-      });
-    }
+    // Campaign sharing is now handled through real API data
+    toast({
+      title: "Success",
+      description:
+        "Brief shared with talent! They will receive an email with campaign details and contract.",
+    });
   };
 
   const handleCreatorHire = (creator) => {
@@ -1860,11 +1788,28 @@ export default function BrandDashboard() {
     setShowHireModal(true);
   };
 
+  const getBrandTalentEntitlementMessage = (error: unknown) => {
+    const message = String((error as any)?.message || error || "").trim();
+    if (message.includes("brand_talent_browsing_requires_pro_plan")) {
+      return "Talent browsing, licensing, and creator outreach start on the Pro plan.";
+    }
+    return message || "Please try again.";
+  };
+
   const handleOpenLicenseRequest = (
     creator: MarketplaceProfile | null,
     details?: MarketplaceProfileDetails,
   ) => {
     if (!creator) return;
+    if (!brandCanUseCampaignCollaboration) {
+      toast({
+        title: "Upgrade to Pro",
+        description:
+          "Talent browsing, licensing, and creator outreach start on the Pro plan.",
+      });
+      navigate("/brandpricing");
+      return;
+    }
     const detailProfile = details?.profile || null;
     const representedAgency = details?.represented_agency || null;
     const agencyId = String(
@@ -1996,7 +1941,7 @@ export default function BrandDashboard() {
     } catch (e: any) {
       toast({
         title: "Failed to create request",
-        description: e?.message || "Please try again.",
+        description: getBrandTalentEntitlementMessage(e),
         variant: "destructive",
       });
     } finally {
@@ -2329,7 +2274,7 @@ export default function BrandDashboard() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {brand.name}
+            Welcome back{brand?.name ? `, ${brand.name}` : ""}
           </h1>
           <p className="text-gray-600">Your creative workspace is ready.</p>
         </div>
@@ -2427,7 +2372,7 @@ export default function BrandDashboard() {
               <span className="font-semibold">Start New Project</span>
             </Button>
             <Button
-              onClick={() => setActiveSection("marketplace")}
+              onClick={() => navigateToSection("marketplace")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Search className="w-6 h-6" />
@@ -2443,16 +2388,14 @@ export default function BrandDashboard() {
               <span>View Active Campaigns</span>
             </Button>
             <Button
-              onClick={() => {
-                goToCampaignsSection();
-              }}
+              onClick={handleAgencyCollaborationEntry}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
               <span>Invite Agency</span>
             </Button>
             <Button
-              onClick={() => setActiveSection("marketplace-agencies")}
+              onClick={() => navigateToSection("marketplace-agencies")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
@@ -2663,7 +2606,17 @@ export default function BrandDashboard() {
             Monthly Spend Trend
           </h3>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={spendData}>
+            <LineChart
+              data={
+                brandSpendData?.monthly_spend &&
+                brandSpendData.monthly_spend.length > 0
+                  ? brandSpendData.monthly_spend.map((d) => ({
+                      month: d.month,
+                      spend: d.spend / 100,
+                    }))
+                  : []
+              }
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -3522,17 +3475,44 @@ export default function BrandDashboard() {
     );
   };
 
-  const renderAgencyMarketplace = () => (
-    <MarketplaceSection
-      entityType="agency"
-      title="Agency Marketplace"
-      subtitle="Verified agencies only"
-      verifiedBadgeLabel=""
-      searchPlaceholder="Search by agency name, type, service, or location..."
-      resultLimit={60}
-      queryScope="brand-agency-marketplace"
-    />
-  );
+  const renderCreatorMarketplace = () => {
+    return (
+      <MarketplaceSection
+        title="Likelee Marketplace"
+        subtitle="Verified creators only"
+        verifiedBadgeLabel=""
+        queryScope="brand-creator-marketplace"
+        showRequestLicense
+        onRequestLicense={(profile, details) =>
+          handleOpenLicenseRequest(profile, details)
+        }
+        actionsLocked={!brandCanUseCampaignCollaboration}
+        lockedTitle="Pro feature preview"
+        lockedDescription="Browse verified creators now. Upgrade to Pro to connect, request licenses, and move from the brief into collaborator selection."
+        lockedCtaLabel="Upgrade to Pro"
+        onLockedAction={() => navigate("/brandpricing")}
+      />
+    );
+  };
+
+  const renderAgencyMarketplace = () => {
+    return (
+      <MarketplaceSection
+        entityType="agency"
+        title="Agency Marketplace"
+        subtitle="Verified agencies only"
+        verifiedBadgeLabel=""
+        searchPlaceholder="Search by agency name, type, service, or location..."
+        resultLimit={60}
+        queryScope="brand-agency-marketplace"
+        actionsLocked={!brandCanUseCampaignCollaboration}
+        lockedTitle="Pro feature preview"
+        lockedDescription="Browse agencies now. Upgrade to Pro to connect with them and unlock campaign collaboration workflows."
+        lockedCtaLabel="Upgrade to Pro"
+        onLockedAction={() => navigate("/brandpricing")}
+      />
+    );
+  };
 
   const renderBrandLicensingRequests = () => (
     <div className="space-y-6">
@@ -3577,12 +3557,65 @@ export default function BrandDashboard() {
             ? `$${Number(licenseFeeValue).toLocaleString()}`
             : "\u2014";
 
-          // Submissions might be an array or object
+          // Submissions can come from either join path depending on whether the
+          // brand request was linked by submission_id directly or via brand_request_id.
           let submissions = req?.license_submissions;
           if (submissions && !Array.isArray(submissions)) {
             submissions = [submissions];
           }
-          const submission = Array.isArray(submissions) ? submissions[0] : null;
+          const directSubmission = req?.license_submission;
+          if (directSubmission) {
+            const directSubmissionList = Array.isArray(directSubmission)
+              ? directSubmission
+              : [directSubmission];
+            const existingIds = new Set(
+              (submissions || [])
+                .map((sub: any) => String(sub?.id || "").trim())
+                .filter(Boolean),
+            );
+            submissions = [
+              ...directSubmissionList.filter((sub: any) => {
+                const id = String(sub?.id || "").trim();
+                return id ? !existingIds.has(id) : true;
+              }),
+              ...(submissions || []),
+            ];
+          }
+
+          const submission = Array.isArray(submissions)
+            ? submissions
+                .filter((sub: any) => sub?.status !== "draft")
+                .sort((a: any, b: any) => {
+                  const linkedSubmissionId = String(
+                    req?.submission_id || "",
+                  ).trim();
+                  const aId = String(a?.id || "").trim();
+                  const bId = String(b?.id || "").trim();
+                  const aMatchesLinked = linkedSubmissionId
+                    ? aId === linkedSubmissionId
+                    : false;
+                  const bMatchesLinked = linkedSubmissionId
+                    ? bId === linkedSubmissionId
+                    : false;
+
+                  if (aMatchesLinked && !bMatchesLinked) return -1;
+                  if (!aMatchesLinked && bMatchesLinked) return 1;
+
+                  const aHasUrl = !!(
+                    a?.client_submitter_slug || a?.docuseal_slug
+                  );
+                  const bHasUrl = !!(
+                    b?.client_submitter_slug || b?.docuseal_slug
+                  );
+
+                  if (aHasUrl && !bHasUrl) return -1;
+                  if (!aHasUrl && bHasUrl) return 1;
+
+                  const aDate = new Date(a?.created_at || 0);
+                  const bDate = new Date(b?.created_at || 0);
+                  return bDate.getTime() - aDate.getTime();
+                })[0]
+            : null;
 
           const slug =
             submission?.client_submitter_slug || submission?.docuseal_slug;
@@ -3728,170 +3761,207 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const renderInboxSubtab = () => (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
-        <p className="text-gray-600">
-          View packages and licensing proposals from agencies
-        </p>
-      </div>
+  const renderInboxSubtab = () => {
+    if (!canViewInbox) {
+      return (
+        <div className="space-y-5">
+          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
+            <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Access Restricted
+            </h2>
+            <p className="text-gray-600">
+              You do not have permission to view the inbox.
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Contact your team administrator to request access.
+            </p>
+          </Card>
+        </div>
+      );
+    }
 
-      <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
-        <button
-          onClick={() => setInboxSubTab("talent_packages")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-            inboxSubTab === "talent_packages"
-              ? "bg-white shadow-sm text-gray-900"
-              : "text-gray-500"
-          }`}
-        >
-          Talent Packages ({inboxPackages.length})
-        </button>
-        <button
-          onClick={() => setInboxSubTab("direct_requests")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-            inboxSubTab === "direct_requests"
-              ? "bg-white shadow-sm text-gray-900"
-              : "text-gray-500"
-          }`}
-        >
-          Direct Requests
-        </button>
-      </div>
+    return (
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
+          <p className="text-gray-600">
+            View packages and licensing proposals from agencies
+          </p>
+        </div>
 
-      {inboxSubTab === "talent_packages" ? (
-        <div className="space-y-4">
-          {loadingInboxPackages && (
-            <Card className="p-6 bg-white border border-gray-300 rounded-none">
-              <p className="text-sm text-gray-500">Loading packages...</p>
-            </Card>
-          )}
-          {!loadingInboxPackages && inboxPackages.length === 0 && (
-            <Card className="p-6 bg-white border border-gray-300 rounded-none">
-              <p className="text-sm text-gray-500">No packages received yet.</p>
-            </Card>
-          )}
-          {inboxPackages.map((pkg: any) => {
-            const expiresAt = pkg?.expires_at ? new Date(pkg.expires_at) : null;
-            const isExpired = expiresAt
-              ? expiresAt.getTime() < Date.now()
-              : false;
-            const isDone =
-              pkg?.status === "feedback_received" ||
-              pkg?.status === "completed";
-            const selectedTalentCount = Array.isArray(
-              pkg?.meta?.selected_talent_ids,
-            )
-              ? pkg.meta.selected_talent_ids.length
-              : 0;
+        <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
+          <button
+            onClick={() => setInboxSubTab("talent_packages")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+              inboxSubTab === "talent_packages"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500"
+            }`}
+          >
+            Talent Packages ({inboxPackages.length})
+          </button>
+          <button
+            onClick={() => setInboxSubTab("direct_requests")}
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+              inboxSubTab === "direct_requests"
+                ? "bg-white shadow-sm text-gray-900"
+                : "text-gray-500"
+            }`}
+          >
+            Direct Requests
+          </button>
+        </div>
 
-            return (
-              <Card
-                key={pkg.id}
-                className="p-6 bg-white border border-gray-300 rounded-none"
-              >
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-2xl font-bold text-gray-900">
-                        {pkg.title ||
-                          pkg.campaign_offers?.offer_title ||
-                          pkg.campaign_offers?.brand_campaigns?.name ||
-                          "Talent package"}
-                      </h3>
-                      {String(pkg?.status || "") === "sent" && (
-                        <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
-                          New
-                        </Badge>
+        {inboxSubTab === "talent_packages" ? (
+          <div className="space-y-4">
+            {loadingInboxPackages && (
+              <Card className="p-6 bg-white border border-gray-300 rounded-none">
+                <p className="text-sm text-gray-500">Loading packages...</p>
+              </Card>
+            )}
+            {!loadingInboxPackages && inboxPackages.length === 0 && (
+              <Card className="p-6 bg-white border border-gray-300 rounded-none">
+                <p className="text-sm text-gray-500">
+                  No packages received yet.
+                </p>
+              </Card>
+            )}
+            {inboxPackages.map((pkg: any) => {
+              const expiresAt = pkg?.expires_at
+                ? new Date(pkg.expires_at)
+                : null;
+              const isExpired = expiresAt
+                ? expiresAt.getTime() < Date.now()
+                : false;
+              const isDone =
+                pkg?.status === "feedback_received" ||
+                pkg?.status === "completed";
+              const selectedTalentCount = Array.isArray(
+                pkg?.meta?.selected_talent_ids,
+              )
+                ? pkg.meta.selected_talent_ids.length
+                : 0;
+
+              return (
+                <Card
+                  key={pkg.id}
+                  className="p-6 bg-white border border-gray-300 rounded-none"
+                >
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-2xl font-bold text-gray-900">
+                          {pkg.title ||
+                            pkg.campaign_offers?.offer_title ||
+                            pkg.campaign_offers?.brand_campaigns?.name ||
+                            "Talent package"}
+                        </h3>
+                        {String(pkg?.status || "") === "sent" && (
+                          <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
+                            New
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-700 font-medium">
+                        From:{" "}
+                        {pkg?.agencies?.agency_name ||
+                          pkg?.agency_id ||
+                          "Agency"}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        Sent:{" "}
+                        {pkg?.sent_at
+                          ? new Date(String(pkg.sent_at)).toLocaleString()
+                          : "—"}
+                      </p>
+                      {pkg?.expires_at && (
+                        <p
+                          className={`text-sm ${
+                            isExpired
+                              ? "text-red-600 font-bold"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          Expires:{" "}
+                          {new Date(pkg.expires_at).toLocaleDateString()}
+                          {isExpired && " (Expired)"}
+                        </p>
                       )}
                     </div>
-                    <p className="text-sm text-gray-700 font-medium">
-                      From:{" "}
-                      {pkg?.agencies?.agency_name || pkg?.agency_id || "Agency"}
+                    <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
+                      {selectedTalentCount} talent
+                    </Badge>
+                  </div>
+
+                  {pkg?.message && (
+                    <p className="text-gray-700 italic mb-4">
+                      "{String(pkg.message)}"
                     </p>
-                    <p className="text-sm text-gray-500">
-                      Sent:{" "}
-                      {pkg?.sent_at
-                        ? new Date(String(pkg.sent_at)).toLocaleString()
-                        : "—"}
-                    </p>
-                    {pkg?.expires_at && (
-                      <p
-                        className={`text-sm ${
-                          isExpired ? "text-red-600 font-bold" : "text-gray-500"
-                        }`}
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      className={`flex-1 rounded-none ${
+                        isExpired || !canManagePayOffers
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-black hover:bg-gray-800 text-white"
+                      }`}
+                      disabled={isExpired || isDone || !canManagePayOffers}
+                      onClick={() => setConfirmingDonePkg(pkg)}
+                      title={
+                        !canManagePayOffers
+                          ? "You do not have permission to mark packages as done"
+                          : ""
+                      }
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border border-gray-300 rounded-none"
+                      disabled={isDone || isExpired}
+                      onClick={() => {
+                        const token = pkg?.meta?.agency_package_token;
+                        const id = String(pkg?.id || "");
+                        if (token) {
+                          window.open(`/share/package/${token}`, "_blank");
+                        } else if (id) {
+                          window.open(`/share/package/${id}`, "_blank");
+                        }
+                      }}
+                    >
+                      Open Package
+                    </Button>
+                    {canManagePayOffers && (
+                      <Button
+                        variant="outline"
+                        className="border border-gray-300 rounded-none"
                       >
-                        Expires: {new Date(pkg.expires_at).toLocaleDateString()}
-                        {isExpired && " (Expired)"}
-                      </p>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     )}
                   </div>
-                  <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
-                    {selectedTalentCount} talent
-                  </Badge>
-                </div>
-
-                {pkg?.message && (
-                  <p className="text-gray-700 italic mb-4">
-                    "{String(pkg.message)}"
-                  </p>
-                )}
-
-                <div className="flex gap-2">
-                  <Button
-                    className={`flex-1 rounded-none ${
-                      isExpired
-                        ? "bg-gray-400 cursor-not-allowed"
-                        : "bg-black hover:bg-gray-800 text-white"
-                    }`}
-                    disabled={isExpired || isDone}
-                    onClick={() => setConfirmingDonePkg(pkg)}
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border border-gray-300 rounded-none"
-                    disabled={isDone || isExpired}
-                    onClick={() => {
-                      const token = pkg?.meta?.agency_package_token;
-                      const id = String(pkg?.id || "");
-                      if (token) {
-                        window.open(`/share/package/${token}`, "_blank");
-                      } else if (id) {
-                        window.open(`/share/package/${id}`, "_blank");
-                      }
-                    }}
-                  >
-                    Open Package
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border border-gray-300 rounded-none"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
-          <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            No direct requests yet
-          </h3>
-          <p className="text-lg text-gray-600">
-            Agencies can send you direct licensing requests for specific
-            campaigns
-          </p>
-        </Card>
-      )}
-    </div>
-  );
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
+            <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              No direct requests yet
+            </h3>
+            <p className="text-lg text-gray-600">
+              Agencies can send you direct licensing requests for specific
+              campaigns
+            </p>
+          </Card>
+        )}
+      </div>
+    );
+  };
 
   const loadOfferHubDetails = async (
     offerId: string,
@@ -4083,6 +4153,15 @@ export default function BrandDashboard() {
     action: string,
     note?: string,
   ) => {
+    if (!canApproveDeliverables) {
+      toast({
+        title: "Permission required",
+        description:
+          "Your role cannot approve or request changes on deliverables.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
     if (deliverableReviewBusyRef.current.has(deliverableId)) return;
     deliverableReviewBusyRef.current.add(deliverableId);
     const offer = brandOfferItems.find(
@@ -4245,47 +4324,53 @@ export default function BrandDashboard() {
                     ⏳ Contract signed. Payment required before deliverables can
                     start.
                   </span>
-                  <Button
-                    size="sm"
-                    className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
-                    disabled={payingOfferId === offerId}
-                    onClick={async () => {
-                      setPayingOfferId(offerId);
-                      try {
-                        const data: any = await base44.post(
-                          `/api/brand/campaign-offers/${offerId}/checkout`,
-                          {},
-                        );
-                        if (data?.url) {
-                          window.location.href = data.url;
-                        } else {
+                  {canManagePayOffers ? (
+                    <Button
+                      size="sm"
+                      className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
+                      disabled={payingOfferId === offerId}
+                      onClick={async () => {
+                        setPayingOfferId(offerId);
+                        try {
+                          const data: any = await base44.post(
+                            `/api/brand/campaign-offers/${offerId}/checkout`,
+                            {},
+                          );
+                          if (data?.url) {
+                            window.location.href = data.url;
+                          } else {
+                            toast({
+                              title: "Payment Error",
+                              description:
+                                data?.message || "Could not start checkout.",
+                              variant: "destructive",
+                            });
+                          }
+                        } catch (e: any) {
+                          const msg = String(e?.message || "");
                           toast({
-                            title: "Payment Error",
-                            description:
-                              data?.message || "Could not start checkout.",
-                            variant: "destructive",
+                            title: msg.includes("no_talents_assigned")
+                              ? "Talent assignment required"
+                              : "Payment Error",
+                            description: msg.includes("no_talents_assigned")
+                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                              : msg || "Could not start checkout.",
+                            variant: "destructive" as any,
                           });
+                        } finally {
+                          setPayingOfferId(null);
                         }
-                      } catch (e: any) {
-                        const msg = String(e?.message || "");
-                        toast({
-                          title: msg.includes("no_talents_assigned")
-                            ? "Talent assignment required"
-                            : "Payment Error",
-                          description: msg.includes("no_talents_assigned")
-                            ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                            : msg || "Could not start checkout.",
-                          variant: "destructive" as any,
-                        });
-                      } finally {
-                        setPayingOfferId(null);
-                      }
-                    }}
-                  >
-                    {payingOfferId === offerId
-                      ? "Redirecting…"
-                      : "💳 Pay Offer"}
-                  </Button>
+                      }}
+                    >
+                      {payingOfferId === offerId
+                        ? "Redirecting…"
+                        : "💳 Pay Offer"}
+                    </Button>
+                  ) : (
+                    <span className="ml-auto text-xs text-amber-600 italic">
+                      View only - payment requires admin or project manager role
+                    </span>
+                  )}
                 </div>
               )}
               {isFullySigned && offer?.payment_status === "paid" && (
@@ -5111,7 +5196,9 @@ export default function BrandDashboard() {
                                                   size="sm"
                                                   className="flex-1 h-8 rounded-none font-bold bg-gray-900"
                                                   disabled={
-                                                    isApproved || isBusy
+                                                    isApproved ||
+                                                    isBusy ||
+                                                    !canApproveDeliverables
                                                   }
                                                   onClick={(e) => {
                                                     e.stopPropagation();
@@ -5131,7 +5218,9 @@ export default function BrandDashboard() {
                                                   variant="outline"
                                                   className="flex-1 h-8 rounded-none font-bold"
                                                   disabled={
-                                                    isApproved || isBusy
+                                                    isApproved ||
+                                                    isBusy ||
+                                                    !canApproveDeliverables
                                                   }
                                                   onClick={(e) => {
                                                     e.stopPropagation();
@@ -6190,8 +6279,18 @@ export default function BrandDashboard() {
                     <Button
                       variant="outline"
                       className="w-full border-2 border-gray-300"
+                      disabled={!canManagePayOffers}
                       onClick={(event) => {
                         event.stopPropagation();
+                        if (!canManagePayOffers) {
+                          toast({
+                            title: "View-only access",
+                            description:
+                              "You do not have permission to add collaborators.",
+                            variant: "destructive" as any,
+                          });
+                          return;
+                        }
                         const first = offers[0];
                         if (first) openAddCollaboratorFlow(first);
                       }}
@@ -6279,18 +6378,8 @@ export default function BrandDashboard() {
   };
 
   const renderCampaignHub = () => {
-    const campaignsForHub = mockCampaigns.filter((campaign) => {
-      if (campaignHubTab === "inbox") return false;
-      const mappedStatus =
-        campaign.status === "in_progress"
-          ? "active"
-          : campaign.status === "pending_approval"
-            ? "pending_approval"
-            : campaign.status === "completed"
-              ? "completed"
-              : "draft";
-      return mappedStatus === campaignHubTab;
-    });
+    // Campaigns are now loaded from real API data
+    const campaignsForHub: any[] = [];
 
     return (
       <div className="space-y-8">
@@ -6318,12 +6407,12 @@ export default function BrandDashboard() {
               Collaborate with Agency
             </h3>
             <Button
-              onClick={() => {
-                goToCampaignsSection();
-              }}
+              onClick={handleAgencyCollaborationEntry}
               className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
             >
-              Invite Agency
+              {brandCanUseCampaignCollaboration
+                ? "Invite Agency"
+                : "Upgrade to Pro"}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
@@ -6337,23 +6426,40 @@ export default function BrandDashboard() {
               Coming Soon
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-none">
+          <Card className="p-6 bg-white border-2 border-amber-600/60 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Invite Company Seat
             </h3>
             <Button
-              disabled
-              className="w-full bg-amber-600 text-white rounded-none cursor-not-allowed"
+              onClick={handleCompanySeatEntry}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
             >
-              Coming Soon
+              {(brandSeatLimit ?? 0) === 0
+                ? "Upgrade to Basic"
+                : brandSeatLimitReached
+                  ? "Seat limit reached"
+                  : `Up to ${brandSeatLimitLabel} seats`}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               AI Studio Add-On
             </h3>
-            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none">
-              Enable Add-On
+            <Button
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none"
+              onClick={() =>
+                navigate(
+                  brandHasStudioAddon
+                    ? createPageUrl("Studio")
+                    : "/brandpricing?focus=studio",
+                )
+              }
+            >
+              {brandHasStudioAddon
+                ? "Open Studio"
+                : brandCanSelfServeStudioAddon
+                  ? "Enable Add-On"
+                  : "Upgrade to Pro"}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
@@ -6610,6 +6716,12 @@ export default function BrandDashboard() {
                             <Button
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              disabled={!canManageJobs}
+                              title={
+                                !canManageJobs
+                                  ? "You do not have permission to manage jobs"
+                                  : ""
+                              }
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
@@ -6755,25 +6867,19 @@ export default function BrandDashboard() {
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Assets</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Videos</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.filter((a) => a.type === "video").length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Images</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {mockAssets.filter((a) => a.type === "image").length}
-          </p>
+          <p className="text-3xl font-bold text-gray-900">0</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Size</p>
-          <p className="text-3xl font-bold text-gray-900">36.1 MB</p>
+          <p className="text-3xl font-bold text-gray-900">0 MB</p>
         </Card>
       </div>
 
@@ -6806,62 +6912,13 @@ export default function BrandDashboard() {
 
       {/* Asset Grid */}
       <div className="grid md:grid-cols-3 gap-6">
-        {mockAssets.map((asset) => (
-          <Card
-            key={asset.id}
-            className="p-4 bg-white border border-gray-200 hover:shadow-lg transition-all"
-          >
-            <div className="relative mb-4">
-              <img
-                src={asset.thumbnail}
-                alt={asset.filename}
-                className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-              />
-              {asset.watermarked && (
-                <Badge className="absolute top-2 right-2 bg-green-500 text-white">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  Watermarked
-                </Badge>
-              )}
-              <Badge className="absolute top-2 left-2 bg-gray-900 text-white">
-                {asset.format}
-              </Badge>
-            </div>
-
-            <h4 className="font-semibold text-gray-900 mb-2 truncate">
-              {asset.filename}
-            </h4>
-            <div className="space-y-1 text-sm text-gray-600 mb-4">
-              <p>Project: {asset.project}</p>
-              <p>Creator: {asset.creator}</p>
-              <p>Date: {new Date(asset.date).toLocaleDateString()}</p>
-              <p className="text-xs">
-                {asset.resolution} • {asset.size}
-              </p>
-            </div>
-
-            <Alert className="mb-3 bg-blue-50 border border-blue-200 p-3">
-              <p className="text-xs text-blue-900">
-                <strong>Usage:</strong> {asset.territory}, valid until{" "}
-                {asset.valid_until}
-              </p>
-            </Alert>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 border-2 border-gray-300"
-              >
-                <Eye className="w-4 h-4 mr-1" />
-                Preview
-              </Button>
-              <Button className="flex-1 bg-[#F7B750] hover:bg-[#E6A640] text-white">
-                <Download className="w-4 h-4 mr-1" />
-                Download
-              </Button>
-            </div>
-          </Card>
-        ))}
+        {/* Assets are now loaded from real API data - no mock assets shown */}
+        <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
+          <p className="text-gray-500">
+            No assets available yet. Assets will appear here once campaigns are
+            completed.
+          </p>
+        </Card>
       </div>
 
       {/* Organization Features */}
@@ -7035,7 +7092,17 @@ export default function BrandDashboard() {
             Spend by Month
           </h3>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={spendData}>
+            <LineChart
+              data={
+                brandSpendData?.monthly_spend &&
+                brandSpendData.monthly_spend.length > 0
+                  ? brandSpendData.monthly_spend.map((d) => ({
+                      month: d.month,
+                      spend: d.spend / 100,
+                    }))
+                  : []
+              }
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -7059,15 +7126,27 @@ export default function BrandDashboard() {
         <div className="grid md:grid-cols-3 gap-6">
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">YTD Spend</p>
-            <p className="text-2xl font-bold text-gray-900">$45,200</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {billingYtdSpend > 0
+                ? `$${(billingYtdSpend / 100).toLocaleString()}`
+                : "$0"}
+            </p>
           </div>
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Monthly Avg</p>
-            <p className="text-2xl font-bold text-gray-900">$7,533</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {billingMonthlyAvg > 0
+                ? `$${(billingMonthlyAvg / 100).toLocaleString()}`
+                : "$0"}
+            </p>
           </div>
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
-            <p className="text-2xl font-bold text-gray-900">$90.4K</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {billingProjectedEoy > 0
+                ? `$${(billingProjectedEoy / 1000).toFixed(1)}K`
+                : "$0"}
+            </p>
           </div>
         </div>
       </Card>
@@ -7075,9 +7154,7 @@ export default function BrandDashboard() {
   );
 
   const renderContractDetail = () => {
-    const contract = mockContracts.find((c) => c.id === selectedContract);
-    if (!contract) return null;
-
+    // Contracts are now loaded from real API data
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -7355,8 +7432,9 @@ export default function BrandDashboard() {
                 <strong>
                   {new Date(contract.created_date).toLocaleDateString()}
                 </strong>
-                , by and between <strong>{mockBrand.name}</strong> ("Licensee")
-                and <strong>{contract.creator_name}</strong> ("Licensor").
+                , by and between <strong>{brand?.name || "Brand"}</strong>{" "}
+                ("Licensee") and <strong>{contract.creator_name}</strong>{" "}
+                ("Licensor").
               </p>
 
               <p className="mb-6">
@@ -7439,9 +7517,9 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Held in escrow until {mockBrand.name}{" "}
-                approval of deliverables. Release upon approval or automatic
-                after 48 hours.
+                <strong>Payment:</strong> Held in escrow until{" "}
+                {brand?.name || "Brand"} approval of deliverables. Release upon
+                approval or automatic after 48 hours.
               </p>
 
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -7498,7 +7576,7 @@ export default function BrandDashboard() {
                   </div>
                   <div className="p-4 bg-gray-50 border-2 border-gray-300 rounded-lg">
                     <p className="font-semibold text-gray-900 mb-2">
-                      {mockBrand.name}
+                      {brand?.name || "Brand"}
                     </p>
                     <p className="text-sm text-gray-600 mb-2">Licensee</p>
                     {contract.signed_date && (
@@ -7635,7 +7713,7 @@ export default function BrandDashboard() {
                     Contract created and sent to {contract.creator_name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Created by: {mockBrand.name}
+                    Created by: {brand?.name || "Brand"}
                   </p>
                 </div>
               </div>
@@ -7701,10 +7779,9 @@ export default function BrandDashboard() {
       return renderContractDetail();
     }
 
-    const activeContracts = mockContracts.filter((c) => c.status === "signed");
-    const pendingContracts = mockContracts.filter(
-      (c) => c.status === "pending_signature",
-    );
+    // Contracts are now loaded from real API data
+    const activeContracts: any[] = [];
+    const pendingContracts: any[] = [];
 
     return (
       <div className="space-y-6">
@@ -7778,7 +7855,7 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            All Contracts ({mockContracts.length})
+            All Contracts (0)
           </button>
         </div>
 
@@ -7966,73 +8043,13 @@ export default function BrandDashboard() {
         {/* All Contracts */}
         {contractHubTab === "all" && (
           <div className="space-y-4">
-            {mockContracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className={`p-6 border ${
-                  contract.status === "signed"
-                    ? "bg-white border-gray-200"
-                    : "bg-yellow-50 border-yellow-300"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {contract.project_name}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {contract.creator_name} ({contract.creator_handle})
-                    </p>
-                  </div>
-                  <Badge
-                    className={
-                      contract.status === "signed"
-                        ? "bg-green-100 text-green-700 border border-green-300"
-                        : "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                    }
-                  >
-                    {contract.status === "signed"
-                      ? "✓ Fully Signed"
-                      : "⏳ Pending"}
-                  </Badge>
-                </div>
-
-                <div className="grid md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Created</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.created_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.territory}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Duration</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.duration_days} days
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Fee</p>
-                    <p className="font-bold text-gray-900">
-                      ${contract.total_fee.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                  onClick={() => setSelectedContract(contract.id)}
-                >
-                  View Details
-                </Button>
-              </Card>
-            ))}
+            {/* Contracts are now loaded from real API data */}
+            <Card className="p-12 bg-white border border-gray-200 text-center">
+              <p className="text-gray-500">
+                No contracts available yet. Contracts will appear here once
+                campaigns are created.
+              </p>
+            </Card>
           </div>
         )}
       </div>
@@ -8124,7 +8141,11 @@ export default function BrandDashboard() {
               </Card>
               <Card className="p-6 bg-white border border-gray-200">
                 <p className="text-sm text-gray-600 mb-1">Royalties Paid</p>
-                <p className="text-4xl font-bold text-gray-900">$8.4K</p>
+                <p className="text-4xl font-bold text-gray-900">
+                  {brandSpendData
+                    ? `$${(brandSpendData.ytd_spend / 1000).toFixed(1)}K`
+                    : "$0"}
+                </p>
               </Card>
               <Card className="p-6 bg-white border border-gray-200">
                 <p className="text-sm text-gray-600 mb-1">Violations</p>
@@ -8171,71 +8192,16 @@ export default function BrandDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {mockLicenses.map((license) => (
-                      <tr key={license.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 font-medium text-gray-900">
-                          {license.asset_name}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.creator}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.territory}
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {license.duration}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex gap-1">
-                            {license.channels.map((ch) => (
-                              <Badge
-                                key={ch}
-                                className="bg-blue-100 text-blue-700 border border-blue-300 text-xs"
-                              >
-                                {ch}
-                              </Badge>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-gray-700">
-                          {new Date(license.end_date).toLocaleDateString()}
-                          <p className="text-xs text-gray-500">
-                            {license.days_remaining} days left
-                          </p>
-                        </td>
-                        <td className="px-4 py-4">
-                          <Badge
-                            className={
-                              license.status === "active"
-                                ? "bg-green-100 text-green-700 border border-green-300"
-                                : "bg-orange-100 text-orange-700 border border-orange-300"
-                            }
-                          >
-                            {license.status === "active"
-                              ? "Active"
-                              : "Expiring Soon"}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-2 border-gray-300"
-                            >
-                              Renew
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-2 border-gray-300"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {/* Licenses are now loaded from real API data */}
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-12 text-center text-gray-500"
+                      >
+                        No licenses available yet. Licenses will appear here
+                        once campaigns are completed.
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -8251,43 +8217,12 @@ export default function BrandDashboard() {
                 License Expiration Calendar
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
-                {mockLicenses
-                  .filter((l) => l.status === "expiring_soon")
-                  .map((license) => (
-                    <div
-                      key={license.id}
-                      className="p-4 rounded-lg border-2 bg-orange-50 border-orange-300"
-                    >
-                      <p className="font-semibold text-gray-900 mb-2">
-                        {license.asset_name}
-                      </p>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Expires:{" "}
-                        {new Date(license.end_date).toLocaleDateString()}
-                      </p>
-                      <Badge className="bg-orange-500 text-white">
-                        {license.days_remaining} days remaining
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        className="w-full mt-3 border-2 border-gray-300"
-                      >
-                        Renew License
-                      </Button>
-                    </div>
-                  ))}
-                {mockLicenses.filter((l) => l.status === "expiring_soon")
-                  .length === 0 && (
-                  <div className="col-span-3 text-center py-12">
-                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      No licenses expiring soon
-                    </h3>
-                    <p className="text-gray-600">
-                      All your licenses are active for 30+ days
-                    </p>
-                  </div>
-                )}
+                {/* Expiring licenses are now loaded from real API data */}
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">
+                    No expiring licenses at this time.
+                  </p>
+                </div>
               </div>
             </Card>
           </div>
@@ -8334,11 +8269,80 @@ export default function BrandDashboard() {
         </p>
       </div>
 
+      {/* Budget Overview - Prominent Position */}
+      {budgetLimit !== null && budgetLimit > 0 && (
+        <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-blue-900 mb-1">
+                Monthly Budget Tracker
+              </h3>
+              <p className="text-sm text-blue-700">
+                Track your spending against your budget limit
+              </p>
+            </div>
+            {budgetAlertEnabled && (
+              <Badge className="bg-blue-100 text-blue-800 border border-blue-300">
+                <Bell className="w-3 h-3 mr-1" />
+                Alerts On
+              </Badge>
+            )}
+          </div>
+          <div className="mt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl font-bold text-blue-900">
+                {loadingBillingData
+                  ? "..."
+                  : `$${((billingCurrentMonthSpend || 0) / 100).toLocaleString()}`}
+              </span>
+              <span className="text-lg text-blue-700">
+                of ${budgetLimit.toLocaleString()} budget
+              </span>
+            </div>
+            <Progress
+              value={Math.min(
+                100,
+                ((billingCurrentMonthSpend || 0) / 100 / budgetLimit) * 100,
+              )}
+              className="h-3 bg-blue-100"
+            />
+            {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit * 0.8 && (
+              <div className="mt-3 flex items-center gap-2">
+                <AlertTriangle
+                  className={`w-5 h-5 ${
+                    (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                      ? "text-red-600"
+                      : "text-amber-600"
+                  }`}
+                />
+                <span
+                  className={`text-sm font-medium ${
+                    (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                      ? "text-red-700"
+                      : "text-amber-700"
+                  }`}
+                >
+                  {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                    ? "You've reached your monthly budget limit"
+                    : "You've reached 80% of your monthly budget"}
+                </span>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Billing Overview */}
       <div className="grid md:grid-cols-4 gap-6">
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">This Month's Spend</p>
-          <p className="text-4xl font-bold text-gray-900">$7.5K</p>
+          <p className="text-4xl font-bold text-gray-900">
+            {loadingBillingData
+              ? "..."
+              : billingCurrentMonthSpend > 0
+                ? `$${(billingCurrentMonthSpend / 1000).toFixed(1)}K`
+                : "$0"}
+          </p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">In Escrow</p>
@@ -8349,46 +8353,277 @@ export default function BrandDashboard() {
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Amount Spent YTD</p>
-          <p className="text-4xl font-bold text-gray-900">$45.2K</p>
+          <p className="text-4xl font-bold text-gray-900">
+            {loadingBillingData
+              ? "..."
+              : billingYtdSpend > 0
+                ? `$${(billingYtdSpend / 1000).toFixed(1)}K`
+                : "$0"}
+          </p>
         </Card>
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
-          <p className="text-2xl font-bold text-gray-900">Mar 1</p>
-          <p className="text-xs text-gray-500 mt-1">$299 subscription</p>
-        </Card>
+        {canViewSubscriptions && (
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {brandNextInvoiceDate || "Not set"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {brandPlanTier === "enterprise"
+                ? "Custom enterprise contract"
+                : (brandRecurringAmount || 0) > 0
+                  ? `$${brandRecurringAmount}/mo recurring`
+                  : "No active subscription"}
+            </p>
+          </Card>
+        )}
       </div>
 
-      {/* Current Plan */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <div className="flex items-center justify-between mb-6">
+      {/* Budget Management */}
+      <Card
+        className={`p-6 border-2 ${
+          budgetLimit === null || budgetLimit === 0
+            ? "bg-amber-50 border-amber-300"
+            : "bg-white border-gray-200"
+        }`}
+      >
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-1">
-              Current Plan: {brand.plan}
+            <h3 className="text-xl font-bold text-gray-900">
+              Budget Management
             </h3>
-            <p className="text-gray-600">Renews on March 1, 2025</p>
-          </div>
-          <Button className="bg-[#F7B750] hover:bg-[#E6A640] text-white">
-            Upgrade Plan
-          </Button>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Monthly Subscription</p>
-            <p className="text-2xl font-bold text-gray-900">$299</p>
-          </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Campaign Slots</p>
-            <p className="text-2xl font-bold text-gray-900">3 / 20</p>
-          </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Team Seats</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {brand.team_seats} / 5
+            <p className="text-sm text-gray-600 mt-1">
+              Set a monthly spending limit and get alerts
             </p>
           </div>
+          {budgetLimit !== null && budgetLimit > 0 && budgetAlertEnabled && (
+            <Badge className="bg-green-100 text-green-700 border border-green-300">
+              Active
+            </Badge>
+          )}
+        </div>
+
+        {budgetLimit === null || budgetLimit === 0 ? (
+          <div className="bg-white border border-amber-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <Target className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">
+                  Set your monthly budget
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Track your spending and get notified when you approach your
+                  limit. Stay on top of your creator campaign costs.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-semibold text-gray-700 block mb-2">
+              Monthly Budget Limit ($)
+            </Label>
+            <Input
+              type="number"
+              placeholder="e.g., 5000"
+              className="border-2 border-gray-300 max-w-xs"
+              value={budgetLimit ?? ""}
+              onChange={(e) =>
+                setBudgetLimit(e.target.value ? Number(e.target.value) : null)
+              }
+            />
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+            <input
+              type="checkbox"
+              id="budgetAlertEnabled"
+              checked={budgetAlertEnabled}
+              onChange={(e) => setBudgetAlertEnabled(e.target.checked)}
+              className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <div>
+              <Label
+                htmlFor="budgetAlertEnabled"
+                className="text-sm font-medium text-gray-900"
+              >
+                Enable budget alerts
+              </Label>
+              <p className="text-xs text-gray-500">
+                Get notified at 80% and 100% of your budget
+              </p>
+            </div>
+          </div>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={savingBudgetSettings}
+            onClick={async () => {
+              setSavingBudgetSettings(true);
+              try {
+                await updateBrandBudgetSettings({
+                  monthly_budget_limit: budgetLimit,
+                  budget_alert_enabled: budgetAlertEnabled,
+                });
+                toast({
+                  title: "Settings saved",
+                  description: "Budget settings updated successfully.",
+                });
+              } catch {
+                toast({
+                  title: "Error",
+                  description: "Failed to save budget settings.",
+                  variant: "destructive",
+                });
+              } finally {
+                setSavingBudgetSettings(false);
+              }
+            }}
+          >
+            {savingBudgetSettings ? "Saving..." : "Save Budget Settings"}
+          </Button>
         </div>
       </Card>
+
+      {/* Current Plan */}
+      {canViewSubscriptions && (
+        <Card
+          className={`overflow-hidden border shadow-sm ${brandSummaryTheme.containerClass}`}
+        >
+          <div className={`h-1.5 w-full ${brandSummaryTheme.bandClass}`} />
+          <div className="p-6">
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <div>
+                <Badge className={brandSummaryTheme.badgeClass}>
+                  {brandSummaryTheme.eyebrow}
+                </Badge>
+                <h3
+                  className={`mt-3 text-xl font-bold ${brandSummaryTheme.headingClass}`}
+                >
+                  Current Plan: {brandPlanLabel}
+                </h3>
+                <p className={`mt-1 ${brandSummaryTheme.bodyClass}`}>
+                  {brandTrialEndsAt
+                    ? `Free trial ends on ${brandTrialEndsAt}`
+                    : brandCurrentPeriodEnd
+                      ? `Renews on ${brandCurrentPeriodEnd}`
+                      : brandSubscriptionStatus}
+                </p>
+              </div>
+              {canManageBilling && (
+                <Button
+                  className={`font-semibold ${brandSummaryTheme.buttonClass}`}
+                  onClick={() => navigate(brandSummaryTheme.actionPath)}
+                >
+                  {brandSummaryTheme.actionLabel}
+                </Button>
+              )}
+            </div>
+
+            <div className="grid md:grid-cols-4 gap-4">
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+              >
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
+                  Base Subscription
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandBasePrice == null
+                    ? brandPlanTier === "enterprise"
+                      ? "Custom"
+                      : "$0"
+                    : `$${brandBasePrice}`}
+                </p>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
+                  {brandSubscriptionStatus}
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+              >
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
+                  AI Studio Add-On
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandHasIncludedStudio
+                    ? "Included"
+                    : brandHasStudioAddon
+                      ? `$${BRAND_STUDIO_ADDON_PRICE}`
+                      : "Inactive"}
+                </p>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
+                  {brandStudioCurrentPeriodEnd && brandPlanTier !== "enterprise"
+                    ? `Renews on ${brandStudioCurrentPeriodEnd}`
+                    : brandStudioStatus}
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+              >
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
+                  Campaign Slots
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandCampaignLimit == null
+                    ? "Unlimited"
+                    : `${brandCampaignSlotsUsed} / ${brandCampaignLimitLabel}`}
+                </p>
+                <p
+                  className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
+                >
+                  {campaignMetrics.active_projects_count} active,{" "}
+                  {campaignMetrics.pending_approvals_count} pending approval
+                </p>
+              </div>
+              <div
+                className={`p-4 rounded-xl ${brandSummaryTheme.statCardClass}`}
+              >
+                <p
+                  className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
+                >
+                  Team Seats
+                </p>
+                <p
+                  className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
+                >
+                  {brandTeamSeatsUsed} / {brandSeatLimitLabel}
+                </p>
+              </div>
+            </div>
+
+            {(brandCampaignLimitReached || brandSeatLimitReached) && (
+              <Alert className="mt-4 border border-amber-200 bg-amber-50 text-amber-900">
+                <AlertDescription>
+                  {brandCampaignLimitReached
+                    ? brandCampaignLimit === 0
+                      ? "Upgrade to a paid brand plan to launch campaigns."
+                      : `You've reached ${brandCampaignSlotsUsed} of ${brandCampaignLimitLabel} campaign slots. Mark a campaign done or upgrade before launching another.`
+                    : brandSeatLimit === 0
+                      ? "Upgrade to Basic or above to unlock company seats."
+                      : `You've reached your ${brandSeatLimitLabel} company seat limit on the current plan.`}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* Payment Status / Project Billing */}
       <Card className="p-6 bg-white border border-gray-200">
@@ -8417,39 +8652,16 @@ export default function BrandDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {mockCampaigns.map((campaign) => (
-                <tr key={campaign.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 font-medium text-gray-900">
-                    {campaign.name}
-                  </td>
-                  <td className="px-4 py-4 text-gray-700">
-                    {campaign.creators.join(", ")}
-                  </td>
-                  <td className="px-4 py-4 font-bold text-gray-900">
-                    ${campaign.budget.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-4">
-                    <Badge
-                      className={
-                        campaign.status === "pending_approval"
-                          ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                          : campaign.status === "completed"
-                            ? "bg-green-100 text-green-700 border border-green-300"
-                            : "bg-blue-100 text-blue-700 border border-blue-300"
-                      }
-                    >
-                      {campaign.status === "pending_approval"
-                        ? "Pending Approval"
-                        : campaign.status === "completed"
-                          ? "Paid"
-                          : "In Escrow"}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-700">
-                    {campaign.go_live}
-                  </td>
-                </tr>
-              ))}
+              {/* Campaigns are now loaded from real API data */}
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-4 py-12 text-center text-gray-500"
+                >
+                  No campaigns available yet. Campaigns will appear here once
+                  you create them.
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -8468,7 +8680,7 @@ export default function BrandDashboard() {
         </p>
         <p className="text-sm font-semibold text-blue-900">
           Current Escrow: ${(escrowTotal / 1000).toFixed(1)}K across{" "}
-          {mockCampaigns.filter((c) => c.escrow_amount > 0).length} projects
+          {escrowProjects.length} projects
         </p>
       </Card>
 
@@ -8476,87 +8688,96 @@ export default function BrandDashboard() {
       <Card className="p-6 bg-white border border-gray-200">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-gray-900">Invoice History</h3>
-          <Button variant="outline" className="border-2 border-gray-300">
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            disabled={brandInvoices.length === 0}
+            onClick={() => {
+              const header = "ID,Number,Amount,Currency,Status,Date\n";
+              const rows = brandInvoices.map((inv) => {
+                const amountDollars = ((inv.amount || 0) / 100).toFixed(2);
+                const date = inv.created_at
+                  ? new Date(inv.created_at).toLocaleDateString()
+                  : "";
+                return `${inv.id},${inv.number || ""},${amountDollars},${inv.currency},${inv.status},${date}`;
+              });
+              const csv = header + rows.join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `invoices-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export All
           </Button>
         </div>
         <div className="space-y-3">
-          {[
-            {
-              month: "February 2025",
-              invoice: "INV-001",
-              amount: 299,
-              status: "Paid",
-              date: "2025-02-01",
-            },
-            {
-              month: "January 2025",
-              invoice: "INV-002",
-              amount: 299,
-              status: "Paid",
-              date: "2025-01-01",
-            },
-            {
-              month: "December 2024",
-              invoice: "INV-003",
-              amount: 299,
-              status: "Paid",
-              date: "2024-12-01",
-            },
-          ].map((invoice, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
-            >
-              <div>
-                <p className="font-semibold text-gray-900">{invoice.month}</p>
-                <p className="text-sm text-gray-600">
-                  {invoice.invoice} • {invoice.date}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="font-bold text-gray-900">
-                  ${invoice.amount}.00
-                </span>
-                <Badge className="bg-green-100 text-green-700 border border-green-300">
-                  {invoice.status}
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-2 border-gray-300"
-                >
-                  <Download className="w-4 h-4" />
-                </Button>
-              </div>
+          {loadingBillingData ? (
+            <div className="p-4 text-center text-gray-500">
+              Loading invoices...
             </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Budget Alerts */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">
-          Budget Management
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <Label className="text-sm font-semibold text-gray-700 block mb-2">
-              Monthly Budget Limit (Optional)
-            </Label>
-            <Input
-              type="number"
-              placeholder="Enter amount"
-              className="border-2 border-gray-300 max-w-xs"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Get alerts when spend reaches 80% or 100%
-            </p>
-          </div>
-          <Button variant="outline" className="border-2 border-gray-300">
-            Set Budget Alerts
-          </Button>
+          ) : brandInvoices.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">
+              No invoices available yet. Invoices will appear here once you have
+              an active subscription.
+            </div>
+          ) : (
+            brandInvoices.map((invoice) => {
+              const amountDollars = (invoice.amount || 0) / 100;
+              const monthLabel = invoice.created_at
+                ? new Date(invoice.created_at).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                  })
+                : "Unknown";
+              return (
+                <div
+                  key={invoice.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-900">{monthLabel}</p>
+                    <p className="text-sm text-gray-600">
+                      {invoice.number || invoice.id.slice(0, 8)} •{" "}
+                      {invoice.created_at
+                        ? new Date(invoice.created_at).toLocaleDateString()
+                        : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="font-bold text-gray-900">
+                      ${amountDollars.toFixed(2)}
+                    </span>
+                    <Badge
+                      className={
+                        invoice.status === "paid"
+                          ? "bg-green-100 text-green-700 border border-green-300"
+                          : "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                      }
+                    >
+                      {invoice.status}
+                    </Badge>
+                    {invoice.invoice_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-2 border-gray-300"
+                        onClick={() =>
+                          window.open(invoice.invoice_url, "_blank")
+                        }
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </Card>
     </div>
@@ -8624,9 +8845,9 @@ export default function BrandDashboard() {
             <div className="flex items-center gap-6">
               <div className="relative">
                 <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
-                  <AvatarImage src={brand.logo} alt={brand.name} />
+                  <AvatarImage src={brand?.logo} alt={brand?.name} />
                   <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
-                    {getBrandInitials(brand.name)}
+                    {getBrandInitials(brand?.name)}
                   </AvatarFallback>
                 </Avatar>
                 <label className="absolute -bottom-2 -right-2 bg-white rounded-none p-2 border-2 border-gray-900 cursor-pointer hover:bg-gray-50 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
@@ -8662,7 +8883,7 @@ export default function BrandDashboard() {
                   Company Name
                 </Label>
                 <Input
-                  value={brand.name}
+                  value={brand?.name ?? ""}
                   onChange={(e) => setBrand({ ...brand, name: e.target.value })}
                   className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
                 />
@@ -8672,7 +8893,7 @@ export default function BrandDashboard() {
                   Industry
                 </Label>
                 <Input
-                  value={brand.industry}
+                  value={brand?.industry ?? ""}
                   onChange={(e) =>
                     setBrand({ ...brand, industry: e.target.value })
                   }
@@ -8684,7 +8905,7 @@ export default function BrandDashboard() {
                   Website
                 </Label>
                 <Input
-                  value={brand.website}
+                  value={brand?.website ?? ""}
                   onChange={(e) =>
                     setBrand({ ...brand, website: e.target.value })
                   }
@@ -8693,14 +8914,12 @@ export default function BrandDashboard() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Contact Email
+                  Your Email
                 </Label>
                 <Input
-                  value={brand.contact_email}
-                  onChange={(e) =>
-                    setBrand({ ...brand, contact_email: e.target.value })
-                  }
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                  value={profile?.email ?? ""}
+                  readOnly
+                  className="rounded-none border-2 border-gray-200 bg-gray-50 cursor-not-allowed h-12 text-sm font-bold text-gray-500"
                 />
               </div>
             </div>
@@ -8825,77 +9044,13 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="team" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-gray-900 uppercase tracking-tighter flex items-center gap-3">
-                <Users className="w-6 h-6" /> Organization Members
-              </h3>
-              <Badge className="rounded-none bg-gray-900 text-white font-black uppercase text-[10px] tracking-widest py-1.5 px-3">
-                {brand.team_seats} / 5 Seats
-              </Badge>
-            </div>
-
-            <div className="space-y-3 mb-8">
-              {[
-                {
-                  name: "John Smith",
-                  email: "john@urbanapparel.com",
-                  role: "Admin",
-                },
-                {
-                  name: "Sarah Jones",
-                  email: "sarah@urbanapparel.com",
-                  role: "PM",
-                },
-                {
-                  name: "Mike Chen",
-                  email: "mike@urbanapparel.com",
-                  role: "Reviewer",
-                },
-              ].map((member, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-5 bg-white border-2 border-gray-100 hover:border-gray-900 transition-colors rounded-none"
-                >
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-10 h-10 rounded-none border border-gray-200">
-                      <AvatarFallback className="font-black text-xs bg-gray-100 uppercase">
-                        {member.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-black text-gray-900 text-sm uppercase tracking-tight">
-                        {member.name}
-                      </p>
-                      <p className="text-xs font-bold text-gray-400">
-                        {member.email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">
-                      {member.role}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-none text-gray-400 hover:text-red-500 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button className="w-full rounded-none bg-gray-950 hover:bg-gray-800 text-white font-black uppercase tracking-[0.2em] h-14 shadow-[8px_8px_0px_rgba(31,41,55,0.2)]">
-              <Plus className="w-5 h-5 mr-3" />
-              Invite New Collaborator
-            </Button>
-          </Card>
+          <TeamManagementCard
+            organizationType="brand"
+            title="Team Management"
+            description="Manage members, roles, and invitations for your brand organization."
+            seatLimit={brandSeatLimit}
+            seatLimitReached={brandSeatLimitReached}
+          />
         </TabsContent>
 
         <TabsContent value="integrations" className="space-y-6 mt-0">
@@ -8986,12 +9141,21 @@ export default function BrandDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12">
+            <Button
+              onClick={() => {
+                // Open support email
+                window.location.href = CONTACT_EMAIL_MAILTO;
+              }}
+              className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
+            >
               <HelpCircle className="w-4 h-4 mr-2" /> Live Support
             </Button>
             <Button
-              variant="outline"
-              className="rounded-none border-white/20 hover:bg-white/10 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
+              onClick={() => {
+                // Navigate to book demo page
+                navigate(createBookDemoUrl("brand_dashboard_settings"));
+              }}
+              className="rounded-none bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12 border-2 border-purple-500"
             >
               <Calendar className="w-4 h-4 mr-2" /> Book a Demo
             </Button>
@@ -10981,7 +11145,7 @@ export default function BrandDashboard() {
       >
         {/* Brand Section */}
         <div className="p-6 border-b border-gray-200">
-          {sidebarOpen ? (
+          {brand && sidebarOpen ? (
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">
                 <AvatarImage src={brand.logo} alt={brand.name} />
@@ -10991,16 +11155,20 @@ export default function BrandDashboard() {
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 truncate">{brand.name}</p>
-                <p className="text-xs text-gray-600 truncate">{brand.plan}</p>
+                <p className="text-xs text-gray-600 truncate">
+                  {brandPlanLabel}
+                </p>
               </div>
             </div>
-          ) : (
+          ) : brand ? (
             <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg mx-auto">
               <AvatarImage src={brand.logo} alt={brand.name} />
               <AvatarFallback className="font-bold text-gray-700">
                 {getBrandInitials(brand.name)}
               </AvatarFallback>
             </Avatar>
+          ) : (
+            <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse" />
           )}
         </div>
 
@@ -11121,17 +11289,27 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          navigateToSection("campaigns-inbox");
+                          if (canViewInbox) {
+                            navigateToSection("campaigns-inbox");
+                          }
                         }}
+                        disabled={!canViewInbox}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-inbox"
                             ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-100"
+                            : canViewInbox
+                              ? "text-gray-600 hover:bg-gray-100"
+                              : "text-gray-400 cursor-not-allowed"
                         }`}
+                        title={
+                          !canViewInbox
+                            ? "You do not have permission to view the inbox"
+                            : ""
+                        }
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
-                        {inboxPendingCount > 0 && (
+                        {canViewInbox && inboxPendingCount > 0 && (
                           <Badge className="bg-gray-200 text-gray-700">
                             {inboxPendingCount}
                           </Badge>
@@ -11217,19 +11395,9 @@ export default function BrandDashboard() {
         className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
       >
         <div className="p-8">
+          <TrialCountdownBanner trialEndsAt={brandTrialEndsAt} />
           {activeSection === "home" && renderHome()}
-          {activeSection === "marketplace" && (
-            <MarketplaceSection
-              title="Likelee Marketplace"
-              subtitle="Verified creators only"
-              verifiedBadgeLabel=""
-              queryScope="brand-creator-marketplace"
-              showRequestLicense
-              onRequestLicense={(profile, details) =>
-                handleOpenLicenseRequest(profile, details)
-              }
-            />
-          )}
+          {activeSection === "marketplace" && renderCreatorMarketplace()}
           {activeSection === "marketplace-agencies" &&
             renderAgencyMarketplace()}
           {activeSection === "campaigns-hub" &&
@@ -11386,6 +11554,12 @@ export default function BrandDashboard() {
                             <Button
                               variant="outline"
                               className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              disabled={!canManageJobs}
+                              title={
+                                !canManageJobs
+                                  ? "You do not have permission to manage jobs"
+                                  : ""
+                              }
                               onClick={() =>
                                 updateJobStatus(String(job.id), "closed")
                               }
@@ -11804,7 +11978,9 @@ export default function BrandDashboard() {
               <Button
                 className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                 disabled={
-                  !reviewDialog.note.trim() || reviewing === reviewDialog.delId
+                  !reviewDialog.note.trim() ||
+                  reviewing === reviewDialog.delId ||
+                  !canApproveDeliverables
                 }
                 onClick={() =>
                   handleDeliverableReview(

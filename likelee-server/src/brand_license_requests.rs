@@ -1,9 +1,16 @@
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
+use std::collections::HashMap;
 use tracing::error;
 
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier},
+    errors::sanitize_db_error,
+    team::{permissions::Permission, require_agency_permission},
+};
 
 #[derive(Deserialize)]
 pub struct CreateBrandLicenseRequest {
@@ -45,6 +52,15 @@ pub async fn create(
         return Err((
             StatusCode::BAD_REQUEST,
             "creator_id and campaign_title are required".to_string(),
+        ));
+    }
+
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
+    let tier = get_brand_plan_tier(&state, &effective_brand_id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_talent_browsing_requires_pro_plan".to_string(),
         ));
     }
 
@@ -188,8 +204,15 @@ pub async fn create(
         ));
     }
 
-    let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
+
+    tracing::info!(
+        "Brand license request - user.id: {}, user.role: {}, effective_brand_id: {}, agency_id: {}",
+        user.id,
+        user.role,
+        effective_brand_id,
+        agency_id
+    );
 
     // ── Step 2: Verify brand is connected to that agency (or auto-create connection) ──
     // First try brand_agency_connections table
@@ -319,7 +342,7 @@ pub async fn create(
                 let restore_result = state
                     .pg
                     .from(connection_table)
-                    .auth(state.supabase_service_key.clone())
+                    .auth(state.supabase_service_key.clone()) // service key required: cross-tenant connection restore (brand updating agency-side record)
                     .update(restore_payload.to_string())
                     .eq("id", &connection_id)
                     .execute()
@@ -371,7 +394,7 @@ pub async fn create(
         let create_conn_resp = state
             .pg
             .from("brand_agency_connections")
-            .auth(state.supabase_service_key.clone()) // Use service key to bypass RLS
+            .auth(state.supabase_service_key.clone()) // service key required: brand creating cross-tenant connection record
             .insert(connection_payload.to_string())
             .execute()
             .await;
@@ -385,6 +408,11 @@ pub async fn create(
                     tracing::info!(
                         "Successfully auto-created brand_agency_connection: {}",
                         text
+                    );
+                    crate::team::invalidate_brand_agency_connection_cache(
+                        &state,
+                        &effective_brand_id,
+                        &agency_id,
                     );
                 } else if crate::face_profiles::is_missing_relation_error(
                     &text,
@@ -406,7 +434,7 @@ pub async fn create(
                     let req_resp = state
                         .pg
                         .from("brand_agency_connection_requests")
-                        .auth(state.supabase_service_key.clone()) // Use service key to bypass RLS
+                        .auth(state.supabase_service_key.clone()) // service key required: cross-tenant connection request (brand creating agency-side request record)
                         .insert(req_payload.to_string())
                         .execute()
                         .await;
@@ -487,7 +515,7 @@ pub async fn create(
     let create_resp = state
         .pg
         .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone()) // Use service key to bypass RLS
+        .auth(user.access_token.clone())
         .insert(insert_payload.to_string())
         .select("id")
         .single()
@@ -530,12 +558,16 @@ pub async fn list_for_brand(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
+
+    // Using .auth() for brand-side to maintain RLS compliance. The .eq("brand_id", ...) filter
+    // provides additional security to ensure brand can only see their own requests.
     let resp = state
         .pg
         .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone())
-        .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),license_submission:license_submissions!brand_license_requests_submission_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at)")
-        .eq("brand_id", &user.id)
+        .auth(user.access_token.clone())
+        .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,agencies(agency_name,logo_url),creators(full_name,email),license_submission:license_submissions!brand_license_requests_submission_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at),license_submissions!license_submissions_brand_request_id_fkey(id,docuseal_slug,client_submitter_slug,status,created_at)")
+        .eq("brand_id", &effective_brand_id)
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -552,13 +584,130 @@ pub async fn list_for_brand(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
 
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| {
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| {
         error!(error = %e, "brand_license_requests JSON parse error");
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("JSON parse error: {}", e),
         )
     })?;
+
+    let submission_ids: Vec<&str> = rows
+        .iter()
+        .filter_map(|row| row.get("submission_id").and_then(|v| v.as_str()))
+        .filter(|id| !id.trim().is_empty())
+        .collect();
+    let brand_request_ids: Vec<&str> = rows
+        .iter()
+        .filter_map(|row| row.get("id").and_then(|v| v.as_str()))
+        .filter(|id| !id.trim().is_empty())
+        .collect();
+
+    if !submission_ids.is_empty() || !brand_request_ids.is_empty() {
+        let mut supplements_by_submission_id: HashMap<String, Vec<Value>> = HashMap::new();
+        let mut supplements_by_brand_request_id: HashMap<String, Vec<Value>> = HashMap::new();
+
+        let mut query = state
+            .pg
+            .from("license_submissions")
+            .select("id,brand_request_id,docuseal_slug,client_submitter_slug,status,created_at");
+
+        if !submission_ids.is_empty() {
+            query = query.in_("id", submission_ids.clone());
+        }
+        if !brand_request_ids.is_empty() {
+            query = query.in_("brand_request_id", brand_request_ids.clone());
+        }
+
+        if let Ok(extra_resp) = query.order("created_at.desc").limit(500).execute().await {
+            if extra_resp.status().is_success() {
+                if let Ok(extra_text) = extra_resp.text().await {
+                    if let Ok(extra_rows) = serde_json::from_str::<Vec<Value>>(&extra_text) {
+                        for sub in extra_rows {
+                            if let Some(id) = sub.get("id").and_then(|v| v.as_str()) {
+                                supplements_by_submission_id
+                                    .entry(id.to_string())
+                                    .or_default()
+                                    .push(sub.clone());
+                            }
+                            if let Some(brand_request_id) =
+                                sub.get("brand_request_id").and_then(|v| v.as_str())
+                            {
+                                supplements_by_brand_request_id
+                                    .entry(brand_request_id.to_string())
+                                    .or_default()
+                                    .push(sub.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for row in &mut rows {
+            let mut merged_submissions: Vec<Value> = Vec::new();
+            let mut seen_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+            let push_unique = |target: &mut Vec<Value>,
+                               seen: &mut std::collections::HashSet<String>,
+                               sub: Value| {
+                let id = sub
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .unwrap_or_default();
+                if id.is_empty() || seen.insert(id) {
+                    target.push(sub);
+                }
+            };
+
+            if let Some(existing) = row.get("license_submission").cloned() {
+                if let Some(arr) = existing.as_array() {
+                    for sub in arr.iter().cloned() {
+                        push_unique(&mut merged_submissions, &mut seen_ids, sub);
+                    }
+                } else if existing.is_object() {
+                    push_unique(&mut merged_submissions, &mut seen_ids, existing);
+                }
+            }
+
+            if let Some(existing) = row.get("license_submissions").cloned() {
+                if let Some(arr) = existing.as_array() {
+                    for sub in arr.iter().cloned() {
+                        push_unique(&mut merged_submissions, &mut seen_ids, sub);
+                    }
+                } else if existing.is_object() {
+                    push_unique(&mut merged_submissions, &mut seen_ids, existing);
+                }
+            }
+
+            if let Some(submission_id) = row.get("submission_id").and_then(|v| v.as_str()) {
+                if let Some(extra) = supplements_by_submission_id.get(submission_id) {
+                    for sub in extra.iter().cloned() {
+                        push_unique(&mut merged_submissions, &mut seen_ids, sub);
+                    }
+                }
+            }
+
+            if let Some(brand_request_id) = row.get("id").and_then(|v| v.as_str()) {
+                if let Some(extra) = supplements_by_brand_request_id.get(brand_request_id) {
+                    for sub in extra.iter().cloned() {
+                        push_unique(&mut merged_submissions, &mut seen_ids, sub);
+                    }
+                }
+            }
+
+            if let Some(obj) = row.as_object_mut() {
+                if let Some(first) = merged_submissions.first().cloned() {
+                    obj.insert("license_submission".to_string(), first);
+                }
+                obj.insert(
+                    "license_submissions".to_string(),
+                    Value::Array(merged_submissions),
+                );
+            }
+        }
+    }
 
     Ok(Json(BrandLicenseRequestListResponse { requests: rows }))
 }
@@ -567,16 +716,18 @@ pub async fn list_for_agency(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<BrandLicenseRequestListResponse>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
+    // Note: Not using .auth() here because the RLS policy uses is_agency_team_member(agency_id)
+    // which checks against organization_memberships, not auth.uid(). Using .auth() would cause
+    // the join to fail due to RLS on the brands table. The .eq("agency_id", agency_id) filter
+    // ensures only the user's agency data is returned.
     let resp = state
         .pg
         .from("brand_license_requests")
-        .auth(state.supabase_service_key.clone())  // Use service key to bypass RLS for debugging
         .select("id,brand_id,agency_id,creator_id,talent_id,talent_name,campaign_title,description,category,exclusivity,modifications_allowed,territory,usage_scope,license_fee,duration_days,license_start_date,license_end_date,status,decline_reason,submission_id,notes,created_at,brands(company_name,email),creators(full_name,email,profile_photo_url)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -614,9 +765,8 @@ pub async fn update_status_for_agency(
     user: AuthUser,
     Json(payload): Json<UpdateBrandLicenseRequestStatus>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
     if payload.brand_request_ids.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "No brand_request_ids".to_string()));
     }
@@ -646,7 +796,7 @@ pub async fn update_status_for_agency(
         .from("brand_license_requests")
         .update(serde_json::Value::Object(update).to_string())
         .in_("id", ids)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

@@ -27,6 +27,15 @@ pub fn build_router(state: AppState) -> Router {
 
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // --- Admin Endpoints ---
+        .route(
+            "/api/admin/storage/backfill",
+            post(crate::admin::backfill_storage),
+        )
+        .route(
+            "/api/admin/storage/verify-parity",
+            get(crate::admin::verify_storage_parity),
+        )
         // --- Messaging Hub ---
         .route(
             "/api/conversations",
@@ -326,6 +335,33 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/talent-invites/:id/revoke",
             post(crate::agency_talent_invites::revoke_for_agency),
+        )
+        .route("/api/team/context", get(crate::team::get_context))
+        .route("/api/team/members", get(crate::team::list_members))
+        .route("/api/team/audit-logs", get(crate::team::list_audit_logs))
+        .route(
+            "/api/team/invites",
+            get(crate::team::list_invites).post(crate::team::create_invite),
+        )
+        .route(
+            "/api/team/members/:user_id/role",
+            post(crate::team::update_member_role),
+        )
+        .route(
+            "/api/team/members/:user_id",
+            axum::routing::delete(crate::team::remove_member),
+        )
+        .route(
+            "/api/invites/team/:token",
+            get(crate::team::get_invite_by_token),
+        )
+        .route(
+            "/api/invites/team/:token/accept",
+            post(crate::team::accept_invite_by_token),
+        )
+        .route(
+            "/api/invites/team/:token/decline",
+            post(crate::team::decline_invite_by_token),
         )
         .route(
             "/api/agency/campaigns/:id",
@@ -779,6 +815,81 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/brand-register", post(crate::brands::register))
         .route("/api/brand-profile", post(crate::brands::update))
         .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        // --- Brand Notifications ---
+        .route(
+            "/api/brand/notifications",
+            get(crate::brands::list_notifications),
+        )
+        .route(
+            "/api/brand/notifications/count",
+            get(crate::brands::get_notification_count),
+        )
+        .route(
+            "/api/brand/notifications/:id/read",
+            post(crate::brands::mark_notification_read),
+        )
+        // --- Brand Badge Counts ---
+        .route(
+            "/api/brand/inbox/unread-count",
+            get(crate::brands::get_inbox_unread_count),
+        )
+        .route(
+            "/api/brand/inbox/mark-viewed",
+            post(crate::brands::mark_inbox_packages_viewed),
+        )
+        .route(
+            "/api/brand/jobs/unread-count",
+            get(crate::brands::get_jobs_unread_count),
+        )
+        .route(
+            "/api/brand/jobs/mark-viewed",
+            post(crate::brands::mark_job_applications_viewed),
+        )
+        .route(
+            "/api/brand/licensing/contracts-count",
+            get(crate::brands::get_licensing_contracts_count),
+        )
+        .route(
+            "/api/brand/billing/checkout",
+            post(crate::billing::create_brand_subscription_checkout),
+        )
+        .route(
+            "/api/brand/billing/portal",
+            post(crate::billing::create_brand_billing_portal),
+        )
+        .route(
+            "/api/brand/billing/studio-addon/checkout",
+            post(crate::billing::create_brand_studio_addon_checkout),
+        )
+        .route(
+            "/api/brand/billing/studio-addon/verify",
+            post(crate::billing::verify_brand_studio_addon_checkout),
+        )
+        .route(
+            "/api/brand/billing/status",
+            get(crate::billing::get_brand_billing_status),
+        )
+        .route(
+            "/api/brand/billing/spend",
+            get(crate::brand_campaigns::get_brand_spend_analytics),
+        )
+        .route(
+            "/api/brand/billing/invoices",
+            get(crate::billing::list_brand_invoices),
+        )
+        .route(
+            "/api/brand/billing/budget-settings",
+            get(crate::billing::get_brand_budget_settings)
+                .put(crate::billing::update_brand_budget_settings),
+        )
+        .route(
+            "/api/cron/budget-alerts",
+            post(crate::billing::check_budget_alerts_cron),
+        )
+        .route(
+            "/api/cron/reset-monthly-budget-alerts",
+            post(crate::billing::reset_monthly_budget_alerts),
+        )
         .route(
             "/api/brand/campaigns",
             post(crate::brand_campaigns::create_campaign)
@@ -1180,6 +1291,22 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_agency_subscription_checkout),
         )
         .route(
+            "/api/creator/billing/checkout",
+            post(crate::billing::create_creator_subscription_checkout),
+        )
+        .route(
+            "/api/creator/billing/upgrade",
+            post(crate::billing::upgrade_creator_subscription),
+        )
+        .route(
+            "/api/creator/billing/status",
+            get(crate::billing::get_creator_billing_status),
+        )
+        .route(
+            "/api/creator/billing/portal",
+            post(crate::billing::create_creator_billing_portal),
+        )
+        .route(
             "/api/agency/billing/change-plan",
             post(crate::billing::change_agency_subscription_plan),
         )
@@ -1190,6 +1317,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/billing/addons/irl-booking/checkout",
             post(crate::billing::create_agency_irl_booking_addon_checkout),
+        )
+        .route(
+            "/api/agency/billing/addons/studio/checkout",
+            post(crate::billing::create_agency_studio_addon_checkout),
         )
         .route(
             "/api/agency/billing/addons/seats",

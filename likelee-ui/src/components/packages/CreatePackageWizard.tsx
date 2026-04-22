@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   Copy,
   ShieldCheck,
+  Lock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -54,6 +55,7 @@ import { Switch } from "@/components/ui/switch";
 import { AssetSelector } from "./AssetSelector";
 import { ensureHexColor } from "@/utils/color";
 import { base44 } from "@/api/base44Client";
+import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
 
@@ -84,6 +86,8 @@ export function CreatePackageWizard({
   offerContext = null,
 }: CreatePackageWizardProps) {
   const { user } = useAuth();
+  const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
+  const canViewConnections = hasPermission("view_brand_connections");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralTitle = isSportsAgency ? "Athletes" : "Talents";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
@@ -103,10 +107,9 @@ export function CreatePackageWizard({
     name: string;
   } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [createdPackage, setCreatedPackage] = useState<any>(null);
-  const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const coverInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditMode = !!packageToEdit && mode !== "send-from-template";
@@ -224,7 +227,12 @@ export function CreatePackageWizard({
           const embeddedTalent =
             it?.talent || it?.agency_users || it?.talent_profile || null;
           const talentId = String(
-            it?.talent_id || embeddedTalent?.id || it?.id || "",
+            it?.talent_id ||
+              embeddedTalent?.id ||
+              it?.creator_id ||
+              it?.relationship_id ||
+              it?.id ||
+              "",
           ).trim();
           if (!talentId) return null;
           const assets = Array.isArray(it?.assets)
@@ -382,13 +390,13 @@ export function CreatePackageWizard({
         : packageApi.createPackage(payload);
     },
     onSuccess: (data: any) => {
-      setCreatedPackage(data);
-      setShowSuccess(true);
       queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-package-templates"] });
       queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
       if (onSuccess) onSuccess();
+      onOpenChange(false);
+      resetForm();
     },
   });
 
@@ -426,11 +434,11 @@ export function CreatePackageWizard({
       return createResp?.package;
     },
     onSuccess: (pkg: any) => {
-      setCreatedPackage(pkg);
-      setShowSuccess(true);
       queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
       if (onSuccess) onSuccess();
+      onOpenChange(false);
+      resetForm();
     },
   });
 
@@ -565,6 +573,15 @@ export function CreatePackageWizard({
           variant: "destructive",
         });
       }
+    }
+
+    if (formData.password_protected && !formData.password.trim()) {
+      return toast({
+        title: "Password Required",
+        description:
+          "Please set a password for this protected package in the 'Customize' step.",
+        variant: "destructive",
+      });
     }
 
     if (isOfferMode) {
@@ -774,59 +791,92 @@ export function CreatePackageWizard({
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                        Cover Image URL
+                        Cover Image
                       </Label>
-                      <Input
-                        placeholder="https://images.unsplash.com/..."
-                        value={formData.cover_image_url}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            cover_image_url: e.target.value,
-                          })
-                        }
-                        className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium placeholder:text-gray-400"
-                      />
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                        <input
-                          ref={coverInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleCoverUpload}
-                          className="hidden"
+                      <div className="flex gap-3">
+                        <Input
+                          placeholder="https://images.unsplash.com/..."
+                          value={formData.cover_image_url}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              cover_image_url: e.target.value,
+                            })
+                          }
+                          className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium placeholder:text-gray-400 flex-1"
                         />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => coverInputRef.current?.click()}
-                          disabled={isUploadingCover}
-                          className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2 w-full sm:w-auto"
-                        >
-                          {isUploadingCover ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                        <label className="h-12 px-4 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-lg cursor-pointer flex items-center justify-center gap-2 transition-all duration-300 shrink-0">
+                          {coverUploading ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
                           ) : (
-                            <SwitchCamera className="w-4 h-4" />
+                            <ImageIcon className="w-4 h-4 text-gray-500" />
                           )}
-                          {isUploadingCover
-                            ? "Uploading..."
-                            : "Upload from device"}
-                        </Button>
-                        {String(formData.cover_image_url || "").trim() && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                cover_image_url: "",
-                              }))
-                            }
-                            className="h-10 px-3 rounded-xl font-bold text-gray-600 w-full sm:w-auto"
-                          >
-                            Clear
-                          </Button>
-                        )}
+                          <span className="text-xs font-bold text-gray-600">
+                            {coverUploading ? "Uploading..." : "Upload"}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={coverUploading}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (!file.type.startsWith("image/")) {
+                                toast({
+                                  title: "Invalid file",
+                                  description: "Please select an image file.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              setCoverUploading(true);
+                              try {
+                                const fd = new FormData();
+                                fd.append("visibility", "public");
+                                fd.append("file", file);
+                                const resp = await base44.post<{
+                                  file_url?: string;
+                                  public_url?: string;
+                                }>("/api/agency/storage/files/upload", fd);
+                                const url = resp?.public_url || resp?.file_url;
+                                if (url) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    cover_image_url: url,
+                                  }));
+                                  toast({ title: "Image uploaded" });
+                                } else {
+                                  throw new Error("Upload returned no URL");
+                                }
+                              } catch (err: any) {
+                                toast({
+                                  title: "Upload failed",
+                                  description:
+                                    err?.message || "Please try again.",
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setCoverUploading(false);
+                                e.target.value = "";
+                              }
+                            }}
+                          />
+                        </label>
                       </div>
+                      {formData.cover_image_url && (
+                        <div className="mt-2 rounded-lg overflow-hidden border border-gray-200 max-w-[200px]">
+                          <img
+                            src={formData.cover_image_url}
+                            alt="Cover preview"
+                            className="w-full h-24 object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-8 bg-gray-50/50 backdrop-blur-sm rounded-[2rem] border border-gray-100 space-y-8">
@@ -1219,34 +1269,66 @@ export function CreatePackageWizard({
                             : "Complete the recipient details to publish the package"}
                         </p>
                       </div>
+
+                      {formData.password_protected &&
+                        !formData.password.trim() && (
+                          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
+                            <Lock className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-xs font-black text-red-900 uppercase tracking-widest">
+                                Password Missing
+                              </p>
+                              <p className="text-sm text-red-700 font-medium mt-1">
+                                This package has access control enabled but no
+                                password is set. Please go back to the{" "}
+                                <span className="font-bold">Customize</span>{" "}
+                                step to set one.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       {isOfferMode && (
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
                             Recipient Brand *
                           </Label>
-                          <select
-                            value={selectedBrandId}
-                            onChange={(e) => setSelectedBrandId(e.target.value)}
-                            className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
-                          >
-                            <option value="">Select a brand…</option>
-                            {(Array.isArray(connectedBrands)
-                              ? connectedBrands
-                              : []
-                            ).map((c: any) => {
-                              const id = String(c?.brand_id || "").trim();
-                              const label =
-                                String(c?.brands?.company_name || "").trim() ||
-                                String(c?.brands?.email || "").trim() ||
-                                id;
-                              if (!id) return null;
-                              return (
-                                <option key={id} value={id}>
-                                  {label}
-                                </option>
-                              );
-                            })}
-                          </select>
+                          {canViewConnections ? (
+                            <select
+                              value={selectedBrandId}
+                              onChange={(e) =>
+                                setSelectedBrandId(e.target.value)
+                              }
+                              className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                            >
+                              <option value="">Select a brand…</option>
+                              {(Array.isArray(connectedBrands)
+                                ? connectedBrands
+                                : []
+                              ).map((c: any) => {
+                                const id = String(c?.brand_id || "").trim();
+                                const label =
+                                  String(
+                                    c?.brands?.company_name || "",
+                                  ).trim() ||
+                                  String(c?.brands?.email || "").trim() ||
+                                  id;
+                                if (!id) return null;
+                                return (
+                                  <option key={id} value={id}>
+                                    {label}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          ) : (
+                            <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex items-center gap-3">
+                              <Lock className="w-5 h-5 text-red-600" />
+                              <p className="text-sm text-red-700 font-medium">
+                                Permission Required: You do not have access to
+                                view brand connections.
+                              </p>
+                            </div>
+                          )}
                           <p className="text-xs text-gray-500 font-medium">
                             This package will be delivered to the brand’s
                             dashboard inbox for this offer.
@@ -1435,7 +1517,11 @@ export function CreatePackageWizard({
                                 >
                                   <opt.icon className="w-3 h-3" />
                                   <span className="text-[10px] font-black uppercase tracking-tight">
-                                    {opt.label}
+                                    {opt.label === "Locked" && opt.enabled
+                                      ? formData.password.trim()
+                                        ? "Locked (Set)"
+                                        : "Locked (Empty!)"
+                                      : opt.label}
                                   </span>
                                 </div>
                               ))}
@@ -1468,132 +1554,67 @@ export function CreatePackageWizard({
                     </div>
                   </div>
                 )}
-
-                {showSuccess && createdPackage && (
-                  <div className="flex flex-col items-center justify-center p-10 py-20 text-center space-y-8 h-full">
-                    <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="w-12 h-12 text-green-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-4xl font-black text-gray-900 tracking-tight">
-                        Package Published!
-                      </h2>
-                      <p className="text-gray-500 font-medium mt-2 max-w-sm mx-auto">
-                        Your curated selection is now live and{" "}
-                        {isOfferMode
-                          ? "has been sent to the brand inbox."
-                          : formData.client_email
-                            ? `an invitation has been sent to ${formData.client_email}.`
-                            : "is ready to be shared."}
-                      </p>
-                    </div>
-
-                    {!isOfferMode && (
-                      <div className="w-full max-w-md p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                          Shareable Link
-                        </p>
-                        <div className="flex gap-2">
-                          <Input
-                            readOnly
-                            value={`${window.location.origin}/share/package/${createdPackage.access_token}`}
-                            className="bg-white border-gray-200 font-bold text-indigo-600 h-12"
-                          />
-                          <Button
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                `${window.location.origin}/share/package/${createdPackage.access_token}`,
-                              );
-                              toast({
-                                title: "Link Copied",
-                                description:
-                                  "The portal address is now in your clipboard.",
-                              });
-                            }}
-                            className="bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-white h-12 w-12 p-0"
-                          >
-                            <Badge className="bg-indigo-50 text-indigo-600 border-none">
-                              Copy
-                            </Badge>
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-
-                    <Button
-                      onClick={() => {
-                        onOpenChange(false);
-                        resetForm();
-                      }}
-                      className="bg-gray-900 text-white rounded-xl h-12 px-10 font-black uppercase text-xs tracking-widest"
-                    >
-                      Done
-                    </Button>
-                  </div>
-                )}
               </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Footer */}
-          {!showSuccess && (
-            <div className="p-4 sm:p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  if (step === 0) onOpenChange(false);
-                  else prevStep();
-                }}
-                className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
-              >
-                {step === 0 ? (
-                  "Cancel"
-                ) : (
-                  <>
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
-                  </>
-                )}
-              </Button>
+          <div className="p-4 sm:p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (step === 0) onOpenChange(false);
+                else prevStep();
+              }}
+              className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+            >
+              {step === 0 ? (
+                "Cancel"
+              ) : (
+                <>
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                </>
+              )}
+            </Button>
 
-              <div className="flex gap-3 w-full sm:w-auto">
-                {step < totalSteps - 1 ? (
-                  <Button
-                    onClick={nextStep}
-                    disabled={isNavigating}
-                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group w-full sm:w-auto"
-                  >
-                    {isNavigating ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        Continue{" "}
-                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    )}
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={mutation.isPending || offerSendMutation.isPending}
-                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center justify-center gap-2 w-full sm:w-auto"
-                  >
-                    {mutation.isPending || offerSendMutation.isPending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : isTemplateMode ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                      <Send className="w-5 h-5" />
-                    )}
-                    {isTemplateMode
-                      ? isEditMode
-                        ? "Save Template"
-                        : "Done"
-                      : "Publish & Send"}
-                  </Button>
-                )}
-              </div>
+            <div className="flex gap-3 w-full sm:w-auto">
+              {step < totalSteps - 1 ? (
+                <Button
+                  onClick={nextStep}
+                  disabled={isNavigating}
+                  className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group w-full sm:w-auto"
+                >
+                  {isNavigating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Continue{" "}
+                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSubmit}
+                  disabled={mutation.isPending || offerSendMutation.isPending}
+                  className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center justify-center gap-2 w-full sm:w-auto"
+                >
+                  {mutation.isPending || offerSendMutation.isPending ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isTemplateMode ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                  {isTemplateMode
+                    ? isEditMode
+                      ? "Save Template"
+                      : "Done"
+                    : "Publish & Send"}
+                </Button>
+              )}
             </div>
-          )}
+          </div>
         </DialogContent>
       </Dialog>
 

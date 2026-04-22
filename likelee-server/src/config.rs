@@ -138,6 +138,18 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_AGENCY_PRO_BASE_PRICE_ID", default = "")]
     pub stripe_agency_pro_base_price_id: String,
 
+    #[envconfig(from = "STRIPE_CREATOR_BASIC_PRICE_ID", default = "")]
+    pub stripe_creator_basic_price_id: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_PRO_PRICE_ID", default = "")]
+    pub stripe_creator_pro_price_id: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_BASIC_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_creator_basic_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_PRO_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_creator_pro_annual_price_id: String,
+
     #[envconfig(from = "STRIPE_AGENCY_PRO_HEADCOUNT_PRICE_ID", default = "")]
     pub stripe_agency_pro_headcount_price_id: String,
 
@@ -152,6 +164,21 @@ pub struct ServerConfig {
 
     #[envconfig(from = "STRIPE_AGENCY_IRL_BOOKING_ANNUAL_PRICE_ID", default = "")]
     pub stripe_agency_irl_booking_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_BASIC_PRICE_ID", default = "")]
+    pub stripe_brand_basic_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_BASIC_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_brand_basic_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_PRO_PRICE_ID", default = "")]
+    pub stripe_brand_pro_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_PRO_ANNUAL_PRICE_ID", default = "")]
+    pub stripe_brand_pro_annual_price_id: String,
+
+    #[envconfig(from = "STRIPE_BRAND_STUDIO_ADDON_PRICE_ID", default = "")]
+    pub stripe_brand_studio_addon_price_id: String,
 
     #[envconfig(from = "STRIPE_CHECKOUT_SUCCESS_URL", default = "")]
     pub stripe_checkout_success_url: String,
@@ -170,6 +197,12 @@ pub struct ServerConfig {
 
     #[envconfig(from = "STRIPE_STUDIO_CANCEL_URL", default = "")]
     pub stripe_studio_cancel_url: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_SUCCESS_URL", default = "")]
+    pub stripe_creator_success_url: String,
+
+    #[envconfig(from = "STRIPE_CREATOR_CANCEL_URL", default = "")]
+    pub stripe_creator_cancel_url: String,
 
     #[envconfig(from = "STRIPE_STUDIO_PRICE_IDS", default = "")]
     pub stripe_studio_price_ids: String,
@@ -274,6 +307,14 @@ pub struct ServerConfig {
     /// TTL for idempotency records in seconds (default: 24 hours)
     #[envconfig(from = "CACHE_IDEMPOTENCY_TTL_SECS", default = "86400")]
     pub cache_idempotency_ttl_secs: u64,
+
+    /// Secret token for authenticating cron job endpoints
+    #[envconfig(from = "CRON_SECRET", default = "")]
+    pub cron_secret: String,
+
+    /// Brand trial period in days (default: 14)
+    #[envconfig(from = "BRAND_TRIAL_DAYS", default = "14")]
+    pub brand_trial_days: u32,
 }
 
 #[derive(Clone)]
@@ -286,6 +327,7 @@ pub struct AppState {
     pub supabase_jwt_secret: String,
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
+    pub supabase_bucket_temp: String,
     pub elevenlabs_api_key: String,
 
     pub stripe_secret_key: String,
@@ -305,15 +347,26 @@ pub struct AppState {
     pub stripe_agency_basic_headcount_price_id: String,
     pub stripe_agency_basic_headcount_annual_price_id: String,
     pub stripe_agency_pro_base_price_id: String,
+    pub stripe_creator_basic_price_id: String,
+    pub stripe_creator_pro_price_id: String,
+    pub stripe_creator_basic_annual_price_id: String,
+    pub stripe_creator_pro_annual_price_id: String,
     pub stripe_agency_pro_base_annual_price_id: String,
     pub stripe_agency_pro_headcount_price_id: String,
     pub stripe_agency_pro_headcount_annual_price_id: String,
     pub stripe_agency_irl_booking_price_id: String,
     pub stripe_agency_irl_booking_annual_price_id: String,
+    pub stripe_brand_basic_price_id: String,
+    pub stripe_brand_basic_annual_price_id: String,
+    pub stripe_brand_pro_price_id: String,
+    pub stripe_brand_pro_annual_price_id: String,
+    pub stripe_brand_studio_addon_price_id: String,
     pub stripe_checkout_success_url: String,
     pub stripe_checkout_cancel_url: String,
     pub stripe_licensing_success_url: String,
     pub stripe_licensing_cancel_url: String,
+    pub stripe_creator_success_url: String,
+    pub stripe_creator_cancel_url: String,
 
     pub stripe_studio_success_url: String,
     pub stripe_studio_cancel_url: String,
@@ -373,4 +426,10 @@ pub struct AppState {
     pub cache_l3: std::sync::Arc<crate::cache::ApplicationCache>,
     pub cache_idempotency: std::sync::Arc<crate::cache::IdempotencyStore>,
     pub cache_metrics: std::sync::Arc<crate::cache::CacheMetrics>,
+
+    // Cron authentication
+    pub cron_secret: String,
+
+    // Brand trial configuration
+    pub brand_trial_days: u32,
 }

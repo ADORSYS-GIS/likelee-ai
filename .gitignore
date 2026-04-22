@@ -127,6 +127,10 @@ public/build/
 .vscode/
 .idea/
 
+# Kilo CLI
+.kilo/
+.kilocode/
+
 # OS files
 .DS_Store
 Thumbs.db

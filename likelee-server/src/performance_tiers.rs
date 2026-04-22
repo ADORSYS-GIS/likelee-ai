@@ -237,7 +237,7 @@ pub async fn get_performance_tiers(
 ) -> Result<Json<PerformanceTiersResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let start_total = Instant::now();
-    let agency_id = &auth_user.id;
+    let agency_id = auth_user.effective_org_id();
     let today = today_iso();
 
     // Parallelize calls
@@ -261,7 +261,6 @@ pub async fn get_performance_tiers(
             .eq("agency_id", agency_id)
             .eq("role", "talent")
             .in_("status", vec!["active", "inactive"])
-            .not("is", "creator_id", "null")
             .limit(500)
             .select("id, creator_id, full_legal_name, profile_photo_url, performance_tier_name")
             .execute(),
@@ -588,6 +587,14 @@ pub async fn get_performance_tiers(
                         rate,
                         true,
                     )
+                } else if creator_id.is_none() {
+                    (
+                        "internal".to_string(),
+                        "tier_default".to_string(),
+                        false,
+                        assigned_tier.commission_rate,
+                        false,
+                    )
                 } else {
                     (
                         "internal".to_string(),
@@ -733,7 +740,7 @@ pub async fn update_talent_commission(
     Json(payload): Json<UpdateTalentCommissionRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
-    let agency_id = &auth_user.id;
+    let agency_id = auth_user.effective_org_id();
     let creator_id = payload.creator_id.trim().to_string();
     if creator_id.is_empty() {
         return Err((
@@ -941,7 +948,7 @@ pub async fn bulk_update_talent_commissions(
     Json(payload): Json<BulkUpdateTalentCommissionsRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
-    let agency_id = &auth_user.id;
+    let agency_id = auth_user.effective_org_id();
 
     let mut updated: usize = 0;
     let mut reset: usize = 0;
@@ -1178,7 +1185,7 @@ pub async fn get_commission_breakdowns(
     auth_user: AuthUser,
 ) -> Result<Json<Vec<CommissionBreakdown>>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
-    let agency_id = &auth_user.id;
+    let agency_id = auth_user.effective_org_id();
     let resp = state.pg.from("payments").eq("agency_id", agency_id).eq("status", "succeeded").select("id, created_at, gross_cents, talent_earnings_cents, agency_users:talent_id(full_legal_name), brands:brand_id(name)").order("created_at.desc").limit(50).execute().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
@@ -1243,7 +1250,7 @@ pub async fn get_agency_payout_weights(
     auth_user: AuthUser,
 ) -> Result<Json<AgencyPayoutWeightsResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
-    let agency_id = &auth_user.id;
+    let agency_id = auth_user.effective_org_id();
     let (resp_talents, resp_stats, resp_tiers) = tokio::try_join!(
         state.pg.from("agency_users").select("id, full_legal_name, stage_name, profile_photo_url, performance_tier_name").eq("agency_id", agency_id).eq("role", "talent").execute(),
         async {

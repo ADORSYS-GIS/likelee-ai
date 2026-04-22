@@ -192,6 +192,21 @@ export const LicensingRequestsView: React.FC<LicensingRequestsViewProps> = ({
               ? submissions
                   .filter((sub) => sub?.status !== "draft") // Exclude drafts
                   .sort((a, b) => {
+                    const linkedSubmissionId = String(
+                      req?.submission_id || "",
+                    ).trim();
+                    const aId = String(a?.id || "").trim();
+                    const bId = String(b?.id || "").trim();
+                    const aMatchesLinked = linkedSubmissionId
+                      ? aId === linkedSubmissionId
+                      : false;
+                    const bMatchesLinked = linkedSubmissionId
+                      ? bId === linkedSubmissionId
+                      : false;
+
+                    if (aMatchesLinked && !bMatchesLinked) return -1;
+                    if (!aMatchesLinked && bMatchesLinked) return 1;
+
                     // Prioritize submissions with signing URLs
                     const aHasUrl = !!(
                       a?.client_submitter_slug || a?.docuseal_slug

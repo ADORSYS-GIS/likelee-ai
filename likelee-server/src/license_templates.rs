@@ -130,7 +130,7 @@ pub async fn list(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<Vec<LicenseTemplate>>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     let resp = state
         .pg
@@ -161,7 +161,7 @@ pub async fn stats(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<TemplateStats>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     let resp = state
         .pg
@@ -239,7 +239,7 @@ pub async fn create(
     auth_user: AuthUser,
     Json(payload): Json<CreateTemplateRequest>,
 ) -> Result<Json<LicenseTemplate>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     let body = json!({
         "agency_id": agency_id,
@@ -309,7 +309,7 @@ pub async fn update(
     Path(id): Path<String>,
     Json(payload): Json<CreateTemplateRequest>,
 ) -> Result<Json<LicenseTemplate>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     let body = json!({
         "template_name": payload.template_name,
@@ -377,7 +377,7 @@ pub async fn delete_template(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     state
         .pg
@@ -398,7 +398,7 @@ pub async fn copy(
     auth_user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<LicenseTemplate>, (StatusCode, String)> {
-    let agency_id = auth_user.id;
+    let agency_id = auth_user.effective_org_id().to_string();
 
     // 1. Fetch original
     let resp = state

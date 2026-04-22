@@ -1,8 +1,19 @@
 use crate::{
+    activity::{log_activity_event, log_activity_event_with_subject},
     auth::AuthUser,
     config::AppState,
+    entitlements::{
+        brand_allows_campaign_collaboration, brand_campaign_limit, get_brand_plan_tier, PlanTier,
+    },
     errors::sanitize_db_error,
+    pricing_defaults::should_default_visibility_on,
     services::docuseal::{DocuSealClient, Submitter},
+    storage::{
+        canonical_object_path, delete_object, download_object, insert_asset_record,
+        sanitize_file_name, soft_delete_asset_record, upload_object, StorageAssetRecord,
+        StorageContextType, StorageOwnerType, StorageVisibility,
+    },
+    team::{self, permissions::Permission},
 };
 use axum::{
     body::Body,
@@ -19,7 +30,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
 use stripe_sdk;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 fn offer_contract_status_is_signed(value: &serde_json::Value) -> bool {
@@ -394,6 +405,136 @@ fn is_creator_like(role: &str) -> bool {
     role == "creator" || role == "talent"
 }
 
+fn offer_status_counts_toward_campaign_slot(status: &str) -> bool {
+    !matches!(
+        status.trim().to_lowercase().as_str(),
+        "cancelled" | "declined" | "expired" | "completed"
+    )
+}
+
+fn campaign_is_past_end(campaign: &serde_json::Value) -> bool {
+    if campaign
+        .get("completed_at")
+        .and_then(|v| v.as_str())
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false)
+    {
+        return true;
+    }
+
+    let start_date = campaign
+        .get("start_date")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    if start_date.is_empty() {
+        return false;
+    }
+
+    let Ok(start) = chrono::NaiveDate::parse_from_str(start_date, "%Y-%m-%d") else {
+        return false;
+    };
+    let duration_days = campaign
+        .get("duration_days")
+        .and_then(|v| v.as_i64())
+        .filter(|value| *value > 0)
+        .unwrap_or(30);
+    let end = start + chrono::Duration::days(duration_days.saturating_sub(1));
+    chrono::Utc::now().date_naive() > end
+}
+
+async fn active_brand_campaign_slot_ids(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<std::collections::HashSet<String>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("campaign_offers")
+        .select("brand_campaign_id,status,brand_campaigns(start_date,duration_days,completed_at)")
+        .eq("brand_id", brand_id)
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut ids = std::collections::HashSet::new();
+    for row in rows {
+        let campaign_id = row
+            .get("brand_campaign_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("");
+        if campaign_id.is_empty() {
+            continue;
+        }
+
+        let status = row.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        if !offer_status_counts_toward_campaign_slot(status) {
+            continue;
+        }
+
+        let campaign = row
+            .get("brand_campaigns")
+            .cloned()
+            .unwrap_or(serde_json::Value::Null);
+        if campaign_is_past_end(&campaign) {
+            continue;
+        }
+
+        ids.insert(campaign_id.to_string());
+    }
+
+    Ok(ids)
+}
+
+async fn ensure_brand_campaign_collaboration_access(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<PlanTier, (StatusCode, String)> {
+    let tier = get_brand_plan_tier(state, brand_id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_campaign_collaboration_requires_pro_plan".to_string(),
+        ));
+    }
+    Ok(tier)
+}
+
+async fn enforce_brand_campaign_limit(
+    state: &AppState,
+    brand_id: &str,
+    campaign_id: &str,
+    tier: PlanTier,
+) -> Result<(), (StatusCode, String)> {
+    let Some(limit) = brand_campaign_limit(tier) else {
+        return Ok(());
+    };
+
+    let active_campaign_ids = active_brand_campaign_slot_ids(state, brand_id).await?;
+    if active_campaign_ids.contains(campaign_id) {
+        return Ok(());
+    }
+
+    if active_campaign_ids.len() >= limit {
+        return Err((
+            StatusCode::FORBIDDEN,
+            format!("brand_campaign_limit_reached:{limit}"),
+        ));
+    }
+
+    Ok(())
+}
+
 async fn resolve_agency_talent(
     state: &AppState,
     agency_id: &str,
@@ -628,11 +769,13 @@ async fn ensure_offer_access(
         .eq("id", offer_id);
 
     if user.role == "brand" {
-        req = req.eq("brand_id", user.id.as_str());
+        let brand_access = team::require_brand_access(state, user).await?;
+        req = req.eq("brand_id", brand_access.organization_id.as_str());
     } else if user.role == "agency" {
+        let agency_access = team::require_agency_access(state, user).await?;
         req = req
             .eq("target_type", "agency")
-            .eq("target_id", user.id.as_str());
+            .eq("target_id", agency_access.organization_id.as_str());
     } else if !is_creator_like(&user.role) {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
@@ -843,9 +986,9 @@ pub async fn create_campaign(
     user: AuthUser,
     Json(payload): Json<CreateBrandCampaignRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "brand" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let brand_access =
+        team::require_brand_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let brand_id = brand_access.organization_id.clone();
 
     let name = trim_non_empty(&payload.name, "name")?;
     let objective = trim_non_empty(&payload.objective, "objective")?;
@@ -855,7 +998,7 @@ pub async fn create_campaign(
     let start_date = trim_non_empty(&payload.start_date, "start_date")?;
 
     let insert_payload = json!({
-        "brand_id": user.id,
+        "brand_id": brand_id,
         "name": name,
         "objective": objective,
         "category": category,
@@ -901,13 +1044,13 @@ pub async fn create_campaign(
         .get("name")
         .and_then(|v| v.as_str())
         .unwrap_or("campaign");
-    let brand_name = resolve_brand_name(&state, &user.id)
+    let brand_name = resolve_brand_name(&state, &brand_id)
         .await
         .unwrap_or_else(|| "Brand".to_string());
     if !campaign_id.is_empty() {
         log_activity_event(
             &state,
-            &user.id,
+            &brand_id,
             Some(&campaign_id),
             "brand",
             &brand_name,
@@ -925,11 +1068,11 @@ pub async fn update_campaign(
     Path(campaign_id): Path<String>,
     Json(payload): Json<UpdateBrandCampaignRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "brand" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let brand_access =
+        team::require_brand_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let brand_id = brand_access.organization_id.clone();
 
-    let _existing = ensure_brand_campaign_ownership(&state, &user.id, &campaign_id).await?;
+    let _existing = ensure_brand_campaign_ownership(&state, &brand_id, &campaign_id).await?;
     let mut update = serde_json::Map::new();
 
     if let Some(v) = payload.name.as_deref() {
@@ -1003,7 +1146,7 @@ pub async fn update_campaign(
         .pg
         .from("brand_campaigns")
         .eq("id", &campaign_id)
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .update(serde_json::Value::Object(update).to_string())
         .select("*")
         .single()
@@ -1028,16 +1171,16 @@ pub async fn mark_campaign_done(
     user: AuthUser,
     Path(campaign_id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "brand" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let brand_access =
+        team::require_brand_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let brand_id = brand_access.organization_id.clone();
 
     let fetch_resp = state
         .pg
         .from("brand_campaigns")
         .select("id, name, status, completed_at")
         .eq("id", &campaign_id)
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .single()
         .execute()
         .await
@@ -1080,7 +1223,7 @@ pub async fn mark_campaign_done(
         .pg
         .from("brand_campaigns")
         .eq("id", &campaign_id)
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .update(serde_json::Value::Object(update).to_string())
         .select("*")
         .single()
@@ -1104,7 +1247,7 @@ pub async fn mark_campaign_done(
         .pg
         .from("campaign_offers")
         .eq("brand_campaign_id", &campaign_id)
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &brand_id)
         .neq("status", "cancelled")
         .neq("status", "declined")
         .neq("status", "completed")
@@ -1125,12 +1268,12 @@ pub async fn mark_campaign_done(
         .get("name")
         .and_then(|v| v.as_str())
         .unwrap_or("campaign");
-    let brand_name = resolve_brand_name(&state, &user.id)
+    let brand_name = resolve_brand_name(&state, &brand_id)
         .await
         .unwrap_or_else(|| "Brand".to_string());
     log_activity_event(
         &state,
-        &user.id,
+        &brand_id,
         Some(&campaign_id),
         "brand",
         &brand_name,
@@ -1877,6 +2020,149 @@ pub async fn get_brand_analytics(
     })))
 }
 
+#[derive(Debug, Serialize)]
+pub struct MonthlySpend {
+    pub month: String,
+    pub spend: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandSpendAnalytics {
+    pub monthly_spend: Vec<MonthlySpend>,
+    pub ytd_spend: i64,
+    pub monthly_avg: i64,
+    pub current_month_spend: i64,
+    pub projected_eoy: i64,
+}
+
+pub async fn get_brand_spend_analytics(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandSpendAnalytics>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    let now = chrono::Utc::now();
+    let year_start = chrono::Utc
+        .with_ymd_and_hms(now.year(), 1, 1, 0, 0, 0)
+        .unwrap();
+    let current_month_start = chrono::Utc
+        .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0)
+        .unwrap();
+
+    let offers_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,budget_snapshot,payment_status,created_at,brand_campaigns(start_date)")
+        .eq("brand_id", &brand_id)
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let offers_status = offers_resp.status();
+    let offers_text = offers_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !offers_status.is_success() {
+        return Err(sanitize_db_error(offers_status.as_u16(), offers_text));
+    }
+    let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
+
+    let mut monthly_spend_map: std::collections::HashMap<String, i64> =
+        std::collections::HashMap::new();
+    let mut ytd_spend: i64 = 0;
+    let mut current_month_spend: i64 = 0;
+
+    for offer in offers {
+        let payment_status = offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+
+        if payment_status != "released" && payment_status != "paid" {
+            continue;
+        }
+
+        let budget_cents = offer
+            .get("budget_snapshot")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+
+        if budget_cents <= 0 {
+            continue;
+        }
+
+        let created_at_str = offer
+            .get("created_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
+        let created_at = if created_at_str.is_empty() {
+            offer
+                .get("brand_campaigns")
+                .and_then(|c| c.get("start_date"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+        } else {
+            created_at_str
+        };
+
+        let date = if created_at.is_empty() {
+            now
+        } else {
+            chrono::DateTime::parse_from_rfc3339(created_at)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or(now)
+        };
+
+        if date >= year_start {
+            ytd_spend += budget_cents;
+        }
+
+        if date >= current_month_start {
+            current_month_spend += budget_cents;
+        }
+
+        let month_key = format!("{}-{:02}", date.year(), date.month());
+        *monthly_spend_map.entry(month_key).or_insert(0) += budget_cents;
+    }
+
+    let mut monthly_spend: Vec<MonthlySpend> = monthly_spend_map
+        .into_iter()
+        .map(|(month, spend)| MonthlySpend { month, spend })
+        .collect();
+    monthly_spend.sort_by(|a, b| a.month.cmp(&b.month));
+
+    if monthly_spend.len() > 12 {
+        monthly_spend = monthly_spend.into_iter().rev().take(12).rev().collect();
+    }
+
+    let months_elapsed = now.month() as i64;
+    let monthly_avg = if months_elapsed > 0 {
+        ytd_spend / months_elapsed
+    } else {
+        ytd_spend
+    };
+
+    let remaining_months = 12 - months_elapsed;
+    let projected_eoy = ytd_spend + (monthly_avg * remaining_months);
+
+    Ok(Json(BrandSpendAnalytics {
+        monthly_spend,
+        ytd_spend,
+        monthly_avg,
+        current_month_spend,
+        projected_eoy,
+    }))
+}
+
 pub async fn get_campaign(
     State(state): State<AppState>,
     user: AuthUser,
@@ -1898,6 +2184,7 @@ pub async fn list_offer_options(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let _tier = ensure_brand_campaign_collaboration_access(&state, &user.id).await?;
     let _campaign = ensure_brand_campaign_ownership(&state, &user.id, &campaign_id).await?;
     let target_type = q
         .target_type
@@ -2028,22 +2315,24 @@ pub async fn list_offer_options(
     let items: Vec<serde_json::Value> = rows
         .into_iter()
         .filter(|r| {
-            let public_profile_visible = r
-                .get("public_profile_visible")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false);
+            let public_profile_visible = r.get("public_profile_visible").and_then(|v| v.as_bool());
             let visibility = r
                 .get("visibility")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .trim()
                 .to_lowercase();
-            public_profile_visible
-                || visibility.is_empty()
-                || visibility == "public"
-                || visibility == "brands"
-                || visibility == "visible_to_brands"
-                || visibility == "true"
+            match public_profile_visible {
+                Some(true) => true,
+                Some(false) => should_default_visibility_on(r),
+                None => {
+                    visibility.is_empty()
+                        || visibility == "public"
+                        || visibility == "brands"
+                        || visibility == "visible_to_brands"
+                        || visibility == "true"
+                }
+            }
         })
         .map(|r| {
             let monthly = r
@@ -2076,16 +2365,18 @@ pub async fn create_campaign_offers(
     Path(campaign_id): Path<String>,
     Json(payload): Json<CreateCampaignOffersRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "brand" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let brand_access =
+        team::require_brand_permission(&state, &user, Permission::CreateCampaigns).await?;
+    let brand_id = brand_access.organization_id.clone();
+    let tier = get_brand_plan_tier(&state, &brand_id).await?;
     if payload.target_ids.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
             "target_ids is required".to_string(),
         ));
     }
-    let campaign = ensure_brand_campaign_ownership(&state, &user.id, &campaign_id).await?;
+    let campaign = ensure_brand_campaign_ownership(&state, &brand_id, &campaign_id).await?;
+    enforce_brand_campaign_limit(&state, &brand_id, &campaign_id, tier).await?;
     let target_type = payload.target_type.trim().to_lowercase();
     if !["creator", "agency"].contains(&target_type.as_str()) {
         return Err((
@@ -2119,7 +2410,7 @@ pub async fn create_campaign_offers(
                 .pg
                 .from("brand_agency_connections")
                 .select("id")
-                .eq("brand_id", &user.id)
+                .eq("brand_id", &brand_id)
                 .eq("agency_id", tid.as_str())
                 .eq("status", "active")
                 .limit(1)
@@ -2198,7 +2489,7 @@ pub async fn create_campaign_offers(
 
         let insert_payload = json!({
             "brand_campaign_id": campaign_id,
-            "brand_id": user.id,
+            "brand_id": brand_id,
             "target_type": target_type,
             "target_id": tid,
             "status": "sent",
@@ -2243,7 +2534,7 @@ pub async fn create_campaign_offers(
                 .pg
                 .from("brands")
                 .select("company_name")
-                .eq("id", &user.id)
+                .eq("id", &brand_id)
                 .single()
                 .execute()
                 .await;
@@ -2259,7 +2550,7 @@ pub async fn create_campaign_offers(
 
             let stub_payload = json!({
                 "agency_id": tid,
-                "brand_id": user.id,
+                "brand_id": brand_id,
                 "status": "approved", // Pre-approved stub for payment
                 "campaign_title": payload.offer_title.as_deref().unwrap_or("Campaign Offer"),
                 "client_name": brand_name,
@@ -2320,7 +2611,7 @@ pub async fn create_campaign_offers(
             .get("name")
             .and_then(|v| v.as_str())
             .unwrap_or("campaign");
-        let brand_name = resolve_brand_name(&state, &user.id)
+        let brand_name = resolve_brand_name(&state, &brand_id)
             .await
             .unwrap_or_else(|| "Brand".to_string());
         let target_name = resolve_offer_target_name(&state, &row)
@@ -2328,7 +2619,7 @@ pub async fn create_campaign_offers(
             .unwrap_or_else(|| target_label.to_string());
         log_activity_event(
             &state,
-            &user.id,
+            &brand_id,
             Some(&campaign_id),
             "brand",
             &brand_name,
@@ -2341,6 +2632,7 @@ pub async fn create_campaign_offers(
         .await;
         created.push(row);
     }
+
     Ok(Json(json!({"status":"ok","offers":created})))
 }
 
@@ -2546,7 +2838,7 @@ pub async fn list_my_campaign_offers(
         .pg
         .from("campaign_offers")
         .select(
-            "id,brand_campaign_id,brand_id,target_type,target_id,status,offer_title,message,expires_at,decided_at,brief_snapshot,budget_snapshot,meta,created_at,updated_at,billing_request_id,payment_status,brand_campaigns(id,name,objective,category,description,usage_scope,duration_days,territory,exclusivity,budget_range,start_date,custom_terms,completed_at,created_at,updated_at,status),brands(id,company_name,email,logo_url)",
+            "id,brand_campaign_id,brand_id,target_type,target_id,status,offer_title,message,expires_at,decided_at,brief_snapshot,budget_snapshot,meta,created_at,updated_at,billing_request_id,payment_status,escrow_status,brand_campaigns(id,name,objective,category,description,usage_scope,duration_days,territory,exclusivity,budget_range,start_date,custom_terms,completed_at,created_at,updated_at,status),brands(id,company_name,email,logo_url)",
         )
         .order("created_at.desc")
         .limit(limit);
@@ -2556,9 +2848,13 @@ pub async fn list_my_campaign_offers(
     }
 
     if user.role == "brand" {
-        req = req.eq("brand_id", &user.id);
+        let brand_access = team::require_brand_access(&state, &user).await?;
+        req = req.eq("brand_id", brand_access.organization_id.as_str());
     } else if user.role == "agency" {
-        req = req.eq("target_type", "agency").eq("target_id", &user.id);
+        let agency_access = team::require_agency_access(&state, &user).await?;
+        req = req
+            .eq("target_type", "agency")
+            .eq("target_id", agency_access.organization_id.as_str());
     } else if is_creator_like(&user.role) {
         let creator_id = resolve_effective_creator_id(&state, &user).await;
         // Get connected agencies
@@ -2777,6 +3073,9 @@ pub async fn respond_to_campaign_offer(
     if user.role != "agency" && !is_creator_like(&user.role) {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    if user.role == "agency" {
+        team::require_agency_permission(&state, &user, Permission::CreateCampaigns).await?;
+    }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
     let action = payload.action.trim().to_lowercase();
     let new_status = match action.as_str() {
@@ -2845,6 +3144,75 @@ pub async fn respond_to_campaign_offer(
                 .await;
         }
     }
+
+    // Notify brand when offer is accepted (newProjectAlerts)
+    if action == "accept" {
+        let brand_id_str = row
+            .get("brand_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let campaign_id_str = row
+            .get("brand_campaign_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let offer_id_str = offer_id.clone();
+        let target_type = row
+            .get("target_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("collaborator")
+            .to_string();
+        let target_name = if user.role == "agency" {
+            resolve_agency_name(&state, &user.id)
+                .await
+                .unwrap_or_else(|| "Agency".to_string())
+        } else {
+            let creator_id = resolve_effective_creator_id(&state, &user).await;
+            resolve_creator_name(&state, &creator_id)
+                .await
+                .unwrap_or_else(|| "Creator".to_string())
+        };
+        let state_clone = state.clone();
+
+        // Log activity event
+        log_activity_event(
+            &state,
+            &brand_id_str,
+            campaign_id_str.as_deref(),
+            &target_type,
+            &target_name,
+            "offer.accepted",
+            format!("{} accepted your campaign offer", target_name),
+        )
+        .await;
+
+        tokio::spawn(async move {
+            let subject = format!("{} accepted your campaign offer", target_name);
+            let message = format!(
+                "{} has accepted your campaign offer. You can now proceed with the next steps on your dashboard.",
+                target_name
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: None,
+                    pref_key: "newProjectAlerts",
+                    subject: &subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "target_type": target_type,
+                        "target_name": target_name,
+                        "type": "offer_accepted"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
+        });
+    }
+
     Ok(Json(json!({"status":"ok","offer": row})))
 }
 
@@ -2866,19 +3234,25 @@ pub async fn create_offer_contract(
         .get("target_id")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if user.role == "agency" && (target_type != "agency" || target_id != user.id) {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let agency_id = if user.role == "agency" {
+        let access = team::require_agency_access(&state, &user).await?;
+        if target_type != "agency" || target_id != access.organization_id {
+            return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+        }
+        Some(access.organization_id)
+    } else {
+        None
+    };
 
     // Agencies must assign at least one talent BEFORE preparing contracts for brand campaign offers.
     // This avoids the "brand pays before assignments exist" payout/distribution failure mode.
-    if user.role == "agency" {
+    if let Some(ref agency_id) = agency_id {
         let assignments_resp = state
             .pg
             .from("offer_talent_assignments")
             .select("id")
             .eq("offer_id", &offer_id)
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .eq("status", "assigned")
             .limit(1)
             .execute()
@@ -2949,13 +3323,20 @@ pub async fn send_offer_contract(
     }
     let offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
-    if user.role == "agency" {
+    let agency_id = if user.role == "agency" {
+        let access = team::require_agency_access(&state, &user).await?;
+        Some(access.organization_id)
+    } else {
+        None
+    };
+
+    if let Some(ref agency_id) = agency_id {
         let assignments_resp = state
             .pg
             .from("offer_talent_assignments")
             .select("id")
             .eq("offer_id", &offer_id)
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .eq("status", "assigned")
             .limit(1)
             .execute()
@@ -4657,13 +5038,15 @@ pub async fn send_offer_package(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let access = team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let now = chrono::Utc::now().to_rfc3339();
     let resp = state
         .pg
         .from("campaign_offer_packages")
         .eq("id", &payload.package_id)
         .eq("offer_id", &offer_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .update(
             json!({
                 "status": "sent",
@@ -4672,7 +5055,7 @@ pub async fn send_offer_package(
             })
             .to_string(),
         )
-        .select("*")
+        .select("*,campaign_offers!inner(brand_campaigns!inner(brand_id))")
         .single()
         .execute()
         .await
@@ -4686,6 +5069,36 @@ pub async fn send_offer_package(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
     let row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
+
+    // Log activity event for brand
+    if let Some(brand_id) = row
+        .get("campaign_offers")
+        .and_then(|co| co.get("brand_campaigns"))
+        .and_then(|bc| bc.get("brand_id"))
+        .and_then(|v| v.as_str())
+    {
+        let agency_name = resolve_agency_name(&state, &user.id)
+            .await
+            .unwrap_or_else(|| "Agency".to_string());
+        let package_title = row
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Package");
+
+        log_activity_event_with_subject(
+            &state,
+            brand_id,
+            None,
+            "agency",
+            &agency_name,
+            "package.sent",
+            format!("{} sent you a package: {}", agency_name, package_title),
+            "campaign_offer_packages",
+            Some(&payload.package_id),
+        )
+        .await;
+    }
+
     Ok(Json(json!({"status":"ok","package": row})))
 }
 
@@ -4804,11 +5217,13 @@ pub async fn list_agency_offer_packages(
     if user.role != "agency" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let access = team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("campaign_offer_packages")
         .select("*,brand_campaigns(id,name),campaign_offers(id,offer_title,target_type,target_id)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .execute()
         .await
@@ -4832,11 +5247,13 @@ pub async fn list_agency_package_feedback(
     if user.role != "agency" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let access = team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("campaign_offer_packages")
         .select("*,campaign_offers(id,brand_campaign_id,status,offer_title,message)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("status", "feedback_received")
         .order("updated_at.desc")
         .execute()
@@ -4863,12 +5280,14 @@ pub async fn list_offer_talent_assignments(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let access = team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("offer_talent_assignments")
         .select("*, creators(id, full_name, profile_photo_url), agency_users(id, full_legal_name, stage_name, profile_photo_url, creator_id)")
         .eq("offer_id", &offer_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .eq("status", "assigned")
         .order("created_at.desc")
         .execute()
@@ -4907,7 +5326,7 @@ pub async fn list_offer_talent_assignments(
             .pg
             .from("agency_users")
             .select("id, full_legal_name, stage_name, profile_photo_url, creator_id")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .or(format!(
                 "creator_id.eq.{},user_id.eq.{}",
                 creator_id, creator_id
@@ -4942,6 +5361,8 @@ pub async fn create_offer_talent_assignment(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let access = team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let offer_status = offer
         .get("status")
         .and_then(|v| v.as_str())
@@ -4982,7 +5403,7 @@ pub async fn create_offer_talent_assignment(
     if creator_id.is_empty() {
         // Legacy/roster flow: resolve by talent_id (agency_users.id or alias id shapes).
         canonical_talent_id = trim_non_empty(&canonical_talent_id, "talent_id")?;
-        let talent = resolve_agency_talent(&state, &user.id, &canonical_talent_id).await?;
+        let talent = resolve_agency_talent(&state, agency_id, &canonical_talent_id).await?;
         canonical_talent_id = talent
             .get("id")
             .and_then(|v| v.as_str())
@@ -5008,7 +5429,7 @@ pub async fn create_offer_talent_assignment(
             .pg
             .from("agency_talent_relationships")
             .select("id,status")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .eq("creator_id", &creator_id)
             .limit(1)
             .execute()
@@ -5033,7 +5454,7 @@ pub async fn create_offer_talent_assignment(
                 .pg
                 .from("agency_users")
                 .select("id")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("creator_id", &creator_id)
                 .limit(1)
                 .execute()
@@ -5063,7 +5484,7 @@ pub async fn create_offer_talent_assignment(
     }
     let insert_payload = json!({
         "offer_id": offer_id,
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "talent_id": if canonical_talent_id.is_empty() { serde_json::Value::Null } else { json!(canonical_talent_id) },
         "creator_id": creator_id,
         "status": "assigned",
@@ -5094,7 +5515,7 @@ pub async fn create_offer_talent_assignment(
                 .from("offer_talent_assignments")
                 .select("*")
                 .eq("offer_id", &offer_id)
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .eq("creator_id", &creator_id)
                 .eq("status", "assigned")
                 .limit(1)
@@ -5150,6 +5571,8 @@ pub async fn delete_offer_talent_assignment(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let access = team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let offer_status = offer
         .get("status")
         .and_then(|v| v.as_str())
@@ -5179,7 +5602,7 @@ pub async fn delete_offer_talent_assignment(
         .from("offer_talent_assignments")
         .eq("id", &assignment_id)
         .eq("offer_id", &offer_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .update(
             json!({
                 "status": "removed",
@@ -5212,12 +5635,14 @@ pub async fn list_offer_asset_requests(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let access = team::require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
     let resp = state
         .pg
         .from("offer_asset_requests")
         .select("*, creators(id, full_name, profile_photo_url), agency_users(id, full_legal_name, stage_name, profile_photo_url, creator_id)")
         .eq("offer_id", &offer_id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .order("created_at.desc")
         .execute()
         .await
@@ -5512,7 +5937,8 @@ pub async fn submit_offer_deliverable(
         .to_string();
 
     let agency_id = if user.role == "agency" {
-        Some(user.id.clone())
+        let access = team::require_agency_access(&state, &user).await?;
+        Some(access.organization_id)
     } else if _offer.get("target_type").and_then(|v| v.as_str()) == Some("agency") {
         _offer
             .get("target_id")
@@ -5522,6 +5948,7 @@ pub async fn submit_offer_deliverable(
         None
     };
     let (talent_id, creator_id) = if user.role == "agency" {
+        let agency_id_val = agency_id.clone().unwrap_or_default();
         let payload_creator_id = payload
             .creator_id
             .as_deref()
@@ -5536,7 +5963,7 @@ pub async fn submit_offer_deliverable(
                 .from("offer_talent_assignments")
                 .select("*")
                 .eq("offer_id", &offer_id)
-                .eq("agency_id", &user.id)
+                .eq("agency_id", &agency_id_val)
                 .eq("creator_id", &creator_id)
                 .eq("status", "assigned")
                 .limit(1)
@@ -5566,7 +5993,7 @@ pub async fn submit_offer_deliverable(
                 .map(str::trim)
                 .filter(|s| !s.is_empty());
             let talent_id = if let Some(tid) = tid_opt {
-                let talent = resolve_agency_talent(&state, &user.id, tid).await?;
+                let talent = resolve_agency_talent(&state, &agency_id_val, tid).await?;
                 let canonical_tid = talent
                     .get("id")
                     .and_then(|v| v.as_str())
@@ -5600,13 +6027,13 @@ pub async fn submit_offer_deliverable(
                     StatusCode::BAD_REQUEST,
                     "talent_id or creator_id required".to_string(),
                 ))?;
-            let talent = resolve_agency_talent(&state, &user.id, tid).await?;
+            let talent = resolve_agency_talent(&state, &agency_id_val, tid).await?;
             let assignment = state
                 .pg
                 .from("offer_talent_assignments")
                 .select("*")
                 .eq("offer_id", &offer_id)
-                .eq("agency_id", &user.id)
+                .eq("agency_id", &agency_id_val)
                 .eq("talent_id", tid)
                 .eq("status", "assigned")
                 .limit(1)
@@ -5758,6 +6185,44 @@ pub async fn submit_offer_deliverable(
         ),
     )
     .await;
+
+    // Notify brand if direct submission (no agency review needed)
+    if agency_id.is_none() {
+        let brand_id_str = offer_brand_id.clone();
+        let offer_id_str = offer_id.clone();
+        let deliverable_id_str = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let state_clone = state.clone();
+
+        tokio::spawn(async move {
+            let subject = "New deliverable submitted";
+            let message = format!(
+                "A creator has submitted a new deliverable for offer {}. Please review it on your dashboard.",
+                offer_id_str
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: None,
+                    pref_key: "deliverableSubmissions",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "deliverable_id": deliverable_id_str,
+                        "type": "deliverable_submission"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
+        });
+    }
+
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }
 
@@ -6211,11 +6676,20 @@ pub async fn list_offer_deliverables(
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
-    // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
-    // for approval/download. Preview is allowed to support review workflows.
-    if user.role == "brand" && payment_status != "paid" {
-        for row in rows.iter_mut() {
-            if let Some(obj) = row.as_object_mut() {
+    // Normalize asset_url to consistently return the secure file endpoint
+    // for private deliverables instead of the storage path
+    for row in rows.iter_mut() {
+        if let Some(obj) = row.as_object_mut() {
+            if let Some(id) = obj.get("id").and_then(|v| v.as_str()) {
+                // Replace asset_url with the secure file endpoint URL
+                let secure_url =
+                    format!("/api/campaign-offers/{}/deliverables/{}/file", offer_id, id);
+                obj.insert("asset_url".to_string(), json!(secure_url));
+            }
+
+            // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
+            // for approval/download. Preview is allowed to support review workflows.
+            if user.role == "brand" && payment_status != "paid" {
                 let meta = obj.get("meta").cloned().unwrap_or_else(|| json!({}));
                 let mut meta_obj = meta.as_object().cloned().unwrap_or_default();
                 meta_obj.insert("payment_required".to_string(), json!(true));
@@ -6324,52 +6798,18 @@ pub async fn upload_offer_deliverable_form(
     }
 
     let fname = file_name.unwrap_or_else(|| "deliverable.bin".to_string());
-    let sanitized = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
-
-    let bucket = state.supabase_bucket_private.clone();
-    let path = format!(
-        "campaigns/deliverables/{}/{}_{}",
-        offer_id,
+    let size_bytes = bytes.len() as i64;
+    let sanitized = sanitize_file_name(&fname);
+    let path = canonical_object_path(
+        &format!("campaign-offers/{offer_id}/deliverables"),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
-        sanitized
     );
-
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let up = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .body(bytes)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
+    let uploaded = upload_object(&state, StorageVisibility::Private, &path, bytes, None).await?;
 
     let agency_id = if user.role == "agency" {
-        Some(user.id.clone())
+        let access = team::require_agency_access(&state, &user).await?;
+        Some(access.organization_id)
     } else if _offer.get("target_type").and_then(|v| v.as_str()) == Some("agency") {
         _offer
             .get("target_id")
@@ -6379,6 +6819,7 @@ pub async fn upload_offer_deliverable_form(
         None
     };
     let (resolved_talent_id, resolved_creator_id) = if user.role == "agency" {
+        let agency_id_val = agency_id.clone().unwrap_or_default();
         let cid_opt = creator_id_field
             .as_deref()
             .map(str::trim)
@@ -6391,7 +6832,7 @@ pub async fn upload_offer_deliverable_form(
                 .from("offer_talent_assignments")
                 .select("*")
                 .eq("offer_id", &offer_id)
-                .eq("agency_id", &user.id)
+                .eq("agency_id", &agency_id_val)
                 .eq("creator_id", &creator_id)
                 .eq("status", "assigned")
                 .limit(1)
@@ -6420,7 +6861,7 @@ pub async fn upload_offer_deliverable_form(
                 .map(str::trim)
                 .filter(|s| !s.is_empty());
             let talent_id = if let Some(tid) = tid_opt {
-                let talent = resolve_agency_talent(&state, &user.id, tid).await?;
+                let talent = resolve_agency_talent(&state, &agency_id_val, tid).await?;
                 let canonical_tid = talent
                     .get("id")
                     .and_then(|v| v.as_str())
@@ -6452,13 +6893,13 @@ pub async fn upload_offer_deliverable_form(
                     StatusCode::BAD_REQUEST,
                     "talent_id or creator_id required".to_string(),
                 ))?;
-            let talent = resolve_agency_talent(&state, &user.id, tid).await?;
+            let talent = resolve_agency_talent(&state, &agency_id_val, tid).await?;
             let assignment = state
                 .pg
                 .from("offer_talent_assignments")
                 .select("*")
                 .eq("offer_id", &offer_id)
-                .eq("agency_id", &user.id)
+                .eq("agency_id", &agency_id_val)
                 .eq("talent_id", tid)
                 .eq("status", "assigned")
                 .limit(1)
@@ -6547,13 +6988,13 @@ pub async fn upload_offer_deliverable_form(
             .as_deref()
             .map(|v| json!(v))
             .unwrap_or(serde_json::Value::Null),
-        "asset_url": path, // Storing path relative to bucket
+        "asset_url": uploaded.path.clone(), // Storing path relative to bucket
         "asset_type": asset_type,
         "caption": caption.as_deref().map(str::trim).filter(|s| !s.is_empty()),
         "status": status_value,
         "meta": json!({
             "original_filename": fname,
-            "bucket": bucket,
+            "bucket": uploaded.bucket,
         }),
     });
 
@@ -6592,6 +7033,47 @@ pub async fn upload_offer_deliverable_form(
 
     let row: serde_json::Value =
         serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or_default();
+    if let Some(deliverable_id) = row
+        .get("id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+    {
+        let owner_type = if user.role == "agency" {
+            StorageOwnerType::Agency
+        } else {
+            StorageOwnerType::Creator
+        };
+        let owner_id = if user.role == "agency" {
+            agency_id.clone().unwrap_or_default()
+        } else {
+            resolved_creator_id
+                .clone()
+                .unwrap_or_else(|| user.id.clone())
+        };
+        let record = StorageAssetRecord {
+            owner_type,
+            owner_id,
+            context_type: StorageContextType::CampaignOfferDeliverable,
+            context_id: Some(offer_id.clone()),
+            visibility: StorageVisibility::Private,
+            object_path: insert_payload
+                .get("asset_url")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            original_file_name: Some(fname.clone()),
+            mime_type: None,
+            size_bytes: Some(size_bytes),
+            checksum_sha256: None,
+            source_table: Some("campaign_offer_deliverables".to_string()),
+            source_id: Some(deliverable_id.to_string()),
+            created_by: Some(user.id.clone()),
+            counts_toward_quota: user.role == "agency",
+        };
+        if let Err(err) = insert_asset_record(&state, &record).await {
+            warn!(offer_id = %offer_id, deliverable_id = %deliverable_id, error = %err.1, "failed to mirror campaign offer deliverable into storage_assets");
+        }
+    }
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }
 
@@ -6692,6 +7174,19 @@ pub async fn delete_offer_deliverable(
     let del: serde_json::Value =
         serde_json::from_str(&del_resp.text().await.unwrap_or_default()).unwrap_or_default();
     let status = del.get("status").and_then(|s| s.as_str()).unwrap_or("");
+    let storage_path = del
+        .get("asset_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let storage_bucket = del
+        .get("meta")
+        .and_then(|m| m.get("bucket"))
+        .and_then(|v| v.as_str())
+        .unwrap_or(&state.supabase_bucket_private)
+        .trim()
+        .to_string();
 
     if status != "draft" && status != "rejected" && status != "changes_requested" {
         return Err((
@@ -6715,6 +7210,11 @@ pub async fn delete_offer_deliverable(
         let msg = resp.text().await.unwrap_or_default();
         return Err(sanitize_db_error(status, msg));
     }
+
+    if !storage_path.is_empty() {
+        let _ = delete_object(&state, &storage_bucket, &storage_path).await;
+    }
+    let _ = soft_delete_asset_record(&state, "campaign_offer_deliverables", &deliverable_id).await;
 
     Ok(Json(json!({"status": "ok"})))
 }
@@ -6842,40 +7342,52 @@ pub async fn serve_offer_deliverable(
         )
     };
 
-    let http = reqwest::Client::new();
-    let up = http
-        .get(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let (content_type, bytes) = if is_thumbnail && asset_type == "image" {
+        let http = reqwest::Client::new();
+        let up = http
+            .get(&storage_url)
+            .header(
+                "Authorization",
+                format!("Bearer {}", state.supabase_service_key),
+            )
+            .header("apikey", state.supabase_service_key.clone())
+            .send()
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
 
-    if !up.status().is_success() {
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            "failed to fetch from storage".to_string(),
-        ));
-    }
+        if !up.status().is_success() {
+            return Err((
+                StatusCode::BAD_GATEWAY,
+                "failed to fetch from storage".to_string(),
+            ));
+        }
 
-    let content_type = up
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or(if asset_type == "video" {
-            "video/mp4"
-        } else {
-            "image/jpeg"
-        })
-        .to_string();
+        let content_type = up
+            .headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("image/jpeg")
+            .to_string();
 
-    let bytes = up
-        .bytes()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let bytes = up
+            .bytes()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        (content_type, bytes)
+    } else {
+        let downloaded = download_object(&state, &state.supabase_bucket_private, path).await?;
+        let content_type = downloaded
+            .headers
+            .get("content-type")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or(if asset_type == "video" {
+                "video/mp4"
+            } else {
+                "image/jpeg"
+            })
+            .to_string();
+        (content_type, downloaded.bytes)
+    };
 
     let mut resp = Response::new(Body::from(bytes));
     resp.headers_mut().insert(
@@ -6910,9 +7422,17 @@ pub async fn review_offer_deliverable(
     }): Path<OfferDeliverablePath>,
     Json(payload): Json<ReviewDeliverableRequest>,
 ) -> Result<Json<serde_json::Value>, (axum::http::StatusCode, String)> {
-    if user.role != "brand" && user.role != "agency" {
+    let actor_org_id = if user.role == "brand" {
+        team::require_brand_permission(&state, &user, Permission::ApproveDeliverables)
+            .await?
+            .organization_id
+    } else if user.role == "agency" {
+        team::require_agency_permission(&state, &user, Permission::ApproveDeliverables)
+            .await?
+            .organization_id
+    } else {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    };
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
     if user.role == "brand" {
         let payment_status = _offer
@@ -7051,20 +7571,53 @@ pub async fn review_offer_deliverable(
         .await;
 
     let brand_id_value = if user.role == "brand" {
-        user.id.as_str()
+        actor_org_id.as_str()
     } else {
         _offer
             .get("brand_id")
             .and_then(|v| v.as_str())
             .unwrap_or("")
     };
+
+    if status_value == "brand_review" {
+        let brand_id_str = brand_id_value.to_string();
+        let offer_id_str = offer_id.clone();
+        let deliverable_id_str = deliverable_id.clone();
+        let agency_id_str = user.id.clone();
+        let state_clone = state.clone();
+
+        tokio::spawn(async move {
+            let subject = "Deliverable ready for your review";
+            let message = format!(
+                "An agency has approved a deliverable for offer {}. Please review it on your dashboard.",
+                offer_id_str
+            );
+            let _ = crate::notifications::notify_brand_if_enabled(
+                &state_clone,
+                crate::notifications::BrandNotificationRequest {
+                    brand_id: &brand_id_str,
+                    agency_id: Some(&agency_id_str),
+                    pref_key: "approvalReminders",
+                    subject,
+                    message: &message,
+                    meta_json: json!({
+                        "offer_id": offer_id_str,
+                        "deliverable_id": deliverable_id_str,
+                        "type": "approval_reminder"
+                    }),
+                    notify_email: true,
+                },
+            )
+            .await;
+        });
+    }
     let brand_name = resolve_brand_name(&state, brand_id_value)
         .await
         .unwrap_or_else(|| "Brand".to_string());
     let actor_label = if user.role == "brand" {
         brand_name.clone()
     } else {
-        resolve_agency_name(&state, &user.id)
+        resolve_agency_name(&state, &actor_org_id)
             .await
             .unwrap_or_else(|| "Agency".to_string())
     };
@@ -8456,70 +9009,4 @@ pub async fn ensure_campaign_billing_stub(
         "Generated billing stub {} with {} per-talent payments.", lr_id, split_cents
     );
     Ok(lr_id.to_string())
-}
-
-#[allow(clippy::too_many_arguments)]
-pub(crate) async fn log_activity_event_with_subject(
-    state: &AppState,
-    brand_id: &str,
-    campaign_id: Option<&str>,
-    actor_type: &str,
-    actor_name: &str,
-    event_type: &str,
-    description: String,
-    subject_table: &str,
-    subject_id: Option<&str>,
-) {
-    if brand_id.trim().is_empty() {
-        return;
-    }
-    let mut payload = serde_json::Map::new();
-    payload.insert("brand_id".to_string(), json!(brand_id));
-    if let Some(campaign_id) = campaign_id {
-        if !campaign_id.trim().is_empty() {
-            payload.insert("campaign_id".to_string(), json!(campaign_id));
-        }
-    }
-    payload.insert("actor_type".to_string(), json!(actor_type));
-    payload.insert("actor_name".to_string(), json!(actor_name));
-    payload.insert("event_type".to_string(), json!(event_type));
-    payload.insert("description".to_string(), json!(description));
-    payload.insert("type".to_string(), json!(event_type));
-    payload.insert("subject_table".to_string(), json!(subject_table));
-    let subject_value = subject_id.or(campaign_id).unwrap_or("");
-    payload.insert("subject_id".to_string(), json!(subject_value));
-    payload.insert("title".to_string(), json!(description));
-    payload.insert("subtitle".to_string(), json!(actor_name));
-    if let Err(e) = state
-        .pg
-        .from("brand_activity_events")
-        .insert(serde_json::Value::Object(payload).to_string())
-        .execute()
-        .await
-    {
-        eprintln!("Failed to log activity event: {}", e);
-    }
-}
-
-async fn log_activity_event(
-    state: &AppState,
-    brand_id: &str,
-    campaign_id: Option<&str>,
-    actor_type: &str,
-    actor_name: &str,
-    event_type: &str,
-    description: String,
-) {
-    log_activity_event_with_subject(
-        state,
-        brand_id,
-        campaign_id,
-        actor_type,
-        actor_name,
-        event_type,
-        description,
-        "brand_campaigns",
-        campaign_id,
-    )
-    .await;
 }

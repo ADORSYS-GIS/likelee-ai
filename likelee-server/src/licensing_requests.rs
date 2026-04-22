@@ -1,14 +1,41 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier},
+    errors::sanitize_db_error,
+    pricing_defaults::should_default_visibility_on,
+    team::{permissions::Permission, require_agency_access, require_agency_permission},
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
-use chrono::Utc;
+use chrono::{Duration, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration as StdDuration, Instant};
 use tracing::info;
+
+const LICENSE_EXPIRATION_CHECK_THROTTLE: StdDuration = StdDuration::from_secs(300);
+static LICENSE_EXPIRATION_CHECKS: OnceLock<Mutex<HashMap<String, Instant>>> = OnceLock::new();
+
+fn should_run_license_expiration_check(brand_id: &str) -> bool {
+    let now = Instant::now();
+    let cache = LICENSE_EXPIRATION_CHECKS.get_or_init(|| Mutex::new(HashMap::new()));
+    let mut guard = cache.lock().unwrap_or_else(|e| e.into_inner());
+
+    if let Some(last) = guard.get(brand_id) {
+        if now.duration_since(*last) < LICENSE_EXPIRATION_CHECK_THROTTLE {
+            return false;
+        }
+    }
+
+    guard.insert(brand_id.to_string(), now);
+    true
+}
 
 #[derive(Serialize, Clone)]
 pub struct LicensingRequestTalent {
@@ -161,9 +188,8 @@ pub async fn list_for_agency(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<Vec<LicensingRequestGroup>>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_access(&state, &user).await?;
+    let agency_id = &access.organization_id;
 
     // Optimization: Single query with resource embedding to fetch everything at once
     // Filter out archived records (archived_at IS NULL means not archived)
@@ -171,7 +197,7 @@ pub async fn list_for_agency(
         .pg
         .from("licensing_requests")
         .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,context_type,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee,status),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .is("archived_at", "null")  // Only show non-archived records
         .or("context_type.is.null,context_type.neq.campaign")
         .order("created_at.desc")
@@ -191,7 +217,7 @@ pub async fn list_for_agency(
     }
 
     let rows: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
-        tracing::error!(agency_id = %user.id, error = %e, "licensing_requests JSON parse error");
+        tracing::error!(agency_id = %agency_id, error = %e, "licensing_requests JSON parse error");
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("JSON parse error: {}", e),
@@ -215,7 +241,7 @@ pub async fn list_for_agency(
             .pg
             .from("agency_payment_links")
             .select("id,licensing_request_id,stripe_payment_link_url,status,created_at")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .in_("licensing_request_id", lr_refs)
             .order("created_at.desc")
             .execute()
@@ -243,7 +269,7 @@ pub async fn list_for_agency(
         }
     }
 
-    info!(agency_id = %user.id, count = requests.len(), "licensing_requests fetched (optimized)");
+    info!(agency_id = %agency_id, count = requests.len(), "licensing_requests fetched (optimized)");
 
     let mut groups: BTreeMap<String, LicensingRequestGroup> = BTreeMap::new();
 
@@ -522,8 +548,17 @@ pub async fn list_for_brand(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let effective_brand_id =
-        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
+
+    let state_for_notify = state.clone();
+    let brand_id_for_notify = effective_brand_id.clone();
+    tokio::spawn(async move {
+        if let Err(e) =
+            notify_brand_license_expirations_lazy(&state_for_notify, &brand_id_for_notify).await
+        {
+            tracing::warn!(error = %e, brand_id = %brand_id_for_notify, "license expiration check failed");
+        }
+    });
 
     let resp = state
         .pg
@@ -548,14 +583,194 @@ pub async fn list_for_brand(
     Ok(Json(rows))
 }
 
+pub async fn notify_brand_license_expirations_lazy(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<(), String> {
+    if !should_run_license_expiration_check(brand_id) {
+        return Ok(());
+    }
+    let today = Utc::now().date_naive();
+    let end_window = today + Duration::days(10);
+
+    let resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,effective_end_date,license_end_date,deadline,status,license_submissions!licensing_requests_submission_id_fkey(status,signed_at,agency_signed_at,requires_agency_signature)")
+        .eq("brand_id", brand_id)
+        .eq("status", "approved")
+        .gte("effective_end_date", today.to_string())
+        .lte("effective_end_date", end_window.to_string())
+        .limit(200)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !resp.status().is_success() {
+        return Err(resp.text().await.unwrap_or_default());
+    }
+
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.is_empty() {
+        return Ok(());
+    }
+
+    let mut candidates: Vec<(String, NaiveDate)> = Vec::new();
+    for row in rows {
+        let id = match row.get("id").and_then(|v| v.as_str()) {
+            Some(v) if !v.trim().is_empty() => v.to_string(),
+            _ => continue,
+        };
+
+        let submission = row.get("license_submissions");
+        let submission_status = submission
+            .and_then(|s| s.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        let signed_at = submission
+            .and_then(|s| s.get("signed_at"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let agency_signed_at = submission
+            .and_then(|s| s.get("agency_signed_at"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let requires_agency_signature = submission
+            .and_then(|s| s.get("requires_agency_signature"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+
+        let fully_signed = if submission_status == "completed" || submission_status == "signed" {
+            if requires_agency_signature {
+                !signed_at.is_empty() && !agency_signed_at.is_empty()
+            } else {
+                !signed_at.is_empty()
+            }
+        } else {
+            false
+        };
+
+        if !fully_signed {
+            continue;
+        }
+
+        let date_str = row
+            .get("effective_end_date")
+            .and_then(|v| v.as_str())
+            .or_else(|| row.get("license_end_date").and_then(|v| v.as_str()))
+            .or_else(|| row.get("deadline").and_then(|v| v.as_str()));
+
+        let Some(date_str) = date_str else { continue };
+        let Ok(end_date) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") else {
+            continue;
+        };
+
+        candidates.push((id, end_date));
+    }
+
+    if candidates.is_empty() {
+        return Ok(());
+    }
+
+    let ids: Vec<String> = candidates.iter().map(|(id, _)| id.clone()).collect();
+
+    let existing_resp = state
+        .pg
+        .from("brand_notifications")
+        .select("meta_json")
+        .eq("brand_id", brand_id)
+        .eq("meta_json->>type", "license_expiration")
+        .in_("meta_json->>licensing_request_id", ids.clone())
+        .limit(200)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut already_notified: HashSet<String> = HashSet::new();
+    if existing_resp.status().is_success() {
+        let existing_text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let existing_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&existing_text).unwrap_or_default();
+        for row in existing_rows {
+            if let Some(id) = row
+                .get("meta_json")
+                .and_then(|v| v.get("licensing_request_id"))
+                .and_then(|v| v.as_str())
+            {
+                already_notified.insert(id.to_string());
+            }
+        }
+    }
+
+    let prefs_resp = state
+        .pg
+        .from("brands")
+        .select("notification_prefs")
+        .eq("id", brand_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !prefs_resp.status().is_success() {
+        return Ok(());
+    }
+    let prefs: serde_json::Value = prefs_resp.json().await.unwrap_or(json!({}));
+    let notify_enabled = prefs
+        .get("notification_prefs")
+        .and_then(|p| p.get("licenseExpirationAlerts"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    if !notify_enabled {
+        return Ok(());
+    }
+
+    for (id, end_date) in candidates {
+        if already_notified.contains(&id) {
+            continue;
+        }
+        let days_until_expiry = (end_date - today).num_days();
+        if !(0..=10).contains(&days_until_expiry) {
+            continue;
+        }
+        let subject = format!("License expiring in {} days", days_until_expiry);
+        let message = format!(
+            "Your license will expire on {}. Please renew or extend before expiration.",
+            end_date.format("%Y-%m-%d")
+        );
+        let _ = crate::notifications::send_brand_notification(
+            state,
+            brand_id,
+            None,
+            &subject,
+            &message,
+            json!({
+                "licensing_request_id": id,
+                "expiry_date": end_date.format("%Y-%m-%d").to_string(),
+                "days_remaining": days_until_expiry,
+                "type": "license_expiration"
+            }),
+            true,
+        )
+        .await;
+    }
+
+    Ok(())
+}
+
 pub async fn update_status_bulk(
     State(state): State<AppState>,
     user: AuthUser,
     Json(payload): Json<UpdateLicensingRequestStatusBody>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     if payload.licensing_request_ids.is_empty() {
         return Err((
@@ -606,7 +821,7 @@ pub async fn update_status_bulk(
     let resp = state
         .pg
         .from("licensing_requests")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .in_("id", ids.clone())
         .update(v.to_string())
         .execute()
@@ -722,6 +937,121 @@ pub async fn update_status_bulk(
         }
     }
 
+    // Notify brand when licensing request is approved (newProjectAlerts)
+    if status == "approved" {
+        let state_clone = state.clone();
+        let ids_clone = payload.licensing_request_ids.clone();
+
+        tokio::spawn(async move {
+            // Fetch brand IDs for these requests
+            let ids_refs: Vec<&str> = ids_clone.iter().map(|s| s.as_str()).collect();
+            if let Ok(req_resp) = state_clone
+                .pg
+                .from("licensing_requests")
+                .select("id,brand_id,campaign_title")
+                .in_("id", ids_refs)
+                .execute()
+                .await
+            {
+                if req_resp.status().is_success() {
+                    if let Ok(req_text) = req_resp.text().await {
+                        if let Ok(req_rows) =
+                            serde_json::from_str::<Vec<serde_json::Value>>(&req_text)
+                        {
+                            // Get agency name once
+                            let agency_name = if let Ok(agency_resp) = state_clone
+                                .pg
+                                .from("agencies")
+                                .select("agency_name")
+                                .eq("id", &user.id)
+                                .single()
+                                .execute()
+                                .await
+                            {
+                                if agency_resp.status().is_success() {
+                                    if let Ok(agency_text) = agency_resp.text().await {
+                                        if let Ok(agency_data) =
+                                            serde_json::from_str::<serde_json::Value>(&agency_text)
+                                        {
+                                            agency_data
+                                                .get("agency_name")
+                                                .and_then(|v| v.as_str())
+                                                .unwrap_or("Agency")
+                                                .to_string()
+                                        } else {
+                                            "Agency".to_string()
+                                        }
+                                    } else {
+                                        "Agency".to_string()
+                                    }
+                                } else {
+                                    "Agency".to_string()
+                                }
+                            } else {
+                                "Agency".to_string()
+                            };
+
+                            for req in req_rows {
+                                let brand_id = req
+                                    .get("brand_id")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string();
+                                let request_id = req
+                                    .get("id")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("")
+                                    .to_string();
+                                let campaign_title = req
+                                    .get("campaign_title")
+                                    .and_then(|v| v.as_str())
+                                    .unwrap_or("licensing request");
+
+                                if brand_id.is_empty() {
+                                    continue;
+                                }
+
+                                // Log activity event
+                                let _ = crate::activity::log_activity_event(
+                                    &state_clone,
+                                    &brand_id,
+                                    None,
+                                    "agency",
+                                    &agency_name,
+                                    "licensing_request.accepted",
+                                    format!(
+                                        "{} accepted your licensing request for {}",
+                                        agency_name, campaign_title
+                                    ),
+                                )
+                                .await;
+
+                                let subject = "Agency accepted your licensing request";
+                                let message = "An agency has approved your licensing request and will send you a contract soon. Check your dashboard for details.";
+                                let _ = crate::notifications::notify_brand_if_enabled(
+                                    &state_clone,
+                                    crate::notifications::BrandNotificationRequest {
+                                        brand_id: &brand_id,
+                                        agency_id: None,
+                                        pref_key: "newProjectAlerts",
+                                        subject,
+                                        message,
+                                        meta_json: json!({
+                                            "licensing_request_id": request_id,
+                                            "type": "licensing_request_accepted"
+                                        }),
+                                        notify_email: true,
+                                    },
+                                )
+                                .await;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     Ok(Json(json!({"ok": true})))
 }
 
@@ -730,9 +1060,8 @@ pub async fn create(
     user: AuthUser,
     Json(payload): Json<CreateLicensingRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     // Calculate end date
     let start_date =
@@ -746,7 +1075,7 @@ pub async fn create(
 
     // 1. Create Licensing Request
     let request_json = json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "talent_id": payload.talent_id,
         "client_name": payload.brand_name,
         "status": "approved",
@@ -783,7 +1112,7 @@ pub async fn create(
     // 2. Create Campaign (for value)
     if !request_id.is_empty() {
         let campaign_json = json!({
-            "agency_id": user.id,
+            "agency_id": agency_id,
             "talent_id": payload.talent_id,
             "licensing_request_id": request_id,
             "name": payload.license_type,
@@ -1223,6 +1552,14 @@ pub async fn list_brand_campaign_license_options(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
+    let tier = get_brand_plan_tier(&state, &user.id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_talent_browsing_requires_pro_plan".to_string(),
+        ));
+    }
+
     let campaign_resp = state
         .pg
         .from("campaigns")
@@ -1412,22 +1749,24 @@ pub async fn list_brand_campaign_license_options(
     let mut out: Vec<serde_json::Value> = rows
         .into_iter()
         .filter(|r| {
-            let public_profile_visible = r
-                .get("public_profile_visible")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false);
+            let public_profile_visible = r.get("public_profile_visible").and_then(|v| v.as_bool());
             let visibility = r
                 .get("visibility")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .trim()
                 .to_lowercase();
-            public_profile_visible
-                || visibility.is_empty()
-                || visibility == "public"
-                || visibility == "brands"
-                || visibility == "visible_to_brands"
-                || visibility == "true"
+            match public_profile_visible {
+                Some(true) => true,
+                Some(false) => should_default_visibility_on(r),
+                None => {
+                    visibility.is_empty()
+                        || visibility == "public"
+                        || visibility == "brands"
+                        || visibility == "visible_to_brands"
+                        || visibility == "true"
+                }
+            }
         })
         .map(|r| {
             let base_weekly = resolve_weekly_cents(
@@ -1490,9 +1829,8 @@ pub async fn send_payment_link(
     use std::str::FromStr;
     use tracing::{error, warn};
 
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
 
     // 1. Fetch the licensing request (must belong to this agency)
     let lr_resp = state
@@ -1500,7 +1838,7 @@ pub async fn send_payment_link(
         .from("licensing_requests")
         .select("id,agency_id,brand_id,talent_id,talent_ids,status,campaign_title,client_name,talent_name,submission_id,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name,creator_id),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -1532,7 +1870,7 @@ pub async fn send_payment_link(
         .pg
         .from("licensing_requests")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .update(update_body.to_string())
         .execute()
         .await
@@ -1569,7 +1907,7 @@ pub async fn send_payment_link(
         .pg
         .from("agencies")
         .select("stripe_connect_account_id")
-        .eq("id", &user.id)
+        .eq("id", agency_id)
         .limit(1)
         .execute()
         .await
@@ -1592,7 +1930,7 @@ pub async fn send_payment_link(
     }
 
     // 5. Platform fee based on subscription plan
-    let tier = get_agency_plan_tier(&state, &user.id).await?;
+    let tier = get_agency_plan_tier(&state, agency_id).await?;
     let fee_pct: f64 = match tier {
         PlanTier::Free => 0.08,
         PlanTier::Basic => 0.05,
@@ -1643,7 +1981,7 @@ pub async fn send_payment_link(
 
     if client_email.is_none() {
         warn!(
-            agency_id = %user.id,
+            agency_id = %agency_id,
             licensing_request_id = %id,
             "No client email found for payment link - email sending will be skipped"
         );
@@ -1779,7 +2117,7 @@ pub async fn send_payment_link(
             .pg
             .from("agency_users")
             .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
-            .eq("agency_id", &user.id)
+            .eq("agency_id", agency_id)
             .in_("creator_id", au_refs)
             .execute()
             .await;
@@ -2018,7 +2356,7 @@ pub async fn send_payment_link(
                 .pg
                 .from("performance_tiers")
                 .select("tier_name,payout_percent")
-                .eq("agency_id", &user.id)
+                .eq("agency_id", agency_id)
                 .in_("tier_name", tn_refs),
         )
     } else {
@@ -2027,7 +2365,7 @@ pub async fn send_payment_link(
                 .pg
                 .from("performance_tiers")
                 .select("tier_name,payout_percent")
-                .eq("agency_id", &user.id),
+                .eq("agency_id", agency_id),
         )
     };
 
@@ -2134,7 +2472,7 @@ pub async fn send_payment_link(
     }
 
     tracing::info!(
-        agency_id = %user.id,
+        agency_id = %agency_id,
         licensing_request_id = %id,
         net_amount_cents = net_amount_cents,
         agency_amount_cents = agency_amount_cents,
@@ -2351,9 +2689,8 @@ pub async fn get_pay_split(
     user: AuthUser,
     Query(q): Query<PaySplitQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let access = require_agency_permission(&state, &user, Permission::ViewLicenses).await?;
+    let agency_id = &access.organization_id;
 
     if q.licensing_request_ids.is_empty() {
         return Err((
@@ -2368,7 +2705,7 @@ pub async fn get_pay_split(
         .pg
         .from("licensing_requests")
         .select("id,agency_id,brand_id,talent_id,status,created_at,agency_users(full_legal_name,stage_name)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", agency_id)
         .in_("id", ids.clone())
         .execute()
         .await
@@ -2485,9 +2822,7 @@ pub async fn set_pay_split(
     user: AuthUser,
     Json(_payload): Json<PaySplitBody>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
+    let _access = require_agency_permission(&_state, &user, Permission::ManageLicenses).await?;
 
     Err((
         StatusCode::BAD_REQUEST,
