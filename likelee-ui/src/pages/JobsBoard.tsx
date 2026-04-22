@@ -45,35 +45,13 @@ import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { useAuth } from "@/auth/AuthProvider";
 import { getAgencyBillingStatus } from "@/api/functions";
 import CompCardAttachModal from "@/components/jobs/CompCardAttachModal";
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 10;
 
-const callTypeOptions = [
-  { value: "all", label: "All call types" },
-  { value: "creator", label: "Creator call" },
-  { value: "agency", label: "Agency call" },
-  { value: "athlete", label: "Athlete call" },
-  { value: "ai_artist", label: "AI artist call" },
-];
-
-const jobTypeOptions = [
-  { value: "all", label: "All job types" },
-  { value: "full_time", label: "Full-time" },
-  { value: "part_time", label: "Part-time" },
-  { value: "contract", label: "Contract" },
-  { value: "freelance", label: "Freelance" },
-  { value: "gig", label: "Gig" },
-];
-
-const locationOptions = [
-  { value: "all", label: "All locations" },
-  { value: "remote", label: "Remote" },
-  { value: "hybrid", label: "Hybrid" },
-  { value: "on_site", label: "On-site" },
-];
-
 export default function JobsBoard() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { authenticated, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -108,6 +86,36 @@ export default function JobsBoard() {
   const compCardInputRef = useRef<HTMLInputElement>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
   const isAgencyUser = authenticated && profile?.role === "agency";
+  const callTypeOptions = useMemo(
+    () => [
+      { value: "all", label: t("jobsPage.allCallTypes") },
+      { value: "creator", label: t("jobsPage.callTypes.creator") },
+      { value: "agency", label: t("jobsPage.callTypes.agency") },
+      { value: "athlete", label: t("jobsPage.callTypes.athlete") },
+      { value: "ai_artist", label: t("jobsPage.callTypes.aiArtist") },
+    ],
+    [t],
+  );
+  const jobTypeOptions = useMemo(
+    () => [
+      { value: "all", label: t("jobsPage.allJobTypes") },
+      { value: "full_time", label: t("jobsPage.jobTypes.fullTime") },
+      { value: "part_time", label: t("jobsPage.jobTypes.partTime") },
+      { value: "contract", label: t("jobsPage.jobTypes.contract") },
+      { value: "freelance", label: t("jobsPage.jobTypes.freelance") },
+      { value: "gig", label: t("jobsPage.jobTypes.gig") },
+    ],
+    [t],
+  );
+  const locationOptions = useMemo(
+    () => [
+      { value: "all", label: t("jobsPage.allLocations") },
+      { value: "remote", label: t("jobsPage.locations.remote") },
+      { value: "hybrid", label: t("jobsPage.locations.hybrid") },
+      { value: "on_site", label: t("jobsPage.locations.onSite") },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -662,16 +670,18 @@ export default function JobsBoard() {
                 }}
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                Back to dashboard
+                {t("jobsPage.backToDashboard")}
               </Button>
-              <h1 className="text-3xl font-bold text-gray-900">Find Jobs</h1>
-              <p className="text-gray-600">
-                Browse brand-posted opportunities and apply directly.
-              </p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {t("jobsPage.title")}
+              </h1>
+              <p className="text-gray-600">{t("jobsPage.subtitle")}</p>
             </div>
             <div className="flex items-center gap-2 text-gray-500">
               <Briefcase className="w-5 h-5" />
-              <span className="text-sm">{filteredJobs.length} open roles</span>
+              <span className="text-sm">
+                {t("jobsPage.openRoles", { count: filteredJobs.length })}
+              </span>
             </div>
           </div>
 
@@ -683,14 +693,16 @@ export default function JobsBoard() {
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search job title or keyword"
+                    placeholder={t("jobsPage.searchPlaceholder")}
                     className="pl-9"
                   />
                 </div>
               </div>
               <Select value={callType} onValueChange={setCallType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Call type" />
+                  <SelectValue
+                    placeholder={t("jobsPage.callTypePlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {callTypeOptions.map((opt) => (
@@ -702,7 +714,7 @@ export default function JobsBoard() {
               </Select>
               <Select value={jobType} onValueChange={setJobType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Job type" />
+                  <SelectValue placeholder={t("jobsPage.jobTypePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {jobTypeOptions.map((opt) => (
@@ -714,7 +726,9 @@ export default function JobsBoard() {
               </Select>
               <Select value={location} onValueChange={setLocation}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Location" />
+                  <SelectValue
+                    placeholder={t("jobsPage.locationPlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {locationOptions.map((opt) => (
@@ -841,7 +855,7 @@ export default function JobsBoard() {
                       setDetailsOpen(true);
                     }}
                   >
-                    View Details
+                    {t("jobsPage.viewDetails")}
                   </Button>
                   <Button
                     className="w-full bg-black text-white hover:bg-gray-800"
@@ -862,8 +876,8 @@ export default function JobsBoard() {
                     }}
                   >
                     {isAgencyUser && !agencyCanApply
-                      ? "Upgrade to Apply"
-                      : "Apply Now"}
+                      ? t("jobsPage.upgradeToApply")
+                      : t("jobsPage.applyNow")}
                   </Button>
                 </div>
               </Card>

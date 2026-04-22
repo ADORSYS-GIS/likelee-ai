@@ -611,7 +611,9 @@ export default function Layout({ children, currentPageName }) {
                             to={dashboardPath}
                             className="px-6 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-lg hover:bg-[#2AB8C1] transition-all shadow-sm"
                           >
-                            {t("common.dashboard")}
+                            {t("common.dashboard", {
+                              defaultValue: t("creatorDashboard.nav.dashboard"),
+                            })}
                           </Link>
                         )}
                         <button
@@ -712,7 +714,9 @@ export default function Layout({ children, currentPageName }) {
                           onClick={() => setMobileMenuOpen(false)}
                           className="flex items-center justify-center w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
                         >
-                          {t("common.dashboard")}
+                          {t("common.dashboard", {
+                            defaultValue: t("creatorDashboard.nav.dashboard"),
+                          })}
                         </Link>
                         <button
                           onClick={() => {

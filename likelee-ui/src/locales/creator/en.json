@@ -213,7 +213,8 @@
       "subtitle": "Manage your profile and preferences",
       "tabs": {
         "profile": "Profile Settings",
-        "rules": "My Rules"
+        "rules": "My Rules",
+        "billing": "Billing"
       },
       "profile": {
         "photoTitle": "Profile Photo",
@@ -262,6 +263,8 @@
       "rules": {
         "title": "My Rules",
         "subtitle": "Set your licensing preferences and rates",
+        "planLimitMessage": "You are on the {{plan}} creator plan. You can select up to {{limit}} combined content categories and industries.",
+        "proCreatorsUnlimitedSelection": "Pro creators have unlimited category selection.",
         "edit": "Edit",
         "cancel": "Cancel",
         "save": "Save",
@@ -280,6 +283,48 @@
         "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate",
         "negotiationEnabled": "Negotiation enabled!",
         "negotiationDisabled": "Negotiation disabled!"
+      },
+      "billing": {
+        "title": "Billing",
+        "subtitle": "Manage your subscription and payment methods",
+        "currentPlan": "Current Plan",
+        "freePlan": "Free Plan",
+        "proPlan": "Pro Plan",
+        "upgradeToPro": "Upgrade to Pro",
+        "manageSubscription": "Manage Subscription",
+        "billingHistory": "Billing History",
+        "noBillingHistory": "No billing history yet",
+        "paymentMethod": "Payment Method",
+        "addPaymentMethod": "Add Payment Method",
+        "updatePaymentMethod": "Update Payment Method"
+      },
+      "billingSummary": {
+        "title": "Creator subscription",
+        "currentAccess": "Current access",
+        "recommendedNextStep": "Recommended next step",
+        "processing": "Processing...",
+        "viewDetails": "View Details",
+        "lockInProTitle": "Ready to lock in Pro?",
+        "lockInProDescription": "Your trial is active, but you can secure your professional workflow tools today. Get full marketplace priority and exclusive campaign access.",
+        "openingPortal": "Opening Portal...",
+        "selectPlan": "Select Plan",
+        "access": {
+          "proTrial": "Pro Trial access",
+          "pro": "Pro creator access",
+          "basicTrial": "Basic Trial access",
+          "basic": "Basic creator access",
+          "free": "Free creator access"
+        },
+        "next": {
+          "free": "Move to Basic",
+          "basic": "Move to Pro",
+          "pro": "You're fully unlocked"
+        },
+        "descriptions": {
+          "free": "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts.",
+          "basic": "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns.",
+          "pro": "Your current plan includes the full creator workflow toolset."
+        }
       }
     },
     "referenceImageLibrary": {
@@ -1119,7 +1164,15 @@
     "viewJobDetails": "View job details",
     "apply": "Apply",
     "browseBoardTitle": "Browse the full Jobs board",
-    "browseBoardDescription": "Open the public jobs page to view all available opportunities and apply."
+    "browseBoardDescription": "Open the public jobs page to view all available opportunities and apply.",
+    "findJobs": "Find Jobs",
+    "browseBrandPostedOpportunities": "Browse brand-posted opportunities",
+    "searchJobs": "Search jobs...",
+    "filterByIndustry": "Filter by industry",
+    "filterByLocation": "Filter by location",
+    "allIndustries": "All industries",
+    "allLocations": "All locations",
+    "clearFilters": "Clear filters"
   },
   "agencyConnections": {
     "title": "Agency Connections",
@@ -1131,6 +1184,7 @@
     "assetRequests": "Asset Requests",
     "disconnect": "Request Disconnect",
     "viewContract": "View Contract",
+    "viewPDF": "View PDF",
     "noConnections": "No agency connections yet.",
     "noAssetRequests": "No asset requests yet.",
     "invitations": "Invitations",
@@ -1185,7 +1239,10 @@
     "invitationFromAgency": "Invitation from agency",
     "profileAvailable": "Agency profile available on request",
     "assetRequestsDescription": "Upload deliverables for agency requests.",
-    "loadingRequests": "Loading requests..."
+    "loadingRequests": "Loading requests...",
+    "assetRequestFallback": "Asset request",
+    "offerMissingTitle": "Campaign offer missing",
+    "offerMissingDescription": "We could not find the campaign offer for this request. Please refresh and try again."
   },
   "brandConnections": {
     "title": "Brand Connections",
@@ -1268,14 +1325,36 @@
     "subtitle": "Browse brand-posted opportunities and apply directly.",
     "backToDashboard": "Back to dashboard",
     "searchPlaceholder": "Search job title or keyword",
+    "callTypePlaceholder": "Call type",
+    "jobTypePlaceholder": "Job type",
+    "locationPlaceholder": "Location",
     "allCallTypes": "All call types",
     "allJobTypes": "All job types",
     "allLocations": "All locations",
     "viewDetails": "View Details",
     "applyNow": "Apply Now",
+    "upgradeToApply": "Upgrade to Apply",
     "remote": "Remote",
     "aboutRole": "About role",
-    "openRoles": "{{count}} open roles"
+    "openRoles": "{{count}} open roles",
+    "callTypes": {
+      "creator": "Creator call",
+      "agency": "Agency call",
+      "athlete": "Athlete call",
+      "aiArtist": "AI artist call"
+    },
+    "jobTypes": {
+      "fullTime": "Full-time",
+      "partTime": "Part-time",
+      "contract": "Contract",
+      "freelance": "Freelance",
+      "gig": "Gig"
+    },
+    "locations": {
+      "remote": "Remote",
+      "hybrid": "Hybrid",
+      "onSite": "On-site"
+    }
   },
   "billing": {
     "title": "Billing",
@@ -1292,5 +1371,103 @@
     "billedMonthly": "Billed monthly",
     "billedAnnually": "Billed annually",
     "save20Percent": "SAVE 20%"
+  },
+  "creatorSubscribe": {
+    "hero": {
+      "badge": "Creator Plans",
+      "title": "Own your likeness.",
+      "subtitle": "Earn from it forever.",
+      "description": "Simple, affordable plans so creators can protect, license, and monetize their identity in the AI era with the right level of access."
+    },
+    "billing": {
+      "plansAreBilled": "Plans are billed {{interval}}",
+      "monthly": "Monthly",
+      "annually": "annually",
+      "annual": "Annual",
+      "save20": "SAVE 20%",
+      "subscriptionStarted": "Subscription started",
+      "checkoutCanceled": "Checkout canceled",
+      "perMonth": "/mo",
+      "annualSuffix": "(annual)"
+    },
+    "currentPlan": {
+      "label": "Current Plan:",
+      "expiresOn": "Expires on ",
+      "renewsOn": "Renews on ",
+      "manageSubscription": "Manage Subscription"
+    },
+    "trial": {
+      "oneTimeOffer": "One-Time Offer",
+      "startPrefix": "Start Your 30-Day",
+      "free": "Free",
+      "startSuffix": "Trial",
+      "description": "Pick any plan below and enter your card - you won't be charged until the trial ends.",
+      "continuation": "Trial Continuation",
+      "basicCarryOver": "Downgrading to Basic trial. Your remaining trial days carry over. Basic billing begins automatically on",
+      "proCarryOver": "You'll keep your remaining trial days. Pro billing begins automatically on",
+      "daysLeft": "{{count}} day left",
+      "daysLeft_other": "{{count}} days left"
+    },
+    "plans": {
+      "basic": {
+        "badge": "ESSENTIAL",
+        "name": "Basic",
+        "description": "Get verified and start earning."
+      },
+      "pro": {
+        "badge": "MOST POPULAR",
+        "recommended": "RECOM.",
+        "name": "Pro",
+        "description": "The full premium creator suite."
+      }
+    },
+    "actions": {
+      "currentPlan": "Current Plan",
+      "switchToInterval": "Switch to {{interval}}",
+      "switchToBasic": "Switch to Basic",
+      "switchToBasicTrial": "Switch to Basic Trial",
+      "switchToPro": "Switch to Pro",
+      "switchToProTrial": "Switch to Pro Trial",
+      "startFreeTrial": "Start 30-Day Free Trial",
+      "subscribeToBasic": "Subscribe to Basic",
+      "subscribeToPro": "Subscribe to Pro"
+    },
+    "groups": {
+      "dashboardProfile": "Dashboard & Profile",
+      "connectionsPayouts": "Connections & Payouts",
+      "everythingInBasic": "Everything in Basic, plus",
+      "voiceTools": "Voice & Creator Tools",
+      "campaignsAnalytics": "Campaigns & Analytics"
+    },
+    "features": {
+      "content": "Content",
+      "dashboard": "Dashboard",
+      "dashboardOverview": "Dashboard overview",
+      "likeness": "My Likeness",
+      "kyc": "Identity verification (KYC)",
+      "visibilityUnlock": "Creator visibility trust unlock",
+      "agencyConnection": "Agency connection",
+      "brandConnection": "Brand connection",
+      "payouts": "Payouts",
+      "cameoUploads": "Cameo video uploads",
+      "jobs": "Jobs",
+      "rules": "Settings: My Rules",
+      "voice": "Voice",
+      "voiceProfileCreation": "Voice profile creation",
+      "voiceTones": "Up to 6 voice tones",
+      "talentPortal": "Talent Portal",
+      "archives": "Campaign Archives",
+      "activeCampaigns": "Active Campaigns",
+      "analytics": "Advanced earnings analytics"
+    },
+    "comparison": {
+      "title": "Full comparison",
+      "subtitle": "Every feature, side by side.",
+      "feature": "Feature",
+      "coreAccess": "Core access",
+      "premiumWorkflow": "Premium workflow"
+    },
+    "moreFeatures": "+ More features",
+    "backToDashboard": "Back to Dashboard"
   }
 }

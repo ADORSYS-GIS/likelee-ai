@@ -88,7 +88,36 @@
       "subtitle": "Verwalten Sie Ihr Profil und Ihre Präferenzen",
       "tabs": {
         "profile": "Profileinstellungen",
-        "rules": "Meine Regeln"
+        "rules": "Meine Regeln",
+        "billing": "Abrechnung"
+      },
+      "billingSummary": {
+        "title": "Creator-Abonnement",
+        "currentAccess": "Aktueller Zugriff",
+        "recommendedNextStep": "Empfohlener nächster Schritt",
+        "processing": "Wird verarbeitet...",
+        "viewDetails": "Details anzeigen",
+        "lockInProTitle": "Bereit, Pro festzulegen?",
+        "lockInProDescription": "Dein Test ist aktiv, aber du kannst dir deine professionellen Workflow-Tools schon heute sichern. Erhalte volle Marketplace-Priorität und exklusiven Zugang zu Kampagnen.",
+        "openingPortal": "Portal wird geöffnet...",
+        "selectPlan": "Plan auswählen",
+        "access": {
+          "proTrial": "Pro-Testzugang",
+          "pro": "Pro-Creator-Zugang",
+          "basicTrial": "Basic-Testzugang",
+          "basic": "Basic-Creator-Zugang",
+          "free": "Kostenloser Creator-Zugang"
+        },
+        "next": {
+          "free": "Zu Basic wechseln",
+          "basic": "Zu Pro wechseln",
+          "pro": "Alles ist bereits freigeschaltet"
+        },
+        "descriptions": {
+          "free": "Basic schaltet KYC, Creator-Sichtbarkeit, Agentur- und Markenverbindungen, My Likeness und Auszahlungen frei.",
+          "basic": "Pro schaltet Cameo-Uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives und Active Campaigns frei.",
+          "pro": "Dein aktueller Plan umfasst das komplette Creator-Workflow-Toolkit."
+        }
       },
       "profile": {
         "photoTitle": "Profilfoto",
@@ -137,6 +166,8 @@
       "rules": {
         "title": "Meine Regeln",
         "subtitle": "Legen Sie Ihre Lizenzpräferenzen und Preise fest",
+        "planLimitMessage": "Sie sind im {{plan}}-Ersteller-Plan. Sie können bis zu {{limit}} kombinierte Inhaltskategorien und Branchen auswählen.",
+        "proCreatorsUnlimitedSelection": "Pro-Ersteller haben unbegrenzte Kategorieauswahl.",
         "edit": "Bearbeiten",
         "cancel": "Abbrechen",
         "save": "Speichern",
@@ -1067,7 +1098,15 @@
     "viewJobDetails": "Jobdetails ansehen",
     "apply": "Bewerben",
     "browseBoardTitle": "Das vollständige Job-Board durchsuchen",
-    "browseBoardDescription": "Öffne die öffentliche Jobseite, um alle verfügbaren Möglichkeiten anzusehen und dich zu bewerben."
+    "browseBoardDescription": "Öffne die öffentliche Jobseite, um alle verfügbaren Möglichkeiten anzusehen und dich zu bewerben.",
+    "findJobs": "Jobs Finden",
+    "browseBrandPostedOpportunities": "Von Marken veröffentlichte Möglichkeiten durchsuchen",
+    "searchJobs": "Jobs suchen...",
+    "filterByIndustry": "Nach Branche filtern",
+    "filterByLocation": "Nach Standort filtern",
+    "allIndustries": "Alle Branchen",
+    "allLocations": "Alle Standorte",
+    "clearFilters": "Filter löschen"
   },
   "brandConnections": {
     "title": "Markenverbindung",
@@ -1190,7 +1229,10 @@
     "invitationFromAgency": "Einladung von einer Agentur",
     "profileAvailable": "Agenturprofil auf Anfrage verfügbar",
     "assetRequestsDescription": "Lade Deliverables für Agenturanfragen hoch.",
-    "loadingRequests": "Anfragen werden geladen..."
+    "loadingRequests": "Anfragen werden geladen...",
+    "assetRequestFallback": "Asset-Anfrage",
+    "offerMissingTitle": "Kampagnenangebot fehlt",
+    "offerMissingDescription": "Wir konnten das Kampagnenangebot für diese Anfrage nicht finden. Bitte aktualisiere die Seite und versuche es erneut."
   },
   "talentPortal": {
     "title": "Talent-Portal",
@@ -1241,14 +1283,36 @@
     "subtitle": "Durchsuchen Sie von Marken veröffentlichte Möglichkeiten und bewerben Sie sich direkt.",
     "backToDashboard": "Zurück zum Dashboard",
     "searchPlaceholder": "Jobtitel oder Stichwort suchen",
+    "callTypePlaceholder": "Anruftyp",
+    "jobTypePlaceholder": "Jobtyp",
+    "locationPlaceholder": "Standort",
     "allCallTypes": "Alle Anruftypen",
     "allJobTypes": "Alle Jobtypen",
     "allLocations": "Alle Standorte",
     "viewDetails": "Details anzeigen",
     "applyNow": "Jetzt bewerben",
+    "upgradeToApply": "Upgrade zum Bewerben",
     "remote": "Remote",
     "aboutRole": "Über die Rolle",
-    "openRoles": "{{count}} offene Stellen"
+    "openRoles": "{{count}} offene Stellen",
+    "callTypes": {
+      "creator": "Creator-Call",
+      "agency": "Agentur-Call",
+      "athlete": "Athleten-Call",
+      "aiArtist": "KI-Artist-Call"
+    },
+    "jobTypes": {
+      "fullTime": "Vollzeit",
+      "partTime": "Teilzeit",
+      "contract": "Vertrag",
+      "freelance": "Freelance",
+      "gig": "Gig"
+    },
+    "locations": {
+      "remote": "Remote",
+      "hybrid": "Hybrid",
+      "onSite": "Vor Ort"
+    }
   },
   "billing": {
     "title": "Abrechnung",
@@ -1265,5 +1329,103 @@
     "billedMonthly": "Monatlich abgerechnet",
     "billedAnnually": "Jährlich abgerechnet",
     "save20Percent": "SPARE 20%"
+  },
+  "creatorSubscribe": {
+    "hero": {
+      "badge": "Creator-Pläne",
+      "title": "Besitze dein Abbild.",
+      "subtitle": "Verdiene damit für immer.",
+      "description": "Einfache, erschwingliche Pläne, damit Creator ihre Identität im KI-Zeitalter mit dem passenden Zugriff schützen, lizenzieren und monetarisieren können."
+    },
+    "billing": {
+      "plansAreBilled": "Pläne werden {{interval}} abgerechnet",
+      "monthly": "Monatlich",
+      "annually": "jährlich",
+      "annual": "Jährlich",
+      "save20": "SPARE 20%",
+      "subscriptionStarted": "Abonnement gestartet",
+      "checkoutCanceled": "Checkout abgebrochen",
+      "perMonth": "/Monat",
+      "annualSuffix": "(jährlich)"
+    },
+    "currentPlan": {
+      "label": "Aktueller Plan:",
+      "expiresOn": "Läuft ab am ",
+      "renewsOn": "Verlängert sich am ",
+      "manageSubscription": "Abonnement verwalten"
+    },
+    "trial": {
+      "oneTimeOffer": "Einmaliges Angebot",
+      "startPrefix": "Starte deinen 30-Tage-",
+      "free": "Gratis-",
+      "startSuffix": "Test",
+      "description": "Wähle einen der Pläne unten und hinterlege deine Karte. Bis zum Ende des Tests wird nichts berechnet.",
+      "continuation": "Testfortsetzung",
+      "basicCarryOver": "Beim Wechsel zum Basic-Test bleiben deine restlichen Testtage erhalten. Die Basic-Abrechnung startet automatisch am",
+      "proCarryOver": "Deine restlichen Testtage bleiben erhalten. Die Pro-Abrechnung startet automatisch am",
+      "daysLeft": "{{count}} Tag übrig",
+      "daysLeft_other": "{{count}} Tage übrig"
+    },
+    "plans": {
+      "basic": {
+        "badge": "ESSENZIELL",
+        "name": "Basic",
+        "description": "Verifiziere dich und beginne zu verdienen."
+      },
+      "pro": {
+        "badge": "AM BELIEBTESTEN",
+        "recommended": "EMPF.",
+        "name": "Pro",
+        "description": "Die komplette Premium-Suite für Creator."
+      }
+    },
+    "actions": {
+      "currentPlan": "Aktueller Plan",
+      "switchToInterval": "Zu {{interval}} wechseln",
+      "switchToBasic": "Zu Basic wechseln",
+      "switchToBasicTrial": "Zum Basic-Test wechseln",
+      "switchToPro": "Zu Pro wechseln",
+      "switchToProTrial": "Zum Pro-Test wechseln",
+      "startFreeTrial": "30-Tage-Gratis-Test starten",
+      "subscribeToBasic": "Basic abonnieren",
+      "subscribeToPro": "Pro abonnieren"
+    },
+    "groups": {
+      "dashboardProfile": "Dashboard und Profil",
+      "connectionsPayouts": "Verbindungen und Auszahlungen",
+      "everythingInBasic": "Alles in Basic plus",
+      "voiceTools": "Stimme und Creator-Tools",
+      "campaignsAnalytics": "Kampagnen und Analysen"
+    },
+    "features": {
+      "content": "Inhalt",
+      "dashboard": "Dashboard",
+      "dashboardOverview": "Dashboard-Überblick",
+      "likeness": "My Likeness",
+      "kyc": "Identitätsprüfung (KYC)",
+      "visibilityUnlock": "Freischaltung der Creator-Sichtbarkeit",
+      "agencyConnection": "Agenturverbindung",
+      "brandConnection": "Markenverbindung",
+      "payouts": "Auszahlungen",
+      "cameoUploads": "Cameo-Video-Uploads",
+      "jobs": "Jobs",
+      "rules": "Einstellungen: My Rules",
+      "voice": "Stimme",
+      "voiceProfileCreation": "Erstellung des Sprachprofils",
+      "voiceTones": "Bis zu 6 Stimmlagen",
+      "talentPortal": "Talent Portal",
+      "archives": "Kampagnenarchive",
+      "activeCampaigns": "Aktive Kampagnen",
+      "analytics": "Erweiterte Verdienstanalysen"
+    },
+    "comparison": {
+      "title": "Vollständiger Vergleich",
+      "subtitle": "Jede Funktion Seite an Seite.",
+      "feature": "Funktion",
+      "coreAccess": "Kernzugriff",
+      "premiumWorkflow": "Premium-Workflow"
+    },
+    "moreFeatures": "+ Mehr Funktionen",
+    "backToDashboard": "Zurück zum Dashboard"
   }
 }

@@ -549,7 +549,36 @@
       "subtitle": "Gérez votre profil et vos préférences",
       "tabs": {
         "profile": "Paramètres du Profil",
-        "rules": "Mes Règles"
+        "rules": "Mes Règles",
+        "billing": "Facturation"
+      },
+      "billingSummary": {
+        "title": "Abonnement créateur",
+        "currentAccess": "Accès actuel",
+        "recommendedNextStep": "Prochaine étape recommandée",
+        "processing": "Traitement...",
+        "viewDetails": "Voir les détails",
+        "lockInProTitle": "Prêt à passer en Pro ?",
+        "lockInProDescription": "Votre essai est actif, mais vous pouvez sécuriser dès aujourd'hui vos outils de workflow professionnels. Obtenez la priorité complète sur la marketplace et un accès exclusif aux campagnes.",
+        "openingPortal": "Ouverture du portail...",
+        "selectPlan": "Choisir un plan",
+        "access": {
+          "proTrial": "Accès essai Pro",
+          "pro": "Accès créateur Pro",
+          "basicTrial": "Accès essai Basic",
+          "basic": "Accès créateur Basic",
+          "free": "Accès créateur gratuit"
+        },
+        "next": {
+          "free": "Passer à Basic",
+          "basic": "Passer à Pro",
+          "pro": "Tout est déjà débloqué"
+        },
+        "descriptions": {
+          "free": "Basic débloque la vérification KYC, la visibilité créateur, les connexions agence et marque, My Likeness et les paiements.",
+          "basic": "Pro débloque les uploads Cameo, Jobs, My Rules, Voice, Talent Portal, Campaign Archives et Active Campaigns.",
+          "pro": "Votre formule actuelle inclut tous les outils du workflow créateur."
+        }
       },
       "profile": {
         "photoTitle": "Photo de Profil",
@@ -598,6 +627,8 @@
       "rules": {
         "title": "Mes règles",
         "subtitle": "Définissez vos préférences de licence et vos tarifs",
+        "planLimitMessage": "Vous êtes sur le plan créateur {{plan}}. Vous pouvez sélectionner jusqu'à {{limit}} catégories de contenu et industries combinées.",
+        "proCreatorsUnlimitedSelection": "Les créateurs Pro ont une sélection illimitée de catégories.",
         "edit": "Modifier",
         "cancel": "Annuler",
         "save": "Enregistrer",
@@ -1036,7 +1067,15 @@
     "viewJobDetails": "Voir les détails de l'emploi",
     "apply": "Postuler",
     "browseBoardTitle": "Parcourir l'intégralité du tableau des emplois",
-    "browseBoardDescription": "Ouvrez la page publique des emplois pour voir toutes les opportunités disponibles et postuler."
+    "browseBoardDescription": "Ouvrez la page publique des emplois pour voir toutes les opportunités disponibles et postuler.",
+    "findJobs": "Trouver des Emplois",
+    "browseBrandPostedOpportunities": "Parcourir les opportunités publiées par les marques",
+    "searchJobs": "Rechercher des emplois...",
+    "filterByIndustry": "Filtrer par industrie",
+    "filterByLocation": "Filtrer par emplacement",
+    "allIndustries": "Toutes les industries",
+    "allLocations": "Tous les emplacements",
+    "clearFilters": "Effacer les filtres"
   },
   "agencyConnections": {
     "title": "Connexions d'Agence",
@@ -1102,7 +1141,10 @@
     "invitationFromAgency": "Invitation d'une agence",
     "profileAvailable": "Profil d'agence disponible sur demande",
     "assetRequestsDescription": "Téléchargez des livrables pour les demandes de l’agence.",
-    "loadingRequests": "Chargement des demandes..."
+    "loadingRequests": "Chargement des demandes...",
+    "assetRequestFallback": "Demande d'assets",
+    "offerMissingTitle": "Offre de campagne introuvable",
+    "offerMissingDescription": "Nous n'avons pas pu trouver l'offre de campagne pour cette demande. Actualisez la page puis réessayez."
   },
   "brandConnections": {
     "title": "Connexions de Marque",
@@ -1185,14 +1227,36 @@
     "subtitle": "Parcourez les opportunités publiées par les marques et postulez directement.",
     "backToDashboard": "Retour au tableau de bord",
     "searchPlaceholder": "Rechercher un titre de poste ou un mot-clé",
+    "callTypePlaceholder": "Type d'appel",
+    "jobTypePlaceholder": "Type d'emploi",
+    "locationPlaceholder": "Emplacement",
     "allCallTypes": "Tous les types d'appel",
     "allJobTypes": "Tous les types d'emploi",
     "allLocations": "Tous les emplacements",
     "viewDetails": "Voir les Détails",
     "applyNow": "Postuler Maintenant",
+    "upgradeToApply": "Mettre à niveau pour postuler",
     "remote": "À distance",
     "aboutRole": "À propos du rôle",
-    "openRoles": "{{count}} postes ouverts"
+    "openRoles": "{{count}} postes ouverts",
+    "callTypes": {
+      "creator": "Appel créateur",
+      "agency": "Appel agence",
+      "athlete": "Appel athlète",
+      "aiArtist": "Appel artiste IA"
+    },
+    "jobTypes": {
+      "fullTime": "Temps plein",
+      "partTime": "Temps partiel",
+      "contract": "Contrat",
+      "freelance": "Freelance",
+      "gig": "Mission"
+    },
+    "locations": {
+      "remote": "À distance",
+      "hybrid": "Hybride",
+      "onSite": "Sur site"
+    }
   },
   "billing": {
     "title": "Facturation",
@@ -1209,5 +1273,103 @@
     "billedMonthly": "Facturé mensuellement",
     "billedAnnually": "Facturé annuellement",
     "save20Percent": "ÉCONOMISEZ 20%"
+  },
+  "creatorSubscribe": {
+    "hero": {
+      "badge": "Plans créateur",
+      "title": "Prenez possession de votre image.",
+      "subtitle": "Gagnez avec elle pour toujours.",
+      "description": "Des plans simples et accessibles pour permettre aux créateurs de protéger, licencier et monétiser leur identité à l'ère de l'IA avec le bon niveau d'accès."
+    },
+    "billing": {
+      "plansAreBilled": "Les plans sont facturés {{interval}}",
+      "monthly": "Mensuel",
+      "annually": "annuellement",
+      "annual": "Annuel",
+      "save20": "ÉCONOMISEZ 20%",
+      "subscriptionStarted": "Abonnement démarré",
+      "checkoutCanceled": "Paiement annulé",
+      "perMonth": "/mois",
+      "annualSuffix": "(annuel)"
+    },
+    "currentPlan": {
+      "label": "Plan actuel :",
+      "expiresOn": "Expire le ",
+      "renewsOn": "Renouvelle le ",
+      "manageSubscription": "Gérer l'abonnement"
+    },
+    "trial": {
+      "oneTimeOffer": "Offre unique",
+      "startPrefix": "Lancez votre essai de 30 jours",
+      "free": "gratuit",
+      "startSuffix": "",
+      "description": "Choisissez l'un des plans ci-dessous et entrez votre carte. Vous ne serez pas débité avant la fin de l'essai.",
+      "continuation": "Suite de l'essai",
+      "basicCarryOver": "En passant sur l'essai Basic, vos jours restants sont conservés. La facturation Basic commencera automatiquement le",
+      "proCarryOver": "Vous conservez vos jours d'essai restants. La facturation Pro commencera automatiquement le",
+      "daysLeft": "Il reste {{count}} jour",
+      "daysLeft_other": "Il reste {{count}} jours"
+    },
+    "plans": {
+      "basic": {
+        "badge": "ESSENTIEL",
+        "name": "Basic",
+        "description": "Vérifiez-vous et commencez à gagner."
+      },
+      "pro": {
+        "badge": "LE PLUS POPULAIRE",
+        "recommended": "RECO.",
+        "name": "Pro",
+        "description": "La suite premium complète pour les créateurs."
+      }
+    },
+    "actions": {
+      "currentPlan": "Plan actuel",
+      "switchToInterval": "Passer en {{interval}}",
+      "switchToBasic": "Passer à Basic",
+      "switchToBasicTrial": "Passer à l'essai Basic",
+      "switchToPro": "Passer à Pro",
+      "switchToProTrial": "Passer à l'essai Pro",
+      "startFreeTrial": "Commencer l'essai gratuit de 30 jours",
+      "subscribeToBasic": "S'abonner à Basic",
+      "subscribeToPro": "S'abonner à Pro"
+    },
+    "groups": {
+      "dashboardProfile": "Tableau de bord et profil",
+      "connectionsPayouts": "Connexions et paiements",
+      "everythingInBasic": "Tout dans Basic, plus",
+      "voiceTools": "Voix et outils créateur",
+      "campaignsAnalytics": "Campagnes et analytique"
+    },
+    "features": {
+      "content": "Contenu",
+      "dashboard": "Tableau de bord",
+      "dashboardOverview": "Vue d'ensemble du tableau de bord",
+      "likeness": "My Likeness",
+      "kyc": "Vérification d'identité (KYC)",
+      "visibilityUnlock": "Déblocage de visibilité créateur",
+      "agencyConnection": "Connexion agence",
+      "brandConnection": "Connexion marque",
+      "payouts": "Paiements",
+      "cameoUploads": "Uploads vidéo Cameo",
+      "jobs": "Jobs",
+      "rules": "Paramètres : My Rules",
+      "voice": "Voix",
+      "voiceProfileCreation": "Création de profil vocal",
+      "voiceTones": "Jusqu'à 6 tonalités de voix",
+      "talentPortal": "Talent Portal",
+      "archives": "Archives de campagnes",
+      "activeCampaigns": "Campagnes actives",
+      "analytics": "Analytique avancée des revenus"
+    },
+    "comparison": {
+      "title": "Comparaison complète",
+      "subtitle": "Chaque fonctionnalité, côte à côte.",
+      "feature": "Fonctionnalité",
+      "coreAccess": "Accès principal",
+      "premiumWorkflow": "Workflow premium"
+    },
+    "moreFeatures": "+ Plus de fonctionnalités",
+    "backToDashboard": "Retour au tableau de bord"
   }
 }

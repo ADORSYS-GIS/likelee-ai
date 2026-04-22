@@ -786,10 +786,103 @@ export default function CreatorDashboard() {
   const totalBrandConnectionNotifications =
     unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
 
-  const formatStatus = (status: unknown) =>
-    String(status || "sent")
+  const formatStatus = (status: unknown) => {
+    const normalized = String(status || "sent").toLowerCase();
+    const keyMap: Record<string, string> = {
+      accepted: "brandConnections.accepted",
+      approved: "brandConnections.approved",
+      sent: "brandConnections.sent",
+      viewed: "brandConnections.viewed",
+      fulfilled: "brandConnections.fulfilled",
+      submitted: "brandConnections.submitted",
+      brand_approved: "brandConnections.approved",
+      declined: "brandConnections.declined",
+      changes_requested: "brandConnections.changesRequested",
+      contract_fully_signed: "brandConnections.contractFullySigned",
+      contract_partially_signed: "brandConnections.contractPartiallySigned",
+      contract_sent: "brandConnections.contractSent",
+    };
+    const key = keyMap[normalized];
+    if (key) return t(key);
+    return String(status || "sent")
       .replace(/_/g, " ")
       .replace(/\b\w/g, (m) => m.toUpperCase());
+  };
+
+  const translateJobCallType = (value: unknown) => {
+    const normalized = String(value || "creator").toLowerCase();
+    const keyMap: Record<string, string> = {
+      creator: "jobsPage.callTypes.creator",
+      agency: "jobsPage.callTypes.agency",
+      athlete: "jobsPage.callTypes.athlete",
+      ai_artist: "jobsPage.callTypes.aiArtist",
+    };
+    return keyMap[normalized]
+      ? t(keyMap[normalized])
+      : normalized.replace(/_/g, " ");
+  };
+
+  const translateJobMetaValue = (
+    value: unknown,
+    type: "location" | "jobType",
+  ) => {
+    const normalized = String(value || "").toLowerCase();
+    if (!normalized) return "";
+    const keyMap =
+      type === "location"
+        ? {
+            remote: "jobsPage.locations.remote",
+            hybrid: "jobsPage.locations.hybrid",
+            on_site: "jobsPage.locations.onSite",
+          }
+        : {
+            full_time: "jobsPage.jobTypes.fullTime",
+            part_time: "jobsPage.jobTypes.partTime",
+            contract: "jobsPage.jobTypes.contract",
+            freelance: "jobsPage.jobTypes.freelance",
+            gig: "jobsPage.jobTypes.gig",
+            per_project: "jobsPage.jobTypes.perProject",
+          };
+    return (keyMap as Record<string, string>)[normalized]
+      ? t((keyMap as Record<string, string>)[normalized])
+      : normalized.replace(/_/g, " ");
+  };
+
+  const translateAgencyFeedbackText = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    const cleaned = raw
+      .replace(/^agencyConnection\.agencyFeedback:\s*/i, "")
+      .replace(/^agencyConnections\.agencyFeedback:\s*/i, "");
+    const normalized = cleaned.trim().toLowerCase();
+    const keyMap: Record<string, string> = {
+      good: "agencyConnections.feedback.good",
+      "request changes": "agencyConnections.feedback.requestingChanges",
+      "requesting changes": "agencyConnections.feedback.requestingChanges",
+      changes_requested: "agencyConnections.feedback.requestingChanges",
+    };
+    return keyMap[normalized] ? t(keyMap[normalized]) : cleaned;
+  };
+
+  const translateOfferDeliverableStatus = (value: unknown) => {
+    const normalized = String(value || "").toLowerCase();
+    if (normalized.includes("changes_requested")) {
+      return t("brandConnections.requestReview");
+    }
+    if (normalized.includes("deliverables_submitted")) {
+      return t("brandConnections.submitted");
+    }
+    if (normalized.includes("approved")) {
+      return t("brandConnections.approved");
+    }
+    if (
+      normalized.includes("contract_fully_signed") ||
+      normalized.includes("signed")
+    ) {
+      return t("brandConnections.readyToSubmit");
+    }
+    return t("brandConnections.notStarted");
+  };
 
   const offerStatusBadgeClass = (statusRaw: unknown) => {
     const status = String(statusRaw || "").toLowerCase();
@@ -2743,7 +2836,7 @@ export default function CreatorDashboard() {
   ];
 
   const getTranslatedVibes = () =>
-    VIBES.map((vibe) => resolveTranslation(`content.vibes.${vibe}`, vibe));
+    VIBES.map((vibe) => resolveTranslation(`vibes.${vibe}`, vibe));
 
   // Mapping functions to translate stored English values to localized display text
   const translateContentType = (englishType: string): string => {
@@ -4105,13 +4198,17 @@ export default function CreatorDashboard() {
                   </div>
                 </div>
                 <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
-                  {(job?.call_type || "call").replace("_", " ")}
+                  {translateJobCallType(job?.call_type)}
                 </Badge>
               </div>
               <div className="text-sm text-gray-600 lowercase">
                 {[
-                  job?.location ? String(job.location).replace("_", " ") : "",
-                  job?.job_type ? String(job.job_type).replace("_", " ") : "",
+                  job?.location
+                    ? translateJobMetaValue(job.location, "location")
+                    : "",
+                  job?.job_type
+                    ? translateJobMetaValue(job.job_type, "jobType")
+                    : "",
                 ]
                   .filter(Boolean)
                   .join("   ")}
@@ -8077,7 +8174,9 @@ export default function CreatorDashboard() {
                   req?.agencies?.agency_name ||
                   t("agencyConnections.contract.agencyFallback");
                 const agencyLogo = req?.agencies?.logo_url || "";
-                const requestTitle = String(req?.title || "Asset request");
+                const requestTitle = String(
+                  req?.title || t("agencyConnections.assetRequestFallback"),
+                );
                 const offerDeliverables = offerId
                   ? offerDeliverablesById[offerId] || []
                   : [];
@@ -8122,7 +8221,7 @@ export default function CreatorDashboard() {
                             {agencyName} •{" "}
                             {offer?.offer_title ||
                               offer?.brand_campaigns?.name ||
-                              "Campaign"}
+                              t("brandConnections.campaignFallback")}
                           </div>
                         </div>
                       </div>
@@ -8153,7 +8252,8 @@ export default function CreatorDashboard() {
                               window.open(String(req.file_url), "_blank")
                             }
                           >
-                            <FileText className="w-4 h-4 mr-2" /> View PDF
+                            <FileText className="w-4 h-4 mr-2" />{" "}
+                            {t("brandConnections.viewPDF")}
                           </Button>
                         )}
                         <div className="flex flex-wrap gap-2 pt-2">
@@ -8165,9 +8265,12 @@ export default function CreatorDashboard() {
                             onClick={async () => {
                               if (!offerId) {
                                 toast({
-                                  title: "Campaign offer missing",
-                                  description:
-                                    "We could not find the campaign offer for this request. Please refresh and try again.",
+                                  title: t(
+                                    "agencyConnections.offerMissingTitle",
+                                  ),
+                                  description: t(
+                                    "agencyConnections.offerMissingDescription",
+                                  ),
                                   variant: "destructive",
                                 });
                                 return;
@@ -8199,22 +8302,24 @@ export default function CreatorDashboard() {
                               } catch {}
                             }}
                           >
-                            Upload Deliverables
+                            {t("brandConnections.uploadDeliverables")}
                           </Button>
                         </div>
                         <div className="pt-2 border-t border-gray-100">
                           <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-2">
-                            <span>Your deliverables</span>
+                            <span>
+                              {t("brandConnections.yourDeliverables")}
+                            </span>
                           </div>
                           {loadingOfferDeliverablesById[offerId] && (
                             <p className="text-xs text-gray-500">
-                              Loading deliverables...
+                              {t("brandConnections.loadingDeliverables")}
                             </p>
                           )}
                           {!loadingOfferDeliverablesById[offerId] &&
                             requestDeliverables.length === 0 && (
                               <p className="text-xs text-gray-500">
-                                No deliverables submitted yet.
+                                {t("brandConnections.noDeliverablesSubmitted")}
                               </p>
                             )}
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -8258,14 +8363,9 @@ export default function CreatorDashboard() {
                                           deliverable?.status || "submitted",
                                         )}`}
                                       >
-                                        {String(
+                                        {formatStatus(
                                           deliverable?.status || "submitted",
-                                        ).toLowerCase() === "brand_approved"
-                                          ? "approved"
-                                          : String(
-                                              deliverable?.status ||
-                                                "submitted",
-                                            )}
+                                        )}
                                       </Badge>
                                     </div>
                                   </div>
@@ -8275,8 +8375,15 @@ export default function CreatorDashboard() {
                                     </div>
                                     {agencyNote && (
                                       <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded p-2">
-                                        <strong>Agency Feedback:</strong>{" "}
-                                        {agencyNote}
+                                        <strong>
+                                          {t(
+                                            "agencyConnections.agencyFeedback",
+                                          )}
+                                          :
+                                        </strong>{" "}
+                                        {translateAgencyFeedbackText(
+                                          agencyNote,
+                                        )}
                                       </div>
                                     )}
                                     {assetUrl &&
@@ -8288,7 +8395,7 @@ export default function CreatorDashboard() {
                                           rel="noreferrer"
                                           className="text-xs text-blue-600 underline"
                                         >
-                                          Open file
+                                          {t("brandConnections.openFile")}
                                         </a>
                                       )}
                                   </div>
@@ -8595,15 +8702,19 @@ export default function CreatorDashboard() {
                           </div>
                         </div>
                         <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
-                          {(job?.call_type || "call").replace("_", " ")}
+                          {translateJobCallType(job?.call_type)}
                         </Badge>
                       </div>
                       <div className="text-xs text-gray-600 flex flex-wrap gap-2">
                         {job?.location && (
-                          <span>{String(job.location).replace("_", " ")}</span>
+                          <span>
+                            {translateJobMetaValue(job.location, "location")}
+                          </span>
                         )}
                         {job?.job_type && (
-                          <span>{String(job.job_type).replace("_", " ")}</span>
+                          <span>
+                            {translateJobMetaValue(job.job_type, "jobType")}
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -8753,7 +8864,7 @@ export default function CreatorDashboard() {
                         onClick={closeOfferBriefPage}
                         className="border-2 border-gray-300"
                       >
-                        ← Back to Brand Offers
+                        {t("brandConnections.backToOffers")}
                       </Button>
                       <h1 className="text-3xl font-bold text-gray-900">
                         {t("brandConnections.briefAndContractTitle", {
@@ -9157,11 +9268,11 @@ export default function CreatorDashboard() {
                         onClick={signContract}
                         disabled={!selectedBriefContract}
                       >
-                        Sign Contract
+                        {t("brandConnections.signContract")}
                       </Button>
                     ) : (
                       <div className="text-sm font-medium text-emerald-700">
-                        Contract already signed.
+                        {t("brandConnections.contractAlreadySigned")}
                       </div>
                     )}
                   </div>
@@ -9198,37 +9309,15 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
                         <p>
-                          Offer status:{" "}
+                          {t("brandConnections.offerStatus")}{" "}
                           <span className="font-semibold text-gray-900">
                             {formatStatus(offer?.status || "sent")}
                           </span>
                         </p>
                         <p>
-                          Deliverable status:{" "}
+                          {t("brandConnections.deliverableStatus")}{" "}
                           <span className="font-semibold text-gray-900">
-                            {(() => {
-                              const normalized = String(
-                                offer?.status || "",
-                              ).toLowerCase();
-                              if (normalized.includes("changes_requested")) {
-                                return "Request Review";
-                              }
-                              if (
-                                normalized.includes("deliverables_submitted")
-                              ) {
-                                return "Submitted";
-                              }
-                              if (normalized.includes("approved")) {
-                                return "Approved";
-                              }
-                              if (
-                                normalized.includes("contract_fully_signed") ||
-                                normalized.includes("signed")
-                              ) {
-                                return "Ready to submit";
-                              }
-                              return "Not started";
-                            })()}
+                            {translateOfferDeliverableStatus(offer?.status)}
                           </span>
                         </p>
                         <p>
@@ -9281,8 +9370,7 @@ export default function CreatorDashboard() {
                           String(offer?.id || ""),
                         ) && (
                           <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                            Edits requested by brand. Open brief and check
-                            feedback comments.
+                            {t("brandConnections.editsRequestedByBrand")}
                           </div>
                         )}
                       <Button
@@ -9290,7 +9378,7 @@ export default function CreatorDashboard() {
                         className="border-gray-200"
                         onClick={() => openOfferBriefPage(offerId)}
                       >
-                        View brief
+                        {t("brandConnections.viewBrief")}
                       </Button>
                     </div>
                   );
@@ -9304,7 +9392,7 @@ export default function CreatorDashboard() {
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-lg font-semibold text-gray-900">
-                  Deliverables
+                  {t("brandConnections.deliverables")}
                 </div>
                 <Button
                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -9314,16 +9402,18 @@ export default function CreatorDashboard() {
                     setSendDeliverableOpen(true);
                   }}
                 >
-                  Send deliverable
+                  {t("brandConnections.sendDeliverable")}
                 </Button>
               </div>
               {loadingBrandOffers && (
-                <p className="text-sm text-gray-600">Loading deliverables...</p>
+                <p className="text-sm text-gray-600">
+                  {t("brandConnections.loadingDeliverables")}
+                </p>
               )}
               {!loadingBrandOffers &&
                 deliverableEligibleOffers.length === 0 && (
                   <p className="text-sm text-gray-600">
-                    No deliverables yet for fully signed offers.
+                    {t("brandConnections.noDeliverablesForSignedOffers")}
                   </p>
                 )}
               {deliverableEligibleOffers.map((offer: any) => {
@@ -9359,11 +9449,11 @@ export default function CreatorDashboard() {
                       <div className="rounded-md border border-gray-200 p-3">
                         {loadingOfferDetails ? (
                           <div className="text-xs text-gray-500">
-                            Loading deliverables...
+                            {t("brandConnections.loadingDeliverables")}
                           </div>
                         ) : selectedOfferDeliverables.length === 0 ? (
                           <div className="text-xs text-gray-500">
-                            No deliverables yet.
+                            {t("brandConnections.noDeliverablesYet")}
                           </div>
                         ) : (
                           selectedOfferDeliverables.map((deliverable: any) => (
@@ -9383,7 +9473,7 @@ export default function CreatorDashboard() {
                                   {String(
                                     deliverable?.status || "submitted",
                                   ).toLowerCase() === "brand_approved"
-                                    ? "Approved"
+                                    ? t("brandConnections.approved")
                                     : formatStatus(
                                         deliverable?.status || "submitted",
                                       )}
@@ -11624,8 +11714,14 @@ export default function CreatorDashboard() {
             <div className="p-6 pt-2 space-y-8">
               <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
                 {effectivePlanTier === "pro"
-                  ? "Pro creators have unlimited category selection."
-                  : `You are on the ${effectivePlanTier === "basic" ? "Basic" : "Free"} creator plan. You can select up to ${creatorCategoryLimit} combined content categories and industries.`}
+                  ? t("common.proCreatorsUnlimited")
+                  : t("creatorDashboard.settingsView.rules.planLimitMessage", {
+                      plan:
+                        effectivePlanTier === "basic"
+                          ? t("billing.basic")
+                          : t("billing.free"),
+                      limit: creatorCategoryLimit,
+                    })}
               </div>
               {/* Content I'm Open To */}
               <div>
@@ -11892,7 +11988,7 @@ export default function CreatorDashboard() {
                 <div>
                   <div className="flex items-center gap-3">
                     <h3 className="text-xl font-bold text-[#142033]">
-                      Creator subscription
+                      {t("creatorDashboard.settingsView.billingSummary.title")}
                     </h3>
                     <Badge
                       className={
@@ -11923,18 +12019,30 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                      Current access
+                      {t(
+                        "creatorDashboard.settingsView.billingSummary.currentAccess",
+                      )}
                     </div>
                     <div className="mt-1 text-2xl font-bold text-[#142033]">
                       {effectivePlanTier === "pro"
                         ? trialActive
-                          ? "Pro Trial access"
-                          : "Pro creator access"
+                          ? t(
+                              "creatorDashboard.settingsView.billingSummary.access.proTrial",
+                            )
+                          : t(
+                              "creatorDashboard.settingsView.billingSummary.access.pro",
+                            )
                         : effectivePlanTier === "basic"
                           ? trialActive
-                            ? "Basic Trial access"
-                            : "Basic creator access"
-                          : "Free creator access"}
+                            ? t(
+                                "creatorDashboard.settingsView.billingSummary.access.basicTrial",
+                              )
+                            : t(
+                                "creatorDashboard.settingsView.billingSummary.access.basic",
+                              )
+                          : t(
+                              "creatorDashboard.settingsView.billingSummary.access.free",
+                            )}
                     </div>
                   </div>
                 </div>
@@ -11942,51 +12050,104 @@ export default function CreatorDashboard() {
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
                   {[
                     {
-                      label: "Content",
-                      value: "Included for all creators",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.content.label",
+                      ),
+                      value: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.content.value",
+                      ),
                       included: true,
                     },
                     {
-                      label: "KYC access",
-                      value: creatorCanUseKyc ? "Included" : "Upgrade to Basic",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.kyc.label",
+                      ),
+                      value: creatorCanUseKyc
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                          ),
                       included: creatorCanUseKyc,
                     },
                     {
-                      label: "My Likeness",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.likeness.label",
+                      ),
                       value: creatorCanUseLikeness
-                        ? "Included"
-                        : "Upgrade to Basic",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                          ),
                       included: creatorCanUseLikeness,
                     },
                     {
-                      label: "Payouts",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.payouts.label",
+                      ),
                       value: creatorCanUsePayouts
-                        ? "Included"
-                        : "Upgrade to Basic",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                          ),
                       included: creatorCanUsePayouts,
                     },
                     {
-                      label: "My Rules",
-                      value: creatorCanUseRules ? "Included" : "Pro only",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.rules.label",
+                      ),
+                      value: creatorCanUseRules
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                          ),
                       included: creatorCanUseRules,
                     },
                     {
-                      label: "Voice",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.voice.label",
+                      ),
                       value: creatorCanUseVoice
-                        ? `Enabled (${Math.max(creatorVoiceLimit, 6)} tones)`
-                        : "Pro only",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.voiceEnabled",
+                            { count: Math.max(creatorVoiceLimit, 6) },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                          ),
                       included: creatorCanUseVoice,
                     },
                     {
-                      label: "Jobs",
-                      value: creatorCanUseJobs ? "Included" : "Pro only",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.jobs.label",
+                      ),
+                      value: creatorCanUseJobs
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                          ),
                       included: creatorCanUseJobs,
                     },
                     {
-                      label: "Active Campaigns",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.activeCampaigns.label",
+                      ),
                       value: creatorCanUseActiveCampaigns
-                        ? "Included"
-                        : "Pro only",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                          ),
                       included: creatorCanUseActiveCampaigns,
                     },
                   ].map((item) => (
@@ -12031,21 +12192,35 @@ export default function CreatorDashboard() {
               <div className="space-y-4">
                 <div className="rounded-3xl border border-[#D7E6F5] bg-gradient-to-br from-[#F9FCFF] to-[#EEF5FB] p-6">
                   <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                    Recommended next step
+                    {t(
+                      "creatorDashboard.settingsView.billingSummary.recommendedNextStep",
+                    )}
                   </div>
                   <div className="mt-2 text-2xl font-bold text-[#142033]">
                     {effectivePlanTier === "free"
-                      ? "Move to Basic"
+                      ? t(
+                          "creatorDashboard.settingsView.billingSummary.next.free",
+                        )
                       : effectivePlanTier === "basic"
-                        ? "Move to Pro"
-                        : "You’re fully unlocked"}
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.next.basic",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.next.pro",
+                          )}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[#5A6880]">
                     {effectivePlanTier === "free"
-                      ? "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts."
+                      ? t(
+                          "creatorDashboard.settingsView.billingSummary.descriptions.free",
+                        )
                       : effectivePlanTier === "basic"
-                        ? "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns."
-                        : "Your current plan includes the full creator workflow toolset."}
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.descriptions.basic",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.descriptions.pro",
+                          )}
                   </p>
                   {effectivePlanTier !== "pro" && (
                     <Button
@@ -12056,10 +12231,14 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          Processing...
+                          {t(
+                            "creatorDashboard.settingsView.billingSummary.processing",
+                          )}
                         </>
                       ) : (
-                        "View Details"
+                        t(
+                          "creatorDashboard.settingsView.billingSummary.viewDetails",
+                        )
                       )}
                     </Button>
                   )}
@@ -12070,12 +12249,14 @@ export default function CreatorDashboard() {
                   <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                     <div className="max-w-md text-center md:text-left">
                       <h4 className="text-2xl font-black tracking-tight">
-                        Ready to lock in Pro?
+                        {t(
+                          "creatorDashboard.settingsView.billingSummary.lockInProTitle",
+                        )}
                       </h4>
                       <p className="mt-3 text-base text-indigo-100/100 leading-relaxed font-medium">
-                        Your trial is active, but you can secure your
-                        professional workflow tools today. Get full marketplace
-                        priority and exclusive campaign access.
+                        {t(
+                          "creatorDashboard.settingsView.billingSummary.lockInProDescription",
+                        )}
                       </p>
                     </div>
                     <Button
@@ -12085,10 +12266,14 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-6 h-6 animate-spin mr-3" />
-                          Opening Portal...
+                          {t(
+                            "creatorDashboard.settingsView.billingSummary.openingPortal",
+                          )}
                         </>
                       ) : (
-                        "Select Plan"
+                        t(
+                          "creatorDashboard.settingsView.billingSummary.selectPlan",
+                        )
                       )}
                     </Button>
                   </div>
