@@ -93,9 +93,7 @@ export default function ProtectedRoute({
       setProfileLoadFailed(false);
 
       const attemptRefresh = async (attempt: number) => {
-        console.log(
-          `[ProtectedRoute] Profile refresh attempt ${attempt + 1}`,
-        );
+        console.log(`[ProtectedRoute] Profile refresh attempt ${attempt + 1}`);
         try {
           await refreshProfile();
         } catch (err) {
