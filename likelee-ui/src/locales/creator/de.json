@@ -1200,24 +1200,5 @@
     "stripeConnect": "Mit Stripe verbinden",
     "paypalConnect": "Mit PayPal verbinden",
     "wiseConnect": "Mit Wise verbinden"
-  },
-  "jobs": {
-    "title": "Jobs",
-    "subtitle": "Überprüfen Sie Einladungen und erkunden Sie offene Rollen.",
-    "jobInvites": "Job-Einladungen",
-    "jobInvitesDescription": "Antworten Sie auf direkte Job-Einladungen von Marken.",
-    "jobBoard": "Job-Board",
-    "openJobBoard": "Job-Board öffnen",
-    "loadingInvites": "Einladungen werden geladen...",
-    "noInvites": "Noch keine Einladungen.",
-    "acceptInvite": "Einladung annehmen",
-    "declineInvite": "Einladung ablehnen",
-    "inviteAccepted": "Einladung angenommen",
-    "inviteDeclined": "Einladung abgelehnt",
-    "inviteFallbackTitle": "Job-Einladung",
-    "viewJobDetails": "Jobdetails ansehen",
-    "apply": "Bewerben",
-    "browseBoardTitle": "Das vollständige Job-Board durchsuchen",
-    "browseBoardDescription": "Öffne die öffentliche Jobseite, um alle verfügbaren Möglichkeiten anzusehen und dich zu bewerben."
   }
 }
