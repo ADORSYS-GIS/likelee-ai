@@ -1274,109 +1274,11 @@ export default function AgencySubscribe() {
           </Card>
         </div>
 
-        <div
+<div
           id="agency-plan-cards"
           className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto"
         >
-          {/* Card 1: Free */}
-          <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#00BFA5] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
-            <div className="absolute top-6 left-8">
-              <span className="px-2 py-1 bg-emerald-50 text-emerald-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
-                Free
-              </span>
-            </div>
-
-            <div className="mt-8 pt-4">
-              <div className="text-3xl font-black font-display text-gray-900">
-                Free
-              </div>
-              <div className="text-gray-500 mt-2 text-sm leading-relaxed min-h-[40px]">
-                Start with core agency setup
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-col sm:flex-row sm:items-end gap-2 text-gray-900">
-              <span className="text-5xl font-black font-display tracking-tight text-gray-900">
-                $0
-              </span>
-              <span className="text-gray-500 font-medium pb-1 tracking-tight text-sm">
-                per month
-              </span>
-            </div>
-
-            <div className="mt-6 text-sm text-gray-500 font-medium space-y-2">
-              <div className="flex justify-between">
-                <span>Base plan</span>
-                <span className="text-gray-900 font-semibold">$0</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Roster seats</span>
-                <span className="text-gray-900 font-semibold">
-                  Not included
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>IRL Booking</span>
-                <span className="text-gray-900 font-semibold">
-                  Not included
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <Button
-                type="button"
-                className="w-full h-12 rounded-lg font-bold bg-[#00BFA5] hover:bg-[#00A18B] text-white transition-colors"
-                disabled={
-                  authenticated &&
-                  isAgencyUser &&
-                  !!currentPlanTier &&
-                  currentPlanTier !== "free"
-                }
-                onClick={() => {
-                  if (authenticated && isAgencyUser) {
-                    navigate("/AgencyDashboard");
-                    return;
-                  }
-                  navigate("/Login?role=agency");
-                }}
-              >
-                {authenticated &&
-                isAgencyUser &&
-                !!currentPlanTier &&
-                currentPlanTier !== "free"
-                  ? "Active"
-                  : currentPlanTier === "free"
-                    ? "Current"
-                    : "Continue Free"}
-              </Button>
-            </div>
-
-            <hr className="my-8 border-gray-100" />
-
-            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-gray-400 mb-4">
-              Included
-            </div>
-            <div className="space-y-4 flex-grow">
-              {[
-                "Agency dashboard access",
-                "Agency profile and organization setup",
-                "Read-only platform exploration",
-                "1 team seat (owner only)",
-              ].map((label) => (
-                <div key={label} className="flex items-start gap-3">
-                  <div className="mt-0.5 w-[18px] h-[18px] rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-3 h-3 text-[#00BFA5]" strokeWidth={3} />
-                  </div>
-                  <div className="leading-snug text-sm text-gray-600">
-                    {label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Card 2: Basic */}
+          {/* Card: Basic */}
           <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#3B82F6] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
             <div className="absolute top-6 left-8 flex justify-between items-center w-[calc(100%-4rem)]">
               <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
