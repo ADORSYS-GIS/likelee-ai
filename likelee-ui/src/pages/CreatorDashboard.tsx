@@ -5636,10 +5636,17 @@ export default function CreatorDashboard() {
       const value = Number.parseFloat(text);
       return Number.isFinite(value) ? value : undefined;
     };
-    const nextRate = creator.price_per_month || 0;
+    const nextRate =
+      overrides?.price_per_month ?? creator.price_per_month ?? undefined;
     const prevRate = baseRateRef.current;
     const rateChanged =
-      typeof prevRate === "number" ? nextRate !== prevRate : nextRate > 0;
+      typeof nextRate === "number"
+        ? typeof prevRate === "number"
+          ? nextRate !== prevRate
+          : nextRate > 0
+        : false;
+    const hasPositiveMonthlyRate =
+      typeof nextRate === "number" && Number.isFinite(nextRate) && nextRate > 0;
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -5650,13 +5657,16 @@ export default function CreatorDashboard() {
       bio: creator.bio,
       city: creator.location?.split(",")[0]?.trim(),
       state: creator.location?.split(",")[1]?.trim(),
-      base_monthly_price_cents: Math.round(
-        (creator.price_per_month || 0) * 100,
-      ),
-      base_weekly_price_cents: Math.round(
-        ((creator.price_per_month || 0) / 4.345) * 100,
-      ),
-      pricing_updated_at: rateChanged ? new Date().toISOString() : undefined,
+      base_monthly_price_cents: hasPositiveMonthlyRate
+        ? Math.round(nextRate * 100)
+        : undefined,
+      base_weekly_price_cents: hasPositiveMonthlyRate
+        ? Math.round((nextRate / 4.345) * 100)
+        : undefined,
+      pricing_updated_at:
+        hasPositiveMonthlyRate && rateChanged
+          ? new Date().toISOString()
+          : undefined,
       birthdate:
         typeof creator.birthday === "string" && creator.birthday.trim().length
           ? creator.birthday.trim()

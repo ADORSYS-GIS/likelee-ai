@@ -62,4 +62,5 @@ pub mod studio;
 pub mod talent;
 pub mod talent_statements;
 pub mod team;
+pub mod utils;
 pub mod voice;

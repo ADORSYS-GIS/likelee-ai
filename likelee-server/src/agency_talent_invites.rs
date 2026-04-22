@@ -963,7 +963,11 @@ pub async fn get_magic_link_by_token(
     })))
 }
 
-async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id: &str) {
+async fn ensure_creator_row_exists(
+    state: &AppState,
+    user: &AuthUser,
+    creator_id: &str,
+) -> Result<(), (StatusCode, String)> {
     let resp = state
         .pg
         .from("creators")
@@ -972,19 +976,22 @@ async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id
         .limit(1)
         .execute()
         .await
-        .ok();
-    if let Some(resp) = resp {
-        if resp.status().is_success() {
-            if let Ok(txt) = resp.text().await {
-                let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
-                if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
-                    return;
-                }
-            }
-        }
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
     }
 
-    let _ = state
+    let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
+    if rows.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+        return Ok(());
+    }
+
+    let resp = state
         .pg
         .from("creators")
         .insert(
@@ -992,12 +999,25 @@ async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id
                 "id": creator_id,
                 "email": user.email,
                 "full_name": user.email.clone().unwrap_or_default(),
+                "onboarding_step": "profile_details",
+                "public_profile_visible": false,
+                "visibility": "private",
                 "updated_at": now_rfc3339(),
             })
             .to_string(),
         )
         .execute()
-        .await;
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if resp.status().is_success() {
+        return Ok(());
+    }
+    let status = resp.status();
+    let txt = resp.text().await.unwrap_or_default();
+    if txt.contains("\"23505\"") {
+        return Ok(());
+    }
+    Err(sanitize_db_error(status.as_u16(), txt))
 }
 
 pub async fn accept_by_token(
@@ -1042,7 +1062,29 @@ pub async fn accept_by_token(
         ));
     }
 
-    ensure_creator_row_exists(&state, &user, &creator_id).await;
+    ensure_creator_row_exists(&state, &user, &creator_id).await?;
+
+    let resp = state
+        .pg
+        .from("creators")
+        .eq("id", &creator_id)
+        .update(
+            json!({
+                "onboarding_step": "profile_details",
+                "public_profile_visible": false,
+                "visibility": "private",
+                "updated_at": now_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let txt = resp.text().await.unwrap_or_default();
+        return Err(sanitize_db_error(status.as_u16(), txt));
+    }
 
     let mut existing_agency_user_id: Option<String> = None;
     let mut matched_agency_row: Option<Value> = None;
