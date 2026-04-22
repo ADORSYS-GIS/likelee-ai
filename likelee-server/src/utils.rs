@@ -1,5 +1,3 @@
-pub mod utils {}
-
 use serde_json::Value;
 
 pub fn parse_budget_cents(budget_snapshot: &Value) -> i64 {
