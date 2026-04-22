@@ -1507,9 +1507,6 @@ pub async fn stripe_webhook(
         );
     }
 
-    // Best-effort: also parse into typed Event; currently unused but kept for potential
-    // future event handlers without reintroducing signature parsing changes.
-    let typed_event: Option<stripe_sdk::Event> = serde_json::from_str(&payload).ok();
     let etype = payload_json
         .get("type")
         .and_then(|v| v.as_str())
@@ -2103,30 +2100,54 @@ pub async fn stripe_webhook(
         }
         // Connected Account status updates
         "account.updated" => {
-            if let Some(event) = typed_event {
-                if let stripe_sdk::EventObject::Account(acct) = event.data.object {
-                    let account_id = acct.id.to_string();
-                    let payouts_enabled = acct.payouts_enabled.unwrap_or(false);
-                    let disabled_reason = acct
-                        .requirements
-                        .and_then(|r| r.disabled_reason)
-                        .unwrap_or_default();
-                    if !account_id.is_empty() {
-                        let _ = state
-                            .pg
-                            .from("creators")
-                            .eq("stripe_connect_account_id", account_id)
-                            .update(
-                                json!({
-                                    "payouts_enabled": payouts_enabled,
-                                    "last_payout_error": disabled_reason
-                                })
-                                .to_string(),
-                            )
-                            .execute()
-                            .await;
-                    }
-                }
+            let obj = payload_json
+                .get("data")
+                .and_then(|d| d.get("object"))
+                .cloned()
+                .unwrap_or(json!({}));
+            let account_id = obj
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            let payouts_enabled = obj
+                .get("payouts_enabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let disabled_reason = obj
+                .get("requirements")
+                .and_then(|v| v.get("disabled_reason"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            if !account_id.is_empty() {
+                let _ = state
+                    .pg
+                    .from("creators")
+                    .eq("stripe_connect_account_id", &account_id)
+                    .update(
+                        json!({
+                            "payouts_enabled": payouts_enabled,
+                            "last_payout_error": disabled_reason
+                        })
+                        .to_string(),
+                    )
+                    .execute()
+                    .await;
+                let _ = state
+                    .pg
+                    .from("agencies")
+                    .eq("stripe_connect_account_id", &account_id)
+                    .update(
+                        json!({
+                            "payouts_enabled": payouts_enabled,
+                            "last_payout_error": disabled_reason
+                        })
+                        .to_string(),
+                    )
+                    .execute()
+                    .await;
             }
         }
         // Payout lifecycle on connected accounts
@@ -2134,65 +2155,74 @@ pub async fn stripe_webhook(
             let is_paid = etype == "payout.paid";
             let is_failed = etype == "payout.failed";
             let is_canceled = etype == "payout.canceled";
-            let maybe_account = typed_event
-                .as_ref()
-                .and_then(|e| e.account.clone().map(|a| a.to_string()));
-            if let Some(event) = typed_event {
-                if let stripe_sdk::EventObject::Payout(p) = event.data.object.clone() {
-                    let pid = p.id.to_string();
-                    let mut update = serde_json::Map::new();
-                    if is_paid {
-                        update.insert("status".into(), json!("paid"));
-                        update.insert(
-                            "processed_at".into(),
-                            json!(chrono::Utc::now().to_rfc3339()),
-                        );
-                    }
-                    if is_failed {
-                        update.insert("status".into(), json!("failed"));
-                        update.insert(
-                            "processed_at".into(),
-                            json!(chrono::Utc::now().to_rfc3339()),
-                        );
-                    }
-                    if is_canceled {
-                        update.insert("status".into(), json!("canceled"));
-                        update.insert(
-                            "processed_at".into(),
-                            json!(chrono::Utc::now().to_rfc3339()),
-                        );
-                    }
-                    update.insert("stripe_payout_id".into(), json!(pid));
-                    if let (Some(btx), Some(acct_id)) = (p.balance_transaction, maybe_account) {
-                        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-                        let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
-                            Ok(id) => client.with_stripe_account(id),
-                            Err(_) => client, // fallback: use platform client, retrieval may fail but won't panic
-                        };
-                        let maybe_id = match btx {
-                            stripe_sdk::Expandable::Id(id) => Some(id),
-                            stripe_sdk::Expandable::Object(obj) => Some(obj.id),
-                        };
-                        if let Some(id) = maybe_id {
-                            if let Ok(bt) = stripe_sdk::BalanceTransaction::retrieve(
-                                &connected_client,
-                                &id,
-                                &[],
-                            )
-                            .await
-                            {
-                                update.insert("fee_cents".into(), json!(bt.fee));
-                            }
+            let obj = payload_json
+                .get("data")
+                .and_then(|d| d.get("object"))
+                .cloned()
+                .unwrap_or(json!({}));
+            let maybe_account = payload_json
+                .get("account")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let pid = obj
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !pid.is_empty() {
+                let mut update = serde_json::Map::new();
+                if is_paid {
+                    update.insert("status".into(), json!("paid"));
+                    update.insert(
+                        "processed_at".into(),
+                        json!(chrono::Utc::now().to_rfc3339()),
+                    );
+                }
+                if is_failed {
+                    update.insert("status".into(), json!("failed"));
+                    update.insert(
+                        "processed_at".into(),
+                        json!(chrono::Utc::now().to_rfc3339()),
+                    );
+                }
+                if is_canceled {
+                    update.insert("status".into(), json!("canceled"));
+                    update.insert(
+                        "processed_at".into(),
+                        json!(chrono::Utc::now().to_rfc3339()),
+                    );
+                }
+                update.insert("stripe_payout_id".into(), json!(pid));
+
+                let balance_transaction_id = obj.get("balance_transaction").and_then(|v| {
+                    // Can be string ID or expanded object
+                    v.as_str()
+                        .map(|s| s.to_string())
+                        .or_else(|| v.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                });
+                if let (Some(btx_id), Some(acct_id)) = (balance_transaction_id, maybe_account) {
+                    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+                    let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
+                        Ok(id) => client.with_stripe_account(id),
+                        Err(_) => client,
+                    };
+                    if let Ok(bt_id) = btx_id.parse::<stripe_sdk::BalanceTransactionId>() {
+                        if let Ok(bt) =
+                            stripe_sdk::BalanceTransaction::retrieve(&connected_client, &bt_id, &[])
+                                .await
+                        {
+                            update.insert("fee_cents".into(), json!(bt.fee));
                         }
                     }
-                    let _ = state
-                        .pg
-                        .from("creator_payout_requests")
-                        .eq("id", &pid)
-                        .update(json!(update).to_string())
-                        .execute()
-                        .await;
                 }
+                let _ = state
+                    .pg
+                    .from("creator_payout_requests")
+                    .eq("stripe_payout_id", &pid)
+                    .update(json!(update).to_string())
+                    .execute()
+                    .await;
             }
         }
         // Brand payment method setup completion
@@ -5775,21 +5805,63 @@ async fn handle_campaign_offer_checkout_session_completed(
         return Err("missing_offer_id".into());
     }
 
-    // Mark the offer as paid
-    let update_resp = state
+    let offer_resp = state
         .pg
         .from("campaign_offers")
+        .select("id,payment_status,paid_at,billing_request_id")
         .eq("id", &offer_id)
-        .update(
-            json!({"payment_status": "paid", "updated_at": chrono::Utc::now().to_rfc3339()})
-                .to_string(),
-        )
+        .limit(1)
         .execute()
         .await
         .map_err(|e| e.to_string())?;
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    let existing_offer = offer_rows.first().cloned().unwrap_or_else(|| json!({}));
+    let existing_paid_at = existing_offer
+        .get("paid_at")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let billing_request_id_from_offer = existing_offer
+        .get("billing_request_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let paid_at_rfc3339 = if existing_paid_at.is_empty() {
+        chrono::Utc::now().to_rfc3339()
+    } else {
+        existing_paid_at.clone()
+    };
 
-    if !update_resp.status().is_success() {
-        tracing::error!("Failed to update campaign offer {} to paid", offer_id);
+    // Mark the offer as paid
+    if existing_offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        != "paid"
+        || existing_paid_at.is_empty()
+    {
+        let update_resp = state
+            .pg
+            .from("campaign_offers")
+            .eq("id", &offer_id)
+            .update(
+                json!({
+                    "payment_status": "paid",
+                    "paid_at": paid_at_rfc3339,
+                    "updated_at": chrono::Utc::now().to_rfc3339()
+                })
+                .to_string(),
+            )
+            .execute()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        if !update_resp.status().is_success() {
+            tracing::error!("Failed to update campaign offer {} to paid", offer_id);
+        }
     }
 
     if target_type == "agency" {
@@ -5799,6 +5871,16 @@ async fn handle_campaign_offer_checkout_session_completed(
             .unwrap_or("")
             .trim()
             .to_string();
+        let billing_request_id = if billing_request_ids.is_empty() {
+            billing_request_id_from_offer
+        } else {
+            billing_request_ids
+                .split(',')
+                .next()
+                .unwrap_or("")
+                .trim()
+                .to_string()
+        };
         let agency_id = md
             .get("agency_id")
             .and_then(|v| v.as_str())
@@ -5806,7 +5888,7 @@ async fn handle_campaign_offer_checkout_session_completed(
             .trim()
             .to_string();
 
-        if billing_request_ids.is_empty() || agency_id.is_empty() || session_id.is_empty() {
+        if billing_request_id.is_empty() || agency_id.is_empty() || session_id.is_empty() {
             tracing::warn!(
                 offer_id = %offer_id,
                 agency_id = %agency_id,
@@ -5817,13 +5899,47 @@ async fn handle_campaign_offer_checkout_session_completed(
             return Ok(());
         }
 
+        let payments_update_resp = state
+            .pg
+            .from("payments")
+            .eq("licensing_request_id", &billing_request_id)
+            .update(
+                json!({
+                    "status": "succeeded",
+                    "paid_at": paid_at_rfc3339
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+        match payments_update_resp {
+            Ok(resp) if !resp.status().is_success() => {
+                let body = resp.text().await.unwrap_or_default();
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    licensing_request_id = %billing_request_id,
+                    body = %body,
+                    "failed to mark campaign offer payment rows as succeeded"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    licensing_request_id = %billing_request_id,
+                    error = %e,
+                    "transport error marking campaign offer payment rows as succeeded"
+                );
+            }
+            _ => {}
+        }
+
         // Distribute funds to agency + assigned talents by writing a single licensing_payouts row
         // with talent_splits; DB triggers will credit agency_balances + creator_balances.
         let _ = handle_campaign_offer_agency_distribution(
             state,
             &offer_id,
             &agency_id,
-            &billing_request_ids,
+            &billing_request_id,
             &session_id,
             obj,
         )

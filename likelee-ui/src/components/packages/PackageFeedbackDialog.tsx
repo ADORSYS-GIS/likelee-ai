@@ -19,6 +19,8 @@ import {
   MessageSquare,
   Check,
   ShieldCheck,
+  FileStack,
+  Mail,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packageApi } from "@/api/packages";
@@ -300,6 +302,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                 const isSelected = interaction.type === "selected";
                 const isComment = interaction.type === "comment";
                 const isConsent = interaction.type === "consent";
+                const isAssetRequest = interaction.type === "asset_request";
 
                 const commentText =
                   interaction?.content ||
@@ -346,7 +349,9 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                 ? "bg-purple-100 text-purple-700"
                                 : isComment
                                   ? "bg-amber-100 text-amber-700"
-                                  : "bg-blue-100 text-blue-600"
+                                  : isAssetRequest
+                                    ? "bg-indigo-100 text-indigo-700"
+                                    : "bg-blue-100 text-blue-600"
                         }`}
                       >
                         {isFavorite ? (
@@ -357,6 +362,8 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                           <ShieldCheck className="w-4 h-4" />
                         ) : isComment ? (
                           <MessageSquare className="w-4 h-4" />
+                        ) : isAssetRequest ? (
+                          <FileStack className="w-4 h-4" />
                         ) : (
                           <Phone className="w-4 h-4" />
                         )}
@@ -377,9 +384,11 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                   ? "Selected a Talent"
                                   : isConsent
                                     ? "Updated Consent"
-                                    : isComment
-                                      ? "Commented on a Talent"
-                                      : "Requested Callback"}
+                                    : isAssetRequest
+                                      ? "Requested Full Assets"
+                                      : isComment
+                                        ? "Commented on a Talent"
+                                        : "Requested Callback"}
                             </h4>
                             <p className="text-xs text-gray-400 font-medium">
                               {format(
@@ -398,7 +407,52 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                           )}
                         </div>
 
-                        {!isConsent && (
+                        {isAssetRequest && (
+                          <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-4 mb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 text-indigo-700 font-bold text-[10px] uppercase tracking-[0.2em]">
+                                <User className="w-3.5 h-3.5" />
+                                Client Contact Details
+                              </div>
+                              <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-100">
+                                Asset Request
+                              </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block">
+                                  Full Name
+                                </span>
+                                <div className="flex items-center gap-2 font-medium text-gray-900 text-sm">
+                                  {interaction.client_name || "Not specified"}
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block">
+                                  Email Address
+                                </span>
+                                <div className="flex items-center gap-2 font-medium text-gray-900 text-sm">
+                                  <Mail className="w-3.5 h-3.5 text-indigo-400" />
+                                  {interaction.client_email || "Not specified"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {interaction.content && (
+                              <div className="pt-3 border-t border-indigo-100/50">
+                                <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-tight block mb-1.5">
+                                  Personal Message
+                                </span>
+                                <div className="text-sm text-gray-700 bg-white/50 p-3 rounded-lg border border-indigo-50 italic leading-relaxed">
+                                  "{interaction.content}"
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {!isConsent && !isAssetRequest && (
                           <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100 mb-3">
                             <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
                               {talentImage ? (

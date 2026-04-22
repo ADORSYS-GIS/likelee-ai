@@ -102,6 +102,7 @@ import {
   Trash2,
   Sparkles,
   Lock,
+  ShieldCheck,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
 import {
@@ -148,6 +149,7 @@ import { TrialCountdownBanner } from "@/components/brand/TrialCountdownBanner";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { TeamManagementCard } from "@/features/team/TeamManagementCard";
 import { BrandSettingsBilling } from "@/components/brand-dashboard/settings/BrandSettingsBilling";
+import { currencyFormatter } from "@/lib/utils";
 import {
   LineChart,
   Line,
@@ -405,6 +407,8 @@ export default function BrandDashboard() {
     ytd_spend: number;
     monthly_avg: number;
     current_month_spend: number;
+    previous_month_spend: number;
+    current_month_growth_percentage: number;
     projected_eoy: number;
   } | null>(null);
 
@@ -941,6 +945,7 @@ export default function BrandDashboard() {
 
   useEffect(() => {
     if (
+      activeSection !== "home" &&
       activeSection !== "billing" &&
       activeSection !== "analytics" &&
       activeSection !== "usage-rights"
@@ -973,8 +978,15 @@ export default function BrandDashboard() {
             ytd_spend: spendRes.ytd_spend || 0,
             monthly_avg: spendRes.monthly_avg || 0,
             current_month_spend: spendRes.current_month_spend || 0,
+            previous_month_spend: spendRes.previous_month_spend || 0,
+            current_month_growth_percentage:
+              spendRes.current_month_growth_percentage || 0,
             projected_eoy: spendRes.projected_eoy || 0,
           });
+          setBillingYtdSpend(spendRes.ytd_spend || 0);
+          setBillingCurrentMonthSpend(spendRes.current_month_spend || 0);
+          setBillingProjectedEoy(spendRes.projected_eoy || 0);
+          setBillingMonthlyAvg(spendRes.monthly_avg || 0);
         }
         if (invoicesRes) {
           setBrandInvoices(
@@ -1271,6 +1283,7 @@ export default function BrandDashboard() {
   useEffect(() => {
     if (
       activeSection !== "home" &&
+      activeSection !== "billing" &&
       activeSection !== "campaign-offers" &&
       activeSection !== "campaigns-contract-hub" &&
       activeSection !== "campaigns-deliverables"
@@ -1404,7 +1417,18 @@ export default function BrandDashboard() {
         if (!mounted) return;
         if (status) setBrandBillingStatus(status);
         if (spend?.monthly_spend) {
-          setBrandSpendData(spend.monthly_spend);
+          setBrandSpendData({
+            monthly_spend: Array.isArray(spend.monthly_spend)
+              ? spend.monthly_spend
+              : [],
+            ytd_spend: spend.ytd_spend || 0,
+            monthly_avg: spend.monthly_avg || 0,
+            current_month_spend: spend.current_month_spend || 0,
+            previous_month_spend: spend.previous_month_spend || 0,
+            current_month_growth_percentage:
+              spend.current_month_growth_percentage || 0,
+            projected_eoy: spend.projected_eoy || 0,
+          });
           setBillingYtdSpend(spend.ytd_spend || 0);
           setBillingCurrentMonthSpend(spend.current_month_spend || 0);
           setBillingProjectedEoy(spend.projected_eoy || 0);
@@ -1547,25 +1571,75 @@ export default function BrandDashboard() {
       const escrowStatus = String(offer?.escrow_status || "").toLowerCase();
       if (escrowStatus === "holding" || escrowStatus === "releasing") {
         const budgetSnap = offer?.budget_snapshot || {};
-        const amount = Number(
-          budgetSnap?.total_amount || budgetSnap?.amount || 0,
-        );
-        if (amount > 0) {
-          total += amount;
+        // Support multiple possible keys: budget_total (new offers), total_amount (legacy/drafts), amount (fallback)
+        const rawAmount =
+          budgetSnap?.budget_total ||
+          budgetSnap?.total_amount ||
+          budgetSnap?.amount ||
+          "0";
+
+        // Robust parsing: strip $ and , and handle strings vs numbers
+        const normalizedAmount =
+          typeof rawAmount === "string"
+            ? parseFloat(rawAmount.replace(/[$,\s]/g, "")) || 0
+            : Number(rawAmount) || 0;
+
+        if (normalizedAmount > 0) {
+          total += normalizedAmount;
           projects.push({
             id: offer.id,
             name:
               offer?.brand_campaigns?.name || offer?.offer_title || "Campaign",
             status: escrowStatus === "holding" ? "in_progress" : "releasing",
-            amount,
+            amount: normalizedAmount,
             creator:
               offer?.target_type === "creator" ? offer.target_id : "Unknown",
+            // For independent creators, we can usually resolve their name from brand_creator_connections if available,
+            // but for now we fallback to ID if unknown.
+            dueDate: budgetSnap?.budget_submission_deadline || "TBD",
+            currency: budgetSnap?.currency_code || "USD",
           });
         }
       }
     });
     return { escrowTotal: total, escrowProjects: projects };
   }, [brandOfferItems]);
+
+  const formatCompactCurrencyFromCents = (amountCents: number) => {
+    const dollars = (Number(amountCents) || 0) / 100;
+    if (dollars >= 1000) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(dollars);
+    }
+    return currencyFormatter.format(dollars);
+  };
+
+  const homeCurrentMonthSpendLabel = loadingBillingData
+    ? "..."
+    : (brandSpendData?.current_month_spend || 0) > 0
+      ? `$${((brandSpendData?.current_month_spend || 0) / 100000).toFixed(1)}K`
+      : "$0";
+  const homeSpendGrowth = brandSpendData?.current_month_growth_percentage || 0;
+  const homeSpendGrowthLabel =
+    loadingBillingData || !brandSpendData
+      ? ""
+      : brandSpendData.previous_month_spend > 0
+        ? `${homeSpendGrowth >= 0 ? "+" : ""}${homeSpendGrowth.toFixed(1)}% vs last month`
+        : brandSpendData.current_month_spend > 0
+          ? "New spend this month"
+          : "No spend recorded yet";
+  const homeSpendGrowthClass =
+    !brandSpendData || loadingBillingData
+      ? "text-gray-500"
+      : homeSpendGrowth > 0
+        ? "text-green-600"
+        : homeSpendGrowth < 0
+          ? "text-amber-600"
+          : "text-gray-500";
 
   const recentProjects = useMemo(() => {
     const parseDate = (value?: string | null) => {
@@ -2030,239 +2104,146 @@ export default function BrandDashboard() {
         <Button
           variant="outline"
           onClick={() => setShowEscrowDetails(false)}
-          className="border-2 border-gray-300"
+          className="border-2 border-gray-300 hover:bg-gray-100 transition-colors"
         >
           ← Back to Dashboard
         </Button>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Escrow Details</h1>
-          <p className="text-gray-600">Projects with protected payments</p>
+          <p className="text-gray-600">
+            Securely held payments for your active projects
+          </p>
         </div>
       </div>
 
-      {/* Escrow Summary */}
-      <Card className="p-6 bg-blue-50 border-2 border-blue-300">
-        <div className="flex items-center justify-between mb-4">
+      {/* Escrow Summary Panel */}
+      <Card className="p-8 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <DollarSign className="w-32 h-32 text-blue-900" />
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900">
-              Total in Escrow
+            <h3 className="text-lg font-semibold text-blue-900 uppercase tracking-wider mb-1">
+              Active Escrow
             </h3>
-            <p className="text-gray-600">
-              Protected payment across {escrowProjects.length} active projects
+            <p className="text-6xl font-black text-blue-600">
+              ${(escrowTotal / 1000).toFixed(2)}K
+            </p>
+            <p className="text-blue-800 mt-2 font-medium">
+              Protecting {escrowProjects.length}{" "}
+              {escrowProjects.length === 1 ? "project" : "projects"}
             </p>
           </div>
-          <p className="text-5xl font-bold text-blue-600">
-            ${(escrowTotal / 1000).toFixed(1)}K
-          </p>
+          <Alert className="bg-white/80 backdrop-blur-sm border border-blue-200 max-w-md shadow-sm">
+            <ShieldCheck className="h-5 w-5 text-blue-600" />
+            <AlertDescription className="text-blue-900 leading-relaxed">
+              <strong>Guaranteed Payment:</strong> Funds are held in a neutral
+              balance. Approval triggers immediate transfer. All payments
+              require manual approval to ensure quality.
+            </AlertDescription>
+          </Alert>
         </div>
-        <Alert className="bg-white border border-blue-200">
-          <AlertCircle className="h-5 w-5 text-blue-600" />
-          <AlertDescription className="text-blue-900">
-            <strong>How Escrow Works:</strong> Your payment is held securely
-            until you approve deliverables. Once approved, funds release to
-            creators. If no action taken within 48 hours, payment auto-releases.
-            This protects both you and the creator.
-          </AlertDescription>
-        </Alert>
       </Card>
 
-      {/* Escrow Projects Table */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">
-          Projects with Funds in Escrow
-        </h3>
+      {/* Actionable Project List */}
+      <Card className="p-0 bg-white border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+          <h3 className="text-xl font-bold text-gray-900">Escrow Inventory</h3>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b-2 border-gray-300">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Project Name
+              <tr className="border-b border-gray-200 text-left bg-gray-50/30">
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Campaign / Project
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Creator
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Partner
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Escrow Amount
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
+                  Held Amount
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Due Date
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Actions
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
+                  Est. Release
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {escrowProjects.map((project) => (
-                <tr key={project.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4">
-                    <p className="font-semibold text-gray-900">
-                      {project.name}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Last updated: {project.last_update}
-                    </p>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
-                      {project.creatorAvatars &&
-                        project.creatorAvatars.length > 0 && (
-                          <img
-                            src={project.creatorAvatars[0]}
-                            alt={project.creators[0]}
-                            className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                          />
-                        )}
-                      <span className="text-gray-900">
-                        {project.creators[0]}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <p className="text-2xl font-bold text-blue-600">
-                      ${project.escrow_amount.toLocaleString()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Creator gets: ${(project.escrow_amount * 0.9).toFixed(0)}
-                    </p>
-                  </td>
-                  <td className="px-4 py-4">
-                    <Badge
-                      className={
-                        project.status === "in_progress"
-                          ? "bg-blue-100 text-blue-700 border border-blue-300"
-                          : project.status === "pending_approval"
-                            ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                      }
-                    >
-                      {project.status === "in_progress"
-                        ? "In Progress"
-                        : project.status === "pending_approval"
-                          ? "Awaiting Your Approval"
-                          : project.status.replace("_", " ")}
-                    </Badge>
-                    {project.status === "pending_approval" && (
-                      <p className="text-xs text-yellow-600 mt-1 font-semibold">
-                        ⏰ 48h to approve
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-gray-700">
-                    {new Date(project.due_date).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-2 border-gray-300"
-                      onClick={() => {
-                        setActiveSection("campaign-offers");
-                        setSelectedCampaign(project.id);
-                        setShowEscrowDetails(false);
-                      }}
-                    >
-                      View Project
-                    </Button>
+            <tbody className="divide-y divide-gray-100">
+              {escrowProjects.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-gray-500 italic"
+                  >
+                    No active escrow records found. All payments are either
+                    released or pending initial funding.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                escrowProjects.map((project) => (
+                  <tr
+                    key={project.id}
+                    className="hover:bg-blue-50/30 transition-colors group"
+                  >
+                    <td className="px-6 py-5">
+                      <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                        {project.name}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        ID: {project.id}
+                      </p>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 overflow-hidden">
+                          {project.creatorAvatars &&
+                          project.creatorAvatars.length > 0 ? (
+                            <img
+                              src={project.creatorAvatars[0]}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-4 h-4 text-gray-400" />
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                          {project.creator === "Unknown"
+                            ? "Collaborator"
+                            : project.creator}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-right font-mono font-bold text-gray-900">
+                      ${project.amount.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-5">
+                      <Badge
+                        className={
+                          project.status === "releasing"
+                            ? "bg-amber-100 text-amber-700 border-amber-200"
+                            : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                        }
+                      >
+                        {project.status === "releasing"
+                          ? "Process Started"
+                          : "Protected"}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <span className="text-sm text-gray-600">
+                        {project.dueDate || "N/A"}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </Card>
-
-      {/* Breakdown by Status */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Escrow by Status
-          </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div>
-                <p className="font-semibold text-gray-900">In Progress</p>
-                <p className="text-sm text-gray-600">
-                  {
-                    escrowProjects.filter((p) => p.status === "in_progress")
-                      .length
-                  }{" "}
-                  projects
-                </p>
-              </div>
-              <p className="text-2xl font-bold text-blue-600">
-                $
-                {escrowProjects
-                  .filter((p) => p.status === "in_progress")
-                  .reduce((sum, p) => sum + p.escrow_amount, 0)
-                  .toLocaleString()}
-              </p>
-            </div>
-            <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div>
-                <p className="font-semibold text-gray-900">Awaiting Approval</p>
-                <p className="text-sm text-gray-600">
-                  {
-                    escrowProjects.filter(
-                      (p) => p.status === "pending_approval",
-                    ).length
-                  }{" "}
-                  projects
-                </p>
-              </div>
-              <p className="text-2xl font-bold text-yellow-600">
-                $
-                {escrowProjects
-                  .filter((p) => p.status === "pending_approval")
-                  .reduce((sum, p) => sum + p.escrow_amount, 0)
-                  .toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 bg-white border border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Escrow Timeline
-          </h3>
-          <div className="space-y-3">
-            <p className="text-gray-700">
-              <strong className="text-gray-900">What happens next:</strong>
-            </p>
-            <div className="space-y-2 text-sm text-gray-700">
-              <div className="flex items-start gap-2">
-                <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  1
-                </div>
-                <p>Creator submits deliverables for your review</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  2
-                </div>
-                <p>You have 48 hours to approve or request revisions</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  3
-                </div>
-                <p>
-                  Once approved, funds release to creator within 3 business days
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  4
-                </div>
-                <p>If no action taken, payment auto-releases after 48 hours</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
     </div>
   );
 
@@ -2337,8 +2318,12 @@ export default function BrandDashboard() {
               </p>
               <TrendingUp className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">$12.5K</p>
-            <p className="text-sm text-green-600 mt-1">+22% vs last month</p>
+            <p className="text-4xl font-bold text-gray-900">
+              {homeCurrentMonthSpendLabel}
+            </p>
+            <p className={`text-sm mt-1 ${homeSpendGrowthClass}`}>
+              {homeSpendGrowthLabel}
+            </p>
           </Card>
 
           <Card className="p-6 bg-white border border-gray-200">
@@ -2353,7 +2338,6 @@ export default function BrandDashboard() {
                 ? `${campaignMetrics.avg_turnaround_hours}h`
                 : "—"}
             </p>
-            <p className="text-sm text-gray-600 mt-1">Industry: 48h</p>
           </Card>
         </div>
 
@@ -4188,7 +4172,24 @@ export default function BrandDashboard() {
         action,
         note,
       });
+
       const escrow = result?.escrow;
+
+      // Reactive Update: Update the offer in brandOfferItems if escrow status has changed.
+      if (escrow?.id && escrow?.escrow_status) {
+        setBrandOfferItems((prev) =>
+          prev.map((o) => {
+            if (String(o.id) === String(escrow.id)) {
+              return {
+                ...o,
+                escrow_status: escrow.escrow_status,
+                payment_status: escrow.payment_status || o.payment_status,
+              };
+            }
+            return o;
+          }),
+        );
+      }
       if (action === "approve" && escrow) {
         if (escrow?.released_now) {
           const off = brandOfferItems.find(
@@ -6967,7 +6968,6 @@ export default function BrandDashboard() {
               ? `${campaignMetrics.avg_turnaround_hours}h`
               : "—"}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Industry: 48h</p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
@@ -7145,7 +7145,7 @@ export default function BrandDashboard() {
             <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
             <p className="text-2xl font-bold text-gray-900">
               {billingProjectedEoy > 0
-                ? `$${(billingProjectedEoy / 1000).toFixed(1)}K`
+                ? `$${(billingProjectedEoy / 100000).toFixed(1)}K`
                 : "$0"}
             </p>
           </div>
@@ -7518,9 +7518,9 @@ export default function BrandDashboard() {
                 {contract.creator_earnings.toLocaleString()}
               </p>
               <p className="mb-6">
-                <strong>Payment:</strong> Held in escrow until{" "}
-                {brand?.name || "Brand"} approval of deliverables. Release upon
-                approval or automatic after 48 hours.
+                <strong>Payment:</strong> Funds are held in a secure neutral
+                balance. Payment is released upon your manual review and
+                approval of deliverables.
               </p>
 
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -8144,7 +8144,7 @@ export default function BrandDashboard() {
                 <p className="text-sm text-gray-600 mb-1">Royalties Paid</p>
                 <p className="text-4xl font-bold text-gray-900">
                   {brandSpendData
-                    ? `$${(brandSpendData.ytd_spend / 1000).toFixed(1)}K`
+                    ? `$${(brandSpendData.ytd_spend / 100000).toFixed(1)}K`
                     : "$0"}
                 </p>
               </Card>
@@ -8341,7 +8341,7 @@ export default function BrandDashboard() {
             {loadingBillingData
               ? "..."
               : billingCurrentMonthSpend > 0
-                ? `$${(billingCurrentMonthSpend / 1000).toFixed(1)}K`
+                ? `$${(billingCurrentMonthSpend / 100000).toFixed(1)}K`
                 : "$0"}
           </p>
         </Card>
@@ -8358,7 +8358,7 @@ export default function BrandDashboard() {
             {loadingBillingData
               ? "..."
               : billingYtdSpend > 0
-                ? `$${(billingYtdSpend / 1000).toFixed(1)}K`
+                ? `$${(billingYtdSpend / 100000).toFixed(1)}K`
                 : "$0"}
           </p>
         </Card>
@@ -8676,8 +8676,7 @@ export default function BrandDashboard() {
         <p className="text-gray-700 mb-4">
           Escrow protects both you and creators. When you start a project,
           payment is held securely. Once you approve deliverables, payment
-          releases to the creator. If not approved within 48 hours, it
-          auto-releases.
+          releases to the creator.
         </p>
         <p className="text-sm font-semibold text-blue-900">
           Current Escrow: ${(escrowTotal / 1000).toFixed(1)}K across{" "}
@@ -10891,8 +10890,8 @@ export default function BrandDashboard() {
                     you approve deliverables, the creator gets paid.
                   </p>
                   <p className="text-sm text-gray-700">
-                    <strong>Protection:</strong> No disputes after 48 hours. If
-                    you don't approve within 48h, payment auto-releases.
+                    <strong>Protection:</strong> Funds are only released once
+                    you have reviewed and approved all campaign deliverables.
                   </p>
                 </div>
 
@@ -10909,7 +10908,9 @@ export default function BrandDashboard() {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <span className="text-gray-700">Approval Deadline:</span>
-                    <span className="text-gray-900">48 hours</span>
+                    <span className="text-gray-900">
+                      Manual Approval Required
+                    </span>
                   </div>
                 </div>
 
