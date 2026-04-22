@@ -3923,7 +3923,7 @@ export default function CreatorDashboard() {
         setTrialCountdown("Trial ended");
         return;
       }
-      setTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
+      setTrialCountdown(t("creatorSubscribe.trial.daysLeft", { count: days }));
     };
 
     compute();

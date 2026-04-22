@@ -3,8 +3,10 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useChat } from "@/hooks/useChat";
 import { ThreadList } from "./ThreadList";
 import { ChatWindow } from "./ChatWindow";
+import { useTranslation } from "react-i18next";
 
 export function CommunicationHub() {
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const {
     conversations,
@@ -117,11 +119,22 @@ export function CommunicationHub() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-700">
-                  Select a conversation
+                  {t("talentPortal.chat.selectConversation", {
+                    defaultValue: "Select a conversation",
+                  })}
                 </p>
                 <p className="text-xs text-gray-400 mt-1 max-w-xs">
-                  Choose a thread on the left, or initiate a new conversation
-                  with {isCreator ? "an agency" : "a creator"}.
+                  {t("talentPortal.chat.chooseThread", {
+                    role: isCreator
+                      ? t("talentPortal.chat.roleAgency", {
+                          defaultValue: "an agency",
+                        })
+                      : t("talentPortal.chat.roleCreator", {
+                          defaultValue: "a creator",
+                        }),
+                    defaultValue:
+                      "Choose a thread on the left, or initiate a new conversation with {{role}}.",
+                  })}
                 </p>
               </div>
             </div>
@@ -132,7 +145,9 @@ export function CommunicationHub() {
                 <textarea
                   rows={1}
                   disabled
-                  placeholder="Select a chat to start typing…"
+                  placeholder={t("talentPortal.chat.selectChatToType", {
+                    defaultValue: "Select a chat to start typing…",
+                  })}
                   className="flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none max-h-36 overflow-y-auto cursor-not-allowed"
                 />
                 <button

@@ -1236,6 +1236,75 @@
       "privacy": "Privacy"
     },
     "content": {
+      "ai": {
+        "overview": {
+          "activeCampaigns": "Active Campaigns",
+          "monthlyRevenue": "Monthly Revenue",
+          "latestLicensingRequests": "Latest Licensing Requests",
+          "noLicensingRequests": "No licensing requests yet.",
+          "brandFallback": "Brand",
+          "licensingRequestFallback": "Licensing request",
+          "pending": "pending"
+        },
+        "likeness": {
+          "assetLibraryTitle": "Likeness Asset Library",
+          "assetLibrarySubtitle": "Manage your photos, videos, and voice samples used for AI content generation",
+          "referencePhotos": "Reference Photos",
+          "voiceSamples": "Voice Samples",
+          "managePhotos": "Manage Photos",
+          "manageVoice": "Manage Voice",
+          "assetUsageRights": "Asset Usage Rights",
+          "photosApproved": "Photos: Approved",
+          "photosUsageDescription": "Your photos can be used for AI image generation by licensed brands",
+          "allBrands": "All Brands",
+          "voiceApproved": "Voice: Approved",
+          "voiceUsageDescription": "Voice cloning enabled for approved emotions",
+          "limitedUse": "Limited Use",
+          "portfolioShowcase": "Portfolio Showcase",
+          "portfolioSubtitle": "Approved AI-generated content featuring your likeness",
+          "portfolioUrlPlaceholder": "Paste image/video URL",
+          "add": "Add",
+          "live": "Live",
+          "remove": "Remove",
+          "portfolioItemFallback": "Portfolio Item",
+          "noPortfolioItems": "No portfolio items yet."
+        },
+        "campaigns": {
+          "allBrands": "All brands",
+          "searchPlaceholder": "Search by brand or campaign",
+          "clearSearchAria": "Clear search",
+          "amount": "Amount",
+          "activeUntil": "Active Until",
+          "regions": "Regions",
+          "emptySearch": "No campaigns match your search.",
+          "loading": "Loading active campaigns...",
+          "emptyNone": "No active campaigns yet.",
+          "campaignFallback": "Campaign",
+          "notAvailable": "—"
+        },
+        "archive": {
+          "subtitle": "Past campaigns (expired)",
+          "campaignFallback": "Campaign",
+          "loading": "Loading past campaigns...",
+          "empty": "No past campaigns yet"
+        },
+        "earnings": {
+          "subtitle": "Track your licensing revenue",
+          "annualRunRate": "Annual Run Rate",
+          "brandFallback": "Brand",
+          "monthlySuffix": "/mo",
+          "yourAgency": "Your Agency",
+          "connectedSince": "Connected since {{date}}",
+          "editProfile": "Edit Profile",
+          "manageCampaigns": "Manage Campaigns",
+          "viewEarnings": "View Earnings",
+          "manage": "Manage"
+        },
+        "analytics": {
+          "subtitle": "Performance metrics across all campaigns",
+          "totalViews": "Total Views"
+        }
+      },
       "bookingPreferences": {
         "title": "Booking Preferences",
         "subtitle": "Set preferences your agency can use when booking you",
@@ -1262,6 +1331,40 @@
         "revenue": "Revenue",
         "empty": "No analytics metrics yet. Ask your agency to add weekly view metrics."
       }
+    },
+    "chat": {
+      "messagesTitle": "Messages",
+      "agencySingular": "Agency",
+      "agencyPlural": "Agencies",
+      "creatorSingular": "Creator",
+      "creatorPlural": "Creators",
+      "searchConversations": "Search conversations...",
+      "filterAll": "All",
+      "filterUnread": "Unread",
+      "noMessagesYet": "No messages yet",
+      "sendToStart": "Send a message to start the conversation.",
+      "messageDeleted": "This message was deleted",
+      "edited": "(edited)",
+      "edit": "Edit",
+      "delete": "Delete",
+      "typeMessage": "Type a message... (Enter to send)",
+      "sendMessage": "Send message",
+      "shiftEnter": "Shift+Enter for new line",
+      "deleteMessageTitle": "Delete Message",
+      "deleteMessageDescription": "Are you sure you want to delete this message? This action cannot be undone.",
+      "cancel": "Cancel",
+      "editMessageTitle": "Edit Message",
+      "enterMessage": "Enter your message...",
+      "saveChanges": "Save Changes",
+      "selectConversation": "Select a conversation",
+      "chooseThread": "Choose a thread on the left, or initiate a new conversation with {{role}}.",
+      "selectChatToType": "Select a chat to start typing...",
+      "roleAgency": "an agency",
+      "roleCreator": "a creator",
+      "noActiveConnections": "No active connections",
+      "connectToChat": "Connect with {{role}} to chat.",
+      "startConversation": "Start Conversation",
+      "noResults": "No results found"
     },
     "noBookings": "No bookings yet.",
     "noLicenses": "No licenses yet.",
