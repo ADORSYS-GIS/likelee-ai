@@ -28,11 +28,16 @@
         "back": "Zurück"
       },
       "subtitle": "Verfolgen Sie Ihre Einnahmen und Zahlungen",
-      "readyTitle": "Ihr Einnahmen-Dashboard ist bereit",
-      "readyMessage": "Sobald Ihre Lizenzen aktiviert sind, sehen Sie hier Echtzeit-Einnahmen. Derzeit haben Sie keine aktiven Verträge.",
+      "readyTitle": "Bereit zum Auszahlen?",
+      "readyMessage": "Verbinden Sie Ihre Auszahlungsmethode, um Ihre Einnahmen abzuheben. Die Einrichtung dauert nur wenige Minuten.",
+      "announcement": {
+        "title": "Neu: Flexibles Auszahlen!",
+        "message": "Sie können Ihre Einnahmen jetzt über Stripe Connect abheben. PayPal und Wise kommen bald!"
+      },
       "actions": {
         "cashOut": "Auszahlen",
-        "downloadTax": "Steuerübersicht herunterladen (1099)"
+        "loading": "Wird verarbeitet...",
+        "downloadTax": "Steuerdokumente herunterladen (PDF)"
       },
       "metrics": {
         "totalEarnedYTD": "Gesamtverdienst (YTD)",
@@ -87,6 +92,15 @@
       },
       "profile": {
         "photoTitle": "Profilfoto",
+        "professionalDetails": "Berufliche Details",
+        "creatorType": "Ersteller-Typ",
+        "dateOfBirth": "Geburtsdatum",
+        "gender": "Geschlecht",
+        "ethnicity": "Ethnizität",
+        "race": "Rasse",
+        "hairColor": "Haarfarbe",
+        "eyeColor": "Augenfarbe",
+        "heightCm": "Größe (cm)",
         "placeholders": {
           "fullName": "Ihr vollständiger Name",
           "bio": "Erzählen Sie uns über sich...",
@@ -447,6 +461,16 @@
       "consent": {
         "title": "Ihre Zustimmung für alle Nutzungen erforderlich.",
         "message": "{{count}} aktive Kampagnen, alle zeitlich begrenzt, alle von Ihnen genehmigt. Sie können jederzeit pausieren/widerrufen."
+      },
+      "searchPlaceholder": "Nach Marke oder Kampagne suchen",
+      "clearSearch": "Suche löschen",
+      "empty": {
+        "searchTitle": "Keine Kampagnen entsprechen deiner Suche.",
+        "searchDescription": "Versuche einen anderen Marken- oder Kampagnennamen.",
+        "loadingTitle": "Kampagnen werden geladen...",
+        "loadingDescription": "Deine aktiven Kampagnen und Lizenzen werden geladen.",
+        "noneTitle": "Noch keine aktiven Kampagnen.",
+        "noneDescription": "Neue Kampagnen erscheinen hier, sobald sie starten."
       }
     },
     "voice": {
@@ -632,6 +656,7 @@
       "archive": "Kampagnenarchiv",
       "contracts": "Lizenzen & Verträge",
       "earnings": "Einnahmen",
+      "payouts": "Auszahlungen",
       "settings": "Einstellungen",
       "profile": {
         "edit": "Profil bearbeiten",
@@ -1037,7 +1062,12 @@
     "acceptInvite": "Einladung annehmen",
     "declineInvite": "Einladung ablehnen",
     "inviteAccepted": "Einladung angenommen",
-    "inviteDeclined": "Einladung abgelehnt"
+    "inviteDeclined": "Einladung abgelehnt",
+    "inviteFallbackTitle": "Job-Einladung",
+    "viewJobDetails": "Jobdetails ansehen",
+    "apply": "Bewerben",
+    "browseBoardTitle": "Das vollständige Job-Board durchsuchen",
+    "browseBoardDescription": "Öffne die öffentliche Jobseite, um alle verfügbaren Möglichkeiten anzusehen und dich zu bewerben."
   },
   "brandConnections": {
     "title": "Markenverbindung",
@@ -1058,7 +1088,27 @@
     "noOffers": "Noch keine Angebote.",
     "viewDetails": "Details anzeigen",
     "acceptRequest": "Annehmen",
-    "declineRequest": "Ablehnen"
+    "declineRequest": "Ablehnen",
+    "notificationSummarySingular": "{{count}} neue Benachrichtigung zu Anfragen, Angeboten und Deliverables.",
+    "notificationSummaryPlural": "{{count}} neue Benachrichtigungen zu Anfragen, Angeboten und Deliverables.",
+    "connectedBrandFallback": "Verbundene Marke",
+    "requestsDescription": "Reagiere auf ausstehende Markenverbindungsanfragen.",
+    "noPendingRequestsDescription": "Derzeit keine ausstehenden Anfragen.",
+    "requestFallback": "Markenverbindungsanfrage",
+    "profileAvailable": "Markenprofil verfügbar",
+    "loadingOffers": "Kampagnenangebote werden geladen...",
+    "noOffersAvailable": "Derzeit keine Kampagnenangebote verfügbar.",
+    "offerFallback": "Kampagnenangebot",
+    "viewBrief": "Brief ansehen",
+    "backToOffers": "← Zurück zu Markenangeboten",
+    "offerBriefNotFound": "Angebotsbrief nicht gefunden.",
+    "campaignFallback": "Kampagne",
+    "briefAndContractTitle": "{{campaign}} - Brief & Vertrag",
+    "briefAndContractSubtitle": "Detaillierter Umfang und Anforderungen",
+    "disconnectAria": "Verbindung zur Marke trennen",
+    "offerStatusLabel": "Angebotsstatus:",
+    "hide": "Ausblenden",
+    "open": "Öffnen"
   },
   "agencyConnections": {
     "title": "Agenturverbindung",
@@ -1077,7 +1127,54 @@
     "disconnectConfirm": "Sind Sie sicher, dass Sie die Verbindung zu dieser Agentur trennen möchten?",
     "disconnectReason": "Grund für die Trennung (optional)",
     "disconnected": "Erfolgreich von der Agentur getrennt",
-    "invitationAccepted": "Sie sind jetzt mit dieser Agentur verbunden. Sie können Ihr Profil pro Agentur in den Talent-Portal-Einstellungen bearbeiten."
+    "invitationAccepted": "Sie sind jetzt mit dieser Agentur verbunden. Sie können Ihr Profil pro Agentur in den Talent-Portal-Einstellungen bearbeiten.",
+    "thisAgency": "diese Agentur",
+    "dialogs": {
+      "requestDisconnectTitle": "Trennung von {{agency}} anfragen?",
+      "disconnectTitle": "Verbindung zu {{agency}} trennen?",
+      "requestDisconnectDescription": "Dieser Vertrag ist noch aktiv, daher muss die Agentur deine Trennungsanfrage genehmigen, es sei denn, der Vertrag läuft zuerst aus.",
+      "disconnectDescription": "Dies kann den Zugriff auf Buchungen, Einnahmen und Portaldaten für diese Agentur entfernen.",
+      "requestDisconnectConfirm": "Ich verstehe, dass die Verbindung aktiv bleibt, bis die Agentur diese Anfrage genehmigt.",
+      "disconnectConfirm": "Ich verstehe, dass diese Aktion schwer rückgängig zu machen ist.",
+      "requestReasonLabel": "Grund für die Anfrage",
+      "requestReasonPlaceholder": "Teile der Agentur mit, warum du den aktiven Vertrag vorzeitig beenden möchtest.",
+      "requestPending": "Für diesen Vertrag ist bereits eine Trennungsanfrage ausstehend.",
+      "cancel": "Abbrechen",
+      "requestDisconnect": "Trennung anfragen"
+    },
+    "toasts": {
+      "disconnectRequestedTitle": "Trennung angefragt",
+      "disconnectRequestedDescription": "Deine Agentur wurde benachrichtigt. Die Verbindung bleibt aktiv, bis sie zustimmt oder der Vertrag abläuft.",
+      "requestAlreadyPendingTitle": "Anfrage bereits ausstehend",
+      "requestAlreadyPendingDescription": "Diese Trennungsanfrage wartet bereits auf die Genehmigung der Agentur.",
+      "disconnectedTitle": "Getrennt",
+      "disconnectedDescription": "Du wurdest von der Agentur getrennt.",
+      "failedDisconnectTitle": "Trennung fehlgeschlagen"
+    },
+    "contract": {
+      "title": "Vertrag mit {{agency}}",
+      "agencyFallback": "Agentur",
+      "description": "Prüfe die wichtigsten Bedingungen deines aktiven Agenturvertrags und des unterschriebenen Dokuments.",
+      "status": "Status",
+      "commission": "Provision",
+      "startDate": "Startdatum",
+      "endDate": "Enddatum",
+      "disconnectStatus": "Trennungsstatus:",
+      "reason": "Grund:",
+      "viewSignedContract": "Unterschriebenen Vertrag ansehen",
+      "agencyWebsite": "Website der Agentur",
+      "noDetails": "Für diese Agentur sind keine Details zu einem aktiven Marketplace-Vertrag verfügbar."
+    },
+    "loading": "Wird geladen",
+    "disconnectPending": "Trennungsanfrage ausstehend",
+    "connectedAgencyFallback": "Verbundene Agentur",
+    "disconnectAria": "Verbindung zur Agentur trennen",
+    "pendingInvitationsDescription": "Reagiere auf ausstehende Einladungen von Agenturen.",
+    "invitationFromAgencyNamed": "Einladung von {{agency}}",
+    "invitationFromAgency": "Einladung von einer Agentur",
+    "profileAvailable": "Agenturprofil auf Anfrage verfügbar",
+    "assetRequestsDescription": "Lade Deliverables für Agenturanfragen hoch.",
+    "loadingRequests": "Anfragen werden geladen..."
   },
   "talentPortal": {
     "title": "Talent-Portal",
@@ -1087,7 +1184,8 @@
     "requests": "Anfragen",
     "noBookings": "Noch keine Buchungen.",
     "noLicenses": "Noch keine Lizenzen.",
-    "noRequests": "Noch keine Anfragen."
+    "noRequests": "Noch keine Anfragen.",
+    "disabledDescription": "Verbinde dich mit einer Agentur, um auf das Talent-Portal zuzugreifen."
   },
   "payouts": {
     "title": "Auszahlungen",
@@ -1102,5 +1200,24 @@
     "stripeConnect": "Mit Stripe verbinden",
     "paypalConnect": "Mit PayPal verbinden",
     "wiseConnect": "Mit Wise verbinden"
+  },
+  "jobs": {
+    "title": "Jobs",
+    "subtitle": "Überprüfen Sie Einladungen und erkunden Sie offene Rollen.",
+    "jobInvites": "Job-Einladungen",
+    "jobInvitesDescription": "Antworten Sie auf direkte Job-Einladungen von Marken.",
+    "jobBoard": "Job-Board",
+    "openJobBoard": "Job-Board öffnen",
+    "loadingInvites": "Einladungen werden geladen...",
+    "noInvites": "Noch keine Einladungen.",
+    "acceptInvite": "Einladung annehmen",
+    "declineInvite": "Einladung ablehnen",
+    "inviteAccepted": "Einladung angenommen",
+    "inviteDeclined": "Einladung abgelehnt",
+    "inviteFallbackTitle": "Job-Einladung",
+    "viewJobDetails": "Jobdetails ansehen",
+    "apply": "Bewerben",
+    "browseBoardTitle": "Das vollständige Job-Board durchsuchen",
+    "browseBoardDescription": "Öffne die öffentliche Jobseite, um alle verfügbaren Möglichkeiten anzusehen und dich zu bewerben."
   }
 }

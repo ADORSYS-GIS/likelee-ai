@@ -28,11 +28,16 @@
         "back": "Volver"
       },
       "subtitle": "Rastrea tus ingresos y pagos",
-      "readyTitle": "Su panel de ganancias está listo",
-      "readyMessage": "Una vez que se activen sus licencias, verá las ganancias en tiempo real aquí. Actualmente, no tiene contratos activos.",
+      "readyTitle": "¿Listo para retirar?",
+      "readyMessage": "Conecta tu método de pago para retirar tus ganancias. Solo toma unos minutos configurarlo.",
+      "announcement": {
+        "title": "Nuevo: ¡Retiro flexible!",
+        "message": "Ahora puedes retirar tus ganancias a través de Stripe Connect. ¡PayPal y Wise próximamente!"
+      },
       "actions": {
         "cashOut": "Retirar Fondos",
-        "downloadTax": "Descargar resumen de impuestos (1099)"
+        "loading": "Procesando...",
+        "downloadTax": "Descargar documentos fiscales (PDF)"
       },
       "metrics": {
         "totalEarnedYTD": "Total ganado (YTD)",
@@ -87,6 +92,15 @@
       },
       "profile": {
         "photoTitle": "Foto de Perfil",
+        "professionalDetails": "Detalles Profesionales",
+        "creatorType": "Tipo de Creador",
+        "dateOfBirth": "Fecha de Nacimiento",
+        "gender": "Género",
+        "ethnicity": "Etnicidad",
+        "race": "Raza",
+        "hairColor": "Color de Cabello",
+        "eyeColor": "Color de Ojos",
+        "heightCm": "Altura (cm)",
         "placeholders": {
           "fullName": "Tu nombre completo",
           "bio": "Cuéntanos sobre ti...",
@@ -445,6 +459,16 @@
       "consent": {
         "title": "Se requiere su consentimiento para todos los usos.",
         "message": "{{count}} campañas activas, todas con límite de tiempo, todas aprobadas por usted. Puede pausar/revocar en cualquier momento."
+      },
+      "searchPlaceholder": "Buscar por marca o campaña",
+      "clearSearch": "Limpiar búsqueda",
+      "empty": {
+        "searchTitle": "Ninguna campaña coincide con tu búsqueda.",
+        "searchDescription": "Prueba con otra marca o nombre de campaña.",
+        "loadingTitle": "Cargando campañas...",
+        "loadingDescription": "Obteniendo tus campañas y licencias activas.",
+        "noneTitle": "Aún no hay campañas activas.",
+        "noneDescription": "Las nuevas campañas aparecerán aquí cuando comiencen."
       }
     },
     "voice": {
@@ -630,6 +654,7 @@
       "archive": "Archivos de Campañas",
       "contracts": "Licencias y Contratos",
       "earnings": "Ganancias",
+      "payouts": "Pagos",
       "settings": "Configuración",
       "profile": {
         "edit": "Editar Perfil",
@@ -1035,7 +1060,12 @@
     "acceptInvite": "Aceptar invitación",
     "declineInvite": "Rechazar invitación",
     "inviteAccepted": "Invitación aceptada",
-    "inviteDeclined": "Invitación rechazada"
+    "inviteDeclined": "Invitación rechazada",
+    "inviteFallbackTitle": "Invitación de trabajo",
+    "viewJobDetails": "Ver detalles del trabajo",
+    "apply": "Postular",
+    "browseBoardTitle": "Explora el tablero completo de trabajos",
+    "browseBoardDescription": "Abre la página pública de trabajos para ver todas las oportunidades disponibles y postular."
   },
   "brandConnections": {
     "title": "Conexión de marca",
@@ -1056,7 +1086,27 @@
     "noOffers": "Aún no hay ofertas.",
     "viewDetails": "Ver detalles",
     "acceptRequest": "Aceptar",
-    "declineRequest": "Rechazar"
+    "declineRequest": "Rechazar",
+    "notificationSummarySingular": "{{count}} nueva notificación en solicitudes, ofertas y entregables.",
+    "notificationSummaryPlural": "{{count}} nuevas notificaciones en solicitudes, ofertas y entregables.",
+    "connectedBrandFallback": "Marca conectada",
+    "requestsDescription": "Responde a las solicitudes pendientes de conexión con marcas.",
+    "noPendingRequestsDescription": "No hay solicitudes pendientes en este momento.",
+    "requestFallback": "Solicitud de conexión de marca",
+    "profileAvailable": "Perfil de marca disponible",
+    "loadingOffers": "Cargando ofertas de campaña...",
+    "noOffersAvailable": "Aún no hay ofertas de campaña disponibles.",
+    "offerFallback": "Oferta de campaña",
+    "viewBrief": "Ver brief",
+    "backToOffers": "← Volver a ofertas de marca",
+    "offerBriefNotFound": "No se encontró el brief de la oferta.",
+    "campaignFallback": "Campaña",
+    "briefAndContractTitle": "{{campaign}} - Brief y contrato",
+    "briefAndContractSubtitle": "Alcance detallado y requisitos",
+    "disconnectAria": "Desconectarse de la marca",
+    "offerStatusLabel": "Estado de la oferta:",
+    "hide": "Ocultar",
+    "open": "Abrir"
   },
   "agencyConnections": {
     "title": "Conexión de agencia",
@@ -1075,7 +1125,54 @@
     "disconnectConfirm": "¿Estás seguro de que quieres desconectarte de esta agencia?",
     "disconnectReason": "Razón para desconectar (opcional)",
     "disconnected": "Desconectado exitosamente de la agencia",
-    "invitationAccepted": "Ahora estás conectado a esta agencia. Puedes editar tu perfil por agencia en la configuración del portal de talento."
+    "invitationAccepted": "Ahora estás conectado a esta agencia. Puedes editar tu perfil por agencia en la configuración del portal de talento.",
+    "thisAgency": "esta agencia",
+    "dialogs": {
+      "requestDisconnectTitle": "¿Solicitar desconexión de {{agency}}?",
+      "disconnectTitle": "¿Desconectarte de {{agency}}?",
+      "requestDisconnectDescription": "Este contrato sigue activo, por lo que la agencia debe aprobar tu solicitud de desconexión a menos que el contrato expire primero.",
+      "disconnectDescription": "Esto puede eliminar el acceso a reservas, ganancias y datos del portal de esa agencia.",
+      "requestDisconnectConfirm": "Entiendo que la conexión seguirá activa hasta que la agencia apruebe esta solicitud.",
+      "disconnectConfirm": "Entiendo que esta acción es difícil de deshacer.",
+      "requestReasonLabel": "Motivo de la solicitud",
+      "requestReasonPlaceholder": "Indica a la agencia por qué deseas terminar el contrato activo antes de tiempo.",
+      "requestPending": "Ya hay una solicitud de desconexión pendiente para este contrato.",
+      "cancel": "Cancelar",
+      "requestDisconnect": "Solicitar desconexión"
+    },
+    "toasts": {
+      "disconnectRequestedTitle": "Desconexión solicitada",
+      "disconnectRequestedDescription": "Tu agencia ha sido notificada. La conexión seguirá activa hasta que aprueben la solicitud o expire el contrato.",
+      "requestAlreadyPendingTitle": "Solicitud ya pendiente",
+      "requestAlreadyPendingDescription": "Esta solicitud de desconexión ya está esperando la aprobación de la agencia.",
+      "disconnectedTitle": "Desconectado",
+      "disconnectedDescription": "Te has desconectado de la agencia.",
+      "failedDisconnectTitle": "No se pudo desconectar"
+    },
+    "contract": {
+      "title": "Contrato de {{agency}}",
+      "agencyFallback": "Agencia",
+      "description": "Revisa los términos clave de tu contrato activo con la agencia y el documento firmado.",
+      "status": "Estado",
+      "commission": "Comisión",
+      "startDate": "Fecha de inicio",
+      "endDate": "Fecha de finalización",
+      "disconnectStatus": "Estado de desconexión:",
+      "reason": "Motivo:",
+      "viewSignedContract": "Ver contrato firmado",
+      "agencyWebsite": "Sitio web de la agencia",
+      "noDetails": "No hay detalles disponibles de un contrato activo de marketplace para esta agencia."
+    },
+    "loading": "Cargando",
+    "disconnectPending": "Solicitud de desconexión pendiente",
+    "connectedAgencyFallback": "Agencia conectada",
+    "disconnectAria": "Desconectarse de la agencia",
+    "pendingInvitationsDescription": "Responde a las invitaciones pendientes de agencias.",
+    "invitationFromAgencyNamed": "Invitación de {{agency}}",
+    "invitationFromAgency": "Invitación de una agencia",
+    "profileAvailable": "Perfil de agencia disponible a petición",
+    "assetRequestsDescription": "Sube entregables para las solicitudes de la agencia.",
+    "loadingRequests": "Cargando solicitudes..."
   },
   "talentPortal": {
     "title": "Portal de talento",
@@ -1085,7 +1182,8 @@
     "requests": "Solicitudes",
     "noBookings": "Aún no hay reservas.",
     "noLicenses": "Aún no hay licencias.",
-    "noRequests": "Aún no hay solicitudes."
+    "noRequests": "Aún no hay solicitudes.",
+    "disabledDescription": "Conéctate a una agencia para acceder al Portal de talento."
   },
   "payouts": {
     "title": "Pagos",

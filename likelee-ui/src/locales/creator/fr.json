@@ -535,6 +535,7 @@
       "archive": "Archives des Campagnes",
       "contracts": "Licences et Contrats",
       "earnings": "Gains",
+      "payouts": "Paiements",
       "settings": "Paramètres",
       "profile": {
         "edit": "Modifier le profil",
@@ -552,6 +553,15 @@
       },
       "profile": {
         "photoTitle": "Photo de Profil",
+        "professionalDetails": "Détails Professionnels",
+        "creatorType": "Type de Créateur",
+        "dateOfBirth": "Date de Naissance",
+        "gender": "Genre",
+        "ethnicity": "Ethnicité",
+        "race": "Race",
+        "hairColor": "Couleur de Cheveux",
+        "eyeColor": "Couleur des Yeux",
+        "heightCm": "Taille (cm)",
         "placeholders": {
           "fullName": "Votre nom complet",
           "bio": "Parlez-nous de vous...",
@@ -703,6 +713,16 @@
         "status": "Statut",
         "thisMonth": "Ce mois",
         "actions": "Actions"
+      },
+      "searchPlaceholder": "Rechercher par marque ou campagne",
+      "clearSearch": "Effacer la recherche",
+      "empty": {
+        "searchTitle": "Aucune campagne ne correspond à votre recherche.",
+        "searchDescription": "Essayez un autre nom de marque ou de campagne.",
+        "loadingTitle": "Chargement des campagnes...",
+        "loadingDescription": "Récupération de vos campagnes et licences actives.",
+        "noneTitle": "Aucune campagne active pour le moment.",
+        "noneDescription": "Les nouvelles campagnes apparaîtront ici lorsqu'elles commenceront."
       }
     },
     "rules": {
@@ -973,6 +993,100 @@
       "stripeConnect": "Connecter avec Stripe",
       "paypalConnect": "Connecter avec PayPal",
       "wiseConnect": "Connecter avec Wise"
+    },
+    "earnings": {
+      "announcement": {
+        "title": "Nouveau : Retrait flexible !",
+        "message": "Vous pouvez maintenant retirer vos gains via Stripe Connect. PayPal et Wise arrivent bientôt !"
+      },
+      "actions": {
+        "cashOut": "Retirer",
+        "loading": "Traitement...",
+        "downloadTax": "Télécharger les documents fiscaux (PDF)"
+      },
+      "readyTitle": "Prêt à retirer ?",
+      "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer."
     }
+  },
+  "talentPortal": {
+    "disabledDescription": "Connectez-vous à une agence pour accéder au Portail des talents."
+  },
+  "jobs": {
+    "inviteFallbackTitle": "Invitation d'emploi",
+    "viewJobDetails": "Voir les détails de l'emploi",
+    "apply": "Postuler",
+    "browseBoardTitle": "Parcourir l'intégralité du tableau des emplois",
+    "browseBoardDescription": "Ouvrez la page publique des emplois pour voir toutes les opportunités disponibles et postuler."
+  },
+  "agencyConnections": {
+    "thisAgency": "cette agence",
+    "dialogs": {
+      "requestDisconnectTitle": "Demander la déconnexion de {{agency}} ?",
+      "disconnectTitle": "Se déconnecter de {{agency}} ?",
+      "requestDisconnectDescription": "Ce contrat est toujours actif, l'agence doit donc approuver votre demande de déconnexion sauf si le contrat expire d'abord.",
+      "disconnectDescription": "Cette action peut supprimer l’accès aux réservations, aux gains et aux données du portail pour cette agence.",
+      "requestDisconnectConfirm": "Je comprends que la connexion reste active jusqu'à ce que l'agence approuve cette demande.",
+      "disconnectConfirm": "Je comprends que cette action est difficile à annuler.",
+      "requestReasonLabel": "Raison de la demande",
+      "requestReasonPlaceholder": "Expliquez à l'agence pourquoi vous souhaitez résilier le contrat actif avant son terme.",
+      "requestPending": "Une demande de déconnexion est déjà en attente pour ce contrat.",
+      "cancel": "Annuler",
+      "requestDisconnect": "Demander la déconnexion"
+    },
+    "toasts": {
+      "disconnectRequestedTitle": "Déconnexion demandée",
+      "disconnectRequestedDescription": "Votre agence a été informée. La connexion restera active jusqu'à son approbation ou jusqu'à l'expiration du contrat.",
+      "requestAlreadyPendingTitle": "Demande déjà en attente",
+      "requestAlreadyPendingDescription": "Cette demande de déconnexion attend déjà l'approbation de l'agence.",
+      "disconnectedTitle": "Déconnecté",
+      "disconnectedDescription": "Vous avez été déconnecté de l'agence.",
+      "failedDisconnectTitle": "Échec de la déconnexion"
+    },
+    "contract": {
+      "title": "Contrat de {{agency}}",
+      "agencyFallback": "Agence",
+      "description": "Consultez les principales conditions de votre contrat actif avec l’agence et le document signé.",
+      "status": "Statut",
+      "commission": "Commission",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "disconnectStatus": "Statut de déconnexion :",
+      "reason": "Raison :",
+      "viewSignedContract": "Voir le contrat signé",
+      "agencyWebsite": "Site web de l'agence",
+      "noDetails": "Aucun détail de contrat marketplace actif n'est disponible pour cette agence."
+    },
+    "loading": "Chargement",
+    "disconnectPending": "Demande de déconnexion en attente",
+    "connectedAgencyFallback": "Agence connectée",
+    "disconnectAria": "Se déconnecter de l'agence",
+    "pendingInvitationsDescription": "Répondez aux invitations en attente des agences.",
+    "invitationFromAgencyNamed": "Invitation de {{agency}}",
+    "invitationFromAgency": "Invitation d'une agence",
+    "profileAvailable": "Profil d'agence disponible sur demande",
+    "assetRequestsDescription": "Téléchargez des livrables pour les demandes de l’agence.",
+    "loadingRequests": "Chargement des demandes..."
+  },
+  "brandConnections": {
+    "notificationSummarySingular": "{{count}} nouvelle notification concernant les demandes, offres et livrables.",
+    "notificationSummaryPlural": "{{count}} nouvelles notifications concernant les demandes, offres et livrables.",
+    "connectedBrandFallback": "Marque connectée",
+    "requestsDescription": "Répondez aux demandes de connexion de marque en attente.",
+    "noPendingRequestsDescription": "Aucune demande en attente pour le moment.",
+    "requestFallback": "Demande de connexion de marque",
+    "profileAvailable": "Profil de marque disponible",
+    "loadingOffers": "Chargement des offres de campagne...",
+    "noOffersAvailable": "Aucune offre de campagne disponible pour le moment.",
+    "offerFallback": "Offre de campagne",
+    "viewBrief": "Voir le brief",
+    "backToOffers": "← Retour aux offres de marque",
+    "offerBriefNotFound": "Brief introuvable.",
+    "campaignFallback": "Campagne",
+    "briefAndContractTitle": "{{campaign}} - Brief & contrat",
+    "briefAndContractSubtitle": "Portée détaillée et exigences",
+    "disconnectAria": "Se déconnecter de la marque",
+    "offerStatusLabel": "Statut de l'offre :",
+    "hide": "Masquer",
+    "open": "Ouvrir"
   }
 }

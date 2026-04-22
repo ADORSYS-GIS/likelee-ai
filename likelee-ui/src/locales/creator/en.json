@@ -217,6 +217,15 @@
       },
       "profile": {
         "photoTitle": "Profile Photo",
+        "professionalDetails": "Professional Details",
+        "creatorType": "Creator Type",
+        "dateOfBirth": "Date of Birth",
+        "gender": "Gender",
+        "ethnicity": "Ethnicity",
+        "race": "Race",
+        "hairColor": "Hair Color",
+        "eyeColor": "Eye Color",
+        "heightCm": "Height (cm)",
         "placeholders": {
           "fullName": "Your full name",
           "bio": "Tell us about yourself...",
@@ -571,6 +580,16 @@
       "consent": {
         "title": "Your consent required for all uses.",
         "message": "{{count}} active campaigns, all time-limited, all approved by you. You can pause/revoke anytime."
+      },
+      "searchPlaceholder": "Search by brand or campaign",
+      "clearSearch": "Clear search",
+      "empty": {
+        "searchTitle": "No campaigns match your search.",
+        "searchDescription": "Try a different brand or campaign name.",
+        "loadingTitle": "Loading campaigns...",
+        "loadingDescription": "Fetching your active campaigns and licenses.",
+        "noneTitle": "No active campaigns yet.",
+        "noneDescription": "New campaigns will appear here once they start."
       }
     },
     "earnings": {
@@ -1071,5 +1090,86 @@
       "paypalConnect": "Connect with PayPal",
       "wiseConnect": "Connect with Wise"
     }
+  },
+  "talentPortal": {
+    "disabledDescription": "Connect to an agency to access Talent Portal."
+  },
+  "jobs": {
+    "inviteFallbackTitle": "Job invite",
+    "viewJobDetails": "View job details",
+    "apply": "Apply",
+    "browseBoardTitle": "Browse the full Jobs board",
+    "browseBoardDescription": "Open the public jobs page to view all available opportunities and apply."
+  },
+  "agencyConnections": {
+    "thisAgency": "this agency",
+    "dialogs": {
+      "requestDisconnectTitle": "Request disconnect from {{agency}}?",
+      "disconnectTitle": "Disconnect from {{agency}}?",
+      "requestDisconnectDescription": "This contract is still active, so the agency must approve your disconnect request unless the contract expires first.",
+      "disconnectDescription": "This may remove access to bookings, earnings, and portal data for that agency.",
+      "requestDisconnectConfirm": "I understand the connection stays active until the agency approves this request.",
+      "disconnectConfirm": "I understand this action is hard to undo.",
+      "requestReasonLabel": "Reason for request",
+      "requestReasonPlaceholder": "Tell the agency why you want to terminate the active contract early.",
+      "requestPending": "A disconnect request is already pending for this contract.",
+      "cancel": "Cancel",
+      "requestDisconnect": "Request disconnect"
+    },
+    "toasts": {
+      "disconnectRequestedTitle": "Disconnect requested",
+      "disconnectRequestedDescription": "Your agency has been notified. The connection will remain active until they approve or the contract expires.",
+      "requestAlreadyPendingTitle": "Request already pending",
+      "requestAlreadyPendingDescription": "This disconnect request is already awaiting agency approval.",
+      "disconnectedTitle": "Disconnected",
+      "disconnectedDescription": "You have disconnected from the agency.",
+      "failedDisconnectTitle": "Failed to disconnect"
+    },
+    "contract": {
+      "title": "{{agency}} contract",
+      "agencyFallback": "Agency",
+      "description": "Review the key terms of your active agency contract and signed document.",
+      "status": "Status",
+      "commission": "Commission",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "disconnectStatus": "Disconnect status:",
+      "reason": "Reason:",
+      "viewSignedContract": "View signed contract",
+      "agencyWebsite": "Agency website",
+      "noDetails": "No active marketplace contract details are available for this agency."
+    },
+    "loading": "Loading",
+    "disconnectPending": "Disconnect request pending",
+    "connectedAgencyFallback": "Connected agency",
+    "disconnectAria": "Disconnect from agency",
+    "pendingInvitationsDescription": "Respond to pending invitations from agencies.",
+    "invitationFromAgencyNamed": "Invitation from {{agency}}",
+    "invitationFromAgency": "Invitation from agency",
+    "profileAvailable": "Agency profile available on request",
+    "assetRequestsDescription": "Upload deliverables for agency requests.",
+    "loadingRequests": "Loading requests..."
+  },
+  "brandConnections": {
+    "notificationSummarySingular": "{{count}} new notification across requests, offers, and deliverables.",
+    "notificationSummaryPlural": "{{count}} new notifications across requests, offers, and deliverables.",
+    "connectedBrandFallback": "Connected brand",
+    "requestsDescription": "Respond to pending brand connection requests.",
+    "noPendingRequestsDescription": "No pending requests right now.",
+    "requestFallback": "Brand connection request",
+    "profileAvailable": "Brand profile available",
+    "loadingOffers": "Loading campaign offers...",
+    "noOffersAvailable": "No campaign offers available yet.",
+    "offerFallback": "Campaign offer",
+    "viewBrief": "View brief",
+    "backToOffers": "← Back to Brand Offers",
+    "offerBriefNotFound": "Offer brief not found.",
+    "campaignFallback": "Campaign",
+    "briefAndContractTitle": "{{campaign}} - Brief & Contract",
+    "briefAndContractSubtitle": "Detailed scope and requirements",
+    "disconnectAria": "Disconnect from brand",
+    "offerStatusLabel": "Offer status:",
+    "hide": "Hide",
+    "open": "Open"
   }
 }
