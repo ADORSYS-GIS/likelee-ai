@@ -202,6 +202,7 @@ pub async fn revoke_session(
     State(state): State<AppState>,
     user: AuthUser,
     Path(session_id): Path<String>,
+    headers: HeaderMap,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let session_id = session_id.trim().to_string();
     if session_id.is_empty() {
@@ -212,20 +213,33 @@ pub async fn revoke_session(
         ));
     }
 
-    // Guard: prevent revoking the caller's own current session
+    // Fetch sessions to verify ownership and identify current session
+    let raw_sessions = fetch_raw_sessions(&state, &user.id).await?;
+
+    // Use the same current-session identification strategy as list_sessions
     let sid_claim = extract_sid_from_token(&user.access_token);
-    if let Some(ref sid) = sid_claim {
-        if sid.trim() == session_id.as_str() {
+    let caller_ua = headers.get("user-agent").and_then(|v| v.to_str().ok());
+    let current_session_id =
+        identify_current_session(&raw_sessions, sid_claim.as_deref(), caller_ua);
+
+    // Guard: prevent revoking the caller's own current session
+    if let Some(ref current_sid) = current_session_id {
+        if current_sid == session_id.as_str() {
             return Err(session_error(
                 StatusCode::FORBIDDEN,
                 "cannot_revoke_current_session",
                 "You cannot revoke your current session. Sign out instead.",
             ));
         }
+    } else if sid_claim.is_none() {
+        warn!(
+            user_id = %user.id,
+            session_id = %session_id,
+            "[sessions] Cannot identify current session — allowing revoke to proceed (user may have multiple sessions with same UA)"
+        );
     }
 
     // Verify the session belongs to this user before revoking
-    let raw_sessions = fetch_raw_sessions(&state, &user.id).await?;
     let session_belongs_to_user = raw_sessions.iter().any(|s| s.id == session_id);
     if !session_belongs_to_user {
         // Treat as success — session is already gone or never existed for this user
