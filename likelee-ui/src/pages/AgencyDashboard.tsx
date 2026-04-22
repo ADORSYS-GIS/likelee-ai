@@ -20762,6 +20762,10 @@ export default function AgencyDashboard() {
                 isLoading={rosterQuery.isLoading}
                 onRosterChanged={() => rosterQuery.refetch()}
                 isSportsAgency={isSportsAgency}
+                initialOpenTalentId={
+                  String(searchParams.get("openTalentId") || "").trim() ||
+                  undefined
+                }
               />
             )}
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
