@@ -112,12 +112,12 @@ async fn check_customer_default_payment_method(
     if state.stripe_secret_key.trim().is_empty() {
         return Ok(false);
     }
-    
+
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let cust_id = customer_id
         .parse::<stripe_sdk::CustomerId>()
         .map_err(|e| format!("invalid customer id: {}", e))?;
-    
+
     match stripe_sdk::Customer::retrieve(&client, &cust_id, &[]).await {
         Ok(customer) => {
             let has_default = customer
@@ -1720,7 +1720,10 @@ pub async fn create_agency_subscription_checkout(
             Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);
     } else {
         // Check if customer has a default payment method - if so, use IfRequired to skip payment method collection
-        let has_default_payment_method = check_customer_default_payment_method(&state, &billing_ctx.customer_id).await.unwrap_or(false);
+        let has_default_payment_method =
+            check_customer_default_payment_method(&state, &billing_ctx.customer_id)
+                .await
+                .unwrap_or(false);
         if has_default_payment_method {
             cs_params.payment_method_collection =
                 Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::IfRequired);
@@ -3086,7 +3089,10 @@ pub async fn create_creator_subscription_checkout(
             Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);
     } else {
         // Check if customer has a default payment method - if so, use IfRequired to skip payment method collection
-        let has_default_payment_method = check_customer_default_payment_method(&state, &customer_id).await.unwrap_or(false);
+        let has_default_payment_method =
+            check_customer_default_payment_method(&state, &customer_id)
+                .await
+                .unwrap_or(false);
         if has_default_payment_method {
             cs_params.payment_method_collection =
                 Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::IfRequired);
@@ -3586,7 +3592,9 @@ pub async fn create_brand_subscription_checkout(
     let has_default_payment_method = if should_start_trial {
         false
     } else {
-        check_customer_default_payment_method(&state, &customer_id).await.unwrap_or(false)
+        check_customer_default_payment_method(&state, &customer_id)
+            .await
+            .unwrap_or(false)
     };
 
     // If user has a default payment method, create subscription directly without checkout
@@ -3599,7 +3607,8 @@ pub async fn create_brand_subscription_checkout(
             &target_plan,
             billing_cycle,
             should_start_trial,
-        ).await;
+        )
+        .await;
     }
 
     // Fall back to checkout session for users without a default payment method
@@ -3700,7 +3709,10 @@ async fn create_brand_subscription_direct(
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let customer_id_parsed = customer_id.parse::<stripe_sdk::CustomerId>().map_err(|e| {
         warn!(error = %e, brand_id = %brand_id, "invalid customer id");
-        (StatusCode::INTERNAL_SERVER_ERROR, "Invalid Stripe customer ID".to_string())
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Invalid Stripe customer ID".to_string(),
+        )
     })?;
 
     let mut sub_md = std::collections::HashMap::new();
@@ -3892,7 +3904,9 @@ pub async fn create_brand_studio_addon_checkout(
     cs_params.metadata = Some(md);
 
     // Check if customer has a default payment method - if so, use IfRequired to skip payment method collection
-    let has_default_payment_method = check_customer_default_payment_method(&state, &customer_id).await.unwrap_or(false);
+    let has_default_payment_method = check_customer_default_payment_method(&state, &customer_id)
+        .await
+        .unwrap_or(false);
     if has_default_payment_method {
         cs_params.payment_method_collection =
             Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::IfRequired);
@@ -5317,9 +5331,7 @@ pub async fn reset_monthly_budget_alerts(
 // BRAND PAYMENT METHOD HANDLERS
 // ============================================================================
 
-pub async fn get_stripe_publishable_key(
-    State(state): State<AppState>,
-) -> Json<serde_json::Value> {
+pub async fn get_stripe_publishable_key(State(state): State<AppState>) -> Json<serde_json::Value> {
     Json(json!({ "publishable_key": state.stripe_publishable_key }))
 }
 
@@ -5391,7 +5403,10 @@ pub async fn create_brand_payment_method_setup_intent(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let brand: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!({}));
 
-    let stripe_customer_id: Option<String> = brand.get("stripe_customer_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let stripe_customer_id: Option<String> = brand
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let customer_id = if let Some(id) = stripe_customer_id {
         id
     } else {
@@ -5499,12 +5514,33 @@ pub async fn get_brand_payment_methods(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let brand: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!({}));
 
-    let primary_payment_method = if let (Some(pm_id), Some(last_four), Some(brand_name), Some(exp_month), Some(exp_year)) = (
-        brand.get("stripe_payment_method_id").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        brand.get("payment_method_last_four").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        brand.get("payment_method_brand").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        brand.get("payment_method_exp_month").and_then(|v| v.as_i64()).map(|v| v as i32),
-        brand.get("payment_method_exp_year").and_then(|v| v.as_i64()).map(|v| v as i32),
+    let primary_payment_method = if let (
+        Some(pm_id),
+        Some(last_four),
+        Some(brand_name),
+        Some(exp_month),
+        Some(exp_year),
+    ) = (
+        brand
+            .get("stripe_payment_method_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        brand
+            .get("payment_method_last_four")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        brand
+            .get("payment_method_brand")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        brand
+            .get("payment_method_exp_month")
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32),
+        brand
+            .get("payment_method_exp_year")
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32),
     ) {
         Some(PrimaryPaymentMethod {
             stripe_payment_method_id: pm_id,
@@ -5557,11 +5593,15 @@ pub async fn set_brand_primary_payment_method(
         // Payment method not found locally, retrieve from Stripe
         warn!(brand_id = %user_id, stripe_payment_method_id = %req.stripe_payment_method_id, "payment method not found locally, retrieving from Stripe");
         let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-        let pm_id = req.stripe_payment_method_id
+        let pm_id = req
+            .stripe_payment_method_id
             .parse::<stripe_sdk::PaymentMethodId>()
             .map_err(|e| {
                 warn!(error = %e, brand_id = %user_id, "invalid payment method id");
-                (StatusCode::BAD_REQUEST, "Invalid payment method ID".to_string())
+                (
+                    StatusCode::BAD_REQUEST,
+                    "Invalid payment method ID".to_string(),
+                )
             })?;
         let pm = stripe_sdk::PaymentMethod::retrieve(&client, &pm_id, &[])
             .await
@@ -5570,9 +5610,12 @@ pub async fn set_brand_primary_payment_method(
                 (StatusCode::NOT_FOUND, "Payment method not found in Stripe".to_string())
             })?;
 
-        let card = pm
-            .card
-            .ok_or_else(|| (StatusCode::BAD_REQUEST, "Payment method is not a card".to_string()))?;
+        let card = pm.card.ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Payment method is not a card".to_string(),
+            )
+        })?;
 
         let last_four = card.last4.clone();
         let card_brand = card.brand.clone();
@@ -5583,15 +5626,18 @@ pub async fn set_brand_primary_payment_method(
         state
             .pg
             .from("brand_payment_methods")
-            .insert(json!({
-                "brand_id": user_id.to_string(),
-                "stripe_payment_method_id": req.stripe_payment_method_id.clone(),
-                "card_last_four": last_four.clone(),
-                "card_brand": card_brand.clone(),
-                "card_exp_month": exp_month,
-                "card_exp_year": exp_year,
-                "is_active": true
-            }).to_string())
+            .insert(
+                json!({
+                    "brand_id": user_id.to_string(),
+                    "stripe_payment_method_id": req.stripe_payment_method_id.clone(),
+                    "card_last_four": last_four.clone(),
+                    "card_brand": card_brand.clone(),
+                    "card_exp_month": exp_month,
+                    "card_exp_year": exp_year,
+                    "is_active": true
+                })
+                .to_string(),
+            )
             .execute()
             .await
             .map_err(|e| {
@@ -5607,7 +5653,7 @@ pub async fn set_brand_primary_payment_method(
             card_exp_month: exp_month,
             card_exp_year: exp_year,
             is_active: true,
-            created_at: Utc::now().to_rfc3339()
+            created_at: Utc::now().to_rfc3339(),
         }
     };
 
@@ -5620,7 +5666,7 @@ pub async fn set_brand_primary_payment_method(
         .single()
         .execute()
         .await;
-    
+
     let stripe_customer_id: Option<String> = if let Ok(resp) = brand_row {
         if let Ok(text) = resp.text().await {
             if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&text) {
@@ -5647,11 +5693,15 @@ pub async fn set_brand_primary_payment_method(
                     warn!(error = %e, brand_id = %user_id, "invalid payment method id for stripe update");
                     (StatusCode::BAD_REQUEST, "Invalid payment method ID".to_string())
                 })?;
-            
-            let customer_id_parsed = customer_id.parse::<stripe_sdk::CustomerId>().map_err(|e| {
-                warn!(error = %e, brand_id = %user_id, "invalid customer id");
-                (StatusCode::INTERNAL_SERVER_ERROR, "Invalid Stripe customer ID".to_string())
-            })?;
+
+            let customer_id_parsed =
+                customer_id.parse::<stripe_sdk::CustomerId>().map_err(|e| {
+                    warn!(error = %e, brand_id = %user_id, "invalid customer id");
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Invalid Stripe customer ID".to_string(),
+                    )
+                })?;
 
             // Update the customer's invoice_settings.default_payment_method
             let update_params = stripe_sdk::UpdateCustomer {
@@ -5661,7 +5711,7 @@ pub async fn set_brand_primary_payment_method(
                 }),
                 ..Default::default()
             };
-            
+
             match stripe_sdk::Customer::update(&client, &customer_id_parsed, update_params).await {
                 Ok(_) => {
                     info!(brand_id = %user_id, customer_id = %customer_id, payment_method_id = %payment_method.stripe_payment_method_id, "updated stripe customer default payment method");
@@ -5678,14 +5728,17 @@ pub async fn set_brand_primary_payment_method(
         .pg
         .from("brands")
         .eq("id", user_id.to_string())
-        .update(json!({
-            "stripe_payment_method_id": payment_method.stripe_payment_method_id,
-            "payment_method_last_four": payment_method.card_last_four,
-            "payment_method_brand": payment_method.card_brand,
-            "payment_method_exp_month": payment_method.card_exp_month,
-            "payment_method_exp_year": payment_method.card_exp_year,
-            "payment_method_updated_at": Utc::now().to_rfc3339()
-        }).to_string())
+        .update(
+            json!({
+                "stripe_payment_method_id": payment_method.stripe_payment_method_id,
+                "payment_method_last_four": payment_method.card_last_four,
+                "payment_method_brand": payment_method.card_brand,
+                "payment_method_exp_month": payment_method.card_exp_month,
+                "payment_method_exp_year": payment_method.card_exp_year,
+                "payment_method_updated_at": Utc::now().to_rfc3339()
+            })
+            .to_string(),
+        )
         .execute()
         .await
         .map_err(|e| {

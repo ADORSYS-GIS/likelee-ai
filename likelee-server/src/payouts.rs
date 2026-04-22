@@ -2294,9 +2294,7 @@ async fn handle_brand_setup_intent_succeeded(
         .await
         .map_err(|e| format!("failed to retrieve payment method: {}", e))?;
 
-    let card = pm
-        .card
-        .ok_or("payment method is not a card")?;
+    let card = pm.card.ok_or("payment method is not a card")?;
 
     let last_four = card.last4.clone();
     let card_brand = card.brand.clone();
@@ -2307,15 +2305,18 @@ async fn handle_brand_setup_intent_succeeded(
     state
         .pg
         .from("brand_payment_methods")
-        .insert(json!({
-            "brand_id": brand_id,
-            "stripe_payment_method_id": payment_method_id,
-            "card_last_four": last_four,
-            "card_brand": card_brand,
-            "card_exp_month": exp_month,
-            "card_exp_year": exp_year,
-            "is_active": true
-        }).to_string())
+        .insert(
+            json!({
+                "brand_id": brand_id,
+                "stripe_payment_method_id": payment_method_id,
+                "card_last_four": last_four,
+                "card_brand": card_brand,
+                "card_exp_month": exp_month,
+                "card_exp_year": exp_year,
+                "is_active": true
+            })
+            .to_string(),
+        )
         .execute()
         .await
         .map_err(|e| format!("failed to insert payment method: {}", e))?;
@@ -2325,14 +2326,17 @@ async fn handle_brand_setup_intent_succeeded(
         .pg
         .from("brands")
         .eq("id", brand_id)
-        .update(json!({
-            "stripe_payment_method_id": payment_method_id,
-            "payment_method_last_four": last_four,
-            "payment_method_brand": card_brand,
-            "payment_method_exp_month": exp_month,
-            "payment_method_exp_year": exp_year,
-            "payment_method_updated_at": chrono::Utc::now().to_rfc3339()
-        }).to_string())
+        .update(
+            json!({
+                "stripe_payment_method_id": payment_method_id,
+                "payment_method_last_four": last_four,
+                "payment_method_brand": card_brand,
+                "payment_method_exp_month": exp_month,
+                "payment_method_exp_year": exp_year,
+                "payment_method_updated_at": chrono::Utc::now().to_rfc3339()
+            })
+            .to_string(),
+        )
         .execute()
         .await
         .map_err(|e| format!("failed to update brand: {}", e))?;
