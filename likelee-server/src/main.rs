@@ -140,6 +140,7 @@ async fn main() {
         supabase_bucket_temp: cfg.supabase_bucket_temp.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
         stripe_secret_key: cfg.stripe_secret_key.clone(),
+        stripe_publishable_key: cfg.stripe_publishable_key.clone(),
         stripe_client_id: cfg.stripe_client_id.clone(),
         stripe_return_url: cfg.stripe_return_url.clone(),
         stripe_refresh_url: cfg.stripe_refresh_url.clone(),

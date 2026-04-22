@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, CheckCircle } from "lucide-react";
-import { loadStripe } from "@stripe/js";
+import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
   CardElement,
@@ -17,10 +16,7 @@ import {
   setBrandPrimaryPaymentMethod,
 } from "@/api/functions";
 import { toast } from "sonner";
-
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ""
-);
+import { base44 } from "@/api/base44Client";
 
 interface PaymentMethodModalProps {
   isOpen: boolean;
@@ -52,15 +48,12 @@ const CardForm = ({
     setIsProcessing(true);
 
     try {
-      // Get setup intent
-      const { data: setupIntentData, error: setupError } =
-        await createBrandPaymentMethodSetupIntent();
+      const setupIntentData = await createBrandPaymentMethodSetupIntent();
 
-      if (setupError || !setupIntentData?.client_secret) {
-        throw new Error(setupError || "Failed to create setup intent");
+      if (!setupIntentData?.client_secret) {
+        throw new Error("Failed to create setup intent");
       }
 
-      // Confirm card setup
       const { setupIntent, error: confirmError } =
         await stripe.confirmCardSetup(setupIntentData.client_secret, {
           payment_method: {
@@ -143,16 +136,27 @@ const PaymentMethodModalContent = ({
 }: PaymentMethodModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [stripePromise, setStripePromise] = useState<ReturnType<typeof loadStripe> | null>(null);
 
   useEffect(() => {
-    console.log("Modal isOpen state changed:", isOpen);
-  }, [isOpen]);
+    if (isOpen && !stripePromise) {
+      base44.get<{ publishable_key: string }>("/brand/billing/stripe-config")
+        .then((data) => {
+          if (data.publishable_key) {
+            setStripePromise(loadStripe(data.publishable_key));
+          } else {
+            toast.error("Stripe is not configured. Please contact support.");
+          }
+        })
+        .catch(() => {
+          toast.error("Failed to load Stripe configuration.");
+        });
+    }
+  }, [isOpen, stripePromise]);
 
   const handleCardSubmit = async (setupIntentClientSecret: string) => {
     setIsLoading(true);
     try {
-      // The payment method is now attached to the customer
-      // Set it as primary
       const stripe = await stripePromise;
       if (!stripe) throw new Error("Stripe failed to load");
 
@@ -164,13 +168,9 @@ const PaymentMethodModalContent = ({
         setupIntent.setupIntent?.payment_method &&
         typeof setupIntent.setupIntent.payment_method === "string"
       ) {
-        const { error } = await setBrandPrimaryPaymentMethod({
+        await setBrandPrimaryPaymentMethod({
           stripe_payment_method_id: setupIntent.setupIntent.payment_method,
         });
-
-        if (error) {
-          throw new Error(error);
-        }
 
         setSuccessMessage("Card added successfully!");
         toast.success("Payment method added successfully");
@@ -195,6 +195,9 @@ const PaymentMethodModalContent = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Payment Method</DialogTitle>
+          <DialogDescription>
+            Enter your card details to add a new payment method for your brand account.
+          </DialogDescription>
         </DialogHeader>
 
         {successMessage ? (
@@ -206,14 +209,15 @@ const PaymentMethodModalContent = ({
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Enter your card details to add a new payment method for your brand
-              account.
-            </p>
-
-            <Elements stripe={stripePromise}>
-              <CardForm isLoading={isLoading} onSubmit={handleCardSubmit} />
-            </Elements>
+            {stripePromise ? (
+              <Elements stripe={stripePromise}>
+                <CardForm isLoading={isLoading} onSubmit={handleCardSubmit} />
+              </Elements>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+              </div>
+            )}
 
             <p className="text-xs text-gray-500 text-center">
               Your card information is securely processed by Stripe and never

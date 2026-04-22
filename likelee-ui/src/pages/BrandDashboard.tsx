@@ -147,6 +147,7 @@ import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
 import { TrialCountdownBanner } from "@/components/brand/TrialCountdownBanner";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { TeamManagementCard } from "@/features/team/TeamManagementCard";
+import { BrandSettingsBilling } from "@/components/brand-dashboard/settings/BrandSettingsBilling";
 import {
   LineChart,
   Line,
@@ -8983,64 +8984,7 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="billing" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <CreditCard className="w-6 h-6" /> Billing & Payment
-            </h3>
-            <div className="grid md:grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Billing Address
-                </Label>
-                <Textarea
-                  defaultValue="123 Main St&#10;Los Angeles, CA 90001&#10;United States"
-                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 font-bold min-h-[120px]"
-                />
-              </div>
-              <div className="space-y-8">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                    Billing Email
-                  </Label>
-                  <Input
-                    defaultValue="billing@urbanapparel.com"
-                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                    Tax Identification
-                  </Label>
-                  <Input
-                    placeholder="XX-XXXXXXX"
-                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12 p-6 bg-gray-50 border-2 border-gray-900 rounded-none flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gray-950 rounded-lg flex items-center justify-center">
-                  <CreditCard className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Primary Payment Method
-                  </p>
-                  <p className="text-sm font-black text-gray-900">
-                    Visa ending in 4242
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                className="rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white"
-              >
-                Manage
-              </Button>
-            </div>
-          </Card>
+          <BrandSettingsBilling />
         </TabsContent>
 
         <TabsContent value="team" className="space-y-6 mt-0">
@@ -11144,7 +11088,12 @@ export default function BrandDashboard() {
         className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
       >
         {/* Brand Section */}
-        <div className="p-6 border-b border-gray-200">
+        <div
+          className="p-6 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => {
+            navigate("/brandpricing");
+          }}
+        >
           {brand && sidebarOpen ? (
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">

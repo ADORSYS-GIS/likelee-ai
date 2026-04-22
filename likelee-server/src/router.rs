@@ -870,6 +870,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::create_brand_payment_method_setup_intent),
         )
         .route(
+            "/api/brand/billing/stripe-config",
+            get(crate::billing::get_stripe_publishable_key),
+        )
+        .route(
             "/api/brand/billing/payment-methods",
             get(crate::billing::get_brand_payment_methods),
         )
