@@ -5387,7 +5387,7 @@ pub async fn create_brand_payment_method_setup_intent(
     let resp = state
         .pg
         .from("brands")
-        .eq("id", user_id.to_string())
+        .eq("id", &user_id)
         .select("stripe_customer_id")
         .single()
         .execute()
@@ -5413,7 +5413,7 @@ pub async fn create_brand_payment_method_setup_intent(
         // Create new Stripe customer
         let mut params = stripe_sdk::CreateCustomer::new();
         params.metadata = Some(
-            vec![("brand_id".to_string(), user_id.to_string())]
+            vec![("brand_id".to_string(), user_id.clone())]
                 .into_iter()
                 .collect(),
         );
@@ -5431,7 +5431,7 @@ pub async fn create_brand_payment_method_setup_intent(
         state
             .pg
             .from("brands")
-            .eq("id", user_id.to_string())
+            .eq("id", &user_id)
             .update(json!({"stripe_customer_id": customer_id.clone()}).to_string())
             .execute()
             .await
@@ -5475,7 +5475,7 @@ pub async fn get_brand_payment_methods(
     let resp = state
         .pg
         .from("brand_payment_methods")
-        .eq("brand_id", user_id.to_string())
+        .eq("brand_id", &user_id)
         .is("deleted_at", "null")
         .order("created_at.desc")
         .select("id,stripe_payment_method_id,card_last_four,card_brand,card_exp_month,card_exp_year,is_active,created_at")
@@ -5498,7 +5498,7 @@ pub async fn get_brand_payment_methods(
     let resp = state
         .pg
         .from("brands")
-        .eq("id", user_id.to_string())
+        .eq("id", &user_id)
         .select("stripe_payment_method_id,payment_method_last_four,payment_method_brand,payment_method_exp_month,payment_method_exp_year")
         .single()
         .execute()
@@ -5568,7 +5568,7 @@ pub async fn set_brand_primary_payment_method(
     let payment_method_result = state
         .pg
         .from("brand_payment_methods")
-        .eq("brand_id", user_id.to_string())
+        .eq("brand_id", &user_id)
         .eq("stripe_payment_method_id", &req.stripe_payment_method_id)
         .is("deleted_at", "null")
         .select("id,stripe_payment_method_id,card_last_four,card_brand,card_exp_month,card_exp_year,is_active,created_at")
@@ -5628,7 +5628,7 @@ pub async fn set_brand_primary_payment_method(
             .from("brand_payment_methods")
             .insert(
                 json!({
-                    "brand_id": user_id.to_string(),
+                    "brand_id": &user_id,
                     "stripe_payment_method_id": req.stripe_payment_method_id.clone(),
                     "card_last_four": last_four.clone(),
                     "card_brand": card_brand.clone(),
@@ -5649,7 +5649,7 @@ pub async fn set_brand_primary_payment_method(
             id: String::new(),
             stripe_payment_method_id: req.stripe_payment_method_id.clone(),
             card_last_four: last_four,
-            card_brand: card_brand,
+            card_brand,
             card_exp_month: exp_month,
             card_exp_year: exp_year,
             is_active: true,
@@ -5661,7 +5661,7 @@ pub async fn set_brand_primary_payment_method(
     let brand_row = state
         .pg
         .from("brands")
-        .eq("id", user_id.to_string())
+        .eq("id", &user_id)
         .select("stripe_customer_id")
         .single()
         .execute()
@@ -5727,7 +5727,7 @@ pub async fn set_brand_primary_payment_method(
     state
         .pg
         .from("brands")
-        .eq("id", user_id.to_string())
+        .eq("id", &user_id)
         .update(
             json!({
                 "stripe_payment_method_id": payment_method.stripe_payment_method_id,
@@ -5758,7 +5758,7 @@ pub async fn delete_brand_payment_method(
     state
         .pg
         .from("brand_payment_methods")
-        .eq("brand_id", user_id.to_string())
+        .eq("brand_id", &user_id)
         .eq("stripe_payment_method_id", &req.stripe_payment_method_id)
         .update(json!({"deleted_at": Utc::now().to_rfc3339()}).to_string())
         .execute()
