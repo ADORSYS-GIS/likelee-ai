@@ -23,11 +23,17 @@ import {
   X,
   Mail,
   UserX,
+  AlertTriangle,
+  CheckCircle2,
+  ArrowRight,
+  RotateCcw,
 } from "lucide-react";
 import {
   createOfferAssetRequest,
   createOfferTalentAssignment,
   getAgencyTalents,
+  getOfferTransferStatus,
+  retryOfferTransfers,
   listMyCampaignOffers,
   listOfferAssetRequests,
   listOfferDeliverables,
@@ -108,6 +114,16 @@ export function AgencyDeliverablesView() {
     talentName: string;
     talentId: string;
   }>({ open: false, talentName: "", talentId: "" });
+  // Transfer status panel: keyed by offerId
+  const [transferStatusByOffer, setTransferStatusByOffer] = useState<
+    Record<string, any>
+  >({});
+  const [loadingTransferStatus, setLoadingTransferStatus] = useState<
+    Record<string, boolean>
+  >({});
+  const [retryingTransfers, setRetryingTransfers] = useState<
+    Record<string, boolean>
+  >({});
   const [unassignDialog, setUnassignDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -809,6 +825,72 @@ export function AgencyDeliverablesView() {
         loadAssignments(next),
         loadDeliverablesWithCache(next),
       ]);
+      // Auto-load transfer status if offer is released
+      const offer = (offersQuery.data?.offers ?? []).find(
+        (o: any) => String(o?.id || "") === next,
+      );
+      if (String(offer?.escrow_status || "") === "released") {
+        loadTransferStatus(next);
+      }
+    }
+  };
+
+  const loadTransferStatus = async (offerId: string) => {
+    if (loadingTransferStatus[offerId]) return;
+    setLoadingTransferStatus((prev) => ({ ...prev, [offerId]: true }));
+    try {
+      const data = await getOfferTransferStatus(offerId);
+      setTransferStatusByOffer((prev) => ({ ...prev, [offerId]: data }));
+    } catch (_) {
+      // best-effort — don't surface errors for status polling
+    } finally {
+      setLoadingTransferStatus((prev) => ({ ...prev, [offerId]: false }));
+    }
+  };
+
+  const handleRetryTransfers = async (offerId: string) => {
+    if (retryingTransfers[offerId]) return;
+    setRetryingTransfers((prev) => ({ ...prev, [offerId]: true }));
+    try {
+      const result: any = await retryOfferTransfers(offerId);
+      if (result?.nothing_to_retry) {
+        toast({ title: "Nothing to retry", description: "All transfers are already successful." });
+      } else {
+        const succeeded = (result?.retried ?? []).filter((r: any) => r.result === "succeeded").length;
+        const failed = (result?.retried ?? []).filter((r: any) => r.result === "failed").length;
+        const skipped = (result?.retried ?? []).filter((r: any) => r.result === "skipped_no_account").length;
+        toast({
+          title: succeeded > 0 ? "Transfers retried" : "Retry completed",
+          description: [
+            succeeded > 0 && `${succeeded} succeeded`,
+            failed > 0 && `${failed} still failing`,
+            skipped > 0 && `${skipped} skipped (no Stripe account)`,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          variant: succeeded > 0 && failed === 0 ? "default" : "destructive",
+        });
+      }
+      // Refresh transfer status after retry
+      await loadTransferStatus(offerId);
+    } catch (err: any) {
+      const body = err?.data;
+      const code = body?.code;
+      if (code === "escrow_not_released") {
+        toast({
+          title: "Not yet available",
+          description: "Transfers can only be retried after the brand approves the deliverables.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Retry failed",
+          description: err?.message || "Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setRetryingTransfers((prev) => ({ ...prev, [offerId]: false }));
     }
   };
 
@@ -1156,6 +1238,13 @@ export function AgencyDeliverablesView() {
           const hasDraftAgencyDeliverables = agencyDeliverables.some(
             (d: any) => String(d?.status || "").toLowerCase() === "draft",
           );
+          // For the Submit to Brand button: check ALL agency drafts for this offer,
+          // not just those matching the currently selected talent.
+          const hasAnyDraftAgencyDeliverables = deliverables.some(
+            (d: any) =>
+              String(d?.submitted_by_role || "") === "agency" &&
+              String(d?.status || "").toLowerCase() === "draft",
+          );
           const isOfferPaid =
             String(offer?.payment_status || "").toLowerCase() === "paid";
           const isOfferSigned = (() => {
@@ -1281,6 +1370,180 @@ export function AgencyDeliverablesView() {
                     </span>
                   </div>
                 )}
+
+                {/* ── Payout Status Panel ── visible once escrow is released ── */}
+                {String(offer?.escrow_status || "") === "released" &&
+                  expanded &&
+                  (() => {
+                    const ts = transferStatusByOffer[offerId];
+                    const isLoading = loadingTransferStatus[offerId];
+                    const isRetrying = retryingTransfers[offerId];
+                    const hasFailedTransfers = ts?.recipients?.some(
+                      (r: any) => r.transfer_status === "failed",
+                    );
+                    const allSucceeded =
+                      ts?.recipients?.length > 0 &&
+                      ts?.recipients?.every(
+                        (r: any) => r.transfer_status === "created",
+                      );
+
+                    const statusIcon = (r: any) => {
+                      if (r.transfer_status === "created")
+                        return <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />;
+                      if (r.transfer_status === "failed" || r.transfer_status === "pending_retry")
+                        return <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />;
+                      return <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />;
+                    };
+
+                    const statusLabel = (r: any) => {
+                      if (r.transfer_status === "created") return "transferred";
+                      if (r.transfer_status === "pending_retry") return "retrying\u2026";
+                      if (r.transfer_status === "failed") return "failed";
+                      if (r.transfer_status === "reversed") return "reversed";
+                      return "not attempted";
+                    };
+
+                    const friendlyReason = (reason: string) => {
+                      if (!reason) return null;
+                      if (reason.includes("insufficient_capabilities_for_transfer"))
+                        return "Stripe account not fully set up \u2014 transfers not enabled.";
+                      if (reason.includes("transfers_not_allowed"))
+                        return "Transfers not allowed on this Stripe account.";
+                      if (reason.includes("payouts_not_allowed"))
+                        return "Payouts not allowed on this Stripe account.";
+                      if (reason.includes("balance_insufficient"))
+                        return "Platform balance insufficient \u2014 contact support.";
+                      if (reason.includes("no_stripe_account") || reason.includes("No Stripe Connect"))
+                        return "No Stripe account connected. Ask them to complete Stripe onboarding.";
+                      return reason.length > 120 ? reason.slice(0, 120) + "\u2026" : reason;
+                    };
+
+                    return (
+                      <div className="mx-5 mb-4 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-gray-800">Payout Status</span>
+                            {allSucceeded && (
+                              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                all transferred
+                              </span>
+                            )}
+                            {hasFailedTransfers && (
+                              <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                action required
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                              onClick={() => loadTransferStatus(offerId)}
+                              disabled={isLoading}
+                            >
+                              <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`} />
+                              Refresh
+                            </Button>
+                            {hasFailedTransfers && (
+                              <Button
+                                size="sm"
+                                className="h-7 px-3 text-xs bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-lg flex items-center gap-1.5"
+                                onClick={() => handleRetryTransfers(offerId)}
+                                disabled={isRetrying}
+                              >
+                                {isRetrying ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="w-3 h-3" />
+                                )}
+                                Retry failed
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Body */}
+                        {isLoading && !ts ? (
+                          <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-xs">Loading payout status\u2026</span>
+                          </div>
+                        ) : !ts ? (
+                          <div className="px-4 py-4 text-xs text-gray-400 text-center">
+                            Click refresh to load payout status.
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-100">
+                            {(ts.recipients ?? []).map((r: any) => (
+                              <div key={`${r.recipient_type}-${r.recipient_id}`} className="px-4 py-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {statusIcon(r)}
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-sm font-semibold text-gray-900 truncate">
+                                          {r.name}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                                          {r.recipient_type === "agency" ? "agency" : "talent"}
+                                        </span>
+                                      </div>
+                                      {/* Stripe health */}
+                                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                        {!r.stripe_connected ? (
+                                          <span className="text-[10px] text-red-600 font-semibold">
+                                            No Stripe account
+                                          </span>
+                                        ) : !r.stripe_transfers_enabled ? (
+                                          <span className="text-[10px] text-amber-600 font-semibold">
+                                            Transfers not enabled
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] text-emerald-600 font-semibold">
+                                            Stripe ready
+                                          </span>
+                                        )}
+                                        {r.retry_count > 0 && (
+                                          <span className="text-[10px] text-gray-400">
+                                            {r.retry_count} {r.retry_count === 1 ? "retry" : "retries"}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {r.transfer_status === "failed" && r.failure_reason && (
+                                        <p className="text-[11px] text-amber-700 mt-1 leading-snug">
+                                          {friendlyReason(r.failure_reason)}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3 flex-shrink-0">
+                                    <span className="text-sm font-bold text-gray-900">
+                                      ${((r.amount_cents ?? 0) / 100).toFixed(2)}
+                                    </span>
+                                    <span
+                                      className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                                        r.transfer_status === "created"
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          : r.transfer_status === "failed"
+                                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                                            : r.transfer_status === "pending_retry"
+                                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                                              : "bg-gray-50 text-gray-500 border-gray-200"
+                                      }`}
+                                    >
+                                      {statusLabel(r)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                 <AnimatePresence>
                   {expanded && (
@@ -1442,12 +1705,9 @@ export function AgencyDeliverablesView() {
                                   variant="outline"
                                   className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                   disabled={
-                                    !hasDraftAgencyDeliverables ||
+                                    !hasAnyDraftAgencyDeliverables ||
                                     submittingDrafts[offerId] ||
-                                    !canApproveDeliverables ||
-                                    (offer?.status ===
-                                      "contract_fully_signed" &&
-                                      !isOfferPaid)
+                                    !canApproveDeliverables
                                   }
                                   onClick={() => handleSubmitDrafts(offerId)}
                                 >
