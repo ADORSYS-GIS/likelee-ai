@@ -150,6 +150,10 @@
       "metrics": {
         "totalEarnedYTD": "Total gagné (YTD)",
         "willUpdate": "Se mettra à jour dès l'activation de votre première licence",
+        "cashoutBalanceStripe": "Solde de retrait (Stripe)",
+        "availableInConnectedStripe": "Disponible sur votre compte Stripe connecté.",
+        "heldPendingTransfer": "Retenu (virement en attente)",
+        "connectedBankAccountEndingIn": "Compte bancaire connecté se terminant par",
         "thisMonthRecurring": "Récurrent ce mois-ci",
         "waitingForCampaigns": "En attente de campagnes actives",
         "projectedNextMonth": "Projeté mois prochain",
@@ -178,12 +182,20 @@
         "title": "Revenus par campagne",
         "placeholderTitle": "Vos campagnes apparaîtront ici",
         "placeholderMessage": "Une fois que vous aurez des licences actives générant des revenus",
+        "campaignFallback": "Campagne",
         "thisMonth": "ce mois-ci"
       },
       "history": {
         "title": "Historique des paiements",
         "placeholderTitle": "Votre historique de paiements apparaîtra ici",
-        "placeholderMessage": "Une fois que vous recevrez votre premier virement"
+        "placeholderMessage": "Une fois que vous recevrez votre premier virement",
+        "columns": {
+          "date": "Date",
+          "amount": "Montant",
+          "method": "Méthode",
+          "status": "Statut"
+        },
+        "standardMethod": "standard"
       }
     },
     "settings": "Paramètres",
@@ -333,6 +345,10 @@
     "approvals": {
       "title": "Approbations en Attente",
       "subtitle": "Examiner et approuver les demandes de campagne des marques",
+      "pendingRequests": "Demandes en attente",
+      "openRequests": "Ouvrir les demandes",
+      "offerActions": "Actions sur les offres",
+      "reviewOffers": "Voir les offres",
       "pendingCount": "{{count}} En Attente",
       "welcome": {
         "title": "Bienvenue !",
@@ -556,12 +572,43 @@
         "title": "Abonnement créateur",
         "currentAccess": "Accès actuel",
         "recommendedNextStep": "Prochaine étape recommandée",
+        "included": "Inclus",
+        "upgradeToBasic": "Passer à Basic",
+        "proOnly": "Pro uniquement",
+        "voiceEnabled": "Activé ({{count}} tonalités)",
         "processing": "Traitement...",
         "viewDetails": "Voir les détails",
         "lockInProTitle": "Prêt à passer en Pro ?",
         "lockInProDescription": "Votre essai est actif, mais vous pouvez sécuriser dès aujourd'hui vos outils de workflow professionnels. Obtenez la priorité complète sur la marketplace et un accès exclusif aux campagnes.",
         "openingPortal": "Ouverture du portail...",
         "selectPlan": "Choisir un plan",
+        "cards": {
+          "content": {
+            "label": "Contenu",
+            "value": "Inclus pour tous les créateurs"
+          },
+          "kyc": {
+            "label": "Accès KYC"
+          },
+          "likeness": {
+            "label": "Mon Apparence"
+          },
+          "payouts": {
+            "label": "Paiements"
+          },
+          "rules": {
+            "label": "Mes Règles"
+          },
+          "voice": {
+            "label": "Voix"
+          },
+          "jobs": {
+            "label": "Emplois"
+          },
+          "activeCampaigns": {
+            "label": "Campagnes actives"
+          }
+        },
         "access": {
           "proTrial": "Accès essai Pro",
           "pro": "Accès créateur Pro",
@@ -575,8 +622,8 @@
           "pro": "Tout est déjà débloqué"
         },
         "descriptions": {
-          "free": "Basic débloque la vérification KYC, la visibilité créateur, les connexions agence et marque, My Likeness et les paiements.",
-          "basic": "Pro débloque les uploads Cameo, Jobs, My Rules, Voice, Talent Portal, Campaign Archives et Active Campaigns.",
+          "free": "Basic débloque la vérification KYC, la visibilité créateur, les connexions agence et marque, Mon Apparence et les paiements.",
+          "basic": "Pro débloque les uploads Cameo, Emplois, Mes Règles, Voix, Portail des talents, Archives des campagnes et Campagnes actives.",
           "pro": "Votre formule actuelle inclut tous les outils du workflow créateur."
         }
       },
@@ -656,6 +703,7 @@
       "voiceBadgePlural": "Voix",
       "recordingModal": {
         "title": "Enregistrer un échantillon de voix {{emotion}}",
+        "getReady": "Préparez-vous...",
         "ready": "Prêt à enregistrer ?",
         "instruction": "Le script défilera lentement. Parlez naturellement et de manière expressive.",
         "start": "Démarrer l'enregistrement",
@@ -1023,9 +1071,18 @@
       "setupPayouts": "Configurer les paiements",
       "stripeConnect": "Connecter avec Stripe",
       "paypalConnect": "Connecter avec PayPal",
-      "wiseConnect": "Connecter avec Wise"
+      "wiseConnect": "Connecter avec Wise",
+      "paymentPreferences": "Préférences de paiement",
+      "taxDocumentation": "Documentation fiscale",
+      "w9OnFile": "W-9 au dossier • Mis à jour {{date}}",
+      "noW9OnFile": "Aucun W-9 au dossier",
+      "download1099": "Télécharger le 1099 ({{year}})",
+      "cashOutEarnings": "Retirer les revenus",
+      "requesting": "Demande en cours..."
     },
     "earnings": {
+      "title": "Tableau de Bord des Gains",
+      "subtitle": "Suivez vos revenus et paiements",
       "announcement": {
         "title": "Nouveau : Retrait flexible !",
         "message": "Vous pouvez maintenant retirer vos gains via Stripe Connect. PayPal et Wise arrivent bientôt !"
@@ -1034,6 +1091,56 @@
         "cashOut": "Retirer",
         "loading": "Traitement...",
         "downloadTax": "Télécharger les documents fiscaux (PDF)"
+      },
+      "metrics": {
+        "totalEarnedYTD": "Total gagné (YTD)",
+        "willUpdate": "Se mettra à jour dès l'activation de votre première licence",
+        "cashoutBalanceStripe": "Solde de retrait (Stripe)",
+        "availableInConnectedStripe": "Disponible sur votre compte Stripe connecté.",
+        "heldPendingTransfer": "Retenu (virement en attente)",
+        "connectedBankAccountEndingIn": "Compte bancaire connecté se terminant par",
+        "thisMonthRecurring": "Récurrent ce mois-ci",
+        "waitingForCampaigns": "En attente de campagnes actives",
+        "projectedNextMonth": "Projeté mois prochain",
+        "willCalculate": "Calculera selon les licences actives",
+        "nextPayment": "Prochain paiement",
+        "toBeDetermined": "À déterminer",
+        "noActiveContracts": "Pas de contrats actifs"
+      },
+      "charts": {
+        "revenueTrend": "Tendance des revenus (6 derniers mois)",
+        "revenuePlaceholder": "Votre tendance de revenus apparaîtra ici",
+        "activePlaceholder": "Une fois que vous aurez des campagnes actives",
+        "industryBreakdown": "Revenus par industrie",
+        "industryPlaceholder": "Votre répartition par industrie apparaîtra ici"
+      },
+      "comparison": {
+        "title": "Voici à quoi pourraient ressembler vos revenus",
+        "subtitle": "Comparez le modèle récurrent de Likelee au modèle traditionnel unique",
+        "traditionalModel": "Modèle traditionnel :",
+        "traditionalDesc": "Paiement unique par campagne",
+        "likeleeModel": "Modèle Likelee :",
+        "likeleeAmount": "2 500 $ + / mois",
+        "likeleeDesc": "Par licence active • Revenu récurrent"
+      },
+      "campaigns": {
+        "title": "Revenus par campagne",
+        "placeholderTitle": "Vos campagnes apparaîtront ici",
+        "placeholderMessage": "Une fois que vous aurez des licences actives générant des revenus",
+        "campaignFallback": "Campagne",
+        "thisMonth": "ce mois-ci"
+      },
+      "history": {
+        "title": "Historique des paiements",
+        "placeholderTitle": "Votre historique de paiements apparaîtra ici",
+        "placeholderMessage": "Une fois que vous recevrez votre premier virement",
+        "columns": {
+          "date": "Date",
+          "amount": "Montant",
+          "method": "Méthode",
+          "status": "Statut"
+        },
+        "standardMethod": "standard"
       },
       "readyTitle": "Prêt à retirer ?",
       "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer."
@@ -1045,6 +1152,65 @@
     "bookings": "Réservations",
     "licenses": "Licences",
     "requests": "Demandes",
+    "mode": {
+      "aiTitle": "Portail de licences IA",
+      "irlTitle": "Portail de réservations IRL",
+      "aiSubtitle": "Gérez vos accords de licence IA et vos revenus",
+      "irlSubtitle": "Suivez vos réservations et vos revenus",
+      "aiButton": "Mode IA",
+      "irlButton": "Mode IRL"
+    },
+    "tabs": {
+      "overview": "Aperçu",
+      "bookingCalendar": "Calendrier des réservations",
+      "activeProjects": "Projets actifs",
+      "jobHistory": "Historique des emplois",
+      "availability": "Disponibilité",
+      "portfolio": "Portfolio",
+      "earnings": "Revenus",
+      "messages": "Messages",
+      "settings": "Paramètres",
+      "agencyConnection": "Connexion agence",
+      "myLikeness": "Mon Apparence",
+      "activeCampaigns": "Campagnes actives",
+      "archive": "Archives",
+      "analytics": "Analytique"
+    },
+    "portalSettings": "Paramètres du portail",
+    "portalSettingsDescription": "Configurez vos préférences du portail des talents",
+    "settingsTabs": {
+      "profile": "Profil",
+      "payments": "Paiements",
+      "privacy": "Confidentialité"
+    },
+    "content": {
+      "bookingPreferences": {
+        "title": "Préférences de réservation",
+        "subtitle": "Définissez les préférences que votre agence peut utiliser pour vos réservations",
+        "willingToTravel": "Prêt à voyager",
+        "acceptOutsideLocalArea": "Accepter les réservations hors zone locale",
+        "minimumDayRate": "Tarif journalier minimum",
+        "minimumRateDescription": "Votre tarif minimum acceptable"
+      },
+      "portfolio": {
+        "title": "Portfolio",
+        "subtitle": "Mettez en avant votre travail et vos projets passés",
+        "imagesTitle": "Images du portfolio",
+        "imagesSubtitle": "Téléchargez des images pour votre portfolio IRL",
+        "addImages": "Ajouter des images",
+        "selectAgencyTitle": "Sélectionnez une agence",
+        "selectAgencyDescription": "Veuillez choisir l'agence pour cet envoi dans le filtre Agence."
+      },
+      "analytics": {
+        "totalRevenue": "Revenu total",
+        "monthlyRecurring": "Mensuel récurrent",
+        "campaignPerformance": "Performance des campagnes",
+        "aiLicensing": "Licence IA",
+        "viewsPerWeek": "Vues/semaine",
+        "revenue": "Revenu",
+        "empty": "Aucune statistique pour le moment. Demandez à votre agence d'ajouter les vues hebdomadaires."
+      }
+    },
     "noBookings": "Aucune réservation pour le moment.",
     "noLicenses": "Aucune licence pour le moment.",
     "noRequests": "Aucune demande pour le moment.",
@@ -1141,8 +1307,14 @@
     "invitationFromAgency": "Invitation d'une agence",
     "profileAvailable": "Profil d'agence disponible sur demande",
     "assetRequestsDescription": "Téléchargez des livrables pour les demandes de l’agence.",
+    "viewPDF": "Voir le PDF",
     "loadingRequests": "Chargement des demandes...",
+    "agencyFeedback": "Feedback de l'agence",
     "assetRequestFallback": "Demande d'assets",
+    "feedback": {
+      "good": "bien",
+      "requestingChanges": "modifications demandées"
+    },
     "offerMissingTitle": "Offre de campagne introuvable",
     "offerMissingDescription": "Nous n'avons pas pu trouver l'offre de campagne pour cette demande. Actualisez la page puis réessayez."
   },
@@ -1184,15 +1356,24 @@
     "briefAndContractSubtitle": "Portée détaillée et exigences",
     "disconnectAria": "Se déconnecter de la marque",
     "offerStatusLabel": "Statut de l'offre :",
+    "offerStatus": "Statut de l'offre :",
+    "deliverableStatus": "Statut du livrable :",
     "hide": "Masquer",
     "open": "Ouvrir",
+    "brandFallback": "Marque",
     "creator": "créateur",
     "agency": "agence",
     "viewPDF": "Voir le PDF",
+    "openFile": "Ouvrir le fichier",
     "yourDeliverables": "Vos livrables",
     "noDeliverablesSubmitted": "Aucun livrable soumis pour le moment.",
+    "noDeliverablesForSignedOffers": "Aucun livrable disponible pour les offres signées pour le moment.",
+    "noDeliverablesYet": "Aucun livrable pour le moment.",
     "viewed": "vu",
+    "fulfilled": "terminé",
+    "submitted": "soumis",
     "signContract": "Signer le Contrat",
+    "contractAlreadySigned": "Contrat déjà signé",
     "accepted": "accepté",
     "declined": "refusé",
     "approved": "approuvé",
@@ -1201,7 +1382,34 @@
     "changesRequested": "Modifications Demandées",
     "contractPartiallySigned": "Contrat Partiellement Signé",
     "contractSent": "Contrat Envoyé",
-    "loadingDeliverables": "Chargement des livrables..."
+    "requestReview": "Demander une révision",
+    "readyToSubmit": "Prêt à soumettre",
+    "notStarted": "Non commencé",
+    "editsRequestedByBrand": "Modifications demandées par la marque",
+    "loadingDeliverables": "Chargement des livrables...",
+    "selectBrand": "Sélectionner une marque",
+    "selectConnectedBrand": "Sélectionner une marque connectée",
+    "selectCampaign": "Sélectionner une campagne",
+    "selectCampaignOffer": "Sélectionner une offre de campagne",
+    "noCampaignOffersForBrandYet": "Aucune offre de campagne trouvée pour cette marque pour le moment.",
+    "remove": "Retirer",
+    "cancel": "Annuler",
+    "send": "Envoyer",
+    "sending": "Envoi...",
+    "deliverableFeedback": "Feedback des livrables",
+    "viewFeedback": "Voir le feedback",
+    "needsYourAttention": "Nécessite votre attention",
+    "needsYourAttentionDescription": "Les derniers éléments qui nécessitent encore votre réponse.",
+    "noApprovalsWaiting": "Aucune approbation en attente pour le moment.",
+    "connectionRequestAwaitingResponse": "Demande de connexion en attente de votre réponse",
+    "deliverableReview": "Révision de livrable",
+    "feedbackReceivedOnDeliverables": "Feedback reçu sur les livrables soumis",
+    "feedback": "Retour",
+    "chooseFiles": "Choisir des fichiers",
+    "noFileChosen": "Aucun fichier choisi",
+    "filesSelected": "{{count}} fichier sélectionné",
+    "filesSelected_other": "{{count}} fichiers sélectionnés",
+    "uploadHint": "Les fichiers envoyés seront stockés et partagés sous forme de liens téléchargeables."
   },
   "common": {
     "dashboard": "Tableau de bord",
@@ -1250,7 +1458,8 @@
       "partTime": "Temps partiel",
       "contract": "Contrat",
       "freelance": "Freelance",
-      "gig": "Mission"
+      "gig": "Mission",
+      "perProject": "Par projet"
     },
     "locations": {
       "remote": "À distance",
@@ -1345,19 +1554,19 @@
       "content": "Contenu",
       "dashboard": "Tableau de bord",
       "dashboardOverview": "Vue d'ensemble du tableau de bord",
-      "likeness": "My Likeness",
+      "likeness": "Mon Apparence",
       "kyc": "Vérification d'identité (KYC)",
       "visibilityUnlock": "Déblocage de visibilité créateur",
       "agencyConnection": "Connexion agence",
       "brandConnection": "Connexion marque",
       "payouts": "Paiements",
       "cameoUploads": "Uploads vidéo Cameo",
-      "jobs": "Jobs",
-      "rules": "Paramètres : My Rules",
+      "jobs": "Emplois",
+      "rules": "Paramètres : Mes Règles",
       "voice": "Voix",
       "voiceProfileCreation": "Création de profil vocal",
       "voiceTones": "Jusqu'à 6 tonalités de voix",
-      "talentPortal": "Talent Portal",
+      "talentPortal": "Portail des talents",
       "archives": "Archives de campagnes",
       "activeCampaigns": "Campagnes actives",
       "analytics": "Analytique avancée des revenus"

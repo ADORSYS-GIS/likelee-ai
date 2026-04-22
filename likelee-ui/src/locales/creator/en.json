@@ -302,12 +302,43 @@
         "title": "Creator subscription",
         "currentAccess": "Current access",
         "recommendedNextStep": "Recommended next step",
+        "included": "Included",
+        "upgradeToBasic": "Upgrade to Basic",
+        "proOnly": "Pro only",
+        "voiceEnabled": "Enabled ({{count}} tones)",
         "processing": "Processing...",
         "viewDetails": "View Details",
         "lockInProTitle": "Ready to lock in Pro?",
         "lockInProDescription": "Your trial is active, but you can secure your professional workflow tools today. Get full marketplace priority and exclusive campaign access.",
         "openingPortal": "Opening Portal...",
         "selectPlan": "Select Plan",
+        "cards": {
+          "content": {
+            "label": "Content",
+            "value": "Included for all creators"
+          },
+          "kyc": {
+            "label": "KYC access"
+          },
+          "likeness": {
+            "label": "My Likeness"
+          },
+          "payouts": {
+            "label": "Payouts"
+          },
+          "rules": {
+            "label": "My Rules"
+          },
+          "voice": {
+            "label": "Voice"
+          },
+          "jobs": {
+            "label": "Jobs"
+          },
+          "activeCampaigns": {
+            "label": "Active Campaigns"
+          }
+        },
         "access": {
           "proTrial": "Pro Trial access",
           "pro": "Pro creator access",
@@ -537,6 +568,10 @@
       "acceptAndSign": "Accept & Sign",
       "title": "Approval Queue",
       "subtitle": "Review and approve licensing requests",
+      "pendingRequests": "Pending requests",
+      "openRequests": "Open requests",
+      "offerActions": "Offer actions",
+      "reviewOffers": "Review offers",
       "pendingCount": "{{count}} Pending",
       "welcome": {
         "title": "Welcome to your Approval Queue!",
@@ -649,6 +684,10 @@
       "metrics": {
         "totalEarnedYTD": "Total Earned (YTD)",
         "willUpdate": "Updates after each payout",
+        "cashoutBalanceStripe": "Cashout Balance (Stripe)",
+        "availableInConnectedStripe": "Available in your connected Stripe account.",
+        "heldPendingTransfer": "Held (pending transfer)",
+        "connectedBankAccountEndingIn": "Connected bank account ending in",
         "thisMonthRecurring": "This Month (Recurring)",
         "waitingForCampaigns": "Waiting for active campaigns",
         "projectedNextMonth": "Projected Next Month",
@@ -682,12 +721,20 @@
         "title": "Earnings by Campaign",
         "placeholderTitle": "Your campaigns will appear here",
         "placeholderMessage": "Once you have active licenses generating revenue",
+        "campaignFallback": "Campaign",
         "thisMonth": "this month"
       },
       "history": {
         "title": "Payment History",
         "placeholderTitle": "Your payment history will appear here",
-        "placeholderMessage": "Once you receive your first payout"
+        "placeholderMessage": "Once you receive your first payout",
+        "columns": {
+          "date": "Date",
+          "amount": "Amount",
+          "method": "Method",
+          "status": "Status"
+        },
+        "standardMethod": "standard"
       }
     },
     "voice": {
@@ -697,6 +744,7 @@
       "voiceBadgePlural": "Voices",
       "recordingModal": {
         "title": "Record {{emotion}} Voice Sample",
+        "getReady": "Get ready...",
         "ready": "Ready to Record?",
         "instruction": "The script will scroll slowly. Speak naturally and expressively.",
         "start": "Start Recording",
@@ -1133,7 +1181,14 @@
       "setupPayouts": "Setup Payouts",
       "stripeConnect": "Connect with Stripe",
       "paypalConnect": "Connect with PayPal",
-      "wiseConnect": "Connect with Wise"
+      "wiseConnect": "Connect with Wise",
+      "paymentPreferences": "Payment Preferences",
+      "taxDocumentation": "Tax Documentation",
+      "w9OnFile": "W-9 on file • Updated {{date}}",
+      "noW9OnFile": "No W-9 on file",
+      "download1099": "Download 1099 ({{year}})",
+      "cashOutEarnings": "Cash Out Earnings",
+      "requesting": "Requesting..."
     }
   },
   "talentPortal": {
@@ -1142,6 +1197,65 @@
     "bookings": "Bookings",
     "licenses": "Licenses",
     "requests": "Requests",
+    "mode": {
+      "aiTitle": "AI Licensing Portal",
+      "irlTitle": "IRL Bookings Portal",
+      "aiSubtitle": "Manage your AI licensing deals and earnings",
+      "irlSubtitle": "Track your bookings and earnings",
+      "aiButton": "AI Mode",
+      "irlButton": "IRL Mode"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "bookingCalendar": "Booking Calendar",
+      "activeProjects": "Active Projects",
+      "jobHistory": "Job History",
+      "availability": "Availability",
+      "portfolio": "Portfolio",
+      "earnings": "Earnings",
+      "messages": "Messages",
+      "settings": "Settings",
+      "agencyConnection": "Agency Connection",
+      "myLikeness": "My Likeness",
+      "activeCampaigns": "Active Campaigns",
+      "archive": "Archive",
+      "analytics": "Analytics"
+    },
+    "portalSettings": "Portal Settings",
+    "portalSettingsDescription": "Configure your talent portal preferences",
+    "settingsTabs": {
+      "profile": "Profile",
+      "payments": "Payments",
+      "privacy": "Privacy"
+    },
+    "content": {
+      "bookingPreferences": {
+        "title": "Booking Preferences",
+        "subtitle": "Set preferences your agency can use when booking you",
+        "willingToTravel": "Willing to Travel",
+        "acceptOutsideLocalArea": "Accept bookings outside local area",
+        "minimumDayRate": "Minimum Day Rate",
+        "minimumRateDescription": "Your minimum acceptable rate"
+      },
+      "portfolio": {
+        "title": "Portfolio",
+        "subtitle": "Showcase your work and past projects",
+        "imagesTitle": "Portfolio Images",
+        "imagesSubtitle": "Upload images to your IRL portfolio",
+        "addImages": "Add Images",
+        "selectAgencyTitle": "Select an agency",
+        "selectAgencyDescription": "Please choose the agency for this upload using the Agency filter dropdown."
+      },
+      "analytics": {
+        "totalRevenue": "Total Revenue",
+        "monthlyRecurring": "Monthly recurring",
+        "campaignPerformance": "Campaign Performance",
+        "aiLicensing": "AI Licensing",
+        "viewsPerWeek": "Views/Week",
+        "revenue": "Revenue",
+        "empty": "No analytics metrics yet. Ask your agency to add weekly view metrics."
+      }
+    },
     "noBookings": "No bookings yet.",
     "noLicenses": "No licenses yet.",
     "noRequests": "No requests yet.",
@@ -1240,7 +1354,12 @@
     "profileAvailable": "Agency profile available on request",
     "assetRequestsDescription": "Upload deliverables for agency requests.",
     "loadingRequests": "Loading requests...",
+    "agencyFeedback": "Agency feedback",
     "assetRequestFallback": "Asset request",
+    "feedback": {
+      "good": "good",
+      "requestingChanges": "requesting changes"
+    },
     "offerMissingTitle": "Campaign offer missing",
     "offerMissingDescription": "We could not find the campaign offer for this request. Please refresh and try again."
   },
@@ -1282,15 +1401,24 @@
     "briefAndContractSubtitle": "Detailed scope and requirements",
     "disconnectAria": "Disconnect from brand",
     "offerStatusLabel": "Offer status:",
+    "offerStatus": "Offer status:",
+    "deliverableStatus": "Deliverable status:",
     "hide": "Hide",
     "open": "Open",
+    "brandFallback": "Brand",
     "creator": "creator",
     "agency": "agency",
     "viewPDF": "View PDF",
+    "openFile": "Open file",
     "yourDeliverables": "Your deliverables",
     "noDeliverablesSubmitted": "No deliverables submitted yet.",
+    "noDeliverablesForSignedOffers": "No deliverables available for signed offers yet.",
+    "noDeliverablesYet": "No deliverables yet.",
     "viewed": "viewed",
+    "fulfilled": "fulfilled",
+    "submitted": "submitted",
     "signContract": "Sign Contract",
+    "contractAlreadySigned": "Contract already signed",
     "accepted": "accepted",
     "declined": "declined",
     "approved": "approved",
@@ -1299,7 +1427,34 @@
     "changesRequested": "Changes Requested",
     "contractPartiallySigned": "Contract Partially Signed",
     "contractSent": "Contract Sent",
-    "loadingDeliverables": "Loading deliverables..."
+    "requestReview": "Request review",
+    "readyToSubmit": "Ready to submit",
+    "notStarted": "Not started",
+    "editsRequestedByBrand": "Edits requested by brand",
+    "loadingDeliverables": "Loading deliverables...",
+    "selectBrand": "Select brand",
+    "selectConnectedBrand": "Select connected brand",
+    "selectCampaign": "Select campaign",
+    "selectCampaignOffer": "Select campaign offer",
+    "noCampaignOffersForBrandYet": "No campaign offers found for this brand yet.",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "send": "Send",
+    "sending": "Sending...",
+    "deliverableFeedback": "Deliverable feedback",
+    "viewFeedback": "View feedback",
+    "needsYourAttention": "Needs your attention",
+    "needsYourAttentionDescription": "The latest items that still need a response from you.",
+    "noApprovalsWaiting": "No approvals are waiting right now.",
+    "connectionRequestAwaitingResponse": "Connection request awaiting your response",
+    "deliverableReview": "Deliverable review",
+    "feedbackReceivedOnDeliverables": "Feedback received on submitted deliverables",
+    "feedback": "Feedback",
+    "chooseFiles": "Choose Files",
+    "noFileChosen": "No file chosen",
+    "filesSelected": "{{count}} file selected",
+    "filesSelected_other": "{{count}} files selected",
+    "uploadHint": "Uploaded assets will be stored and shared as downloadable links."
   },
   "common": {
     "dashboard": "Dashboard",
@@ -1348,7 +1503,8 @@
       "partTime": "Part-time",
       "contract": "Contract",
       "freelance": "Freelance",
-      "gig": "Gig"
+      "gig": "Gig",
+      "perProject": "Per project"
     },
     "locations": {
       "remote": "Remote",

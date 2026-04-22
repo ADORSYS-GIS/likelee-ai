@@ -42,6 +42,10 @@
       "metrics": {
         "totalEarnedYTD": "Total ganado (YTD)",
         "willUpdate": "Se actualizará una vez que se active su primera licencia",
+        "cashoutBalanceStripe": "Saldo de retiro (Stripe)",
+        "availableInConnectedStripe": "Disponible en tu cuenta de Stripe conectada.",
+        "heldPendingTransfer": "Retenido (transferencia pendiente)",
+        "connectedBankAccountEndingIn": "Cuenta bancaria conectada terminada en",
         "thisMonthRecurring": "Recurrente este mes",
         "waitingForCampaigns": "Esperando campañas activas",
         "projectedNextMonth": "Proyectado próximo mes",
@@ -70,12 +74,20 @@
         "title": "Ganancias por campaña",
         "placeholderTitle": "Sus campañas aparecerán aquí",
         "placeholderMessage": "Una vez que tenga licencias activas generando ingresos",
+        "campaignFallback": "Campaña",
         "thisMonth": "este mes"
       },
       "history": {
         "title": "Historial de pagos",
         "placeholderTitle": "Su historial de pagos aparecerá aquí",
-        "placeholderMessage": "Una vez que reciba su primer pago"
+        "placeholderMessage": "Una vez que reciba su primer pago",
+        "columns": {
+          "date": "Fecha",
+          "amount": "Monto",
+          "method": "Método",
+          "status": "Estado"
+        },
+        "standardMethod": "estándar"
       }
     },
     "settings": "Configuración",
@@ -95,12 +107,43 @@
         "title": "Suscripción del creador",
         "currentAccess": "Acceso actual",
         "recommendedNextStep": "Siguiente paso recomendado",
+        "included": "Incluido",
+        "upgradeToBasic": "Mejorar a Basic",
+        "proOnly": "Solo Pro",
+        "voiceEnabled": "Habilitado ({{count}} tonos)",
         "processing": "Procesando...",
         "viewDetails": "Ver detalles",
         "lockInProTitle": "¿Listo para asegurar Pro?",
         "lockInProDescription": "Tu prueba está activa, pero puedes asegurar hoy tus herramientas profesionales de flujo de trabajo. Obtén prioridad total en el marketplace y acceso exclusivo a campañas.",
         "openingPortal": "Abriendo portal...",
         "selectPlan": "Seleccionar plan",
+        "cards": {
+          "content": {
+            "label": "Contenido",
+            "value": "Incluido para todos los creadores"
+          },
+          "kyc": {
+            "label": "Acceso KYC"
+          },
+          "likeness": {
+            "label": "Mi Apariencia"
+          },
+          "payouts": {
+            "label": "Pagos"
+          },
+          "rules": {
+            "label": "Mis Reglas"
+          },
+          "voice": {
+            "label": "Voz"
+          },
+          "jobs": {
+            "label": "Trabajos"
+          },
+          "activeCampaigns": {
+            "label": "Campañas Activas"
+          }
+        },
         "access": {
           "proTrial": "Acceso de prueba Pro",
           "pro": "Acceso Pro para creadores",
@@ -114,8 +157,8 @@
           "pro": "Ya tienes todo desbloqueado"
         },
         "descriptions": {
-          "free": "Basic desbloquea KYC, visibilidad del creador, conexiones con agencias y marcas, Mi Imagen y pagos.",
-          "basic": "Pro desbloquea subidas de Cameo, Jobs, Mis Reglas, Voz, Talent Portal, Archivos de Campañas y Campañas Activas.",
+          "free": "Basic desbloquea KYC, visibilidad del creador, conexiones con agencias y marcas, Mi Apariencia y pagos.",
+          "basic": "Pro desbloquea subidas de Cameo, Trabajos, Mis Reglas, Voz, Portal de talento, Archivos de campañas y Campañas activas.",
           "pro": "Tu plan actual incluye todo el conjunto de herramientas del flujo de trabajo del creador."
         }
       },
@@ -402,6 +445,10 @@
       "acceptAndSign": "Aceptar y Firmar",
       "title": "Cola de Aprobación",
       "subtitle": "Revisa y aprueba las solicitudes de licencia",
+      "pendingRequests": "Solicitudes pendientes",
+      "openRequests": "Abrir solicitudes",
+      "offerActions": "Acciones de ofertas",
+      "reviewOffers": "Revisar ofertas",
       "pendingCount": "{{count}} Pendientes",
       "welcome": {
         "title": "¡Bienvenido a tu Cola de Aprobación!",
@@ -533,6 +580,7 @@
       "voiceBadgePlural": "Voces",
       "recordingModal": {
         "title": "Grabar muestra de voz {{emotion}}",
+        "getReady": "Prepárate...",
         "ready": "¿Listo para grabar?",
         "instruction": "El guión se desplazará lentamente. Habla de forma natural y expresiva.",
         "start": "Iniciar grabación",
@@ -1144,15 +1192,24 @@
     "briefAndContractSubtitle": "Alcance detallado y requisitos",
     "disconnectAria": "Desconectarse de la marca",
     "offerStatusLabel": "Estado de la oferta:",
+    "offerStatus": "Estado de la oferta:",
+    "deliverableStatus": "Estado del entregable:",
     "hide": "Ocultar",
     "open": "Abrir",
+    "brandFallback": "Marca",
     "creator": "creador",
     "agency": "agencia",
     "viewPDF": "Ver PDF",
+    "openFile": "Abrir archivo",
     "yourDeliverables": "Tus entregables",
     "noDeliverablesSubmitted": "Aún no se han enviado entregables.",
+    "noDeliverablesForSignedOffers": "Aún no hay entregables para ofertas firmadas.",
+    "noDeliverablesYet": "Aún no hay entregables.",
     "viewed": "visto",
+    "fulfilled": "completado",
+    "submitted": "enviado",
     "signContract": "Firmar contrato",
+    "contractAlreadySigned": "Contrato ya firmado",
     "accepted": "aceptado",
     "declined": "rechazado",
     "approved": "aprobado",
@@ -1161,7 +1218,34 @@
     "changesRequested": "Cambios solicitados",
     "contractPartiallySigned": "Contrato parcialmente firmado",
     "contractSent": "Contrato enviado",
-    "loadingDeliverables": "Cargando entregables..."
+    "requestReview": "Solicitar revisión",
+    "readyToSubmit": "Listo para enviar",
+    "notStarted": "No iniciado",
+    "editsRequestedByBrand": "Cambios solicitados por la marca",
+    "loadingDeliverables": "Cargando entregables...",
+    "selectBrand": "Seleccionar marca",
+    "selectConnectedBrand": "Seleccionar marca conectada",
+    "selectCampaign": "Seleccionar campaña",
+    "selectCampaignOffer": "Seleccionar oferta de campaña",
+    "noCampaignOffersForBrandYet": "Aún no se encontraron ofertas de campaña para esta marca.",
+    "remove": "Eliminar",
+    "cancel": "Cancelar",
+    "send": "Enviar",
+    "sending": "Enviando...",
+    "deliverableFeedback": "Comentarios de entregables",
+    "viewFeedback": "Ver comentarios",
+    "needsYourAttention": "Necesita tu atención",
+    "needsYourAttentionDescription": "Los elementos más recientes que aún necesitan tu respuesta.",
+    "noApprovalsWaiting": "No hay aprobaciones pendientes ahora mismo.",
+    "connectionRequestAwaitingResponse": "Solicitud de conexión pendiente de tu respuesta",
+    "deliverableReview": "Revisión de entregable",
+    "feedbackReceivedOnDeliverables": "Se recibió feedback sobre entregables enviados",
+    "feedback": "Comentarios",
+    "chooseFiles": "Elegir archivos",
+    "noFileChosen": "Ningún archivo seleccionado",
+    "filesSelected": "{{count}} archivo seleccionado",
+    "filesSelected_other": "{{count}} archivos seleccionados",
+    "uploadHint": "Los archivos subidos se almacenarán y compartirán como enlaces descargables."
   },
   "agencyConnections": {
     "title": "Conexión de agencia",
@@ -1227,8 +1311,14 @@
     "invitationFromAgency": "Invitación de una agencia",
     "profileAvailable": "Perfil de agencia disponible a petición",
     "assetRequestsDescription": "Sube entregables para las solicitudes de la agencia.",
+    "viewPDF": "Ver PDF",
     "loadingRequests": "Cargando solicitudes...",
+    "agencyFeedback": "Comentarios de la agencia",
     "assetRequestFallback": "Solicitud de recursos",
+    "feedback": {
+      "good": "bueno",
+      "requestingChanges": "solicitando cambios"
+    },
     "offerMissingTitle": "Falta la oferta de campaña",
     "offerMissingDescription": "No pudimos encontrar la oferta de campaña para esta solicitud. Actualiza la página e inténtalo de nuevo."
   },
@@ -1238,10 +1328,69 @@
     "bookings": "Reservas",
     "licenses": "Licencias",
     "requests": "Solicitudes",
+    "mode": {
+      "aiTitle": "Portal de licencias de IA",
+      "irlTitle": "Portal de reservas IRL",
+      "aiSubtitle": "Gestiona tus acuerdos de licencias de IA y tus ganancias",
+      "irlSubtitle": "Sigue tus reservas y ganancias",
+      "aiButton": "Modo IA",
+      "irlButton": "Modo IRL"
+    },
+    "tabs": {
+      "overview": "Resumen",
+      "bookingCalendar": "Calendario de reservas",
+      "activeProjects": "Proyectos activos",
+      "jobHistory": "Historial de trabajos",
+      "availability": "Disponibilidad",
+      "portfolio": "Portafolio",
+      "earnings": "Ganancias",
+      "messages": "Mensajes",
+      "settings": "Configuración",
+      "agencyConnection": "Conexión de agencia",
+      "myLikeness": "Mi Apariencia",
+      "activeCampaigns": "Campañas activas",
+      "archive": "Archivo",
+      "analytics": "Analíticas"
+    },
+    "portalSettings": "Configuración del portal",
+    "portalSettingsDescription": "Configura tus preferencias del portal de talento",
+    "settingsTabs": {
+      "profile": "Perfil",
+      "payments": "Pagos",
+      "privacy": "Privacidad"
+    },
     "noBookings": "Aún no hay reservas.",
     "noLicenses": "Aún no hay licencias.",
     "noRequests": "Aún no hay solicitudes.",
-    "disabledDescription": "Conéctate a una agencia para acceder al Portal de talento."
+    "disabledDescription": "Conéctate a una agencia para acceder al Portal de talento.",
+    "content": {
+      "bookingPreferences": {
+        "title": "Preferencias de reservas",
+        "subtitle": "Define cómo y dónde quieres trabajar para solicitudes IRL.",
+        "willingToTravel": "Disponible para viajar",
+        "acceptOutsideLocalArea": "Aceptar reservas fuera del área local",
+        "minimumDayRate": "Tarifa mínima por día",
+        "minimumRateDescription": "Tu tarifa mínima aceptable"
+      },
+      "portfolio": {
+        "title": "Portafolio",
+        "subtitle": "Muestra tu trabajo IRL para ayudar a agencias y marcas a reservarte.",
+        "imagesTitle": "Imágenes del portafolio",
+        "imagesSubtitle": "Sube imágenes a tu portafolio IRL",
+        "addImages": "Agregar imágenes",
+        "selectAgencyTitle": "Selecciona una agencia",
+        "selectAgencyDescription": "Conéctate a una agencia para subir elementos del portafolio."
+      },
+      "analytics": {
+        "totalRevenue": "Ingresos totales",
+        "monthlyRecurring": "Mensual recurrente",
+        "campaignPerformance": "Rendimiento de campañas",
+        "aiLicensing": "Licenciamiento de IA",
+        "viewsPerWeek": "Vistas por semana",
+        "revenue": "Ingresos",
+        "empty": "Aún no hay métricas analíticas. Pídele a tu agencia que agregue métricas semanales de vistas."
+      }
+    }
   },
   "payouts": {
     "title": "Pagos",
@@ -1255,7 +1404,14 @@
     "setupPayouts": "Configurar pagos",
     "stripeConnect": "Conectar con Stripe",
     "paypalConnect": "Conectar con PayPal",
-    "wiseConnect": "Conectar con Wise"
+    "wiseConnect": "Conectar con Wise",
+    "paymentPreferences": "Preferencias de pago",
+    "taxDocumentation": "Documentación fiscal",
+    "w9OnFile": "W-9 en archivo • Actualizado {{date}}",
+    "noW9OnFile": "No hay W-9 en archivo",
+    "download1099": "Descargar 1099 ({{year}})",
+    "cashOutEarnings": "Retirar ganancias",
+    "requesting": "Solicitando..."
   },
   "common": {
     "dashboard": "Tablero",
@@ -1304,7 +1460,8 @@
       "partTime": "Medio tiempo",
       "contract": "Contrato",
       "freelance": "Freelance",
-      "gig": "Gig"
+      "gig": "Gig",
+      "perProject": "Por proyecto"
     },
     "locations": {
       "remote": "Remoto",

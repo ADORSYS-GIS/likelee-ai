@@ -216,12 +216,12 @@ const VIBES = [
 
 // Voice recording scripts for different emotions
 const getVoiceScripts = (t: any) => ({
-  happy: t("creatorDashboard.voiceScripts.happy"),
-  emotional: t("creatorDashboard.voiceScripts.emotional"),
-  excited: t("creatorDashboard.voiceScripts.excited"),
-  mellow: t("creatorDashboard.voiceScripts.mellow"),
-  relaxed: t("creatorDashboard.voiceScripts.relaxed"),
-  angry: t("creatorDashboard.voiceScripts.angry"),
+  happy: t("creatorDashboard.voice.voiceScripts.happy"),
+  emotional: t("creatorDashboard.voice.voiceScripts.emotional"),
+  excited: t("creatorDashboard.voice.voiceScripts.excited"),
+  mellow: t("creatorDashboard.voice.voiceScripts.mellow"),
+  relaxed: t("creatorDashboard.voice.voiceScripts.relaxed"),
+  angry: t("creatorDashboard.voice.voiceScripts.angry"),
 });
 
 const getImageSections = (t: any) => [
@@ -658,6 +658,7 @@ export default function CreatorDashboard() {
     campaign_name?: string;
   } | null>(null);
   const [sendDeliverableFiles, setSendDeliverableFiles] = useState<File[]>([]);
+  const sendDeliverableFileInputRef = useRef<HTMLInputElement | null>(null);
   const [sendDeliverablePreviewUrls, setSendDeliverablePreviewUrls] = useState<
     string[]
   >([]);
@@ -859,6 +860,8 @@ export default function CreatorDashboard() {
       good: "agencyConnections.feedback.good",
       "request changes": "agencyConnections.feedback.requestingChanges",
       "requesting changes": "agencyConnections.feedback.requestingChanges",
+      "reqeusting changes": "agencyConnections.feedback.requestingChanges",
+      "requsting changes": "agencyConnections.feedback.requestingChanges",
       changes_requested: "agencyConnections.feedback.requestingChanges",
     };
     return keyMap[normalized] ? t(keyMap[normalized]) : cleaned;
@@ -7414,15 +7417,6 @@ export default function CreatorDashboard() {
                     )}
                   </div>
                 ))}
-                {!recording.voiceProfileCreated && recording.accessible && (
-                  <Button
-                    disabled={true}
-                    className="w-full bg-gray-400 cursor-not-allowed text-white"
-                  >
-                    <PlayCircle className="w-4 h-4 mr-2" />
-                    Coming Soon
-                  </Button>
-                )}
               </div>
             </Card>
           )}
@@ -8227,7 +8221,7 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="capitalize">
-                          {String(req?.status || "sent").replace(/_/g, " ")}
+                          {formatStatus(req?.status || "sent")}
                         </Badge>
                         <ChevronDown
                           className={`w-4 h-4 text-gray-400 transition-transform ${
@@ -8815,11 +8809,11 @@ export default function CreatorDashboard() {
                             </div>
                             <div className="text-xs text-gray-500">
                               {offer?.brands?.company_name || "Brand"} •{" "}
-                              {status.replace(/_/g, " ")}
+                              {formatStatus(status)}
                             </div>
                           </div>
                           <Badge variant="outline" className="capitalize">
-                            {status.replace(/_/g, " ")}
+                            {formatStatus(status)}
                           </Badge>
                         </div>
                         {offer?.message && (
@@ -9967,15 +9961,19 @@ export default function CreatorDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Approval Queue</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {t("creatorDashboard.approvals.title")}
+          </h2>
           <p className="text-gray-600 mt-1">
-            Review brand requests, contract actions, and deliverable feedback.
+            {t("creatorDashboard.approvals.subtitle")}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Pending requests</div>
+            <div className="text-sm text-gray-500">
+              {t("creatorDashboard.approvals.pendingRequests")}
+            </div>
             <div className="mt-2 text-3xl font-bold text-gray-900">
               {pending.length}
             </div>
@@ -9983,12 +9981,14 @@ export default function CreatorDashboard() {
               className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               onClick={() => openBrandConnectionSubTab("requests")}
             >
-              Open requests
+              {t("creatorDashboard.approvals.openRequests")}
             </Button>
           </Card>
 
           <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Offer actions</div>
+            <div className="text-sm text-gray-500">
+              {t("creatorDashboard.approvals.offerActions")}
+            </div>
             <div className="mt-2 text-3xl font-bold text-gray-900">
               {actionableOffers.length}
             </div>
@@ -9996,12 +9996,14 @@ export default function CreatorDashboard() {
               className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               onClick={() => openBrandConnectionSubTab("offers")}
             >
-              Review offers
+              {t("creatorDashboard.approvals.reviewOffers")}
             </Button>
           </Card>
 
           <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Deliverable feedback</div>
+            <div className="text-sm text-gray-500">
+              {t("brandConnections.deliverableFeedback")}
+            </div>
             <div className="mt-2 text-3xl font-bold text-gray-900">
               {pendingDeliverables.length}
             </div>
@@ -10009,7 +10011,7 @@ export default function CreatorDashboard() {
               className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               onClick={() => openBrandConnectionSubTab("deliverables")}
             >
-              View feedback
+              {t("brandConnections.viewFeedback")}
             </Button>
           </Card>
         </div>
@@ -10018,10 +10020,10 @@ export default function CreatorDashboard() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-lg font-semibold text-gray-900">
-                Needs your attention
+                {t("brandConnections.needsYourAttention")}
               </div>
               <div className="text-sm text-gray-600 mt-1">
-                The latest items that still need a response from you.
+                {t("brandConnections.needsYourAttentionDescription")}
               </div>
             </div>
             <Badge className="bg-[#1A2140] text-white">
@@ -10035,7 +10037,7 @@ export default function CreatorDashboard() {
           actionableOffers.length === 0 &&
           pendingDeliverables.length === 0 ? (
             <div className="mt-6 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center text-sm text-gray-600">
-              No approvals are waiting right now.
+              {t("brandConnections.noApprovalsWaiting")}
             </div>
           ) : (
             <div className="mt-6 space-y-3">
@@ -10048,14 +10050,16 @@ export default function CreatorDashboard() {
                     <div className="min-w-0">
                       <div className="font-semibold text-gray-900 truncate">
                         {req?.brands?.company_name ||
-                          "Brand connection request"}
+                          t("brandConnections.requestFallback")}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        Connection request awaiting your response
+                        {t(
+                          "brandConnections.connectionRequestAwaitingResponse",
+                        )}
                       </div>
                     </div>
                     <Badge className="bg-amber-50 text-amber-700 border border-amber-200">
-                      Request
+                      {t("brandConnections.requests")}
                     </Badge>
                   </div>
                 </div>
@@ -10069,15 +10073,17 @@ export default function CreatorDashboard() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-semibold text-gray-900 truncate">
-                        {offer?.brand_campaigns?.name || "Campaign offer"}
+                        {offer?.brand_campaigns?.name ||
+                          t("brandConnections.offerFallback")}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {offer?.brands?.company_name || "Brand"} •{" "}
-                        {String(offer?.status || "sent").replace(/_/g, " ")}
+                        {offer?.brands?.company_name ||
+                          t("brandConnections.brandFallback")}{" "}
+                        • {formatStatus(offer?.status || "sent")}
                       </div>
                     </div>
                     <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
-                      {String(offer?.status || "sent").replace(/_/g, " ")}
+                      {formatStatus(offer?.status || "sent")}
                     </Badge>
                   </div>
                 </div>
@@ -10091,14 +10097,15 @@ export default function CreatorDashboard() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-semibold text-gray-900 truncate">
-                        {offer?.brand_campaigns?.name || "Deliverable review"}
+                        {offer?.brand_campaigns?.name ||
+                          t("brandConnections.deliverableReview")}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        Feedback received on submitted deliverables
+                        {t("brandConnections.feedbackReceivedOnDeliverables")}
                       </div>
                     </div>
                     <Badge className="bg-rose-50 text-rose-700 border border-rose-200">
-                      Feedback
+                      {t("brandConnections.feedback")}
                     </Badge>
                   </div>
                 </div>
@@ -10855,7 +10862,9 @@ export default function CreatorDashboard() {
               <div className="mt-2 flex items-center gap-2 text-sm text-blue-800 font-medium">
                 <CreditCard className="w-4 h-4" />
                 <span>
-                  Connected bank account ending in{" "}
+                  {t(
+                    "creatorDashboard.earnings.metrics.connectedBankAccountEndingIn",
+                  )}{" "}
                   <strong>{payoutAccountStatus.bank_last4}</strong>
                 </span>
               </div>
@@ -10868,7 +10877,7 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500"></div>
             <p className="text-sm font-medium text-gray-600 mb-2 relative z-10">
-              cashout Balance (Stripe)
+              {t("creatorDashboard.earnings.metrics.cashoutBalanceStripe")}
             </p>
             <p className="text-3xl font-bold text-emerald-600 relative z-10">
               $
@@ -10878,10 +10887,12 @@ export default function CreatorDashboard() {
               ).toFixed(2)}
             </p>
             <p className="text-sm text-gray-600 mt-1 relative z-10">
-              Available in your connected Stripe account.
+              {t(
+                "creatorDashboard.earnings.metrics.availableInConnectedStripe",
+              )}
             </p>
             <p className="text-xs text-gray-500 mt-2 relative z-10">
-              Held (pending transfer): $
+              {t("creatorDashboard.earnings.metrics.heldPendingTransfer")}: $
               {(
                 (balances.find((b) => b.currency === "USD")?.available_cents ||
                   0) / 100
@@ -11008,7 +11019,9 @@ export default function CreatorDashboard() {
                   className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
                 >
                   <div className="font-semibold text-gray-900 truncate">
-                    {c.name || c.brand || "Campaign"}
+                    {c.name ||
+                      c.brand ||
+                      t("creatorDashboard.earnings.campaigns.campaignFallback")}
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-gray-900">
@@ -11044,11 +11057,17 @@ export default function CreatorDashboard() {
               <table className="w-full text-sm text-left">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    <th className="pb-3 font-semibold text-gray-600">Date</th>
-                    <th className="pb-3 font-semibold text-gray-600">Amount</th>
-                    <th className="pb-3 font-semibold text-gray-600">Method</th>
+                    <th className="pb-3 font-semibold text-gray-600">
+                      {t("creatorDashboard.earnings.history.columns.date")}
+                    </th>
+                    <th className="pb-3 font-semibold text-gray-600">
+                      {t("creatorDashboard.earnings.history.columns.amount")}
+                    </th>
+                    <th className="pb-3 font-semibold text-gray-600">
+                      {t("creatorDashboard.earnings.history.columns.method")}
+                    </th>
                     <th className="pb-3 font-semibold text-gray-600 text-right">
-                      Status
+                      {t("creatorDashboard.earnings.history.columns.status")}
                     </th>
                   </tr>
                 </thead>
@@ -11064,7 +11083,8 @@ export default function CreatorDashboard() {
                         ${(item.amount_cents / 100).toFixed(2)}
                       </td>
                       <td className="py-4 capitalize text-gray-600">
-                        {item.payout_method || "standard"}
+                        {item.payout_method ||
+                          t("creatorDashboard.earnings.history.standardMethod")}
                       </td>
                       <td className="py-4 text-right">
                         <Badge
@@ -12771,11 +12791,11 @@ export default function CreatorDashboard() {
         >
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-              <DialogTitle>Send deliverable</DialogTitle>
+              <DialogTitle>{t("brandConnections.sendDeliverable")}</DialogTitle>
               <DialogDescription>
                 {sendDeliverableRequestId
-                  ? "Upload deliverables for the agency request."
-                  : "Upload a deliverable, choose the connected brand, and select the campaign offer."}
+                  ? t("brandConnections.uploadForAgencyRequest")
+                  : t("brandConnections.uploadDeliverableDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -12817,8 +12837,7 @@ export default function CreatorDashboard() {
                   return (
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                       <span className="text-amber-700 text-sm font-semibold">
-                        ⏳ Awaiting brand payment before deliverables can be
-                        uploaded.
+                        ⏳ {t("brandConnections.awaitingPayment")}
                       </span>
                     </div>
                   );
@@ -12826,11 +12845,15 @@ export default function CreatorDashboard() {
                 return null;
               })()}
               <div className="space-y-2">
-                <Label htmlFor="deliverable-upload">Upload deliverables</Label>
+                <Label htmlFor="deliverable-upload">
+                  {t("brandConnections.uploadDeliverables")}
+                </Label>
                 <Input
+                  ref={sendDeliverableFileInputRef}
                   id="deliverable-upload"
                   type="file"
                   multiple
+                  className="hidden"
                   onChange={(e) => {
                     const selectedFiles = Array.from(e.target.files || []);
                     if (selectedFiles.length === 0) return;
@@ -12854,9 +12877,25 @@ export default function CreatorDashboard() {
                     e.target.value = "";
                   }}
                 />
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-gray-300"
+                    onClick={() => sendDeliverableFileInputRef.current?.click()}
+                  >
+                    {t("brandConnections.chooseFiles")}
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    {sendDeliverableFiles.length > 0
+                      ? t("brandConnections.filesSelected", {
+                          count: sendDeliverableFiles.length,
+                        })
+                      : t("brandConnections.noFileChosen")}
+                  </span>
+                </div>
                 <p className="text-xs text-gray-500">
-                  Uploaded assets will be stored and shared as downloadable
-                  links.
+                  {t("brandConnections.uploadHint")}
                 </p>
                 {sendDeliverableFiles.length > 0 && (
                   <div className="mt-2 space-y-2">
@@ -12904,7 +12943,7 @@ export default function CreatorDashboard() {
                               setSendDeliverablePreviewUrls(nextUrls);
                             }}
                           >
-                            Remove
+                            {t("brandConnections.remove")}
                           </Button>
                         </div>
                       </div>
@@ -12915,7 +12954,9 @@ export default function CreatorDashboard() {
               {!sendDeliverableRequestId && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="deliverable-brand">Select brand</Label>
+                    <Label htmlFor="deliverable-brand">
+                      {t("brandConnections.selectBrand")}
+                    </Label>
                     <select
                       id="deliverable-brand"
                       value={sendDeliverableBrandId}
@@ -12925,7 +12966,9 @@ export default function CreatorDashboard() {
                       }}
                       className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      <option value="">Select connected brand</option>
+                      <option value="">
+                        {t("brandConnections.selectConnectedBrand")}
+                      </option>
                       {brandConnections.map((c: any) => (
                         <option
                           key={String(c?.brand_id || c?.id)}
@@ -12938,7 +12981,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="deliverable-campaign">
-                      Select campaign
+                      {t("brandConnections.selectCampaign")}
                     </Label>
                     <select
                       id="deliverable-campaign"
@@ -12958,7 +13001,9 @@ export default function CreatorDashboard() {
                       }}
                       className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      <option value="">Select campaign offer</option>
+                      <option value="">
+                        {t("brandConnections.selectCampaignOffer")}
+                      </option>
                       {campaignOptions.map((offer: any) => (
                         <option
                           key={String(offer?.id)}
@@ -12967,14 +13012,14 @@ export default function CreatorDashboard() {
                           {String(
                             offer?.brand_campaigns?.name ||
                               offer?.offer_title ||
-                              "Campaign offer",
+                              t("brandConnections.offerFallback"),
                           )}
                         </option>
                       ))}
                     </select>
                     {sendDeliverableBrandId && campaignOptions.length === 0 && (
                       <p className="text-xs text-amber-700">
-                        No campaign offers found for this brand yet.
+                        {t("brandConnections.noCampaignOffersForBrandYet")}
                       </p>
                     )}
                   </div>
@@ -12995,7 +13040,7 @@ export default function CreatorDashboard() {
                 }}
                 disabled={offerActionLoading}
               >
-                Cancel
+                {t("brandConnections.cancel")}
               </Button>
               <Button
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -13015,7 +13060,9 @@ export default function CreatorDashboard() {
                     })())
                 }
               >
-                {offerActionLoading ? "Sending..." : "Send"}
+                {offerActionLoading
+                  ? t("brandConnections.sending")
+                  : t("brandConnections.send")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -13652,7 +13699,7 @@ export default function CreatorDashboard() {
                   {countdown}
                 </div>
                 <p className="text-xl font-bold text-gray-400 mt-4 uppercase tracking-widest">
-                  Get ready...
+                  {t("creatorDashboard.voice.recordingModal.getReady")}
                 </p>
                 <div className="mt-8 opacity-40 grayscale pointer-events-none">
                   {renderScript()}

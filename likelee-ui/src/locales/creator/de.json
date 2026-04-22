@@ -42,6 +42,10 @@
       "metrics": {
         "totalEarnedYTD": "Gesamtverdienst (YTD)",
         "willUpdate": "Wird aktualisiert, sobald Ihre erste Lizenz aktiviert wird",
+        "cashoutBalanceStripe": "Auszahlungsbetrag (Stripe)",
+        "availableInConnectedStripe": "Verfügbar in deinem verbundenen Stripe-Konto.",
+        "heldPendingTransfer": "Zurückgehalten (ausstehende Überweisung)",
+        "connectedBankAccountEndingIn": "Verbundenes Bankkonto endet auf",
         "thisMonthRecurring": "Wiederkehrend diesen Monat",
         "waitingForCampaigns": "Warten auf aktive Kampagnen",
         "projectedNextMonth": "Prognose nächster Monat",
@@ -70,12 +74,20 @@
         "title": "Einnahmen nach Kampagne",
         "placeholderTitle": "Ihre Kampagnen werden hier erscheinen",
         "placeholderMessage": "Sobald Sie aktive Lizenzen haben, die Einnahmen generieren",
+        "campaignFallback": "Kampagne",
         "thisMonth": "diesen Monat"
       },
       "history": {
         "title": "Zahlungshistorie",
         "placeholderTitle": "Ihre Zahlungshistorie wird hier erscheinen",
-        "placeholderMessage": "Sobald Sie Ihre erste Auszahlung erhalten"
+        "placeholderMessage": "Sobald Sie Ihre erste Auszahlung erhalten",
+        "columns": {
+          "date": "Datum",
+          "amount": "Betrag",
+          "method": "Methode",
+          "status": "Status"
+        },
+        "standardMethod": "standard"
       }
     },
     "settings": "Einstellungen",
@@ -95,12 +107,43 @@
         "title": "Creator-Abonnement",
         "currentAccess": "Aktueller Zugriff",
         "recommendedNextStep": "Empfohlener nächster Schritt",
+        "included": "Enthalten",
+        "upgradeToBasic": "Auf Basic upgraden",
+        "proOnly": "Nur Pro",
+        "voiceEnabled": "Aktiviert ({{count}} Tonlagen)",
         "processing": "Wird verarbeitet...",
         "viewDetails": "Details anzeigen",
         "lockInProTitle": "Bereit, Pro festzulegen?",
         "lockInProDescription": "Dein Test ist aktiv, aber du kannst dir deine professionellen Workflow-Tools schon heute sichern. Erhalte volle Marketplace-Priorität und exklusiven Zugang zu Kampagnen.",
         "openingPortal": "Portal wird geöffnet...",
         "selectPlan": "Plan auswählen",
+        "cards": {
+          "content": {
+            "label": "Inhalt",
+            "value": "Für alle Creator enthalten"
+          },
+          "kyc": {
+            "label": "KYC-Zugang"
+          },
+          "likeness": {
+            "label": "Mein Abbild"
+          },
+          "payouts": {
+            "label": "Auszahlungen"
+          },
+          "rules": {
+            "label": "Meine Regeln"
+          },
+          "voice": {
+            "label": "Stimme"
+          },
+          "jobs": {
+            "label": "Jobs"
+          },
+          "activeCampaigns": {
+            "label": "Aktive Kampagnen"
+          }
+        },
         "access": {
           "proTrial": "Pro-Testzugang",
           "pro": "Pro-Creator-Zugang",
@@ -114,8 +157,8 @@
           "pro": "Alles ist bereits freigeschaltet"
         },
         "descriptions": {
-          "free": "Basic schaltet KYC, Creator-Sichtbarkeit, Agentur- und Markenverbindungen, My Likeness und Auszahlungen frei.",
-          "basic": "Pro schaltet Cameo-Uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives und Active Campaigns frei.",
+          "free": "Basic schaltet KYC, Creator-Sichtbarkeit, Agentur- und Markenverbindungen, Mein Abbild und Auszahlungen frei.",
+          "basic": "Pro schaltet Cameo-Uploads, Jobs, Meine Regeln, Stimme, Talent-Portal, Kampagnenarchiv und Aktive Kampagnen frei.",
           "pro": "Dein aktueller Plan umfasst das komplette Creator-Workflow-Toolkit."
         }
       },
@@ -404,6 +447,10 @@
       "acceptAndSign": "Akzeptieren & Unterschreiben",
       "title": "Genehmigungswarteschlange",
       "subtitle": "Überprüfen und genehmigen Sie Lizenzanfragen",
+      "pendingRequests": "Ausstehende Anfragen",
+      "openRequests": "Offene Anfragen",
+      "offerActions": "Angebotsaktionen",
+      "reviewOffers": "Angebote prüfen",
       "pendingCount": "{{count}} ausstehend",
       "welcome": {
         "title": "Willkommen in Ihrer Genehmigungswarteschlange!",
@@ -535,6 +582,7 @@
       "voiceBadgePlural": "Stimmen",
       "recordingModal": {
         "title": "{{emotion}} Sprachprobe aufnehmen",
+        "getReady": "Mach dich bereit...",
         "ready": "Bereit zur Aufnahme?",
         "instruction": "Das Skript wird langsam gescrollt. Sprechen Sie natürlich und ausdrucksstark.",
         "start": "Aufnahme starten",
@@ -1146,15 +1194,24 @@
     "briefAndContractSubtitle": "Detaillierter Umfang und Anforderungen",
     "disconnectAria": "Verbindung zur Marke trennen",
     "offerStatusLabel": "Angebotsstatus:",
+    "offerStatus": "Angebotsstatus:",
+    "deliverableStatus": "Lieferstatus:",
     "hide": "Ausblenden",
     "open": "Öffnen",
+    "brandFallback": "Marke",
     "creator": "Ersteller",
     "agency": "Agentur",
     "viewPDF": "PDF ansehen",
+    "openFile": "Datei öffnen",
     "yourDeliverables": "Ihre Lieferungen",
     "noDeliverablesSubmitted": "Noch keine Lieferungen eingereicht.",
+    "noDeliverablesForSignedOffers": "Für unterschriebene Angebote sind noch keine Deliverables verfügbar.",
+    "noDeliverablesYet": "Noch keine Deliverables.",
     "viewed": "angesehen",
+    "fulfilled": "erfüllt",
+    "submitted": "eingereicht",
     "signContract": "Vertrag unterschreiben",
+    "contractAlreadySigned": "Vertrag bereits unterschrieben",
     "accepted": "akzeptiert",
     "declined": "abgelehnt",
     "approved": "genehmigt",
@@ -1163,7 +1220,34 @@
     "changesRequested": "Änderungen angefordert",
     "contractPartiallySigned": "Vertrag teilweise unterzeichnet",
     "contractSent": "Vertrag gesendet",
-    "loadingDeliverables": "Lieferungen werden geladen..."
+    "requestReview": "Review anfordern",
+    "readyToSubmit": "Bereit zum Einreichen",
+    "notStarted": "Nicht begonnen",
+    "editsRequestedByBrand": "Änderungen von der Marke angefordert",
+    "loadingDeliverables": "Lieferungen werden geladen...",
+    "selectBrand": "Marke auswählen",
+    "selectConnectedBrand": "Verbundene Marke auswählen",
+    "selectCampaign": "Kampagne auswählen",
+    "selectCampaignOffer": "Kampagnenangebot auswählen",
+    "noCampaignOffersForBrandYet": "Für diese Marke wurden noch keine Kampagnenangebote gefunden.",
+    "remove": "Entfernen",
+    "cancel": "Abbrechen",
+    "send": "Senden",
+    "sending": "Wird gesendet...",
+    "deliverableFeedback": "Deliverable-Feedback",
+    "viewFeedback": "Feedback anzeigen",
+    "needsYourAttention": "Erfordert deine Aufmerksamkeit",
+    "needsYourAttentionDescription": "Die neuesten Punkte, die noch eine Antwort von dir benötigen.",
+    "noApprovalsWaiting": "Derzeit warten keine Freigaben.",
+    "connectionRequestAwaitingResponse": "Verbindungsanfrage wartet auf deine Antwort",
+    "deliverableReview": "Deliverable-Review",
+    "feedbackReceivedOnDeliverables": "Feedback zu eingereichten Deliverables erhalten",
+    "feedback": "Rückmeldung",
+    "chooseFiles": "Dateien auswählen",
+    "noFileChosen": "Keine Datei ausgewählt",
+    "filesSelected": "{{count}} Datei ausgewählt",
+    "filesSelected_other": "{{count}} Dateien ausgewählt",
+    "uploadHint": "Hochgeladene Dateien werden gespeichert und als Download-Links geteilt."
   },
   "agencyConnections": {
     "title": "Agenturverbindung",
@@ -1229,8 +1313,14 @@
     "invitationFromAgency": "Einladung von einer Agentur",
     "profileAvailable": "Agenturprofil auf Anfrage verfügbar",
     "assetRequestsDescription": "Lade Deliverables für Agenturanfragen hoch.",
+    "viewPDF": "PDF ansehen",
     "loadingRequests": "Anfragen werden geladen...",
+    "agencyFeedback": "Agentur-Feedback",
     "assetRequestFallback": "Asset-Anfrage",
+    "feedback": {
+      "good": "gut",
+      "requestingChanges": "Änderungen angefordert"
+    },
     "offerMissingTitle": "Kampagnenangebot fehlt",
     "offerMissingDescription": "Wir konnten das Kampagnenangebot für diese Anfrage nicht finden. Bitte aktualisiere die Seite und versuche es erneut."
   },
@@ -1240,10 +1330,69 @@
     "bookings": "Buchungen",
     "licenses": "Lizenzen",
     "requests": "Anfragen",
+    "mode": {
+      "aiTitle": "KI-Lizenzportal",
+      "irlTitle": "IRL-Buchungsportal",
+      "aiSubtitle": "Verwalte deine KI-Lizenzdeals und Einnahmen",
+      "irlSubtitle": "Verfolge deine Buchungen und Einnahmen",
+      "aiButton": "KI-Modus",
+      "irlButton": "IRL-Modus"
+    },
+    "tabs": {
+      "overview": "Übersicht",
+      "bookingCalendar": "Buchungskalender",
+      "activeProjects": "Aktive Projekte",
+      "jobHistory": "Jobverlauf",
+      "availability": "Verfügbarkeit",
+      "portfolio": "Portfolio",
+      "earnings": "Einnahmen",
+      "messages": "Nachrichten",
+      "settings": "Einstellungen",
+      "agencyConnection": "Agenturverbindung",
+      "myLikeness": "Mein Abbild",
+      "activeCampaigns": "Aktive Kampagnen",
+      "archive": "Archiv",
+      "analytics": "Analysen"
+    },
+    "portalSettings": "Portaleinstellungen",
+    "portalSettingsDescription": "Konfiguriere deine Talent-Portal-Einstellungen",
+    "settingsTabs": {
+      "profile": "Profil",
+      "payments": "Zahlungen",
+      "privacy": "Datenschutz"
+    },
     "noBookings": "Noch keine Buchungen.",
     "noLicenses": "Noch keine Lizenzen.",
     "noRequests": "Noch keine Anfragen.",
-    "disabledDescription": "Verbinde dich mit einer Agentur, um auf das Talent-Portal zuzugreifen."
+    "disabledDescription": "Verbinde dich mit einer Agentur, um auf das Talent-Portal zuzugreifen.",
+    "content": {
+      "bookingPreferences": {
+        "title": "Buchungspräferenzen",
+        "subtitle": "Lege fest, wie und wo du für IRL-Anfragen arbeiten möchtest.",
+        "willingToTravel": "Reisebereitschaft",
+        "acceptOutsideLocalArea": "Buchungen außerhalb der Region akzeptieren",
+        "minimumDayRate": "Mindesttagessatz",
+        "minimumRateDescription": "Dein minimal akzeptabler Satz"
+      },
+      "portfolio": {
+        "title": "Portfolio",
+        "subtitle": "Präsentiere deine IRL-Arbeit, damit Agenturen und Marken dich leichter buchen können.",
+        "imagesTitle": "Portfolio-Bilder",
+        "imagesSubtitle": "Lade Bilder in dein IRL-Portfolio hoch",
+        "addImages": "Bilder hinzufügen",
+        "selectAgencyTitle": "Agentur auswählen",
+        "selectAgencyDescription": "Verbinde dich mit einer Agentur, um Portfolio-Elemente hochzuladen."
+      },
+      "analytics": {
+        "totalRevenue": "Gesamtumsatz",
+        "monthlyRecurring": "Monatlich wiederkehrend",
+        "campaignPerformance": "Kampagnenleistung",
+        "aiLicensing": "KI-Lizenzierung",
+        "viewsPerWeek": "Aufrufe pro Woche",
+        "revenue": "Umsatz",
+        "empty": "Noch keine Analysemetriken. Bitte deine Agentur, wöchentliche View-Metriken hinzuzufügen."
+      }
+    }
   },
   "payouts": {
     "title": "Auszahlungen",
@@ -1257,7 +1406,14 @@
     "setupPayouts": "Auszahlungen einrichten",
     "stripeConnect": "Mit Stripe verbinden",
     "paypalConnect": "Mit PayPal verbinden",
-    "wiseConnect": "Mit Wise verbinden"
+    "wiseConnect": "Mit Wise verbinden",
+    "paymentPreferences": "Zahlungseinstellungen",
+    "taxDocumentation": "Steuerdokumentation",
+    "w9OnFile": "W-9 hinterlegt • Aktualisiert {{date}}",
+    "noW9OnFile": "Kein W-9 hinterlegt",
+    "download1099": "1099 herunterladen ({{year}})",
+    "cashOutEarnings": "Einnahmen auszahlen",
+    "requesting": "Wird angefordert..."
   },
   "common": {
     "dashboard": "Dashboard",
@@ -1306,7 +1462,8 @@
       "partTime": "Teilzeit",
       "contract": "Vertrag",
       "freelance": "Freelance",
-      "gig": "Gig"
+      "gig": "Gig",
+      "perProject": "Pro Projekt"
     },
     "locations": {
       "remote": "Remote",
@@ -1401,7 +1558,7 @@
       "content": "Inhalt",
       "dashboard": "Dashboard",
       "dashboardOverview": "Dashboard-Überblick",
-      "likeness": "My Likeness",
+      "likeness": "Mein Abbild",
       "kyc": "Identitätsprüfung (KYC)",
       "visibilityUnlock": "Freischaltung der Creator-Sichtbarkeit",
       "agencyConnection": "Agenturverbindung",
@@ -1409,11 +1566,11 @@
       "payouts": "Auszahlungen",
       "cameoUploads": "Cameo-Video-Uploads",
       "jobs": "Jobs",
-      "rules": "Einstellungen: My Rules",
+      "rules": "Einstellungen: Meine Regeln",
       "voice": "Stimme",
       "voiceProfileCreation": "Erstellung des Sprachprofils",
       "voiceTones": "Bis zu 6 Stimmlagen",
-      "talentPortal": "Talent Portal",
+      "talentPortal": "Talent-Portal",
       "archives": "Kampagnenarchive",
       "activeCampaigns": "Aktive Kampagnen",
       "analytics": "Erweiterte Verdienstanalysen"
