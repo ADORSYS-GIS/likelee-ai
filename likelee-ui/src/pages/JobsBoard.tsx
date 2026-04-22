@@ -900,7 +900,7 @@ export default function JobsBoard() {
             {!loading && jobs.length > 0 && !hasMore && (
               <div className="col-span-full text-center py-4">
                 <p className="text-sm text-gray-400">
-                  Showing all {jobs.length} job{jobs.length !== 1 ? "s" : ""}
+                  {t("jobsPage.showingAllJobs", { count: jobs.length })}
                 </p>
               </div>
             )}
@@ -911,10 +911,12 @@ export default function JobsBoard() {
           <DialogContent className="max-w-2xl">
             <DialogHeader className="pb-3">
               <DialogTitle className="text-lg font-semibold">
-                Apply to {selectedJob?.title}
+                {t("jobsPage.applyDialog.title", {
+                  title: selectedJob?.title || "",
+                })}
               </DialogTitle>
               <DialogDescription>
-                Provide your details and resume to apply for this position.
+                {t("jobsPage.applyDialog.description")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-3">
@@ -923,7 +925,7 @@ export default function JobsBoard() {
                   {/* Resume upload */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      Upload resume (CV)
+                      {t("jobsPage.applyDialog.uploadResume")}
                     </label>
                     <input
                       ref={resumeInputRef}
@@ -941,7 +943,7 @@ export default function JobsBoard() {
                           htmlFor="job-resume-upload"
                           className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400 cursor-pointer"
                         >
-                          Browse resume
+                          {t("jobsPage.applyDialog.browseResume")}
                         </label>
                       )}
                       {resumeUploading && (
@@ -970,7 +972,7 @@ export default function JobsBoard() {
                   {/* Comp card upload */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      Upload comp card
+                      {t("jobsPage.applyDialog.uploadCompCard")}
                     </label>
                     <input
                       ref={compCardInputRef}
@@ -991,12 +993,12 @@ export default function JobsBoard() {
                           onClick={() => setCompCardAttachOpen(true)}
                           className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400"
                         >
-                          Generate comp card
+                          {t("jobsPage.applyDialog.generateCompCard")}
                         </button>
                       )}
                       {compCardMetas.length === 0 && (
                         <div className="text-[11px] text-gray-500">
-                          Or upload an existing PDF/image comp card.
+                          {t("jobsPage.applyDialog.orUploadCompCard")}
                         </div>
                       )}
                       {compCardMetas.length === 0 && (
@@ -1004,7 +1006,7 @@ export default function JobsBoard() {
                           htmlFor="job-comp-card-upload"
                           className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400 cursor-pointer"
                         >
-                          Browse comp cards
+                          {t("jobsPage.applyDialog.browseCompCards")}
                         </label>
                       )}
                       {compCardUploading && (
@@ -1038,7 +1040,7 @@ export default function JobsBoard() {
                             onClick={handleClearCompCards}
                             className="text-xs font-medium text-gray-500 hover:text-gray-900"
                           >
-                            Clear all
+                            {t("jobsPage.applyDialog.clearAll")}
                           </button>
                         </div>
                       )}
@@ -1050,10 +1052,12 @@ export default function JobsBoard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      Portfolio Link *
+                      {t("jobsPage.applyDialog.portfolioLink")}
                     </label>
                     <Input
-                      placeholder="https://yourportfolio.com"
+                      placeholder={t(
+                        "jobsPage.applyDialog.portfolioPlaceholder",
+                      )}
                       value={portfolioLink}
                       onChange={(e) => setPortfolioLink(e.target.value)}
                     />
@@ -1063,13 +1067,15 @@ export default function JobsBoard() {
               <Textarea
                 value={applyMessage}
                 onChange={(e) => setApplyMessage(e.target.value)}
-                placeholder='Optional message, e.g. "Here is my resume..."'
+                placeholder={t(
+                  "jobsPage.applyDialog.optionalMessagePlaceholder",
+                )}
                 className="min-h-[160px]"
               />
             </div>
             <DialogFooter className="pt-5">
               <Button variant="outline" onClick={() => setApplyOpen(false)}>
-                Cancel
+                {t("jobsPage.applyDialog.cancel")}
               </Button>
               <Button
                 className="bg-black text-white"
@@ -1083,7 +1089,9 @@ export default function JobsBoard() {
                   !portfolioLink.trim()
                 }
               >
-                {applyLoading ? "Sending..." : "Send application"}
+                {applyLoading
+                  ? t("jobsPage.applyDialog.sending")
+                  : t("jobsPage.applyDialog.sendApplication")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1093,10 +1101,10 @@ export default function JobsBoard() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="border-b border-gray-100 pb-3">
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Job Details
+              {t("jobsPage.details.title")}
             </DialogTitle>
             <DialogDescription>
-              In-depth information about the selected job posting.
+              {t("jobsPage.details.description")}
             </DialogDescription>
           </DialogHeader>
           {selectedJob ? (
@@ -1593,7 +1601,7 @@ export default function JobsBoard() {
           )}
           <DialogFooter className="mt-6 border-t border-gray-100 pt-4">
             <Button variant="outline" onClick={() => setDetailsOpen(false)}>
-              Close
+              {t("jobsPage.details.close")}
             </Button>
             {selectedJob && (
               <Button
@@ -1613,7 +1621,9 @@ export default function JobsBoard() {
                   setApplyOpen(true);
                 }}
               >
-                {isAgencyUser && !agencyCanApply ? "Upgrade to Apply" : "Apply"}
+                {isAgencyUser && !agencyCanApply
+                  ? t("jobsPage.upgradeToApply")
+                  : t("jobsPage.details.apply")}
               </Button>
             )}
           </DialogFooter>

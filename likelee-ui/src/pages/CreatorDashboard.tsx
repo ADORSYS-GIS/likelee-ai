@@ -216,12 +216,24 @@ const VIBES = [
 
 // Voice recording scripts for different emotions
 const getVoiceScripts = (t: any) => ({
-  happy: t("creatorDashboard.voice.voiceScripts.happy"),
-  emotional: t("creatorDashboard.voice.voiceScripts.emotional"),
-  excited: t("creatorDashboard.voice.voiceScripts.excited"),
-  mellow: t("creatorDashboard.voice.voiceScripts.mellow"),
-  relaxed: t("creatorDashboard.voice.voiceScripts.relaxed"),
-  angry: t("creatorDashboard.voice.voiceScripts.angry"),
+  happy: t("creatorDashboard.voiceScripts.happy", {
+    defaultValue: t("creatorDashboard.voice.voiceScripts.happy"),
+  }),
+  emotional: t("creatorDashboard.voiceScripts.emotional", {
+    defaultValue: t("creatorDashboard.voice.voiceScripts.emotional"),
+  }),
+  excited: t("creatorDashboard.voiceScripts.excited", {
+    defaultValue: t("creatorDashboard.voice.voiceScripts.excited"),
+  }),
+  mellow: t("creatorDashboard.voiceScripts.mellow", {
+    defaultValue: t("creatorDashboard.voice.voiceScripts.mellow"),
+  }),
+  relaxed: t("creatorDashboard.voiceScripts.relaxed", {
+    defaultValue: t("creatorDashboard.voice.voiceScripts.relaxed"),
+  }),
+  angry: t("creatorDashboard.voiceScripts.angry", {
+    defaultValue: t("creatorDashboard.voice.voiceScripts.angry"),
+  }),
 });
 
 const getImageSections = (t: any) => [
@@ -6195,7 +6207,9 @@ export default function CreatorDashboard() {
               {trialActive && trialEndsAt && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <div className="flex items-center gap-1.5 font-medium text-[#64748B]">
-                    <span className="text-[#94A3B8]">Ends in:</span>
+                    <span className="text-[#94A3B8]">
+                      {t("creatorDashboard.planStatus.endsIn")}
+                    </span>
                     <span
                       className={`font-black ${
                         isExpiringSoon ? "text-red-500" : "text-[#0F172A]"
@@ -6206,7 +6220,9 @@ export default function CreatorDashboard() {
                   </div>
                   {trialStartAt && (
                     <span className="text-[10px] text-[#94A3B8] font-medium bg-[#F1F5F9] px-2 py-0.5 rounded-full">
-                      Started {new Date(trialStartAt).toLocaleDateString()}
+                      {t("creatorDashboard.planStatus.started", {
+                        date: new Date(trialStartAt).toLocaleDateString(),
+                      })}
                     </span>
                   )}
                   {isExpiringSoon && (
@@ -6216,7 +6232,7 @@ export default function CreatorDashboard() {
                       className="flex items-center gap-1 bg-red-100/80 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight"
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                      Expiring Soon
+                      {t("creatorDashboard.planStatus.expiringSoon")}
                     </motion.div>
                   )}
                 </div>
@@ -6247,7 +6263,9 @@ export default function CreatorDashboard() {
                 <Gift className="h-4 w-4 text-[#38BDF8]" />
               </motion.div>
             )}
-            {trialActive ? "Manage Subscription" : "Account Settings"}
+            {trialActive
+              ? t("creatorDashboard.planStatus.manageSubscription")
+              : t("creatorDashboard.planStatus.accountSettings")}
             <ChevronRight
               className={`ml-2 h-4 w-4 transition-transform ${
                 isExpiringSoon

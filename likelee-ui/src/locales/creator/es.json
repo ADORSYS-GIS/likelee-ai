@@ -629,6 +629,13 @@
       "voiceRecordings": "Grabaciones de Voz",
       "missing": "Falta"
     },
+    "planStatus": {
+      "endsIn": "Termina en:",
+      "started": "Iniciado {{date}}",
+      "expiringSoon": "Próximo a vencer",
+      "manageSubscription": "Gestionar suscripción",
+      "accountSettings": "Configuración de la cuenta"
+    },
     "content": {
       "title": "Contenido",
       "subtitle": "Rastrea el contenido creado con tu imagen",
@@ -1415,6 +1422,7 @@
   },
   "common": {
     "dashboard": "Tablero",
+    "signIn": "Iniciar sesión",
     "viewPDF": "Ver PDF",
     "uploadDeliverables": "Subir entregables",
     "yourDeliverables": "Tus entregables",
@@ -1449,6 +1457,30 @@
     "remote": "Remoto",
     "aboutRole": "Sobre el rol",
     "openRoles": "{{count}} roles abiertos",
+    "showingAllJobs": "Mostrando los {{count}} trabajos",
+    "applyDialog": {
+      "title": "Postular a {{title}}",
+      "description": "Proporciona tus datos y CV para postular a esta posición.",
+      "uploadResume": "Subir CV",
+      "browseResume": "Examinar CV",
+      "uploadCompCard": "Subir comp card",
+      "generateCompCard": "Generar comp card",
+      "orUploadCompCard": "O sube un comp card existente en PDF/imagen.",
+      "browseCompCards": "Examinar comp cards",
+      "clearAll": "Limpiar todo",
+      "portfolioLink": "Enlace de portafolio *",
+      "portfolioPlaceholder": "https://tuportafolio.com",
+      "optionalMessagePlaceholder": "Mensaje opcional, p. ej. \"Aquí está mi CV...\"",
+      "cancel": "Cancelar",
+      "sending": "Enviando...",
+      "sendApplication": "Enviar postulación"
+    },
+    "details": {
+      "title": "Detalles del trabajo",
+      "description": "Información detallada sobre la oferta seleccionada.",
+      "close": "Cerrar",
+      "apply": "Postular"
+    },
     "callTypes": {
       "creator": "Llamada para creador",
       "agency": "Llamada para agencia",

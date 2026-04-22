@@ -108,6 +108,14 @@ export default function TalentPortal({
   initialMode?: "ai" | "irl";
 }) {
   const { t } = useTranslation();
+  const tPayout = React.useCallback(
+    (key: string, options?: Record<string, unknown>) =>
+      t(`creatorDashboard.payouts.${key}`, {
+        ...(options || {}),
+        defaultValue: t(`payouts.${key}`, options || {}),
+      }),
+    [t],
+  );
   const navigate = useNavigate();
   const location = useLocation();
   const params = useQueryParams();
@@ -2190,8 +2198,8 @@ export default function TalentPortal({
                 }}
               >
                 {createIrlPayoutRequestMutation.isPending
-                  ? t("payouts.requesting")
-                  : t("payouts.cashOutEarnings")}
+                  ? tPayout("requesting")
+                  : tPayout("cashOutEarnings")}
               </button>
             </div>
           )}
@@ -2496,23 +2504,23 @@ export default function TalentPortal({
                 <>
                   <Card className="p-6 rounded-xl shadow-sm">
                     <div className="text-sm font-semibold text-gray-900">
-                      {t("payouts.paymentPreferences")}
+                      {tPayout("paymentPreferences")}
                     </div>
 
                     <div className="mt-4 space-y-3">
                       <div className="rounded-xl border border-gray-200 bg-white p-4">
                         <div>
                           <div className="text-sm font-semibold text-gray-900">
-                            {t("payouts.taxDocumentation")}
+                            {tPayout("taxDocumentation")}
                           </div>
                           <div className="text-xs text-gray-600 mt-1">
                             {(w9Doc as any)?.id && (w9Doc as any)?.created_at
-                              ? t("payouts.w9OnFile", {
+                              ? tPayout("w9OnFile", {
                                   date: new Date(
                                     (w9Doc as any).created_at,
                                   ).toLocaleDateString(),
                                 })
-                              : t("payouts.noW9OnFile")}
+                              : tPayout("noW9OnFile")}
                           </div>
                         </div>
 
@@ -2525,7 +2533,9 @@ export default function TalentPortal({
                             if (url) window.open(url, "_blank");
                           }}
                         >
-                          {t("payouts.download1099", { year: taxYear })}
+                          {tPayout("download1099", {
+                            year: taxYear,
+                          })}
                         </Button>
                       </div>
                     </div>
@@ -3788,23 +3798,23 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("payouts.paymentPreferences")}
+                  {tPayout("paymentPreferences")}
                 </div>
 
                 <div className="mt-4 space-y-3">
                   <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        {t("payouts.taxDocumentation")}
+                        {tPayout("taxDocumentation")}
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
                         {(w9Doc as any)?.id && (w9Doc as any)?.created_at
-                          ? t("payouts.w9OnFile", {
+                          ? tPayout("w9OnFile", {
                               date: new Date(
                                 (w9Doc as any).created_at,
                               ).toLocaleDateString(),
                             })
-                          : t("payouts.noW9OnFile")}
+                          : tPayout("noW9OnFile")}
                       </div>
                     </div>
 
@@ -3817,7 +3827,9 @@ export default function TalentPortal({
                         if (url) window.open(url, "_blank");
                       }}
                     >
-                      {t("payouts.download1099", { year: taxYear })}
+                      {tPayout("download1099", {
+                        year: taxYear,
+                      })}
                     </Button>
                   </div>
                 </div>

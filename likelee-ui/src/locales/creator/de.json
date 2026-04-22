@@ -631,6 +631,13 @@
       "voiceRecordings": "Sprachaufnahmen",
       "missing": "Fehlend"
     },
+    "planStatus": {
+      "endsIn": "Endet in:",
+      "started": "Gestartet {{date}}",
+      "expiringSoon": "Läuft bald ab",
+      "manageSubscription": "Abonnement verwalten",
+      "accountSettings": "Kontoeinstellungen"
+    },
     "content": {
       "title": "Inhalt",
       "subtitle": "Verfolgen Sie Inhalte, die mit Ihrem Abbild erstellt wurden",
@@ -1417,6 +1424,7 @@
   },
   "common": {
     "dashboard": "Dashboard",
+    "signIn": "Anmelden",
     "viewPDF": "PDF ansehen",
     "uploadDeliverables": "Lieferungen hochladen",
     "yourDeliverables": "Ihre Lieferungen",
@@ -1451,6 +1459,30 @@
     "remote": "Remote",
     "aboutRole": "Über die Rolle",
     "openRoles": "{{count}} offene Stellen",
+    "showingAllJobs": "Alle {{count}} Jobs werden angezeigt",
+    "applyDialog": {
+      "title": "Bewerben auf {{title}}",
+      "description": "Gib deine Daten und deinen Lebenslauf an, um dich auf diese Stelle zu bewerben.",
+      "uploadResume": "Lebenslauf hochladen (CV)",
+      "browseResume": "Lebenslauf auswählen",
+      "uploadCompCard": "Comp Card hochladen",
+      "generateCompCard": "Comp Card erstellen",
+      "orUploadCompCard": "Oder eine vorhandene PDF-/Bild-Comp-Card hochladen.",
+      "browseCompCards": "Comp Cards auswählen",
+      "clearAll": "Alles entfernen",
+      "portfolioLink": "Portfolio-Link *",
+      "portfolioPlaceholder": "https://deinportfolio.com",
+      "optionalMessagePlaceholder": "Optionale Nachricht, z. B. \"Hier ist mein Lebenslauf...\"",
+      "cancel": "Abbrechen",
+      "sending": "Wird gesendet...",
+      "sendApplication": "Bewerbung senden"
+    },
+    "details": {
+      "title": "Jobdetails",
+      "description": "Detaillierte Informationen zur ausgewählten Stellenausschreibung.",
+      "close": "Schließen",
+      "apply": "Bewerben"
+    },
     "callTypes": {
       "creator": "Creator-Call",
       "agency": "Agentur-Call",

@@ -289,6 +289,13 @@
       "voiceRecordings": "Enregistrements Vocaux",
       "missing": "MANQUANT"
     },
+    "planStatus": {
+      "endsIn": "Se termine dans :",
+      "started": "Démarré le {{date}}",
+      "expiringSoon": "Expire bientôt",
+      "manageSubscription": "Gérer l’abonnement",
+      "accountSettings": "Paramètres du compte"
+    },
     "content": {
       "title": "Contenu",
       "subtitle": "Suivez le contenu créé avec votre image",
@@ -1413,6 +1420,7 @@
   },
   "common": {
     "dashboard": "Tableau de bord",
+    "signIn": "Se connecter",
     "viewPDF": "Voir le PDF",
     "uploadDeliverables": "Télécharger les Livrables",
     "yourDeliverables": "Vos livrables",
@@ -1447,6 +1455,30 @@
     "remote": "À distance",
     "aboutRole": "À propos du rôle",
     "openRoles": "{{count}} postes ouverts",
+    "showingAllJobs": "Affichage des {{count}} emplois",
+    "applyDialog": {
+      "title": "Postuler à {{title}}",
+      "description": "Renseignez vos informations et votre CV pour postuler à ce poste.",
+      "uploadResume": "Télécharger le CV",
+      "browseResume": "Parcourir le CV",
+      "uploadCompCard": "Télécharger la comp card",
+      "generateCompCard": "Générer une comp card",
+      "orUploadCompCard": "Ou téléchargez une comp card PDF/image existante.",
+      "browseCompCards": "Parcourir les comp cards",
+      "clearAll": "Tout effacer",
+      "portfolioLink": "Lien portfolio *",
+      "portfolioPlaceholder": "https://votreportfolio.com",
+      "optionalMessagePlaceholder": "Message facultatif, ex. \"Voici mon CV...\"",
+      "cancel": "Annuler",
+      "sending": "Envoi...",
+      "sendApplication": "Envoyer la candidature"
+    },
+    "details": {
+      "title": "Détails de l'emploi",
+      "description": "Informations détaillées sur l’offre sélectionnée.",
+      "close": "Fermer",
+      "apply": "Postuler"
+    },
     "callTypes": {
       "creator": "Appel créateur",
       "agency": "Appel agence",

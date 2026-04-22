@@ -817,6 +817,13 @@
       "voiceRecordings": "Voice Recordings",
       "missing": "MISSING"
     },
+    "planStatus": {
+      "endsIn": "Ends in:",
+      "started": "Started {{date}}",
+      "expiringSoon": "Expiring Soon",
+      "manageSubscription": "Manage Subscription",
+      "accountSettings": "Account Settings"
+    },
     "content": {
       "title": "Content",
       "subtitle": "Track content created with your likeness",
@@ -1458,6 +1465,7 @@
   },
   "common": {
     "dashboard": "Dashboard",
+    "signIn": "Sign In",
     "viewPDF": "View PDF",
     "uploadDeliverables": "Upload Deliverables",
     "yourDeliverables": "Your deliverables",
@@ -1492,6 +1500,30 @@
     "remote": "Remote",
     "aboutRole": "About role",
     "openRoles": "{{count}} open roles",
+    "showingAllJobs": "Showing all {{count}} jobs",
+    "applyDialog": {
+      "title": "Apply to {{title}}",
+      "description": "Provide your details and resume to apply for this position.",
+      "uploadResume": "Upload resume (CV)",
+      "browseResume": "Browse resume",
+      "uploadCompCard": "Upload comp card",
+      "generateCompCard": "Generate comp card",
+      "orUploadCompCard": "Or upload an existing PDF/image comp card.",
+      "browseCompCards": "Browse comp cards",
+      "clearAll": "Clear all",
+      "portfolioLink": "Portfolio Link *",
+      "portfolioPlaceholder": "https://yourportfolio.com",
+      "optionalMessagePlaceholder": "Optional message, e.g. \"Here is my resume...\"",
+      "cancel": "Cancel",
+      "sending": "Sending...",
+      "sendApplication": "Send application"
+    },
+    "details": {
+      "title": "Job Details",
+      "description": "In-depth information about the selected job posting.",
+      "close": "Close",
+      "apply": "Apply"
+    },
     "callTypes": {
       "creator": "Creator call",
       "agency": "Agency call",
