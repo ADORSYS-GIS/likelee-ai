@@ -3,6 +3,18 @@
   "getStarted": "Loslegen",
   "brands": "Marken",
   "agencies": "Agenturen",
+  "jobs": {
+    "title": "Jobs"
+  },
+  "talentPortal": {
+    "title": "Talent-Portal"
+  },
+  "agencyConnections": {
+    "title": "Agentur-Verbindungen"
+  },
+  "brandConnections": {
+    "title": "Marken-Verbindungen"
+  },
   "marketingAgency": "Marketingagentur",
   "marketingAgencySub": "Werbung & Kreativdienste",
   "talentAgencyLabel": "Talent- / Modelagentur",

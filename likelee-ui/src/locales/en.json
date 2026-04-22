@@ -3,6 +3,18 @@
   "getStarted": "Get Started",
   "brands": "Brands",
   "agencies": "Agencies",
+  "jobs": {
+    "title": "Jobs"
+  },
+  "talentPortal": {
+    "title": "Talent Portal"
+  },
+  "agencyConnections": {
+    "title": "Agency Connections"
+  },
+  "brandConnections": {
+    "title": "Brand Connections"
+  },
   "marketingAgency": "Marketing Agency",
   "marketingAgencySub": "Advertising & creative services",
   "talentAgencyLabel": "Talent / Modeling Agency",

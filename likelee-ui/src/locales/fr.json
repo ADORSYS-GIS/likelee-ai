@@ -3,6 +3,18 @@
   "getStarted": "Commencer",
   "brands": "Marques",
   "agencies": "Agences",
+  "jobs": {
+    "title": "Emplois"
+  },
+  "talentPortal": {
+    "title": "Portail des Talents"
+  },
+  "agencyConnections": {
+    "title": "Connexions d'Agence"
+  },
+  "brandConnections": {
+    "title": "Connexions de Marque"
+  },
   "talentModelingAgency": "Agence de talents / mannequins",
   "talentModelingAgencyMessage": "Représentez des acteurs, des mannequins et des influenceurs",
   "sportsAgency": "Agence sportive",
