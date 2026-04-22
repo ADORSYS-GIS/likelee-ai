@@ -26,6 +26,7 @@ use crate::{
         get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user, PlanTier,
     },
     team::{self, permissions::Permission},
+    utils::parse_budget_cents,
 };
 
 pub const BRAND_STUDIO_ADDON_STUDIO_PLAN: &str = "pro";
@@ -5006,7 +5007,7 @@ pub async fn check_budget_alerts_cron(
         let offers_resp = state
             .pg
             .from("campaign_offers")
-            .select("id,budget_snapshot,payment_status,created_at")
+            .select("id,budget_snapshot,payment_status,paid_at,updated_at,created_at")
             .eq("brand_id", brand_id)
             .limit(1000)
             .execute()
@@ -5017,33 +5018,33 @@ pub async fn check_budget_alerts_cron(
         let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
 
         let mut current_month_spend: i64 = 0;
+        // Uses shared utils::parse_budget_cents() function
         for offer in offers {
             let payment_status = offer
                 .get("payment_status")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_lowercase();
-            if payment_status != "released" && payment_status != "paid" {
+            if payment_status != "paid" {
                 continue;
             }
 
-            let budget_cents = offer
-                .get("budget_snapshot")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0);
+            let budget_snapshot = offer.get("budget_snapshot");
+            let budget_cents = budget_snapshot.map(parse_budget_cents).unwrap_or(0);
             if budget_cents <= 0 {
                 continue;
             }
 
-            let created_at_str = offer
-                .get("created_at")
+            let paid_at_str = offer
+                .get("paid_at")
                 .and_then(|v| v.as_str())
+                .or_else(|| offer.get("created_at").and_then(|v| v.as_str()))
                 .unwrap_or("");
-            let created_at = chrono::DateTime::parse_from_rfc3339(created_at_str)
+            let paid_at = chrono::DateTime::parse_from_rfc3339(paid_at_str)
                 .map(|dt| dt.with_timezone(&chrono::Utc))
                 .unwrap_or(now);
 
-            if created_at >= current_month_start {
+            if paid_at >= current_month_start {
                 current_month_spend += budget_cents;
             }
         }
