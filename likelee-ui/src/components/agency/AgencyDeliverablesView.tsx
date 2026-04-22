@@ -1670,18 +1670,14 @@ export function AgencyDeliverablesView() {
                         </h6>
                         <div className="mt-1 flex items-center gap-2 flex-wrap">
                           {alreadyAssigned && (
-                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
-                              Assigned
+                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] tracking-widest font-black px-2 py-0.5">
+                              assigned
                             </Badge>
                           )}
-                          {needsInvite ? (
-                            <Badge className="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5 flex items-center gap-1">
+                          {needsInvite && (
+                            <Badge className="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] tracking-widest font-black px-2 py-0.5 flex items-center gap-1">
                               <Mail className="w-2.5 h-2.5" />
                               invite required
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
-                              Portal Access
                             </Badge>
                           )}
                         </div>
