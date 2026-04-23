@@ -156,3 +156,70 @@ likelee-ui/
 ⚠️ **Test with different roles** - What works for Owner might not work for Reviewer.
 
 📚 **Read the docs** - See [CACHE_INVALIDATION.md](CACHE_INVALIDATION.md) for comprehensive details.
+
+---
+
+## Campaign Offer Transfer Retry System
+
+### Overview
+
+When a brand approves a deliverable, escrow is released and Stripe transfers are attempted per recipient (agency + assigned talents). Transfers can fail silently if a recipient's Stripe account is not fully onboarded. The retry system allows agencies to recover from these failures without any manual platform intervention.
+
+### Key Principle
+
+**Escrow release is always permanent after brand approval.** It represents the brand's obligation being fulfilled. Transfer failures are an operational concern — funds remain on the platform's Stripe balance until a retry succeeds.
+
+### Transfer Status Flow
+
+```
+escrow_status = "released"  (set on brand approval — permanent)
+  └─ campaign_offer_transfers per recipient:
+       "created"       → funds in recipient's Stripe account ✅
+       "failed"        → funds on platform Stripe balance, retry available ⚠️
+       "pending_retry" → retry in progress (transient)
+       "reversed"      → reversed by Stripe
+```
+
+### Retry Gate
+
+The retry endpoint enforces two hard guards:
+1. `escrow_status` must be `"released"` — prevents premature transfers
+2. Only rows with `status = "failed"` are processed — never re-transfers succeeded rows
+
+### New API Endpoints
+
+| Method | Path | Permission Required |
+|--------|------|---------------------|
+| `GET` | `/api/agency/campaign-offers/:offer_id/transfer-status` | `manage_billing` |
+| `POST` | `/api/agency/campaign-offers/:offer_id/retry-transfers` | `manage_billing` |
+
+### DB Changes (migration `2026-04-22_campaign_offer_transfer_retry.sql`)
+
+New columns on `campaign_offer_transfers`:
+- `retry_count integer NOT NULL DEFAULT 0`
+- `retried_at timestamptz`
+- `notified_at timestamptz`
+
+New status value: `pending_retry` (added to constraint)
+
+New RPCs:
+- `mark_transfer_pending_retry(p_offer_id, p_recipient_type, p_recipient_id)`
+- `mark_transfer_notified(p_offer_id, p_recipient_type, p_recipient_id)`
+
+### Frontend
+
+The **Payout Status** panel in `AgencyDeliverablesView` renders automatically when `offer.escrow_status === "released"` and the offer card is expanded. It shows:
+- Per-recipient row: name, type, amount, Stripe health, transfer status badge
+- Human-readable failure reasons mapped from Stripe error codes
+- **Refresh** button to re-poll
+- **Retry failed** button (only when at least one transfer has `status: failed`)
+
+### Stripe Error Code Mapping (Frontend)
+
+| Stripe Code | User-Facing Message |
+|-------------|---------------------|
+| `insufficient_capabilities_for_transfer` | Stripe account not fully set up — transfers not enabled |
+| `transfers_not_allowed` | Transfers not allowed on this Stripe account |
+| `payouts_not_allowed` | Payouts not allowed on this Stripe account |
+| `balance_insufficient` | Platform balance insufficient — contact support |
+| No Stripe account | No Stripe account connected. Ask them to complete Stripe onboarding |

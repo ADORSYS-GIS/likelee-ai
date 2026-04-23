@@ -1588,39 +1588,72 @@ pub async fn create_talent(
         ));
     }
 
-    // 3. Reuse an existing agency-owned talent row by email when possible, else insert a new one.
+    // 3. Block duplicate email globally — email must be unique across all agencies.
     let normalized_email = payload
         .email
         .as_deref()
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty());
 
-    let existing_talent = if let Some(email) = normalized_email.as_deref() {
+    if let Some(email) = normalized_email.as_deref() {
         let existing_resp = state
             .pg
             .from("agency_users")
-            .select("id,creator_id")
-            .eq("agency_id", &effective_agency_id)
+            .select("id,agency_id,full_legal_name,stage_name")
             .eq("role", "talent")
             .ilike("email", email)
-            .order("updated_at.desc")
             .limit(1)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let existing_status = existing_resp.status();
         let existing_text = existing_resp
             .text()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !existing_status.is_success() {
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, existing_text));
+            .unwrap_or_else(|_| "[]".to_string());
+        let existing_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&existing_text).unwrap_or_default();
+        if let Some(row) = existing_rows.first() {
+            let existing_id = row
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let existing_name = row
+                .get("stage_name")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .or_else(|| row.get("full_legal_name").and_then(|v| v.as_str()))
+                .unwrap_or("this talent")
+                .to_string();
+            let same_agency = row.get("agency_id").and_then(|v| v.as_str()).unwrap_or("")
+                == effective_agency_id.as_str();
+            let (code, message) = if same_agency {
+                (
+                    "duplicate_email_same_agency",
+                    format!(
+                        "A talent with this email already exists on your roster ({}).",
+                        existing_name
+                    ),
+                )
+            } else {
+                (
+                    "duplicate_email_other_agency",
+                    "This email is already registered to a talent on another agency's roster. Each talent must have a unique email across the platform.".to_string(),
+                )
+            };
+            return Err((
+                StatusCode::CONFLICT,
+                serde_json::to_string(&serde_json::json!({
+                    "code": code,
+                    "message": message,
+                    "existing_talent_id": if same_agency { existing_id } else { "".to_string() },
+                    "existing_talent_name": if same_agency { existing_name } else { "".to_string() },
+                    "same_agency": same_agency,
+                }))
+                .unwrap_or_else(|_| code.to_string()),
+            ));
         }
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&existing_text).unwrap_or_default();
-        rows.first().cloned()
-    } else {
-        None
-    };
+    }
 
     let mut identity_payload = json!({
         "full_legal_name": payload.full_name,
@@ -1673,37 +1706,7 @@ pub async fn create_talent(
         }
     }
 
-    let (talent_id, creator_id): (String, Option<String>) = if let Some(row) = existing_talent {
-        let talent_id = row
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        if talent_id.is_empty() {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "unable to resolve existing talent id".to_string(),
-            ));
-        }
-        let update_resp = state
-            .pg
-            .from("agency_users")
-            .eq("id", &talent_id)
-            .update(identity_payload.to_string())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !update_resp.status().is_success() {
-            let err_text = update_resp.text().await.unwrap_or_default();
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
-        }
-        (
-            talent_id,
-            row.get("creator_id")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-        )
-    } else {
+    let (talent_id, creator_id): (String, Option<String>) = {
         if let serde_json::Value::Object(ref mut map) = identity_payload {
             map.insert("agency_id".to_string(), json!(effective_agency_id));
         }

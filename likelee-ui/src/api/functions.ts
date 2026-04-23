@@ -1085,6 +1085,15 @@ export const deleteOfferTalentAssignment = (
     `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
   );
 
+export const getOfferTransferStatus = (offerId: string) =>
+  base44Client.get(`/api/agency/campaign-offers/${offerId}/transfer-status`);
+
+export const retryOfferTransfers = (offerId: string) =>
+  base44Client.post(`/api/agency/campaign-offers/${offerId}/retry-transfers`);
+
+export const getCreatorTransferStatus = () =>
+  base44Client.get(`/api/talent/campaign-offers/transfer-status`);
+
 export const uploadOfferAssetRequestFile = (offerId: string, file: File) =>
   base44Client.post(
     `/api/campaign-offers/${offerId}/asset-requests/upload`,

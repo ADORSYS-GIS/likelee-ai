@@ -64,6 +64,47 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 | GET    | `/api/agency/payouts/account-status`    | Stripe Connect status  |
 | POST   | `/api/agency/payouts/onboarding-link`   | Get onboarding link    |
 
+### Campaign Offer Transfers (Agency)
+
+These endpoints are agency-only and require the `manage_billing` permission. They are only meaningful after `escrow_status = "released"` (i.e. after the brand has approved at least one deliverable).
+
+| Method | Path                                                        | Description                                                                 |
+| ------ | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| GET    | `/api/agency/campaign-offers/:offer_id/transfer-status`     | Live Stripe account health + transfer row status for every recipient        |
+| POST   | `/api/agency/campaign-offers/:offer_id/retry-transfers`     | Retry all failed Stripe transfers for an offer                              |
+
+#### Transfer Status Response Fields (per recipient)
+
+| Field                    | Type    | Description                                                        |
+| ------------------------ | ------- | ------------------------------------------------------------------ |
+| `recipient_type`         | string  | `"agency"` or `"creator"`                                          |
+| `recipient_id`           | string  | UUID of the recipient                                              |
+| `name`                   | string  | Display name                                                       |
+| `amount_cents`           | integer | Amount owed in cents                                               |
+| `transfer_status`        | string  | `created` / `failed` / `pending_retry` / `reversed` / `not_attempted` |
+| `failure_reason`         | string? | Raw Stripe failure reason (if failed)                              |
+| `retry_count`            | integer | Number of retry attempts made                                      |
+| `stripe_connected`       | boolean | Whether a Stripe Connect account exists                            |
+| `stripe_transfers_enabled` | boolean | Whether the `transfers` capability is active on the account      |
+| `stripe_payouts_enabled` | boolean | Whether payouts are enabled on the account                         |
+| `stripe_details_submitted` | boolean | Whether Stripe onboarding details have been submitted            |
+
+#### Retry Response Fields (per retried recipient)
+
+| Field               | Type    | Description                                                  |
+| ------------------- | ------- | ------------------------------------------------------------ |
+| `result`            | string  | `succeeded` / `failed` / `skipped_no_account`                |
+| `failure_reason`    | string? | Reason if failed                                             |
+| `stripe_transfer_id`| string? | Stripe transfer ID if succeeded                              |
+
+#### Retry Error Codes
+
+| Code                  | HTTP | Meaning                                              |
+| --------------------- | ---- | ---------------------------------------------------- |
+| `escrow_not_released` | 400  | Brand has not approved yet — retry not allowed       |
+| `offer_not_paid`      | 400  | Offer payment not completed                          |
+| `offer_not_found`     | 404  | Offer does not belong to this agency                 |
+
 ### Studio (AI Generation)
 
 | Method | Path                          | Description              |

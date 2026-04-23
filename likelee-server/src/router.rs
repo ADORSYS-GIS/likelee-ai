@@ -1070,12 +1070,24 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::brand_campaigns::comment_offer_deliverable),
         )
         .route(
+            "/api/agency/campaign-offers/:offer_id/transfer-status",
+            get(crate::brand_campaigns::get_offer_transfer_status),
+        )
+        .route(
+            "/api/agency/campaign-offers/:offer_id/retry-transfers",
+            post(crate::brand_campaigns::retry_offer_transfers),
+        )
+        .route(
             "/api/talent/offer-asset-requests",
             get(crate::brand_campaigns::list_creator_asset_requests),
         )
         .route(
             "/api/talent/offer-asset-requests/:request_id/viewed",
             post(crate::brand_campaigns::mark_creator_asset_request_viewed),
+        )
+        .route(
+            "/api/talent/campaign-offers/transfer-status",
+            get(crate::brand_campaigns::get_creator_transfer_status),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
