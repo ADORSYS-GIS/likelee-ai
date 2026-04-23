@@ -660,6 +660,8 @@ export default function BrandDashboard() {
   const [assetSizesCache, setAssetSizesCache] = useState<Record<string, number>>({});
   const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set());
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState<any>(null);
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
     new Set(),
   );
@@ -1951,6 +1953,49 @@ export default function BrandDashboard() {
       }
     };
     loadStudioData();
+  };
+
+  const handleDeleteAsset = async (asset: any) => {
+    setAssetToDelete(asset);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteAsset = async () => {
+    if (!assetToDelete) return;
+    setShowDeleteDialog(false);
+
+    try {
+      if (assetToDelete.source_type === "upload" || assetToDelete.generation_id === undefined) {
+        setStudioFiles((prev) => prev.filter((f) => f.id !== assetToDelete.id));
+      } else if (assetToDelete.source_type === "studio_generation") {
+        setStudioGenerations((prev) => prev.filter((g) => g.id !== assetToDelete.generation_id));
+      }
+
+      setCollections((prev) =>
+        prev.map((c) => ({
+          ...c,
+          assetIds: c.assetIds.filter((id) => id !== assetToDelete.id),
+        })),
+      );
+      setSelectedAssetIds((prev) => {
+        const next = new Set(prev);
+        next.delete(assetToDelete.id);
+        return next;
+      });
+
+      toast({
+        title: "Asset deleted",
+        description: `"${assetToDelete.file_name}" has been removed.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Could not delete the asset.",
+        variant: "destructive",
+      });
+    }
+
+    setAssetToDelete(null);
   };
 
   useEffect(() => {
@@ -7482,19 +7527,29 @@ export default function BrandDashboard() {
                     <Badge className="bg-purple-600 text-white">Studio</Badge>
                   )}
                 </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white"
-                  onClick={() => handleDownloadAsset(asset)}
-                  disabled={activeDownloads.has(asset.id)}
-                >
-                  {activeDownloads.has(asset.id) ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="bg-white/90 hover:bg-white"
+                    onClick={() => handleDownloadAsset(asset)}
+                    disabled={activeDownloads.has(asset.id)}
+                  >
+                    {activeDownloads.has(asset.id) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="bg-white/90 hover:bg-red-50 text-red-600 hover:text-red-700"
+                    onClick={() => handleDeleteAsset(asset)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               <div className="p-3">
                 <p className="text-sm font-medium text-gray-900 truncate">
@@ -7556,18 +7611,28 @@ export default function BrandDashboard() {
                     Studio
                   </Badge>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDownloadAsset(asset)}
-                  disabled={activeDownloads.has(asset.id)}
-                >
-                  {activeDownloads.has(asset.id) ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4" />
-                  )}
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDownloadAsset(asset)}
+                    disabled={activeDownloads.has(asset.id)}
+                  >
+                    {activeDownloads.has(asset.id) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleDeleteAsset(asset)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -12865,6 +12930,26 @@ export default function BrandDashboard() {
             </Button>
             <Button onClick={() => setShowFilterDialog(false)}>
               Apply Filters
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Asset Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Asset</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{assetToDelete?.file_name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteAsset}>
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
