@@ -657,6 +657,7 @@ export default function BrandDashboard() {
   const [signedUrlsCache, setSignedUrlsCache] = useState<
     Record<string, { url: string; expires: number }>
   >({});
+  const [assetSizesCache, setAssetSizesCache] = useState<Record<string, number>>({});
   const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set());
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
@@ -664,10 +665,23 @@ export default function BrandDashboard() {
   );
   const [collections, setCollections] = useState<
     { id: string; name: string; assetIds: string[] }[]
-  >([
-    { id: "1", name: "Holiday 2024", assetIds: [] },
-    { id: "2", name: "Evergreen", assetIds: [] },
-  ]);
+  >(() => {
+    const saved = localStorage.getItem("studio-collections");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [
+          { id: "1", name: "Holiday 2024", assetIds: [] },
+          { id: "2", name: "Evergreen", assetIds: [] },
+        ];
+      }
+    }
+    return [
+      { id: "1", name: "Holiday 2024", assetIds: [] },
+      { id: "2", name: "Evergreen", assetIds: [] },
+    ];
+  });
   const [showCreateCollectionDialog, setShowCreateCollectionDialog] =
     useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
@@ -1542,6 +1556,10 @@ export default function BrandDashboard() {
   }, [activeSection]);
 
   useEffect(() => {
+    localStorage.setItem("studio-collections", JSON.stringify(collections));
+  }, [collections]);
+
+  useEffect(() => {
     if (activeSection !== "studio" || studioFiles.length === 0) return;
     let mounted = true;
     const loadSignedUrls = async () => {
@@ -1665,16 +1683,29 @@ export default function BrandDashboard() {
           (a) => a.generation_id === g.id && a.url === url,
         );
         if (alreadyAdded) continue;
+
+        const cachedSize = assetSizesCache[url];
         assets.push({
           id: `gen-${g.id}-${url}`,
           file_name: fname,
           url,
           mime_type: isImage ? "image/jpeg" : "video/mp4",
           source_type: "studio_generation",
-          size_bytes: 0,
+          size_bytes: cachedSize || 0,
           created_at: g.created_at,
           generation_id: g.id,
         });
+
+        if (!cachedSize) {
+          fetch(url, { method: "HEAD" })
+            .then((res) => {
+              const size = parseInt(res.headers.get("content-length") || "0", 10);
+              if (size > 0) {
+                setAssetSizesCache((prev) => ({ ...prev, [url]: size }));
+              }
+            })
+            .catch(() => {});
+        }
       }
     }
 
