@@ -3170,23 +3170,41 @@ export default function CreatorDashboard() {
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showRequestPayoutModal, setShowRequestPayoutModal] = useState(false);
   const [requestPayoutAmount, setRequestPayoutAmount] = useState("");
+  const [creatorTransfers, setCreatorTransfers] = useState<any[]>([]);
+  const [loadingCreatorTransfers, setLoadingCreatorTransfers] = useState(false);
 
   const fetchPayoutStatus = async () => {
     if (!initialized || !authenticated || !user?.id) return;
     try {
-      const { getPayoutsAccountStatus, getPayoutBalance, getHistory } =
+      const { getPayoutsAccountStatus, getPayoutBalance, getHistory, getCreatorTransferStatus } =
         await import("@/api/functions");
-      const [statusRes, balanceRes, historyRes] = await Promise.all([
+      const [statusRes, balanceRes, historyRes, transfersRes] = await Promise.all([
         getPayoutsAccountStatus(user.id),
         getPayoutBalance(user.id),
         getHistory({ profile_id: user.id, limit: 5 }),
+        getCreatorTransferStatus().catch(() => ({ transfers: [] })),
       ]);
       setPayoutAccountStatus(statusRes.data);
       setBalances(balanceRes.data.balances || []);
       setStripeBalances(balanceRes.data.stripe_balances || []);
       setPayoutHistory(historyRes.data.items || historyRes.items || []);
+      setCreatorTransfers((transfersRes as any)?.transfers ?? []);
     } catch (e) {
       console.error("Failed to fetch payout status", e);
+    }
+  };
+
+  const refreshCreatorTransfers = async () => {
+    if (loadingCreatorTransfers) return;
+    setLoadingCreatorTransfers(true);
+    try {
+      const { getCreatorTransferStatus } = await import("@/api/functions");
+      const res = await getCreatorTransferStatus();
+      setCreatorTransfers((res as any)?.transfers ?? []);
+    } catch (_) {
+      // best-effort
+    } finally {
+      setLoadingCreatorTransfers(false);
     }
   };
 
@@ -10887,6 +10905,158 @@ export default function CreatorDashboard() {
             </div>
           )}
         </Card>
+
+        {/* Transfer Status Panel — shows pending/failed transfers from brand offers */}
+        {creatorTransfers.length > 0 && (
+          <Card className="p-6 bg-white border border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">
+                Pending Transfers
+              </h3>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                onClick={refreshCreatorTransfers}
+                disabled={loadingCreatorTransfers}
+              >
+                <RefreshCw
+                  className={`w-3 h-3 mr-1 ${loadingCreatorTransfers ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </Button>
+            </div>
+
+            {loadingCreatorTransfers ? (
+              <div className="flex items-center justify-center py-8 gap-2 text-gray-400">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-xs">Loading transfer status…</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {creatorTransfers.map((t: any) => {
+                  const statusIcon =
+                    t.transfer_status === "created" ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    ) : t.transfer_status === "failed" ||
+                      t.transfer_status === "pending_retry" ? (
+                      <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                    ) : (
+                      <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    );
+
+                  const statusLabel =
+                    t.transfer_status === "created"
+                      ? "transferred"
+                      : t.transfer_status === "pending_retry"
+                        ? "retrying…"
+                        : t.transfer_status === "failed"
+                          ? "failed"
+                          : "pending";
+
+                  const friendlyReason = (reason: string) => {
+                    if (!reason) return null;
+                    if (
+                      reason.includes("insufficient_capabilities_for_transfer")
+                    )
+                      return "Your Stripe account is not fully set up. Complete Stripe onboarding to receive transfers.";
+                    if (reason.includes("transfers_not_allowed"))
+                      return "Transfers not allowed on your Stripe account.";
+                    if (
+                      reason.includes("no_stripe_account") ||
+                      reason.includes("No Stripe Connect")
+                    )
+                      return "No Stripe account connected. Complete Stripe onboarding to receive funds.";
+                    return reason.length > 120
+                      ? reason.slice(0, 120) + "…"
+                      : reason;
+                  };
+
+                  return (
+                    <div
+                      key={t.offer_id}
+                      className="p-4 rounded-xl border border-gray-200 bg-gray-50/50"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          {statusIcon}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-gray-900 truncate">
+                                {t.offer_title}
+                              </span>
+                              <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                                {t.brand_name}
+                              </span>
+                            </div>
+                            {t.transfer_status === "failed" &&
+                              t.failure_reason && (
+                                <p className="text-[11px] text-amber-700 mt-1 leading-snug">
+                                  {friendlyReason(t.failure_reason)}
+                                </p>
+                              )}
+                            {t.retry_count > 0 && (
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                {t.retry_count}{" "}
+                                {t.retry_count === 1 ? "retry" : "retries"}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className="text-sm font-bold text-gray-900">
+                            ${((t.amount_cents ?? 0) / 100).toFixed(2)}
+                          </span>
+                          <span
+                            className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                              t.transfer_status === "created"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : t.transfer_status === "failed"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                                  : t.transfer_status === "pending_retry"
+                                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                                    : "bg-gray-50 text-gray-500 border-gray-200"
+                            }`}
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {creatorTransfers.some((t: any) => t.transfer_status === "failed") && (
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-amber-900">
+                      Action required
+                    </p>
+                    <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                      One or more transfers failed because your Stripe account
+                      is not fully set up. Complete your Stripe onboarding to
+                      receive these funds. The agency will retry the transfer
+                      once your account is ready.
+                    </p>
+                    {!payoutAccountStatus?.transfers_enabled && (
+                      <Button
+                        size="sm"
+                        className="mt-3 h-8 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs"
+                        onClick={() => setShowPayoutSettings(true)}
+                      >
+                        Complete Stripe setup
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </Card>
+        )}
 
         {/* Payment History */}
         <Card className="p-6 bg-white border border-gray-200">

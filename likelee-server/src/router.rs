@@ -1073,6 +1073,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::brand_campaigns::mark_creator_asset_request_viewed),
         )
         .route(
+            "/api/talent/campaign-offers/transfer-status",
+            get(crate::brand_campaigns::get_creator_transfer_status),
+        )
+        .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
             post(crate::licensing_requests::create_for_brand_campaign),
         )

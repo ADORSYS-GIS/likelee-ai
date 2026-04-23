@@ -1523,20 +1523,30 @@ export function AgencyDeliverablesView() {
                                           {friendlyReason(r.failure_reason)}
                                         </p>
                                       )}
-                                      {/* Fix Stripe account CTA — shown when transfer failed due to account issues */}
+                                      {/* Fix Stripe account CTA */}
                                       {r.transfer_status === "failed" &&
                                         !r.stripe_transfers_enabled && (
-                                          <button
-                                            className="mt-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1"
-                                            onClick={() =>
-                                              navigate(
-                                                `/AgencyDashboard?tab=payouts`,
-                                              )
-                                            }
-                                          >
-                                            <ArrowRight className="w-3 h-3" />
-                                            Fix Stripe account
-                                          </button>
+                                          <>
+                                            {r.recipient_type === "agency" ? (
+                                              // Agency = this user's own account → navigate to payouts
+                                              <button
+                                                className="mt-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1"
+                                                onClick={() =>
+                                                  navigate(
+                                                    `/AgencyDashboard?tab=payouts`,
+                                                  )
+                                                }
+                                              >
+                                                <ArrowRight className="w-3 h-3" />
+                                                Fix your Stripe account
+                                              </button>
+                                            ) : (
+                                              // Creator = talent's account → agency can't fix it, show guidance
+                                              <p className="mt-1.5 text-[11px] text-gray-500 leading-snug">
+                                                Ask this talent to complete their Stripe onboarding in their portal.
+                                              </p>
+                                            )}
+                                          </>
                                         )}
                                     </div>
                                   </div>
@@ -2138,15 +2148,34 @@ export function AgencyDeliverablesView() {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 bg-gray-50/60 border-t border-gray-100 space-y-2">
+          <div className="px-6 py-4 bg-gray-50/60 border-t border-gray-100 space-y-3">
             {retryResultDialog.results.some(
               (r) => r.result === "failed" || r.result === "skipped_no_account",
             ) && (
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Recipients with failed transfers need to complete their Stripe
-                onboarding before funds can be sent. Direct them to their
-                Payouts page to fix their account.
-              </p>
+              <div className="space-y-1.5">
+                {/* Agency-specific guidance */}
+                {retryResultDialog.results.some(
+                  (r) =>
+                    (r.result === "failed" || r.result === "skipped_no_account") &&
+                    r.recipient_type === "agency",
+                ) && (
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Your Stripe account needs attention. Complete your Stripe
+                    onboarding to receive transfers.
+                  </p>
+                )}
+                {/* Creator-specific guidance */}
+                {retryResultDialog.results.some(
+                  (r) =>
+                    (r.result === "failed" || r.result === "skipped_no_account") &&
+                    r.recipient_type === "creator",
+                ) && (
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    One or more talents need to complete their Stripe onboarding
+                    in their portal before funds can be sent to them.
+                  </p>
+                )}
+              </div>
             )}
             <div className="flex gap-2">
               {retryResultDialog.results.some(

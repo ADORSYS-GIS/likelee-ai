@@ -5845,17 +5845,72 @@ async fn handle_campaign_offer_checkout_session_completed(
             .to_string();
 
         if !creator_id.is_empty() && amount_total > 0 {
-            tracing::info!(creator_id = %creator_id, amount_cents = amount_total, "Adding funds to creator balance");
+            // Idempotency: check if we've already credited this session
+            let existing_resp = state
+                .pg
+                .from("campaign_offers")
+                .select("id,budget_snapshot,escrow_status")
+                .eq("id", &offer_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| e.to_string())?;
+            let existing_text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let existing_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&existing_text).unwrap_or_default();
+            let offer_data = existing_rows.first().cloned().unwrap_or_else(|| json!({}));
+            let already_credited = offer_data
+                .get("escrow_status")
+                .and_then(|v| v.as_str())
+                .map(|s| s != "holding")
+                .unwrap_or(false);
 
-            // We can simulate it or insert directly. Given existing table triggers, we insert into `creator_balances` directly.
-            // (assuming an `increment_creator_balance` function exists or we construct a query)
+            if already_credited {
+                tracing::info!(
+                    offer_id = %offer_id,
+                    creator_id = %creator_id,
+                    "creator balance already credited for this offer (idempotent)"
+                );
+                return Ok(());
+            }
+
+            // Use net amount (budget_creator_payment) not gross (amount_total)
+            let budget_snapshot = offer_data
+                .get("budget_snapshot")
+                .and_then(|v| v.as_object())
+                .cloned()
+                .unwrap_or_default();
+            let net_str = budget_snapshot
+                .get("budget_creator_payment")
+                .and_then(|v| v.as_str())
+                .unwrap_or("0")
+                .replace(",", "");
+            let net_amount: f64 = net_str.parse().unwrap_or(0.0);
+            let net_amount_cents = (net_amount * 100.0).round() as i64;
+
+            if net_amount_cents <= 0 {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    creator_id = %creator_id,
+                    "creator offer has zero net amount; skipping balance credit"
+                );
+                return Ok(());
+            }
+
+            tracing::info!(
+                creator_id = %creator_id,
+                net_amount_cents = net_amount_cents,
+                gross_amount_cents = amount_total,
+                "Crediting creator balance with net amount (not gross)"
+            );
+
             let _ = state
                 .pg
                 .rpc(
                     "increment_creator_balance",
                     json!({
                         "p_creator_id": creator_id,
-                        "p_amount_cents": amount_total,
+                        "p_amount_cents": net_amount_cents,
                         "p_currency_code": currency
                     })
                     .to_string(),
