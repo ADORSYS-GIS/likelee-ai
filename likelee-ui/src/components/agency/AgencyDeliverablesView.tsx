@@ -129,6 +129,7 @@ export function AgencyDeliverablesView() {
     open: boolean;
     results: Array<{
       name: string;
+      recipient_id: string;
       recipient_type: string;
       amount_cents: number;
       result: string;
@@ -1580,12 +1581,25 @@ export function AgencyDeliverablesView() {
                                                 Fix your Stripe account
                                               </button>
                                             ) : (
-                                              // Creator = talent's account → agency can't fix it, show guidance
-                                              <p className="mt-1.5 text-[11px] text-gray-500 leading-snug">
-                                                Ask this talent to complete
-                                                their Stripe onboarding in their
-                                                portal.
-                                              </p>
+                                              // Creator = talent's account → agency can't fix it, show guidance + message button
+                                              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                                                <p className="text-[11px] text-gray-500 leading-snug">
+                                                  Ask this talent to complete
+                                                  their Stripe onboarding in
+                                                  their portal.
+                                                </p>
+                                                <button
+                                                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1 flex-shrink-0"
+                                                  onClick={() =>
+                                                    navigate(
+                                                      `/AgencyDashboard?tab=messages&openCreatorId=${encodeURIComponent(r.recipient_id)}`,
+                                                    )
+                                                  }
+                                                >
+                                                  <Mail className="w-3 h-3" />
+                                                  Message talent
+                                                </button>
+                                              </div>
                                             )}
                                           </>
                                         )}
@@ -2238,10 +2252,40 @@ export function AgencyDeliverablesView() {
                       r.result === "skipped_no_account") &&
                     r.recipient_type === "creator",
                 ) && (
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    One or more talents need to complete their Stripe onboarding
-                    in their portal before funds can be sent to them.
-                  </p>
+                  <div>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      One or more talents need to complete their Stripe
+                      onboarding before funds can be sent to them.
+                    </p>
+                    {/* Message buttons for each failed creator */}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {retryResultDialog.results
+                        .filter(
+                          (r) =>
+                            (r.result === "failed" ||
+                              r.result === "skipped_no_account") &&
+                            r.recipient_type === "creator",
+                        )
+                        .map((r) => (
+                          <button
+                            key={r.recipient_id}
+                            className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1"
+                            onClick={() => {
+                              setRetryResultDialog({
+                                open: false,
+                                results: [],
+                              });
+                              navigate(
+                                `/AgencyDashboard?tab=messages&openCreatorId=${encodeURIComponent(r.recipient_id)}`,
+                              );
+                            }}
+                          >
+                            <Mail className="w-3 h-3" />
+                            Message {r.name}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
                 )}
               </div>
             )}

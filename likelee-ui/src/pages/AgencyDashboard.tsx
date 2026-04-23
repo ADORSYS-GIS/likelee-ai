@@ -21019,7 +21019,12 @@ export default function AgencyDashboard() {
             )}
             {activeTab === "messages" &&
               (hasProAccess ? (
-                <CommunicationHub />
+                <CommunicationHub
+                  initialCreatorId={
+                    String(searchParams.get("openCreatorId") || "").trim() ||
+                    undefined
+                  }
+                />
               ) : (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                   <div className="text-lg font-black text-gray-900">
