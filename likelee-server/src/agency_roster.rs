@@ -1625,10 +1625,7 @@ pub async fn create_talent(
                 .or_else(|| row.get("full_legal_name").and_then(|v| v.as_str()))
                 .unwrap_or("this talent")
                 .to_string();
-            let same_agency = row
-                .get("agency_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
+            let same_agency = row.get("agency_id").and_then(|v| v.as_str()).unwrap_or("")
                 == effective_agency_id.as_str();
             let (code, message) = if same_agency {
                 (
