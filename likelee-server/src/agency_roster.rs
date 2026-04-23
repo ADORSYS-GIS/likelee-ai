@@ -1638,9 +1638,7 @@ pub async fn create_talent(
             } else {
                 (
                     "duplicate_email_other_agency",
-                    format!(
-                        "This email is already registered to a talent on another agency's roster. Each talent must have a unique email across the platform."
-                    ),
+                    "This email is already registered to a talent on another agency's roster. Each talent must have a unique email across the platform.".to_string(),
                 )
             };
             return Err((
