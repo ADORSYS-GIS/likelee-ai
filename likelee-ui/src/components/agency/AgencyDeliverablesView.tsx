@@ -124,6 +124,16 @@ export function AgencyDeliverablesView() {
   const [retryingTransfers, setRetryingTransfers] = useState<
     Record<string, boolean>
   >({});
+  const [retryResultDialog, setRetryResultDialog] = useState<{
+    open: boolean;
+    results: Array<{
+      name: string;
+      recipient_type: string;
+      amount_cents: number;
+      result: string;
+      failure_reason?: string;
+    }>;
+  }>({ open: false, results: [] });
   const [unassignDialog, setUnassignDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -856,19 +866,16 @@ export function AgencyDeliverablesView() {
       if (result?.nothing_to_retry) {
         toast({ title: "Nothing to retry", description: "All transfers are already successful." });
       } else {
-        const succeeded = (result?.retried ?? []).filter((r: any) => r.result === "succeeded").length;
-        const failed = (result?.retried ?? []).filter((r: any) => r.result === "failed").length;
-        const skipped = (result?.retried ?? []).filter((r: any) => r.result === "skipped_no_account").length;
-        toast({
-          title: succeeded > 0 ? "Transfers retried" : "Retry completed",
-          description: [
-            succeeded > 0 && `${succeeded} succeeded`,
-            failed > 0 && `${failed} still failing`,
-            skipped > 0 && `${skipped} skipped (no Stripe account)`,
-          ]
-            .filter(Boolean)
-            .join(" · "),
-          variant: succeeded > 0 && failed === 0 ? "default" : "destructive",
+        // Show professional result modal
+        setRetryResultDialog({
+          open: true,
+          results: (result?.retried ?? []).map((r: any) => ({
+            name: r.name || "Recipient",
+            recipient_type: r.recipient_type,
+            amount_cents: r.amount_cents ?? 0,
+            result: r.result,
+            failure_reason: r.failure_reason,
+          })),
         });
       }
       // Refresh transfer status after retry
@@ -1516,6 +1523,21 @@ export function AgencyDeliverablesView() {
                                           {friendlyReason(r.failure_reason)}
                                         </p>
                                       )}
+                                      {/* Fix Stripe account CTA — shown when transfer failed due to account issues */}
+                                      {r.transfer_status === "failed" &&
+                                        !r.stripe_transfers_enabled && (
+                                          <button
+                                            className="mt-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1"
+                                            onClick={() =>
+                                              navigate(
+                                                `/AgencyDashboard?tab=payouts`,
+                                              )
+                                            }
+                                          >
+                                            <ArrowRight className="w-3 h-3" />
+                                            Fix Stripe account
+                                          </button>
+                                        )}
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3 flex-shrink-0">

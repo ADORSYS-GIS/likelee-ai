@@ -110,6 +110,8 @@ const TalentSideModal = ({
     phone: safeTalent.phone || "",
     bio: safeTalent.bio || "",
     instagram_handle: safeTalent.instagram_handle || "",
+    instagram_followers: safeTalent.followers ?? safeTalent.instagram_followers ?? "",
+    engagement_rate: safeTalent.engagement_rate ?? "",
     role_types: roleTypes,
     gender_identity: safeTalent.gender_identity || "",
     hair_color: safeTalent.hair_color || "",
@@ -269,6 +271,16 @@ const TalentSideModal = ({
         phone: editForm.phone || undefined,
         bio: editForm.bio || undefined,
         instagram_handle: editForm.instagram_handle || undefined,
+        instagram_followers:
+          editForm.instagram_followers !== "" &&
+          editForm.instagram_followers !== undefined
+            ? Number(editForm.instagram_followers)
+            : undefined,
+        engagement_rate:
+          editForm.engagement_rate !== "" &&
+          editForm.engagement_rate !== undefined
+            ? Number(editForm.engagement_rate)
+            : undefined,
         role_type: Array.isArray(editForm.role_types)
           ? editForm.role_types
           : undefined,
@@ -534,6 +546,37 @@ const TalentSideModal = ({
                       value={editForm.instagram_handle}
                       onChange={(e) =>
                         setField("instagram_handle", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-gray-700">
+                      Instagram followers
+                    </div>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="e.g. 12500"
+                      value={editForm.instagram_followers}
+                      onChange={(e) =>
+                        setField("instagram_followers", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-gray-700">
+                      Engagement rate (%)
+                    </div>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      placeholder="e.g. 3.5"
+                      value={editForm.engagement_rate}
+                      onChange={(e) =>
+                        setField("engagement_rate", e.target.value)
                       }
                     />
                   </div>
