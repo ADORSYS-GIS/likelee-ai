@@ -254,6 +254,26 @@ export default function TalentPortal({
     return { id: talentId, name: String(talentName || "Talent") };
   }, [talentId, talentName]);
 
+  const translateIrlStatus = React.useCallback(
+    (
+      value?: string,
+      fallback: "pending" | "completed" | "confirmed" = "pending",
+    ) => {
+      const normalized = String(value || fallback)
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/-/g, "_");
+
+      const key = `talentPortal.content.irl.shared.status.${normalized}`;
+      const fallbackKey = `talentPortal.content.irl.shared.status.${fallback}`;
+      const translated = t(key, { defaultValue: "" });
+      if (translated && translated !== key) return translated;
+      return t(fallbackKey);
+    },
+    [t],
+  );
+
   const totalUnreadMessages = useUnreadMessages(profile?.id);
 
   const [showPhotoFull, setShowPhotoFull] = React.useState(false);
@@ -1578,8 +1598,7 @@ export default function TalentPortal({
                             </div>
                           </div>
                           <Badge variant="secondary" className="capitalize">
-                            {safeStr(b.status || "pending").toLowerCase() ||
-                              t("talentPortal.content.irl.overview.pending")}
+                            {translateIrlStatus(safeStr(b.status || "pending"))}
                           </Badge>
                         </div>
                       ))}
@@ -1774,8 +1793,9 @@ export default function TalentPortal({
                               )}
                             </div>
                             <Badge variant="outline" className="capitalize">
-                              {safeStr(b.status || "pending").toLowerCase() ||
-                                t("talentPortal.content.irl.overview.pending")}
+                              {translateIrlStatus(
+                                safeStr(b.status || "pending"),
+                              )}
                             </Badge>
                           </div>
                         </div>
@@ -1834,10 +1854,10 @@ export default function TalentPortal({
                             </div>
                           </div>
                           <Badge variant="secondary" className="capitalize">
-                            {safeStr(b.status || "completed").toLowerCase() ||
-                              t(
-                                "talentPortal.content.irl.jobHistory.completed",
-                              )}
+                            {translateIrlStatus(
+                              safeStr(b.status || "completed"),
+                              "completed",
+                            )}
                           </Badge>
                         </div>
                       ))}
@@ -2216,7 +2236,7 @@ export default function TalentPortal({
                               ? new Date(p.paid_at).toLocaleDateString()
                               : "—"}
                             {p.status
-                              ? ` • ${String(p.status).toLowerCase()}`
+                              ? ` • ${translateIrlStatus(String(p.status))}`
                               : ""}
                           </div>
                         </div>

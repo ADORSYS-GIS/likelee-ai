@@ -1253,6 +1253,198 @@
       }
     },
     "content": {
+      "irl": {
+        "overview": {
+          "upcomingBookings": "Réservations à venir",
+          "totalEarnings": "Revenus totaux",
+          "completedJobs": "Travaux terminés",
+          "thisMonth": "Ce mois-ci",
+          "noUpcomingBookings": "Aucune réservation à venir pour le moment.",
+          "bookingFallback": "Réservation",
+          "pending": "en attente",
+          "earningsByAgency": "Revenus par agence",
+          "noEarningsByAgency": "Aucun revenu par agence pour ce mois pour le moment.",
+          "agencyFallback": "Agence",
+          "monthlySuffix": "/mois",
+          "yourAgency": "Votre agence",
+          "connectedSince": "Connecté depuis {{date}}",
+          "editProfile": "Modifier le profil",
+          "manageCampaigns": "Gérer les campagnes",
+          "viewEarnings": "Voir les revenus"
+        },
+        "calendar": {
+          "subtitle": "Voir et gérer vos réservations à venir",
+          "scheduleTitle": "Réservations et planning",
+          "scheduleDescription": "Gérez les réservations et la disponibilité de votre {{entity}}",
+          "manageAvailability": "Gérer la disponibilité",
+          "newBooking": "Nouvelle réservation",
+          "selectDate": "Sélectionner une date",
+          "untitled": "Sans titre",
+          "bookOutsTitle": "{{count}} indisponible",
+          "bookOutsLabel": "{{count}} indisponible",
+          "stats": {
+            "totalBookings": "Réservations totales",
+            "thisMonth": "Ce mois-ci",
+            "confirmed": "Confirmé",
+            "pending": "En attente"
+          },
+          "views": {
+            "month": "Mois",
+            "week": "Semaine",
+            "day": "Jour",
+            "teamView": "Vue équipe",
+            "agenda": "Agenda"
+          },
+          "talentView": {
+            "single": "Vue simple",
+            "all": "Tous les {{entity}}",
+            "selected": "{{entity}} sélectionné",
+            "select": "Sélectionner {{entity}}"
+          },
+          "shortcuts": {
+            "navigate": "Naviguer",
+            "today": "Aujourd'hui",
+            "newBooking": "Nouvelle réservation",
+            "close": "Fermer"
+          },
+          "legend": {
+            "casting": "Casting",
+            "option": "Option",
+            "confirmed": "Confirmé",
+            "pending": "En attente",
+            "completed": "Terminé",
+            "cancelled": "Annulé",
+            "testShoot": "Séance test",
+            "fitting": "Essayage",
+            "rehearsal": "Répétition",
+            "unavailable": "Indisponible",
+            "conflict": "Conflit"
+          }
+        },
+        "activeProjects": {
+          "subtitle": "Projets et missions actuellement en cours",
+          "noneTitle": "Aucun projet actif pour le moment.",
+          "noneDescription": "Vos projets et missions en cours apparaîtront ici.",
+          "projectFallback": "Projet"
+        },
+        "jobHistory": {
+          "subtitle": "Voir toutes les réservations terminées",
+          "noneTitle": "Aucun emploi terminé pour le moment.",
+          "noneDescription": "Vos réservations terminées apparaîtront ici.",
+          "jobFallback": "Emploi",
+          "completed": "terminé"
+        },
+        "availability": {
+          "title": "Paramètres de disponibilité",
+          "subtitle": "Gérez votre disponibilité pour les réservations et vos indisponibilités",
+          "bookOutCalendar": "Calendrier des indisponibilités",
+          "bookOutCalendarDescription": "Bloquez les dates où vous n'êtes pas disponible pour les réservations",
+          "talentAvailabilityTitle": "Disponibilité de {{entity}}",
+          "talentAvailabilityDescription": "Gérez les indisponibilités et absences de votre {{entity}}",
+          "addBookOut": "Ajouter une indisponibilité",
+          "noneTitle": "Aucune indisponibilité planifiée",
+          "noneDescription": "Ajoutez des périodes d'indisponibilité pour votre {{entity}}",
+          "allDatesAvailable": "{{entity}} apparaîtra disponible pour toutes les dates",
+          "unknownEntity": "{{entity}} inconnu",
+          "deleteDialogTitle": "Supprimer cette indisponibilité ?",
+          "deleteDialogDescription": "Cela supprimera cette période d'indisponibilité du planning.",
+          "deleteFailedTitle": "Échec de la suppression",
+          "deleteFailedDescription": "Impossible de supprimer l'indisponibilité.",
+          "manageModalTitle": "Disponibilité et indisponibilités de {{entity}}",
+          "manageModalDescription": "Gérez quand {{entity}} n'est pas disponible pour les réservations"
+        },
+        "earnings": {
+          "subtitle": "Suivez vos revenus de réservation",
+          "totalEarnings": "Revenus totaux",
+          "withdrawable": "Retirable",
+          "completedJobs": "Travaux terminés",
+          "recentPayments": "Paiements récents",
+          "noPaymentsYet": "Aucun paiement pour le moment.",
+          "paymentFallback": "Paiement"
+        },
+        "shared": {
+          "ok": "OK",
+          "cancel": "Annuler",
+          "delete": "Supprimer",
+          "remove": "Retirer",
+          "status": {
+            "pending": "En attente",
+            "confirmed": "Confirmé",
+            "completed": "Terminé",
+            "cancelled": "Annulé"
+          }
+        },
+        "bookOutReasons": {
+          "personal": "Personnel",
+          "medical": "Médical",
+          "vacation": "Vacances",
+          "other_booking": "Autre réservation",
+          "other": "Autre"
+        },
+        "addBookOut": {
+          "save": "Enregistrer l'indisponibilité",
+          "fields": {
+            "reason": "Motif",
+            "entity": "{{entity}}",
+            "selectEntity": "Sélectionner {{entity}}",
+            "startDate": "Date de début",
+            "endDate": "Date de fin",
+            "notes": "Notes",
+            "additionalDetails": "Détails supplémentaires...",
+            "notifyAgency": "Notifier l'agence par e-mail",
+            "notifyEntity": "Notifier {{entity}} par e-mail"
+          }
+        },
+        "bookingDetails": {
+          "title": "Détails de la réservation",
+          "client": "Client",
+          "viewClientProfile": "Cliquer pour voir le profil client",
+          "notSpecified": "Non spécifié",
+          "dateTime": "Date et heure",
+          "date": "Date :",
+          "location": "Lieu",
+          "viewOnGoogleMaps": "Voir sur Google Maps",
+          "payment": "Paiement",
+          "dayRate": "Tarif journalier",
+          "usageTerms": "Conditions d'utilisation",
+          "duration": "Durée",
+          "digital": "Numérique",
+          "oneMonth": "1 mois",
+          "specialInstructions": "Instructions spéciales",
+          "noSpecialInstructions": "Aucune instruction spéciale.",
+          "attachments": "Pièces jointes",
+          "edit": "Modifier",
+          "duplicate": "Dupliquer",
+          "complete": "Terminer",
+          "remind": "Rappeler",
+          "downloadPdf": "Télécharger le PDF",
+          "generateInvoice": "Générer la facture",
+          "shareBookingLink": "Partager le lien de réservation",
+          "cancelBooking": "Annuler la réservation",
+          "activityLog": "Journal d'activité",
+          "bookingCreated": "Réservation créée",
+          "talentViewedBooking": "Le talent a consulté la réservation",
+          "times": "{{count}} fois",
+          "bookingId": "ID de réservation : {{id}}",
+          "downloadStarted": "Téléchargement démarré",
+          "downloadingFile": "Téléchargement de {{name}}",
+          "downloadFailed": "Échec du téléchargement",
+          "couldNotDownloadFile": "Impossible de télécharger le fichier",
+          "confirmCancelTitle": "Voulez-vous vraiment annuler cette réservation ?",
+          "confirmCancelDescription": "Cette action est irréversible.",
+          "confirmCompleteTitle": "Marquer cette réservation comme terminée ?",
+          "confirmCompleteDescription": "Le statut sera mis à jour sur Terminé.",
+          "bookingMarkedCompletedTitle": "Réservation marquée comme terminée",
+          "bookingMarkedCompletedDescription": "Le statut a été mis à jour avec succès.",
+          "sendReminderTitle": "Envoyer un rappel à {{entity}} ?",
+          "sendReminderDescription": "Un rappel sera envoyé à {{name}}",
+          "reminderSentTitle": "Rappel envoyé",
+          "reminderSentDescription": "La notification a été envoyée à {{name}}",
+          "pdfComingSoon": "La fonction de téléchargement PDF arrive bientôt !",
+          "invoiceComingSoon": "La génération de facture arrive bientôt !",
+          "bookingLinkCopied": "Lien de réservation copié dans le presse-papiers !"
+        }
+      },
       "bookingPreferences": {
         "title": "Préférences de réservation",
         "subtitle": "Définissez les préférences que votre agence peut utiliser pour vos réservations",
@@ -1267,6 +1459,11 @@
         "imagesTitle": "Images du portfolio",
         "imagesSubtitle": "Téléchargez des images pour votre portfolio IRL",
         "addImages": "Ajouter des images",
+        "remove": "Supprimer",
+        "pastWorkHighlights": "Temps forts des projets passés",
+        "pastWorkHighlightsDescription": "Ajoutez des projets marquants, collaborations ou mentions presse",
+        "highlightsComingSoon": "Temps forts bientôt disponibles",
+        "highlightsComingSoonDescription": "Votre agence peut vous aider à organiser ici les temps forts du portfolio",
         "selectAgencyTitle": "Sélectionnez une agence",
         "selectAgencyDescription": "Veuillez choisir l'agence pour cet envoi dans le filtre Agence."
       },

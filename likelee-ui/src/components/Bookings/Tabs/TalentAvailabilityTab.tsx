@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AddBookOutModal } from "../Modals/AddBookOutModal";
 import { getAgencyRoster } from "@/api/functions";
+import { useTranslation } from "react-i18next";
 
 export const TalentAvailabilityTab = ({
   bookOuts = [],
@@ -29,8 +30,10 @@ export const TalentAvailabilityTab = ({
   fixedTalent?: { id: string; name: string };
   isSportsAgency?: boolean;
 }) => {
+  const { t, i18n } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const locale = i18n.resolvedLanguage || i18n.language || "en";
   const [addBookOutOpen, setAddBookOutOpen] = useState(false);
   const [confirmingBookOutId, setConfirmingBookOutId] = useState<string | null>(
     null,
@@ -79,39 +82,55 @@ export const TalentAvailabilityTab = ({
     return m;
   }, [talents]);
   const getTalentName = (id: string) =>
-    nameById.get(String(id)) || `Unknown ${entitySingularTitle}`;
+    nameById.get(String(id)) ||
+    t("talentPortal.content.irl.availability.unknownEntity", {
+      entity: entitySingularTitle,
+    });
 
   const fmtDate = (v?: string) => {
     if (!v) return "";
     const d = new Date(v);
     if (isNaN(d.getTime())) return v; // show raw if not ISO parseable
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(locale, {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
   };
   const fmtReason = (r?: string) =>
-    String(r || "personal")
-      .replace("_", " ")
-      .toLowerCase();
+    t(
+      `talentPortal.content.irl.bookOutReasons.${String(r || "personal")
+        .trim()
+        .toLowerCase()}`,
+    );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
-            {`${entitySingularTitle} Availability`}
+            {t(
+              "talentPortal.content.irl.availability.talentAvailabilityTitle",
+              {
+                entity: entitySingularTitle,
+              },
+            )}
           </h2>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            {`Manage book-outs and ${entitySingularLower} unavailability`}
+            {t(
+              "talentPortal.content.irl.availability.talentAvailabilityDescription",
+              {
+                entity: entitySingularLower,
+              },
+            )}
           </p>
         </div>
         <Button
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
           onClick={() => setAddBookOutOpen(true)}
         >
-          <Plus className="w-4 h-4 mr-2" /> Add Book-Out
+          <Plus className="w-4 h-4 mr-2" />{" "}
+          {t("talentPortal.content.irl.availability.addBookOut")}
         </Button>
       </div>
 
@@ -121,10 +140,12 @@ export const TalentAvailabilityTab = ({
             <Calendar className="w-12 h-12 text-gray-400" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mb-2">
-            No book-outs scheduled
+            {t("talentPortal.content.irl.availability.noneTitle")}
           </h3>
           <p className="text-gray-500 max-w-md">
-            {`Add unavailability periods for your ${entitySingularLower}`}
+            {t("talentPortal.content.irl.availability.noneDescription", {
+              entity: entitySingularLower,
+            })}
           </p>
         </div>
       ) : (
@@ -159,7 +180,7 @@ export const TalentAvailabilityTab = ({
                     className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 font-bold px-4"
                     onClick={() => setConfirmingBookOutId(String(bo.id))}
                   >
-                    Remove
+                    {t("talentPortal.content.irl.shared.remove")}
                   </Button>
                 </div>
               </Card>
@@ -183,13 +204,19 @@ export const TalentAvailabilityTab = ({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete book-out?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("talentPortal.content.irl.availability.deleteDialogTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the unavailability period from the schedule.
+              {t(
+                "talentPortal.content.irl.availability.deleteDialogDescription",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>
+              {t("talentPortal.content.irl.shared.cancel")}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (!confirmingBookOutId) return;
@@ -197,8 +224,12 @@ export const TalentAvailabilityTab = ({
                   onRemoveBookOut(confirmingBookOutId);
                 } catch (_e) {
                   toast({
-                    title: "Remove failed",
-                    description: "Failed to remove book-out.",
+                    title: t(
+                      "talentPortal.content.irl.availability.deleteFailedTitle",
+                    ),
+                    description: t(
+                      "talentPortal.content.irl.availability.deleteFailedDescription",
+                    ),
                     variant: "destructive" as any,
                   });
                 } finally {
@@ -206,7 +237,7 @@ export const TalentAvailabilityTab = ({
                 }
               }}
             >
-              Delete
+              {t("talentPortal.content.irl.shared.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

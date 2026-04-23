@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { getAgencyRoster } from "@/api/functions";
+import { useTranslation } from "react-i18next";
 
 export const AddBookOutModal = ({
   open,
@@ -34,6 +35,7 @@ export const AddBookOutModal = ({
   fixedTalent?: { id: string; name: string };
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [reason, setReason] = useState("personal");
@@ -121,38 +123,66 @@ export const AddBookOutModal = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            {`${entitySingularTitle} Availability & Book-Outs`}
+            {t("talentPortal.content.irl.availability.manageModalTitle", {
+              entity: entitySingularTitle,
+            })}
           </DialogTitle>
           <DialogDescription>
-            {`Manage when ${entitySingularLower} is unavailable for bookings`}
+            {t("talentPortal.content.irl.availability.manageModalDescription", {
+              entity: entitySingularLower,
+            })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label className="font-bold">Reason *</Label>
+            <Label className="font-bold">
+              {t("talentPortal.content.irl.addBookOut.fields.reason")} *
+            </Label>
             <Select value={reason} onValueChange={setReason}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="personal">Personal</SelectItem>
-                <SelectItem value="medical">Medical</SelectItem>
-                <SelectItem value="vacation">Vacation</SelectItem>
-                <SelectItem value="other_booking">Other Booking</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="personal">
+                  {t("talentPortal.content.irl.bookOutReasons.personal")}
+                </SelectItem>
+                <SelectItem value="medical">
+                  {t("talentPortal.content.irl.bookOutReasons.medical")}
+                </SelectItem>
+                <SelectItem value="vacation">
+                  {t("talentPortal.content.irl.bookOutReasons.vacation")}
+                </SelectItem>
+                <SelectItem value="other_booking">
+                  {t("talentPortal.content.irl.bookOutReasons.other_booking")}
+                </SelectItem>
+                <SelectItem value="other">
+                  {t("talentPortal.content.irl.bookOutReasons.other")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label className="font-bold">{`${entitySingularTitle} *`}</Label>
+            <Label className="font-bold">
+              {t("talentPortal.content.irl.addBookOut.fields.entity", {
+                entity: entitySingularTitle,
+              })}{" "}
+              *
+            </Label>
             {fixedTalent?.id ? (
               <Input value={fixedTalent.name} readOnly className="bg-gray-50" />
             ) : (
               <Select value={talentId} onValueChange={setTalentId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={`Select ${entitySingularLower}`} />
+                  <SelectValue
+                    placeholder={t(
+                      "talentPortal.content.irl.addBookOut.fields.selectEntity",
+                      {
+                        entity: entitySingularLower,
+                      },
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {talents.map((talent) => (
@@ -167,7 +197,9 @@ export const AddBookOutModal = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="font-bold">Start Date *</Label>
+              <Label className="font-bold">
+                {t("talentPortal.content.irl.addBookOut.fields.startDate")} *
+              </Label>
               <Input
                 type="date"
                 value={startDate}
@@ -175,7 +207,9 @@ export const AddBookOutModal = ({
               />
             </div>
             <div className="space-y-2">
-              <Label className="font-bold">End Date *</Label>
+              <Label className="font-bold">
+                {t("talentPortal.content.irl.addBookOut.fields.endDate")} *
+              </Label>
               <Input
                 type="date"
                 value={endDate}
@@ -185,9 +219,13 @@ export const AddBookOutModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label className="font-bold">Notes</Label>
+            <Label className="font-bold">
+              {t("talentPortal.content.irl.addBookOut.fields.notes")}
+            </Label>
             <Textarea
-              placeholder="Additional details..."
+              placeholder={t(
+                "talentPortal.content.irl.addBookOut.fields.additionalDetails",
+              )}
               className="min-h-[80px]"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -204,8 +242,10 @@ export const AddBookOutModal = ({
             />
             <Label htmlFor="notify" className="font-normal cursor-pointer">
               {fixedTalent?.id
-                ? "Notify agency via email"
-                : `Notify ${entitySingularLower} via email`}
+                ? t("talentPortal.content.irl.addBookOut.fields.notifyAgency")
+                : t("talentPortal.content.irl.addBookOut.fields.notifyEntity", {
+                    entity: entitySingularLower,
+                  })}
             </Label>
           </div>
         </div>
@@ -216,7 +256,7 @@ export const AddBookOutModal = ({
             onClick={() => onOpenChange(false)}
             className="font-bold"
           >
-            Cancel
+            {t("talentPortal.content.irl.shared.cancel")}
           </Button>
           <Button
             className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all ${
@@ -225,7 +265,7 @@ export const AddBookOutModal = ({
             onClick={handleSave}
             disabled={!isValid}
           >
-            Save Book-Out
+            {t("talentPortal.content.irl.addBookOut.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

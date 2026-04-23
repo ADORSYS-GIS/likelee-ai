@@ -23,6 +23,7 @@ import { ManageAvailabilityModal } from "../Modals/ManageAvailabilityModal";
 import { NewBookingModal } from "../Modals/NewBookingModal";
 import { BookingDetailsModal } from "../Modals/BookingDetailsModal";
 import { getAgencyRoster } from "@/api/functions";
+import { useTranslation } from "react-i18next";
 
 export const CalendarScheduleTab = ({
   bookings,
@@ -47,8 +48,10 @@ export const CalendarScheduleTab = ({
   disableBookingEdits?: boolean;
   isSportsAgency?: boolean;
 }) => {
+  const { t, i18n } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const locale = i18n.resolvedLanguage || i18n.language || "en";
   const [modalOpen, setModalOpen] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -228,13 +231,74 @@ export const CalendarScheduleTab = ({
         .length
     : 0;
   const stats = [
-    { label: "Total Bookings", value: String(totalCount) },
-    { label: "This Month", value: String(thisMonthCount) },
-    { label: "Confirmed", value: String(confirmedCount) },
-    { label: "Pending", value: String(pendingCount) },
+    {
+      label: t("talentPortal.content.irl.calendar.stats.totalBookings"),
+      value: String(totalCount),
+    },
+    {
+      label: t("talentPortal.content.irl.calendar.stats.thisMonth"),
+      value: String(thisMonthCount),
+    },
+    {
+      label: t("talentPortal.content.irl.calendar.stats.confirmed"),
+      value: String(confirmedCount),
+    },
+    {
+      label: t("talentPortal.content.irl.calendar.stats.pending"),
+      value: String(pendingCount),
+    },
   ];
 
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const months = Array.from({ length: 12 }, (_, idx) => ({
+    value: [
+      "january",
+      "february",
+      "march",
+      "april",
+      "may",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november",
+      "december",
+    ][idx],
+    label: new Intl.DateTimeFormat(locale, { month: "long" }).format(
+      new Date(2026, idx, 1),
+    ),
+  }));
+
+  const days = Array.from({ length: 7 }, (_, idx) =>
+    new Intl.DateTimeFormat(locale, { weekday: "short" }).format(
+      new Date(2026, 0, 4 + idx),
+    ),
+  );
+
+  const translateStatus = (value?: string, fallbackKey?: string) => {
+    const normalized = String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "_")
+      .replace(/-/g, "_");
+    const map: Record<string, string> = {
+      pending: "talentPortal.content.irl.shared.status.pending",
+      confirmed: "talentPortal.content.irl.shared.status.confirmed",
+      completed: "talentPortal.content.irl.shared.status.completed",
+      cancelled: "talentPortal.content.irl.shared.status.cancelled",
+      casting: "talentPortal.content.irl.calendar.legend.casting",
+      option: "talentPortal.content.irl.calendar.legend.option",
+      test_shoot: "talentPortal.content.irl.calendar.legend.testShoot",
+      fitting: "talentPortal.content.irl.calendar.legend.fitting",
+      rehearsal: "talentPortal.content.irl.calendar.legend.rehearsal",
+      conflict: "talentPortal.content.irl.calendar.legend.conflict",
+      unavailable: "talentPortal.content.irl.calendar.legend.unavailable",
+    };
+
+    const key = map[normalized] || fallbackKey;
+    if (!key) return value || "";
+    return t(key);
+  };
 
   // Dynamic Calendar Calculation
   const daysInMonth = getDaysInMonth(currentDate);
@@ -274,10 +338,12 @@ export const CalendarScheduleTab = ({
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
-            Bookings & Schedule
+            {t("talentPortal.content.irl.calendar.scheduleTitle")}
           </h2>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            {`Manage your ${entitySingularLower}'s bookings and availability`}
+            {t("talentPortal.content.irl.calendar.scheduleDescription", {
+              entity: entitySingularLower,
+            })}
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -286,7 +352,8 @@ export const CalendarScheduleTab = ({
             className="font-bold text-gray-700 bg-white w-full sm:w-auto"
             onClick={() => setModalOpen(true)}
           >
-            <Calendar className="w-4 h-4 mr-2" /> Manage Availability
+            <Calendar className="w-4 h-4 mr-2" />{" "}
+            {t("talentPortal.content.irl.calendar.manageAvailability")}
           </Button>
           {!disableBookingEdits && (
             <Button
@@ -297,7 +364,8 @@ export const CalendarScheduleTab = ({
                 setNewBookingOpen(true);
               }}
             >
-              <Plus className="w-4 h-4 mr-2" /> New Booking
+              <Plus className="w-4 h-4 mr-2" />{" "}
+              {t("talentPortal.content.irl.calendar.newBooking")}
             </Button>
           )}
         </div>
@@ -328,22 +396,9 @@ export const CalendarScheduleTab = ({
                 <SelectValue placeholder={format(currentDate, "MMMM")} />
               </SelectTrigger>
               <SelectContent>
-                {[
-                  "January",
-                  "February",
-                  "March",
-                  "April",
-                  "May",
-                  "June",
-                  "July",
-                  "August",
-                  "September",
-                  "October",
-                  "November",
-                  "December",
-                ].map((m) => (
-                  <SelectItem key={m} value={m.toLowerCase()}>
-                    {m}
+                {months.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -383,7 +438,7 @@ export const CalendarScheduleTab = ({
                 className="h-8 px-3 text-sm font-bold hover:bg-white hover:shadow-sm"
                 onClick={handleToday}
               >
-                Today
+                {t("talentPortal.content.irl.calendar.shortcuts.today")}
               </Button>
               <Button
                 variant="ghost"
@@ -402,7 +457,7 @@ export const CalendarScheduleTab = ({
                 value={format(currentDate, "yyyy-MM-dd")}
                 onChange={(e) => handleDateInputChange(e.target.value)}
                 className="w-[150px] pl-9"
-                aria-label="Select date"
+                aria-label={t("talentPortal.content.irl.calendar.selectDate")}
               />
             </div>
           </div>
@@ -413,11 +468,21 @@ export const CalendarScheduleTab = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="month">Month</SelectItem>
-                <SelectItem value="week">Week</SelectItem>
-                <SelectItem value="day">Day</SelectItem>
-                <SelectItem value="team">Team View</SelectItem>
-                <SelectItem value="agenda">Agenda</SelectItem>
+                <SelectItem value="month">
+                  {t("talentPortal.content.irl.calendar.views.month")}
+                </SelectItem>
+                <SelectItem value="week">
+                  {t("talentPortal.content.irl.calendar.views.week")}
+                </SelectItem>
+                <SelectItem value="day">
+                  {t("talentPortal.content.irl.calendar.views.day")}
+                </SelectItem>
+                <SelectItem value="team">
+                  {t("talentPortal.content.irl.calendar.views.teamView")}
+                </SelectItem>
+                <SelectItem value="agenda">
+                  {t("talentPortal.content.irl.calendar.views.agenda")}
+                </SelectItem>
               </SelectContent>
             </Select>
             {!fixedTalent?.id && (
@@ -430,10 +495,21 @@ export const CalendarScheduleTab = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="single">Single View</SelectItem>
-                    <SelectItem value="all">{`All ${entitySingularTitle}`}</SelectItem>
+                    <SelectItem value="single">
+                      {t("talentPortal.content.irl.calendar.talentView.single")}
+                    </SelectItem>
+                    <SelectItem value="all">
+                      {t("talentPortal.content.irl.calendar.talentView.all", {
+                        entity: entitySingularTitle,
+                      })}
+                    </SelectItem>
                     <SelectItem value="selected">
-                      {`Selected ${entitySingularTitle}`}
+                      {t(
+                        "talentPortal.content.irl.calendar.talentView.selected",
+                        {
+                          entity: entitySingularTitle,
+                        },
+                      )}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -445,7 +521,12 @@ export const CalendarScheduleTab = ({
                   >
                     <SelectTrigger className="w-40 sm:w-48 shrink-0">
                       <SelectValue
-                        placeholder={`Select ${entitySingularLower}`}
+                        placeholder={t(
+                          "talentPortal.content.irl.calendar.talentView.select",
+                          {
+                            entity: entitySingularLower,
+                          },
+                        )}
                       />
                     </SelectTrigger>
                     <SelectContent>
@@ -469,7 +550,8 @@ export const CalendarScheduleTab = ({
                   setNewBookingOpen(true);
                 }}
               >
-                <Plus className="w-4 h-4 mr-2" /> New Booking
+                <Plus className="w-4 h-4 mr-2" />{" "}
+                {t("talentPortal.content.irl.calendar.newBooking")}
               </Button>
             )}
           </div>
@@ -478,16 +560,20 @@ export const CalendarScheduleTab = ({
         <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400 mb-4 px-2">
           <span className="flex items-center gap-1">
             <span className="border p-0.5 rounded px-1">←</span>{" "}
-            <span className="border p-0.5 rounded px-1">→</span> Navigate
+            <span className="border p-0.5 rounded px-1">→</span>{" "}
+            {t("talentPortal.content.irl.calendar.shortcuts.navigate")}
           </span>
           <span className="flex items-center gap-1">
-            <span className="border p-0.5 rounded px-1">T</span> Today
+            <span className="border p-0.5 rounded px-1">T</span>{" "}
+            {t("talentPortal.content.irl.calendar.shortcuts.today")}
           </span>
           <span className="flex items-center gap-1">
-            <span className="border p-0.5 rounded px-1">C</span> New Booking
+            <span className="border p-0.5 rounded px-1">C</span>{" "}
+            {t("talentPortal.content.irl.calendar.shortcuts.newBooking")}
           </span>
           <span className="flex items-center gap-1">
-            <span className="border p-0.5 rounded px-1">ESC</span> Close
+            <span className="border p-0.5 rounded px-1">ESC</span>{" "}
+            {t("talentPortal.content.irl.calendar.shortcuts.close")}
           </span>
         </div>
 
@@ -617,7 +703,7 @@ export const CalendarScheduleTab = ({
                           pick(b?.talent?.full_name) ||
                           pick(b?.talent?.name) ||
                           pick(b.client_name) ||
-                          "Untitled";
+                          t("talentPortal.content.irl.calendar.untitled");
                         // TEMP: debug what drives color (remove after validation)
                         // console.debug("calendar booking", { date: dayString, status: statusVal, type: typeVal, name: displayName, id: b.id });
                         return (
@@ -641,9 +727,20 @@ export const CalendarScheduleTab = ({
                       {dayBookOutsCount > 0 && (
                         <div
                           className="bg-red-100 text-red-700 w-full h-7 flex items-center text-xs px-3 rounded-md font-bold whitespace-nowrap overflow-hidden text-ellipsis border border-red-200"
-                          title={`${dayBookOutsCount} unavailable`}
+                          title={t(
+                            "talentPortal.content.irl.calendar.bookOutsTitle",
+                            {
+                              count: dayBookOutsCount,
+                            },
+                          )}
                         >
-                          ✕ {dayBookOutsCount} unavailable
+                          ✕{" "}
+                          {t(
+                            "talentPortal.content.irl.calendar.bookOutsLabel",
+                            {
+                              count: dayBookOutsCount,
+                            },
+                          )}
                         </div>
                       )}
                     </div>
@@ -665,43 +762,52 @@ export const CalendarScheduleTab = ({
 
         <div className="flex flex-wrap gap-4 mt-4 text-xs font-medium text-gray-600">
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-blue-100 rounded-sm"></div> Casting
+            <div className="w-3 h-3 bg-blue-100 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.casting")}
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-yellow-100 rounded-sm"></div> Option
+            <div className="w-3 h-3 bg-yellow-100 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.option")}
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-green-100 rounded-sm"></div> Confirmed
+            <div className="w-3 h-3 bg-green-100 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.confirmed")}
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-gray-100 rounded-sm"></div> Pending
+            <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.pending")}
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-purple-100 rounded-sm"></div> Completed
+            <div className="w-3 h-3 bg-purple-100 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.completed")}
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-red-100 rounded-sm"></div> Cancelled
+            <div className="w-3 h-3 bg-red-100 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.cancelled")}
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-orange-100 rounded-sm"></div> Test Shoot
+            <div className="w-3 h-3 bg-orange-100 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.testShoot")}
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-yellow-50 rounded-sm"></div> Fitting
+            <div className="w-3 h-3 bg-yellow-50 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.fitting")}
           </span>
           <span className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Rehearsal
+            <div className="w-3 h-3 bg-gray-200 rounded-sm"></div>{" "}
+            {t("talentPortal.content.irl.calendar.legend.rehearsal")}
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-red-100 rounded-sm flex items-center justify-center text-[8px] text-red-600 font-bold">
               ✕
             </div>{" "}
-            Unavailable
+            {t("talentPortal.content.irl.calendar.legend.unavailable")}
           </span>
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-red-50 rounded-sm flex items-center justify-center text-[8px] text-red-600 font-bold">
               !
             </div>{" "}
-            Conflict
+            {t("talentPortal.content.irl.calendar.legend.conflict")}
           </span>
         </div>
       </Card>

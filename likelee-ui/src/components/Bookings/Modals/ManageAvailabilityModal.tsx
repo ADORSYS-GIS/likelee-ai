@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddBookOutModal } from "./AddBookOutModal";
 import { getAgencyRoster } from "@/api/functions";
+import { useTranslation } from "react-i18next";
 
 export const ManageAvailabilityModal = ({
   open,
@@ -28,6 +29,7 @@ export const ManageAvailabilityModal = ({
   fixedTalent?: { id: string; name: string };
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [addOpen, setAddOpen] = useState(false);
@@ -74,23 +76,37 @@ export const ManageAvailabilityModal = ({
 
   const getTalentName = (bo: any) => {
     const id = bo.talentId || bo.talent_id;
-    return nameById.get(String(id)) || String(id || "Unknown");
+    return (
+      nameById.get(String(id)) ||
+      String(
+        id ||
+          t("talentPortal.content.irl.availability.unknownEntity", {
+            entity: entitySingularTitle,
+          }),
+      )
+    );
   };
 
   const fmtReason = (r?: string) =>
-    String(r || "personal")
-      .replace("_", " ")
-      .toLowerCase();
+    t(
+      `talentPortal.content.irl.bookOutReasons.${String(r || "personal")
+        .trim()
+        .toLowerCase()}`,
+    );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            {`${entitySingularTitle} Availability & Book-Outs`}
+            {t("talentPortal.content.irl.availability.manageModalTitle", {
+              entity: entitySingularTitle,
+            })}
           </DialogTitle>
           <p className="text-sm text-gray-500">
-            {`Manage when ${entitySingularLower} is unavailable for bookings`}
+            {t("talentPortal.content.irl.availability.manageModalDescription", {
+              entity: entitySingularLower,
+            })}
           </p>
         </DialogHeader>
         <div className="py-6">
@@ -98,7 +114,8 @@ export const ManageAvailabilityModal = ({
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold mb-8 rounded-lg h-10"
             onClick={() => setAddOpen(true)}
           >
-            <Plus className="w-4 h-4 mr-2" /> Add Book-Out
+            <Plus className="w-4 h-4 mr-2" />{" "}
+            {t("talentPortal.content.irl.availability.addBookOut")}
           </Button>
 
           {bookOuts.length === 0 ? (
@@ -107,10 +124,12 @@ export const ManageAvailabilityModal = ({
                 <Calendar className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="font-bold text-gray-900 mb-1">
-                No book-outs scheduled
+                {t("talentPortal.content.irl.availability.noneTitle")}
               </h3>
               <p className="text-sm text-gray-500">
-                {`${entitySingularTitle} will appear available for all dates`}
+                {t("talentPortal.content.irl.availability.allDatesAvailable", {
+                  entity: entitySingularTitle,
+                })}
               </p>
             </div>
           ) : (
@@ -138,7 +157,8 @@ export const ManageAvailabilityModal = ({
                       className="text-red-600 border-red-200 hover:bg-red-50"
                       onClick={() => onRemoveBookOut(bo.id)}
                     >
-                      <X className="w-4 h-4 mr-1" /> Remove
+                      <X className="w-4 h-4 mr-1" />{" "}
+                      {t("talentPortal.content.irl.shared.remove")}
                     </Button>
                   </Card>
                 );

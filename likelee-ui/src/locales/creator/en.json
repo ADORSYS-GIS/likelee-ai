@@ -1310,7 +1310,53 @@
           "viewEarnings": "View Earnings"
         },
         "calendar": {
-          "subtitle": "View and manage your upcoming bookings"
+          "subtitle": "View and manage your upcoming bookings",
+          "scheduleTitle": "Bookings & Schedule",
+          "scheduleDescription": "Manage your {{entity}}'s bookings and availability",
+          "manageAvailability": "Manage Availability",
+          "newBooking": "New Booking",
+          "selectDate": "Select date",
+          "untitled": "Untitled",
+          "bookOutsTitle": "{{count}} unavailable",
+          "bookOutsLabel": "{{count}} unavailable",
+          "stats": {
+            "totalBookings": "Total Bookings",
+            "thisMonth": "This Month",
+            "confirmed": "Confirmed",
+            "pending": "Pending"
+          },
+          "views": {
+            "month": "Month",
+            "week": "Week",
+            "day": "Day",
+            "teamView": "Team View",
+            "agenda": "Agenda"
+          },
+          "talentView": {
+            "single": "Single View",
+            "all": "All {{entity}}",
+            "selected": "Selected {{entity}}",
+            "select": "Select {{entity}}"
+          },
+          "shortcuts": {
+            "navigate": "Navigate",
+            "today": "Today",
+            "newBooking": "New Booking",
+            "close": "Close"
+          },
+          "legend": {
+            "casting": "Casting",
+            "option": "Option",
+            "confirmed": "Confirmed",
+            "pending": "Pending",
+            "completed": "Completed",
+            "cancelled": "Cancelled",
+            "testShoot": "Test Shoot",
+            "fitting": "Fitting",
+            "rehearsal": "Rehearsal",
+            "unavailable": "Unavailable",
+            "conflict": "Conflict"
+          }
         },
         "activeProjects": {
           "subtitle": "Current ongoing projects and gigs",
@@ -1329,7 +1375,20 @@
           "title": "Availability Settings",
           "subtitle": "Manage your booking availability and book-outs",
           "bookOutCalendar": "Book-Out Calendar",
-          "bookOutCalendarDescription": "Block dates when you're not available for bookings"
+          "bookOutCalendarDescription": "Block dates when you're not available for bookings",
+          "talentAvailabilityTitle": "{{entity}} Availability",
+          "talentAvailabilityDescription": "Manage book-outs and {{entity}} unavailability",
+          "addBookOut": "Add Book-Out",
+          "noneTitle": "No book-outs scheduled",
+          "noneDescription": "Add unavailability periods for your {{entity}}",
+          "allDatesAvailable": "{{entity}} will appear available for all dates",
+          "unknownEntity": "Unknown {{entity}}",
+          "deleteDialogTitle": "Delete book-out?",
+          "deleteDialogDescription": "This will remove the unavailability period from the schedule.",
+          "deleteFailedTitle": "Remove failed",
+          "deleteFailedDescription": "Failed to remove book-out.",
+          "manageModalTitle": "{{entity}} Availability & Book-Outs",
+          "manageModalDescription": "Manage when {{entity}} is unavailable for bookings"
         },
         "earnings": {
           "subtitle": "Track your booking earnings",
@@ -1339,6 +1398,88 @@
           "recentPayments": "Recent Payments",
           "noPaymentsYet": "No payments yet.",
           "paymentFallback": "Payment"
+        },
+        "shared": {
+          "ok": "OK",
+          "cancel": "Cancel",
+          "delete": "Delete",
+          "remove": "Remove",
+          "status": {
+            "pending": "Pending",
+            "confirmed": "Confirmed",
+            "completed": "Completed",
+            "cancelled": "Cancelled"
+          }
+        },
+        "bookOutReasons": {
+          "personal": "Personal",
+          "medical": "Medical",
+          "vacation": "Vacation",
+          "other_booking": "Other Booking",
+          "other": "Other"
+        },
+        "addBookOut": {
+          "save": "Save Book-Out",
+          "fields": {
+            "reason": "Reason",
+            "entity": "{{entity}}",
+            "selectEntity": "Select {{entity}}",
+            "startDate": "Start Date",
+            "endDate": "End Date",
+            "notes": "Notes",
+            "additionalDetails": "Additional details...",
+            "notifyAgency": "Notify agency via email",
+            "notifyEntity": "Notify {{entity}} via email"
+          }
+        },
+        "bookingDetails": {
+          "title": "Booking Details",
+          "client": "Client",
+          "viewClientProfile": "Click to view client profile",
+          "notSpecified": "Not specified",
+          "dateTime": "Date & Time",
+          "date": "Date:",
+          "location": "Location",
+          "viewOnGoogleMaps": "View on Google Maps",
+          "payment": "Payment",
+          "dayRate": "Day Rate",
+          "usageTerms": "Usage Terms",
+          "duration": "Duration",
+          "digital": "Digital",
+          "oneMonth": "1 Month",
+          "specialInstructions": "Special Instructions",
+          "noSpecialInstructions": "No special instructions.",
+          "attachments": "Attachments",
+          "edit": "Edit",
+          "duplicate": "Duplicate",
+          "complete": "Complete",
+          "remind": "Remind",
+          "downloadPdf": "Download PDF",
+          "generateInvoice": "Generate Invoice",
+          "shareBookingLink": "Share Booking Link",
+          "cancelBooking": "Cancel Booking",
+          "activityLog": "Activity Log",
+          "bookingCreated": "Booking Created",
+          "talentViewedBooking": "Talent Viewed Booking",
+          "times": "{{count}} times",
+          "bookingId": "Booking ID: {{id}}",
+          "downloadStarted": "Download started",
+          "downloadingFile": "Downloading {{name}}",
+          "downloadFailed": "Download failed",
+          "couldNotDownloadFile": "Could not download file",
+          "confirmCancelTitle": "Are you sure you want to cancel this booking?",
+          "confirmCancelDescription": "This action cannot be undone.",
+          "confirmCompleteTitle": "Mark this booking as completed?",
+          "confirmCompleteDescription": "The status will be updated to Completed.",
+          "bookingMarkedCompletedTitle": "Booking marked as completed",
+          "bookingMarkedCompletedDescription": "The status has been successfully updated.",
+          "sendReminderTitle": "Send reminder notification to {{entity}}?",
+          "sendReminderDescription": "This will send a reminder to {{name}}",
+          "reminderSentTitle": "Reminder Sent",
+          "reminderSentDescription": "Notification has been sent to {{name}}",
+          "pdfComingSoon": "PDF download feature coming soon!",
+          "invoiceComingSoon": "Invoice generation feature coming soon!",
+          "bookingLinkCopied": "Booking link copied to clipboard!"
         }
       },
       "ai": {
