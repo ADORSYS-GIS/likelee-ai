@@ -22,7 +22,11 @@ import {
   listBrandInvoices,
   getBrandBudgetSettings,
   updateBrandBudgetSettings,
+  listBrandStorageFilesPaged,
+  listBrandStorageFoldersPaged,
+  getBrandStorageFileSignedUrl,
 } from "@/api/functions";
+import { listGenerations, listCampaignGenerations, StudioGenerationRow } from "@/api/studio";
 import { useAuth } from "@/auth/AuthProvider";
 import {
   BRAND_STUDIO_ADDON_PRICE,
@@ -626,6 +630,24 @@ export default function BrandDashboard() {
   }, [selectedJobForApplications]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
+  const [studioGenerations, setStudioGenerations] = useState<StudioGenerationRow[]>([]);
+  const [studioFiles, setStudioFiles] = useState<any[]>([]);
+  const [studioFolders, setStudioFolders] = useState<any[]>([]);
+  const [studioLoading, setStudioLoading] = useState(false);
+  const [studioSearchQuery, setStudioSearchQuery] = useState("");
+  const [studioSourceFilter, setStudioSourceFilter] = useState<"all" | "studio_generation">("all");
+  const [studioAssetUrls, setStudioAssetUrls] = useState<Record<string, string>>({});
+  const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
+  const [collections, setCollections] = useState<{ id: string; name: string; assetIds: string[] }[]>([
+    { id: "1", name: "Holiday 2024", assetIds: [] },
+    { id: "2", name: "Evergreen", assetIds: [] },
+  ]);
+  const [showCreateCollectionDialog, setShowCreateCollectionDialog] = useState(false);
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<"all" | "image" | "video">("all");
+  const [filterDateRange, setFilterDateRange] = useState<"all" | "week" | "month" | "year">("all");
   const [showEscrowDetails, setShowEscrowDetails] = useState(false);
   const [showBriefDetails, setShowBriefDetails] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
@@ -1413,6 +1435,232 @@ export default function BrandDashboard() {
       mounted = false;
     };
   }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== "studio") return;
+    let mounted = true;
+    const loadStudioData = async () => {
+      setStudioLoading(true);
+      try {
+        const [generations, files, folders] = await Promise.all([
+          listGenerations({ limit: 100 }).catch(() => []),
+          listBrandStorageFilesPaged({ limit: 100 }).catch(() => []),
+          listBrandStorageFoldersPaged().catch(() => []),
+        ]);
+        if (mounted) {
+          setStudioGenerations(generations || []);
+          setStudioFiles(files || []);
+          setStudioFolders(folders || []);
+        }
+      } catch {
+      } finally {
+        if (mounted) setStudioLoading(false);
+      }
+    };
+    loadStudioData();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== "studio" || studioFiles.length === 0) return;
+    let mounted = true;
+    const loadSignedUrls = async () => {
+      const urls: Record<string, string> = {};
+      const imageFiles = studioFiles.filter((f) =>
+        f.mime_type?.startsWith("image/")
+      );
+      for (const file of imageFiles.slice(0, 20)) {
+        try {
+          const res = await getBrandStorageFileSignedUrl(file.id);
+          if (mounted && res?.signed_url) {
+            urls[file.id] = res.signed_url;
+          }
+        } catch {
+        }
+      }
+      if (mounted) setStudioAssetUrls(urls);
+    };
+    loadSignedUrls();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection, studioFiles]);
+
+  const studioAssets = useMemo(() => {
+    const assets: Array<{
+      id: string;
+      file_name: string;
+      url: string;
+      mime_type: string;
+      source_type: string;
+      size_bytes: number;
+      created_at: string;
+      generation_id?: string;
+    }> = [];
+
+    for (const f of studioFiles) {
+      const isImage = f.mime_type?.startsWith("image/");
+      const isVideo = f.mime_type?.startsWith("video/");
+      if (!isImage && !isVideo) continue;
+      if (studioSourceFilter === "studio_generation" && f.source_type !== "studio_generation") continue;
+      if (studioSearchQuery && !f.file_name.toLowerCase().includes(studioSearchQuery.toLowerCase())) continue;
+      assets.push({
+        id: f.id,
+        file_name: f.file_name,
+        url: studioAssetUrls[f.id] || f.public_url || "",
+        mime_type: f.mime_type || "",
+        source_type: f.source_type || "upload",
+        size_bytes: f.size_bytes || 0,
+        created_at: f.created_at,
+        generation_id: f.generation_id,
+      });
+    }
+
+    for (const g of studioGenerations) {
+      if (g.status !== "completed" || !g.output_urls || g.output_urls.length === 0) continue;
+      for (const url of g.output_urls) {
+        const isImage = url.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i);
+        const isVideo = url.match(/\.(mp4|webm|mov)(\?|$)/i);
+        if (!isImage && !isVideo) continue;
+        const fname = url.split("/").pop()?.split("?")[0] || "asset";
+        if (studioSearchQuery && !fname.toLowerCase().includes(studioSearchQuery.toLowerCase())) continue;
+        const alreadyAdded = assets.some((a) => a.generation_id === g.id && a.url === url);
+        if (alreadyAdded) continue;
+        assets.push({
+          id: `gen-${g.id}-${url}`,
+          file_name: fname,
+          url,
+          mime_type: isImage ? "image/jpeg" : "video/mp4",
+          source_type: "studio_generation",
+          size_bytes: 0,
+          created_at: g.created_at,
+          generation_id: g.id,
+        });
+      }
+    }
+
+    return assets;
+  }, [studioFiles, studioGenerations, studioAssetUrls, studioSearchQuery, studioSourceFilter]);
+
+  const studioStats = useMemo(() => {
+    const videos = studioAssets.filter((a) => a.mime_type.startsWith("video/"));
+    const images = studioAssets.filter((a) => a.mime_type.startsWith("image/"));
+    const totalBytes = studioAssets.reduce((sum, a) => sum + (a.size_bytes || 0), 0);
+    return {
+      total: studioAssets.length,
+      videos: videos.length,
+      images: images.length,
+      totalSize: totalBytes,
+    };
+  }, [studioAssets]);
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 MB";
+    const mb = bytes / (1024 * 1024);
+    if (mb < 1) return `${Math.round(bytes / 1024)} KB`;
+    return `${mb.toFixed(1)} MB`;
+  };
+
+  const toggleAssetSelection = (assetId: string) => {
+    setSelectedAssetIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(assetId)) {
+        next.delete(assetId);
+      } else {
+        next.add(assetId);
+      }
+      return next;
+    });
+  };
+
+  const selectAllAssets = () => {
+    if (selectedAssetIds.size === studioAssets.length) {
+      setSelectedAssetIds(new Set());
+    } else {
+      setSelectedAssetIds(new Set(studioAssets.map((a) => a.id)));
+    }
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedAssetIds.size === 0) {
+      toast({ title: "No assets selected", description: "Please select assets to download.", variant: "destructive" });
+      return;
+    }
+    const selectedAssets = studioAssets.filter((a) => selectedAssetIds.has(a.id));
+    toast({ title: "Downloading...", description: `Downloading ${selectedAssets.length} asset(s)` });
+    for (const asset of selectedAssets) {
+      const link = document.createElement("a");
+      link.href = asset.url;
+      link.download = asset.file_name;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    toast({ title: "Download complete", description: `${selectedAssets.length} asset(s) downloaded.` });
+  };
+
+  const handleDownloadAsset = (asset: any) => {
+    const link = document.createElement("a");
+    link.href = asset.url;
+    link.download = asset.file_name;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCreateCollection = () => {
+    if (!newCollectionName.trim()) {
+      toast({ title: "Collection name required", description: "Please enter a name for the collection.", variant: "destructive" });
+      return;
+    }
+    const newCollection = {
+      id: Date.now().toString(),
+      name: newCollectionName.trim(),
+      assetIds: Array.from(selectedAssetIds),
+    };
+    setCollections((prev) => [...prev, newCollection]);
+    setNewCollectionName("");
+    setShowCreateCollectionDialog(false);
+    toast({ title: "Collection created", description: `"${newCollection.name}" created with ${newCollection.assetIds.length} asset(s).` });
+  };
+
+  const handleSelectCollection = (collectionId: string) => {
+    if (selectedCollectionId === collectionId) {
+      setSelectedCollectionId(null);
+    } else {
+      setSelectedCollectionId(collectionId);
+    }
+  };
+
+  const getFilteredAssets = () => {
+    let filtered = [...studioAssets];
+    if (selectedCollectionId) {
+      const collection = collections.find((c) => c.id === selectedCollectionId);
+      if (collection) {
+        filtered = filtered.filter((a) => collection.assetIds.includes(a.id));
+      }
+    }
+    if (filterType === "image") {
+      filtered = filtered.filter((a) => a.mime_type.startsWith("image/"));
+    } else if (filterType === "video") {
+      filtered = filtered.filter((a) => a.mime_type.startsWith("video/"));
+    }
+    if (filterDateRange !== "all") {
+      const now = new Date();
+      const cutoff = new Date();
+      if (filterDateRange === "week") cutoff.setDate(now.getDate() - 7);
+      else if (filterDateRange === "month") cutoff.setMonth(now.getMonth() - 1);
+      else if (filterDateRange === "year") cutoff.setFullYear(now.getFullYear() - 1);
+      filtered = filtered.filter((a) => new Date(a.created_at) >= cutoff);
+    }
+    return filtered;
+  };
+
+  const displayedAssets = getFilteredAssets();
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -6786,11 +7034,11 @@ export default function BrandDashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-2 border-gray-300">
+          <Button variant="outline" className="border-2 border-gray-300" onClick={handleBatchDownload} disabled={selectedAssetIds.size === 0}>
             <Download className="w-4 h-4 mr-2" />
-            Batch Download
+            Batch Download{selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
           </Button>
-          <Button variant="outline" className="border-2 border-gray-300">
+          <Button variant="outline" className="border-2 border-gray-300" onClick={() => setShowFilterDialog(true)}>
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </Button>
@@ -6801,19 +7049,19 @@ export default function BrandDashboard() {
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Assets</p>
-          <p className="text-3xl font-bold text-gray-900">0</p>
+          <p className="text-3xl font-bold text-gray-900">{studioStats.total}</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Videos</p>
-          <p className="text-3xl font-bold text-gray-900">0</p>
+          <p className="text-3xl font-bold text-gray-900">{studioStats.videos}</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Images</p>
-          <p className="text-3xl font-bold text-gray-900">0</p>
+          <p className="text-3xl font-bold text-gray-900">{studioStats.images}</p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Size</p>
-          <p className="text-3xl font-bold text-gray-900">0 MB</p>
+          <p className="text-3xl font-bold text-gray-900">{formatBytes(studioStats.totalSize)}</p>
         </Card>
       </div>
 
@@ -6825,7 +7073,25 @@ export default function BrandDashboard() {
             <Input
               placeholder="Search by project, creator, or filename..."
               className="pl-10 border-2 border-gray-300"
+              value={studioSearchQuery}
+              onChange={(e) => setStudioSearchQuery(e.target.value)}
             />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={studioSourceFilter === "all" ? "default" : "outline"}
+              onClick={() => setStudioSourceFilter("all")}
+              className="border-2 border-gray-300"
+            >
+              All
+            </Button>
+            <Button
+              variant={studioSourceFilter === "studio_generation" ? "default" : "outline"}
+              onClick={() => setStudioSourceFilter("studio_generation")}
+              className="border-2 border-gray-300"
+            >
+              Studio
+            </Button>
           </div>
           <Button
             variant={viewMode === "grid" ? "default" : "outline"}
@@ -6845,30 +7111,113 @@ export default function BrandDashboard() {
       </Card>
 
       {/* Asset Grid */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Assets are now loaded from real API data - no mock assets shown */}
+      {studioLoading ? (
+        <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
+          <p className="text-gray-500">Loading assets...</p>
+        </Card>
+      ) : studioAssets.length === 0 ? (
         <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
           <p className="text-gray-500">
             No assets available yet. Assets will appear here once campaigns are
             completed.
           </p>
         </Card>
-      </div>
+      ) : viewMode === "grid" ? (
+        <div className="grid md:grid-cols-3 gap-6">
+          {displayedAssets.map((asset) => (
+            <Card key={asset.id} className="overflow-hidden border border-gray-200 hover:border-indigo-300 transition-colors">
+              <div className="aspect-video bg-gray-100 relative group">
+                {asset.mime_type.startsWith("image/") ? (
+                  <img src={asset.url} alt={asset.file_name} className="w-full h-full object-cover" />
+                ) : (
+                  <video src={asset.url} className="w-full h-full object-cover" controls />
+                )}
+                <div className="absolute top-2 left-2 flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedAssetIds.has(asset.id)}
+                    onCheckedChange={() => toggleAssetSelection(asset.id)}
+                    className="bg-white/90 border-white data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                  />
+                  {asset.source_type === "studio_generation" && (
+                    <Badge className="bg-purple-600 text-white">Studio</Badge>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white"
+                  onClick={() => handleDownloadAsset(asset)}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="p-3">
+                <p className="text-sm font-medium text-gray-900 truncate">{asset.file_name}</p>
+                <p className="text-xs text-gray-500">{formatBytes(asset.size_bytes)}</p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="border border-gray-200">
+          <div className="divide-y divide-gray-100">
+            <div className="flex items-center gap-4 p-4 bg-gray-50">
+              <Checkbox
+                checked={displayedAssets.length > 0 && selectedAssetIds.size === displayedAssets.length}
+                onCheckedChange={selectAllAssets}
+              />
+              <span className="text-sm text-gray-500">{displayedAssets.length} assets</span>
+            </div>
+            {displayedAssets.map((asset) => (
+              <div key={asset.id} className="flex items-center gap-4 p-4 hover:bg-gray-50">
+                <Checkbox
+                  checked={selectedAssetIds.has(asset.id)}
+                  onCheckedChange={() => toggleAssetSelection(asset.id)}
+                />
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  {asset.mime_type.startsWith("image/") ? (
+                    <img src={asset.url} alt={asset.file_name} className="w-full h-full object-cover rounded-lg" />
+                  ) : (
+                    <Video className="w-6 h-6 text-gray-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{asset.file_name}</p>
+                  <p className="text-xs text-gray-500">{formatBytes(asset.size_bytes)} · {new Date(asset.created_at).toLocaleDateString()}</p>
+                </div>
+                {asset.source_type === "studio_generation" && (
+                  <Badge className="bg-purple-100 text-purple-700">Studio</Badge>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => handleDownloadAsset(asset)}>
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Organization Features */}
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Collections</h3>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-2 border-gray-300">
+        <div className="flex gap-3 flex-wrap">
+          <Button variant="outline" className="border-2 border-gray-300" onClick={() => setShowCreateCollectionDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Create Collection
           </Button>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 cursor-pointer hover:bg-gray-200">
-            Holiday 2024 (12 assets)
-          </Badge>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 cursor-pointer hover:bg-gray-200">
-            Evergreen (5 assets)
-          </Badge>
+          {collections.map((collection) => (
+            <Badge
+              key={collection.id}
+              className={`px-4 py-2 cursor-pointer border border-gray-300 ${
+                selectedCollectionId === collection.id
+                  ? "bg-indigo-100 text-indigo-700 border-indigo-300"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+              onClick={() => handleSelectCollection(collection.id)}
+            >
+              {collection.name} ({collection.assetIds.length} assets)
+            </Badge>
+          ))}
         </div>
       </Card>
     </div>
@@ -11998,6 +12347,137 @@ export default function BrandDashboard() {
               Done
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Collection Dialog */}
+      <Dialog open={showCreateCollectionDialog} onOpenChange={setShowCreateCollectionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Collection</DialogTitle>
+            <DialogDescription>
+              Organize your selected assets into a new collection.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="collection-name">Collection Name</Label>
+              <Input
+                id="collection-name"
+                placeholder="e.g., Summer Campaign 2025"
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreateCollection();
+                }}
+              />
+            </div>
+            <p className="text-sm text-gray-500">
+              {selectedAssetIds.size > 0
+                ? `${selectedAssetIds.size} asset(s) will be added to this collection.`
+                : "No assets selected. You can add assets later."}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateCollectionDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateCollection}>Create Collection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Filter Dialog */}
+      <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filter Assets</DialogTitle>
+            <DialogDescription>
+              Narrow down your asset library view.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Asset Type</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={filterType === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("all")}
+                  className="flex-1"
+                >
+                  All
+                </Button>
+                <Button
+                  variant={filterType === "image" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("image")}
+                  className="flex-1"
+                >
+                  <ImageIcon className="w-4 h-4 mr-1" />
+                  Images
+                </Button>
+                <Button
+                  variant={filterType === "video" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("video")}
+                  className="flex-1"
+                >
+                  <Video className="w-4 h-4 mr-1" />
+                  Videos
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Date Range</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={filterDateRange === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterDateRange("all")}
+                  className="flex-1"
+                >
+                  All Time
+                </Button>
+                <Button
+                  variant={filterDateRange === "week" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterDateRange("week")}
+                  className="flex-1"
+                >
+                  Last Week
+                </Button>
+                <Button
+                  variant={filterDateRange === "month" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterDateRange("month")}
+                  className="flex-1"
+                >
+                  Last Month
+                </Button>
+                <Button
+                  variant={filterDateRange === "year" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterDateRange("year")}
+                  className="flex-1"
+                >
+                  Last Year
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFilterType("all");
+                setFilterDateRange("all");
+              }}
+            >
+              Reset Filters
+            </Button>
+            <Button onClick={() => setShowFilterDialog(false)}>Apply Filters</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
