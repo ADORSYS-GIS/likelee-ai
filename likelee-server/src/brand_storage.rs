@@ -738,7 +738,7 @@ pub async fn upload_brand_storage_file(
             .and_then(|v| v.as_str())
             .unwrap_or("upload")
             .to_string(),
-        generation_id: generation_id,
+        generation_id,
         created_at: None,
     }))
 }

@@ -91,7 +91,7 @@ pub async fn list_org_storage_assets(
             _ => None,
         };
         if let Some(prefix) = mime_prefix {
-            req = req.like("mime_type", &format!("{}%", prefix));
+            req = req.like("mime_type", format!("{}%", prefix));
         }
     }
 

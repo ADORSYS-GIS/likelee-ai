@@ -207,7 +207,7 @@ pub async fn activated_stub(
 
             let mut brand_bucket = storage_bucket.to_string();
             let mut brand_path = storage_path.to_string();
-            let mut brand_public_url: Option<String> = None;
+            let mut _brand_public_url: Option<String> = None;
 
             if !storage_bucket.is_empty() && !storage_path.is_empty() {
                 match download_object(&state, storage_bucket, storage_path).await {
@@ -228,7 +228,7 @@ pub async fn activated_stub(
                         {
                             brand_bucket = uploaded.bucket.clone();
                             brand_path = uploaded.path.clone();
-                            brand_public_url = uploaded.public_url.clone();
+                            _brand_public_url = uploaded.public_url.clone();
 
                             let bf_insert = serde_json::json!({
                                 "brand_id": input.brand_org_id,
