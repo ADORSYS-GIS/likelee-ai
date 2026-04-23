@@ -277,17 +277,17 @@ export default function CreatorSubscribe() {
       const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
 
       if (ms <= 0) {
-        setTrialCountdown("Trial ended");
+        setTrialCountdown(t("creatorSubscribe.trial.ended"));
         return;
       }
 
-      setTrialCountdown(`${days} ${days === 1 ? "day" : "days"} left`);
+      setTrialCountdown(t("creatorSubscribe.trial.daysLeft", { count: days }));
     };
 
     compute();
     const id = window.setInterval(compute, 60 * 1000);
     return () => window.clearInterval(id);
-  }, [currentPlanTier, trialInfo.active, trialInfo.endsAt]);
+  }, [currentPlanTier, trialInfo.active, trialInfo.endsAt, t]);
 
   React.useEffect(() => {
     const key = "creator_billing_interval";

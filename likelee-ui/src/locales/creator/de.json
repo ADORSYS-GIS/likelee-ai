@@ -633,10 +633,32 @@
     },
     "planStatus": {
       "endsIn": "Endet in:",
+      "days": "{{count}} Tag",
+      "days_other": "{{count}} Tage",
       "started": "Gestartet {{date}}",
       "expiringSoon": "Läuft bald ab",
       "manageSubscription": "Abonnement verwalten",
       "accountSettings": "Kontoeinstellungen"
+    },
+    "trialGate": {
+      "upgradeToBasicForKyc": "Upgrade auf Basic, um KYC zu starten",
+      "basicRequired": "Basic erforderlich",
+      "basicAndKycDescription": "Ohne Basic und genehmigtes KYC kann dein Creator-Profil weder im Marketplace sichtbar sein noch von Marken und Agenturen verwaltet werden.",
+      "processing": "Wird verarbeitet...",
+      "upgradePlan": "Plan upgraden"
+    },
+    "trialOffer": {
+      "badge": "Exklusives Creator-Angebot",
+      "titlePrefix": "Erlebe Likelee",
+      "pro": "Pro",
+      "titleSuffix": "30 Tage lang",
+      "description": "Schalte professionelle Funktionen frei, darunter KI-Stimmprofile, erweiterte Analysen, Content-Monitoring und Premium-Kampagnenmöglichkeiten.",
+      "cta": "Pläne ansehen und Test freischalten",
+      "bullets": {
+        "premiumAccess": "30 Tage Premium-Zugang",
+        "cancelAnytime": "Während des Tests jederzeit kündbar",
+        "autoBilling": "Automatische Abrechnung nach 30 Tagen"
+      }
     },
     "content": {
       "title": "Inhalt",
@@ -1288,6 +1310,11 @@
       "cancel": "Abbrechen",
       "requestDisconnect": "Trennung anfragen"
     },
+    "disconnectNow": "Trennen",
+    "decline": "Ablehnen",
+    "reviewContract": "Vertrag prüfen",
+    "sync": "Synchronisieren",
+    "accept": "Annehmen",
     "toasts": {
       "disconnectRequestedTitle": "Trennung angefragt",
       "disconnectRequestedDescription": "Deine Agentur wurde benachrichtigt. Die Verbindung bleibt aktiv, bis sie zustimmt oder der Vertrag abläuft.",
@@ -1295,7 +1322,17 @@
       "requestAlreadyPendingDescription": "Diese Trennungsanfrage wartet bereits auf die Genehmigung der Agentur.",
       "disconnectedTitle": "Getrennt",
       "disconnectedDescription": "Du wurdest von der Agentur getrennt.",
-      "failedDisconnectTitle": "Trennung fehlgeschlagen"
+      "failedDisconnectTitle": "Trennung fehlgeschlagen",
+      "missingInviteTokenTitle": "Einladungs-Token fehlt",
+      "missingInviteTokenDescription": "Öffne den Einladungslink, um zu antworten.",
+      "failedDeclineTitle": "Ablehnen fehlgeschlagen",
+      "contractLinkUnavailableTitle": "Vertragslink nicht verfügbar",
+      "contractLinkUnavailableDescription": "Der Signierlink ist noch nicht bereit. Versuche die Synchronisierung gleich noch einmal.",
+      "contractSyncedTitle": "Vertrag synchronisiert",
+      "contractSyncedDescription": "Der Einladungsstatus wurde aktualisiert.",
+      "failedSyncTitle": "Synchronisierung fehlgeschlagen",
+      "invitationAcceptedTitle": "Einladung angenommen",
+      "failedAcceptTitle": "Annahme fehlgeschlagen"
     },
     "contract": {
       "title": "Vertrag mit {{agency}}",
@@ -1303,6 +1340,8 @@
       "description": "Prüfe die wichtigsten Bedingungen deines aktiven Agenturvertrags und des unterschriebenen Dokuments.",
       "status": "Status",
       "commission": "Provision",
+      "validUntil": "Gültig bis",
+      "notSet": "nicht festgelegt",
       "startDate": "Startdatum",
       "endDate": "Enddatum",
       "disconnectStatus": "Trennungsstatus:",
@@ -1323,6 +1362,8 @@
     "viewPDF": "PDF ansehen",
     "loadingRequests": "Anfragen werden geladen...",
     "agencyFeedback": "Agentur-Feedback",
+    "likeleeNoticeTitle": "Likelee-Hinweis:",
+    "likeleeNoticeDescription": "Diese Agentur hat dein öffentliches Profil im Marketplace gefunden und dir eine Verbindungsanfrage gesendet.",
     "assetRequestFallback": "Asset-Anfrage",
     "feedback": {
       "good": "gut",
@@ -1367,6 +1408,38 @@
       "profile": "Profil",
       "payments": "Zahlungen",
       "privacy": "Datenschutz"
+    },
+    "settings": {
+      "profile": {
+        "title": "Profil",
+        "subtitle": "Dieses Profil gilt für die ausgewählte Agentur.",
+        "allAgencies": "Alle Agenturen",
+        "defaultAgency": "Standardagentur",
+        "save": "Profil speichern",
+        "saving": "Wird gespeichert...",
+        "fields": {
+          "stageName": "Künstlername",
+          "fullLegalName": "Vollständiger rechtlicher Name",
+          "email": "E-Mail",
+          "phone": "Telefon",
+          "dateOfBirth": "Geburtsdatum",
+          "roleType": "Rollentyp",
+          "status": "Status",
+          "skinTone": "Hautfarbe",
+          "instagram": "Instagram",
+          "instagramFollowers": "Instagram-Follower",
+          "engagementRate": "Engagement-Rate",
+          "city": "Stadt",
+          "stateProvince": "Bundesland / Provinz",
+          "country": "Land",
+          "bio": "Biografie"
+        }
+      },
+      "privacy": {
+        "title": "Datenschutzkontrollen",
+        "dataUsageTitle": "Datennutzung für Training",
+        "dataUsageDescription": "Anonymisierte Daten zur Verbesserung des KI-Modells zulassen"
+      }
     },
     "noBookings": "Noch keine Buchungen.",
     "noLicenses": "Noch keine Lizenzen.",
@@ -1501,7 +1574,16 @@
       "noActiveConnections": "Keine aktiven Verbindungen",
       "connectToChat": "Verbinde dich mit {{role}}, um zu chatten.",
       "startConversation": "Unterhaltung starten",
-      "noResults": "Keine Ergebnisse gefunden"
+      "noResults": "Keine Ergebnisse gefunden",
+      "time": {
+        "daysAgo": "vor {{count}} Tag",
+        "daysAgo_other": "vor {{count}} Tagen",
+        "hoursAgo": "vor {{count}} Stunde",
+        "hoursAgo_other": "vor {{count}} Stunden",
+        "minutesAgo": "vor {{count}} Minute",
+        "minutesAgo_other": "vor {{count}} Minuten",
+        "justNow": "Gerade eben"
+      }
     }
   },
   "payouts": {
@@ -1655,6 +1737,7 @@
       "continuation": "Testfortsetzung",
       "basicCarryOver": "Beim Wechsel zum Basic-Test bleiben deine restlichen Testtage erhalten. Die Basic-Abrechnung startet automatisch am",
       "proCarryOver": "Deine restlichen Testtage bleiben erhalten. Die Pro-Abrechnung startet automatisch am",
+      "ended": "Test beendet",
       "daysLeft": "{{count}} Tag übrig",
       "daysLeft_other": "{{count}} Tage übrig"
     },

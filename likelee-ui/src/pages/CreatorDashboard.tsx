@@ -3920,16 +3920,16 @@ export default function CreatorDashboard() {
       const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
       setDaysLeft(days);
       if (ms <= 0) {
-        setTrialCountdown("Trial ended");
+        setTrialCountdown(t("creatorSubscribe.trial.ended"));
         return;
       }
-      setTrialCountdown(t("creatorSubscribe.trial.daysLeft", { count: days }));
+      setTrialCountdown(t("creatorDashboard.planStatus.days", { count: days }));
     };
 
     compute();
     const id = window.setInterval(compute, 60 * 1000);
     return () => window.clearInterval(id);
-  }, [creatorPlanTier, trialActive, trialEndsAt]);
+  }, [creatorPlanTier, trialActive, trialEndsAt, t]);
 
   const creatorCategoryLimit =
     typeof creatorBilling?.category_limit === "number"
@@ -5939,15 +5939,14 @@ export default function CreatorDashboard() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold text-gray-900">
-                    Upgrade to Basic to start KYC
+                    {t("creatorDashboard.trialGate.upgradeToBasicForKyc")}
                   </p>
                   <Badge className="rounded-full border-0 bg-white/90 px-2.5 py-0.5 text-[11px] font-medium text-gray-700 shadow-sm">
-                    Basic required
+                    {t("creatorDashboard.trialGate.basicRequired")}
                   </Badge>
                 </div>
                 <p className="mt-1 text-sm leading-6 text-gray-600">
-                  Without Basic and approved KYC, your creator profile cannot be
-                  visible in the marketplace or managed by brands and agencies.
+                  {t("creatorDashboard.trialGate.basicAndKycDescription")}
                 </p>
               </div>
             </div>
@@ -5967,7 +5966,9 @@ export default function CreatorDashboard() {
               ) : (
                 <Crown className="mr-2 h-4 w-4" />
               )}
-              {portalLoading ? "Processing..." : "Upgrade plan"}
+              {portalLoading
+                ? t("creatorDashboard.trialGate.processing")
+                : t("creatorDashboard.trialGate.upgradePlan")}
             </Button>
           </div>
         </div>
@@ -6319,19 +6320,17 @@ export default function CreatorDashboard() {
 
                 <div className="max-w-xl">
                   <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-6">
-                    Exclusive Creator Offer
+                    {t("creatorDashboard.trialOffer.badge")}
                   </div>
                   <h2 className="text-3xl font-black tracking-tight sm:text-4xl leading-tight">
-                    Experience Likelee{" "}
+                    {t("creatorDashboard.trialOffer.titlePrefix")}{" "}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">
-                      Pro
+                      {t("creatorDashboard.trialOffer.pro")}
                     </span>{" "}
-                    for 30 Days
+                    {t("creatorDashboard.trialOffer.titleSuffix")}
                   </h2>
                   <p className="mt-4 text-lg text-slate-300 leading-relaxed font-medium">
-                    Unlock professional features including AI Voice profiles,
-                    advanced analytics, content monitoring, and premium campaign
-                    opportunities.
+                    {t("creatorDashboard.trialOffer.description")}
                   </p>
                 </div>
               </div>
@@ -6340,9 +6339,9 @@ export default function CreatorDashboard() {
                 <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-md">
                   <div className="space-y-4 mb-8">
                     {[
-                      "30 Days of Premium Access",
-                      "Cancel anytime during trial",
-                      "Automatic billing after 30 days",
+                      t("creatorDashboard.trialOffer.bullets.premiumAccess"),
+                      t("creatorDashboard.trialOffer.bullets.cancelAnytime"),
+                      t("creatorDashboard.trialOffer.bullets.autoBilling"),
                     ].map((item, i) => (
                       <div
                         key={i}
@@ -6358,7 +6357,7 @@ export default function CreatorDashboard() {
                     onClick={() => navigate("/CreatorSubscribe")}
                     className="w-full h-14 rounded-2xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-lg shadow-xl hover:shadow-emerald-500/20 group"
                   >
-                    Explore Plans & Unlock Trial
+                    {t("creatorDashboard.trialOffer.cta")}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </div>

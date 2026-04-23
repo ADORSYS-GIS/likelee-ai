@@ -819,10 +819,32 @@
     },
     "planStatus": {
       "endsIn": "Ends in:",
+      "days": "{{count}} day",
+      "days_other": "{{count}} days",
       "started": "Started {{date}}",
       "expiringSoon": "Expiring Soon",
       "manageSubscription": "Manage Subscription",
       "accountSettings": "Account Settings"
+    },
+    "trialGate": {
+      "upgradeToBasicForKyc": "Upgrade to Basic to start KYC",
+      "basicRequired": "Basic required",
+      "basicAndKycDescription": "Without Basic and approved KYC, your creator profile cannot be visible in the marketplace or managed by brands and agencies.",
+      "processing": "Processing...",
+      "upgradePlan": "Upgrade plan"
+    },
+    "trialOffer": {
+      "badge": "Exclusive Creator Offer",
+      "titlePrefix": "Experience Likelee",
+      "pro": "Pro",
+      "titleSuffix": "for 30 Days",
+      "description": "Unlock professional features including AI Voice profiles, advanced analytics, content monitoring, and premium campaign opportunities.",
+      "cta": "Explore Plans & Unlock Trial",
+      "bullets": {
+        "premiumAccess": "30 Days of Premium Access",
+        "cancelAnytime": "Cancel anytime during trial",
+        "autoBilling": "Automatic billing after 30 days"
+      }
     },
     "content": {
       "title": "Content",
@@ -1235,7 +1257,90 @@
       "payments": "Payments",
       "privacy": "Privacy"
     },
+    "settings": {
+      "profile": {
+        "title": "Profile",
+        "subtitle": "This profile is specific to the selected agency.",
+        "allAgencies": "All agencies",
+        "defaultAgency": "Default agency",
+        "save": "Save profile",
+        "saving": "Saving...",
+        "fields": {
+          "stageName": "Stage Name",
+          "fullLegalName": "Full Legal Name",
+          "email": "Email",
+          "phone": "Phone",
+          "dateOfBirth": "Date of Birth",
+          "roleType": "Role Type",
+          "status": "Status",
+          "skinTone": "Skin Tone",
+          "instagram": "Instagram",
+          "instagramFollowers": "Instagram Followers",
+          "engagementRate": "Engagement Rate",
+          "city": "City",
+          "stateProvince": "State / Province",
+          "country": "Country",
+          "bio": "Bio"
+        }
+      },
+      "privacy": {
+        "title": "Privacy Controls",
+        "dataUsageTitle": "Data Usage for Training",
+        "dataUsageDescription": "Allow anonymized data for AI model improvement"
+      }
+    },
     "content": {
+      "irl": {
+        "overview": {
+          "upcomingBookings": "Upcoming Bookings",
+          "totalEarnings": "Total Earnings",
+          "completedJobs": "Completed Jobs",
+          "thisMonth": "This Month",
+          "noUpcomingBookings": "No upcoming bookings yet.",
+          "bookingFallback": "Booking",
+          "pending": "pending",
+          "earningsByAgency": "Earnings by Agency",
+          "noEarningsByAgency": "No earnings by agency for this month yet.",
+          "agencyFallback": "Agency",
+          "monthlySuffix": "/mo",
+          "yourAgency": "Your Agency",
+          "connectedSince": "Connected since {{date}}",
+          "editProfile": "Edit Profile",
+          "manageCampaigns": "Manage Campaigns",
+          "viewEarnings": "View Earnings"
+        },
+        "calendar": {
+          "subtitle": "View and manage your upcoming bookings"
+        },
+        "activeProjects": {
+          "subtitle": "Current ongoing projects and gigs",
+          "noneTitle": "No active projects yet.",
+          "noneDescription": "Current projects and gigs will appear here.",
+          "projectFallback": "Project"
+        },
+        "jobHistory": {
+          "subtitle": "View all completed bookings",
+          "noneTitle": "No completed jobs yet.",
+          "noneDescription": "Your completed bookings will appear here.",
+          "jobFallback": "Job",
+          "completed": "completed"
+        },
+        "availability": {
+          "title": "Availability Settings",
+          "subtitle": "Manage your booking availability and book-outs",
+          "bookOutCalendar": "Book-Out Calendar",
+          "bookOutCalendarDescription": "Block dates when you're not available for bookings"
+        },
+        "earnings": {
+          "subtitle": "Track your booking earnings",
+          "totalEarnings": "Total Earnings",
+          "withdrawable": "Withdrawable",
+          "completedJobs": "Completed Jobs",
+          "recentPayments": "Recent Payments",
+          "noPaymentsYet": "No payments yet.",
+          "paymentFallback": "Payment"
+        }
+      },
       "ai": {
         "overview": {
           "activeCampaigns": "Active Campaigns",
@@ -1311,7 +1416,9 @@
         "willingToTravel": "Willing to Travel",
         "acceptOutsideLocalArea": "Accept bookings outside local area",
         "minimumDayRate": "Minimum Day Rate",
-        "minimumRateDescription": "Your minimum acceptable rate"
+        "minimumRateDescription": "Your minimum acceptable rate",
+        "selectAgencyTitle": "Select an agency",
+        "selectAgencyDescription": "Please choose the agency for this book-out using the Agency filter dropdown."
       },
       "portfolio": {
         "title": "Portfolio",
@@ -1319,6 +1426,11 @@
         "imagesTitle": "Portfolio Images",
         "imagesSubtitle": "Upload images to your IRL portfolio",
         "addImages": "Add Images",
+        "remove": "Remove",
+        "pastWorkHighlights": "Past Work Highlights",
+        "pastWorkHighlightsDescription": "Add standout projects, collaborations, or press mentions",
+        "highlightsComingSoon": "Highlights coming soon",
+        "highlightsComingSoonDescription": "Your agency can help curate portfolio highlights here",
         "selectAgencyTitle": "Select an agency",
         "selectAgencyDescription": "Please choose the agency for this upload using the Agency filter dropdown."
       },
@@ -1364,7 +1476,16 @@
       "noActiveConnections": "No active connections",
       "connectToChat": "Connect with {{role}} to chat.",
       "startConversation": "Start Conversation",
-      "noResults": "No results found"
+      "noResults": "No results found",
+      "time": {
+        "daysAgo": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago",
+        "hoursAgo": "{{count}} hour ago",
+        "hoursAgo_other": "{{count}} hours ago",
+        "minutesAgo": "{{count}} minute ago",
+        "minutesAgo_other": "{{count}} minutes ago",
+        "justNow": "Just now"
+      }
     },
     "noBookings": "No bookings yet.",
     "noLicenses": "No licenses yet.",
@@ -1431,6 +1552,11 @@
       "cancel": "Cancel",
       "requestDisconnect": "Request disconnect"
     },
+    "disconnectNow": "Disconnect",
+    "decline": "Decline",
+    "reviewContract": "Review contract",
+    "sync": "Sync",
+    "accept": "Accept",
     "toasts": {
       "disconnectRequestedTitle": "Disconnect requested",
       "disconnectRequestedDescription": "Your agency has been notified. The connection will remain active until they approve or the contract expires.",
@@ -1438,7 +1564,17 @@
       "requestAlreadyPendingDescription": "This disconnect request is already awaiting agency approval.",
       "disconnectedTitle": "Disconnected",
       "disconnectedDescription": "You have disconnected from the agency.",
-      "failedDisconnectTitle": "Failed to disconnect"
+      "failedDisconnectTitle": "Failed to disconnect",
+      "missingInviteTokenTitle": "Missing invite token",
+      "missingInviteTokenDescription": "Open the invite link to respond.",
+      "failedDeclineTitle": "Failed to decline",
+      "contractLinkUnavailableTitle": "Contract link unavailable",
+      "contractLinkUnavailableDescription": "The signing link is not ready yet. Try syncing again in a moment.",
+      "contractSyncedTitle": "Contract synced",
+      "contractSyncedDescription": "Invitation status has been refreshed.",
+      "failedSyncTitle": "Failed to sync",
+      "invitationAcceptedTitle": "Invitation accepted",
+      "failedAcceptTitle": "Failed to accept"
     },
     "contract": {
       "title": "{{agency}} contract",
@@ -1446,6 +1582,8 @@
       "description": "Review the key terms of your active agency contract and signed document.",
       "status": "Status",
       "commission": "Commission",
+      "validUntil": "Valid until",
+      "notSet": "not set",
       "startDate": "Start date",
       "endDate": "End date",
       "disconnectStatus": "Disconnect status:",
@@ -1465,6 +1603,8 @@
     "assetRequestsDescription": "Upload deliverables for agency requests.",
     "loadingRequests": "Loading requests...",
     "agencyFeedback": "Agency feedback",
+    "likeleeNoticeTitle": "Likelee notice:",
+    "likeleeNoticeDescription": "This agency found your public profile in marketplace and sent a connection invitation.",
     "assetRequestFallback": "Asset request",
     "feedback": {
       "good": "good",
@@ -1696,6 +1836,7 @@
       "continuation": "Trial Continuation",
       "basicCarryOver": "Downgrading to Basic trial. Your remaining trial days carry over. Basic billing begins automatically on",
       "proCarryOver": "You'll keep your remaining trial days. Pro billing begins automatically on",
+      "ended": "Trial ended",
       "daysLeft": "{{count}} day left",
       "daysLeft_other": "{{count}} days left"
     },

@@ -1,12 +1,25 @@
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
 import type { Conversation, Participant, Contact } from "@/hooks/useChat";
 import { useTranslation } from "react-i18next";
 
-function formatTime(dateString: string) {
+function formatTime(
+  dateString: string,
+  t: (key: string, opts?: any) => string,
+) {
   try {
-    const date = new Date(dateString);
-    return formatDistanceToNow(date, { addSuffix: true });
+    const date = new Date(dateString).getTime();
+    const now = Date.now();
+    const diffMs = Math.max(0, now - date);
+    const minutes = Math.floor(diffMs / (60 * 1000));
+    const hours = Math.floor(diffMs / (60 * 60 * 1000));
+    const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+    if (days > 0) return t("talentPortal.chat.time.daysAgo", { count: days });
+    if (hours > 0)
+      return t("talentPortal.chat.time.hoursAgo", { count: hours });
+    if (minutes > 0) {
+      return t("talentPortal.chat.time.minutesAgo", { count: minutes });
+    }
+    return t("talentPortal.chat.time.justNow");
   } catch (e) {
     return "";
   }
@@ -247,7 +260,7 @@ export function ThreadList({
                     {participant.name}
                   </span>
                   <span className="text-[10px] text-gray-400 font-medium flex-shrink-0">
-                    {formatTime(conv.updated_at)}
+                    {formatTime(conv.updated_at, t)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">

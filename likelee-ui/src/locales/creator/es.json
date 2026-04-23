@@ -631,10 +631,32 @@
     },
     "planStatus": {
       "endsIn": "Termina en:",
+      "days": "{{count}} día",
+      "days_other": "{{count}} días",
       "started": "Iniciado {{date}}",
       "expiringSoon": "Próximo a vencer",
       "manageSubscription": "Gestionar suscripción",
       "accountSettings": "Configuración de la cuenta"
+    },
+    "trialGate": {
+      "upgradeToBasicForKyc": "Actualiza a Basic para iniciar KYC",
+      "basicRequired": "Basic requerido",
+      "basicAndKycDescription": "Sin Basic y un KYC aprobado, tu perfil de creador no podrá ser visible en el marketplace ni gestionado por marcas y agencias.",
+      "processing": "Procesando...",
+      "upgradePlan": "Actualizar plan"
+    },
+    "trialOffer": {
+      "badge": "Oferta exclusiva para creadores",
+      "titlePrefix": "Disfruta Likelee",
+      "pro": "Pro",
+      "titleSuffix": "durante 30 días",
+      "description": "Desbloquea funciones profesionales, incluidos perfiles de voz IA, analíticas avanzadas, monitoreo de contenido y oportunidades premium de campaña.",
+      "cta": "Ver planes y desbloquear prueba",
+      "bullets": {
+        "premiumAccess": "30 días de acceso premium",
+        "cancelAnytime": "Cancela en cualquier momento durante la prueba",
+        "autoBilling": "Facturación automática después de 30 días"
+      }
     },
     "content": {
       "title": "Contenido",
@@ -1286,6 +1308,11 @@
       "cancel": "Cancelar",
       "requestDisconnect": "Solicitar desconexión"
     },
+    "disconnectNow": "Desconectar",
+    "decline": "Rechazar",
+    "reviewContract": "Revisar contrato",
+    "sync": "Sincronizar",
+    "accept": "Aceptar",
     "toasts": {
       "disconnectRequestedTitle": "Desconexión solicitada",
       "disconnectRequestedDescription": "Tu agencia ha sido notificada. La conexión seguirá activa hasta que aprueben la solicitud o expire el contrato.",
@@ -1293,7 +1320,17 @@
       "requestAlreadyPendingDescription": "Esta solicitud de desconexión ya está esperando la aprobación de la agencia.",
       "disconnectedTitle": "Desconectado",
       "disconnectedDescription": "Te has desconectado de la agencia.",
-      "failedDisconnectTitle": "No se pudo desconectar"
+      "failedDisconnectTitle": "No se pudo desconectar",
+      "missingInviteTokenTitle": "Falta el token de invitación",
+      "missingInviteTokenDescription": "Abre el enlace de invitación para responder.",
+      "failedDeclineTitle": "No se pudo rechazar",
+      "contractLinkUnavailableTitle": "Enlace del contrato no disponible",
+      "contractLinkUnavailableDescription": "El enlace de firma aún no está listo. Intenta sincronizar de nuevo en un momento.",
+      "contractSyncedTitle": "Contrato sincronizado",
+      "contractSyncedDescription": "Se actualizó el estado de la invitación.",
+      "failedSyncTitle": "No se pudo sincronizar",
+      "invitationAcceptedTitle": "Invitación aceptada",
+      "failedAcceptTitle": "No se pudo aceptar"
     },
     "contract": {
       "title": "Contrato de {{agency}}",
@@ -1301,6 +1338,8 @@
       "description": "Revisa los términos clave de tu contrato activo con la agencia y el documento firmado.",
       "status": "Estado",
       "commission": "Comisión",
+      "validUntil": "Válido hasta",
+      "notSet": "no definido",
       "startDate": "Fecha de inicio",
       "endDate": "Fecha de finalización",
       "disconnectStatus": "Estado de desconexión:",
@@ -1321,6 +1360,8 @@
     "viewPDF": "Ver PDF",
     "loadingRequests": "Cargando solicitudes...",
     "agencyFeedback": "Comentarios de la agencia",
+    "likeleeNoticeTitle": "Aviso de Likelee:",
+    "likeleeNoticeDescription": "Esta agencia encontró tu perfil público en el marketplace y te envió una invitación de conexión.",
     "assetRequestFallback": "Solicitud de recursos",
     "feedback": {
       "good": "bueno",
@@ -1365,6 +1406,38 @@
       "profile": "Perfil",
       "payments": "Pagos",
       "privacy": "Privacidad"
+    },
+    "settings": {
+      "profile": {
+        "title": "Perfil",
+        "subtitle": "Este perfil es específico de la agencia seleccionada.",
+        "allAgencies": "Todas las agencias",
+        "defaultAgency": "Agencia predeterminada",
+        "save": "Guardar perfil",
+        "saving": "Guardando...",
+        "fields": {
+          "stageName": "Nombre artístico",
+          "fullLegalName": "Nombre legal completo",
+          "email": "Correo electrónico",
+          "phone": "Teléfono",
+          "dateOfBirth": "Fecha de nacimiento",
+          "roleType": "Tipo de rol",
+          "status": "Estado",
+          "skinTone": "Tono de piel",
+          "instagram": "Instagram",
+          "instagramFollowers": "Seguidores de Instagram",
+          "engagementRate": "Tasa de interacción",
+          "city": "Ciudad",
+          "stateProvince": "Estado / Provincia",
+          "country": "País",
+          "bio": "Biografía"
+        }
+      },
+      "privacy": {
+        "title": "Controles de privacidad",
+        "dataUsageTitle": "Uso de datos para entrenamiento",
+        "dataUsageDescription": "Permitir datos anonimizados para mejorar el modelo de IA"
+      }
     },
     "noBookings": "Aún no hay reservas.",
     "noLicenses": "Aún no hay licencias.",
@@ -1499,7 +1572,16 @@
       "noActiveConnections": "No hay conexiones activas",
       "connectToChat": "Conéctate con {{role}} para chatear.",
       "startConversation": "Iniciar conversación",
-      "noResults": "No se encontraron resultados"
+      "noResults": "No se encontraron resultados",
+      "time": {
+        "daysAgo": "hace {{count}} día",
+        "daysAgo_other": "hace {{count}} días",
+        "hoursAgo": "hace {{count}} hora",
+        "hoursAgo_other": "hace {{count}} horas",
+        "minutesAgo": "hace {{count}} minuto",
+        "minutesAgo_other": "hace {{count}} minutos",
+        "justNow": "Justo ahora"
+      }
     }
   },
   "payouts": {
@@ -1653,6 +1735,7 @@
       "continuation": "Continuación de la prueba",
       "basicCarryOver": "Al cambiar a Basic trial, tus días restantes de prueba se mantienen. La facturación de Basic comenzará automáticamente el",
       "proCarryOver": "Mantendrás tus días restantes de prueba. La facturación de Pro comenzará automáticamente el",
+      "ended": "Prueba finalizada",
       "daysLeft": "Queda {{count}} día",
       "daysLeft_other": "Quedan {{count}} días"
     },
