@@ -102,6 +102,7 @@ import {
   Trash2,
   Sparkles,
   Lock,
+  Shield,
   ShieldCheck,
 } from "lucide-react";
 import { DocusealForm } from "@docuseal/react";
@@ -159,6 +160,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ActiveSessionAudit } from "@/components/security/ActiveSessionAudit";
 
 const ensureProtocol = (url: string | null | undefined) => {
   if (!url) return "";
@@ -633,6 +635,7 @@ export default function BrandDashboard() {
   const [showEscrowDetails, setShowEscrowDetails] = useState(false);
   const [showBriefDetails, setShowBriefDetails] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
+  const [showSessionAudit, setShowSessionAudit] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [showLicenseRequestModal, setShowLicenseRequestModal] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState("profile");
@@ -9077,27 +9080,39 @@ export default function BrandDashboard() {
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
               <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
-                <Settings className="w-6 h-6" /> Security Settings
+                <Shield className="w-6 h-6" /> Security Settings
               </h3>
               <div className="space-y-4">
                 <Button
                   variant="outline"
+                  onClick={() => navigate("/forgot-password")}
                   className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
                 >
                   Reset Admin Password <ChevronRight className="w-4 h-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
-                >
-                  Enable 2FA Protection <ChevronRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
-                >
-                  Active Session Audit <ChevronRight className="w-4 h-4" />
-                </Button>
+                <div className="relative group">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/TwoFactorSetup")}
+                    className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                  >
+                    Enable 2FA Protection <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="relative group">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSessionAudit((v) => !v)}
+                    className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
+                  >
+                    Active Session Audit <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+                {showSessionAudit && (
+                  <div className="border-2 border-gray-100 p-4">
+                    <ActiveSessionAudit variant="brand" />
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -9106,21 +9121,51 @@ export default function BrandDashboard() {
                 <FileText className="w-6 h-6" /> Legal & Governance
               </h3>
               <div className="space-y-3">
-                {[
-                  "Terms & Conditions",
-                  "Privacy Policy",
-                  "SAG-AFTRA Agreement",
-                  "Data Export (GDPR)",
-                ].map((legal, i) => (
-                  <Button
-                    key={i}
-                    variant="ghost"
-                    className="w-full justify-start rounded-none font-bold text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-0"
+                <button
+                  onClick={() =>
+                    window.open(
+                      "/agency_brand_terms_and-conditions.pdf",
+                      "_blank",
+                    )
+                  }
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-900 text-[10px] font-black uppercase tracking-widest text-gray-800 text-left transition-colors"
+                >
+                  <FileText className="w-4 h-4 text-gray-500 shrink-0" />
+                  Terms & Conditions
+                </button>
+                <button
+                  onClick={() =>
+                    window.open("https://likelee.ai/privacypolicy", "_blank")
+                  }
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-900 text-[10px] font-black uppercase tracking-widest text-gray-800 text-left transition-colors"
+                >
+                  <FileText className="w-4 h-4 text-gray-500 shrink-0" />
+                  Privacy Policy
+                </button>
+                <button
+                  onClick={() => navigate("/sagaftraalignment")}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-900 text-[10px] font-black uppercase tracking-widest text-gray-800 text-left transition-colors"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                  SAG-AFTRA Agreement
+                </button>
+                <div className="relative group">
+                  <button
+                    disabled
+                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 text-left transition-colors opacity-50 blur-[1px] cursor-not-allowed"
                   >
-                    <CheckCircle2 className="w-4 h-4 mr-3 text-green-500" />
-                    {legal}
-                  </Button>
-                ))}
+                    <Download className="w-4 h-4 text-gray-400 shrink-0" />
+                    Data Export (GDPR)
+                  </button>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <Badge
+                      variant="secondary"
+                      className="bg-gray-900 text-white font-black uppercase tracking-widest text-[10px]"
+                    >
+                      Coming Soon
+                    </Badge>
+                  </div>
+                </div>
               </div>
             </Card>
           </div>
