@@ -2048,6 +2048,137 @@ export function AgencyDeliverablesView() {
         </DialogContent>
       </Dialog>
 
+      {/* Retry Transfer Result Modal */}
+      <Dialog
+        open={retryResultDialog.open}
+        onOpenChange={(open) =>
+          setRetryResultDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-md rounded-2xl p-0 border-none bg-white shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              {retryResultDialog.results.every((r) => r.result === "succeeded") ? (
+                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                </div>
+              )}
+              <div>
+                <h3 className="text-base font-black text-gray-900 tracking-tight">
+                  Transfer Retry Results
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {retryResultDialog.results.filter((r) => r.result === "succeeded").length} of{" "}
+                  {retryResultDialog.results.length} transfers succeeded
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Results list */}
+          <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+            {retryResultDialog.results.map((r, i) => (
+              <div key={i} className="px-6 py-3 flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900 truncate">
+                      {r.name}
+                    </span>
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium flex-shrink-0">
+                      {r.recipient_type === "agency" ? "agency" : "talent"}
+                    </span>
+                  </div>
+                  {r.result === "failed" && r.failure_reason && (
+                    <p className="text-[11px] text-amber-700 mt-0.5 leading-snug">
+                      {r.failure_reason.includes("insufficient_capabilities_for_transfer")
+                        ? "Stripe account not fully set up — transfers not enabled."
+                        : r.failure_reason.includes("transfers_not_allowed")
+                          ? "Transfers not allowed on this Stripe account."
+                          : r.failure_reason.includes("no_stripe_account") ||
+                              r.failure_reason.includes("No Stripe Connect")
+                            ? "No Stripe account connected."
+                            : r.failure_reason.length > 100
+                              ? r.failure_reason.slice(0, 100) + "\u2026"
+                              : r.failure_reason}
+                    </p>
+                  )}
+                  {r.result === "skipped_no_account" && (
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      No Stripe account connected yet.
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-sm font-bold text-gray-900">
+                    ${(r.amount_cents / 100).toFixed(2)}
+                  </span>
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                      r.result === "succeeded"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : r.result === "skipped_no_account"
+                          ? "bg-gray-50 text-gray-500 border-gray-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {r.result === "succeeded"
+                      ? "transferred"
+                      : r.result === "skipped_no_account"
+                        ? "no account"
+                        : "failed"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 bg-gray-50/60 border-t border-gray-100 space-y-2">
+            {retryResultDialog.results.some(
+              (r) => r.result === "failed" || r.result === "skipped_no_account",
+            ) && (
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Recipients with failed transfers need to complete their Stripe
+                onboarding before funds can be sent. Direct them to their
+                Payouts page to fix their account.
+              </p>
+            )}
+            <div className="flex gap-2">
+              {retryResultDialog.results.some(
+                (r) =>
+                  (r.result === "failed" || r.result === "skipped_no_account") &&
+                  r.recipient_type === "agency",
+              ) && (
+                <Button
+                  size="sm"
+                  className="h-9 px-4 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl text-xs flex items-center gap-1.5"
+                  onClick={() => {
+                    setRetryResultDialog({ open: false, results: [] });
+                    navigate(`/AgencyDashboard?tab=payouts`);
+                  }}
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  Fix your Stripe account
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-9 px-4 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-700 ml-auto"
+                onClick={() => setRetryResultDialog({ open: false, results: [] })}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog
         open={notSignedDialog.open}
         onOpenChange={(open) => {
