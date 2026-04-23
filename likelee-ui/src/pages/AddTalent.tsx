@@ -34,10 +34,7 @@ import {
   Play,
   UserCheck,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 import { createAgencyTalent } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
@@ -569,13 +566,13 @@ export default function AddTalent() {
       // and the HTTP status to err.status.
       const status = error?.status;
       const raw = error?.data;
-      const code = typeof raw === "object" && raw !== null
-        ? String(raw?.code || "")
-        : "";
+      const code =
+        typeof raw === "object" && raw !== null ? String(raw?.code || "") : "";
 
       if (
         status === 409 &&
-        (code === "duplicate_email_same_agency" || code === "duplicate_email_other_agency")
+        (code === "duplicate_email_same_agency" ||
+          code === "duplicate_email_other_agency")
       ) {
         setDuplicateConflict({
           open: true,

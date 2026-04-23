@@ -743,7 +743,10 @@ const ConnectBankView = ({
                   Transfers not enabled
                 </p>
                 <p className="text-xs text-amber-800 font-medium mt-1">
-                  Your Stripe account is connected but the <strong>transfers</strong> capability is not active. This means payouts from brand offers cannot be sent to your account until you complete Stripe onboarding.
+                  Your Stripe account is connected but the{" "}
+                  <strong>transfers</strong> capability is not active. This
+                  means payouts from brand offers cannot be sent to your account
+                  until you complete Stripe onboarding.
                 </p>
                 <Button
                   size="sm"

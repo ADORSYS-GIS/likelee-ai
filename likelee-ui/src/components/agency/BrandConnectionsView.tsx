@@ -3114,7 +3114,11 @@ const BrandConnectionsView = () => {
                       onClick={() => {
                         if (assignmentLockedForOffer) return;
                         if (needsInvite) {
-                          setInviteRequiredDialog({ open: true, talentName, talentId: talent?.id || id });
+                          setInviteRequiredDialog({
+                            open: true,
+                            talentName,
+                            talentId: talent?.id || id,
+                          });
                           return;
                         }
                         if (!canAssign) return;
@@ -3226,7 +3230,11 @@ const BrandConnectionsView = () => {
             <div className="flex flex-col gap-2 w-full mt-2">
               <Button
                 onClick={() => {
-                  setInviteRequiredDialog({ open: false, talentName: "", talentId: "" });
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  });
                   navigate(
                     `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent("All Talent")}&openTalentId=${encodeURIComponent(inviteRequiredDialog.talentId || "")}`,
                   );
@@ -3239,7 +3247,11 @@ const BrandConnectionsView = () => {
               <Button
                 variant="ghost"
                 onClick={() =>
-                  setInviteRequiredDialog({ open: false, talentName: "", talentId: "" })
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  })
                 }
                 className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
               >

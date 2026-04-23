@@ -48,7 +48,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";import {
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -864,7 +865,10 @@ export function AgencyDeliverablesView() {
     try {
       const result: any = await retryOfferTransfers(offerId);
       if (result?.nothing_to_retry) {
-        toast({ title: "Nothing to retry", description: "All transfers are already successful." });
+        toast({
+          title: "Nothing to retry",
+          description: "All transfers are already successful.",
+        });
       } else {
         // Show professional result modal
         setRetryResultDialog({
@@ -886,7 +890,8 @@ export function AgencyDeliverablesView() {
       if (code === "escrow_not_released") {
         toast({
           title: "Not yet available",
-          description: "Transfers can only be retried after the brand approves the deliverables.",
+          description:
+            "Transfers can only be retried after the brand approves the deliverables.",
           variant: "destructive",
         });
       } else {
@@ -1396,15 +1401,25 @@ export function AgencyDeliverablesView() {
 
                     const statusIcon = (r: any) => {
                       if (r.transfer_status === "created")
-                        return <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />;
-                      if (r.transfer_status === "failed" || r.transfer_status === "pending_retry")
-                        return <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />;
-                      return <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />;
+                        return (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        );
+                      if (
+                        r.transfer_status === "failed" ||
+                        r.transfer_status === "pending_retry"
+                      )
+                        return (
+                          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        );
+                      return (
+                        <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      );
                     };
 
                     const statusLabel = (r: any) => {
                       if (r.transfer_status === "created") return "transferred";
-                      if (r.transfer_status === "pending_retry") return "retrying\u2026";
+                      if (r.transfer_status === "pending_retry")
+                        return "retrying\u2026";
                       if (r.transfer_status === "failed") return "failed";
                       if (r.transfer_status === "reversed") return "reversed";
                       return "not attempted";
@@ -1412,7 +1427,11 @@ export function AgencyDeliverablesView() {
 
                     const friendlyReason = (reason: string) => {
                       if (!reason) return null;
-                      if (reason.includes("insufficient_capabilities_for_transfer"))
+                      if (
+                        reason.includes(
+                          "insufficient_capabilities_for_transfer",
+                        )
+                      )
                         return "Stripe account not fully set up \u2014 transfers not enabled.";
                       if (reason.includes("transfers_not_allowed"))
                         return "Transfers not allowed on this Stripe account.";
@@ -1420,9 +1439,14 @@ export function AgencyDeliverablesView() {
                         return "Payouts not allowed on this Stripe account.";
                       if (reason.includes("balance_insufficient"))
                         return "Platform balance insufficient \u2014 contact support.";
-                      if (reason.includes("no_stripe_account") || reason.includes("No Stripe Connect"))
+                      if (
+                        reason.includes("no_stripe_account") ||
+                        reason.includes("No Stripe Connect")
+                      )
                         return "No Stripe account connected. Ask them to complete Stripe onboarding.";
-                      return reason.length > 120 ? reason.slice(0, 120) + "\u2026" : reason;
+                      return reason.length > 120
+                        ? reason.slice(0, 120) + "\u2026"
+                        : reason;
                     };
 
                     return (
@@ -1430,7 +1454,9 @@ export function AgencyDeliverablesView() {
                         {/* Header */}
                         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-gray-800">Payout Status</span>
+                            <span className="text-sm font-bold text-gray-800">
+                              Payout Status
+                            </span>
                             {allSucceeded && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                                 all transferred
@@ -1450,7 +1476,9 @@ export function AgencyDeliverablesView() {
                               onClick={() => loadTransferStatus(offerId)}
                               disabled={isLoading}
                             >
-                              <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`} />
+                              <RefreshCw
+                                className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`}
+                              />
                               Refresh
                             </Button>
                             {hasFailedTransfers && (
@@ -1475,7 +1503,9 @@ export function AgencyDeliverablesView() {
                         {isLoading && !ts ? (
                           <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span className="text-xs">Loading payout status\u2026</span>
+                            <span className="text-xs">
+                              Loading payout status\u2026
+                            </span>
                           </div>
                         ) : !ts ? (
                           <div className="px-4 py-4 text-xs text-gray-400 text-center">
@@ -1484,7 +1514,10 @@ export function AgencyDeliverablesView() {
                         ) : (
                           <div className="divide-y divide-gray-100">
                             {(ts.recipients ?? []).map((r: any) => (
-                              <div key={`${r.recipient_type}-${r.recipient_id}`} className="px-4 py-3">
+                              <div
+                                key={`${r.recipient_type}-${r.recipient_id}`}
+                                className="px-4 py-3"
+                              >
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="flex items-center gap-3 min-w-0">
                                     {statusIcon(r)}
@@ -1494,7 +1527,9 @@ export function AgencyDeliverablesView() {
                                           {r.name}
                                         </span>
                                         <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
-                                          {r.recipient_type === "agency" ? "agency" : "talent"}
+                                          {r.recipient_type === "agency"
+                                            ? "agency"
+                                            : "talent"}
                                         </span>
                                       </div>
                                       {/* Stripe health */}
@@ -1514,15 +1549,19 @@ export function AgencyDeliverablesView() {
                                         )}
                                         {r.retry_count > 0 && (
                                           <span className="text-[10px] text-gray-400">
-                                            {r.retry_count} {r.retry_count === 1 ? "retry" : "retries"}
+                                            {r.retry_count}{" "}
+                                            {r.retry_count === 1
+                                              ? "retry"
+                                              : "retries"}
                                           </span>
                                         )}
                                       </div>
-                                      {r.transfer_status === "failed" && r.failure_reason && (
-                                        <p className="text-[11px] text-amber-700 mt-1 leading-snug">
-                                          {friendlyReason(r.failure_reason)}
-                                        </p>
-                                      )}
+                                      {r.transfer_status === "failed" &&
+                                        r.failure_reason && (
+                                          <p className="text-[11px] text-amber-700 mt-1 leading-snug">
+                                            {friendlyReason(r.failure_reason)}
+                                          </p>
+                                        )}
                                       {/* Fix Stripe account CTA */}
                                       {r.transfer_status === "failed" &&
                                         !r.stripe_transfers_enabled && (
@@ -1543,7 +1582,9 @@ export function AgencyDeliverablesView() {
                                             ) : (
                                               // Creator = talent's account → agency can't fix it, show guidance
                                               <p className="mt-1.5 text-[11px] text-gray-500 leading-snug">
-                                                Ask this talent to complete their Stripe onboarding in their portal.
+                                                Ask this talent to complete
+                                                their Stripe onboarding in their
+                                                portal.
                                               </p>
                                             )}
                                           </>
@@ -1552,7 +1593,8 @@ export function AgencyDeliverablesView() {
                                   </div>
                                   <div className="flex items-center gap-3 flex-shrink-0">
                                     <span className="text-sm font-bold text-gray-900">
-                                      ${((r.amount_cents ?? 0) / 100).toFixed(2)}
+                                      $
+                                      {((r.amount_cents ?? 0) / 100).toFixed(2)}
                                     </span>
                                     <span
                                       className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
@@ -1560,7 +1602,8 @@ export function AgencyDeliverablesView() {
                                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                           : r.transfer_status === "failed"
                                             ? "bg-amber-50 text-amber-700 border-amber-200"
-                                            : r.transfer_status === "pending_retry"
+                                            : r.transfer_status ===
+                                                "pending_retry"
                                               ? "bg-blue-50 text-blue-700 border-blue-200"
                                               : "bg-gray-50 text-gray-500 border-gray-200"
                                       }`}
@@ -1926,7 +1969,11 @@ export function AgencyDeliverablesView() {
                       onClick={() => {
                         if (assignmentLockedForOffer) return;
                         if (needsInvite) {
-                          setInviteRequiredDialog({ open: true, talentName, talentId: talent?.id || creatorId });
+                          setInviteRequiredDialog({
+                            open: true,
+                            talentName,
+                            talentId: talent?.id || creatorId,
+                          });
                           return;
                         }
                         if (!canAssign || alreadyAssigned) return;
@@ -2033,7 +2080,11 @@ export function AgencyDeliverablesView() {
             <div className="flex flex-col gap-2 w-full mt-2">
               <Button
                 onClick={() => {
-                  setInviteRequiredDialog({ open: false, talentName: "", talentId: "" });
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  });
                   setAssignDialog({ open: false, offerId: "" });
                   navigate(
                     `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent("All Talent")}&openTalentId=${encodeURIComponent(inviteRequiredDialog.talentId || "")}`,
@@ -2047,7 +2098,11 @@ export function AgencyDeliverablesView() {
               <Button
                 variant="ghost"
                 onClick={() =>
-                  setInviteRequiredDialog({ open: false, talentName: "", talentId: "" })
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  })
                 }
                 className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
               >
@@ -2069,7 +2124,9 @@ export function AgencyDeliverablesView() {
           {/* Header */}
           <div className="px-6 pt-6 pb-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              {retryResultDialog.results.every((r) => r.result === "succeeded") ? (
+              {retryResultDialog.results.every(
+                (r) => r.result === "succeeded",
+              ) ? (
                 <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                 </div>
@@ -2083,8 +2140,12 @@ export function AgencyDeliverablesView() {
                   Transfer Retry Results
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {retryResultDialog.results.filter((r) => r.result === "succeeded").length} of{" "}
-                  {retryResultDialog.results.length} transfers succeeded
+                  {
+                    retryResultDialog.results.filter(
+                      (r) => r.result === "succeeded",
+                    ).length
+                  }{" "}
+                  of {retryResultDialog.results.length} transfers succeeded
                 </p>
               </div>
             </div>
@@ -2093,7 +2154,10 @@ export function AgencyDeliverablesView() {
           {/* Results list */}
           <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
             {retryResultDialog.results.map((r, i) => (
-              <div key={i} className="px-6 py-3 flex items-start justify-between gap-3">
+              <div
+                key={i}
+                className="px-6 py-3 flex items-start justify-between gap-3"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-gray-900 truncate">
@@ -2105,7 +2169,9 @@ export function AgencyDeliverablesView() {
                   </div>
                   {r.result === "failed" && r.failure_reason && (
                     <p className="text-[11px] text-amber-700 mt-0.5 leading-snug">
-                      {r.failure_reason.includes("insufficient_capabilities_for_transfer")
+                      {r.failure_reason.includes(
+                        "insufficient_capabilities_for_transfer",
+                      )
                         ? "Stripe account not fully set up — transfers not enabled."
                         : r.failure_reason.includes("transfers_not_allowed")
                           ? "Transfers not allowed on this Stripe account."
@@ -2156,7 +2222,8 @@ export function AgencyDeliverablesView() {
                 {/* Agency-specific guidance */}
                 {retryResultDialog.results.some(
                   (r) =>
-                    (r.result === "failed" || r.result === "skipped_no_account") &&
+                    (r.result === "failed" ||
+                      r.result === "skipped_no_account") &&
                     r.recipient_type === "agency",
                 ) && (
                   <p className="text-xs text-gray-500 leading-relaxed">
@@ -2167,7 +2234,8 @@ export function AgencyDeliverablesView() {
                 {/* Creator-specific guidance */}
                 {retryResultDialog.results.some(
                   (r) =>
-                    (r.result === "failed" || r.result === "skipped_no_account") &&
+                    (r.result === "failed" ||
+                      r.result === "skipped_no_account") &&
                     r.recipient_type === "creator",
                 ) && (
                   <p className="text-xs text-gray-500 leading-relaxed">
@@ -2180,7 +2248,8 @@ export function AgencyDeliverablesView() {
             <div className="flex gap-2">
               {retryResultDialog.results.some(
                 (r) =>
-                  (r.result === "failed" || r.result === "skipped_no_account") &&
+                  (r.result === "failed" ||
+                    r.result === "skipped_no_account") &&
                   r.recipient_type === "agency",
               ) && (
                 <Button
@@ -2199,7 +2268,9 @@ export function AgencyDeliverablesView() {
                 size="sm"
                 variant="ghost"
                 className="h-9 px-4 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-700 ml-auto"
-                onClick={() => setRetryResultDialog({ open: false, results: [] })}
+                onClick={() =>
+                  setRetryResultDialog({ open: false, results: [] })
+                }
               >
                 Close
               </Button>

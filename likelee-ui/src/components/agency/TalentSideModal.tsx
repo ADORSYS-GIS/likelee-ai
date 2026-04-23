@@ -110,7 +110,8 @@ const TalentSideModal = ({
     phone: safeTalent.phone || "",
     bio: safeTalent.bio || "",
     instagram_handle: safeTalent.instagram_handle || "",
-    instagram_followers: safeTalent.followers ?? safeTalent.instagram_followers ?? "",
+    instagram_followers:
+      safeTalent.followers ?? safeTalent.instagram_followers ?? "",
     engagement_rate: safeTalent.engagement_rate ?? "",
     role_types: roleTypes,
     gender_identity: safeTalent.gender_identity || "",
