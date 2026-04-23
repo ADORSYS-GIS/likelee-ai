@@ -876,6 +876,7 @@ export function AgencyDeliverablesView() {
           open: true,
           results: (result?.retried ?? []).map((r: any) => ({
             name: r.name || "Recipient",
+            recipient_id: r.recipient_id || "",
             recipient_type: r.recipient_type,
             amount_cents: r.amount_cents ?? 0,
             result: r.result,
