@@ -26,7 +26,11 @@ import {
   listBrandStorageFoldersPaged,
   getBrandStorageFileSignedUrl,
 } from "@/api/functions";
-import { listGenerations, listCampaignGenerations, StudioGenerationRow } from "@/api/studio";
+import {
+  listGenerations,
+  listCampaignGenerations,
+  StudioGenerationRow,
+} from "@/api/studio";
 import { useAuth } from "@/auth/AuthProvider";
 import {
   BRAND_STUDIO_ADDON_PRICE,
@@ -630,27 +634,51 @@ export default function BrandDashboard() {
   }, [selectedJobForApplications]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
-  const [studioGenerations, setStudioGenerations] = useState<StudioGenerationRow[]>([]);
+  const [studioGenerations, setStudioGenerations] = useState<
+    StudioGenerationRow[]
+  >([]);
   const [studioFiles, setStudioFiles] = useState<any[]>([]);
   const [studioFolders, setStudioFolders] = useState<any[]>([]);
   const [studioLoading, setStudioLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [studioSearchQuery, setStudioSearchQuery] = useState("");
-  const [studioSourceFilter, setStudioSourceFilter] = useState<"all" | "studio_generation">("all");
-  const [studioAssetUrls, setStudioAssetUrls] = useState<Record<string, string>>({});
-  const [studioDataCache, setStudioDataCache] = useState<{ files: any[]; generations: any[]; folders: any[]; timestamp: number } | null>(null);
-  const [signedUrlsCache, setSignedUrlsCache] = useState<Record<string, { url: string; expires: number }>>({});
-  const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
-  const [collections, setCollections] = useState<{ id: string; name: string; assetIds: string[] }[]>([
+  const [studioSourceFilter, setStudioSourceFilter] = useState<
+    "all" | "studio_generation"
+  >("all");
+  const [studioAssetUrls, setStudioAssetUrls] = useState<
+    Record<string, string>
+  >({});
+  const [studioDataCache, setStudioDataCache] = useState<{
+    files: any[];
+    generations: any[];
+    folders: any[];
+    timestamp: number;
+  } | null>(null);
+  const [signedUrlsCache, setSignedUrlsCache] = useState<
+    Record<string, { url: string; expires: number }>
+  >({});
+  const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [collections, setCollections] = useState<
+    { id: string; name: string; assetIds: string[] }[]
+  >([
     { id: "1", name: "Holiday 2024", assetIds: [] },
     { id: "2", name: "Evergreen", assetIds: [] },
   ]);
-  const [showCreateCollectionDialog, setShowCreateCollectionDialog] = useState(false);
+  const [showCreateCollectionDialog, setShowCreateCollectionDialog] =
+    useState(false);
   const [showFilterDialog, setShowFilterDialog] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
-  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
-  const [filterType, setFilterType] = useState<"all" | "image" | "video">("all");
-  const [filterDateRange, setFilterDateRange] = useState<"all" | "week" | "month" | "year">("all");
+  const [selectedCollectionId, setSelectedCollectionId] = useState<
+    string | null
+  >(null);
+  const [filterType, setFilterType] = useState<"all" | "image" | "video">(
+    "all",
+  );
+  const [filterDateRange, setFilterDateRange] = useState<
+    "all" | "week" | "month" | "year"
+  >("all");
   const [showEscrowDetails, setShowEscrowDetails] = useState(false);
   const [showBriefDetails, setShowBriefDetails] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
@@ -1464,8 +1492,7 @@ export default function BrandDashboard() {
                 setStudioLoading(false);
               }
             }
-          } catch {
-          }
+          } catch {}
         }
 
         if (!useCache || forceRefresh) {
@@ -1487,7 +1514,10 @@ export default function BrandDashboard() {
             setStudioFolders(folders || []);
             localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
             if (useCache && !forceRefresh) {
-              toast({ title: "Updated from server", description: "Asset library refreshed with latest data." });
+              toast({
+                title: "Updated from server",
+                description: "Asset library refreshed with latest data.",
+              });
             }
           }
         }
@@ -1516,7 +1546,7 @@ export default function BrandDashboard() {
       const urls: Record<string, string> = {};
       const now = Date.now();
       const imageFiles = studioFiles.filter((f) =>
-        f.mime_type?.startsWith("image/")
+        f.mime_type?.startsWith("image/"),
       );
 
       const filesToFetch = imageFiles.slice(0, 50);
@@ -1533,7 +1563,11 @@ export default function BrandDashboard() {
           try {
             const res = await getBrandStorageFileSignedUrl(file.id);
             if (res?.signed_url) {
-              return { id: file.id, url: res.signed_url, expires: now + 59 * 60 * 1000 };
+              return {
+                id: file.id,
+                url: res.signed_url,
+                expires: now + 59 * 60 * 1000,
+              };
             }
             return null;
           } catch {
@@ -1547,7 +1581,10 @@ export default function BrandDashboard() {
         for (const result of results) {
           if (result && result.url) {
             urls[result.id] = result.url;
-            newCache[result.id] = { url: result.url, expires: result.expires || (now + 59 * 60 * 1000) };
+            newCache[result.id] = {
+              url: result.url,
+              expires: result.expires || now + 59 * 60 * 1000,
+            };
           }
         }
 
@@ -1583,8 +1620,16 @@ export default function BrandDashboard() {
       const isImage = f.mime_type?.startsWith("image/");
       const isVideo = f.mime_type?.startsWith("video/");
       if (!isImage && !isVideo) continue;
-      if (studioSourceFilter === "studio_generation" && f.source_type !== "studio_generation") continue;
-      if (studioSearchQuery && !f.file_name.toLowerCase().includes(studioSearchQuery.toLowerCase())) continue;
+      if (
+        studioSourceFilter === "studio_generation" &&
+        f.source_type !== "studio_generation"
+      )
+        continue;
+      if (
+        studioSearchQuery &&
+        !f.file_name.toLowerCase().includes(studioSearchQuery.toLowerCase())
+      )
+        continue;
       assets.push({
         id: f.id,
         file_name: f.file_name,
@@ -1598,14 +1643,25 @@ export default function BrandDashboard() {
     }
 
     for (const g of studioGenerations) {
-      if (g.status !== "completed" || !g.output_urls || g.output_urls.length === 0) continue;
+      if (
+        g.status !== "completed" ||
+        !g.output_urls ||
+        g.output_urls.length === 0
+      )
+        continue;
       for (const url of g.output_urls) {
         const isImage = url.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i);
         const isVideo = url.match(/\.(mp4|webm|mov)(\?|$)/i);
         if (!isImage && !isVideo) continue;
         const fname = url.split("/").pop()?.split("?")[0] || "asset";
-        if (studioSearchQuery && !fname.toLowerCase().includes(studioSearchQuery.toLowerCase())) continue;
-        const alreadyAdded = assets.some((a) => a.generation_id === g.id && a.url === url);
+        if (
+          studioSearchQuery &&
+          !fname.toLowerCase().includes(studioSearchQuery.toLowerCase())
+        )
+          continue;
+        const alreadyAdded = assets.some(
+          (a) => a.generation_id === g.id && a.url === url,
+        );
         if (alreadyAdded) continue;
         assets.push({
           id: `gen-${g.id}-${url}`,
@@ -1621,12 +1677,21 @@ export default function BrandDashboard() {
     }
 
     return assets;
-  }, [studioFiles, studioGenerations, studioAssetUrls, studioSearchQuery, studioSourceFilter]);
+  }, [
+    studioFiles,
+    studioGenerations,
+    studioAssetUrls,
+    studioSearchQuery,
+    studioSourceFilter,
+  ]);
 
   const studioStats = useMemo(() => {
     const videos = studioAssets.filter((a) => a.mime_type.startsWith("video/"));
     const images = studioAssets.filter((a) => a.mime_type.startsWith("image/"));
-    const totalBytes = studioAssets.reduce((sum, a) => sum + (a.size_bytes || 0), 0);
+    const totalBytes = studioAssets.reduce(
+      (sum, a) => sum + (a.size_bytes || 0),
+      0,
+    );
     return {
       total: studioAssets.length,
       videos: videos.length,
@@ -1664,11 +1729,20 @@ export default function BrandDashboard() {
 
   const handleBatchDownload = async () => {
     if (selectedAssetIds.size === 0) {
-      toast({ title: "No assets selected", description: "Please select assets to download.", variant: "destructive" });
+      toast({
+        title: "No assets selected",
+        description: "Please select assets to download.",
+        variant: "destructive",
+      });
       return;
     }
-    const selectedAssets = studioAssets.filter((a) => selectedAssetIds.has(a.id));
-    toast({ title: "Downloading...", description: `Downloading ${selectedAssets.length} asset(s)` });
+    const selectedAssets = studioAssets.filter((a) =>
+      selectedAssetIds.has(a.id),
+    );
+    toast({
+      title: "Downloading...",
+      description: `Downloading ${selectedAssets.length} asset(s)`,
+    });
     for (const asset of selectedAssets) {
       const link = document.createElement("a");
       link.href = asset.url;
@@ -1678,7 +1752,10 @@ export default function BrandDashboard() {
       link.click();
       document.body.removeChild(link);
     }
-    toast({ title: "Download complete", description: `${selectedAssets.length} asset(s) downloaded.` });
+    toast({
+      title: "Download complete",
+      description: `${selectedAssets.length} asset(s) downloaded.`,
+    });
   };
 
   const handleDownloadAsset = (asset: any) => {
@@ -1693,7 +1770,11 @@ export default function BrandDashboard() {
 
   const handleCreateCollection = () => {
     if (!newCollectionName.trim()) {
-      toast({ title: "Collection name required", description: "Please enter a name for the collection.", variant: "destructive" });
+      toast({
+        title: "Collection name required",
+        description: "Please enter a name for the collection.",
+        variant: "destructive",
+      });
       return;
     }
     const newCollection = {
@@ -1704,7 +1785,10 @@ export default function BrandDashboard() {
     setCollections((prev) => [...prev, newCollection]);
     setNewCollectionName("");
     setShowCreateCollectionDialog(false);
-    toast({ title: "Collection created", description: `"${newCollection.name}" created with ${newCollection.assetIds.length} asset(s).` });
+    toast({
+      title: "Collection created",
+      description: `"${newCollection.name}" created with ${newCollection.assetIds.length} asset(s).`,
+    });
   };
 
   const handleSelectCollection = (collectionId: string) => {
@@ -1733,7 +1817,8 @@ export default function BrandDashboard() {
       const cutoff = new Date();
       if (filterDateRange === "week") cutoff.setDate(now.getDate() - 7);
       else if (filterDateRange === "month") cutoff.setMonth(now.getMonth() - 1);
-      else if (filterDateRange === "year") cutoff.setFullYear(now.getFullYear() - 1);
+      else if (filterDateRange === "year")
+        cutoff.setFullYear(now.getFullYear() - 1);
       filtered = filtered.filter((a) => new Date(a.created_at) >= cutoff);
     }
     return filtered;
@@ -1765,7 +1850,10 @@ export default function BrandDashboard() {
         setStudioFolders(folders || []);
         localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
         setSignedUrlsCache({});
-        toast({ title: "Refreshed", description: "Asset library has been refreshed." });
+        toast({
+          title: "Refreshed",
+          description: "Asset library has been refreshed.",
+        });
       } catch {
       } finally {
         setStudioLoading(false);
@@ -7146,22 +7234,40 @@ export default function BrandDashboard() {
             Download, manage, and organize all your creative assets
             {studioDataCache && !studioLoading && (
               <Badge className="bg-amber-50 text-amber-700 border-amber-200">
-                Cached • Updated {new Date(studioDataCache.timestamp).toLocaleTimeString()}
+                Cached • Updated{" "}
+                {new Date(studioDataCache.timestamp).toLocaleTimeString()}
               </Badge>
             )}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-2 border-gray-300" onClick={handleBatchDownload} disabled={selectedAssetIds.size === 0}>
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={handleBatchDownload}
+            disabled={selectedAssetIds.size === 0}
+          >
             <Download className="w-4 h-4 mr-2" />
-            Batch Download{selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
+            Batch Download
+            {selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
           </Button>
-          <Button variant="outline" className="border-2 border-gray-300" onClick={() => setShowFilterDialog(true)}>
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={() => setShowFilterDialog(true)}
+          >
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </Button>
-          <Button variant="outline" className="border-2 border-gray-300" onClick={handleRefreshAssets} disabled={studioLoading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${studioLoading ? "animate-spin" : ""}`} />
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={handleRefreshAssets}
+            disabled={studioLoading}
+          >
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${studioLoading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
@@ -7171,19 +7277,27 @@ export default function BrandDashboard() {
       <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Assets</p>
-          <p className="text-3xl font-bold text-gray-900">{studioStats.total}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {studioStats.total}
+          </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Videos</p>
-          <p className="text-3xl font-bold text-gray-900">{studioStats.videos}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {studioStats.videos}
+          </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Images</p>
-          <p className="text-3xl font-bold text-gray-900">{studioStats.images}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {studioStats.images}
+          </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Size</p>
-          <p className="text-3xl font-bold text-gray-900">{formatBytes(studioStats.totalSize)}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {formatBytes(studioStats.totalSize)}
+          </p>
         </Card>
       </div>
 
@@ -7208,7 +7322,11 @@ export default function BrandDashboard() {
               All
             </Button>
             <Button
-              variant={studioSourceFilter === "studio_generation" ? "default" : "outline"}
+              variant={
+                studioSourceFilter === "studio_generation"
+                  ? "default"
+                  : "outline"
+              }
               onClick={() => setStudioSourceFilter("studio_generation")}
               className="border-2 border-gray-300"
             >
@@ -7248,12 +7366,23 @@ export default function BrandDashboard() {
       ) : viewMode === "grid" ? (
         <div className="grid md:grid-cols-3 gap-6">
           {displayedAssets.map((asset) => (
-            <Card key={asset.id} className="overflow-hidden border border-gray-200 hover:border-indigo-300 transition-colors">
+            <Card
+              key={asset.id}
+              className="overflow-hidden border border-gray-200 hover:border-indigo-300 transition-colors"
+            >
               <div className="aspect-video bg-gray-100 relative group">
                 {asset.mime_type.startsWith("image/") ? (
-                  <img src={asset.url} alt={asset.file_name} className="w-full h-full object-cover" />
+                  <img
+                    src={asset.url}
+                    alt={asset.file_name}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <video src={asset.url} className="w-full h-full object-cover" controls />
+                  <video
+                    src={asset.url}
+                    className="w-full h-full object-cover"
+                    controls
+                  />
                 )}
                 <div className="absolute top-2 left-2 flex items-center gap-2">
                   <Checkbox
@@ -7275,8 +7404,12 @@ export default function BrandDashboard() {
                 </Button>
               </div>
               <div className="p-3">
-                <p className="text-sm font-medium text-gray-900 truncate">{asset.file_name}</p>
-                <p className="text-xs text-gray-500">{formatBytes(asset.size_bytes)}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {asset.file_name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatBytes(asset.size_bytes)}
+                </p>
               </div>
             </Card>
           ))}
@@ -7286,32 +7419,55 @@ export default function BrandDashboard() {
           <div className="divide-y divide-gray-100">
             <div className="flex items-center gap-4 p-4 bg-gray-50">
               <Checkbox
-                checked={displayedAssets.length > 0 && selectedAssetIds.size === displayedAssets.length}
+                checked={
+                  displayedAssets.length > 0 &&
+                  selectedAssetIds.size === displayedAssets.length
+                }
                 onCheckedChange={selectAllAssets}
               />
-              <span className="text-sm text-gray-500">{displayedAssets.length} assets</span>
+              <span className="text-sm text-gray-500">
+                {displayedAssets.length} assets
+              </span>
             </div>
             {displayedAssets.map((asset) => (
-              <div key={asset.id} className="flex items-center gap-4 p-4 hover:bg-gray-50">
+              <div
+                key={asset.id}
+                className="flex items-center gap-4 p-4 hover:bg-gray-50"
+              >
                 <Checkbox
                   checked={selectedAssetIds.has(asset.id)}
                   onCheckedChange={() => toggleAssetSelection(asset.id)}
                 />
                 <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   {asset.mime_type.startsWith("image/") ? (
-                    <img src={asset.url} alt={asset.file_name} className="w-full h-full object-cover rounded-lg" />
+                    <img
+                      src={asset.url}
+                      alt={asset.file_name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
                   ) : (
                     <Video className="w-6 h-6 text-gray-400" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{asset.file_name}</p>
-                  <p className="text-xs text-gray-500">{formatBytes(asset.size_bytes)} · {new Date(asset.created_at).toLocaleDateString()}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {asset.file_name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatBytes(asset.size_bytes)} ·{" "}
+                    {new Date(asset.created_at).toLocaleDateString()}
+                  </p>
                 </div>
                 {asset.source_type === "studio_generation" && (
-                  <Badge className="bg-purple-100 text-purple-700">Studio</Badge>
+                  <Badge className="bg-purple-100 text-purple-700">
+                    Studio
+                  </Badge>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => handleDownloadAsset(asset)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownloadAsset(asset)}
+                >
                   <Download className="w-4 h-4" />
                 </Button>
               </div>
@@ -7324,7 +7480,11 @@ export default function BrandDashboard() {
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Collections</h3>
         <div className="flex gap-3 flex-wrap">
-          <Button variant="outline" className="border-2 border-gray-300" onClick={() => setShowCreateCollectionDialog(true)}>
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={() => setShowCreateCollectionDialog(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create Collection
           </Button>
@@ -12474,7 +12634,10 @@ export default function BrandDashboard() {
       </Dialog>
 
       {/* Create Collection Dialog */}
-      <Dialog open={showCreateCollectionDialog} onOpenChange={setShowCreateCollectionDialog}>
+      <Dialog
+        open={showCreateCollectionDialog}
+        onOpenChange={setShowCreateCollectionDialog}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Create Collection</DialogTitle>
@@ -12502,7 +12665,10 @@ export default function BrandDashboard() {
             </p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateCollectionDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateCollectionDialog(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleCreateCollection}>Create Collection</Button>
@@ -12599,7 +12765,9 @@ export default function BrandDashboard() {
             >
               Reset Filters
             </Button>
-            <Button onClick={() => setShowFilterDialog(false)}>Apply Filters</Button>
+            <Button onClick={() => setShowFilterDialog(false)}>
+              Apply Filters
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

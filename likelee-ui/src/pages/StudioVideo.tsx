@@ -2058,7 +2058,13 @@ const StudioVideo = () => {
                             {new Date(gen.created_at).toLocaleDateString()}
                           </span>
                           {gen.status === "completed" && (
-                            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 4,
+                                alignItems: "center",
+                              }}
+                            >
                               <button
                                 onClick={async (e) => {
                                   e.stopPropagation();
@@ -2068,7 +2074,8 @@ const StudioVideo = () => {
                                   } catch (err: any) {
                                     toast({
                                       title: "Save failed",
-                                      description: err?.message ?? "Unknown error",
+                                      description:
+                                        err?.message ?? "Unknown error",
                                       variant: "destructive",
                                     });
                                   }

@@ -120,7 +120,14 @@ export async function listPresets(): Promise<StudioStylePreset[]> {
 
 export async function saveGenerationToStorage(
   generationId: string,
-): Promise<{ saved: Array<{ id: string; file_name: string; storage_path: string; public_url: string | null }> }> {
+): Promise<{
+  saved: Array<{
+    id: string;
+    file_name: string;
+    storage_path: string;
+    public_url: string | null;
+  }>;
+}> {
   return await base44.post(
     `/studio/generations/${generationId}/save-to-storage`,
   );

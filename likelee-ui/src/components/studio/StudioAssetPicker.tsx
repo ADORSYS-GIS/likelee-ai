@@ -114,9 +114,7 @@ export function StudioAssetPicker({
     ? storageAssets.filter(
         (a) =>
           a.name.toLowerCase().includes(storageSearch.toLowerCase()) ||
-          a.folder_name
-            ?.toLowerCase()
-            .includes(storageSearch.toLowerCase()),
+          a.folder_name?.toLowerCase().includes(storageSearch.toLowerCase()),
       )
     : storageAssets;
 
@@ -134,8 +132,7 @@ export function StudioAssetPicker({
         }>("/api/org/storage/files/save-from-url", {
           temp_url: asset.url,
           file_name: asset.name,
-          mime_type:
-            asset.type === "image" ? "image/png" : "audio/mpeg",
+          mime_type: asset.type === "image" ? "image/png" : "audio/mpeg",
         });
         const updated = selectedAssets.map((a) =>
           a.id === asset.id
@@ -245,7 +242,9 @@ export function StudioAssetPicker({
   const goToFileStorage = () => {
     const orgType = currentUser?.organization_type;
     if (orgType === "brand") {
-      navigate(createPageUrl("BrandDashboard") + "?section=settings&tab=file-storage");
+      navigate(
+        createPageUrl("BrandDashboard") + "?section=settings&tab=file-storage",
+      );
     } else if (orgType === "agency") {
       navigate(createPageUrl("AgencyDashboard") + "?tab=file-storage");
     }
@@ -291,7 +290,11 @@ export function StudioAssetPicker({
                   : "text-white/40 hover:text-white/70"
               }`}
             >
-              {t === "upload" ? "📁 Upload" : t === "storage" ? "💾 My Storage" : "🔐 Licensed Assets"}
+              {t === "upload"
+                ? "📁 Upload"
+                : t === "storage"
+                  ? "💾 My Storage"
+                  : "🔐 Licensed Assets"}
             </button>
           ))}
         </div>
@@ -341,17 +344,17 @@ export function StudioAssetPicker({
                   </p>
                   <div className="flex flex-col gap-2">
                     {selectedAssets.map((asset) => (
-                       <AssetChip
-                         key={asset.id}
-                         asset={asset}
-                         onRemove={() => removeAsset(asset.id)}
-                         onSave={
-                           asset.source === "upload"
-                             ? () => saveToStorage(asset)
-                             : undefined
-                         }
-                         saving={savingToStorage === asset.id}
-                       />
+                      <AssetChip
+                        key={asset.id}
+                        asset={asset}
+                        onRemove={() => removeAsset(asset.id)}
+                        onSave={
+                          asset.source === "upload"
+                            ? () => saveToStorage(asset)
+                            : undefined
+                        }
+                        saving={savingToStorage === asset.id}
+                      />
                     ))}
                   </div>
                 </div>
@@ -435,28 +438,48 @@ export function StudioAssetPicker({
                             <div className="w-full h-full bg-gradient-to-br from-purple-900/40 via-purple-800/30 to-pink-900/40 flex items-center justify-center backdrop-blur-sm">
                               <div className="relative">
                                 <div className="absolute inset-0 bg-purple-500/20 blur-2xl rounded-full animate-pulse" />
-                                <span className="relative text-5xl drop-shadow-lg">🎵</span>
+                                <span className="relative text-5xl drop-shadow-lg">
+                                  🎵
+                                </span>
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Licensed Badge */}
                           <div className="absolute top-2 left-2 bg-emerald-500/90 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            <svg
+                              className="w-2.5 h-2.5"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                clipRule="evenodd"
+                              />
                             </svg>
                             LICENSED
                           </div>
-                          
+
                           {/* Selection Checkmark */}
                           {selected && (
                             <div className="absolute top-2 right-2 w-7 h-7 bg-purple-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200">
-                              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              <svg
+                                className="w-4 h-4 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={3}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
                               </svg>
                             </div>
                           )}
-                          
+
                           {/* Disabled overlay */}
                           {disabled && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -468,29 +491,51 @@ export function StudioAssetPicker({
                         </div>
 
                         {/* Info Section */}
-                        <div className={`p-3 bg-gradient-to-b transition-colors duration-300 ${
-                          selected 
-                            ? "from-purple-950/60 to-purple-900/40" 
-                            : "from-slate-900/95 to-slate-800/95 group-hover:from-slate-800/95 group-hover:to-slate-700/95"
-                        }`}>
+                        <div
+                          className={`p-3 bg-gradient-to-b transition-colors duration-300 ${
+                            selected
+                              ? "from-purple-950/60 to-purple-900/40"
+                              : "from-slate-900/95 to-slate-800/95 group-hover:from-slate-800/95 group-hover:to-slate-700/95"
+                          }`}
+                        >
                           <p className="text-white text-sm font-semibold truncate mb-1 tracking-tight">
                             {asset.name}
                           </p>
                           {asset.campaign_name && (
                             <div className="flex items-center gap-1 text-white/50 text-xs truncate">
-                              <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <svg
+                                className="w-3 h-3 flex-shrink-0"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
                                 <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                                <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                                <path
+                                  fillRule="evenodd"
+                                  d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
-                              <span className="truncate">{asset.campaign_name}</span>
+                              <span className="truncate">
+                                {asset.campaign_name}
+                              </span>
                             </div>
                           )}
                           {asset.talent_name && (
                             <div className="flex items-center gap-1 text-purple-400/70 text-xs truncate mt-0.5">
-                              <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                              <svg
+                                className="w-3 h-3 flex-shrink-0"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
-                              <span className="truncate">{asset.talent_name}</span>
+                              <span className="truncate">
+                                {asset.talent_name}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -518,8 +563,18 @@ export function StudioAssetPicker({
                   title="Open File Storage Dashboard"
                   className="flex-shrink-0 p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-colors group"
                 >
-                  <svg className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  <svg
+                    className="w-5 h-5 text-white/60 group-hover:text-white transition-colors"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                    />
                   </svg>
                 </button>
               </div>
@@ -541,8 +596,18 @@ export function StudioAssetPicker({
                     onClick={goToFileStorage}
                     className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                      />
                     </svg>
                     Go to File Storage
                   </button>
@@ -598,20 +663,32 @@ export function StudioAssetPicker({
                             <div className="w-full h-full bg-gradient-to-br from-purple-900/40 via-purple-800/30 to-pink-900/40 flex items-center justify-center backdrop-blur-sm">
                               <div className="relative">
                                 <div className="absolute inset-0 bg-purple-500/20 blur-2xl rounded-full animate-pulse" />
-                                <span className="relative text-5xl drop-shadow-lg">🎵</span>
+                                <span className="relative text-5xl drop-shadow-lg">
+                                  🎵
+                                </span>
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Selection Checkmark */}
                           {selected && (
                             <div className="absolute top-2 right-2 w-7 h-7 bg-purple-500 rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200">
-                              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              <svg
+                                className="w-4 h-4 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={3}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
                               </svg>
                             </div>
                           )}
-                          
+
                           {/* Disabled overlay */}
                           {disabled && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -623,20 +700,28 @@ export function StudioAssetPicker({
                         </div>
 
                         {/* Info Section */}
-                        <div className={`p-3 bg-gradient-to-b transition-colors duration-300 ${
-                          selected 
-                            ? "from-purple-950/60 to-purple-900/40" 
-                            : "from-slate-900/95 to-slate-800/95 group-hover:from-slate-800/95 group-hover:to-slate-700/95"
-                        }`}>
+                        <div
+                          className={`p-3 bg-gradient-to-b transition-colors duration-300 ${
+                            selected
+                              ? "from-purple-950/60 to-purple-900/40"
+                              : "from-slate-900/95 to-slate-800/95 group-hover:from-slate-800/95 group-hover:to-slate-700/95"
+                          }`}
+                        >
                           <p className="text-white text-sm font-semibold truncate mb-1 tracking-tight">
                             {asset.name}
                           </p>
                           {asset.folder_name && (
                             <div className="flex items-center gap-1 text-white/50 text-xs">
-                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <svg
+                                className="w-3 h-3"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
                                 <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" />
                               </svg>
-                              <span className="truncate">{asset.folder_name}</span>
+                              <span className="truncate">
+                                {asset.folder_name}
+                              </span>
                             </div>
                           )}
                         </div>
