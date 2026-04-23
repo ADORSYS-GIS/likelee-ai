@@ -634,9 +634,12 @@ export default function BrandDashboard() {
   const [studioFiles, setStudioFiles] = useState<any[]>([]);
   const [studioFolders, setStudioFolders] = useState<any[]>([]);
   const [studioLoading, setStudioLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [studioSearchQuery, setStudioSearchQuery] = useState("");
   const [studioSourceFilter, setStudioSourceFilter] = useState<"all" | "studio_generation">("all");
   const [studioAssetUrls, setStudioAssetUrls] = useState<Record<string, string>>({});
+  const [studioDataCache, setStudioDataCache] = useState<{ files: any[]; generations: any[]; folders: any[]; timestamp: number } | null>(null);
+  const [signedUrlsCache, setSignedUrlsCache] = useState<Record<string, { url: string; expires: number }>>({});
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(new Set());
   const [collections, setCollections] = useState<{ id: string; name: string; assetIds: string[] }[]>([
     { id: "1", name: "Holiday 2024", assetIds: [] },
@@ -1438,28 +1441,71 @@ export default function BrandDashboard() {
 
   useEffect(() => {
     if (activeSection !== "studio") return;
+    const CACHE_KEY = "studio-data-cache";
+    const CACHE_TTL = 5 * 60 * 1000;
     let mounted = true;
-    const loadStudioData = async () => {
+
+    const loadStudioData = async (forceRefresh = false) => {
       setStudioLoading(true);
       try {
-        const [generations, files, folders] = await Promise.all([
-          listGenerations({ limit: 100 }).catch(() => []),
-          listBrandStorageFilesPaged({ limit: 100 }).catch(() => []),
-          listBrandStorageFoldersPaged().catch(() => []),
-        ]);
-        if (mounted) {
-          setStudioGenerations(generations || []);
-          setStudioFiles(files || []);
-          setStudioFolders(folders || []);
+        const cachedJson = localStorage.getItem(CACHE_KEY);
+        let useCache = false;
+
+        if (cachedJson && !forceRefresh) {
+          try {
+            const cached = JSON.parse(cachedJson);
+            if (Date.now() - cached.timestamp < CACHE_TTL) {
+              useCache = true;
+              if (mounted) {
+                setStudioDataCache(cached);
+                setStudioGenerations(cached.generations || []);
+                setStudioFiles(cached.files || []);
+                setStudioFolders(cached.folders || []);
+                setStudioLoading(false);
+              }
+            }
+          } catch {
+          }
+        }
+
+        if (!useCache || forceRefresh) {
+          const [generations, files, folders] = await Promise.all([
+            listGenerations({ limit: 100 }).catch(() => []),
+            listBrandStorageFilesPaged({ limit: 100 }).catch(() => []),
+            listBrandStorageFoldersPaged().catch(() => []),
+          ]);
+          if (mounted) {
+            const cacheData = {
+              files: files || [],
+              generations: generations || [],
+              folders: folders || [],
+              timestamp: Date.now(),
+            };
+            setStudioDataCache(cacheData);
+            setStudioGenerations(generations || []);
+            setStudioFiles(files || []);
+            setStudioFolders(folders || []);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            if (useCache && !forceRefresh) {
+              toast({ title: "Updated from server", description: "Asset library refreshed with latest data." });
+            }
+          }
         }
       } catch {
       } finally {
         if (mounted) setStudioLoading(false);
       }
     };
+
     loadStudioData();
+
+    const refetchTimer = setInterval(() => {
+      loadStudioData(true);
+    }, 30 * 1000);
+
     return () => {
       mounted = false;
+      clearInterval(refetchTimer);
     };
   }, [activeSection]);
 
@@ -1468,19 +1514,52 @@ export default function BrandDashboard() {
     let mounted = true;
     const loadSignedUrls = async () => {
       const urls: Record<string, string> = {};
+      const now = Date.now();
       const imageFiles = studioFiles.filter((f) =>
         f.mime_type?.startsWith("image/")
       );
-      for (const file of imageFiles.slice(0, 20)) {
-        try {
-          const res = await getBrandStorageFileSignedUrl(file.id);
-          if (mounted && res?.signed_url) {
-            urls[file.id] = res.signed_url;
+
+      const filesToFetch = imageFiles.slice(0, 50);
+      const BATCH_SIZE = 5;
+
+      for (let i = 0; i < filesToFetch.length; i += BATCH_SIZE) {
+        const batch = filesToFetch.slice(i, i + BATCH_SIZE);
+        const batchPromises = batch.map(async (file) => {
+          const cached = signedUrlsCache[file.id];
+          if (cached && cached.expires > now) {
+            return { id: file.id, url: cached.url };
           }
-        } catch {
+
+          try {
+            const res = await getBrandStorageFileSignedUrl(file.id);
+            if (res?.signed_url) {
+              return { id: file.id, url: res.signed_url, expires: now + 59 * 60 * 1000 };
+            }
+            return null;
+          } catch {
+            return null;
+          }
+        });
+
+        const results = await Promise.all(batchPromises);
+        const newCache: Record<string, { url: string; expires: number }> = {};
+
+        for (const result of results) {
+          if (result && result.url) {
+            urls[result.id] = result.url;
+            newCache[result.id] = { url: result.url, expires: result.expires || (now + 59 * 60 * 1000) };
+          }
+        }
+
+        if (mounted && Object.keys(newCache).length > 0) {
+          setStudioAssetUrls((prev) => ({ ...prev, ...urls }));
+          setSignedUrlsCache((prev) => ({ ...prev, ...newCache }));
         }
       }
-      if (mounted) setStudioAssetUrls(urls);
+
+      if (mounted) {
+        setStudioAssetUrls(urls);
+      }
     };
     loadSignedUrls();
     return () => {
@@ -1661,6 +1740,40 @@ export default function BrandDashboard() {
   };
 
   const displayedAssets = getFilteredAssets();
+
+  const handleRefreshAssets = () => {
+    setStudioLoading(true);
+    setIsRefreshing(true);
+    const CACHE_KEY = "studio-data-cache";
+    localStorage.removeItem(CACHE_KEY);
+    const loadStudioData = async () => {
+      try {
+        const [generations, files, folders] = await Promise.all([
+          listGenerations({ limit: 100 }).catch(() => []),
+          listBrandStorageFilesPaged({ limit: 100 }).catch(() => []),
+          listBrandStorageFoldersPaged().catch(() => []),
+        ]);
+        const cacheData = {
+          files: files || [],
+          generations: generations || [],
+          folders: folders || [],
+          timestamp: Date.now(),
+        };
+        setStudioDataCache(cacheData);
+        setStudioGenerations(generations || []);
+        setStudioFiles(files || []);
+        setStudioFolders(folders || []);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        setSignedUrlsCache({});
+        toast({ title: "Refreshed", description: "Asset library has been refreshed." });
+      } catch {
+      } finally {
+        setStudioLoading(false);
+        setIsRefreshing(false);
+      }
+    };
+    loadStudioData();
+  };
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -7029,8 +7142,13 @@ export default function BrandDashboard() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Asset Library
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 flex items-center gap-3">
             Download, manage, and organize all your creative assets
+            {studioDataCache && !studioLoading && (
+              <Badge className="bg-amber-50 text-amber-700 border-amber-200">
+                Cached • Updated {new Date(studioDataCache.timestamp).toLocaleTimeString()}
+              </Badge>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
@@ -7041,6 +7159,10 @@ export default function BrandDashboard() {
           <Button variant="outline" className="border-2 border-gray-300" onClick={() => setShowFilterDialog(true)}>
             <Filter className="w-4 h-4 mr-2" />
             Filter
+          </Button>
+          <Button variant="outline" className="border-2 border-gray-300" onClick={handleRefreshAssets} disabled={studioLoading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${studioLoading ? "animate-spin" : ""}`} />
+            Refresh
           </Button>
         </div>
       </div>
@@ -7113,6 +7235,7 @@ export default function BrandDashboard() {
       {/* Asset Grid */}
       {studioLoading ? (
         <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
+          <Loader2 className="w-8 h-8 text-gray-400 mx-auto mb-3 animate-spin" />
           <p className="text-gray-500">Loading assets...</p>
         </Card>
       ) : studioAssets.length === 0 ? (
