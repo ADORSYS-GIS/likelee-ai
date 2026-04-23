@@ -31,6 +31,7 @@ export DATABASE_URL="postgresql://user:pass@localhost:5432/likelee"
 ```
 
 This will test:
+
 - ✅ Reference image upload (creator, public, no quota)
 - ✅ Voice recording upload (user, private, no quota)
 - ✅ Agency file upload (agency, private, counts quota)
@@ -61,7 +62,7 @@ curl -X POST http://localhost:8080/api/reference-images/upload \
 psql $DATABASE_URL
 
 # Check registry
-SELECT 
+SELECT
   owner_type,
   context_type,
   visibility,
@@ -72,7 +73,7 @@ ORDER BY created_at DESC
 LIMIT 5;
 
 # Check quota
-SELECT 
+SELECT
   owner_type,
   COUNT(*) as files,
   SUM(size_bytes) as bytes
@@ -141,16 +142,19 @@ curl -X GET "http://localhost:8080/api/admin/storage/verify-parity" \
 ## 📊 Test Scenarios
 
 ### Scenario 1: Creator Workflow
+
 1. Upload reference image → Public, no quota
 2. Upload voice recording → Private, no quota
 3. Check quota → Should be 0 for creator assets
 
 ### Scenario 2: Agency Workflow
+
 1. Upload talent portfolio → Public, counts quota
 2. Upload booking deliverable → Private, counts quota
 3. Check quota → Should include both files
 
 ### Scenario 3: Backfill Workflow
+
 1. Run dry-run → Validate without changes
 2. Check report → 0 errors expected
 3. Run production → Insert records
@@ -159,6 +163,7 @@ curl -X GET "http://localhost:8080/api/admin/storage/verify-parity" \
 ## 📖 Detailed Documentation
 
 For comprehensive testing scenarios:
+
 - **Full Guide**: `docs/storage-live-testing-guide.md`
 - **Architecture**: `docs/storage-architecture.md`
 - **Checklist**: `docs/ticket-499-implementation-checklist.md`
@@ -166,6 +171,7 @@ For comprehensive testing scenarios:
 ## 🆘 Getting Help
 
 **Check Logs**:
+
 ```bash
 # Server logs
 tail -f likelee-server/logs/app.log
@@ -175,23 +181,24 @@ tail -f /var/log/postgresql/postgresql.log
 ```
 
 **Database Queries**:
+
 ```sql
 -- Recent uploads
-SELECT * FROM storage_assets 
+SELECT * FROM storage_assets
 ORDER BY created_at DESC LIMIT 10;
 
 -- Check for errors
-SELECT source_table, COUNT(*) 
-FROM storage_assets 
-WHERE deleted_at IS NULL 
+SELECT source_table, COUNT(*)
+FROM storage_assets
+WHERE deleted_at IS NULL
 GROUP BY source_table;
 
 -- Quota by agency
-SELECT owner_id, SUM(size_bytes) 
-FROM storage_assets 
-WHERE owner_type = 'agency' 
-  AND counts_toward_quota = true 
-  AND deleted_at IS NULL 
+SELECT owner_id, SUM(size_bytes)
+FROM storage_assets
+WHERE owner_type = 'agency'
+  AND counts_toward_quota = true
+  AND deleted_at IS NULL
 GROUP BY owner_id;
 ```
 

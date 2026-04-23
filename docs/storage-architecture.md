@@ -28,6 +28,7 @@ The Likelee AI storage system uses a **dual-layer architecture**:
 2. **Storage Registry** (`storage_assets`): Centralized tracking of all storage objects
 
 This separation allows:
+
 - Clean domain models without storage implementation details
 - Centralized quota management and auditing
 - Flexible storage backend changes without business logic updates
@@ -40,9 +41,11 @@ This separation allows:
 Likelee AI uses three primary storage buckets, each serving a specific access pattern:
 
 ### 🌐 likelee-public
+
 **Purpose**: Publicly accessible media that can be rendered directly in browsers
 
 **Use Cases**:
+
 - Reference images for AI training
 - Talent portfolio media (photos, videos)
 - Agency-managed talent assets
@@ -55,9 +58,11 @@ Likelee AI uses three primary storage buckets, each serving a specific access pa
 ---
 
 ### 🔒 likelee-private
+
 **Purpose**: Permission-gated operational assets requiring authentication
 
 **Use Cases**:
+
 - Agency storage files and documents
 - Client files and contracts
 - Booking files and deliverables
@@ -73,9 +78,11 @@ Likelee AI uses three primary storage buckets, each serving a specific access pa
 ---
 
 ### ⏱️ likelee-temp
+
 **Purpose**: Short-lived staging area for uploads and processing
 
 **Use Cases**:
+
 - Staged uploads before validation
 - Temporary processing artifacts
 - Preview generation intermediates
@@ -118,22 +125,22 @@ erDiagram
 
 ### Registry Fields Explained
 
-| Field | Purpose | Example |
-|-------|---------|---------|
-| `owner_type` | Who owns this asset | `agency`, `creator`, `user` |
-| `owner_id` | ID of the owner | `550e8400-e29b-41d4-a716-446655440000` |
-| `context_type` | What type of asset | `voice_recording`, `reference_image` |
-| `context_id` | Additional context | Section ID, folder ID, etc. |
-| `visibility` | Access level | `public`, `private`, `temp` |
-| `bucket_id` | Which bucket | `likelee-private` |
-| `object_path` | Full path in bucket | `users/123/voice-recordings/1234567890_audio.webm` |
-| `original_file_name` | User's filename | `my-voice-sample.webm` |
-| `mime_type` | Content type | `audio/webm` |
-| `size_bytes` | File size | `1048576` (1 MB) |
-| `source_table` | Business table | `voice_recordings` |
-| `source_id` | Business row ID | `abc-123-def-456` |
-| `counts_toward_quota` | Quota flag | `true` for agency assets, `false` for creator assets |
-| `deleted_at` | Soft-delete time | `null` (active) or timestamp (deleted) |
+| Field                 | Purpose             | Example                                              |
+| --------------------- | ------------------- | ---------------------------------------------------- |
+| `owner_type`          | Who owns this asset | `agency`, `creator`, `user`                          |
+| `owner_id`            | ID of the owner     | `550e8400-e29b-41d4-a716-446655440000`               |
+| `context_type`        | What type of asset  | `voice_recording`, `reference_image`                 |
+| `context_id`          | Additional context  | Section ID, folder ID, etc.                          |
+| `visibility`          | Access level        | `public`, `private`, `temp`                          |
+| `bucket_id`           | Which bucket        | `likelee-private`                                    |
+| `object_path`         | Full path in bucket | `users/123/voice-recordings/1234567890_audio.webm`   |
+| `original_file_name`  | User's filename     | `my-voice-sample.webm`                               |
+| `mime_type`           | Content type        | `audio/webm`                                         |
+| `size_bytes`          | File size           | `1048576` (1 MB)                                     |
+| `source_table`        | Business table      | `voice_recordings`                                   |
+| `source_id`           | Business row ID     | `abc-123-def-456`                                    |
+| `counts_toward_quota` | Quota flag          | `true` for agency assets, `false` for creator assets |
+| `deleted_at`          | Soft-delete time    | `null` (active) or timestamp (deleted)               |
 
 ### Why Dual-Write?
 
@@ -165,13 +172,13 @@ graph TB
         PRIVATE[likelee-private<br/>Private Assets]
         TEMP[likelee-temp<br/>Temporary]
     end
-    
+
     subgraph "Public Assets"
         REF[Reference Images<br/>creators/*/reference-images]
         PORT[Talent Portfolio<br/>agencies/*/talents/*/portfolio]
         TALENT[Talent Assets<br/>agencies/*/talents/*/assets]
     end
-    
+
     subgraph "Private Assets"
         AGENCY[Agency Storage<br/>agencies/*/storage]
         CLIENT[Client Files<br/>agencies/*/clients/*/files]
@@ -180,11 +187,11 @@ graph TB
         DELIV[Deliverables<br/>agencies/*/booking-campaigns/*/deliverables]
         TAX[Tax Documents<br/>agencies/*/talents/*/tax-documents]
     end
-    
+
     PUBLIC --> REF
     PUBLIC --> PORT
     PUBLIC --> TALENT
-    
+
     PRIVATE --> AGENCY
     PRIVATE --> CLIENT
     PRIVATE --> VOICE
@@ -195,20 +202,20 @@ graph TB
 
 ### Asset Matrix
 
-| Asset Type | Owner | Visibility | Bucket | Path Pattern | Business Table | Quota |
-|------------|-------|------------|--------|--------------|----------------|-------|
-| **Agency Storage** | Agency | Private | `likelee-private` | `agencies/{agency_id}/storage/...` | `agency_files` | ✅ Yes |
-| **Client Files** | Agency | Private | `likelee-private` | `agencies/{agency_id}/clients/{client_id}/files/...` | `agency_files` | ✅ Yes |
-| **Agency Talent Assets** | Agency | Public | `likelee-public` | `agencies/{agency_id}/talents/{talent_id}/assets/...` | `agency_files` | ✅ Yes |
-| **Booking Files** | Agency | Private | `likelee-private` | `agencies/{agency_id}/bookings/{booking_id}/files/...` | `booking_files` | ✅ Yes |
-| **Booking Deliverables** | Agency/Creator | Private | `likelee-private` | `agencies/{agency_id}/booking-campaigns/{campaign_id}/deliverables/...` | `booking_deliverables` | ✅ Yes |
-| **Campaign Offer Deliverables** | Agency/Creator | Private | `likelee-private` | `campaign-offers/{offer_id}/deliverables/...` | `campaign_offer_deliverables` | ✅ Yes |
-| **Reference Images** | Creator | Public | `likelee-public` | `creators/{creator_id}/reference-images/{section_id}/...` | `reference_images` | ❌ No |
-| **Voice Recordings** | User | Private | `likelee-private` | `users/{user_id}/voice-recordings/...` | `voice_recordings` | ❌ No |
-| **Talent Portfolio** | Agency | Public | `likelee-public` | `agencies/{agency_id}/talents/{talent_id}/portfolio/...` | `talent_portfolio_items` | ✅ Yes |
-| **Tax Documents** | Agency | Private | `likelee-private` | `agencies/{agency_id}/talents/{talent_id}/tax-documents/...` | `talent_tax_documents` | ✅ Yes |
-| **Brand Voice Assets** | Brand | Private | `likelee-private` | `brands/{brand_id}/voice-assets/...` | `brand_voice_assets` | ✅ Yes |
-| **Studio Campaign Docs** | User | Private | `likelee-private` | `studio/campaigns/{campaign_id}/documents/...` | `studio_campaign_documents` | ❌ No |
+| Asset Type                      | Owner          | Visibility | Bucket            | Path Pattern                                                            | Business Table                | Quota  |
+| ------------------------------- | -------------- | ---------- | ----------------- | ----------------------------------------------------------------------- | ----------------------------- | ------ |
+| **Agency Storage**              | Agency         | Private    | `likelee-private` | `agencies/{agency_id}/storage/...`                                      | `agency_files`                | ✅ Yes |
+| **Client Files**                | Agency         | Private    | `likelee-private` | `agencies/{agency_id}/clients/{client_id}/files/...`                    | `agency_files`                | ✅ Yes |
+| **Agency Talent Assets**        | Agency         | Public     | `likelee-public`  | `agencies/{agency_id}/talents/{talent_id}/assets/...`                   | `agency_files`                | ✅ Yes |
+| **Booking Files**               | Agency         | Private    | `likelee-private` | `agencies/{agency_id}/bookings/{booking_id}/files/...`                  | `booking_files`               | ✅ Yes |
+| **Booking Deliverables**        | Agency/Creator | Private    | `likelee-private` | `agencies/{agency_id}/booking-campaigns/{campaign_id}/deliverables/...` | `booking_deliverables`        | ✅ Yes |
+| **Campaign Offer Deliverables** | Agency/Creator | Private    | `likelee-private` | `campaign-offers/{offer_id}/deliverables/...`                           | `campaign_offer_deliverables` | ✅ Yes |
+| **Reference Images**            | Creator        | Public     | `likelee-public`  | `creators/{creator_id}/reference-images/{section_id}/...`               | `reference_images`            | ❌ No  |
+| **Voice Recordings**            | User           | Private    | `likelee-private` | `users/{user_id}/voice-recordings/...`                                  | `voice_recordings`            | ❌ No  |
+| **Talent Portfolio**            | Agency         | Public     | `likelee-public`  | `agencies/{agency_id}/talents/{talent_id}/portfolio/...`                | `talent_portfolio_items`      | ✅ Yes |
+| **Tax Documents**               | Agency         | Private    | `likelee-private` | `agencies/{agency_id}/talents/{talent_id}/tax-documents/...`            | `talent_tax_documents`        | ✅ Yes |
+| **Brand Voice Assets**          | Brand          | Private    | `likelee-private` | `brands/{brand_id}/voice-assets/...`                                    | `brand_voice_assets`          | ✅ Yes |
+| **Studio Campaign Docs**        | User           | Private    | `likelee-private` | `studio/campaigns/{campaign_id}/documents/...`                          | `studio_campaign_documents`   | ❌ No  |
 
 ---
 
@@ -249,11 +256,12 @@ users/abc/../../etc/passwd  ← Path traversal attempt
 
 All filenames are sanitized to prevent security issues:
 
-- **Allowed**: Alphanumeric, dots (.), underscores (_), hyphens (-)
+- **Allowed**: Alphanumeric, dots (.), underscores (\_), hyphens (-)
 - **Replaced**: All other characters become underscores
 - **Empty**: Defaults to `upload.bin`
 
 **Examples**:
+
 - `my document.pdf` → `my_document.pdf`
 - `file@#$%.txt` → `file____.txt`
 - `../../../etc/passwd` → `.._.._etc_passwd`
@@ -267,13 +275,13 @@ All filenames are sanitized to prevent security issues:
 ```mermaid
 graph LR
     OWNER[Owner Types]
-    
+
     OWNER --> AGENCY[Agency<br/>Organization-level assets]
     OWNER --> CREATOR[Creator<br/>Individual creator assets]
     OWNER --> USER[User<br/>User-specific assets]
     OWNER --> BRAND[Brand<br/>Brand-owned assets]
     OWNER --> SYSTEM[System<br/>Platform assets]
-    
+
     AGENCY --> |Counts toward quota| QUOTA1[✅ Yes]
     CREATOR --> |Counts toward quota| QUOTA2[❌ No]
     USER --> |Counts toward quota| QUOTA3[❌ No]
@@ -283,17 +291,18 @@ graph LR
 
 ### Ownership Rules
 
-| Owner Type | Description | Quota | Examples |
-|------------|-------------|-------|----------|
-| **Agency** | Assets owned by an agency organization | ✅ Yes | Agency files, client files, talent portfolios |
-| **Creator** | Assets owned by individual creators | ❌ No | Reference images, personal media |
-| **User** | Assets owned by platform users | ❌ No | Voice recordings, personal documents |
-| **Brand** | Assets owned by brand accounts | ✅ Yes | Brand voice assets, brand materials |
-| **System** | Platform-owned assets | ❌ No | System templates, default assets |
+| Owner Type  | Description                            | Quota  | Examples                                      |
+| ----------- | -------------------------------------- | ------ | --------------------------------------------- |
+| **Agency**  | Assets owned by an agency organization | ✅ Yes | Agency files, client files, talent portfolios |
+| **Creator** | Assets owned by individual creators    | ❌ No  | Reference images, personal media              |
+| **User**    | Assets owned by platform users         | ❌ No  | Voice recordings, personal documents          |
+| **Brand**   | Assets owned by brand accounts         | ✅ Yes | Brand voice assets, brand materials           |
+| **System**  | Platform-owned assets                  | ❌ No  | System templates, default assets              |
 
 ### Important: Agency vs User Ownership
 
 When an agency team member uploads a file:
+
 - ✅ **Correct**: Use `organization_id` as owner (agency-owned)
 - ❌ **Wrong**: Use team member's `user_id` (user-owned)
 
@@ -309,13 +318,13 @@ When an agency team member uploads a file:
 flowchart TD
     START[New Asset Upload]
     START --> OWNER{Owner Type?}
-    
+
     OWNER -->|Agency| AGENCY_QUOTA[counts_toward_quota = true]
     OWNER -->|Brand| BRAND_QUOTA[counts_toward_quota = true]
     OWNER -->|Creator| CREATOR_QUOTA[counts_toward_quota = false]
     OWNER -->|User| USER_QUOTA[counts_toward_quota = false]
     OWNER -->|System| SYSTEM_QUOTA[counts_toward_quota = false]
-    
+
     AGENCY_QUOTA --> REGISTRY[Write to storage_assets]
     BRAND_QUOTA --> REGISTRY
     CREATOR_QUOTA --> REGISTRY
@@ -326,12 +335,14 @@ flowchart TD
 ### Why Some Assets Don't Count Toward Quota
 
 **Creator-Owned Source Assets** (Reference Images, Voice Recordings):
+
 - These are **source materials** provided by creators
 - Used for AI training and voice cloning
 - Should not consume agency storage quota
 - Agencies don't "own" these assets, they just use them
 
 **Agency-Owned Assets** (Agency Files, Client Files, Portfolios):
+
 - These are **operational assets** managed by agencies
 - Directly related to agency business operations
 - Should count toward agency storage quota
@@ -341,7 +352,7 @@ flowchart TD
 
 ```sql
 -- Calculate total storage used by an agency
-SELECT 
+SELECT
     owner_id,
     SUM(size_bytes) as total_bytes,
     COUNT(*) as total_files
@@ -367,13 +378,13 @@ stateDiagram-v2
     Active --> Deleted: User deletes
     Deleted --> [*]: Soft-deleted (audit trail preserved)
     Failed --> [*]: Cleanup
-    
+
     note right of Active
         deleted_at = NULL
         Object exists in bucket
         Registry row active
     end note
-    
+
     note right of Deleted
         deleted_at = timestamp
         Object removed from bucket
@@ -384,16 +395,19 @@ stateDiagram-v2
 ### Deletion Strategy
 
 **STRICT Deletion** (Current Implementation):
+
 1. Delete object from storage bucket (must succeed)
 2. Soft-delete registry row (set `deleted_at`)
 3. Delete business table row
 
 **Why STRICT?**
+
 - Prevents orphaned database records
 - Ensures storage and database stay in sync
 - If storage deletion fails, operation fails (no partial state)
 
 **Soft-Delete Benefits**:
+
 - Preserves audit trail
 - Enables quota history tracking
 - Supports backfill verification
@@ -419,25 +433,24 @@ Return success
 
 ---
 
-
 ## Migration Status
 
 ### Migration Progress
 
-| Asset Type | Status | Migration Date | Notes |
-|------------|--------|----------------|-------|
-| Storage Module Foundation | ✅ Complete | Initial | Shared storage module created |
-| Agency Storage Files | ✅ Complete | Initial | Migrated to shared module |
-| Client Files | ✅ Complete | Initial | Migrated to shared module |
-| Booking Files | ✅ Complete | Initial | Migrated to shared module |
-| Booking Deliverables | ✅ Complete | Initial | Migrated to shared module |
-| Campaign Offer Deliverables | ✅ Complete | Initial | Migrated to shared module |
-| Reference Images | ✅ Complete | Initial | Migrated to shared module |
-| **Voice Recordings** | ✅ Complete | 2026-04-15 | **Recently migrated** |
-| Talent Portfolio | 🔄 In Progress | Pending | Next priority |
-| Tax Documents | ⏳ Pending | TBD | Awaiting migration |
-| Brand Voice Assets | ⏳ Pending | TBD | Awaiting migration |
-| Studio Campaign Docs | ⏳ Pending | TBD | Awaiting migration |
+| Asset Type                  | Status         | Migration Date | Notes                         |
+| --------------------------- | -------------- | -------------- | ----------------------------- |
+| Storage Module Foundation   | ✅ Complete    | Initial        | Shared storage module created |
+| Agency Storage Files        | ✅ Complete    | Initial        | Migrated to shared module     |
+| Client Files                | ✅ Complete    | Initial        | Migrated to shared module     |
+| Booking Files               | ✅ Complete    | Initial        | Migrated to shared module     |
+| Booking Deliverables        | ✅ Complete    | Initial        | Migrated to shared module     |
+| Campaign Offer Deliverables | ✅ Complete    | Initial        | Migrated to shared module     |
+| Reference Images            | ✅ Complete    | Initial        | Migrated to shared module     |
+| **Voice Recordings**        | ✅ Complete    | 2026-04-15     | **Recently migrated**         |
+| Talent Portfolio            | 🔄 In Progress | Pending        | Next priority                 |
+| Tax Documents               | ⏳ Pending     | TBD            | Awaiting migration            |
+| Brand Voice Assets          | ⏳ Pending     | TBD            | Awaiting migration            |
+| Studio Campaign Docs        | ⏳ Pending     | TBD            | Awaiting migration            |
 
 ### Migration Approach
 
@@ -472,6 +485,7 @@ Each asset type follows this migration pattern:
 **Purpose**: Audio recordings used for voice cloning and AI voice generation
 
 **Storage Details**:
+
 - **Owner**: User (the person who recorded their voice)
 - **Visibility**: Private (requires authentication)
 - **Bucket**: `likelee-private`
@@ -479,33 +493,36 @@ Each asset type follows this migration pattern:
 - **Quota**: Does NOT count toward agency quota (creator-owned source asset)
 
 **Example Path**:
+
 ```
 users/550e8400-e29b-41d4-a716-446655440000/voice-recordings/1234567890123_sample.webm
 ```
 
 **Supported Formats**:
+
 - WebM (`.webm`) - Default
 - WAV (`.wav`) - Uncompressed audio
 - OGG (`.ogg`) - Ogg Vorbis
 - MP4/M4A (`.mp4`, `.m4a`) - MPEG-4 audio
 
 **Access Pattern**:
+
 ```mermaid
 sequenceDiagram
     participant User
     participant API
     participant Storage
     participant Registry
-    
+
     User->>API: Upload voice recording
     API->>Storage: Upload to likelee-private
     Storage-->>API: Upload success
     API->>Registry: Insert storage_assets row
     Registry-->>API: Registry success
     API-->>User: Return recording ID
-    
+
     Note over User,Registry: Later: Access recording
-    
+
     User->>API: Request signed URL
     API->>Storage: Generate signed URL (5 min expiry)
     Storage-->>API: Signed URL
@@ -514,6 +531,7 @@ sequenceDiagram
 ```
 
 **Business Table** (`voice_recordings`):
+
 ```sql
 CREATE TABLE voice_recordings (
     id UUID PRIMARY KEY,
@@ -528,6 +546,7 @@ CREATE TABLE voice_recordings (
 ```
 
 **Registry Entry** (`storage_assets`):
+
 ```sql
 INSERT INTO storage_assets (
     owner_type,
@@ -561,6 +580,7 @@ INSERT INTO storage_assets (
 ```
 
 **Migration Changes**:
+
 - ✅ Path format changed from `likeness/{user}/voice/recordings/` to `users/{user_id}/voice-recordings/`
 - ✅ Upload now uses shared `upload_object()` function
 - ✅ Delete now uses STRICT deletion (storage must succeed before DB delete)
@@ -575,6 +595,7 @@ INSERT INTO storage_assets (
 **Purpose**: Images used for AI training and likeness generation
 
 **Storage Details**:
+
 - **Owner**: Creator (the person whose likeness is being captured)
 - **Visibility**: Public (can be rendered directly)
 - **Bucket**: `likelee-public`
@@ -582,11 +603,13 @@ INSERT INTO storage_assets (
 - **Quota**: Does NOT count toward agency quota (creator-owned source asset)
 
 **Example Path**:
+
 ```
 creators/abc-123-def-456/reference-images/section-1/1234567890123_portrait.jpg
 ```
 
 **Supported Formats**:
+
 - JPEG (`.jpg`, `.jpeg`)
 - PNG (`.png`)
 - WebP (`.webp`)
@@ -600,6 +623,7 @@ creators/abc-123-def-456/reference-images/section-1/1234567890123_portrait.jpg
 **Purpose**: General file storage for agency operations
 
 **Storage Details**:
+
 - **Owner**: Agency (organization)
 - **Visibility**: Private (requires authentication)
 - **Bucket**: `likelee-private`
@@ -607,6 +631,7 @@ creators/abc-123-def-456/reference-images/section-1/1234567890123_portrait.jpg
 - **Quota**: DOES count toward agency quota
 
 **Example Path**:
+
 ```
 agencies/550e8400-e29b-41d4-a716-446655440000/storage/contracts/1234567890123_agreement.pdf
 ```
@@ -620,6 +645,7 @@ agencies/550e8400-e29b-41d4-a716-446655440000/storage/contracts/1234567890123_ag
 **Purpose**: Portfolio media for agency-managed talent
 
 **Storage Details**:
+
 - **Owner**: Agency (manages the talent)
 - **Visibility**: Public (portfolio is publicly viewable)
 - **Bucket**: `likelee-public`
@@ -627,6 +653,7 @@ agencies/550e8400-e29b-41d4-a716-446655440000/storage/contracts/1234567890123_ag
 - **Quota**: DOES count toward agency quota
 
 **Example Path**:
+
 ```
 agencies/550e8400/talents/talent-123/portfolio/1234567890123_headshot.jpg
 ```
@@ -655,19 +682,20 @@ When implementing storage for a new asset type:
    - Sanitize filenames
 
 4. **Use Shared Module**
+
    ```rust
    // Upload
    let path = canonical_object_path(&prefix, &filename, timestamp);
    let uploaded = upload_object(&state, visibility, &path, bytes, mime_type).await?;
-   
+
    // Mirror to registry
    let record = StorageAssetRecord { /* ... */ };
    insert_asset_record(&state, &record).await?;
-   
+
    // Delete
    delete_object(&state, &bucket, &path).await?;
    soft_delete_asset_record(&state, "table_name", &id).await?;
-   
+
    // Signed URL
    let url = generate_signed_url(&state, &bucket, &path, expires_sec).await?;
    ```
@@ -730,7 +758,7 @@ WHERE owner_type = 'agency'
 ### How do I calculate total storage used?
 
 ```sql
-SELECT 
+SELECT
     owner_type,
     owner_id,
     SUM(size_bytes) as total_bytes,
@@ -744,6 +772,7 @@ GROUP BY owner_type, owner_id;
 ### What's the difference between deleted_at and actually deleting the row?
 
 **Soft-delete** (setting `deleted_at`) preserves the audit trail. You can see what was deleted, when, and by whom. This is crucial for:
+
 - Quota history tracking
 - Compliance and auditing
 - Debugging storage issues
@@ -752,6 +781,7 @@ GROUP BY owner_type, owner_id;
 ### How are filenames sanitized?
 
 Only alphanumeric characters, dots, underscores, and hyphens are allowed. Everything else becomes an underscore. This prevents:
+
 - Path traversal attacks (`../../../etc/passwd`)
 - Special character issues in URLs
 - File system incompatibilities
@@ -768,7 +798,7 @@ The Likelee AI storage architecture provides:
 ✅ **Complete Audit Trail**: Soft-delete preserves history  
 ✅ **Security**: Sanitization and access control built-in  
 ✅ **Scalability**: Easy to add new asset types  
-✅ **Consistency**: Shared module ensures uniform behavior  
+✅ **Consistency**: Shared module ensures uniform behavior
 
 **Key Principle**: Separate storage concerns from business logic while maintaining a complete audit trail and enabling powerful cross-cutting queries.
 
@@ -778,6 +808,7 @@ The Likelee AI storage architecture provides:
 **Last Updated**: 2026-04-15  
 **Maintained By**: Engineering Team  
 **Related Documents**:
+
 - `docs/ticket-499-implementation-checklist.md` - Migration progress
 - `docs/voice-recording-migration-summary.md` - Voice recording details
 - `likelee-server/src/storage/mod.rs` - Implementation code

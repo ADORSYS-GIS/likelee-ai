@@ -17,6 +17,7 @@ This document describes the implementation of bank card payment method managemen
 ### Database Schema
 
 #### New Table: `brand_payment_methods`
+
 Stores payment method history and metadata for audit trails.
 
 ```sql
@@ -36,6 +37,7 @@ CREATE TABLE public.brand_payment_methods (
 ```
 
 #### Updated Table: `brands`
+
 Added columns to store the primary payment method information:
 
 - `stripe_payment_method_id`: Stripe's payment method ID
@@ -48,13 +50,16 @@ Added columns to store the primary payment method information:
 ### Frontend Components
 
 #### `BrandSettingsBilling.tsx`
+
 Main billing settings component that displays:
+
 - Billing address
 - Billing email
 - Tax identification
 - List of payment methods with management options
 
 **Key Features:**
+
 - Loads payment methods on component mount
 - Displays primary payment method with visual indicator
 - Allows adding new cards via modal
@@ -62,9 +67,11 @@ Main billing settings component that displays:
 - Shows loading states and error handling
 
 #### `PaymentMethodModal.tsx`
+
 Modal dialog for adding new payment methods.
 
 **Key Features:**
+
 - Uses Stripe's CardElement for secure card input
 - Creates a SetupIntent for secure payment method attachment
 - Handles card validation and error messages
@@ -74,11 +81,13 @@ Modal dialog for adding new payment methods.
 ### Backend API Endpoints
 
 #### 1. Create Setup Intent
+
 **Endpoint:** `POST /api/brand/billing/payment-method/setup-intent`
 
 Creates a Stripe SetupIntent for secure card attachment.
 
 **Response:**
+
 ```json
 {
   "client_secret": "seti_1234567890"
@@ -88,11 +97,13 @@ Creates a Stripe SetupIntent for secure card attachment.
 **Handler:** `create_brand_payment_method_setup_intent()`
 
 #### 2. Get Payment Methods
+
 **Endpoint:** `GET /api/brand/billing/payment-methods`
 
 Retrieves all payment methods for the authenticated brand.
 
 **Response:**
+
 ```json
 {
   "payment_methods": [
@@ -120,11 +131,13 @@ Retrieves all payment methods for the authenticated brand.
 **Handler:** `get_brand_payment_methods()`
 
 #### 3. Set Primary Payment Method
+
 **Endpoint:** `POST /api/brand/billing/payment-method/set-primary`
 
 Sets a payment method as the primary for billing.
 
 **Request:**
+
 ```json
 {
   "stripe_payment_method_id": "pm_1234567890"
@@ -134,11 +147,13 @@ Sets a payment method as the primary for billing.
 **Handler:** `set_brand_primary_payment_method()`
 
 #### 4. Delete Payment Method
+
 **Endpoint:** `POST /api/brand/billing/payment-method/delete`
 
 Soft-deletes a payment method (marks as deleted but keeps history).
 
 **Request:**
+
 ```json
 {
   "stripe_payment_method_id": "pm_1234567890"
@@ -224,6 +239,7 @@ export const deleteBrandPaymentMethod = (data: {
 Migration file: `supabase/migrations/2026-04-21_brand_payment_methods.sql`
 
 This migration:
+
 - Adds payment method columns to `brands` table
 - Creates `brand_payment_methods` table
 - Sets up indexes for performance
@@ -275,6 +291,7 @@ The implementation includes comprehensive error handling:
 ### Test Cards
 
 Use these Stripe test cards:
+
 - **Visa**: 4242 4242 4242 4242
 - **Mastercard**: 5555 5555 5555 4444
 - **Amex**: 3782 822463 10005
@@ -291,6 +308,7 @@ Use these Stripe test cards:
 ## Support
 
 For issues or questions:
+
 1. Check Stripe dashboard for payment method status
 2. Review application logs for error details
 3. Verify RLS policies are correctly applied
