@@ -125,3 +125,9 @@ export async function saveGenerationToStorage(
     `/studio/generations/${generationId}/save-to-storage`,
   );
 }
+
+export async function listCampaignGenerations(
+  campaignId: string,
+): Promise<StudioGenerationRow[]> {
+  return await base44.get(`/studio/campaigns/${campaignId}/generations`);
+}

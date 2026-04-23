@@ -13,6 +13,7 @@ import {
   Eye,
   Download,
   X,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +42,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   createBrandStorageFolder,
   deleteBrandStorageFile,
@@ -55,8 +57,8 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 
 type StorageUsage = { used_bytes: number; limit_bytes: number };
-type StorageFolder = { id: string; name: string; parent_id: string | null; created_at: string; file_count?: number };
-type StorageFile = { id: string; file_name: string; folder_id: string | null; size_bytes: number; mime_type: string | null; created_at: string; public_url?: string | null };
+type StorageFolder = { id: string; name: string; parent_id: string | null; is_default?: boolean; created_at: string; file_count?: number };
+type StorageFile = { id: string; file_name: string; folder_id: string | null; size_bytes: number; mime_type: string | null; source_type?: string; generation_id?: string; created_at: string; public_url?: string | null };
 
 const MAX_UPLOAD_BYTES = 500 * 1024 * 1024;
 
@@ -88,6 +90,7 @@ export default function BrandFileStorageView() {
   const [files, setFiles] = useState<StorageFile[]>([]);
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "upload" | "studio_generation">("all");
   const [thumbnailUrlByFileId, setThumbnailUrlByFileId] = useState<Record<string, string>>({});
 
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
@@ -266,9 +269,16 @@ export default function BrandFileStorageView() {
     }
   };
 
-  const filteredFiles = searchQuery
-    ? files.filter((f) => f.file_name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : files;
+  const filteredFiles = useMemo(() => {
+    let result = files;
+    if (searchQuery) {
+      result = result.filter((f) => f.file_name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+    if (sourceFilter !== "all") {
+      result = result.filter((f) => (f.source_type || "upload") === sourceFilter);
+    }
+    return result;
+  }, [files, searchQuery, sourceFilter]);
 
   const usagePercent = usage ? Math.min(100, (usage.used_bytes / usage.limit_bytes) * 100) : 0;
   const usageColor = usagePercent > 90 ? "bg-red-500" : usagePercent > 70 ? "bg-amber-500" : "bg-indigo-500";
@@ -293,7 +303,7 @@ export default function BrandFileStorageView() {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <HardDrive className="w-5 h-5 text-indigo-600" />
-              <span className="font-bold text-gray-900">Storage</span>
+              <span className="font-bold text-gray-900">Asset Library</span>
             </div>
             <span className="text-sm text-gray-500">
               {bytesToHuman(usage.used_bytes)} / {bytesToHuman(usage.limit_bytes)}
@@ -307,7 +317,7 @@ export default function BrandFileStorageView() {
 
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-1 max-w-xs">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -319,6 +329,13 @@ export default function BrandFileStorageView() {
             />
           </div>
           {breadcrumb()}
+          <Tabs value={sourceFilter} onValueChange={(v) => setSourceFilter(v as any)} className="hidden sm:block">
+            <TabsList className="bg-gray-100 rounded-xl p-1 h-9">
+              <TabsTrigger value="all" className="rounded-lg px-3 text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">All</TabsTrigger>
+              <TabsTrigger value="upload" className="rounded-lg px-3 text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">Uploaded</TabsTrigger>
+              <TabsTrigger value="studio_generation" className="rounded-lg px-3 text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">Studio</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -359,7 +376,12 @@ export default function BrandFileStorageView() {
               className="group bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-200 cursor-pointer transition-all"
             >
               <div className="flex items-start justify-between">
-                <Folder className="w-8 h-8 text-indigo-500" />
+                <div className="flex items-center gap-2">
+                  <Folder className="w-8 h-8 text-indigo-500" />
+                  {folder.is_default && (
+                    <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">Default</span>
+                  )}
+                </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button onClick={(e) => e.stopPropagation()} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-gray-100">
@@ -394,6 +416,12 @@ export default function BrandFileStorageView() {
                 className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-200 overflow-hidden transition-all"
               >
                 <div className="aspect-square bg-gray-50 flex items-center justify-center relative">
+                  {file.source_type === "studio_generation" && (
+                    <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                      <Sparkles className="w-3 h-3" />
+                      Studio
+                    </div>
+                  )}
                   {thumbUrl ? (
                     <img src={thumbUrl} alt={file.file_name} className="w-full h-full object-cover" />
                   ) : (

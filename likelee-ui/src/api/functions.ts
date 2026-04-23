@@ -1010,6 +1010,7 @@ export const listBrandStorageFilesPaged = (params?: {
   limit?: number;
   offset?: number;
   mime_type?: string;
+  source_type?: string;
 }) => base44Client.get(`/brand/storage/files`, { params: params || {} });
 
 export const uploadBrandStorageFile = async (data: {
@@ -1029,6 +1030,24 @@ export const deleteBrandStorageFile = (file_id: string) =>
 
 export const getBrandStorageFileSignedUrl = (file_id: string) =>
   base44Client.get(`/brand/storage/files/${file_id}/signed-url`);
+
+export const getBrandStorageAnalytics = () =>
+  base44Client.get<{
+    by_source_type: Array<{
+      source_type: string;
+      mime_type: string | null;
+      file_count: number;
+      total_bytes: number;
+      avg_file_size: number;
+    }>;
+    by_mime_type: Array<{
+      source_type: string;
+      mime_type: string | null;
+      file_count: number;
+      total_bytes: number;
+      avg_file_size: number;
+    }>;
+  }>(`/brand/storage/analytics`);
 
 // Email
 export const getEmailTemplates = () => base44Client.get(`/email/templates`);

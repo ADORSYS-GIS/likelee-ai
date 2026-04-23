@@ -2,7 +2,7 @@ use crate::config::AppState;
 use axum::http::header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::{
     extract::DefaultBodyLimit,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
@@ -35,6 +35,18 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/admin/storage/verify-parity",
             get(crate::admin::verify_storage_parity),
+        )
+        .route(
+            "/api/admin/storage/brands",
+            get(crate::admin::list_brands_storage),
+        )
+        .route(
+            "/api/admin/storage/brands/:brand_id/quota",
+            patch(crate::admin::update_brand_quota),
+        )
+        .route(
+            "/api/admin/storage/analytics",
+            get(crate::admin::get_platform_storage_analytics),
         )
         // --- Messaging Hub ---
         .route(
@@ -1140,6 +1152,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/brand/storage/files/:file_id/signed-url",
             get(crate::brand_storage::get_brand_storage_file_signed_url),
+        )
+        .route(
+            "/api/brand/storage/analytics",
+            get(crate::brand_storage::get_brand_storage_analytics),
         )
         .route(
             "/api/creator-rates",

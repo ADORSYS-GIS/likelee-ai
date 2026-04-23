@@ -1053,6 +1053,7 @@ pub async fn save_generation_to_storage(
         )
     };
 
+    let mut folder_id: Option<String> = None;
     if org_type == "brand" {
         let limit =
             crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
@@ -1064,6 +1065,7 @@ pub async fn save_generation_to_storage(
                 "storage_quota_exceeded".into(),
             ));
         }
+        folder_id = Some(crate::brand_storage::get_or_create_default_folder(&state, &org_id).await?);
     }
 
     let mut saved = Vec::new();
@@ -1115,15 +1117,30 @@ pub async fn save_generation_to_storage(
             }
         };
 
-        let insert = json!({
-            owner_col: org_id,
-            "file_name": fname,
-            "storage_bucket": uploaded.bucket,
-            "storage_path": uploaded.path,
-            "public_url": uploaded.public_url,
-            "size_bytes": new_size,
-            "mime_type": ct,
-        });
+        let insert = if org_type == "brand" {
+            json!({
+                owner_col: org_id,
+                "file_name": fname,
+                "storage_bucket": uploaded.bucket,
+                "storage_path": uploaded.path,
+                "public_url": uploaded.public_url,
+                "folder_id": folder_id,
+                "size_bytes": new_size,
+                "mime_type": ct,
+                "source_type": "studio_generation",
+                "generation_id": generation_id,
+            })
+        } else {
+            json!({
+                owner_col: org_id,
+                "file_name": fname,
+                "storage_bucket": uploaded.bucket,
+                "storage_path": uploaded.path,
+                "public_url": uploaded.public_url,
+                "size_bytes": new_size,
+                "mime_type": ct,
+            })
+        };
         let resp = state
             .pg
             .from(file_table)

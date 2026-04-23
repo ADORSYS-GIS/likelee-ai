@@ -36,6 +36,7 @@ pub struct ListBrandFilesQuery {
     pub limit: Option<u32>,
     pub offset: Option<u32>,
     pub mime_type: Option<String>,
+    pub source_type: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -56,6 +57,8 @@ pub struct BrandFileUploadResponse {
     pub public_url: Option<String>,
     pub storage_bucket: String,
     pub storage_path: String,
+    pub source_type: String,
+    pub generation_id: Option<String>,
     pub created_at: Option<String>,
 }
 
@@ -66,6 +69,7 @@ fn normalize_brand_folder_row(row: &serde_json::Value, file_count: i64) -> serde
         "brand_id": obj.get("brand_id").cloned().unwrap_or(serde_json::Value::Null),
         "parent_id": obj.get("parent_id").cloned().unwrap_or(serde_json::Value::Null),
         "name": obj.get("name").cloned().unwrap_or(serde_json::Value::Null),
+        "is_default": obj.get("is_default").cloned().unwrap_or(serde_json::Value::Null),
         "created_at": obj.get("created_at").cloned().unwrap_or(serde_json::Value::Null),
         "file_count": file_count,
     })
@@ -216,7 +220,7 @@ pub async fn list_brand_folders(
     let mut req = state
         .pg
         .from("brand_folders")
-        .select("id,brand_id,parent_id,name,created_at")
+        .select("id,brand_id,parent_id,name,is_default,created_at")
         .eq("brand_id", brand_id)
         .order("created_at.asc");
     if q.limit.is_some() || q.offset.is_some() {
@@ -474,7 +478,7 @@ pub async fn list_brand_files(
     let mut req = state
         .pg
         .from("brand_files")
-        .select("id,file_name,storage_bucket,storage_path,public_url,folder_id,size_bytes,mime_type,created_at")
+        .select("id,file_name,storage_bucket,storage_path,public_url,folder_id,size_bytes,mime_type,source_type,generation_id,created_at")
         .eq("brand_id", brand_id)
         .order("created_at.desc");
     if let Some(folder_id) = q.folder_id.as_ref().filter(|s| !s.is_empty()) {
@@ -484,6 +488,9 @@ pub async fn list_brand_files(
     }
     if let Some(mt) = q.mime_type.as_ref().filter(|s| !s.is_empty()) {
         req = req.eq("mime_type", mt);
+    }
+    if let Some(st) = q.source_type.as_ref().filter(|s| !s.is_empty()) {
+        req = req.eq("source_type", st);
     }
     if q.limit.is_some() || q.offset.is_some() {
         let limit = q.limit.unwrap_or(50) as usize;
@@ -567,6 +574,8 @@ pub async fn upload_brand_storage_file(
     let mut mime_type = None;
     let mut folder_id: Option<String> = None;
     let mut visibility = StorageVisibility::Private;
+    let mut source_type: Option<String> = None;
+    let mut generation_id: Option<String> = None;
     let mut bytes: Vec<u8> = vec![];
 
     while let Some(field) = multipart
@@ -592,6 +601,24 @@ pub async fn upload_brand_storage_file(
                     .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
                 if txt.trim().to_lowercase() == "public" {
                     visibility = StorageVisibility::Public;
+                }
+            }
+            "source_type" => {
+                let txt = field
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                if !txt.trim().is_empty() {
+                    source_type = Some(txt.trim().to_string());
+                }
+            }
+            "generation_id" => {
+                let txt = field
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                if !txt.trim().is_empty() {
+                    generation_id = Some(txt);
                 }
             }
             "file" => {
@@ -640,6 +667,8 @@ pub async fn upload_brand_storage_file(
         "folder_id": folder_id,
         "size_bytes": new_size,
         "mime_type": mime_type,
+        "source_type": source_type.unwrap_or_else(|| "upload".to_string()),
+        "generation_id": generation_id,
     });
     let resp = state
         .pg
@@ -707,6 +736,12 @@ pub async fn upload_brand_storage_file(
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string(),
+        source_type: insert
+            .get("source_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("upload")
+            .to_string(),
+        generation_id: generation_id,
         created_at: None,
     }))
 }
@@ -787,4 +822,167 @@ pub async fn delete_brand_storage_file(
     }
 
     Ok(Json(serde_json::json!({ "ok": true })))
+}
+
+pub async fn get_or_create_default_folder(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<String, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("brand_folders")
+        .select("id")
+        .eq("brand_id", brand_id)
+        .eq("is_default", "true")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(sanitize_db_error(code.as_u16(), text));
+    }
+
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    if let Some(id) = v
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("id"))
+        .and_then(|x| x.as_str())
+    {
+        return Ok(id.to_string());
+    }
+
+    let body = serde_json::json!({
+        "brand_id": brand_id,
+        "name": "Studio Generations",
+        "is_default": true,
+    });
+    let resp = state
+        .pg
+        .from("brand_folders")
+        .insert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(sanitize_db_error(code.as_u16(), text));
+    }
+
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let id = v
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("id"))
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string();
+    Ok(id)
+}
+
+#[derive(Serialize)]
+pub struct BrandStorageAnalyticsItem {
+    pub source_type: String,
+    pub mime_type: Option<String>,
+    pub file_count: i64,
+    pub total_bytes: i64,
+    pub avg_file_size: f64,
+}
+
+#[derive(Serialize)]
+pub struct BrandStorageAnalytics {
+    pub by_source_type: Vec<BrandStorageAnalyticsItem>,
+    pub by_mime_type: Vec<BrandStorageAnalyticsItem>,
+}
+
+pub async fn get_brand_storage_analytics(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandStorageAnalytics>, (StatusCode, String)> {
+    let access = require_brand_access(&state, &user).await?;
+    let brand_id = &access.organization_id;
+
+    let resp = state
+        .pg
+        .from("brand_storage_analytics")
+        .select("*")
+        .eq("brand_id", brand_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err(sanitize_db_error(code.as_u16(), text));
+    }
+
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let rows = v.as_array().cloned().unwrap_or_default();
+    let mut by_source_type: Vec<BrandStorageAnalyticsItem> = Vec::new();
+    let mut by_mime_type: Vec<BrandStorageAnalyticsItem> = Vec::new();
+
+    for row in rows {
+        let source_type = row
+            .get("source_type")
+            .and_then(|x| x.as_str())
+            .unwrap_or("upload")
+            .to_string();
+        let mime_type = row.get("mime_type").and_then(|x| x.as_str()).map(|s| s.to_string());
+        let file_count = row.get("file_count").and_then(|x| x.as_i64()).unwrap_or(0);
+        let total_bytes = row.get("total_bytes").and_then(|x| x.as_i64()).unwrap_or(0);
+        let avg_file_size = row.get("avg_file_size").and_then(|x| x.as_f64()).unwrap_or(0.0);
+
+        let item = BrandStorageAnalyticsItem {
+            source_type: source_type.clone(),
+            mime_type: mime_type.clone(),
+            file_count,
+            total_bytes,
+            avg_file_size,
+        };
+
+        by_source_type.push(BrandStorageAnalyticsItem {
+            source_type: source_type.clone(),
+            mime_type: None,
+            file_count,
+            total_bytes,
+            avg_file_size,
+        });
+        by_mime_type.push(item);
+    }
+
+    by_source_type.sort_by(|a, b| a.source_type.cmp(&b.source_type));
+    by_mime_type.sort_by(|a, b| {
+        a.mime_type
+            .as_ref()
+            .unwrap_or(&"".to_string())
+            .cmp(b.mime_type.as_ref().unwrap_or(&"".to_string()))
+    });
+
+    Ok(Json(BrandStorageAnalytics {
+        by_source_type,
+        by_mime_type,
+    }))
 }
