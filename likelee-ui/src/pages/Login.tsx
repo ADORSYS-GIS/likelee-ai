@@ -40,6 +40,7 @@ const TabsList: any = UITabsList;
 const TabsTrigger: any = UITabsTrigger;
 const Separator: any = UISeparator;
 const Label: any = UILabel;
+const MFA_PENDING_STORAGE_KEY = "likelee_mfa_pending_next";
 
 export default function Login() {
   const { t } = useTranslation();
@@ -150,6 +151,18 @@ export default function Login() {
 
     if (!initialized) return;
     if (accessDenied) return;
+
+    const pendingMfaNext = sessionStorage.getItem(MFA_PENDING_STORAGE_KEY);
+    if (pendingMfaNext) {
+      setIsRedirecting(true);
+      navigate(
+        `/TwoFactorSetup?mode=challenge&next=${encodeURIComponent(
+          pendingMfaNext,
+        )}`,
+        { replace: true },
+      );
+      return;
+    }
 
     const authIntent = readAuthIntent();
     const normalizedUserType = (userType || "").toLowerCase().trim();
@@ -291,15 +304,26 @@ export default function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Agency login is now enabled
-    // if (userType === "agency") return; // Agency is coming soon
 
     setError(null);
     setLoading(true);
     try {
-      await login(email, password);
-      // Redirection is handled by the useEffect above once profile is loaded
+      const mfaResult = await login(email, password);
+      if (mfaResult.requiresMFA) {
+        setIsRedirecting(true);
+        // Use redirect target if specified, otherwise use a placeholder
+        // The actual dashboard will be determined after MFA based on the loaded profile
+        const next = redirectTarget || "dashboard";
+        sessionStorage.setItem(MFA_PENDING_STORAGE_KEY, next);
+        navigate(
+          `/TwoFactorSetup?mode=challenge&next=${encodeURIComponent(next)}`,
+          { replace: true },
+        );
+        return;
+      }
+      sessionStorage.removeItem(MFA_PENDING_STORAGE_KEY);
     } catch (err: any) {
+      sessionStorage.removeItem(MFA_PENDING_STORAGE_KEY);
       const msg = getFriendlyErrorMessage(err, t);
       setError(msg);
       toast({

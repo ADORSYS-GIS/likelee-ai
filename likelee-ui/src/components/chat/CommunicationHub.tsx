@@ -5,7 +5,13 @@ import { ThreadList } from "./ThreadList";
 import { ChatWindow } from "./ChatWindow";
 import { useTranslation } from "react-i18next";
 
-export function CommunicationHub() {
+import { useTranslation } from "react-i18next";
+
+export function CommunicationHub({
+  initialCreatorId,
+}: {
+  initialCreatorId?: string;
+}) {
   const { t } = useTranslation();
   const { profile } = useAuth();
   const {
@@ -33,6 +39,22 @@ export function CommunicationHub() {
       loadContacts();
     }
   }, [profile?.id, loadConversations, loadContacts]);
+
+  // Auto-open or start a conversation when navigated here with a specific creator
+  useEffect(() => {
+    if (!initialCreatorId || !profile?.id) return;
+    // Wait until conversations are loaded, then find or start the conversation
+    if (loadingConversations) return;
+    const existing = conversations.find(
+      (c) => c.creator_id === initialCreatorId,
+    );
+    if (existing) {
+      openConversation(existing.id);
+    } else {
+      startConversation(initialCreatorId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCreatorId, loadingConversations]);
 
   const activeConversation =
     conversations.find((c) => c.id === activeConversationId) ?? null;

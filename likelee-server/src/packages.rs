@@ -810,7 +810,7 @@ pub async fn create_public_package_full_assets_request(
     let meta_resp = state
         .pg
         .from("agency_talent_packages")
-        .select("agency_id,title")
+        .select("id,agency_id,title")
         .eq("access_token", &token)
         .single()
         .execute()
@@ -877,6 +877,7 @@ pub async fn create_public_package_full_assets_request(
         "agency_id": agency_id,
         "status": "pending",
         "campaign_title": "Full Assets Request",
+        "talent_name": if package_title.is_empty() { "Package Full Assets Request" } else { &package_title },
         "client_name": if client_name.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(client_name.clone()) },
         "usage_scope": "package_full_assets",
         "notes": notes,
@@ -893,6 +894,26 @@ pub async fn create_public_package_full_assets_request(
     if !ins_resp.status().is_success() {
         let err = ins_resp.text().await.unwrap_or_default();
         return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    // Record interaction for the Client Activity timeline
+    let package_id = meta["id"].as_str().unwrap_or("");
+    let interaction_row = serde_json::json!({
+        "package_id": package_id,
+        "type": "asset_request",
+        "content": message,
+        "client_name": client_name,
+        "client_email": client_email,
+    });
+
+    if let Err(e) = state
+        .pg
+        .from("agency_talent_package_interactions")
+        .insert(interaction_row.to_string())
+        .execute()
+        .await
+    {
+        tracing::warn!("Failed to record asset_request interaction: {}", e);
     }
 
     // Best-effort email notification to agency.

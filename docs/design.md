@@ -546,6 +546,26 @@ Agency campaign offers track escrow release separately from the deliverable work
 - **Deferred Payout Model**: The system supports deferred Stripe connectivity. Brands can pay for campaigns immediately; Likelee holds the funds in the internal "Held" ledger until the Agency or Creator completes their Stripe onboarding.
 - **Trigger-Based Integrity**: PostgreSQL triggers (`tr_update_agency_balance_on_payout_request`) automatically refund funds from an "approved" payout back to the internal "Held" balance if the Stripe transfer fails, ensuring no funds are lost due to connectivity issues.
 
+#### Transfer Failure Recovery
+
+Stripe transfers can fail silently when a recipient's connected account is not fully onboarded (e.g. `transfers` capability not active). The system handles this without blocking escrow release:
+
+- **Escrow always releases on brand approval** — this is the brand's obligation being fulfilled. Whether the recipient can receive the funds is a separate operational concern.
+- Failed transfers are recorded in `campaign_offer_transfers` with `status = "failed"` and a `failure_reason`.
+- Funds that fail to transfer remain on the platform's Stripe balance until a retry succeeds.
+- The agency can retry failed transfers at any time after escrow release via `POST /api/agency/campaign-offers/:offer_id/retry-transfers`.
+- Transfer status (including live Stripe account health) is available via `GET /api/agency/campaign-offers/:offer_id/transfer-status`.
+- The **Payout Status** panel in `AgencyDeliverablesView` surfaces this information inline per offer, with a "Retry failed" button when action is needed.
+
+#### `campaign_offer_transfers` Status Values
+
+| Status          | Meaning                                                        |
+| --------------- | -------------------------------------------------------------- |
+| `created`       | Stripe transfer succeeded — funds in recipient's account       |
+| `failed`        | Transfer failed — funds held on platform Stripe balance        |
+| `pending_retry` | Retry in progress (transient)                                  |
+| `reversed`      | Transfer was reversed by Stripe                                |
+
 #### Commission semantics (agency campaign offers)
 
 When distributing a campaign offer payout for an **agency** collaborator, `commission_rate` is interpreted as the **agency commission percent** for each creator share.
@@ -1343,3 +1363,4 @@ Supabase Realtime is used for instant message delivery via `postgres_changes` su
 - [x] **Creator Free Trial Standardization (2026-04-09)**: Standardized Creator trial flow to require upfront payment details via Stripe Checkout. Implemented 30-day trial attached to paid plans with reuse prevention and persistent UI visibility.
 - [x] **Vulnerability Fixes & CI Stabilization (2026-04-15)**: Resolved critical `rustls-webpki` vulnerabilities in backend by transitioning `async-stripe` to use `native-tls` and upgrading other dependencies. Fixed frontend `npm install` failure by resolving `overrides` conflicts in `package.json`. Verified full project health with `cargo audit`, `cargo clippy`, `npm lint`, and `npm build`.
 - [x] **Marketplace & Billing Refinement (2026-04-18)**: Refactored marketplace access to allow Brands to view profiles without agency membership. Optimized campaign payment flow by removing redundant session tracking and formalizing the internal payout ledger (Held) vs live Stripe balance (Cashout) logic.
+- [x] **Full Asset Request Professionalization (2026-04-20)**: Integrated detailed full asset request metadata (name, email, message) into the Client Activity modal with a premium timeline view and backend interaction persistence.

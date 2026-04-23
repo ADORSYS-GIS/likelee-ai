@@ -1,7 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Shield } from "lucide-react";
 
 type BrandSettingsSecurityProps = {
@@ -23,21 +22,13 @@ export const BrandSettingsSecurity = ({
       >
         Reset Admin Password <ChevronRight className="w-4 h-4" />
       </Button>
-      <div className="relative group">
-        <Button
-          variant="outline"
-          disabled
-          className="w-full justify-between rounded-lg border border-gray-200 font-bold text-sm h-12 opacity-50 blur-[1px] cursor-not-allowed"
-        >
-          Enable 2FA Protection (Coming Soon){" "}
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-          <Badge variant="secondary" className="bg-gray-900 text-white">
-            Coming Soon
-          </Badge>
-        </div>
-      </div>
+      <Button
+        variant="outline"
+        onClick={() => onNavigate("/TwoFactorSetup")}
+        className="w-full justify-between rounded-lg border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"
+      >
+        Enable 2FA Protection <ChevronRight className="w-4 h-4" />
+      </Button>
       <Button
         variant="outline"
         className="w-full justify-between rounded-lg border border-gray-200 hover:border-gray-900 font-bold text-sm h-12"

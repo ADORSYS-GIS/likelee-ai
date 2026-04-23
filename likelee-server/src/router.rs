@@ -337,6 +337,19 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::agency_talent_invites::revoke_for_agency),
         )
         .route("/api/team/context", get(crate::team::get_context))
+        // --- Session Audit ---
+        .route(
+            "/api/auth/sessions",
+            get(crate::sessions::list_sessions).delete(crate::sessions::revoke_all_other_sessions),
+        )
+        .route(
+            "/api/auth/sessions/:session_id",
+            delete(crate::sessions::revoke_session),
+        )
+        .route(
+            "/api/auth/login-history",
+            get(crate::sessions::get_login_history),
+        )
         .route("/api/team/members", get(crate::team::list_members))
         .route("/api/team/audit-logs", get(crate::team::list_audit_logs))
         .route(
@@ -1057,12 +1070,24 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::brand_campaigns::comment_offer_deliverable),
         )
         .route(
+            "/api/agency/campaign-offers/:offer_id/transfer-status",
+            get(crate::brand_campaigns::get_offer_transfer_status),
+        )
+        .route(
+            "/api/agency/campaign-offers/:offer_id/retry-transfers",
+            post(crate::brand_campaigns::retry_offer_transfers),
+        )
+        .route(
             "/api/talent/offer-asset-requests",
             get(crate::brand_campaigns::list_creator_asset_requests),
         )
         .route(
             "/api/talent/offer-asset-requests/:request_id/viewed",
             post(crate::brand_campaigns::mark_creator_asset_request_viewed),
+        )
+        .route(
+            "/api/talent/campaign-offers/transfer-status",
+            get(crate::brand_campaigns::get_creator_transfer_status),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
