@@ -149,8 +149,15 @@ pub async fn list_brands_storage(
     let mut total_limit = 0i64;
 
     for brand in brands_array {
-        let brand_id = brand.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let company_name = brand.get("company_name").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let brand_id = brand
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let company_name = brand
+            .get("company_name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         if brand_id.is_empty() {
             continue;
@@ -175,8 +182,8 @@ pub async fn list_brands_storage(
             .text()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let count_json: serde_json::Value = serde_json::from_str(&count_text)
-            .unwrap_or(serde_json::json!([]));
+        let count_json: serde_json::Value =
+            serde_json::from_str(&count_text).unwrap_or(serde_json::json!([]));
         let file_count = count_json.as_array().map(|a| a.len() as i64).unwrap_or(0);
 
         total_bytes += used;
@@ -272,8 +279,8 @@ pub async fn get_platform_storage_analytics(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let brands_json: serde_json::Value = serde_json::from_str(&brands_text)
-        .unwrap_or(serde_json::json!([]));
+    let brands_json: serde_json::Value =
+        serde_json::from_str(&brands_text).unwrap_or(serde_json::json!([]));
     let total_brands = brands_json.as_array().map(|a| a.len() as i64).unwrap_or(0);
 
     let files_resp = state
@@ -287,8 +294,8 @@ pub async fn get_platform_storage_analytics(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let files_json: serde_json::Value = serde_json::from_str(&files_text)
-        .unwrap_or(serde_json::json!([]));
+    let files_json: serde_json::Value =
+        serde_json::from_str(&files_text).unwrap_or(serde_json::json!([]));
     let files_array = files_json.as_array().cloned().unwrap_or_default();
     let total_files = files_array.len() as i64;
     let total_bytes: i64 = files_array
@@ -307,8 +314,8 @@ pub async fn get_platform_storage_analytics(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let analytics_json: serde_json::Value = serde_json::from_str(&analytics_text)
-        .unwrap_or(serde_json::json!([]));
+    let analytics_json: serde_json::Value =
+        serde_json::from_str(&analytics_text).unwrap_or(serde_json::json!([]));
     let analytics_array = analytics_json.as_array().cloned().unwrap_or_default();
 
     let mut by_source_type_map: std::collections::HashMap<String, serde_json::Value> =
@@ -336,8 +343,14 @@ pub async fn get_platform_storage_analytics(
                 let obj = e.as_object_mut().unwrap();
                 let count = obj.get("file_count").and_then(|x| x.as_i64()).unwrap_or(0);
                 let bytes = obj.get("total_bytes").and_then(|x| x.as_i64()).unwrap_or(0);
-                obj.insert("file_count".to_string(), serde_json::json!(count + file_count));
-                obj.insert("total_bytes".to_string(), serde_json::json!(bytes + row_bytes));
+                obj.insert(
+                    "file_count".to_string(),
+                    serde_json::json!(count + file_count),
+                );
+                obj.insert(
+                    "total_bytes".to_string(),
+                    serde_json::json!(bytes + row_bytes),
+                );
             })
             .or_insert_with(|| {
                 serde_json::json!({
@@ -353,8 +366,14 @@ pub async fn get_platform_storage_analytics(
                 let obj = e.as_object_mut().unwrap();
                 let count = obj.get("file_count").and_then(|x| x.as_i64()).unwrap_or(0);
                 let bytes = obj.get("total_bytes").and_then(|x| x.as_i64()).unwrap_or(0);
-                obj.insert("file_count".to_string(), serde_json::json!(count + file_count));
-                obj.insert("total_bytes".to_string(), serde_json::json!(bytes + row_bytes));
+                obj.insert(
+                    "file_count".to_string(),
+                    serde_json::json!(count + file_count),
+                );
+                obj.insert(
+                    "total_bytes".to_string(),
+                    serde_json::json!(bytes + row_bytes),
+                );
             })
             .or_insert_with(|| {
                 serde_json::json!({

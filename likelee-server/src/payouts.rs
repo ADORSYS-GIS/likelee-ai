@@ -4726,7 +4726,10 @@ async fn sync_brand_subscription_from_subscription(
         let _ = state
             .pg
             .from("brand_storage_settings")
-            .insert(json!({ "brand_id": brand_id, "storage_limit_bytes": brand_storage_limit_bytes }).to_string())
+            .insert(
+                json!({ "brand_id": brand_id, "storage_limit_bytes": brand_storage_limit_bytes })
+                    .to_string(),
+            )
             .execute()
             .await;
         let _ = state

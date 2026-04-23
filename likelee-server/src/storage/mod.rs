@@ -454,10 +454,7 @@ mod tests {
             StorageContextType::StudioDocument.as_str(),
             "studio_document"
         );
-        assert_eq!(
-            StorageContextType::BrandStorage.as_str(),
-            "brand_storage"
-        );
+        assert_eq!(StorageContextType::BrandStorage.as_str(), "brand_storage");
         assert_eq!(
             StorageContextType::StudioGeneration.as_str(),
             "studio_generation"

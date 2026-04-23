@@ -139,9 +139,7 @@ pub async fn list_org_storage_assets(
             .to_string();
 
         if let Some(ref search) = q.search {
-            if !search.is_empty()
-                && !file_name.to_lowercase().contains(&search.to_lowercase())
-            {
+            if !search.is_empty() && !file_name.to_lowercase().contains(&search.to_lowercase()) {
                 continue;
             }
         }
@@ -169,10 +167,7 @@ pub async fn list_org_storage_assets(
             .get("folder_id")
             .and_then(|v| v.as_str())
             .map(String::from);
-        let size_bytes = row
-            .get("size_bytes")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
+        let size_bytes = row.get("size_bytes").and_then(|v| v.as_i64()).unwrap_or(0);
         let mime_type = row
             .get("mime_type")
             .and_then(|v| v.as_str())
@@ -204,8 +199,7 @@ pub async fn list_org_storage_assets(
                     .ok();
                 if let Some(fresp) = fresp {
                     let ftext = fresp.text().await.unwrap_or_default();
-                    let fv: serde_json::Value =
-                        serde_json::from_str(&ftext).unwrap_or(json!([]));
+                    let fv: serde_json::Value = serde_json::from_str(&ftext).unwrap_or(json!([]));
                     folder_name = fv
                         .as_array()
                         .and_then(|a| a.first())
@@ -260,11 +254,12 @@ pub async fn save_from_url(
     };
 
     let client = reqwest::Client::new();
-    let response = client
-        .get(&input.temp_url)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Failed to download temp file: {}", e)))?;
+    let response = client.get(&input.temp_url).send().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to download temp file: {}", e),
+        )
+    })?;
 
     if !response.status().is_success() {
         return Err((
@@ -273,10 +268,12 @@ pub async fn save_from_url(
         ));
     }
 
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Failed to read temp file: {}", e)))?;
+    let bytes = response.bytes().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to read temp file: {}", e),
+        )
+    })?;
     let data = bytes.to_vec();
     let new_size = data.len() as i64;
 
@@ -289,8 +286,7 @@ pub async fn save_from_url(
 
     if org_type == "brand" {
         let limit =
-            crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id)
-                .await?;
+            crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
         let used = crate::brand_storage::get_brand_used_storage_bytes(&state, &org_id).await?;
         if used + new_size > limit {
             return Err((
@@ -320,7 +316,10 @@ pub async fn save_from_url(
         &sanitized,
         chrono::Utc::now().timestamp_millis(),
     );
-    let mime = input.mime_type.as_deref().or(Some("application/octet-stream"));
+    let mime = input
+        .mime_type
+        .as_deref()
+        .or(Some("application/octet-stream"));
     let uploaded = upload_object(&state, visibility, &path, data, mime).await?;
     let public_url = uploaded.public_url.clone();
 

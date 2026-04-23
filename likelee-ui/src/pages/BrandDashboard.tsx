@@ -657,8 +657,12 @@ export default function BrandDashboard() {
   const [signedUrlsCache, setSignedUrlsCache] = useState<
     Record<string, { url: string; expires: number }>
   >({});
-  const [assetSizesCache, setAssetSizesCache] = useState<Record<string, number>>({});
-  const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set());
+  const [assetSizesCache, setAssetSizesCache] = useState<
+    Record<string, number>
+  >({});
+  const [activeDownloads, setActiveDownloads] = useState<Set<string>>(
+    new Set(),
+  );
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<any>(null);
@@ -1701,7 +1705,10 @@ export default function BrandDashboard() {
         if (!cachedSize) {
           fetch(url, { method: "HEAD" })
             .then((res) => {
-              const size = parseInt(res.headers.get("content-length") || "0", 10);
+              const size = parseInt(
+                res.headers.get("content-length") || "0",
+                10,
+              );
               if (size > 0) {
                 setAssetSizesCache((prev) => ({ ...prev, [url]: size }));
               }
@@ -1965,10 +1972,15 @@ export default function BrandDashboard() {
     setShowDeleteDialog(false);
 
     try {
-      if (assetToDelete.source_type === "upload" || assetToDelete.generation_id === undefined) {
+      if (
+        assetToDelete.source_type === "upload" ||
+        assetToDelete.generation_id === undefined
+      ) {
         setStudioFiles((prev) => prev.filter((f) => f.id !== assetToDelete.id));
       } else if (assetToDelete.source_type === "studio_generation") {
-        setStudioGenerations((prev) => prev.filter((g) => g.id !== assetToDelete.generation_id));
+        setStudioGenerations((prev) =>
+          prev.filter((g) => g.id !== assetToDelete.generation_id),
+        );
       }
 
       setCollections((prev) =>
@@ -12941,11 +12953,15 @@ export default function BrandDashboard() {
           <DialogHeader>
             <DialogTitle>Delete Asset</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{assetToDelete?.file_name}"? This action cannot be undone.
+              Are you sure you want to delete "{assetToDelete?.file_name}"? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={confirmDeleteAsset}>

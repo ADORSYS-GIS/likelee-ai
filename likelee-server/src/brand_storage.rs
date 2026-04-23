@@ -355,10 +355,7 @@ pub async fn delete_brand_folder(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !files_status.is_success() {
-        return Err(sanitize_db_error(
-            files_status.as_u16(),
-            files_text,
-        ));
+        return Err(sanitize_db_error(files_status.as_u16(), files_text));
     }
     let files_json: serde_json::Value =
         serde_json::from_str(&files_text).unwrap_or(serde_json::json!([]));
@@ -543,10 +540,10 @@ pub async fn get_brand_storage_file_signed_url(
         .and_then(|a| a.first())
         .ok_or((StatusCode::NOT_FOUND, "file not found".to_string()))?;
 
-    let brand_id = row.get("brand_id").and_then(|v| v.as_str()).ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "missing brand_id".into(),
-    ))?;
+    let brand_id = row
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing brand_id".into()))?;
     if brand_id != brand_org_id {
         return Err((StatusCode::FORBIDDEN, "Access denied".into()));
     }
@@ -773,10 +770,10 @@ pub async fn delete_brand_storage_file(
         .and_then(|a| a.first())
         .ok_or((StatusCode::NOT_FOUND, "file not found".to_string()))?;
 
-    let brand_id = row.get("brand_id").and_then(|v| v.as_str()).ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "missing brand_id".into(),
-    ))?;
+    let brand_id = row
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing brand_id".into()))?;
     if brand_id != brand_org_id {
         return Err((StatusCode::FORBIDDEN, "Access denied".into()));
     }
@@ -851,7 +848,7 @@ pub async fn get_or_create_default_folder(
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     if let Some(id) = v
         .as_array()
         .and_then(|a| a.first())
@@ -950,10 +947,16 @@ pub async fn get_brand_storage_analytics(
             .and_then(|x| x.as_str())
             .unwrap_or("upload")
             .to_string();
-        let mime_type = row.get("mime_type").and_then(|x| x.as_str()).map(|s| s.to_string());
+        let mime_type = row
+            .get("mime_type")
+            .and_then(|x| x.as_str())
+            .map(|s| s.to_string());
         let file_count = row.get("file_count").and_then(|x| x.as_i64()).unwrap_or(0);
         let total_bytes = row.get("total_bytes").and_then(|x| x.as_i64()).unwrap_or(0);
-        let avg_file_size = row.get("avg_file_size").and_then(|x| x.as_f64()).unwrap_or(0.0);
+        let avg_file_size = row
+            .get("avg_file_size")
+            .and_then(|x| x.as_f64())
+            .unwrap_or(0.0);
 
         let item = BrandStorageAnalyticsItem {
             source_type: source_type.clone(),

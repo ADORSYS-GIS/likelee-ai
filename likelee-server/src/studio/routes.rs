@@ -4,8 +4,8 @@ use super::wallet;
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use crate::storage::{
-    canonical_object_path, download_object, insert_asset_record, sanitize_file_name,
-    upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+    canonical_object_path, download_object, insert_asset_record, sanitize_file_name, upload_object,
+    StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
 };
 use crate::team::{require_agency_access, require_brand_access};
 use anyhow::anyhow;
@@ -1003,11 +1003,11 @@ pub async fn save_generation_to_storage(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let gen_text = gen_resp.text().await.map_err(|e| {
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-    })?;
-    let gen_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&gen_text).unwrap_or_default();
+    let gen_text = gen_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let gen_rows: Vec<serde_json::Value> = serde_json::from_str(&gen_text).unwrap_or_default();
     let gen = gen_rows
         .first()
         .ok_or((StatusCode::NOT_FOUND, "Generation not found".to_string()))?;
@@ -1057,15 +1057,15 @@ pub async fn save_generation_to_storage(
     if org_type == "brand" {
         let limit =
             crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
-        let used =
-            crate::brand_storage::get_brand_used_storage_bytes(&state, &org_id).await?;
+        let used = crate::brand_storage::get_brand_used_storage_bytes(&state, &org_id).await?;
         if used > limit {
             return Err((
                 StatusCode::PAYLOAD_TOO_LARGE,
                 "storage_quota_exceeded".into(),
             ));
         }
-        folder_id = Some(crate::brand_storage::get_or_create_default_folder(&state, &org_id).await?);
+        folder_id =
+            Some(crate::brand_storage::get_or_create_default_folder(&state, &org_id).await?);
     }
 
     let mut saved = Vec::new();
@@ -1148,9 +1148,10 @@ pub async fn save_generation_to_storage(
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let txt = resp.text().await.map_err(|e| {
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
+        let txt = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
         let rec = arr.first().cloned().unwrap_or(json!({"id": ""}));
         let id = rec

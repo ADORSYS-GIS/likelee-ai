@@ -1,7 +1,7 @@
 use crate::config::AppState;
 use crate::storage::{
-    canonical_object_path, download_object, insert_asset_record, sanitize_file_name,
-    upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+    canonical_object_path, download_object, insert_asset_record, sanitize_file_name, upload_object,
+    StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
 };
 use axum::{
     extract::{Query, State},

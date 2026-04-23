@@ -118,9 +118,7 @@ export async function listPresets(): Promise<StudioStylePreset[]> {
   return presets || [];
 }
 
-export async function saveGenerationToStorage(
-  generationId: string,
-): Promise<{
+export async function saveGenerationToStorage(generationId: string): Promise<{
   saved: Array<{
     id: string;
     file_name: string;
