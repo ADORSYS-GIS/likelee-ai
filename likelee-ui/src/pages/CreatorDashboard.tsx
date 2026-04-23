@@ -3176,14 +3176,19 @@ export default function CreatorDashboard() {
   const fetchPayoutStatus = async () => {
     if (!initialized || !authenticated || !user?.id) return;
     try {
-      const { getPayoutsAccountStatus, getPayoutBalance, getHistory, getCreatorTransferStatus } =
-        await import("@/api/functions");
-      const [statusRes, balanceRes, historyRes, transfersRes] = await Promise.all([
-        getPayoutsAccountStatus(user.id),
-        getPayoutBalance(user.id),
-        getHistory({ profile_id: user.id, limit: 5 }),
-        getCreatorTransferStatus().catch(() => ({ transfers: [] })),
-      ]);
+      const {
+        getPayoutsAccountStatus,
+        getPayoutBalance,
+        getHistory,
+        getCreatorTransferStatus,
+      } = await import("@/api/functions");
+      const [statusRes, balanceRes, historyRes, transfersRes] =
+        await Promise.all([
+          getPayoutsAccountStatus(user.id),
+          getPayoutBalance(user.id),
+          getHistory({ profile_id: user.id, limit: 5 }),
+          getCreatorTransferStatus().catch(() => ({ transfers: [] })),
+        ]);
       setPayoutAccountStatus(statusRes.data);
       setBalances(balanceRes.data.balances || []);
       setStripeBalances(balanceRes.data.stripe_balances || []);
@@ -11028,7 +11033,9 @@ export default function CreatorDashboard() {
               </div>
             )}
 
-            {creatorTransfers.some((t: any) => t.transfer_status === "failed") && (
+            {creatorTransfers.some(
+              (t: any) => t.transfer_status === "failed",
+            ) && (
               <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
