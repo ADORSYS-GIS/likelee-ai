@@ -2020,9 +2020,11 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
         </div>
 
         <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
-          {[
+          {([
             "Profile",
-            "Subscription",
+            ...(teamContext?.permissions?.includes("manage_billing")
+              ? ["Subscription"]
+              : []),
             "Commissions",
             "Email Templates",
             "Notifications",
@@ -2030,7 +2032,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
             "Team",
             "File Storage",
             "Integrations",
-          ].map((tab) => (
+          ] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

@@ -11089,12 +11089,7 @@ export default function BrandDashboard() {
         className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
       >
         {/* Brand Section */}
-        <div
-          className="p-6 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
-          onClick={() => {
-            navigate("/brandpricing");
-          }}
-        >
+        <div className="p-6 border-b border-gray-200">
           {brand && sidebarOpen ? (
             <div className="flex items-center gap-3">
               <Avatar className="w-12 h-12 border-2 border-gray-200 rounded-lg">
