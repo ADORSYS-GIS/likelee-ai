@@ -657,6 +657,8 @@ export default function BrandDashboard() {
   const [signedUrlsCache, setSignedUrlsCache] = useState<
     Record<string, { url: string; expires: number }>
   >({});
+  const [activeDownloads, setActiveDownloads] = useState<Set<string>>(new Set());
+  const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
     new Set(),
   );
@@ -1739,33 +1741,90 @@ export default function BrandDashboard() {
     const selectedAssets = studioAssets.filter((a) =>
       selectedAssetIds.has(a.id),
     );
+    setIsBatchDownloading(true);
     toast({
-      title: "Downloading...",
-      description: `Downloading ${selectedAssets.length} asset(s)`,
+      title: "Starting download...",
+      description: `Preparing to download ${selectedAssets.length} asset(s)`,
     });
+
+    let successCount = 0;
+    let failCount = 0;
+
     for (const asset of selectedAssets) {
+      try {
+        setActiveDownloads((prev) => new Set([...prev, asset.id]));
+        const response = await fetch(asset.url);
+        if (!response.ok) throw new Error("Download failed");
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = asset.file_name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        successCount++;
+      } catch (error) {
+        failCount++;
+        console.error(`Failed to download ${asset.file_name}:`, error);
+      } finally {
+        setActiveDownloads((prev) => {
+          const next = new Set(prev);
+          next.delete(asset.id);
+          return next;
+        });
+      }
+    }
+
+    setIsBatchDownloading(false);
+    if (failCount === 0) {
+      toast({
+        title: "Download complete",
+        description: `${successCount} asset(s) downloaded successfully.`,
+      });
+    } else if (successCount > 0) {
+      toast({
+        title: "Download complete with errors",
+        description: `${successCount} downloaded, ${failCount} failed.`,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Download failed",
+        description: `Could not download any assets.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadAsset = async (asset: any) => {
+    setActiveDownloads((prev) => new Set([...prev, asset.id]));
+    try {
+      const response = await fetch(asset.url);
+      if (!response.ok) throw new Error("Download failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = asset.url;
+      link.href = url;
       link.download = asset.file_name;
-      link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: `Could not download ${asset.file_name}`,
+        variant: "destructive",
+      });
+    } finally {
+      setActiveDownloads((prev) => {
+        const next = new Set(prev);
+        next.delete(asset.id);
+        return next;
+      });
     }
-    toast({
-      title: "Download complete",
-      description: `${selectedAssets.length} asset(s) downloaded.`,
-    });
-  };
-
-  const handleDownloadAsset = (asset: any) => {
-    const link = document.createElement("a");
-    link.href = asset.url;
-    link.download = asset.file_name;
-    link.target = "_blank";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const handleCreateCollection = () => {
@@ -7245,9 +7304,13 @@ export default function BrandDashboard() {
             variant="outline"
             className="border-2 border-gray-300"
             onClick={handleBatchDownload}
-            disabled={selectedAssetIds.size === 0}
+            disabled={selectedAssetIds.size === 0 || isBatchDownloading}
           >
-            <Download className="w-4 h-4 mr-2" />
+            {isBatchDownloading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
             Batch Download
             {selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
           </Button>
@@ -7399,8 +7462,13 @@ export default function BrandDashboard() {
                   variant="secondary"
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white"
                   onClick={() => handleDownloadAsset(asset)}
+                  disabled={activeDownloads.has(asset.id)}
                 >
-                  <Download className="w-4 h-4" />
+                  {activeDownloads.has(asset.id) ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
               <div className="p-3">
@@ -7467,8 +7535,13 @@ export default function BrandDashboard() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDownloadAsset(asset)}
+                  disabled={activeDownloads.has(asset.id)}
                 >
-                  <Download className="w-4 h-4" />
+                  {activeDownloads.has(asset.id) ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             ))}
