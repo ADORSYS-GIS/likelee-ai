@@ -7289,14 +7289,8 @@ export default function BrandDashboard() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Asset Library
           </h1>
-          <p className="text-gray-600 flex items-center gap-3">
+          <p className="text-gray-600">
             Download, manage, and organize all your creative assets
-            {studioDataCache && !studioLoading && (
-              <Badge className="bg-amber-50 text-amber-700 border-amber-200">
-                Cached • Updated{" "}
-                {new Date(studioDataCache.timestamp).toLocaleTimeString()}
-              </Badge>
-            )}
           </p>
         </div>
         <div className="flex gap-2">
