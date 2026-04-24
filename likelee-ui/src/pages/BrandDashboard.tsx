@@ -677,6 +677,8 @@ export default function BrandDashboard() {
   const [showContractHub, setShowContractHub] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractHubTab, setContractHubTab] = useState("active");
+  const [contractSearch, setContractSearch] = useState("");
+  const [contractSort, setContractSort] = useState("newest");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
   const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
@@ -7835,6 +7837,25 @@ export default function BrandDashboard() {
           ? pendingContracts
           : allContracts;
 
+    // Client-side search + sort (all data already in memory)
+    const contractsFiltered = contractsForTab.filter((c: any) => {
+      if (!contractSearch.trim()) return true;
+      const q = contractSearch.toLowerCase();
+      return (
+        String(c?.title || c?.offer_title || "").toLowerCase().includes(q) ||
+        String(c?.target_name || "").toLowerCase().includes(q) ||
+        String(c?.brand_name || "").toLowerCase().includes(q)
+      );
+    });
+
+    const contractsSorted = [...contractsFiltered].sort((a: any, b: any) => {
+      if (contractSort === "oldest") {
+        return new Date(a?.sent_at || 0).getTime() - new Date(b?.sent_at || 0).getTime();
+      }
+      // newest (default)
+      return new Date(b?.sent_at || 0).getTime() - new Date(a?.sent_at || 0).getTime();
+    });
+
     const statusBadge = (c: any) => {
       const s = String(c?.docuseal_status || "").toLowerCase();
       if (s === "completed")
@@ -7873,6 +7894,28 @@ export default function BrandDashboard() {
           </div>
         </div>
 
+        {/* Search & Sort */}
+        <div className="flex gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search by creator, agency, or title…"
+              value={contractSearch}
+              onChange={(e) => setContractSearch(e.target.value)}
+              className="pl-9 h-9 text-sm border-gray-200"
+            />
+          </div>
+          <Select value={contractSort} onValueChange={setContractSort}>
+            <SelectTrigger className="w-40 h-9 text-sm border-gray-200">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Sub-tabs */}
         <div className="flex gap-1 border-b border-gray-200">
           {[
@@ -7909,9 +7952,17 @@ export default function BrandDashboard() {
             <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-sm">Loading contracts…</span>
           </div>
-        ) : contractsForTab.length === 0 ? (
+        ) : contractsSorted.length === 0 ? (
           <div className="py-16 text-center">
-            {contractHubTab === "pending" ? (
+            {contractSearch.trim() ? (
+              <>
+                <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-base font-semibold text-gray-700">No results</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  No contracts match &ldquo;{contractSearch}&rdquo;
+                </p>
+              </>
+            ) : contractHubTab === "pending" ? (
               <>
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
                 <p className="text-base font-semibold text-gray-700">
@@ -7936,7 +7987,7 @@ export default function BrandDashboard() {
           </div>
         ) : (
           <div className="space-y-3">
-            {contractsForTab.map((contract: any) => {
+            {contractsSorted.map((contract: any) => {
               const sentAt = contract?.sent_at
                 ? new Date(contract.sent_at).toLocaleDateString()
                 : "—";
@@ -8151,7 +8202,7 @@ export default function BrandDashboard() {
                   <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-sm font-semibold text-gray-600">
                     {usageRightsTab === "expiring"
-                      ? "No licenses expiring in the next 30 days"
+                      ? "No licenses expiring in the next 15 days"
                       : "No active licenses yet"}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
