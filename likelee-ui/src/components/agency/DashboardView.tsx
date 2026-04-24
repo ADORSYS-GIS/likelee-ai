@@ -530,22 +530,22 @@ const DashboardView = ({
               talentPerformance.new_talent_performance.length ? (
                 talentPerformance.new_talent_performance
                   .slice(0, 1)
-                  .map((t: any) => (
-                    <div key={t.id} className="space-y-2">
+                  .map((talent: any) => (
+                    <div key={talent.id} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-gray-900 text-sm">
-                          {t.name}
+                          {talent.name}
                         </span>
                         <Badge
                           variant="default"
                           className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
                         >
-                          {t.status}
+                          {talent.status}
                         </Badge>
                       </div>
                       <p className="text-xs text-gray-500">
                         {t("agencyDashboard.dashboard.time.addedDaysAgo", {
-                          count: t.days_since_added,
+                          count: talent.days_since_added,
                         })}
                       </p>
                     </div>

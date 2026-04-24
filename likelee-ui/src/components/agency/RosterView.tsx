@@ -2279,16 +2279,18 @@ const RosterView = ({
 
                 return (
                   <div className="max-h-56 overflow-y-auto space-y-2">
-                    {filtered.slice(0, 30).map((t: any) => {
-                      const email = String(t?.email || "").trim();
+                    {filtered.slice(0, 30).map((talent: any) => {
+                      const email = String(talent?.email || "").trim();
                       const name = String(
-                        t?.name || t?.full_legal_name || singularTitleLabel,
+                        talent?.name ||
+                          talent?.full_legal_name ||
+                          singularTitleLabel,
                       ).trim();
                       const rowSending =
                         !!inviteSendingEmail && inviteSendingEmail === email;
                       return (
                         <div
-                          key={t?.id || `${name}:${email}`}
+                          key={talent?.id || `${name}:${email}`}
                           className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
                         >
                           <div className="min-w-0">
