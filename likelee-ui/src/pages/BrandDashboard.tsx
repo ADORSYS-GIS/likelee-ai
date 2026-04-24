@@ -8277,7 +8277,6 @@ export default function BrandDashboard() {
 
         {/* ── Contract Hub ── */}
         {usageRightsTab === "contracts" && renderContractHub()}
-
       </div>
     );
   };
