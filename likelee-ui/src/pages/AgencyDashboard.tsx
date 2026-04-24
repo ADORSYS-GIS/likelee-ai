@@ -10030,6 +10030,7 @@ const ScoutingHubView = ({
   isSavingEvent: boolean;
   setIsSavingEvent: (saving: boolean) => void;
 }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
@@ -10092,14 +10093,54 @@ const ScoutingHubView = ({
   });
 
   const tabs = [
-    "Prospect Pipeline",
-    "Social Discovery",
-    "Marketplace",
-    "Scouting Map",
-    "Plan Trip",
-    "Submissions",
-    "Open Calls",
-    "Analytics",
+    {
+      key: "prospectPipeline",
+      label: t("agencyDashboard.scouting.tabs.prospectPipeline", {
+        defaultValue: "Prospect Pipeline",
+      }),
+    },
+    {
+      key: "socialDiscovery",
+      label: t("agencyDashboard.scouting.tabs.socialDiscovery", {
+        defaultValue: "Social Discovery",
+      }),
+    },
+    {
+      key: "marketplace",
+      label: t("agencyDashboard.scouting.tabs.marketplace", {
+        defaultValue: "Marketplace",
+      }),
+    },
+    {
+      key: "scoutingMap",
+      label: t("agencyDashboard.scouting.tabs.scoutingMap", {
+        defaultValue: "Scouting Map",
+      }),
+    },
+    {
+      key: "planTrip",
+      label: t("agencyDashboard.scouting.tabs.planTrip", {
+        defaultValue: "Plan Trip",
+      }),
+    },
+    {
+      key: "submissions",
+      label: t("agencyDashboard.scouting.tabs.submissions", {
+        defaultValue: "Submissions",
+      }),
+    },
+    {
+      key: "openCalls",
+      label: t("agencyDashboard.scouting.tabs.openCalls", {
+        defaultValue: "Open Calls",
+      }),
+    },
+    {
+      key: "analytics",
+      label: t("agencyDashboard.scouting.tabs.analytics", {
+        defaultValue: "Analytics",
+      }),
+    },
   ];
 
   return (
@@ -10107,10 +10148,15 @@ const ScoutingHubView = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Scouting Hub
+            {t("agencyDashboard.scouting.title", {
+              defaultValue: "Scouting Hub",
+            })}
           </h1>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            {`Discover, track, and manage ${entityPluralLower} prospects`}
+            {t("agencyDashboard.scouting.subtitle", {
+              entityPluralLower,
+              defaultValue: `Discover, track, and manage ${entityPluralLower} prospects`,
+            })}
           </p>
         </div>
         <div className="flex w-full md:w-auto items-center gap-3 overflow-x-auto pb-1">
@@ -10122,24 +10168,33 @@ const ScoutingHubView = ({
               setIsProspectModalOpen(true);
             }}
           >
-            <Plus className="w-4 h-4 text-gray-400" /> Add Prospect
+            <Plus className="w-4 h-4 text-gray-400" />{" "}
+            {t("agencyDashboard.scouting.addProspect", {
+              defaultValue: "Add Prospect",
+            })}
           </Button>
           <Button
             variant="default"
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
             onClick={() => {
-              setActiveTab("Open Calls");
+              setActiveTab("openCalls");
               setEventToEdit(null);
               setIsEventModalOpen(true);
             }}
           >
-            <Calendar className="w-4 h-4" /> Create Event
+            <Calendar className="w-4 h-4" />{" "}
+            {t("agencyDashboard.scouting.createEvent", {
+              defaultValue: "Create Event",
+            })}
           </Button>
           <Button
-            onClick={() => setActiveTab("Plan Trip")}
+            onClick={() => setActiveTab("planTrip")}
             className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
           >
-            <MapPin className="w-4 h-4" /> Plan Scouting Trip
+            <MapPin className="w-4 h-4" />{" "}
+            {t("agencyDashboard.scouting.planScoutingTrip", {
+              defaultValue: "Plan Scouting Trip",
+            })}
           </Button>
         </div>
       </div>
@@ -10147,21 +10202,21 @@ const ScoutingHubView = ({
       <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto w-full">
         {tabs.map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === tab
+              activeTab === tab.key
                 ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
             }`}
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
 
       <div className={`mt-8 w-full`}>
-        {activeTab === "Prospect Pipeline" && (
+        {activeTab === "prospectPipeline" && (
           <ProspectPipelineTab
             onAddProspect={() => {
               setProspectToEdit(null);
@@ -10173,9 +10228,9 @@ const ScoutingHubView = ({
             }}
           />
         )}
-        {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
-        {activeTab === "Marketplace" && <MarketplaceTab />}
-        <div className={activeTab === "Scouting Map" ? "block" : "hidden"}>
+        {activeTab === "socialDiscovery" && <SocialDiscoveryTab />}
+        {activeTab === "marketplace" && <MarketplaceTab />}
+        <div className={activeTab === "scoutingMap" ? "block" : "hidden"}>
           <ScoutingMapTab
             onEditEvent={(event) => {
               setEventToEdit(event);
@@ -10190,14 +10245,14 @@ const ScoutingHubView = ({
               setIsEventModalOpen(true);
             }}
             onDeleteEvent={handleDeleteEvent}
-            isVisible={activeTab === "Scouting Map"}
+            isVisible={activeTab === "scoutingMap"}
           />
         </div>
-        <div className={activeTab === "Plan Trip" ? "block" : "hidden"}>
+        <div className={activeTab === "planTrip" ? "block" : "hidden"}>
           <ScoutingTrips />
         </div>
-        {activeTab === "Submissions" && <SubmissionsTab />}
-        {activeTab === "Open Calls" && (
+        {activeTab === "submissions" && <SubmissionsTab />}
+        {activeTab === "openCalls" && (
           <OpenCallsTab
             onCreateEvent={() => {
               setEventToEdit(null);
@@ -10210,7 +10265,7 @@ const ScoutingHubView = ({
             onDeleteEvent={handleDeleteEvent}
           />
         )}
-        {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
+        {activeTab === "analytics" && <ScoutingAnalyticsTab />}
       </div>
       <ProspectModalAlt
         open={isProspectModalOpen}
@@ -11333,6 +11388,9 @@ const MarketplaceTab = ({
         })}
         verifiedBadgeLabel={t("agencyDashboard.marketplace.verifiedBadge", {
           defaultValue: "Verified Profiles",
+        })}
+        searchPlaceholder={t("agencyDashboard.scouting.search.placeholder", {
+          defaultValue: "Search by name, role, bio, or skills...",
         })}
         queryScope="scouting-marketplace"
         enableAgencyContractConnect
@@ -16999,10 +17057,15 @@ const RoyaltiesPayoutsView = ({
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <div className="mb-4">
             <h3 className="text-lg font-bold text-gray-900 mb-1 tracking-tight">
-              {`${entitySingularTitle} Commission Rules`}
+              {t("agencyDashboard.payouts.commissionStructure.title", {
+                defaultValue: `${entitySingularTitle} Commission Rules`,
+              })}
             </h3>
             <p className="text-sm text-gray-500 font-medium tracking-tight">
-              {`Agency-managed ${entitySingularLower} can use settings-based overrides here. Marketplace-connected ${entitySingularLower} follow the active signed contract rate and are read-only on this screen.`}
+              {t("agencyDashboard.payouts.commissionStructure.description", {
+                entitySingularLower,
+                defaultValue: `Agency-managed ${entitySingularLower} can use settings-based overrides here. Marketplace-connected ${entitySingularLower} follow the active signed contract rate and are read-only on this screen.`,
+              })}
             </p>
           </div>
           <TalentCommissionSettings entitySingularLower={entitySingularLower} />
@@ -17025,7 +17088,9 @@ const RoyaltiesPayoutsView = ({
                   <TrendingUp className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                  Accrued This Month
+                  {t("agencyDashboard.payouts.royalties.accruedThisMonth", {
+                    defaultValue: "Accrued This Month",
+                  })}
                 </p>
               </div>
               <h3 className="text-3xl font-black text-gray-900 mb-2">
@@ -17033,7 +17098,9 @@ const RoyaltiesPayoutsView = ({
               </h3>
               <p className="text-xs font-bold text-green-600 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                Live Earnings Pool
+                {t("agencyDashboard.payouts.royalties.liveEarningsPool", {
+                  defaultValue: "Live Earnings Pool",
+                })}
               </p>
             </Card>
 
@@ -17046,14 +17113,21 @@ const RoyaltiesPayoutsView = ({
                   <Clock className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                  Pending Approval
+                  {t("agencyDashboard.payouts.royalties.pendingApproval", {
+                    defaultValue: "Pending Approval",
+                  })}
                 </p>
               </div>
               <h3 className="text-3xl font-black text-gray-900 mb-2">
                 {royaltiesData?.pending_approval_formatted || "$0.00"}
               </h3>
               <p className="text-xs font-bold text-amber-600">
-                Awaiting Payout Processing
+                {t(
+                  "agencyDashboard.payouts.royalties.awaitingPayoutProcessing",
+                  {
+                    defaultValue: "Awaiting Payout Processing",
+                  },
+                )}
               </p>
             </Card>
 
@@ -17066,14 +17140,19 @@ const RoyaltiesPayoutsView = ({
                   <Calendar className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-black text-indigo-200 uppercase tracking-widest">
-                  {`YTD Paid to ${entitySingularTitle}`}
+                  {t("agencyDashboard.payouts.royalties.ytdPaidToEntity", {
+                    entitySingular: entitySingularTitle,
+                    defaultValue: `YTD Paid to ${entitySingularTitle}`,
+                  })}
                 </p>
               </div>
               <h3 className="text-3xl font-black text-white mb-2">
                 {royaltiesData?.paid_ytd_formatted || "$0.00"}
               </h3>
               <p className="text-xs font-bold text-indigo-300">
-                Total Net Payouts 2024
+                {t("agencyDashboard.payouts.royalties.totalNetPayouts", {
+                  defaultValue: "Total Net Payouts 2024",
+                })}
               </p>
             </Card>
           </div>
@@ -17085,7 +17164,10 @@ const RoyaltiesPayoutsView = ({
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">
-                {`Top Earning ${entitySingularTitle} (Last 30 Days)`}
+                {t("agencyDashboard.payouts.paymentHistory.topEarningTitle", {
+                  entitySingular: entitySingularTitle,
+                  defaultValue: `Top Earning ${entitySingularTitle} (Last 30 Days)`,
+                })}
               </h3>
             </div>
             <div>
@@ -17107,7 +17189,13 @@ const RoyaltiesPayoutsView = ({
                           {row.name}
                         </h4>
                         <p className="text-xs text-gray-500 font-medium">
-                          {row.campaigns_count || 0} campaigns
+                          {t(
+                            "agencyDashboard.payouts.paymentHistory.campaigns",
+                            {
+                              count: row.campaigns_count || 0,
+                              defaultValue: "{{count}} campaigns",
+                            },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -17117,11 +17205,24 @@ const RoyaltiesPayoutsView = ({
                       </h4>
                       <p className="text-[10px] font-black uppercase tracking-tight">
                         <span className="text-green-600">
-                          {`${entitySingularTitle}: ${row.talent_formatted}`}
+                          {t(
+                            "agencyDashboard.payouts.paymentHistory.talentLabel",
+                            {
+                              entitySingular: entitySingularTitle,
+                              defaultValue: `${entitySingularTitle}:`,
+                            },
+                          )}{" "}
+                          {row.talent_formatted}
                         </span>{" "}
                         •{" "}
                         <span className="text-indigo-600">
-                          Agency: {row.agency_formatted}
+                          {t(
+                            "agencyDashboard.payouts.paymentHistory.agencyLabel",
+                            {
+                              defaultValue: "Agency:",
+                            },
+                          )}{" "}
+                          {row.agency_formatted}
                         </span>
                       </p>
                     </div>
@@ -17133,7 +17234,10 @@ const RoyaltiesPayoutsView = ({
                     <Receipt className="w-8 h-8 text-gray-100" />
                   </div>
                   <p className="text-gray-400 font-bold">
-                    No successful payments found in the last 30 days.
+                    {t("agencyDashboard.payouts.paymentHistory.noPayments", {
+                      defaultValue:
+                        "No successful payments found in the last 30 days.",
+                    })}
                   </p>
                 </div>
               )}
@@ -17146,12 +17250,16 @@ const RoyaltiesPayoutsView = ({
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
             <h3 className="text-lg font-bold text-gray-900 mb-6">
-              Payout Schedule Settings
+              {t("agencyDashboard.payouts.payoutPreferences.scheduleSettings", {
+                defaultValue: "Payout Schedule Settings",
+              })}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Payout Frequency
+                  {t("agencyDashboard.payouts.payoutPreferences.frequency", {
+                    defaultValue: "Payout Frequency",
+                  })}
                 </Label>
                 <Select
                   value={payoutSettings?.payout_frequency || "Monthly"}
@@ -17165,21 +17273,48 @@ const RoyaltiesPayoutsView = ({
                   }
                 >
                   <SelectTrigger className="h-12 bg-white border-gray-200">
-                    <SelectValue placeholder="Select Frequency" />
+                    <SelectValue
+                      placeholder={t(
+                        "agencyDashboard.payouts.payoutPreferences.selectFrequency",
+                        {
+                          defaultValue: "Select Frequency",
+                        },
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Weekly">Weekly</SelectItem>
-                    <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
-                    <SelectItem value="Monthly">Monthly</SelectItem>
+                    <SelectItem value="Weekly">
+                      {t("agencyDashboard.payouts.payoutPreferences.weekly", {
+                        defaultValue: "Weekly",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Bi-Weekly">
+                      {t("agencyDashboard.payouts.payoutPreferences.biWeekly", {
+                        defaultValue: "Bi-Weekly",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Monthly">
+                      {t("agencyDashboard.payouts.payoutPreferences.monthly", {
+                        defaultValue: "Monthly",
+                      })}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-gray-500">
-                  {`How often ${entitySingularLower} receives payouts`}
+                  {t(
+                    "agencyDashboard.payouts.payoutPreferences.frequencyDescription",
+                    {
+                      entitySingularLower,
+                      defaultValue: `How often ${entitySingularLower} receives payouts`,
+                    },
+                  )}
                 </p>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Minimum Payout Threshold
+                  {t("agencyDashboard.payouts.payoutPreferences.minThreshold", {
+                    defaultValue: "Minimum Payout Threshold",
+                  })}
                 </Label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
@@ -17203,7 +17338,12 @@ const RoyaltiesPayoutsView = ({
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Don't pay if balance is under this amount
+                  {t(
+                    "agencyDashboard.payouts.payoutPreferences.minThresholdDescription",
+                    {
+                      defaultValue: "Don't pay if balance is under this amount",
+                    },
+                  )}
                 </p>
               </div>
             </div>
@@ -17211,7 +17351,11 @@ const RoyaltiesPayoutsView = ({
 
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 space-y-6">
-              <h3 className="text-lg font-bold text-gray-900">Payout Method</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                {t("agencyDashboard.payouts.payoutPreferences.method", {
+                  defaultValue: "Payout Method",
+                })}
+              </h3>
               <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-200 rounded-xl">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-white border border-green-200 flex items-center justify-center text-green-600">
@@ -17220,21 +17364,36 @@ const RoyaltiesPayoutsView = ({
                   <div>
                     <h4 className="text-base font-bold text-gray-900">
                       {payoutSettings?.payout_method ||
-                        "Stripe Connected Account"}
+                        t(
+                          "agencyDashboard.payouts.payoutPreferences.stripeConnected",
+                          {
+                            defaultValue: "Stripe Connected Account",
+                          },
+                        )}
                     </h4>
                     <p className="text-sm text-gray-500">
-                      Auto-deduct commission, transfer net to talent
+                      {t(
+                        "agencyDashboard.payouts.payoutPreferences.autoDeduct",
+                        {
+                          defaultValue:
+                            "Auto-deduct commission, transfer net to talent",
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
                 <Badge className="bg-green-500 hover:bg-green-600 text-white border-none px-3 py-1 text-xs font-bold">
-                  Active
+                  {t("agencyDashboard.payouts.payoutPreferences.active", {
+                    defaultValue: "Active",
+                  })}
                 </Badge>
               </div>
 
               <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
                 <h4 className="text-sm font-bold text-blue-900 mb-2">
-                  How it works:
+                  {t("agencyDashboard.payouts.payoutPreferences.howItWorks", {
+                    defaultValue: "How it works:",
+                  })}
                 </h4>
                 <ul className="text-sm text-blue-800 space-y-1">
                   {(
@@ -17259,7 +17418,12 @@ const RoyaltiesPayoutsView = ({
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8">
               <h3 className="text-lg font-bold text-gray-900 mb-6">
-                Upcoming Payout Schedule
+                {t(
+                  "agencyDashboard.payouts.payoutPreferences.upcomingSchedule",
+                  {
+                    defaultValue: "Upcoming Payout Schedule",
+                  },
+                )}
               </h3>
               <div className="space-y-4">
                 {upcomingSchedule && upcomingSchedule.length > 0 ? (
@@ -17277,7 +17441,13 @@ const RoyaltiesPayoutsView = ({
                             {format(new Date(item.date), "MMM d, yyyy")}
                           </h4>
                           <p className="text-xs text-gray-500">
-                            {item.description || "Scheduled payout"}
+                            {item.description ||
+                              t(
+                                "agencyDashboard.payouts.payoutPreferences.scheduledPayout",
+                                {
+                                  defaultValue: "Scheduled payout",
+                                },
+                              )}
                           </p>
                         </div>
                       </div>
@@ -17286,7 +17456,13 @@ const RoyaltiesPayoutsView = ({
                           {currencyFormatter.format(item.amount_cents / 100)}
                         </h4>
                         <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-none text-[10px] font-bold">
-                          {item.status || "scheduled"}
+                          {item.status ||
+                            t(
+                              "agencyDashboard.payouts.payoutPreferences.scheduled",
+                              {
+                                defaultValue: "scheduled",
+                              },
+                            )}
                         </Badge>
                       </div>
                     </div>
@@ -17297,10 +17473,21 @@ const RoyaltiesPayoutsView = ({
                       <Calendar className="w-6 h-6 text-gray-200" />
                     </div>
                     <p className="text-sm font-bold text-gray-900 mb-1">
-                      No upcoming payouts
+                      {t(
+                        "agencyDashboard.payouts.payoutPreferences.noUpcoming",
+                        {
+                          defaultValue: "No upcoming payouts",
+                        },
+                      )}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Your next payout will appear here when scheduled.
+                      {t(
+                        "agencyDashboard.payouts.payoutPreferences.noUpcomingDescription",
+                        {
+                          defaultValue:
+                            "Your next payout will appear here when scheduled.",
+                        },
+                      )}
                     </p>
                   </div>
                 )}
@@ -17314,11 +17501,15 @@ const RoyaltiesPayoutsView = ({
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
           <div className="mb-0">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Recent License Deal Breakdowns
+              {t("agencyDashboard.payouts.commissionBreakdown.title", {
+                defaultValue: "Recent License Deal Breakdowns",
+              })}
             </h3>
             <p className="text-sm font-medium text-gray-500 max-w-2xl">
-              Full transparency on how each license deal is split between talent
-              and agency.
+              {t("agencyDashboard.payouts.commissionBreakdown.description", {
+                defaultValue:
+                  "Full transparency on how each license deal is split between talent and agency.",
+              })}
             </p>
           </div>
 
@@ -17326,7 +17517,12 @@ const RoyaltiesPayoutsView = ({
             <Card className="p-6 bg-gray-50/50 border border-gray-200 rounded-2xl flex flex-wrap items-center gap-8 mb-6">
               <div className="flex-1 min-w-[200px]">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                  Total Volume (Last 30 Days)
+                  {t(
+                    "agencyDashboard.payouts.commissionBreakdown.totalVolume",
+                    {
+                      defaultValue: "Total Volume (Last 30 Days)",
+                    },
+                  )}
                 </p>
                 <p className="text-2xl font-black text-gray-900">
                   {currencyFormatter.format(
@@ -17340,7 +17536,12 @@ const RoyaltiesPayoutsView = ({
               <div className="w-[1px] h-10 bg-gray-200 hidden md:block" />
               <div className="flex-1 min-w-[200px]">
                 <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">
-                  Talent Total Share
+                  {t(
+                    "agencyDashboard.payouts.commissionBreakdown.talentTotalShare",
+                    {
+                      defaultValue: "Talent Total Share",
+                    },
+                  )}
                 </p>
                 <p className="text-2xl font-black text-green-600">
                   {currencyFormatter.format(
@@ -17355,7 +17556,12 @@ const RoyaltiesPayoutsView = ({
               <div className="w-[1px] h-10 bg-gray-200 hidden md:block" />
               <div className="flex-1 min-w-[200px]">
                 <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">
-                  Agency Total Revenue
+                  {t(
+                    "agencyDashboard.payouts.commissionBreakdown.agencyTotalRevenue",
+                    {
+                      defaultValue: "Agency Total Revenue",
+                    },
+                  )}
                 </p>
                 <p className="text-2xl font-black text-indigo-600">
                   {currencyFormatter.format(
@@ -17368,7 +17574,10 @@ const RoyaltiesPayoutsView = ({
                 </p>
               </div>
               <Button className="bg-white border-2 border-gray-900 text-gray-900 font-black text-[10px] uppercase h-10 tracking-widest px-6 shadow-[4px_4px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
-                <Download className="w-3.5 h-3.5 mr-2" /> Export Report
+                <Download className="w-3.5 h-3.5 mr-2" />{" "}
+                {t("agencyDashboard.payouts.commissionBreakdown.exportReport", {
+                  defaultValue: "Export Report",
+                })}
               </Button>
             </Card>
           )}
@@ -17402,7 +17611,12 @@ const RoyaltiesPayoutsView = ({
                     </div>
                     <div className="px-6 py-3 bg-gray-900 text-white rounded-2xl text-center min-w-[160px]">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5 text-gray-400">
-                        Total Gross
+                        {t(
+                          "agencyDashboard.payouts.commissionBreakdown.totalGross",
+                          {
+                            defaultValue: "Total Gross",
+                          },
+                        )}
                       </p>
                       <p className="text-2xl font-black font-display tracking-tight">
                         {currencyFormatter.format(deal.total_value)}
@@ -17415,7 +17629,12 @@ const RoyaltiesPayoutsView = ({
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <p className="text-[10px] font-black text-green-700 uppercase tracking-widest mb-1">
-                            Talent Earnings
+                            {t(
+                              "agencyDashboard.payouts.commissionBreakdown.talentEarnings",
+                              {
+                                defaultValue: "Talent Earnings",
+                              },
+                            )}
                           </p>
                           <p className="text-3xl font-black text-green-600 transition-transform group-hover:scale-105 origin-left">
                             {currencyFormatter.format(deal.talent_share)}
@@ -17439,7 +17658,12 @@ const RoyaltiesPayoutsView = ({
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-1">
-                            Agency Commission
+                            {t(
+                              "agencyDashboard.payouts.commissionBreakdown.agencyCommission",
+                              {
+                                defaultValue: "Agency Commission",
+                              },
+                            )}
                           </p>
                           <p className="text-3xl font-black text-indigo-600 transition-transform group-hover:scale-105 origin-left">
                             {currencyFormatter.format(deal.agency_share)}
@@ -17459,9 +17683,23 @@ const RoyaltiesPayoutsView = ({
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] px-2">
-                    <span>TALENT POOL</span>
+                    <span>
+                      {t(
+                        "agencyDashboard.payouts.commissionBreakdown.talentPool",
+                        {
+                          defaultValue: "TALENT POOL",
+                        },
+                      )}
+                    </span>
                     <span className="flex-1 border-b-2 border-dashed border-gray-100 mx-4" />
-                    <span>AGENCY FEE</span>
+                    <span>
+                      {t(
+                        "agencyDashboard.payouts.commissionBreakdown.agencyFee",
+                        {
+                          defaultValue: "AGENCY FEE",
+                        },
+                      )}
+                    </span>
                   </div>
                 </Card>
               ))}
@@ -17472,11 +17710,18 @@ const RoyaltiesPayoutsView = ({
                 <Calculator className="w-10 h-10 text-gray-200" />
               </div>
               <p className="text-xl font-bold text-gray-900 mb-2">
-                No license deals found
+                {t("agencyDashboard.payouts.commissionBreakdown.noDeals", {
+                  defaultValue: "No license deals found",
+                })}
               </p>
               <p className="text-sm text-gray-500 max-w-xs">
-                Recent licensing transactions will automatically generate
-                detailed split breakdowns here.
+                {t(
+                  "agencyDashboard.payouts.commissionBreakdown.noDealsDescription",
+                  {
+                    defaultValue:
+                      "Recent licensing transactions will automatically generate detailed split breakdowns here.",
+                  },
+                )}
               </p>
             </div>
           )}
@@ -17486,12 +17731,21 @@ const RoyaltiesPayoutsView = ({
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                   <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight mb-2">
-                    Commission Transparency
+                    {t(
+                      "agencyDashboard.payouts.commissionBreakdown.transparencyTitle",
+                      {
+                        defaultValue: "Commission Transparency",
+                      },
+                    )}
                   </h3>
                   <p className="text-sm font-medium text-blue-700 max-w-xl">
-                    This breakdown is visible to talent in their payment
-                    history. Full transparency ensures accurate accounting and
-                    builds long-term trust.
+                    {t(
+                      "agencyDashboard.payouts.commissionBreakdown.transparencyDescription",
+                      {
+                        defaultValue:
+                          "This breakdown is visible to talent in their payment history. Full transparency ensures accurate accounting and builds long-term trust.",
+                      },
+                    )}
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -17499,7 +17753,13 @@ const RoyaltiesPayoutsView = ({
                     variant="outline"
                     className="bg-white border-blue-200 text-blue-900 font-bold text-xs gap-2 h-11 px-5 shadow-sm hover:bg-blue-100 transition-all"
                   >
-                    <Settings className="w-4 h-4" /> Configure
+                    <Settings className="w-4 h-4" />{" "}
+                    {t(
+                      "agencyDashboard.payouts.commissionBreakdown.configure",
+                      {
+                        defaultValue: "Configure",
+                      },
+                    )}
                   </Button>
                   <Button
                     variant="default"
@@ -18546,7 +18806,7 @@ export default function AgencyDashboard() {
     isRosterPrimarySubTab,
   ]);
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
-    searchParams.get("scoutingTab") || "Prospect Pipeline",
+    searchParams.get("scoutingTab") || "prospectPipeline",
   );
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
@@ -18554,6 +18814,25 @@ export default function AgencyDashboard() {
   const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<any>(null);
+
+  // Ensure valid sub-tab for Scouting to avoid blank screen
+  useEffect(() => {
+    if (activeTab === "scouting") {
+      const validScoutingTabs = [
+        "prospectPipeline",
+        "socialDiscovery",
+        "marketplace",
+        "scoutingMap",
+        "planTrip",
+        "submissions",
+        "openCalls",
+        "analytics",
+      ];
+      if (!validScoutingTabs.includes(activeScoutingTab)) {
+        setActiveScoutingTab("prospectPipeline");
+      }
+    }
+  }, [activeTab, activeScoutingTab]);
 
   // Ensure valid sub-tab for Analytics to avoid blank screen
   useEffect(() => {
@@ -19790,15 +20069,24 @@ export default function AgencyDashboard() {
 
   const getSidebarItemLabel = (label: string) => {
     const keyMap: Record<string, string> = {
+      Dashboard: "agencyDashboard.navigation.dashboard",
       Jobs: "agencyDashboard.navigation.jobs",
       Marketplace: "agencyDashboard.navigation.marketplace",
       Messages: "agencyDashboard.navigation.messages",
       Roster: "agencyDashboard.navigation.roster",
+      Scouting: "agencyDashboard.navigation.scouting",
+      Bookings: "agencyDashboard.navigation.bookings",
       Payouts: "agencyDashboard.navigation.payouts",
+      "Accounting & Invoicing": "agencyDashboard.navigation.accounting",
+      Analytics: "agencyDashboard.navigation.analytics",
       "Client CRM": "agencyDashboard.navigation.clientCRM",
       Catalogs: "agencyDashboard.navigation.catalogs",
       "Talent Packages": "agencyDashboard.navigation.talentPackages",
       "Athlete Packages": "agencyDashboard.navigation.athletePackages",
+      Deliverables: "agencyDashboard.navigation.deliverables",
+      "Brand Connections": "agencyDashboard.navigation.brandConnections",
+      Settings: "agencyDashboard.navigation.settings",
+      "Protection & Usage": "agencyDashboard.navigation.protection",
     };
 
     const key = keyMap[label];
@@ -19809,6 +20097,47 @@ export default function AgencyDashboard() {
     const keyMap: Record<string, string> = {
       "Performance Tiers":
         "agencyDashboard.navigation.subItems.performanceTiers",
+      "All Talent": "agencyDashboard.navigation.subItems.allTalent",
+      "All Athletes": "agencyDashboard.navigation.subItems.allAthletes",
+      "Licensing Requests":
+        "agencyDashboard.navigation.subItems.licensingRequests",
+      "Active Licenses": "agencyDashboard.navigation.subItems.activeLicenses",
+      "License Submissions":
+        "agencyDashboard.navigation.subItems.licenseSubmissions",
+      "License Templates":
+        "agencyDashboard.navigation.subItems.licenseTemplates",
+      "Job Invites": "agencyDashboard.navigation.subItems.jobInvites",
+      "Open Job Board": "agencyDashboard.navigation.subItems.openJobBoard",
+      "Calendar & Schedule":
+        "agencyDashboard.navigation.subItems.calendarSchedule",
+      "Booking Requests": "agencyDashboard.navigation.subItems.bookingRequests",
+      "Athlete Availability":
+        "agencyDashboard.navigation.subItems.athleteAvailability",
+      "Talent Availability":
+        "agencyDashboard.navigation.subItems.talentAvailability",
+      Notifications: "agencyDashboard.navigation.subItems.notifications",
+      "Management & Analytics":
+        "agencyDashboard.navigation.subItems.managementAnalytics",
+      Campaigns: "agencyDashboard.navigation.subItems.campaigns",
+      "Invoice Generation":
+        "agencyDashboard.navigation.subItems.invoiceGeneration",
+      "Invoice Management":
+        "agencyDashboard.navigation.subItems.invoiceManagement",
+      "Payment Tracking": "agencyDashboard.navigation.subItems.paymentTracking",
+      "Talent Statements":
+        "agencyDashboard.navigation.subItems.talentStatements",
+      "Athlete Statements":
+        "agencyDashboard.navigation.subItems.athleteStatements",
+      "Financial Reports":
+        "agencyDashboard.navigation.subItems.financialReports",
+      "Expense Tracking": "agencyDashboard.navigation.subItems.expenseTracking",
+      "Connect Bank": "agencyDashboard.navigation.subItems.connectBank",
+      "Analytics Dashboard":
+        "agencyDashboard.navigation.subItems.analyticsDashboard",
+      "Royalties & Payouts":
+        "agencyDashboard.navigation.subItems.royaltiesPayouts",
+      "General Settings": "agencyDashboard.navigation.subItems.generalSettings",
+      "File Storage": "agencyDashboard.navigation.subItems.fileStorage",
     };
 
     const key = keyMap[subItem];
@@ -19968,7 +20297,13 @@ export default function AgencyDashboard() {
                 }}
                 title={
                   item.disabled
-                    ? item.disabledReason || "Requires Pro"
+                    ? item.disabledReason === "Choose a plan"
+                      ? t("agencyDashboard.navigation.choosePlan", {
+                          defaultValue: "Choose a plan",
+                        })
+                      : t("agencyDashboard.navigation.requiresPro", {
+                          defaultValue: "Requires Pro",
+                        })
                     : isSidebarCollapsed
                       ? getSidebarItemLabel(item.label)
                       : undefined
@@ -20177,7 +20512,13 @@ export default function AgencyDashboard() {
                 ? "justify-center px-2 py-2"
                 : "gap-2 px-3 py-2"
             }`}
-            title={isSidebarCollapsed ? "Sign Out" : undefined}
+            title={
+              isSidebarCollapsed
+                ? t("agencyDashboard.navigation.signOut", {
+                    defaultValue: "Sign Out",
+                  })
+                : undefined
+            }
           >
             <LogOut className="w-5 h-5 transform -scale-x-100" />
             {showLabels && (
@@ -20185,7 +20526,9 @@ export default function AgencyDashboard() {
                 className="transition-opacity duration-150"
                 style={{ opacity: labelOpacity }}
               >
-                Sign Out
+                {t("agencyDashboard.navigation.signOut", {
+                  defaultValue: "Sign Out",
+                })}
               </span>
             )}
           </button>
@@ -20662,7 +21005,11 @@ export default function AgencyDashboard() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition-colors text-left text-red-600"
                     >
                       <LogOut className="w-4 h-4 transform -scale-x-100" />
-                      <span className="text-sm font-bold">Sign Out</span>
+                      <span className="text-sm font-bold">
+                        {t("agencyDashboard.navigation.signOut", {
+                          defaultValue: "Sign Out",
+                        })}
+                      </span>
                     </button>
                   </div>
                 </div>
