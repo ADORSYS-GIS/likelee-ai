@@ -1828,13 +1828,13 @@ export default function BrandDashboard() {
       icon: FileText,
       badge: (() => {
         const today = new Date();
-        const in30 = new Date(today);
-        in30.setDate(in30.getDate() + 30);
+        const in15 = new Date(today);
+        in15.setDate(in15.getDate() + 15);
         const count = (Array.isArray(brandLicensingRequests) ? brandLicensingRequests : [])
           .filter((r: any) => String(r?.status || "").toLowerCase() === "approved")
           .filter((r: any) => {
             const end = r?.license_end_date ? new Date(r.license_end_date) : null;
-            return end && end >= today && end <= in30;
+            return end && end >= today && end <= in15;
           }).length;
         return count > 0 ? count : undefined;
       })(),
@@ -7988,13 +7988,13 @@ export default function BrandDashboard() {
       (r: any) => String(r?.status || "").toLowerCase() === "approved",
     );
 
-    // Expiring within 30 days
+    // Expiring within 15 days
     const today = new Date();
-    const in30 = new Date(today);
-    in30.setDate(in30.getDate() + 30);
+    const in15 = new Date(today);
+    in15.setDate(in15.getDate() + 15);
     const expiringLicensesReal = approvedLicenses.filter((r: any) => {
       const end = r?.license_end_date ? new Date(r.license_end_date) : null;
-      return end && end >= today && end <= in30;
+      return end && end >= today && end <= in15;
     });
 
     const displayLicenses =
@@ -8009,7 +8009,7 @@ export default function BrandDashboard() {
             Expired
           </span>
         );
-      if (end <= in30)
+      if (end <= in15)
         return (
           <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
             Expiring soon
@@ -8039,7 +8039,7 @@ export default function BrandDashboard() {
             { key: "licenses", label: "Active Licenses" },
             {
               key: "expiring",
-              label: "Expiring Soon",
+              label: "Expiring Soon (15d)",
               count: expiringLicensesReal.length,
             },
             { key: "contracts", label: "Contract Hub" },
@@ -8068,7 +8068,7 @@ export default function BrandDashboard() {
         {(usageRightsTab === "licenses" || usageRightsTab === "expiring") && (
           <div className="space-y-6">
             {/* Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                   Active Licenses
@@ -8079,7 +8079,7 @@ export default function BrandDashboard() {
               </div>
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  Expiring (30d)
+                  Expiring (15d)
                 </p>
                 <p
                   className={`text-3xl font-black ${expiringLicensesReal.length > 0 ? "text-amber-600" : "text-gray-900"}`}
@@ -8091,16 +8091,6 @@ export default function BrandDashboard() {
                     Renew soon
                   </p>
                 )}
-              </div>
-              <div className="p-5 rounded-xl border border-gray-200 bg-white">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  Royalties Paid
-                </p>
-                <p className="text-3xl font-black text-gray-900">
-                  {brandSpendData
-                    ? `$${(brandSpendData.ytd_spend / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                    : "$0"}
-                </p>
               </div>
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
