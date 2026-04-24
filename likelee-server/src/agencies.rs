@@ -431,7 +431,7 @@ fn normalize_agency_folder_row(row: &serde_json::Value, file_count: i64) -> serd
     })
 }
 
-async fn ensure_storage_settings_row(
+pub async fn ensure_storage_settings_row(
     state: &AppState,
     agency_id: &str,
 ) -> Result<i64, (StatusCode, String)> {
@@ -521,7 +521,7 @@ async fn ensure_storage_settings_row(
     Ok(limit)
 }
 
-async fn get_agency_used_storage_bytes(
+pub async fn get_agency_used_storage_bytes(
     state: &AppState,
     agency_id: &str,
 ) -> Result<i64, (StatusCode, String)> {

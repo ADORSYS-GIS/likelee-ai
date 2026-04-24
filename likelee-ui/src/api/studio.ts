@@ -117,3 +117,22 @@ export async function listPresets(): Promise<StudioStylePreset[]> {
   const { presets } = await base44.get("/studio/presets");
   return presets || [];
 }
+
+export async function saveGenerationToStorage(generationId: string): Promise<{
+  saved: Array<{
+    id: string;
+    file_name: string;
+    storage_path: string;
+    public_url: string | null;
+  }>;
+}> {
+  return await base44.post(
+    `/studio/generations/${generationId}/save-to-storage`,
+  );
+}
+
+export async function listCampaignGenerations(
+  campaignId: string,
+): Promise<StudioGenerationRow[]> {
+  return await base44.get(`/studio/campaigns/${campaignId}/generations`);
+}

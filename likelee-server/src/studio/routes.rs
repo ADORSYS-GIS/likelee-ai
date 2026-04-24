@@ -3,6 +3,12 @@ use super::types::*;
 use super::wallet;
 use crate::auth::AuthUser;
 use crate::config::AppState;
+use crate::storage::{
+    canonical_object_path, download_object, insert_asset_record, safe_fetch_url,
+    sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
+    StorageVisibility,
+};
+use crate::team::{require_agency_access, require_brand_access};
 use anyhow::anyhow;
 use axum::{
     extract::{Multipart, Path, Query, State},
@@ -977,4 +983,231 @@ pub async fn list_presets(
     all_presets.sort_by(|a, b| a.name.cmp(&b.name));
 
     Ok(Json(json!({ "presets": all_presets })))
+}
+
+/// POST /api/studio/generations/:generation_id/save-to-storage
+/// Save generation outputs to org storage
+pub async fn save_generation_to_storage(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(generation_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let user_id = &auth_user.id;
+
+    let gen_resp = state
+        .pg
+        .from("studio_generations")
+        .select("id,user_id,output_urls,output_metadata,generation_type,provider,model")
+        .eq("id", &generation_id)
+        .eq("user_id", user_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let gen_text = gen_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let gen_rows: Vec<serde_json::Value> = serde_json::from_str(&gen_text).unwrap_or_default();
+    let gen = gen_rows
+        .first()
+        .ok_or((StatusCode::NOT_FOUND, "Generation not found".to_string()))?;
+
+    let output_urls: Vec<String> = gen
+        .get("output_urls")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    if output_urls.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Generation has no output URLs".into(),
+        ));
+    }
+
+    let (org_type, org_id) = match require_agency_access(&state, &auth_user).await {
+        Ok(access) => ("agency", access.organization_id),
+        Err(_) => {
+            let access = require_brand_access(&state, &auth_user).await?;
+            ("brand", access.organization_id)
+        }
+    };
+
+    let (file_table, owner_col, owner_type, _context_type) = if org_type == "agency" {
+        (
+            "agency_files",
+            "agency_id",
+            StorageOwnerType::Agency,
+            StorageContextType::AgencyStorage,
+        )
+    } else {
+        (
+            "brand_files",
+            "brand_id",
+            StorageOwnerType::Brand,
+            StorageContextType::BrandStorage,
+        )
+    };
+
+    let mut folder_id: Option<String> = None;
+    let mut cumulative_new_size: i64 = 0;
+    if org_type == "brand" {
+        let _limit =
+            crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
+        let used = crate::brand_storage::get_brand_used_storage_bytes(&state, &org_id).await?;
+        cumulative_new_size = used;
+        folder_id =
+            Some(crate::brand_storage::get_or_create_default_folder(&state, &org_id).await?);
+    }
+
+    let mut saved = Vec::new();
+
+    for (idx, url) in output_urls.iter().enumerate() {
+        let downloaded = match download_object(&state, &state.supabase_bucket_public, url).await {
+            Ok(d) => d,
+            Err(_) => match safe_fetch_url(url, None).await {
+                Ok(d) => d,
+                Err(e) => {
+                    warn!(generation_id = %generation_id, idx, error = ?e, "failed to safely fetch generation output from external URL");
+                    continue;
+                }
+            },
+        };
+
+        let file_bytes = downloaded.bytes.to_vec();
+        let new_size = file_bytes.len() as i64;
+        let ct = downloaded.content_type.as_deref();
+
+        if org_type == "brand" {
+            let limit =
+                crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
+            if cumulative_new_size + new_size > limit {
+                warn!(
+                    generation_id = %generation_id,
+                    idx,
+                    cumulative = cumulative_new_size,
+                    new_size,
+                    limit,
+                    "skipping generation output due to quota limit"
+                );
+                continue;
+            }
+        }
+
+        let ext = match ct {
+            Some(m) if m.contains("png") => "png",
+            Some(m) if m.contains("jpeg") || m.contains("jpg") => "jpg",
+            Some(m) if m.contains("webp") => "webp",
+            Some(m) if m.contains("mp4") => "mp4",
+            Some(m) if m.contains("gif") => "gif",
+            _ => "bin",
+        };
+        let fname = format!("generation_{}.{}", idx, ext);
+        let sanitized = sanitize_file_name(&fname);
+        let visibility = StorageVisibility::Private;
+        let path = canonical_object_path(
+            &format!("{org_type}s/{org_id}/studio-generations"),
+            &sanitized,
+            chrono::Utc::now().timestamp_millis(),
+        );
+
+        let uploaded = match upload_object(&state, visibility, &path, file_bytes, ct).await {
+            Ok(u) => u,
+            Err(e) => {
+                warn!(generation_id = %generation_id, idx, error = %e.1, "failed to upload generation output to storage");
+                continue;
+            }
+        };
+
+        let insert = if org_type == "brand" {
+            json!({
+                owner_col: org_id,
+                "file_name": fname,
+                "storage_bucket": uploaded.bucket,
+                "storage_path": uploaded.path,
+                "public_url": uploaded.public_url,
+                "folder_id": folder_id,
+                "size_bytes": new_size,
+                "mime_type": ct,
+                "source_type": "studio_generation",
+                "generation_id": generation_id,
+            })
+        } else {
+            json!({
+                owner_col: org_id,
+                "file_name": fname,
+                "storage_bucket": uploaded.bucket,
+                "storage_path": uploaded.path,
+                "public_url": uploaded.public_url,
+                "size_bytes": new_size,
+                "mime_type": ct,
+            })
+        };
+        let resp = state
+            .pg
+            .from(file_table)
+            .insert(insert.to_string())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let txt = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+        let rec = arr.first().cloned().unwrap_or(json!({"id": ""}));
+        let id = rec
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        let storage_record = StorageAssetRecord {
+            owner_type,
+            owner_id: org_id.clone(),
+            context_type: StorageContextType::StudioGeneration,
+            context_id: Some(generation_id.clone()),
+            visibility,
+            object_path: uploaded.path.clone(),
+            original_file_name: Some(fname.clone()),
+            mime_type: ct.map(|s| s.to_string()),
+            size_bytes: Some(new_size),
+            checksum_sha256: None,
+            source_table: Some(file_table.to_string()),
+            source_id: if id.is_empty() {
+                None
+            } else {
+                Some(id.clone())
+            },
+            created_by: Some(user_id.clone()),
+            counts_toward_quota: true,
+        };
+        if let Err(err) = insert_asset_record(&state, &storage_record).await {
+            warn!(org_id = %org_id, file_id = %id, error = %err.1, "failed to mirror generation output into storage_assets");
+        }
+
+        cumulative_new_size += new_size;
+
+        saved.push(json!({
+            "id": id,
+            "file_name": fname,
+            "storage_path": uploaded.path,
+            "public_url": uploaded.public_url,
+        }));
+    }
+
+    info!(
+        generation_id = %generation_id,
+        org_type = org_type,
+        org_id = %org_id,
+        saved_count = saved.len(),
+        "generation_saved_to_storage"
+    );
+
+    Ok(Json(json!({ "saved": saved })))
 }

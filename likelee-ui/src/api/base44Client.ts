@@ -354,6 +354,48 @@ export const base44 = {
     }
     return (await res.json()) as T;
   },
+  async patch<T = any>(
+    url: string,
+    data?: any,
+    config?: RequestConfig,
+  ): Promise<T> {
+    const full = buildUrl(API_BASE, url, config?.params);
+
+    const {
+      data: { session },
+    } = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
+    const token = session?.access_token;
+
+    const isForm = typeof FormData !== "undefined" && data instanceof FormData;
+    const headers = {
+      ...(isForm ? {} : { "Content-Type": "application/json" }),
+      ...(config?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(config?.idempotencyKey
+        ? { "Idempotency-Key": config.idempotencyKey }
+        : {}),
+    };
+
+    const body = isForm
+      ? data
+      : data !== undefined
+        ? JSON.stringify(data)
+        : undefined;
+    const res = await fetch(full, { method: "PATCH", headers, body });
+    if (!res.ok) {
+      const txt = await res.text();
+      let errorData: any = txt;
+      try {
+        errorData = JSON.parse(txt);
+      } catch {
+        // keep as text
+      }
+      throwBackendError("PATCH", url, res.status, errorData);
+    }
+    return (await res.json()) as T;
+  },
   async delete<T = any>(
     url: string,
     config?: RequestConfig & { data?: any },
