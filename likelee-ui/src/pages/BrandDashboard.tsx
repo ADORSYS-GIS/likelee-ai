@@ -8119,11 +8119,9 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Usage Rights &amp; Compliance
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900">Usage Rights</h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Manage licensing, prevent misuse, ensure compliance
+            Manage your licensing agreements and monitor expiry
           </p>
         </div>
 
