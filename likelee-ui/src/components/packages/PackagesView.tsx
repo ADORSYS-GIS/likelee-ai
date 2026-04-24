@@ -25,6 +25,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,7 @@ export function PackagesView({
 }: {
   isSportsAgency?: boolean;
 }) {
+  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const location = useLocation();
@@ -125,7 +127,11 @@ export function PackagesView({
   const deleteMutation = useMutation({
     mutationFn: (id: string) => packageApi.deletePackage(id),
     onSuccess: () => {
-      toast({ title: "Package deleted" });
+      toast({
+        title: t("agencyDashboard.packages.toasts.deleted", {
+          defaultValue: "Package deleted",
+        }),
+      });
       queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-package-templates"] });
       queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
@@ -146,7 +152,11 @@ export function PackagesView({
   const copyToClipboard = (token: string) => {
     const url = `${window.location.origin}/share/package/${token}`;
     navigator.clipboard.writeText(url);
-    toast({ title: "Link copied to clipboard!" });
+    toast({
+      title: t("agencyDashboard.packages.toasts.linkCopied", {
+        defaultValue: "Link copied to clipboard!",
+      }),
+    });
   };
 
   const currentPackages = activeTab === "templates" ? templates : sentPackages;
@@ -177,21 +187,27 @@ export function PackagesView({
 
   const stats = [
     {
-      label: "Total Packages",
+      label: t("agencyDashboard.packages.stats.totalPackages", {
+        defaultValue: "Total Packages",
+      }),
       value: realStats.total_packages,
       icon: Package,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
     },
     {
-      label: "Active Shares",
+      label: t("agencyDashboard.packages.stats.activeShares", {
+        defaultValue: "Active Shares",
+      }),
       value: realStats.active_shares,
       icon: CheckCircle2,
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
-      label: "Total Views",
+      label: t("agencyDashboard.packages.stats.totalViews", {
+        defaultValue: "Total Views",
+      }),
       value: realStats.total_views.toLocaleString(),
       icon: Eye,
       color: "text-purple-600",
@@ -206,11 +222,15 @@ export function PackagesView({
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-widest text-indigo-700">
-                Sending for offer
+                {t("agencyDashboard.packages.offerBanner.title", {
+                  defaultValue: "Sending for offer",
+                })}
               </p>
               <p className="text-sm text-gray-700 font-medium mt-1">
-                Choose whether to send an existing package/template or create a
-                new one.
+                {t("agencyDashboard.packages.offerBanner.description", {
+                  defaultValue:
+                    "Choose whether to send an existing package/template or create a new one.",
+                })}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -222,7 +242,9 @@ export function PackagesView({
                   setActiveTab("templates");
                 }}
               >
-                Use Existing
+                {t("agencyDashboard.packages.actions.useExisting", {
+                  defaultValue: "Use Existing",
+                })}
               </Button>
               <Button
                 className="bg-indigo-600 hover:bg-indigo-700 text-white"
@@ -232,7 +254,9 @@ export function PackagesView({
                   setShowWizard(true);
                 }}
               >
-                Create New
+                {t("agencyDashboard.packages.actions.createNew", {
+                  defaultValue: "Create New",
+                })}
               </Button>
             </div>
           </div>
@@ -242,8 +266,10 @@ export function PackagesView({
       {offerContext && offerSendChoice === "existing" && (
         <Card className="p-4 bg-indigo-50 border border-indigo-100">
           <p className="text-sm text-indigo-900 font-semibold">
-            Pick a template (or resend an existing package) below, then click
-            "Send" to send it to the brand inbox for this offer.
+            {t("agencyDashboard.packages.offerBanner.pickTemplate", {
+              defaultValue:
+                'Pick a template (or resend an existing package) below, then click "Send" to send it to the brand inbox for this offer.',
+            })}
           </p>
         </Card>
       )}
@@ -283,7 +309,9 @@ export function PackagesView({
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Templates
+            {t("agencyDashboard.packages.tabs.templates", {
+              defaultValue: "Templates",
+            })}
           </button>
           <button
             onClick={() => setActiveTab("sent")}
@@ -293,7 +321,9 @@ export function PackagesView({
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Packages Sent
+            {t("agencyDashboard.packages.tabs.sent", {
+              defaultValue: "Packages Sent",
+            })}
           </button>
         </div>
       </div>
@@ -303,7 +333,17 @@ export function PackagesView({
         <div className="flex-1 relative max-w-none sm:max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder={`Search ${activeTab === "templates" ? "templates" : "sent packages"}...`}
+            placeholder={t("agencyDashboard.packages.search", {
+              target:
+                activeTab === "templates"
+                  ? t("agencyDashboard.packages.tabs.templates", {
+                      defaultValue: "templates",
+                    }).toLowerCase()
+                  : t("agencyDashboard.packages.tabs.sent", {
+                      defaultValue: "sent packages",
+                    }).toLowerCase(),
+              defaultValue: "Search {{target}}...",
+            })}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 h-12 bg-white border-gray-200 font-medium rounded-lg"
@@ -324,7 +364,13 @@ export function PackagesView({
             className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />{" "}
-            {activeTab === "templates" ? "Template" : "Package"}
+            {activeTab === "templates"
+              ? t("agencyDashboard.packages.actions.template", {
+                  defaultValue: "Template",
+                })
+              : t("agencyDashboard.packages.actions.package", {
+                  defaultValue: "Package",
+                })}
           </Button>
         </div>
       </div>
@@ -340,11 +386,24 @@ export function PackagesView({
             <Package className="w-10 h-10 text-gray-300" />
           </div>
           <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
-            No {activeTab === "templates" ? "Templates" : "Packages"} Found
+            {t("agencyDashboard.packages.empty.title", {
+              target:
+                activeTab === "templates"
+                  ? t("agencyDashboard.packages.tabs.templates", {
+                      defaultValue: "Templates",
+                    })
+                  : t("agencyDashboard.packages.actions.packagePlural", {
+                      defaultValue: "Packages",
+                    }),
+              defaultValue: "No {{target}} Found",
+            })}
           </h3>
           <p className="text-gray-500 font-medium mt-2 mb-8">
             {activeTab === "templates"
-              ? "Create reusable templates to send to multiple clients."
+              ? t("agencyDashboard.packages.empty.templatesDescription", {
+                  defaultValue:
+                    "Create reusable templates to send to multiple clients.",
+                })
               : `Start by creating your first ${entitySingularLower} portfolio for a client.`}
           </p>
           <Button
@@ -392,7 +451,10 @@ export function PackagesView({
                 disabled={currentPage === 1}
                 className="font-medium text-gray-500 hover:text-gray-900 px-2"
               >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                <ChevronLeft className="w-4 h-4 mr-1" />{" "}
+                {t("agencyDashboard.packages.pagination.previous", {
+                  defaultValue: "Previous",
+                })}
               </Button>
 
               <div className="flex items-center gap-2">
@@ -422,7 +484,10 @@ export function PackagesView({
                 disabled={currentPage === totalPages}
                 className="font-medium text-gray-500 hover:text-gray-900 px-2"
               >
-                Next <ChevronRight className="w-4 h-4 ml-1" />
+                {t("agencyDashboard.packages.pagination.next", {
+                  defaultValue: "Next",
+                })}{" "}
+                <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           )}
@@ -442,7 +507,13 @@ export function PackagesView({
               : false;
             const isExpiringSoon =
               !isExpired && daysRemaining !== null && daysRemaining <= 2;
-            const statusLabel = isExpired ? "Expired" : "Active";
+            const statusLabel = isExpired
+              ? t("agencyDashboard.packages.status.expired", {
+                  defaultValue: "Expired",
+                })
+              : t("agencyDashboard.packages.status.active", {
+                  defaultValue: "Active",
+                });
             const statusClass = isExpired
               ? "bg-red-100 text-red-700 border-red-200"
               : isExpiringSoon
@@ -515,7 +586,9 @@ export function PackagesView({
                       </h4>
                       {isOffer && (
                         <Badge className="bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200 transition-colors">
-                          Campaign Offer
+                          {t("agencyDashboard.packages.labels.campaignOffer", {
+                            defaultValue: "Campaign Offer",
+                          })}
                         </Badge>
                       )}
                       <Badge className={statusClass}>{statusLabel}</Badge>
