@@ -20401,7 +20401,7 @@ export default function AgencyDashboard() {
                       >
                         {agencyTrialActive ? (
                           <span className="inline-flex items-center gap-2">
-                            <span>PRO TRIAL</span>
+                            <span>{agencyTrialTierLabel} TRIAL</span>
                             {agencyTrialCountdown ? (
                               <span className="text-[11px] font-black tracking-normal opacity-95">
                                 {agencyTrialCountdown}
@@ -20409,7 +20409,7 @@ export default function AgencyDashboard() {
                             ) : null}
                           </span>
                         ) : (
-                          String(agencyDisplayPlanLabel || "")
+                          String(agencyPlanTier || agencyDisplayPlanLabel || "")
                             .trim()
                             .toUpperCase()
                         )}
