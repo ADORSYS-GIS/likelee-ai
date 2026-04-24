@@ -57,6 +57,7 @@ import {
   rejectAgencyCreatorDisconnectRequest,
 } from "@/api/creatorAgencyConnection";
 import { MarketplaceContractSummary } from "@/api/marketplaceContracts";
+import { useTranslation } from "react-i18next";
 
 export type MarketplaceProfile = {
   id: string;
@@ -142,6 +143,7 @@ type MarketplaceSectionProps = {
   connectLocked?: boolean;
   connectLockedReason?: string;
   onConnectLocked?: () => void;
+  translationPrefix?: string;
 };
 
 const parseApiErrorPayload = (error: any) => {
@@ -219,11 +221,21 @@ export function MarketplaceSection({
   connectLocked = false,
   connectLockedReason = "",
   onConnectLocked,
+  translationPrefix = "agencyDashboard.marketplace",
 }: MarketplaceSectionProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const entityLabel = entityType === "agency" ? "agency" : "creator";
   const entityLabelTitle = entityType === "agency" ? "Agency" : "Creator";
+  const entityLabelTranslated = t(
+    `agencyDashboard.marketplace.entities.${entityLabel}`,
+    { defaultValue: entityLabel },
+  );
+  const entityLabelTitleTranslated = t(
+    `agencyDashboard.marketplace.entities.${entityLabel.toLowerCase()}Title`,
+    { defaultValue: entityLabelTitle },
+  );
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [pendingConnectKeys, setPendingConnectKeys] = useState<Set<string>>(
@@ -262,19 +274,48 @@ export function MarketplaceSection({
   const lockedHighlights =
     entityType === "agency"
       ? [
-          "Connect with agencies",
-          "Unlock collaborator workflows",
-          "Launch full campaign handoff",
+          t(`${translationPrefix}.locked.highlights.connectAgencies`, {
+            defaultValue: "Connect with agencies",
+          }),
+          t(`${translationPrefix}.locked.highlights.collaboratorWorkflows`, {
+            defaultValue: "Unlock collaborator workflows",
+          }),
+          t(`${translationPrefix}.locked.highlights.campaignHandoff`, {
+            defaultValue: "Launch full campaign handoff",
+          }),
         ]
       : [
-          "Connect with creators",
-          "Request licenses",
-          "Unlock collaborator workflows",
+          t(`${translationPrefix}.locked.highlights.connectCreators`, {
+            defaultValue: "Connect with creators",
+          }),
+          t(`${translationPrefix}.locked.highlights.requestLicenses`, {
+            defaultValue: "Request licenses",
+          }),
+          t(`${translationPrefix}.locked.highlights.collaboratorWorkflows`, {
+            defaultValue: "Unlock collaborator workflows",
+          }),
         ];
   const selectedProfileId = String(selectedProfile?.id || "").trim();
   const selectedProfileType = selectedProfile?.profile_type || entityType;
   const canFetchDetails = detailsOpen && selectedProfileId.length > 0;
   const isDisconnectBusy = disconnectActionLoading !== null;
+  const getConnectionStatusLabel = (
+    status:
+      | "none"
+      | "waiting"
+      | "pending"
+      | "connected"
+      | "declined"
+      | "disconnected",
+  ) =>
+    t(`agencyDashboard.marketplace.status.${status}`, {
+      defaultValue:
+        status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " "),
+    });
+  const getOwnershipLabel = (ownership: "agency_owned" | "regular") =>
+    t(`agencyDashboard.marketplace.ownership.${ownership}`, {
+      defaultValue: ownership === "agency_owned" ? "Agency-Owned" : "Regular",
+    });
 
   const formatMoney = (amountCents: any, currency: any = "USD") => {
     const n = Number(amountCents || 0);
@@ -366,10 +407,14 @@ export function MarketplaceSection({
   useEffect(() => {
     if (!marketplaceQuery.error) return;
     toast({
-      title: "Failed to load marketplace profiles",
+      title: t(`${translationPrefix}.toasts.loadFailedTitle`, {
+        defaultValue: "Failed to load marketplace profiles",
+      }),
       description: parseApiErrorMessage(
         marketplaceQuery.error,
-        "Please try again.",
+        t(`${translationPrefix}.toasts.tryAgain`, {
+          defaultValue: "Please try again.",
+        }),
         entityLabel,
       ),
       variant: "destructive" as any,
@@ -505,7 +550,9 @@ export function MarketplaceSection({
                 </div>
                 <div>
                   <Badge className="border border-[#F5D497] bg-white/80 text-[#B86B05] hover:bg-white/80">
-                    Preview mode
+                    {t(`${translationPrefix}.locked.previewMode`, {
+                      defaultValue: "Preview mode",
+                    })}
                   </Badge>
                   <p className="mt-3 text-lg font-bold tracking-tight text-[#7A3D00]">
                     {lockedTitle}
@@ -536,7 +583,10 @@ export function MarketplaceSection({
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <p className="text-center text-xs font-semibold text-[#B16B12]">
-                  Visible in preview. Pro makes every action live.
+                  {t(`${translationPrefix}.locked.previewFootnote`, {
+                    defaultValue:
+                      "Visible in preview. Pro makes every action live.",
+                  })}
                 </p>
               </div>
             </div>
@@ -572,7 +622,9 @@ export function MarketplaceSection({
                     : "text-slate-500"
               }`}
             />
-            Filters
+            {t(`${translationPrefix}.filters.button`, {
+              defaultValue: "Filters",
+            })}
             {hasActiveFilters && (
               <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[11px] font-semibold text-white">
                 {activeFilterCount}
@@ -581,7 +633,9 @@ export function MarketplaceSection({
             {hasActiveFilters && (
               <span
                 role="button"
-                aria-label="Reset all filters"
+                aria-label={t(`${translationPrefix}.filters.resetAllAria`, {
+                  defaultValue: "Reset all filters",
+                })}
                 className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-red-600 hover:bg-red-50 hover:text-red-700"
                 onClick={(e) => {
                   e.preventDefault();
@@ -602,7 +656,9 @@ export function MarketplaceSection({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Filter Options
+                {t(`${translationPrefix}.filters.optionsTitle`, {
+                  defaultValue: "Filter Options",
+                })}
               </p>
               {hasActiveFilters && (
                 <button
@@ -614,7 +670,9 @@ export function MarketplaceSection({
                     setSortBy(entityType === "agency" ? "recent" : "followers");
                   }}
                 >
-                  Reset filters
+                  {t(`${translationPrefix}.filters.reset`, {
+                    defaultValue: "Reset filters",
+                  })}
                 </button>
               )}
             </div>
@@ -624,14 +682,23 @@ export function MarketplaceSection({
                 onValueChange={(v) => setCategoryFilter(v || "all")}
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue
+                    placeholder={t(
+                      `${translationPrefix}.filters.allCategories`,
+                      {
+                        defaultValue: "All Categories",
+                      },
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="all"
                   >
-                    All Categories
+                    {t(`${translationPrefix}.filters.allCategories`, {
+                      defaultValue: "All Categories",
+                    })}
                   </SelectItem>
                   {entityType === "creator" ? (
                     <>
@@ -639,25 +706,33 @@ export function MarketplaceSection({
                         className={marketplaceSelectItemClass}
                         value="models"
                       >
-                        Models
+                        {t(`${translationPrefix}.categories.models`, {
+                          defaultValue: "Models",
+                        })}
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="actors"
                       >
-                        Actors
+                        {t(`${translationPrefix}.categories.actors`, {
+                          defaultValue: "Actors",
+                        })}
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="influencers"
                       >
-                        Influencers
+                        {t(`${translationPrefix}.categories.influencers`, {
+                          defaultValue: "Influencers",
+                        })}
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="athletes"
                       >
-                        Athletes
+                        {t(`${translationPrefix}.categories.athletes`, {
+                          defaultValue: "Athletes",
+                        })}
                       </SelectItem>
                     </>
                   ) : (
@@ -666,13 +741,17 @@ export function MarketplaceSection({
                         className={marketplaceSelectItemClass}
                         value="talent_agency"
                       >
-                        Talent Agencies
+                        {t(`${translationPrefix}.categories.talentAgencies`, {
+                          defaultValue: "Talent Agencies",
+                        })}
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="sports_agency"
                       >
-                        Sports Agencies
+                        {t(`${translationPrefix}.categories.sportsAgencies`, {
+                          defaultValue: "Sports Agencies",
+                        })}
                       </SelectItem>
                     </>
                   )}
@@ -692,32 +771,48 @@ export function MarketplaceSection({
                 }
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                  <SelectValue placeholder="All" />
+                  <SelectValue
+                    placeholder={t(`${translationPrefix}.filters.all`, {
+                      defaultValue: "All",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="all"
                   >
-                    All
+                    {t(`${translationPrefix}.filters.all`, {
+                      defaultValue: "All",
+                    })}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value={entityType}
                   >
-                    {`Verified ${entityType === "agency" ? "Agencies" : "Creators"}`}
+                    {entityType === "agency"
+                      ? t(`${translationPrefix}.filters.verifiedAgencies`, {
+                          defaultValue: "Verified Agencies",
+                        })
+                      : t(`${translationPrefix}.filters.verifiedCreators`, {
+                          defaultValue: "Verified Creators",
+                        })}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="connected"
                   >
-                    Connected
+                    {t(`${translationPrefix}.filters.connected`, {
+                      defaultValue: "Connected",
+                    })}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="waiting"
                   >
-                    Waiting
+                    {t(`${translationPrefix}.filters.waiting`, {
+                      defaultValue: "Waiting",
+                    })}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -733,7 +828,13 @@ export function MarketplaceSection({
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
                   <SelectValue
                     placeholder={
-                      entityType === "agency" ? "Recently Updated" : "Followers"
+                      entityType === "agency"
+                        ? t(`${translationPrefix}.sort.recent`, {
+                            defaultValue: "Recently Updated",
+                          })
+                        : t(`${translationPrefix}.sort.followers`, {
+                            defaultValue: "Followers",
+                          })
                     }
                   />
                 </SelectTrigger>
@@ -743,20 +844,26 @@ export function MarketplaceSection({
                       className={marketplaceSelectItemClass}
                       value="followers"
                     >
-                      Followers
+                      {t(`${translationPrefix}.sort.followers`, {
+                        defaultValue: "Followers",
+                      })}
                     </SelectItem>
                   )}
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="name"
                   >
-                    Name
+                    {t(`${translationPrefix}.sort.name`, {
+                      defaultValue: "Name",
+                    })}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="recent"
                   >
-                    Recently Updated
+                    {t(`${translationPrefix}.sort.recent`, {
+                      defaultValue: "Recently Updated",
+                    })}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -768,7 +875,10 @@ export function MarketplaceSection({
           <div className="border border-dashed border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center mt-4">
             <Loader2 className="w-6 h-6 text-gray-400 animate-spin mb-4" />
             <p className="text-sm text-gray-500 font-medium">
-              {`Loading verified ${entityLabel}s...`}
+              {t(`${translationPrefix}.states.loadingProfiles`, {
+                entityLabel,
+                defaultValue: "Loading verified {{entityLabel}}s...",
+              })}
             </p>
           </div>
         ) : profiles.length === 0 ? (
@@ -777,11 +887,23 @@ export function MarketplaceSection({
               <Globe className="w-10 h-10 text-gray-300" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              No verified profiles found
+              {t(`${translationPrefix}.states.noProfilesTitle`, {
+                defaultValue: "No verified profiles found",
+              })}
             </h3>
             <p className="text-gray-500 max-w-md font-medium">
-              Try adjusting your search terms or filters to discover more
-              {entityType === "agency" ? " agencies." : " creators."}
+              {t(`${translationPrefix}.states.noProfilesDescription`, {
+                role:
+                  entityType === "agency"
+                    ? t(`${translationPrefix}.roles.agencies`, {
+                        defaultValue: "agencies",
+                      })
+                    : t(`${translationPrefix}.roles.creators`, {
+                        defaultValue: "creators",
+                      }),
+                defaultValue:
+                  "Try adjusting your search terms or filters to discover more {{role}}.",
+              })}
             </p>
           </div>
         ) : (
@@ -814,13 +936,15 @@ export function MarketplaceSection({
                 connectLocked;
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
-              const roleLabel = `Verified ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
+              const roleLabel = `${t(`${translationPrefix}.labels.verified`, {
+                defaultValue: "Verified",
+              })} ${entityLabelTitleTranslated}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
               const ownershipLabel =
                 profile.profile_type === "creator" &&
                 profile.talent_ownership === "agency_owned"
-                  ? "Agency-Owned"
+                  ? getOwnershipLabel("agency_owned")
                   : profile.profile_type === "creator"
-                    ? "Regular"
+                    ? getOwnershipLabel("regular")
                     : null;
               const ownershipBadgeClass =
                 profile.talent_ownership === "agency_owned"
@@ -861,20 +985,26 @@ export function MarketplaceSection({
                         )}
                         {profile.is_connected && (
                           <Badge className="h-5 px-2 rounded-md bg-blue-50/95 text-blue-700 border border-blue-200 text-[10px] font-semibold shadow-sm">
-                            Connected
+                            {t(`${translationPrefix}.statuses.connected`, {
+                              defaultValue: "Connected",
+                            })}
                           </Badge>
                         )}
                         {!profile.is_connected &&
                           (connectionStatus === "waiting" ||
                             connectionStatus === "pending") && (
                             <Badge className="h-5 px-2 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[10px] font-semibold shadow-sm">
-                              Waiting
+                              {t(`${translationPrefix}.statuses.waiting`, {
+                                defaultValue: "Waiting",
+                              })}
                             </Badge>
                           )}
                         {!profile.is_connected &&
                           connectionStatus === "declined" && (
                             <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
-                              Declined
+                              {t(`${translationPrefix}.statuses.declined`, {
+                                defaultValue: "Declined",
+                              })}
                             </Badge>
                           )}
                         <div className="h-5 w-5 rounded-md bg-white/90 border border-slate-200 shadow-sm flex items-center justify-center">
@@ -905,7 +1035,9 @@ export function MarketplaceSection({
                     )}
                     {!(profile.tagline || profile.bio) && (
                       <p className="text-xs text-slate-400 min-h-[32px]">
-                        No bio available yet.
+                        {t(`${translationPrefix}.states.noBio`, {
+                          defaultValue: "No bio available yet.",
+                        })}
                       </p>
                     )}
 
@@ -929,8 +1061,12 @@ export function MarketplaceSection({
                       <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                         <p className="text-slate-500 text-[11px] font-medium">
                           {entityType === "agency"
-                            ? "Agency Type"
-                            : "Followers"}
+                            ? t(`${translationPrefix}.card.agencyType`, {
+                                defaultValue: "Agency Type",
+                              })
+                            : t(`${translationPrefix}.card.followers`, {
+                                defaultValue: "Followers",
+                              })}
                         </p>
                         <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                           {entityType === "agency"
@@ -943,7 +1079,9 @@ export function MarketplaceSection({
                       {entityType === "agency" && (
                         <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                           <p className="text-slate-500 text-[11px] font-medium">
-                            Services
+                            {t(`${translationPrefix}.card.services`, {
+                              defaultValue: "Services",
+                            })}
                           </p>
                           <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                             {(profile.skills || []).length || "N/A"}
@@ -1011,19 +1149,55 @@ export function MarketplaceSection({
                               );
                               if (status === "declined") {
                                 toast({
-                                  title: "Request already declined",
-                                  description: `This connection was declined previously. You can re-invite this ${entityLabel}.`,
+                                  title: t(
+                                    `${translationPrefix}.toasts.requestAlreadyDeclinedTitle`,
+                                    {
+                                      defaultValue: "Request already declined",
+                                    },
+                                  ),
+                                  description: t(
+                                    `${translationPrefix}.toasts.requestAlreadyDeclinedDescription`,
+                                    {
+                                      entityLabel:
+                                        entityLabelTranslated.toLowerCase(),
+                                      defaultValue:
+                                        "This connection was declined previously. You can re-invite this {{entityLabel}}.",
+                                    },
+                                  ),
                                 });
                               } else if (status === "connected") {
                                 toast({
-                                  title: "Already connected",
-                                  description:
-                                    "This profile is already in your network.",
+                                  title: t(
+                                    `${translationPrefix}.toasts.alreadyConnectedTitle`,
+                                    {
+                                      defaultValue: "Already connected",
+                                    },
+                                  ),
+                                  description: t(
+                                    `${translationPrefix}.toasts.alreadyConnectedDescription`,
+                                    {
+                                      defaultValue:
+                                        "This profile is already in your network.",
+                                    },
+                                  ),
                                 });
                               } else {
                                 toast({
-                                  title: "Connection request sent",
-                                  description: `Waiting for ${entityLabel} response. You will be notified after they accept or decline.`,
+                                  title: t(
+                                    `${translationPrefix}.toasts.connectionRequestSentTitle`,
+                                    {
+                                      defaultValue: "Connection request sent",
+                                    },
+                                  ),
+                                  description: t(
+                                    `${translationPrefix}.toasts.connectionRequestSentDescription`,
+                                    {
+                                      entityLabel:
+                                        entityLabelTranslated.toLowerCase(),
+                                      defaultValue:
+                                        "Waiting for {{entityLabel}} response. You will be notified after they accept or decline.",
+                                    },
+                                  ),
                                 });
                                 setPendingConnectKeys((prev) =>
                                   new Set(prev).add(profileKey),
@@ -1047,8 +1221,21 @@ export function MarketplaceSection({
                                   new Set(prev).add(profileKey),
                                 );
                                 toast({
-                                  title: "Request already pending",
-                                  description: `Waiting for ${entityLabel} response.`,
+                                  title: t(
+                                    `${translationPrefix}.toasts.requestPendingTitle`,
+                                    {
+                                      defaultValue: "Request already pending",
+                                    },
+                                  ),
+                                  description: t(
+                                    `${translationPrefix}.toasts.requestPendingDescription`,
+                                    {
+                                      entityLabel:
+                                        entityLabelTranslated.toLowerCase(),
+                                      defaultValue:
+                                        "Waiting for {{entityLabel}} response.",
+                                    },
+                                  ),
                                 });
                                 await queryClient.invalidateQueries({
                                   queryKey: [queryScope],
@@ -1056,11 +1243,23 @@ export function MarketplaceSection({
                                 return;
                               }
                               toast({
-                                title: "Failed to send connection request",
+                                title: t(
+                                  `${translationPrefix}.toasts.failedConnectionRequestTitle`,
+                                  {
+                                    defaultValue:
+                                      "Failed to send connection request",
+                                  },
+                                ),
                                 description: parseApiErrorMessage(
                                   e,
-                                  "Unable to send connection request right now.",
-                                  entityLabel,
+                                  t(
+                                    `${translationPrefix}.toasts.failedConnectionRequestDescription`,
+                                    {
+                                      defaultValue:
+                                        "Unable to send connection request right now.",
+                                    },
+                                  ),
+                                  entityLabelTranslated.toLowerCase(),
                                 ),
                                 variant: "destructive" as any,
                               });
@@ -1074,13 +1273,30 @@ export function MarketplaceSection({
                           }}
                         >
                           {isRequestingConnect
-                            ? "Sending..."
+                            ? t(`${translationPrefix}.actions.sending`, {
+                                defaultValue: "Sending...",
+                              })
                             : actionsLocked || connectLocked
-                              ? "Upgrade to Connect"
+                              ? t(
+                                  `${translationPrefix}.actions.upgradeToConnect`,
+                                  {
+                                    defaultValue: "Upgrade to Connect",
+                                  },
+                                )
                               : connectionStatus === "pending" ||
                                   connectionStatus === "waiting"
-                                ? `Waiting for ${entityLabel} response`
-                                : "Connect"}
+                                ? t(
+                                    `${translationPrefix}.actions.waitingForResponse`,
+                                    {
+                                      entityLabel:
+                                        entityLabelTranslated.toLowerCase(),
+                                      defaultValue:
+                                        "Waiting for {{entityLabel}} response",
+                                    },
+                                  )
+                                : t(`${translationPrefix}.actions.connect`, {
+                                    defaultValue: "Connect",
+                                  })}
                         </Button>
                         {connectLockedReason ? (
                           <span className="text-[10px] font-semibold text-amber-700">
@@ -1106,10 +1322,20 @@ export function MarketplaceSection({
           const profileKey = `${contractConnectProfile.profile_type}:${contractConnectProfile.id}`;
           setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
           toast({
-            title: "Contract sent",
+            title: t(`${translationPrefix}.toasts.contractSentTitle`, {
+              defaultValue: "Contract sent",
+            }),
             description: contract?.agency_sign_url
-              ? "The contract has been sent for signature and the agency signing link opened in a new tab."
-              : "The contract has been sent for signature.",
+              ? t(
+                  `${translationPrefix}.toasts.contractSentWithLinkDescription`,
+                  {
+                    defaultValue:
+                      "The contract has been sent for signature and the agency signing link opened in a new tab.",
+                  },
+                )
+              : t(`${translationPrefix}.toasts.contractSentDescription`, {
+                  defaultValue: "The contract has been sent for signature.",
+                }),
           });
           queryClient.invalidateQueries({
             queryKey: [queryScope],
@@ -1129,36 +1355,52 @@ export function MarketplaceSection({
             <div className="absolute inset-0 z-50 bg-white/75 backdrop-blur-[1px] flex items-center justify-center">
               <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm text-sm font-medium text-slate-700">
                 <Loader2 className="h-4 w-4 animate-spin text-cyan-600" />
-                Processing disconnect request...
+                {t(`${translationPrefix}.details.processingDisconnect`, {
+                  defaultValue: "Processing disconnect request...",
+                })}
               </div>
             </div>
           ) : null}
           <SheetHeader>
             <SheetTitle>
-              {selectedProfile?.display_name || "Marketplace Profile"}
+              {selectedProfile?.display_name ||
+                t(`${translationPrefix}.details.marketplaceProfile`, {
+                  defaultValue: "Marketplace Profile",
+                })}
             </SheetTitle>
             <SheetDescription>
               {selectedProfile?.profile_type === "agency"
-                ? "Agency profile and connection status"
-                : "Availability, rates, portfolio, and campaign history"}
+                ? t(`${translationPrefix}.details.agencyDescription`, {
+                    defaultValue: "Agency profile and connection status",
+                  })
+                : t(`${translationPrefix}.details.creatorDescription`, {
+                    defaultValue:
+                      "Availability, rates, portfolio, and campaign history",
+                  })}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-6">
             {detailsQuery.isLoading ? (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Loading profile details...
+                {t(`${translationPrefix}.details.loading`, {
+                  defaultValue: "Loading profile details...",
+                })}
               </div>
             ) : detailsQuery.error ? (
               <Card className="p-4 border border-rose-200 bg-rose-50 rounded-xl">
                 <div className="text-sm font-semibold text-rose-900">
-                  Failed to load profile details
+                  {t(`${translationPrefix}.details.loadFailedTitle`, {
+                    defaultValue: "Failed to load profile details",
+                  })}
                 </div>
                 <div className="text-sm text-rose-800 mt-1">
                   {parseApiErrorMessage(
                     detailsQuery.error,
-                    "Please try again.",
-                    entityLabel,
+                    t(`${translationPrefix}.details.tryAgain`, {
+                      defaultValue: "Please try again.",
+                    }),
+                    entityLabelTranslated.toLowerCase(),
                   )}
                 </div>
               </Card>
