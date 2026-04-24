@@ -1,7 +1,8 @@
 // Admin endpoints for system maintenance and operations
 //
-// These endpoints should be protected by admin-level authentication in production.
+// These endpoints are protected by admin-level authentication via RoleGuard.
 
+use crate::auth::{AuthUser, RoleGuard};
 use crate::config::AppState;
 use crate::errors::sanitize_db_error;
 use crate::storage::backfill::{backfill_storage_assets, verify_backfill_parity};
@@ -43,8 +44,10 @@ pub struct BackfillResponse {
 /// ```
 pub async fn backfill_storage(
     State(state): State<AppState>,
+    user: AuthUser,
     Query(params): Query<BackfillParams>,
 ) -> Result<Json<BackfillResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["admin"]).check(&user.role)?;
     let report = backfill_storage_assets(&state, params.dry_run).await?;
 
     let message = if params.dry_run {
@@ -80,7 +83,9 @@ pub async fn backfill_storage(
 /// Use this to verify backfill completeness before switching to registry-based quota.
 pub async fn verify_storage_parity(
     State(state): State<AppState>,
+    user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["admin"]).check(&user.role)?;
     let parity_checks = verify_backfill_parity(&state).await?;
 
     let mut all_match = true;
@@ -121,7 +126,9 @@ pub struct ListBrandsStorageResponse {
 /// List all brands with their storage usage.
 pub async fn list_brands_storage(
     State(state): State<AppState>,
+    user: AuthUser,
 ) -> Result<Json<ListBrandsStorageResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["admin"]).check(&user.role)?;
     let resp = state
         .pg
         .from("brands")
@@ -221,9 +228,11 @@ pub struct UpdateQuotaResponse {
 /// Update storage quota for a specific brand.
 pub async fn update_brand_quota(
     State(state): State<AppState>,
+    user: AuthUser,
     Path(brand_id): Path<String>,
     Json(body): Json<UpdateQuotaBody>,
 ) -> Result<Json<UpdateQuotaResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["admin"]).check(&user.role)?;
     let update = serde_json::json!({
         "brand_id": &brand_id,
         "storage_limit_bytes": body.storage_limit_bytes,
@@ -267,7 +276,9 @@ pub struct PlatformStorageAnalytics {
 /// Get platform-wide storage analytics.
 pub async fn get_platform_storage_analytics(
     State(state): State<AppState>,
+    user: AuthUser,
 ) -> Result<Json<PlatformStorageAnalytics>, (StatusCode, String)> {
+    RoleGuard::new(vec!["admin"]).check(&user.role)?;
     let brands_resp = state
         .pg
         .from("brands")

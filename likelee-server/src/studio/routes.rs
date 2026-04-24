@@ -4,8 +4,8 @@ use super::wallet;
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use crate::storage::{
-    canonical_object_path, download_object, insert_asset_record, sanitize_file_name, upload_object,
-    StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+    canonical_object_path, download_object, insert_asset_record, safe_fetch_url, sanitize_file_name,
+    upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
 };
 use crate::team::{require_agency_access, require_brand_access};
 use anyhow::anyhow;
@@ -1054,16 +1054,12 @@ pub async fn save_generation_to_storage(
     };
 
     let mut folder_id: Option<String> = None;
+    let mut cumulative_new_size: i64 = 0;
     if org_type == "brand" {
-        let limit =
+        let _limit =
             crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
         let used = crate::brand_storage::get_brand_used_storage_bytes(&state, &org_id).await?;
-        if used > limit {
-            return Err((
-                StatusCode::PAYLOAD_TOO_LARGE,
-                "storage_quota_exceeded".into(),
-            ));
-        }
+        cumulative_new_size = used;
         folder_id =
             Some(crate::brand_storage::get_or_create_default_folder(&state, &org_id).await?);
     }
@@ -1074,17 +1070,12 @@ pub async fn save_generation_to_storage(
         let downloaded = match download_object(&state, &state.supabase_bucket_public, url).await {
             Ok(d) => d,
             Err(_) => {
-                let http = reqwest::Client::new();
-                let resp = match http.get(url).send().await {
-                    Ok(r) if r.status().is_success() => r,
-                    _ => continue,
-                };
-                let bytes = resp.bytes().await.unwrap_or_default();
-                let ct = None;
-                crate::storage::DownloadedObject {
-                    bytes: bytes.to_vec().into(),
-                    content_type: ct,
-                    headers: reqwest::header::HeaderMap::new(),
+                match safe_fetch_url(url, None).await {
+                    Ok(d) => d,
+                    Err(e) => {
+                        warn!(generation_id = %generation_id, idx, error = ?e, "failed to safely fetch generation output from external URL");
+                        continue;
+                    }
                 }
             }
         };
@@ -1092,6 +1083,23 @@ pub async fn save_generation_to_storage(
         let file_bytes = downloaded.bytes.to_vec();
         let new_size = file_bytes.len() as i64;
         let ct = downloaded.content_type.as_deref();
+
+        if org_type == "brand" {
+            let limit =
+                crate::brand_storage::ensure_brand_storage_settings_row(&state, &org_id).await?;
+            if cumulative_new_size + new_size > limit {
+                warn!(
+                    generation_id = %generation_id,
+                    idx,
+                    cumulative = cumulative_new_size,
+                    new_size,
+                    limit,
+                    "skipping generation output due to quota limit"
+                );
+                continue;
+            }
+        }
+
         let ext = match ct {
             Some(m) if m.contains("png") => "png",
             Some(m) if m.contains("jpeg") || m.contains("jpg") => "jpg",
@@ -1183,6 +1191,8 @@ pub async fn save_generation_to_storage(
         if let Err(err) = insert_asset_record(&state, &storage_record).await {
             warn!(org_id = %org_id, file_id = %id, error = %err.1, "failed to mirror generation output into storage_assets");
         }
+
+        cumulative_new_size += new_size;
 
         saved.push(json!({
             "id": id,

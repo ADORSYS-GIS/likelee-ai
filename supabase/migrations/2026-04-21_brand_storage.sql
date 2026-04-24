@@ -10,19 +10,19 @@ ALTER TABLE public.brand_storage_settings ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "brand_storage_settings select own" ON public.brand_storage_settings;
 CREATE POLICY "brand_storage_settings select own" ON public.brand_storage_settings
-  FOR SELECT USING (auth.uid() = brand_id);
+  FOR SELECT USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_storage_settings insert own" ON public.brand_storage_settings;
 CREATE POLICY "brand_storage_settings insert own" ON public.brand_storage_settings
-  FOR INSERT WITH CHECK (auth.uid() = brand_id);
+  FOR INSERT WITH CHECK (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_storage_settings update own" ON public.brand_storage_settings;
 CREATE POLICY "brand_storage_settings update own" ON public.brand_storage_settings
-  FOR UPDATE USING (auth.uid() = brand_id);
+  FOR UPDATE USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_storage_settings delete own" ON public.brand_storage_settings;
 CREATE POLICY "brand_storage_settings delete own" ON public.brand_storage_settings
-  FOR DELETE USING (auth.uid() = brand_id);
+  FOR DELETE USING (public.is_brand_team_member(brand_id));
 
 
 CREATE TABLE IF NOT EXISTS public.brand_folders (
@@ -40,19 +40,19 @@ ALTER TABLE public.brand_folders ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "brand_folders select own" ON public.brand_folders;
 CREATE POLICY "brand_folders select own" ON public.brand_folders
-  FOR SELECT USING (auth.uid() = brand_id);
+  FOR SELECT USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_folders insert own" ON public.brand_folders;
 CREATE POLICY "brand_folders insert own" ON public.brand_folders
-  FOR INSERT WITH CHECK (auth.uid() = brand_id);
+  FOR INSERT WITH CHECK (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_folders update own" ON public.brand_folders;
 CREATE POLICY "brand_folders update own" ON public.brand_folders
-  FOR UPDATE USING (auth.uid() = brand_id);
+  FOR UPDATE USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_folders delete own" ON public.brand_folders;
 CREATE POLICY "brand_folders delete own" ON public.brand_folders
-  FOR DELETE USING (auth.uid() = brand_id);
+  FOR DELETE USING (public.is_brand_team_member(brand_id));
 
 
 CREATE TABLE IF NOT EXISTS public.brand_files (
@@ -75,18 +75,18 @@ ALTER TABLE public.brand_files ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "brand_files select own" ON public.brand_files;
 CREATE POLICY "brand_files select own" ON public.brand_files
-  FOR SELECT USING (auth.uid() = brand_id);
+  FOR SELECT USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_files insert own" ON public.brand_files;
 CREATE POLICY "brand_files insert own" ON public.brand_files
-  FOR INSERT WITH CHECK (auth.uid() = brand_id);
+  FOR INSERT WITH CHECK (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_files update own" ON public.brand_files;
 CREATE POLICY "brand_files update own" ON public.brand_files
-  FOR UPDATE USING (auth.uid() = brand_id);
+  FOR UPDATE USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "brand_files delete own" ON public.brand_files;
 CREATE POLICY "brand_files delete own" ON public.brand_files
-  FOR DELETE USING (auth.uid() = brand_id);
+  FOR DELETE USING (public.is_brand_team_member(brand_id));
 
 COMMIT;

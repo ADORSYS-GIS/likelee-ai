@@ -4723,22 +4723,45 @@ async fn sync_brand_subscription_from_subscription(
             _ => 5_i64 * 1024 * 1024 * 1024,
         };
 
-        let _ = state
+        let upsert_payload = json!({
+            "brand_id": brand_id,
+            "storage_limit_bytes": brand_storage_limit_bytes,
+            "updated_at": chrono::Utc::now().to_rfc3339(),
+        });
+        let storage_resp = state
             .pg
             .from("brand_storage_settings")
-            .insert(
-                json!({ "brand_id": brand_id, "storage_limit_bytes": brand_storage_limit_bytes })
-                    .to_string(),
-            )
+            .upsert(upsert_payload.to_string())
             .execute()
             .await;
-        let _ = state
-            .pg
-            .from("brand_storage_settings")
-            .eq("brand_id", brand_id)
-            .update(json!({"storage_limit_bytes": brand_storage_limit_bytes}).to_string())
-            .execute()
-            .await;
+
+        match storage_resp {
+            Ok(resp) if resp.status().is_success() => {
+                info!(
+                    brand_id = %brand_id,
+                    plan_tier = %plan_tier,
+                    storage_limit_bytes = brand_storage_limit_bytes,
+                    "brand_storage_settings upserted successfully"
+                );
+            }
+            Ok(resp) => {
+                let status = resp.status();
+                let text = resp.text().await.unwrap_or_default();
+                warn!(
+                    brand_id = %brand_id,
+                    status = %status,
+                    error = %text,
+                    "brand_storage_settings upsert returned non-success status"
+                );
+            }
+            Err(e) => {
+                error!(
+                    brand_id = %brand_id,
+                    error = %e,
+                    "brand_storage_settings upsert failed"
+                );
+            }
+        }
 
         info!(
             brand_id = %brand_id,

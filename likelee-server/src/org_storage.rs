@@ -4,7 +4,8 @@ use crate::{
     errors::sanitize_db_error,
     storage::{
         canonical_object_path, generate_signed_url, insert_asset_record, sanitize_file_name,
-        upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+        safe_fetch_url, upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
+        StorageVisibility,
     },
     team::{require_agency_access, require_brand_access},
 };
@@ -253,28 +254,8 @@ pub async fn save_from_url(
         }
     };
 
-    let client = reqwest::Client::new();
-    let response = client.get(&input.temp_url).send().await.map_err(|e| {
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to download temp file: {}", e),
-        )
-    })?;
-
-    if !response.status().is_success() {
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            "Failed to download temp file".into(),
-        ));
-    }
-
-    let bytes = response.bytes().await.map_err(|e| {
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to read temp file: {}", e),
-        )
-    })?;
-    let data = bytes.to_vec();
+    let downloaded = safe_fetch_url(&input.temp_url, None).await?;
+    let data = downloaded.bytes.to_vec();
     let new_size = data.len() as i64;
 
     let file_table = if org_type == "agency" {
