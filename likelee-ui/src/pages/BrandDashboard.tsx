@@ -8137,7 +8137,6 @@ export default function BrandDashboard() {
               count: expiringLicensesReal.length,
             },
             { key: "contracts", label: "Contract Hub" },
-            { key: "compliance", label: "Compliance" },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -8162,7 +8161,7 @@ export default function BrandDashboard() {
         {(usageRightsTab === "licenses" || usageRightsTab === "expiring") && (
           <div className="space-y-6">
             {/* Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                   Active Licenses
@@ -8185,15 +8184,6 @@ export default function BrandDashboard() {
                     Renew soon
                   </p>
                 )}
-              </div>
-              <div className="p-5 rounded-xl border border-gray-200 bg-white">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  Violations
-                </p>
-                <p className="text-3xl font-black text-emerald-600">0</p>
-                <p className="text-xs text-emerald-600 font-semibold mt-0.5">
-                  All clear
-                </p>
               </div>
             </div>
 
@@ -8288,24 +8278,6 @@ export default function BrandDashboard() {
         {/* ── Contract Hub ── */}
         {usageRightsTab === "contracts" && renderContractHub()}
 
-        {/* ── Compliance ── */}
-        {usageRightsTab === "compliance" && (
-          <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
-            <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-7 h-7 text-blue-500" />
-            </div>
-            <h3 className="text-base font-bold text-gray-900">
-              Watermark Verification
-            </h3>
-            <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
-              Upload an asset to verify its watermark and confirm license
-              authenticity. This feature is coming soon.
-            </p>
-            <span className="mt-4 inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-600 border border-blue-200">
-              Coming soon
-            </span>
-          </div>
-        )}
       </div>
     );
   };
