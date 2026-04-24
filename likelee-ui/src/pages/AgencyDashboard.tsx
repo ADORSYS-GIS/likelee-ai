@@ -38,6 +38,7 @@ const ScoutingTrips = lazy(() =>
   })),
 );
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -11312,26 +11313,42 @@ const MarketplaceTab = ({
 }: {
   connectLocked?: boolean;
   onConnectLocked?: () => void;
-}) => (
-  <Suspense
-    fallback={
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl h-[600px] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-      </Card>
-    }
-  >
-    <MarketplaceSection
-      title="Likelee Marketplace"
-      subtitle="Verified creators only"
-      verifiedBadgeLabel="Verified Profiles"
-      queryScope="scouting-marketplace"
-      enableAgencyContractConnect
-      connectLocked={connectLocked}
-      connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
-      onConnectLocked={onConnectLocked}
-    />
-  </Suspense>
-);
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Suspense
+      fallback={
+        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl h-[600px] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        </Card>
+      }
+    >
+      <MarketplaceSection
+        title={t("agencyDashboard.marketplace.title", {
+          defaultValue: "Likelee Marketplace",
+        })}
+        subtitle={t("agencyDashboard.marketplace.subtitle", {
+          defaultValue: "Verified creators only",
+        })}
+        verifiedBadgeLabel={t("agencyDashboard.marketplace.verifiedBadge", {
+          defaultValue: "Verified Profiles",
+        })}
+        queryScope="scouting-marketplace"
+        enableAgencyContractConnect
+        connectLocked={connectLocked}
+        connectLockedReason={
+          connectLocked
+            ? t("agencyDashboard.marketplace.connectLockedReason", {
+                defaultValue: "Upgrade plan to connect.",
+              })
+            : ""
+        }
+        onConnectLocked={onConnectLocked}
+      />
+    </Suspense>
+  );
+};
 
 const ScoutingMapTab = ({
   onEditEvent,
@@ -16719,14 +16736,36 @@ const RoyaltiesPayoutsView = ({
 }: {
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
-  const [activeTab, setActiveTab] = useState("Commission Structure");
+  const commissionStructureTab = t(
+    "agencyDashboard.payouts.tabs.commissionStructure",
+    {
+      defaultValue: "Commission Structure",
+    },
+  );
+  const payoutPreferencesTab = t(
+    "agencyDashboard.payouts.tabs.payoutPreferences",
+    {
+      defaultValue: "Payout Preferences",
+    },
+  );
+  const commissionBreakdownTab = t(
+    "agencyDashboard.payouts.tabs.commissionBreakdown",
+    {
+      defaultValue: "Commission Breakdown",
+    },
+  );
+  const paymentHistoryTab = t("agencyDashboard.payouts.tabs.paymentHistory", {
+    defaultValue: "Payment History",
+  });
+  const [activeTab, setActiveTab] = useState(commissionStructureTab);
   const subTabs = [
-    "Commission Structure",
-    "Payout Preferences",
-    "Commission Breakdown",
-    "Payment History",
+    commissionStructureTab,
+    payoutPreferencesTab,
+    commissionBreakdownTab,
+    paymentHistoryTab,
   ];
 
   const queryClient = useQueryClient();
@@ -16745,7 +16784,7 @@ const RoyaltiesPayoutsView = ({
     queryFn: async () => {
       return await base44.get<any[]>("/api/agency/payout-schedule/upcoming");
     },
-    enabled: activeTab === "Payout Preferences",
+    enabled: activeTab === payoutPreferencesTab,
   });
 
   const updatePayoutSettingsMutation = useMutation({
@@ -16775,7 +16814,7 @@ const RoyaltiesPayoutsView = ({
       );
       return resp;
     },
-    enabled: activeTab === "Commission Breakdown",
+    enabled: activeTab === commissionBreakdownTab,
   });
 
   const { data: paymentHistoryTopEarners } = useQuery({
@@ -16786,7 +16825,7 @@ const RoyaltiesPayoutsView = ({
       );
       return resp;
     },
-    enabled: activeTab === "Payment History",
+    enabled: activeTab === paymentHistoryTab,
   });
 
   // Fetch Royalties & Payouts Summary Metrics
@@ -16816,20 +16855,33 @@ const RoyaltiesPayoutsView = ({
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white p-4 sm:p-6 border-b border-gray-100 rounded-xl">
         <h2 className="text-2xl font-bold text-gray-900">
-          Commission & Payout Management
+          {t("agencyDashboard.payouts.title", {
+            defaultValue: "Commission & Payout Management",
+          })}
         </h2>
         <Button
           variant="outline"
           className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm w-full sm:w-auto"
         >
-          <Download className="w-4 h-4" /> Export Report
+          <Download className="w-4 h-4" />{" "}
+          {t("agencyDashboard.payouts.actions.exportReport", {
+            defaultValue: "Export Report",
+          })}
         </Button>
       </div>
 
       <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-        <div className="text-sm font-bold text-gray-900">Payouts and fees</div>
+        <div className="text-sm font-bold text-gray-900">
+          {t("agencyDashboard.payouts.banner.title", {
+            defaultValue: "Payouts and fees",
+          })}
+        </div>
         <div className="text-xs text-gray-700 font-medium mt-1">
-          {`For licensing requests, platform fees and ${entitySingularLower} commission will be deducted from the total paid amount.`}
+          {t("agencyDashboard.payouts.banner.description", {
+            entitySingular: entitySingularLower,
+            defaultValue:
+              "For licensing requests, platform fees and {{entitySingular}} commission will be deducted from the total paid amount.",
+          })}
         </div>
       </Card>
 
@@ -16841,13 +16893,19 @@ const RoyaltiesPayoutsView = ({
               <DollarSign className="w-6 h-6 text-green-600" />
             </div>
             <p className="text-sm font-bold text-gray-500">
-              Accrued This Month
+              {t("agencyDashboard.payouts.stats.accruedThisMonth", {
+                defaultValue: "Accrued This Month",
+              })}
             </p>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">
             {royaltiesData?.accrued_this_month_formatted || "$0"}
           </h3>
-          <p className="text-xs font-bold text-green-600">Ready for payout</p>
+          <p className="text-xs font-bold text-green-600">
+            {t("agencyDashboard.payouts.stats.readyForPayout", {
+              defaultValue: "Ready for payout",
+            })}
+          </p>
         </Card>
 
         <Card className="p-5 sm:p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
@@ -16855,13 +16913,19 @@ const RoyaltiesPayoutsView = ({
             <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
               <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
-            <p className="text-sm font-bold text-gray-500">Pending Approval</p>
+            <p className="text-sm font-bold text-gray-500">
+              {t("agencyDashboard.payouts.stats.pendingApproval", {
+                defaultValue: "Pending Approval",
+              })}
+            </p>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">
             {royaltiesData?.pending_approval_formatted || "$0"}
           </h3>
           <p className="text-xs font-bold text-gray-400">
-            Awaiting brand confirmation
+            {t("agencyDashboard.payouts.stats.awaitingBrandConfirmation", {
+              defaultValue: "Awaiting brand confirmation",
+            })}
           </p>
         </Card>
 
@@ -16870,13 +16934,20 @@ const RoyaltiesPayoutsView = ({
             <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center border border-purple-100">
               <CheckCircle2 className="w-6 h-6 text-purple-600" />
             </div>
-            <p className="text-sm font-bold text-gray-500">Paid YTD</p>
+            <p className="text-sm font-bold text-gray-500">
+              {t("agencyDashboard.payouts.stats.paidYTD", {
+                defaultValue: "Paid YTD",
+              })}
+            </p>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">
             {royaltiesData?.paid_ytd_formatted || "$0"}
           </h3>
           <p className="text-xs font-bold text-gray-400">
-            {`To ${entitySingularTitle} This year`}
+            {t("agencyDashboard.payouts.stats.toEntityThisYear", {
+              entitySingular: entitySingularTitle,
+              defaultValue: "To {{entitySingular}} This year",
+            })}
           </p>
         </Card>
 
@@ -16886,7 +16957,9 @@ const RoyaltiesPayoutsView = ({
               <Percent className="w-6 h-6 text-indigo-600" />
             </div>
             <p className="text-sm font-bold text-indigo-500">
-              Agency Commission YTD
+              {t("agencyDashboard.payouts.stats.agencyCommissionYTD", {
+                defaultValue: "Agency Commission YTD",
+              })}
             </p>
           </div>
           <h3 className="text-3xl font-bold text-indigo-900 mb-1">
@@ -16895,7 +16968,10 @@ const RoyaltiesPayoutsView = ({
           <p className="text-xs font-bold text-indigo-500">
             {avgTierCommissionRate === null
               ? ""
-              : `${avgTierCommissionRate.toFixed(0)}% avg commission rate`}
+              : t("agencyDashboard.payouts.stats.avgCommissionRate", {
+                  rate: avgTierCommissionRate.toFixed(0),
+                  defaultValue: "{{rate}}% avg commission rate",
+                })}
           </p>
         </Card>
       </div>
@@ -16919,7 +16995,7 @@ const RoyaltiesPayoutsView = ({
         </div>
       </div>
 
-      {activeTab === "Commission Structure" && (
+      {activeTab === commissionStructureTab && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <div className="mb-4">
             <h3 className="text-lg font-bold text-gray-900 mb-1 tracking-tight">
@@ -16933,7 +17009,10 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === "Royalties & Payouts" && (
+      {activeTab ===
+        t("agencyDashboard.payouts.tabs.royaltiesAndPayouts", {
+          defaultValue: "Royalties & Payouts",
+        }) && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           {/* Royalties Overview Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -17001,7 +17080,7 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === "Payment History" && (
+      {activeTab === paymentHistoryTab && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 border-b border-gray-100">
@@ -17063,7 +17142,7 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === "Payout Preferences" && (
+      {activeTab === payoutPreferencesTab && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
             <h3 className="text-lg font-bold text-gray-900 mb-6">
@@ -17231,7 +17310,7 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === "Commission Breakdown" && (
+      {activeTab === commissionBreakdownTab && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
           <div className="mb-0">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
@@ -17438,6 +17517,7 @@ const RoyaltiesPayoutsView = ({
   );
 };
 export default function AgencyDashboard() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -17979,8 +18059,12 @@ export default function AgencyDashboard() {
     ? "Athlete Statements"
     : "Talent Statements";
   const packagesTabLabel = isSportsAgency
-    ? "Athlete Packages"
-    : "Talent Packages";
+    ? t("agencyDashboard.navigation.athletePackages", {
+        defaultValue: "Athlete Packages",
+      })
+    : t("agencyDashboard.navigation.talentPackages", {
+        defaultValue: "Talent Packages",
+      });
   const isRosterPrimarySubTab =
     activeSubTab === "All Talent" || activeSubTab === "All Athletes";
 
@@ -19252,9 +19336,16 @@ export default function AgencyDashboard() {
       chatUnreadCount > 0
         ? {
             id: `chat_unread_${chatUnreadCount}`,
-            title: "Messages",
-            message: `You have ${chatUnreadCount} unread message(s).`,
-            time: "New message",
+            title: t("agencyDashboard.navigation.messages", {
+              defaultValue: "Messages",
+            }),
+            message: t("agencyDashboard.chat.notifications.unreadMessages", {
+              count: chatUnreadCount,
+              defaultValue: "You have {{count}} unread messages.",
+            }),
+            time: t("agencyDashboard.chat.notifications.newMessage", {
+              defaultValue: "New message",
+            }),
             color: "blue",
             isSummary: true,
             read: false,
@@ -19264,7 +19355,7 @@ export default function AgencyDashboard() {
     return chatNotification
       ? [chatNotification, ...notifications]
       : notifications;
-  }, [chatUnreadCount, notifications]);
+  }, [chatUnreadCount, notifications, t]);
 
   const unreadCount =
     notifications.filter((n: any) => !n.read).length + (chatUnreadCount || 0);
@@ -19697,6 +19788,33 @@ export default function AgencyDashboard() {
           },
         ];
 
+  const getSidebarItemLabel = (label: string) => {
+    const keyMap: Record<string, string> = {
+      Jobs: "agencyDashboard.navigation.jobs",
+      Marketplace: "agencyDashboard.navigation.marketplace",
+      Messages: "agencyDashboard.navigation.messages",
+      Roster: "agencyDashboard.navigation.roster",
+      Payouts: "agencyDashboard.navigation.payouts",
+      "Client CRM": "agencyDashboard.navigation.clientCRM",
+      Catalogs: "agencyDashboard.navigation.catalogs",
+      "Talent Packages": "agencyDashboard.navigation.talentPackages",
+      "Athlete Packages": "agencyDashboard.navigation.athletePackages",
+    };
+
+    const key = keyMap[label];
+    return key ? t(key, { defaultValue: label }) : label;
+  };
+
+  const getSidebarSubItemLabel = (subItem: string) => {
+    const keyMap: Record<string, string> = {
+      "Performance Tiers":
+        "agencyDashboard.navigation.subItems.performanceTiers",
+    };
+
+    const key = keyMap[subItem];
+    return key ? t(key, { defaultValue: subItem }) : subItem;
+  };
+
   useEffect(() => {
     const validTabIds = new Set(sidebarItems.map((item) => item.id));
     if (!validTabIds.has(activeTab)) {
@@ -19852,7 +19970,7 @@ export default function AgencyDashboard() {
                   item.disabled
                     ? item.disabledReason || "Requires Pro"
                     : isSidebarCollapsed
-                      ? item.label
+                      ? getSidebarItemLabel(item.label)
                       : undefined
                 }
                 onFocus={() => {
@@ -19918,7 +20036,10 @@ export default function AgencyDashboard() {
                         setOpenCollapsedSubmenu(item.id);
                       }
                     }}
-                    aria-label={`Open ${item.label} submenu`}
+                    aria-label={t("agencyDashboard.navigation.openSubmenu", {
+                      label: getSidebarItemLabel(item.label),
+                      defaultValue: "Open {{label}} submenu",
+                    })}
                   >
                     <ChevronRight className="h-3 w-3" />
                   </span>
@@ -19930,7 +20051,7 @@ export default function AgencyDashboard() {
                       style={{ opacity: labelOpacity }}
                     >
                       <span className="block whitespace-normal break-words">
-                        {item.label}
+                        {getSidebarItemLabel(item.label)}
                       </span>
                       {typeof item.badge === "string" && (
                         <span className="inline-flex mt-1 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
@@ -20022,7 +20143,9 @@ export default function AgencyDashboard() {
                             : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
                         } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
-                        <span className="truncate">{subItem}</span>
+                        <span className="truncate">
+                          {getSidebarSubItemLabel(subItem)}
+                        </span>
                         <span className="flex items-center gap-2">
                           {item.disabledSubItems &&
                             item.disabledSubItems[subItem] && (
@@ -20119,7 +20242,10 @@ export default function AgencyDashboard() {
                   <div
                     className="relative rounded-lg border border-gray-200 bg-white shadow-lg p-2"
                     role="menu"
-                    aria-label={`${item.label} submenu`}
+                    aria-label={t("agencyDashboard.navigation.submenu", {
+                      label: getSidebarItemLabel(item.label),
+                      defaultValue: "{{label}} submenu",
+                    })}
                     tabIndex={0}
                     onKeyDown={(event) => {
                       if (event.key === "Escape") {
@@ -20181,7 +20307,9 @@ export default function AgencyDashboard() {
                             : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
                         } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
-                        <span className="truncate">{subItem}</span>
+                        <span className="truncate">
+                          {getSidebarSubItemLabel(subItem)}
+                        </span>
                         <span className="flex items-center gap-2">
                           {item.disabledSubItems &&
                             item.disabledSubItems[subItem] && (
@@ -20683,10 +20811,10 @@ export default function AgencyDashboard() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-lg font-black text-gray-900">
-                    Welcome to your agency dashboard
+                    {t("agencyDashboard.dashboard.banner.title")}
                   </div>
                   <div className="text-gray-500 font-medium mt-1">
-                    This is your main hub for managing your agency.
+                    {t("agencyDashboard.dashboard.banner.subtitle")}
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -20704,7 +20832,7 @@ export default function AgencyDashboard() {
                                 ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
                                 : "bg-white text-gray-900 ring-gray-200"
                       }`}
-                      title="Current plan"
+                      title={t("agencyDashboard.dashboard.banner.currentPlan")}
                     >
                       {agencyTrialActive ? (
                         <span className="inline-flex items-center gap-2">
