@@ -27,9 +27,23 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { format, parseISO, isSameMonth, isSameWeek } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
   const [activeTab, setActiveTab] = useState("Analytics");
+  const { t } = useTranslation();
+
+  const tabs = [
+    t("agencyDashboard.bookings.tabs.managementAnalytics.tabs.analytics", {
+      defaultValue: "Analytics",
+    }),
+    t("agencyDashboard.bookings.tabs.managementAnalytics.tabs.manageBookings", {
+      defaultValue: "Manage Bookings",
+    }),
+    t("agencyDashboard.bookings.tabs.managementAnalytics.tabs.reportsExport", {
+      defaultValue: "Reports & Export",
+    }),
+  ];
 
   return (
     <div className="space-y-6">
@@ -38,16 +52,20 @@ export const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
           <div className="flex items-center gap-2">
             <BarChart2 className="w-6 h-6 text-indigo-600" />
             <h2 className="text-2xl font-bold text-gray-900">
-              Management & Analytics
+              {t("agencyDashboard.bookings.tabs.managementAnalytics.title", {
+                defaultValue: "Management & Analytics",
+              })}
             </h2>
           </div>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Filter, search, and analyze your bookings
+            {t("agencyDashboard.bookings.tabs.managementAnalytics.subtitle", {
+              defaultValue: "Filter, search, and analyze your bookings",
+            })}
           </p>
         </div>
         <div className="overflow-x-auto">
           <div className="flex bg-gray-100 p-1 rounded-lg w-max min-w-full sm:min-w-0 sm:w-fit">
-            {["Analytics", "Manage Bookings", "Reports & Export"].map((tab) => (
+            {tabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -64,15 +82,9 @@ export const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
         </div>
       </div>
 
-      {activeTab === "Analytics" && (
-        <ManagementAnalyticsTab bookings={bookings} />
-      )}
-      {activeTab === "Manage Bookings" && (
-        <ManageBookingsTab bookings={bookings} />
-      )}
-      {activeTab === "Reports & Export" && (
-        <ReportsExportTab bookings={bookings} />
-      )}
+      {activeTab === tabs[0] && <ManagementAnalyticsTab bookings={bookings} />}
+      {activeTab === tabs[1] && <ManageBookingsTab bookings={bookings} />}
+      {activeTab === tabs[2] && <ReportsExportTab bookings={bookings} />}
     </div>
   );
 };

@@ -16,6 +16,7 @@ import {
   User,
   X,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +70,7 @@ export const NewBookingModal = ({
   isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
 
@@ -846,29 +848,73 @@ export const NewBookingModal = ({
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              {mode === "edit" ? "Edit Booking" : "New Booking"}
+              {mode === "edit"
+                ? t("agencyDashboard.bookings.newBooking.editTitle", {
+                    defaultValue: "Edit Booking",
+                  })
+                : t("agencyDashboard.bookings.newBooking.title", {
+                    defaultValue: "New Booking",
+                  })}
             </DialogTitle>
             <p className="text-sm text-gray-500">
               {mode === "edit"
-                ? "Update details for this booking"
-                : `Schedule a booking for your ${entitySingularLower}`}
+                ? t("agencyDashboard.bookings.newBooking.editSubtitle", {
+                    defaultValue: "Update details for this booking",
+                  })
+                : t("agencyDashboard.bookings.newBooking.scheduleBooking", {
+                    entityLower: entitySingularLower,
+                    defaultValue: `Schedule a booking for your ${entitySingularLower}`,
+                  })}
             </p>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label>Booking Type *</Label>
+              <Label>
+                {t("agencyDashboard.bookings.newBooking.bookingType", {
+                  defaultValue: "Booking Type *",
+                })}
+              </Label>
               <div className="flex gap-2">
                 <Select value={bookingType} onValueChange={setBookingType}>
                   <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue
+                      placeholder={t(
+                        "agencyDashboard.bookings.newBooking.selectType",
+                        { defaultValue: "Select type" },
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="casting">Casting</SelectItem>
-                    <SelectItem value="option">Option</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="test-shoot">Test shoot</SelectItem>
-                    <SelectItem value="fitting">Fitting</SelectItem>
-                    <SelectItem value="rehearsal">Rehearsal</SelectItem>
+                    <SelectItem value="casting">
+                      {t("agencyDashboard.bookings.newBooking.casting", {
+                        defaultValue: "Casting",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="option">
+                      {t("agencyDashboard.bookings.newBooking.option", {
+                        defaultValue: "Option",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="confirmed">
+                      {t("agencyDashboard.bookings.newBooking.confirmed", {
+                        defaultValue: "Confirmed",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="test-shoot">
+                      {t("agencyDashboard.bookings.newBooking.testShoot", {
+                        defaultValue: "Test shoot",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="fitting">
+                      {t("agencyDashboard.bookings.newBooking.fitting", {
+                        defaultValue: "Fitting",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="rehearsal">
+                      {t("agencyDashboard.bookings.newBooking.rehearsal", {
+                        defaultValue: "Rehearsal",
+                      })}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <Button
@@ -877,11 +923,16 @@ export const NewBookingModal = ({
                   onClick={() => setPreviewOpen(true)}
                   disabled={!canSubmit}
                 >
-                  Preview
+                  {t("agencyDashboard.bookings.newBooking.preview", {
+                    defaultValue: "Preview",
+                  })}
                 </Button>
                 {uploadSuccess && (
                   <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Files uploaded
+                    <CheckCircle2 className="w-3.5 h-3.5" />{" "}
+                    {t("agencyDashboard.bookings.newBooking.filesUploaded", {
+                      defaultValue: "Files uploaded",
+                    })}
                   </span>
                 )}
               </div>
@@ -903,7 +954,12 @@ export const NewBookingModal = ({
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label>{`${entitySingularTitle} *`}</Label>
+                <Label>
+                  {t("agencyDashboard.bookings.newBooking.talent", {
+                    entitySingular: entitySingularTitle,
+                    defaultValue: `${entitySingularTitle} *`,
+                  })}
+                </Label>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -918,13 +974,22 @@ export const NewBookingModal = ({
                     className="rounded border-gray-300"
                   />
                   <label htmlFor="multi" className="text-sm text-gray-600">
-                    {`Book multiple ${entitySingularLower}`}
+                    {t("agencyDashboard.bookings.newBooking.bookMultiple", {
+                      entityLower: entitySingularLower,
+                      defaultValue: `Book multiple ${entitySingularLower}`,
+                    })}
                   </label>
                 </div>
               </div>
               <div className="relative">
                 <Input
-                  placeholder={`Search ${entitySingularLower} by name...`}
+                  placeholder={t(
+                    "agencyDashboard.bookings.newBooking.searchTalentPlaceholder",
+                    {
+                      entityLower: entitySingularLower,
+                      defaultValue: `Search ${entitySingularLower} by name...`,
+                    },
+                  )}
                   value={talentSearch}
                   onChange={(e) => setTalentSearch(e.target.value)}
                 />
@@ -935,7 +1000,15 @@ export const NewBookingModal = ({
                   <div className="p-8 text-center text-gray-500 text-sm">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>{`Loading ${entitySingularLower}...`}</span>
+                      <span>
+                        {t(
+                          "agencyDashboard.bookings.newBooking.loadingTalent",
+                          {
+                            entityLower: entitySingularLower,
+                            defaultValue: `Loading ${entitySingularLower}...`,
+                          },
+                        )}
+                      </span>
                     </div>
                   </div>
                 ) : (
@@ -967,12 +1040,21 @@ export const NewBookingModal = ({
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <div className="w-2 h-2 rounded-full bg-green-500" />
                           <p className="text-xs text-green-600 font-medium lowercase">
-                            available
+                            {t(
+                              "agencyDashboard.bookings.newBooking.available",
+                              { defaultValue: "available" },
+                            )}
                           </p>
                           <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded leading-none lowercase">
                             {t.relationship_type === "marketplace_connected"
-                              ? "Connected"
-                              : "Internal Talent"}
+                              ? t(
+                                  "agencyDashboard.bookings.newBooking.connected",
+                                  { defaultValue: "Connected" },
+                                )
+                              : t(
+                                  "agencyDashboard.bookings.newBooking.internalTalent",
+                                  { defaultValue: "Internal Talent" },
+                                )}
                           </span>
                         </div>
                       </div>
@@ -987,8 +1069,18 @@ export const NewBookingModal = ({
                 {!talentsLoading && filteredTalents.length === 0 && (
                   <div className="p-8 text-center text-gray-500 text-sm">
                     {talentSearch
-                      ? `No ${entitySingularLower} found matching "${talentSearch}"`
-                      : `No ${entitySingularLower} found`}
+                      ? t(
+                          "agencyDashboard.bookings.newBooking.noTalentMatching",
+                          {
+                            entityLower: entitySingularLower,
+                            search: talentSearch,
+                            defaultValue: `No ${entitySingularLower} found matching "${talentSearch}"`,
+                          },
+                        )
+                      : t("agencyDashboard.bookings.newBooking.noTalentFound", {
+                          entityLower: entitySingularLower,
+                          defaultValue: `No ${entitySingularLower} found`,
+                        })}
                   </div>
                 )}
               </div>
@@ -1012,17 +1104,27 @@ export const NewBookingModal = ({
                         </div>
                       )}
                       <p className="text-sm font-bold text-indigo-900">
-                        Selected: {t.name}
+                        {t("agencyDashboard.bookings.newBooking.selected", {
+                          defaultValue: "Selected:",
+                        })}{" "}
+                        {t.name}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded leading-none lowercase">
                         {t.relationship_type === "marketplace_connected"
-                          ? "Connected"
-                          : "Internal Talent"}
+                          ? t("agencyDashboard.bookings.newBooking.connected", {
+                              defaultValue: "Connected",
+                            })
+                          : t(
+                              "agencyDashboard.bookings.newBooking.internalTalent",
+                              { defaultValue: "Internal Talent" },
+                            )}
                       </span>
                       <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded leading-none uppercase">
-                        Available
+                        {t("agencyDashboard.bookings.newBooking.available", {
+                          defaultValue: "Available",
+                        })}
                       </span>
                       <button
                         onClick={() =>
@@ -1041,15 +1143,26 @@ export const NewBookingModal = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Client *</Label>
+              <Label>
+                {t("agencyDashboard.bookings.newBooking.client", {
+                  defaultValue: "Client *",
+                })}
+              </Label>
               {showAddClient ? (
                 <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 space-y-4">
                   <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
-                    <Building2 className="w-4 h-4" /> New Client
+                    <Building2 className="w-4 h-4" />{" "}
+                    {t("agencyDashboard.bookings.newBooking.newClient", {
+                      defaultValue: "New Client",
+                    })}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label className="text-xs">Company Name *</Label>
+                      <Label className="text-xs">
+                        {t("agencyDashboard.bookings.newBooking.companyName", {
+                          defaultValue: "Company Name *",
+                        })}
+                      </Label>
                       <Input
                         placeholder="Acme Inc."
                         value={newClient.company}
@@ -1062,9 +1175,16 @@ export const NewBookingModal = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Industry</Label>
+                      <Label className="text-xs">
+                        {t("agencyDashboard.bookings.newBooking.industry", {
+                          defaultValue: "Industry",
+                        })}
+                      </Label>
                       <Input
-                        placeholder="e.g. Fashion, Retail, Media"
+                        placeholder={t(
+                          "agencyDashboard.bookings.newBooking.industryPlaceholder",
+                          { defaultValue: "e.g. Fashion, Retail, Media" },
+                        )}
                         value={newClient.industry}
                         onChange={(e) =>
                           setNewClient({
@@ -1075,7 +1195,11 @@ export const NewBookingModal = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Contact Name *</Label>
+                      <Label className="text-xs">
+                        {t("agencyDashboard.bookings.newBooking.contactName", {
+                          defaultValue: "Contact Name *",
+                        })}
+                      </Label>
                       <Input
                         placeholder="John Doe"
                         value={newClient.contact}
@@ -1088,7 +1212,11 @@ export const NewBookingModal = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Email</Label>
+                      <Label className="text-xs">
+                        {t("agencyDashboard.bookings.newBooking.email", {
+                          defaultValue: "Email",
+                        })}
+                      </Label>
                       <Input
                         placeholder="john@acme.com"
                         value={newClient.email}
@@ -1098,7 +1226,11 @@ export const NewBookingModal = ({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Phone</Label>
+                      <Label className="text-xs">
+                        {t("agencyDashboard.bookings.newBooking.phone", {
+                          defaultValue: "Phone",
+                        })}
+                      </Label>
                       <Input
                         placeholder="+1 (555) 123-4567"
                         value={newClient.phone}
@@ -1109,7 +1241,11 @@ export const NewBookingModal = ({
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Payment Terms</Label>
+                    <Label className="text-xs">
+                      {t("agencyDashboard.bookings.newBooking.paymentTerms", {
+                        defaultValue: "Payment Terms",
+                      })}
+                    </Label>
                     <Select
                       value={newClient.terms}
                       onValueChange={(v) =>
@@ -1120,13 +1256,31 @@ export const NewBookingModal = ({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Net 30">Net 30</SelectItem>
-                        <SelectItem value="Net 15">Net 15</SelectItem>
-                        <SelectItem value="Net 30">Net 30</SelectItem>
-                        <SelectItem value="Net 60">Net 60</SelectItem>
-                        <SelectItem value="Da">Da</SelectItem>
+                        <SelectItem value="Net 30">
+                          {t("agencyDashboard.bookings.newBooking.net30", {
+                            defaultValue: "Net 30",
+                          })}
+                        </SelectItem>
+                        <SelectItem value="Net 15">
+                          {t("agencyDashboard.bookings.newBooking.net15", {
+                            defaultValue: "Net 15",
+                          })}
+                        </SelectItem>
+                        <SelectItem value="Net 60">
+                          {t("agencyDashboard.bookings.newBooking.net60", {
+                            defaultValue: "Net 60",
+                          })}
+                        </SelectItem>
+                        <SelectItem value="Da">
+                          {t("agencyDashboard.bookings.newBooking.da", {
+                            defaultValue: "Da",
+                          })}
+                        </SelectItem>
                         <SelectItem value="Upon Completion">
-                          Upon Completion
+                          {t(
+                            "agencyDashboard.bookings.newBooking.uponCompletion",
+                            { defaultValue: "Upon Completion" },
+                          )}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -1137,13 +1291,18 @@ export const NewBookingModal = ({
                       onClick={handleAddClient}
                       disabled={!newClient.company || !newClient.contact}
                     >
-                      Save Client & Use
+                      {t(
+                        "agencyDashboard.bookings.newBooking.saveClientAndUse",
+                        { defaultValue: "Save Client & Use" },
+                      )}
                     </Button>
                     <Button
                       variant="outline"
                       onClick={() => setShowAddClient(false)}
                     >
-                      Cancel
+                      {t("agencyDashboard.bookings.newBooking.cancel", {
+                        defaultValue: "Cancel",
+                      })}
                     </Button>
                   </div>
                 </div>
@@ -1151,7 +1310,10 @@ export const NewBookingModal = ({
                 <>
                   <div className="relative">
                     <Input
-                      placeholder="Search client by name..."
+                      placeholder={t(
+                        "agencyDashboard.bookings.newBooking.searchClientPlaceholder",
+                        { defaultValue: "Search client by name..." },
+                      )}
                       value={clientSearch}
                       onChange={(e) => setClientSearch(e.target.value)}
                     />
@@ -1185,14 +1347,23 @@ export const NewBookingModal = ({
                     ))}
                     {filteredClients.length === 0 && (
                       <div className="p-8 text-center text-gray-500 text-sm">
-                        No clients found matching "{clientSearch}"
+                        {t(
+                          "agencyDashboard.bookings.newBooking.noClientsMatching",
+                          {
+                            search: clientSearch,
+                            defaultValue: `No clients found matching "${clientSearch}"`,
+                          },
+                        )}
                       </div>
                     )}
                     <div
                       onClick={() => setShowAddClient(true)}
                       className="flex items-center gap-2 p-3 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-200 font-bold text-sm"
                     >
-                      <Plus className="w-4 h-4" /> Add New Client
+                      <Plus className="w-4 h-4" />{" "}
+                      {t("agencyDashboard.bookings.newBooking.addNewClient", {
+                        defaultValue: "Add New Client",
+                      })}
                     </div>
                   </div>
                 </>
@@ -1201,13 +1372,19 @@ export const NewBookingModal = ({
 
             <div className="space-y-2">
               <Label>
-                Campaign <span className="text-red-500">*</span>
+                {t("agencyDashboard.bookings.newBooking.campaignRequired", {
+                  defaultValue: "Campaign",
+                })}{" "}
+                <span className="text-red-500">*</span>
               </Label>
               <div className="relative">
                 <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   className="pl-9"
-                  placeholder="Search campaigns..."
+                  placeholder={t(
+                    "agencyDashboard.bookings.newBooking.searchCampaignsPlaceholder",
+                    { defaultValue: "Search campaigns..." },
+                  )}
                   value={campaignSearch}
                   onChange={(e) => setCampaignSearch(e.target.value)}
                 />
@@ -1241,7 +1418,10 @@ export const NewBookingModal = ({
                   onClick={() => setShowCampaignModal(true)}
                   className="flex items-center gap-2 p-2 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-100 font-bold text-xs"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Create New Campaign
+                  <Plus className="w-3.5 h-3.5" />{" "}
+                  {t("agencyDashboard.bookings.newBooking.createNewCampaign", {
+                    defaultValue: "Create New Campaign",
+                  })}
                 </div>
               </div>
               {selectedCampaign && (
@@ -1249,7 +1429,10 @@ export const NewBookingModal = ({
                   <div className="flex items-center gap-2">
                     <Tag className="w-4 h-4 text-indigo-600" />
                     <p className="text-sm font-bold text-indigo-900">
-                      Campaign: {selectedCampaign.name}
+                      {t("agencyDashboard.bookings.newBooking.campaignLabel", {
+                        defaultValue: "Campaign:",
+                      })}{" "}
+                      {selectedCampaign.name}
                     </p>
                   </div>
                   <button

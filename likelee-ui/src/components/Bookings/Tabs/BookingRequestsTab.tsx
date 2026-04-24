@@ -1,14 +1,23 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Calendar } from "lucide-react";
 
 export const BookingRequestsTab = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Booking Requests</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {t("agencyDashboard.bookings.tabs.bookingRequests.title", {
+              defaultValue: "Booking Requests",
+            })}
+          </h2>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Review and manage incoming booking requests
+            {t("agencyDashboard.bookings.tabs.bookingRequests.subtitle", {
+              defaultValue: "Review and manage incoming booking requests",
+            })}
           </p>
         </div>
       </div>
@@ -18,10 +27,15 @@ export const BookingRequestsTab = () => {
           <Calendar className="w-12 h-12 text-gray-400" />
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">
-          Booking requests feature coming soon
+          {t("agencyDashboard.bookings.tabs.bookingRequests.comingSoonTitle", {
+            defaultValue: "Booking requests feature coming soon",
+          })}
         </h3>
         <p className="text-gray-500 max-w-md">
-          Manage incoming booking requests from clients
+          {t(
+            "agencyDashboard.bookings.tabs.bookingRequests.comingSoonDescription",
+            { defaultValue: "Manage incoming booking requests from clients" },
+          )}
         </p>
       </div>
     </div>

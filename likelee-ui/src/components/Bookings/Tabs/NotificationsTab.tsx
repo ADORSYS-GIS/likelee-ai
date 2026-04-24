@@ -26,6 +26,7 @@ import { listBookingNotifications, getAgencyRoster } from "@/api/functions";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "react-i18next";
 
 import { format, parseISO } from "date-fns";
 
@@ -61,6 +62,7 @@ export const NotificationsTab = ({
 }) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const effectiveAgencyId = (profile as any)?.organization_id || profile?.id;
 
@@ -303,35 +305,50 @@ export const NotificationsTab = ({
     const failed = emailRows.length - ok;
     return [
       {
-        label: "Emails Sent",
+        label: t(
+          "agencyDashboard.bookings.tabs.notifications.stats.emailsSent",
+          { defaultValue: "Emails Sent" },
+        ),
         value: String(ok),
         subtitle: "",
         icon: Mail,
         color: "text-blue-600",
       },
       {
-        label: "SMS Sent",
+        label: t("agencyDashboard.bookings.tabs.notifications.stats.smsSent", {
+          defaultValue: "SMS Sent",
+        }),
         value: "0",
-        subtitle: "Coming Soon",
+        subtitle: t(
+          "agencyDashboard.bookings.tabs.notifications.stats.comingSoon",
+          { defaultValue: "Coming Soon" },
+        ),
         icon: Phone,
         color: "text-green-600",
       },
       {
-        label: "Push Sent",
+        label: t("agencyDashboard.bookings.tabs.notifications.stats.pushSent", {
+          defaultValue: "Push Sent",
+        }),
         value: "0",
-        subtitle: "Coming Soon",
+        subtitle: t(
+          "agencyDashboard.bookings.tabs.notifications.stats.comingSoon",
+          { defaultValue: "Coming Soon" },
+        ),
         icon: Bell,
         color: "text-purple-600",
       },
       {
-        label: "Failed",
+        label: t("agencyDashboard.bookings.tabs.notifications.stats.failed", {
+          defaultValue: "Failed",
+        }),
         value: String(failed),
         subtitle: "",
         icon: XCircle,
         color: "text-red-600",
       },
     ];
-  }, [bookingNotifications]);
+  }, [bookingNotifications, t]);
 
   const notifications = useMemo(() => {
     const items: {
@@ -368,12 +385,21 @@ export const NotificationsTab = ({
       const ok = (r.meta_json as any)?.smtp_status === "ok";
       items.push({
         type: ch as any,
-        title: "Booking Created",
+        title: t(
+          "agencyDashboard.bookings.tabs.notifications.logs.bookingCreated",
+          { defaultValue: "Booking Created" },
+        ),
         recipient: r.to_email || "",
         message: r.subject || r.message,
         time: ts,
         status: ok ? "success" : "error",
-        detail: ok ? "Sent" : "Failed",
+        detail: ok
+          ? t("agencyDashboard.bookings.tabs.notifications.logs.sent", {
+              defaultValue: "Sent",
+            })
+          : t("agencyDashboard.bookings.tabs.notifications.logs.failed", {
+              defaultValue: "Failed",
+            }),
       });
     }
     return items;
@@ -385,10 +411,14 @@ export const NotificationsTab = ({
         <Bell className="w-8 h-8 text-gray-700" />
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            Notifications Center
+            {t("agencyDashboard.bookings.tabs.notifications.title", {
+              defaultValue: "Notifications Center",
+            })}
           </h2>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Manage booking notifications and delivery logs
+            {t("agencyDashboard.bookings.tabs.notifications.subtitle", {
+              defaultValue: "Manage booking notifications and delivery logs",
+            })}
           </p>
         </div>
       </div>
@@ -397,10 +427,24 @@ export const NotificationsTab = ({
       <div className="overflow-x-auto border-b border-gray-200">
         <div className="flex gap-1 min-w-max">
           {[
-            "Notification Logs",
-            "Settings",
-            `${entitySingularTitle} Preferences`,
-            "Test Notifications",
+            t(
+              "agencyDashboard.bookings.tabs.notifications.subTabs.notificationLogs",
+              { defaultValue: "Notification Logs" },
+            ),
+            t("agencyDashboard.bookings.tabs.notifications.subTabs.settings", {
+              defaultValue: "Settings",
+            }),
+            t(
+              "agencyDashboard.bookings.tabs.notifications.subTabs.preferences",
+              {
+                entitySingular: entitySingularTitle,
+                defaultValue: `${entitySingularTitle} Preferences`,
+              },
+            ),
+            t(
+              "agencyDashboard.bookings.tabs.notifications.subTabs.testNotifications",
+              { defaultValue: "Test Notifications" },
+            ),
           ].map((tab, idx) => (
             <button
               key={tab}

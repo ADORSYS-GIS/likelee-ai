@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { CampaignModal } from "../Modals/CampaignModal";
 import { toast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 export const CampaignsTab = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -33,6 +34,7 @@ export const CampaignsTab = () => {
   const [deleteHasActiveBookings, setDeleteHasActiveBookings] = useState(false);
   const [deleteTargetCampaign, setDeleteTargetCampaign] = useState<any>(null);
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const { data: campaigns, isLoading } = useQuery({
     queryKey: ["bookings-campaigns"],
@@ -57,11 +59,17 @@ export const CampaignsTab = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bookings-campaigns"] });
-      toast({ title: "Campaign deleted" });
+      toast({
+        title: t("agencyDashboard.bookings.tabs.campaigns.campaignDeleted", {
+          defaultValue: "Campaign deleted",
+        }),
+      });
     },
     onError: (error: any) => {
       toast({
-        title: "Error deleting campaign",
+        title: t("agencyDashboard.bookings.tabs.campaigns.errorDeleting", {
+          defaultValue: "Error deleting campaign",
+        }),
         description: error.message,
         variant: "destructive",
       });
@@ -113,17 +121,27 @@ export const CampaignsTab = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "created":
-        return <Badge variant="secondary">Created</Badge>;
+        return (
+          <Badge variant="secondary">
+            {t("agencyDashboard.bookings.tabs.campaigns.statuses.created", {
+              defaultValue: "Created",
+            })}
+          </Badge>
+        );
       case "ongoing":
         return (
           <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            Ongoing
+            {t("agencyDashboard.bookings.tabs.campaigns.statuses.ongoing", {
+              defaultValue: "Ongoing",
+            })}
           </Badge>
         );
       case "completed":
         return (
           <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-            Completed
+            {t("agencyDashboard.bookings.tabs.campaigns.statuses.completed", {
+              defaultValue: "Completed",
+            })}
           </Badge>
         );
       default:
@@ -135,9 +153,15 @@ export const CampaignsTab = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Campaigns</h2>
+          <h2 className="text-2xl font-bold">
+            {t("agencyDashboard.bookings.tabs.campaigns.title", {
+              defaultValue: "Campaigns",
+            })}
+          </h2>
           <p className="text-muted-foreground text-sm">
-            Manage and organize your booking campaigns
+            {t("agencyDashboard.bookings.tabs.campaigns.subtitle", {
+              defaultValue: "Manage and organize your booking campaigns",
+            })}
           </p>
         </div>
         <Button
@@ -148,7 +172,9 @@ export const CampaignsTab = () => {
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 rounded-xl"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Create Campaign
+          {t("agencyDashboard.bookings.tabs.campaigns.createCampaign", {
+            defaultValue: "Create Campaign",
+          })}
         </Button>
       </div>
 
@@ -156,19 +182,46 @@ export const CampaignsTab = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Campaign Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>Bookings</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>
+                {t("agencyDashboard.bookings.tabs.campaigns.campaignName", {
+                  defaultValue: "Campaign Name",
+                })}
+              </TableHead>
+              <TableHead>
+                {t("agencyDashboard.bookings.tabs.campaigns.status", {
+                  defaultValue: "Status",
+                })}
+              </TableHead>
+              <TableHead>
+                {t("agencyDashboard.bookings.tabs.campaigns.duration", {
+                  defaultValue: "Duration",
+                })}
+              </TableHead>
+              <TableHead>
+                {t("agencyDashboard.bookings.tabs.campaigns.startDate", {
+                  defaultValue: "Start Date",
+                })}
+              </TableHead>
+              <TableHead>
+                {t("agencyDashboard.bookings.tabs.campaigns.bookings", {
+                  defaultValue: "Bookings",
+                })}
+              </TableHead>
+              <TableHead className="text-right">
+                {t("agencyDashboard.bookings.tabs.campaigns.actions", {
+                  defaultValue: "Actions",
+                })}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8">
-                  Loading campaigns...
+                  {t(
+                    "agencyDashboard.bookings.tabs.campaigns.loadingCampaigns",
+                    { defaultValue: "Loading campaigns..." },
+                  )}
                 </TableCell>
               </TableRow>
             ) : campaigns?.length === 0 ? (
@@ -177,7 +230,10 @@ export const CampaignsTab = () => {
                   colSpan={6}
                   className="text-center py-8 text-muted-foreground"
                 >
-                  No campaigns found. Create your first campaign to get started.
+                  {t("agencyDashboard.bookings.tabs.campaigns.noCampaigns", {
+                    defaultValue:
+                      "No campaigns found. Create your first campaign to get started.",
+                  })}
                 </TableCell>
               </TableRow>
             ) : (
@@ -189,7 +245,10 @@ export const CampaignsTab = () => {
                   <TableCell>{getStatusBadge(campaign.status)}</TableCell>
                   <TableCell>
                     {campaign.duration_days
-                      ? `${campaign.duration_days} days`
+                      ? t("agencyDashboard.bookings.tabs.campaigns.days", {
+                          count: campaign.duration_days,
+                          defaultValue: `${campaign.duration_days} days`,
+                        })
                       : "—"}
                   </TableCell>
                   <TableCell>{campaign.start_date || "—"}</TableCell>
@@ -197,8 +256,13 @@ export const CampaignsTab = () => {
                     {campaign.bookings && campaign.bookings.length > 0 ? (
                       <div className="flex flex-col gap-1">
                         <Badge variant="outline" className="w-fit">
-                          {campaign.bookings.length} Booking
-                          {campaign.bookings.length > 1 ? "s" : ""}
+                          {t(
+                            "agencyDashboard.bookings.tabs.campaigns.booking",
+                            {
+                              count: campaign.bookings.length,
+                              defaultValue: `${campaign.bookings.length} Booking${campaign.bookings.length > 1 ? "s" : ""}`,
+                            },
+                          )}
                         </Badge>
                         <div className="text-xs text-gray-400 truncate max-w-[150px]">
                           {campaign.bookings
@@ -254,13 +318,29 @@ export const CampaignsTab = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete campaign</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.bookings.tabs.campaigns.deleteCampaign", {
+                defaultValue: "Delete campaign",
+              })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {deleteChecking
-                ? "Checking linked bookings..."
+                ? t(
+                    "agencyDashboard.bookings.tabs.campaigns.checkingLinkedBookings",
+                    { defaultValue: "Checking linked bookings..." },
+                  )
                 : deleteHasActiveBookings
-                  ? "This campaign has ongoing bookings. Deleting it will also delete those bookings. Do you want to continue?"
-                  : "Are you sure you want to delete this campaign?"}
+                  ? t(
+                      "agencyDashboard.bookings.tabs.campaigns.hasOngoingBookings",
+                      {
+                        defaultValue:
+                          "This campaign has ongoing bookings. Deleting it will also delete those bookings. Do you want to continue?",
+                      },
+                    )
+                  : t("agencyDashboard.bookings.tabs.campaigns.confirmDelete", {
+                      defaultValue:
+                        "Are you sure you want to delete this campaign?",
+                    })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -271,7 +351,9 @@ export const CampaignsTab = () => {
                 setDeleteHasActiveBookings(false);
               }}
             >
-              Cancel
+              {t("agencyDashboard.bookings.tabs.campaigns.cancel", {
+                defaultValue: "Cancel",
+              })}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={
@@ -289,7 +371,9 @@ export const CampaignsTab = () => {
                 }
               }}
             >
-              Yes
+              {t("agencyDashboard.bookings.tabs.campaigns.yes", {
+                defaultValue: "Yes",
+              })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
