@@ -115,6 +115,16 @@ function userFriendlyMessage(
     return "Invalid data provided. Please check your input.";
   }
   if (status === 409) {
+    // For structured duplicate-email conflicts, pass through the real message
+    // so the UI can show the correct modal instead of a generic toast.
+    const normalized = normalizeErrorData(errorData);
+    const code = String(normalized?.code || "").trim();
+    if (
+      code === "duplicate_email_same_agency" ||
+      code === "duplicate_email_other_agency"
+    ) {
+      return normalized?.message || msg || "This email is already in use.";
+    }
     return "This action conflicts with an existing record. Please refresh and try again.";
   }
   if (!msg || !String(msg).trim()) {
@@ -341,6 +351,48 @@ export const base44 = {
         // keep as text
       }
       throwBackendError("PUT", url, res.status, errorData);
+    }
+    return (await res.json()) as T;
+  },
+  async patch<T = any>(
+    url: string,
+    data?: any,
+    config?: RequestConfig,
+  ): Promise<T> {
+    const full = buildUrl(API_BASE, url, config?.params);
+
+    const {
+      data: { session },
+    } = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
+    const token = session?.access_token;
+
+    const isForm = typeof FormData !== "undefined" && data instanceof FormData;
+    const headers = {
+      ...(isForm ? {} : { "Content-Type": "application/json" }),
+      ...(config?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(config?.idempotencyKey
+        ? { "Idempotency-Key": config.idempotencyKey }
+        : {}),
+    };
+
+    const body = isForm
+      ? data
+      : data !== undefined
+        ? JSON.stringify(data)
+        : undefined;
+    const res = await fetch(full, { method: "PATCH", headers, body });
+    if (!res.ok) {
+      const txt = await res.text();
+      let errorData: any = txt;
+      try {
+        errorData = JSON.parse(txt);
+      } catch {
+        // keep as text
+      }
+      throwBackendError("PATCH", url, res.status, errorData);
     }
     return (await res.json()) as T;
   },

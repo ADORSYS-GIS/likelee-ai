@@ -143,6 +143,7 @@ import {
   FolderCheck,
   Gift,
   MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useChat";
 // ----------- LAZY TAB COMPONENTS -----------
@@ -729,6 +730,33 @@ const ConnectBankView = ({
                     Account ending in ••••{accountLast4}
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Transfers not enabled warning — shown when connected but Stripe capability is inactive */}
+          {connected && !status?.transfers_enabled && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-900">
+                  Transfers not enabled
+                </p>
+                <p className="text-xs text-amber-800 font-medium mt-1">
+                  Your Stripe account is connected but the{" "}
+                  <strong>transfers</strong> capability is not active. This
+                  means payouts from brand offers cannot be sent to your account
+                  until you complete Stripe onboarding.
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-3 h-8 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5"
+                  onClick={connect}
+                  disabled={loading || actionsLocked}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Complete Stripe setup
+                </Button>
               </div>
             </div>
           )}
@@ -20762,6 +20790,10 @@ export default function AgencyDashboard() {
                 isLoading={rosterQuery.isLoading}
                 onRosterChanged={() => rosterQuery.refetch()}
                 isSportsAgency={isSportsAgency}
+                initialOpenTalentId={
+                  String(searchParams.get("openTalentId") || "").trim() ||
+                  undefined
+                }
               />
             )}
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
@@ -20987,7 +21019,12 @@ export default function AgencyDashboard() {
             )}
             {activeTab === "messages" &&
               (hasProAccess ? (
-                <CommunicationHub />
+                <CommunicationHub
+                  initialCreatorId={
+                    String(searchParams.get("openCreatorId") || "").trim() ||
+                    undefined
+                  }
+                />
               ) : (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                   <div className="text-lg font-black text-gray-900">

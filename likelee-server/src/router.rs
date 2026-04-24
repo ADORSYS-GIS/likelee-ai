@@ -2,7 +2,7 @@ use crate::config::AppState;
 use axum::http::header::{HeaderName, ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::{
     extract::DefaultBodyLimit,
-    routing::{delete, get, post, put},
+    routing::{delete, get, patch, post, put},
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
@@ -35,6 +35,18 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/admin/storage/verify-parity",
             get(crate::admin::verify_storage_parity),
+        )
+        .route(
+            "/api/admin/storage/brands",
+            get(crate::admin::list_brands_storage),
+        )
+        .route(
+            "/api/admin/storage/brands/:brand_id/quota",
+            patch(crate::admin::update_brand_quota),
+        )
+        .route(
+            "/api/admin/storage/analytics",
+            get(crate::admin::get_platform_storage_analytics),
         )
         // --- Messaging Hub ---
         .route(
@@ -337,6 +349,19 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::agency_talent_invites::revoke_for_agency),
         )
         .route("/api/team/context", get(crate::team::get_context))
+        // --- Session Audit ---
+        .route(
+            "/api/auth/sessions",
+            get(crate::sessions::list_sessions).delete(crate::sessions::revoke_all_other_sessions),
+        )
+        .route(
+            "/api/auth/sessions/:session_id",
+            delete(crate::sessions::revoke_session),
+        )
+        .route(
+            "/api/auth/login-history",
+            get(crate::sessions::get_login_history),
+        )
         .route("/api/team/members", get(crate::team::list_members))
         .route("/api/team/audit-logs", get(crate::team::list_audit_logs))
         .route(
@@ -658,6 +683,15 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/storage/files/:file_id/signed-url",
             get(crate::agencies::get_agency_storage_file_signed_url),
+        )
+        // --- Unified Org Storage ---
+        .route(
+            "/api/org/storage/assets",
+            get(crate::org_storage::list_org_storage_assets),
+        )
+        .route(
+            "/api/org/storage/files/save-from-url",
+            post(crate::org_storage::save_from_url),
         )
         // --- Talent Packages ---
         .route(
@@ -1077,12 +1111,24 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::brand_campaigns::comment_offer_deliverable),
         )
         .route(
+            "/api/agency/campaign-offers/:offer_id/transfer-status",
+            get(crate::brand_campaigns::get_offer_transfer_status),
+        )
+        .route(
+            "/api/agency/campaign-offers/:offer_id/retry-transfers",
+            post(crate::brand_campaigns::retry_offer_transfers),
+        )
+        .route(
             "/api/talent/offer-asset-requests",
             get(crate::brand_campaigns::list_creator_asset_requests),
         )
         .route(
             "/api/talent/offer-asset-requests/:request_id/viewed",
             post(crate::brand_campaigns::mark_creator_asset_request_viewed),
+        )
+        .route(
+            "/api/talent/campaign-offers/transfer-status",
+            get(crate::brand_campaigns::get_creator_transfer_status),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
@@ -1121,6 +1167,40 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/brand/voice-assets",
             get(crate::licenses::list_brand_voice_assets),
+        )
+        .route(
+            "/api/brand/storage/usage",
+            get(crate::brand_storage::get_brand_storage_usage),
+        )
+        .route(
+            "/api/brand/storage/folders",
+            get(crate::brand_storage::list_brand_folders)
+                .post(crate::brand_storage::create_brand_folder),
+        )
+        .route(
+            "/api/brand/storage/folders/:folder_id",
+            delete(crate::brand_storage::delete_brand_folder)
+                .patch(crate::brand_storage::update_brand_folder),
+        )
+        .route(
+            "/api/brand/storage/files",
+            get(crate::brand_storage::list_brand_files),
+        )
+        .route(
+            "/api/brand/storage/files/upload",
+            post(crate::brand_storage::upload_brand_storage_file),
+        )
+        .route(
+            "/api/brand/storage/files/:file_id",
+            delete(crate::brand_storage::delete_brand_storage_file),
+        )
+        .route(
+            "/api/brand/storage/files/:file_id/signed-url",
+            get(crate::brand_storage::get_brand_storage_file_signed_url),
+        )
+        .route(
+            "/api/brand/storage/analytics",
+            get(crate::brand_storage::get_brand_storage_analytics),
         )
         .route(
             "/api/creator-rates",
@@ -1263,6 +1343,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/studio/licensed-assets",
             get(crate::studio::list_licensed_assets),
+        )
+        .route(
+            "/api/studio/generations/:generation_id/save-to-storage",
+            post(crate::studio::save_generation_to_storage),
         )
         // --- Legacy Stripe endpoint used by some UI flows ---
         .route(

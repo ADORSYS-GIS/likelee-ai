@@ -4,8 +4,164 @@ use axum::http::StatusCode;
 use reqwest::header::{HeaderMap as ReqwestHeaderMap, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::time::Duration;
 
 pub mod backfill;
+
+const URL_FETCH_TIMEOUT_SECS: u64 = 30;
+const URL_FETCH_MAX_SIZE_BYTES: usize = 100 * 1024 * 1024;
+
+#[derive(Debug, Clone)]
+pub struct SafeUrlFetchConfig {
+    pub timeout_secs: u64,
+    pub max_size_bytes: usize,
+}
+
+impl Default for SafeUrlFetchConfig {
+    fn default() -> Self {
+        Self {
+            timeout_secs: URL_FETCH_TIMEOUT_SECS,
+            max_size_bytes: URL_FETCH_MAX_SIZE_BYTES,
+        }
+    }
+}
+
+pub fn validate_url_for_fetch(url_str: &str) -> Result<String, (StatusCode, String)> {
+    let url_str = url_str.trim();
+
+    if !url_str.starts_with("http://") && !url_str.starts_with("https://") {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Only http and https URLs are allowed".to_string(),
+        ));
+    }
+
+    let host_start = url_str.find("://").map(|i| i + 3).unwrap_or(0);
+    let after_scheme = &url_str[host_start..];
+    let host_end = after_scheme.find('/').unwrap_or(after_scheme.len());
+    let host = &after_scheme[..host_end];
+    let host = host.split(':').next().unwrap_or(host);
+
+    if is_private_ip(host) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Access to private IP addresses is not allowed".to_string(),
+        ));
+    }
+
+    Ok(url_str.to_string())
+}
+
+fn is_private_ip(host: &str) -> bool {
+    let private_prefixes = [
+        "10.",
+        "172.16.",
+        "172.17.",
+        "172.18.",
+        "172.19.",
+        "172.20.",
+        "172.21.",
+        "172.22.",
+        "172.23.",
+        "172.24.",
+        "172.25.",
+        "172.26.",
+        "172.27.",
+        "172.28.",
+        "172.29.",
+        "172.30.",
+        "172.31.",
+        "192.168.",
+        "127.",
+        "169.254.",
+        "::1",
+        "localhost",
+        "0.0.0.0",
+    ];
+
+    let host_lower = host.to_lowercase();
+    for prefix in &private_prefixes {
+        if host_lower.starts_with(prefix) {
+            return true;
+        }
+    }
+    false
+}
+
+pub async fn safe_fetch_url(
+    url: &str,
+    config: Option<SafeUrlFetchConfig>,
+) -> Result<DownloadedObject, (StatusCode, String)> {
+    let config = config.unwrap_or_default();
+    let validated_url = validate_url_for_fetch(url)?;
+
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(config.timeout_secs))
+        .redirect(reqwest::redirect::Policy::limited(5))
+        .build()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let response = client.get(&validated_url).send().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to fetch URL: {}", e),
+        )
+    })?;
+
+    if !response.status().is_success() {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("URL returned status: {}", response.status()),
+        ));
+    }
+
+    let headers = response.headers().clone();
+    let content_type = headers
+        .get(CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+
+    let content_length: Option<usize> = headers
+        .get(reqwest::header::CONTENT_LENGTH)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse().ok());
+
+    if let Some(len) = content_length {
+        if len > config.max_size_bytes {
+            return Err((
+                StatusCode::PAYLOAD_TOO_LARGE,
+                format!(
+                    "Content too large: {} bytes (max: {} bytes)",
+                    len, config.max_size_bytes
+                ),
+            ));
+        }
+    }
+
+    let bytes = response.bytes().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to read response: {}", e),
+        )
+    })?;
+
+    if bytes.len() > config.max_size_bytes {
+        return Err((
+            StatusCode::PAYLOAD_TOO_LARGE,
+            format!(
+                "Content too large: {} bytes (max: {} bytes)",
+                bytes.len(),
+                config.max_size_bytes
+            ),
+        ));
+    }
+
+    Ok(DownloadedObject {
+        bytes,
+        content_type,
+        headers,
+    })
+}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -70,6 +226,8 @@ pub enum StorageContextType {
     TaxDocument,
     BrandVoiceAsset,
     StudioDocument,
+    BrandStorage,
+    StudioGeneration,
 }
 
 impl StorageContextType {
@@ -87,6 +245,8 @@ impl StorageContextType {
             Self::TaxDocument => "tax_document",
             Self::BrandVoiceAsset => "brand_voice_asset",
             Self::StudioDocument => "studio_document",
+            Self::BrandStorage => "brand_storage",
+            Self::StudioGeneration => "studio_generation",
         }
     }
 }
@@ -449,6 +609,11 @@ mod tests {
         assert_eq!(
             StorageContextType::StudioDocument.as_str(),
             "studio_document"
+        );
+        assert_eq!(StorageContextType::BrandStorage.as_str(), "brand_storage");
+        assert_eq!(
+            StorageContextType::StudioGeneration.as_str(),
+            "studio_generation"
         );
     }
 

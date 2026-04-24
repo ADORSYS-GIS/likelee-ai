@@ -9009,3 +9009,856 @@ pub async fn ensure_campaign_billing_stub(
     );
     Ok(lr_id.to_string())
 }
+
+// =============================================================================
+// GET /api/agency/campaign-offers/:offer_id/transfer-status
+//
+// Returns the Stripe account health + transfer row status for every recipient
+// (agency + each assigned talent) on a given offer.
+// Only the owning agency can call this.
+// =============================================================================
+
+#[derive(Debug, Serialize)]
+pub struct RecipientTransferStatus {
+    pub recipient_type: String,
+    pub recipient_id: String,
+    pub name: String,
+    pub amount_cents: i64,
+    pub currency: String,
+    /// "created" | "failed" | "pending_retry" | "reversed" | "not_attempted"
+    pub transfer_status: String,
+    pub failure_reason: Option<String>,
+    pub retry_count: i64,
+    pub retried_at: Option<String>,
+    pub notified_at: Option<String>,
+    pub stripe_transfer_id: Option<String>,
+    /// Live Stripe account health
+    pub stripe_connected: bool,
+    pub stripe_transfers_enabled: bool,
+    pub stripe_payouts_enabled: bool,
+    pub stripe_details_submitted: bool,
+    pub stripe_account_id: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OfferTransferStatusResponse {
+    pub offer_id: String,
+    pub escrow_status: String,
+    pub payment_status: String,
+    pub recipients: Vec<RecipientTransferStatus>,
+}
+
+pub async fn get_offer_transfer_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(offer_id): Path<String>,
+) -> Result<Json<OfferTransferStatusResponse>, (StatusCode, String)> {
+    // Agency-only, must have billing visibility
+    let access = team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = access.organization_id.clone();
+
+    // 1. Load the offer — verify it belongs to this agency
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,target_type,target_id,payment_status,escrow_status,billing_request_id,budget_snapshot")
+        .eq("id", &offer_id)
+        .eq("target_type", "agency")
+        .eq("target_id", &agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            offer_resp.status().as_u16(),
+            offer_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    let offer = offer_rows
+        .first()
+        .ok_or_else(|| (StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
+
+    let escrow_status = offer
+        .get("escrow_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("holding")
+        .to_string();
+    let payment_status = offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid")
+        .to_string();
+    let billing_request_id = offer
+        .get("billing_request_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    // 2. Load existing transfer rows for this offer
+    let transfers_resp = state
+        .pg
+        .from("campaign_offer_transfers")
+        .select("recipient_type,recipient_id,amount_cents,currency,status,failure_reason,retry_count,retried_at,notified_at,stripe_transfer_id,stripe_connect_account_id")
+        .eq("offer_id", &offer_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let transfers_text = transfers_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let transfer_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&transfers_text).unwrap_or_default();
+
+    // Index transfers by (recipient_type, recipient_id) for O(1) lookup
+    let mut transfer_by_key: std::collections::HashMap<(String, String), serde_json::Value> =
+        std::collections::HashMap::new();
+    for t in &transfer_rows {
+        let rtype = t
+            .get("recipient_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let rid = t
+            .get("recipient_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if !rtype.is_empty() && !rid.is_empty() {
+            transfer_by_key.insert((rtype, rid), t.clone());
+        }
+    }
+
+    // 3. Load payout splits from licensing_payouts to know per-recipient amounts
+    let mut agency_amount_cents: i64 = 0;
+    let mut talent_splits: Vec<serde_json::Value> = vec![];
+    if !billing_request_id.is_empty() {
+        let payouts_resp = state
+            .pg
+            .from("licensing_payouts")
+            .select("amount_cents,talent_splits,currency")
+            .eq("licensing_request_id", &billing_request_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if payouts_resp.status().is_success() {
+            let pt = payouts_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let pr: Vec<serde_json::Value> = serde_json::from_str(&pt).unwrap_or_default();
+            if let Some(p) = pr.first() {
+                agency_amount_cents = p.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+                talent_splits = p
+                    .get("talent_splits")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+            }
+        }
+    }
+
+    // 4. Resolve agency Stripe account health
+    let stripe_client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    async fn fetch_stripe_account_health(
+        client: &stripe_sdk::Client,
+        account_id: &str,
+    ) -> (bool, bool, bool, bool) {
+        // (connected, transfers_enabled, payouts_enabled, details_submitted)
+        if account_id.is_empty() {
+            return (false, false, false, false);
+        }
+        match account_id.parse::<stripe_sdk::AccountId>() {
+            Ok(aid) => match stripe_sdk::Account::retrieve(client, &aid, &[]).await {
+                Ok(acct) => {
+                    let transfers_enabled = acct
+                        .capabilities
+                        .as_ref()
+                        .and_then(|c| c.transfers.as_ref())
+                        .map(|s| s == &stripe_sdk::CapabilityStatus::Active)
+                        .unwrap_or(false);
+                    let payouts_enabled = acct.payouts_enabled.unwrap_or(false);
+                    let details_submitted = acct.details_submitted.unwrap_or(false);
+                    (true, transfers_enabled, payouts_enabled, details_submitted)
+                }
+                Err(_) => (true, false, false, false),
+            },
+            Err(_) => (false, false, false, false),
+        }
+    }
+
+    let mut recipients: Vec<RecipientTransferStatus> = vec![];
+
+    // 4a. Agency recipient
+    let agency_stripe_account = get_agency_stripe_account(&state, &agency_id)
+        .await
+        .unwrap_or_default();
+    let (ag_connected, ag_transfers, ag_payouts, ag_details) =
+        fetch_stripe_account_health(&stripe_client, &agency_stripe_account).await;
+
+    let agency_transfer = transfer_by_key.get(&("agency".to_string(), agency_id.clone()));
+    let agency_name = {
+        let resp = state
+            .pg
+            .from("agencies")
+            .select("agency_name")
+            .eq("id", &agency_id)
+            .limit(1)
+            .execute()
+            .await;
+        if let Ok(r) = resp {
+            let t = r.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&t).unwrap_or_default();
+            rows.first()
+                .and_then(|r| r.get("agency_name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Agency")
+                .to_string()
+        } else {
+            "Agency".to_string()
+        }
+    };
+
+    recipients.push(RecipientTransferStatus {
+        recipient_type: "agency".to_string(),
+        recipient_id: agency_id.clone(),
+        name: agency_name,
+        amount_cents: agency_amount_cents,
+        currency: "USD".to_string(),
+        transfer_status: agency_transfer
+            .and_then(|t| t.get("status"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("not_attempted")
+            .to_string(),
+        failure_reason: agency_transfer
+            .and_then(|t| t.get("failure_reason"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        retry_count: agency_transfer
+            .and_then(|t| t.get("retry_count"))
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0),
+        retried_at: agency_transfer
+            .and_then(|t| t.get("retried_at"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        notified_at: agency_transfer
+            .and_then(|t| t.get("notified_at"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_transfer_id: agency_transfer
+            .and_then(|t| t.get("stripe_transfer_id"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_connected: ag_connected,
+        stripe_transfers_enabled: ag_transfers,
+        stripe_payouts_enabled: ag_payouts,
+        stripe_details_submitted: ag_details,
+        stripe_account_id: if agency_stripe_account.is_empty() {
+            None
+        } else {
+            Some(agency_stripe_account)
+        },
+    });
+
+    // 4b. Per-talent recipients from talent_splits
+    for split in &talent_splits {
+        let creator_id = split
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if creator_id.is_empty() {
+            continue;
+        }
+        let talent_amount = split
+            .get("amount_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let talent_name = split
+            .get("talent_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Talent")
+            .to_string();
+
+        let creator_stripe_account = get_creator_stripe_account(&state, &creator_id)
+            .await
+            .unwrap_or_default();
+        let (cr_connected, cr_transfers, cr_payouts, cr_details) =
+            fetch_stripe_account_health(&stripe_client, &creator_stripe_account).await;
+
+        let creator_transfer = transfer_by_key.get(&("creator".to_string(), creator_id.clone()));
+
+        recipients.push(RecipientTransferStatus {
+            recipient_type: "creator".to_string(),
+            recipient_id: creator_id.clone(),
+            name: talent_name,
+            amount_cents: talent_amount,
+            currency: "USD".to_string(),
+            transfer_status: creator_transfer
+                .and_then(|t| t.get("status"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("not_attempted")
+                .to_string(),
+            failure_reason: creator_transfer
+                .and_then(|t| t.get("failure_reason"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            retry_count: creator_transfer
+                .and_then(|t| t.get("retry_count"))
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0),
+            retried_at: creator_transfer
+                .and_then(|t| t.get("retried_at"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            notified_at: creator_transfer
+                .and_then(|t| t.get("notified_at"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            stripe_transfer_id: creator_transfer
+                .and_then(|t| t.get("stripe_transfer_id"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            stripe_connected: cr_connected,
+            stripe_transfers_enabled: cr_transfers,
+            stripe_payouts_enabled: cr_payouts,
+            stripe_details_submitted: cr_details,
+            stripe_account_id: if creator_stripe_account.is_empty() {
+                None
+            } else {
+                Some(creator_stripe_account)
+            },
+        });
+    }
+
+    Ok(Json(OfferTransferStatusResponse {
+        offer_id: offer_id.clone(),
+        escrow_status,
+        payment_status,
+        recipients,
+    }))
+}
+
+// =============================================================================
+// POST /api/agency/campaign-offers/:offer_id/retry-transfers
+//
+// Retries all failed Stripe transfers for a given offer.
+// Guards:
+//   - Agency must own the offer (target_type=agency, target_id=agency_id)
+//   - escrow_status must be "released" (brand already approved)
+//   - Only processes rows with status = "failed"
+// =============================================================================
+
+#[derive(Debug, Serialize)]
+pub struct RetryTransferResult {
+    pub recipient_type: String,
+    pub recipient_id: String,
+    pub name: String,
+    pub amount_cents: i64,
+    /// "succeeded" | "failed" | "skipped_no_account"
+    pub result: String,
+    pub failure_reason: Option<String>,
+    pub stripe_transfer_id: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct RetryTransfersResponse {
+    pub offer_id: String,
+    pub retried: Vec<RetryTransferResult>,
+    pub nothing_to_retry: bool,
+}
+
+pub async fn retry_offer_transfers(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(offer_id): Path<String>,
+) -> Result<Json<RetryTransfersResponse>, (StatusCode, String)> {
+    // Agency-only, must have billing permission
+    let access = team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = access.organization_id.clone();
+
+    // 1. Load and validate the offer
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,target_type,target_id,payment_status,escrow_status,billing_request_id")
+        .eq("id", &offer_id)
+        .eq("target_type", "agency")
+        .eq("target_id", &agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            offer_resp.status().as_u16(),
+            offer_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    let offer = offer_rows
+        .first()
+        .ok_or_else(|| (StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
+
+    let escrow_status = offer
+        .get("escrow_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("holding");
+    let payment_status = offer
+        .get("payment_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unpaid");
+
+    // Hard gate: escrow must be released (brand approved)
+    if escrow_status != "released" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            serde_json::to_string(&json!({
+                "code": "escrow_not_released",
+                "message": "Transfers can only be retried after the brand has approved the deliverables and escrow has been released.",
+                "escrow_status": escrow_status,
+            })).unwrap_or_else(|_| "escrow_not_released".to_string()),
+        ));
+    }
+
+    // Sanity: offer must be paid
+    if payment_status != "paid" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            serde_json::to_string(&json!({
+                "code": "offer_not_paid",
+                "message": "Offer has not been paid yet.",
+            }))
+            .unwrap_or_else(|_| "offer_not_paid".to_string()),
+        ));
+    }
+
+    let billing_request_id = offer
+        .get("billing_request_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    // 2. Load only failed transfer rows for this offer
+    let failed_resp = state
+        .pg
+        .from("campaign_offer_transfers")
+        .select("recipient_type,recipient_id,amount_cents,currency,stripe_connect_account_id,retry_count")
+        .eq("offer_id", &offer_id)
+        .eq("status", "failed")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let failed_text = failed_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let failed_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&failed_text).unwrap_or_default();
+
+    if failed_rows.is_empty() {
+        return Ok(Json(RetryTransfersResponse {
+            offer_id: offer_id.clone(),
+            retried: vec![],
+            nothing_to_retry: true,
+        }));
+    }
+
+    // 3. Load payout splits for name resolution
+    let mut talent_name_by_creator: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut agency_name = "Agency".to_string();
+    if !billing_request_id.is_empty() {
+        let payouts_resp = state
+            .pg
+            .from("licensing_payouts")
+            .select("talent_splits")
+            .eq("licensing_request_id", &billing_request_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if payouts_resp.status().is_success() {
+            let pt = payouts_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let pr: Vec<serde_json::Value> = serde_json::from_str(&pt).unwrap_or_default();
+            if let Some(p) = pr.first() {
+                if let Some(splits) = p.get("talent_splits").and_then(|v| v.as_array()) {
+                    for s in splits {
+                        let cid = s
+                            .get("creator_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .to_string();
+                        let name = s
+                            .get("talent_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Talent")
+                            .to_string();
+                        if !cid.is_empty() {
+                            talent_name_by_creator.insert(cid, name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Resolve agency name
+    {
+        let resp = state
+            .pg
+            .from("agencies")
+            .select("agency_name")
+            .eq("id", &agency_id)
+            .limit(1)
+            .execute()
+            .await;
+        if let Ok(r) = resp {
+            let t = r.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&t).unwrap_or_default();
+            if let Some(row) = rows.first() {
+                agency_name = row
+                    .get("agency_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Agency")
+                    .to_string();
+            }
+        }
+    }
+
+    let stripe_client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut retried: Vec<RetryTransferResult> = vec![];
+
+    for row in &failed_rows {
+        let recipient_type = row
+            .get("recipient_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let recipient_id = row
+            .get("recipient_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let amount_cents = row
+            .get("amount_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let currency = row
+            .get("currency")
+            .and_then(|v| v.as_str())
+            .unwrap_or("USD")
+            .to_string();
+
+        if recipient_id.is_empty() || amount_cents <= 0 {
+            continue;
+        }
+
+        let name = if recipient_type == "agency" {
+            agency_name.clone()
+        } else {
+            talent_name_by_creator
+                .get(&recipient_id)
+                .cloned()
+                .unwrap_or_else(|| "Talent".to_string())
+        };
+
+        // Resolve current Stripe account (may have been updated since original failure)
+        let stripe_account_id = if recipient_type == "agency" {
+            get_agency_stripe_account(&state, &recipient_id)
+                .await
+                .unwrap_or_default()
+        } else {
+            get_creator_stripe_account(&state, &recipient_id)
+                .await
+                .unwrap_or_default()
+        };
+
+        if stripe_account_id.is_empty() {
+            retried.push(RetryTransferResult {
+                recipient_type: recipient_type.clone(),
+                recipient_id: recipient_id.clone(),
+                name,
+                amount_cents,
+                result: "skipped_no_account".to_string(),
+                failure_reason: Some(
+                    "No Stripe Connect account found. Please complete Stripe onboarding."
+                        .to_string(),
+                ),
+                stripe_transfer_id: None,
+            });
+            continue;
+        }
+
+        // Mark as pending_retry before attempting
+        let _ = state
+            .pg
+            .rpc(
+                "mark_transfer_pending_retry",
+                json!({
+                    "p_offer_id": offer_id,
+                    "p_recipient_type": recipient_type,
+                    "p_recipient_id": recipient_id,
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+
+        let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase())
+            .unwrap_or(stripe_sdk::Currency::USD);
+
+        let mut metadata = std::collections::HashMap::from([
+            ("offer_id".to_string(), offer_id.clone()),
+            (
+                "type".to_string(),
+                format!(
+                    "{}_retry",
+                    if recipient_type == "agency" {
+                        "agency_commission"
+                    } else {
+                        "talent_earnings"
+                    }
+                ),
+            ),
+            ("retry".to_string(), "true".to_string()),
+        ]);
+        if recipient_type == "agency" {
+            metadata.insert("agency_id".to_string(), recipient_id.clone());
+        } else {
+            metadata.insert("creator_id".to_string(), recipient_id.clone());
+        }
+
+        let transfer_result = crate::payouts::execute_and_record_stripe_transfer(
+            &state,
+            &stripe_client,
+            &currency,
+            currency_enum,
+            &recipient_type,
+            &recipient_id,
+            &stripe_account_id,
+            amount_cents,
+            metadata,
+            "record_campaign_offer_transfer",
+            "p_offer_id",
+            &offer_id,
+        )
+        .await;
+
+        match transfer_result {
+            Ok(transfer_id) => {
+                tracing::info!(
+                    offer_id = %offer_id,
+                    recipient_type = %recipient_type,
+                    recipient_id = %recipient_id,
+                    transfer_id = %transfer_id,
+                    "retry transfer succeeded"
+                );
+                retried.push(RetryTransferResult {
+                    recipient_type,
+                    recipient_id,
+                    name,
+                    amount_cents,
+                    result: "succeeded".to_string(),
+                    failure_reason: None,
+                    stripe_transfer_id: Some(transfer_id),
+                });
+            }
+            Err(reason) => {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    recipient_type = %recipient_type,
+                    recipient_id = %recipient_id,
+                    reason = %reason,
+                    "retry transfer failed again"
+                );
+                retried.push(RetryTransferResult {
+                    recipient_type,
+                    recipient_id,
+                    name,
+                    amount_cents,
+                    result: "failed".to_string(),
+                    failure_reason: Some(reason),
+                    stripe_transfer_id: None,
+                });
+            }
+        }
+    }
+
+    Ok(Json(RetryTransfersResponse {
+        offer_id: offer_id.clone(),
+        retried,
+        nothing_to_retry: false,
+    }))
+}
+
+// =============================================================================
+// GET /api/talent/campaign-offers/transfer-status
+//
+// Returns all campaign_offer_transfers rows where the creator is a recipient,
+// joined with offer metadata. Used by the creator's Payouts page to show
+// the status of each pending/failed transfer.
+// =============================================================================
+
+#[derive(Debug, Serialize)]
+pub struct CreatorTransferRow {
+    pub offer_id: String,
+    pub offer_title: String,
+    pub brand_name: String,
+    pub amount_cents: i64,
+    pub currency: String,
+    pub transfer_status: String,
+    pub failure_reason: Option<String>,
+    pub retry_count: i64,
+    pub retried_at: Option<String>,
+    pub stripe_transfer_id: Option<String>,
+    pub escrow_status: String,
+    pub paid_at: Option<String>,
+}
+
+pub async fn get_creator_transfer_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Resolve the creator_id for the authenticated user
+    let creator_id = resolve_effective_creator_id(&state, &user).await;
+    if creator_id.is_empty() {
+        return Err((StatusCode::UNAUTHORIZED, "creator_not_found".to_string()));
+    }
+
+    // Fetch all transfer rows where this creator is the recipient
+    let transfers_resp = state
+        .pg
+        .from("campaign_offer_transfers")
+        .select("offer_id,amount_cents,currency,status,failure_reason,retry_count,retried_at,stripe_transfer_id")
+        .eq("recipient_type", "creator")
+        .eq("recipient_id", &creator_id)
+        .order("updated_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !transfers_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            transfers_resp.status().as_u16(),
+            transfers_resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    let transfers_text = transfers_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let transfer_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&transfers_text).unwrap_or_default();
+
+    if transfer_rows.is_empty() {
+        return Ok(Json(json!({ "transfers": [] })));
+    }
+
+    // Collect unique offer IDs
+    let offer_ids: Vec<String> = transfer_rows
+        .iter()
+        .filter_map(|r| r.get("offer_id").and_then(|v| v.as_str()))
+        .map(|s| s.to_string())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    // Fetch offer metadata in one query
+    let offers_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,offer_title,escrow_status,paid_at,brands(company_name),brand_campaigns(name)")
+        .in_(
+            "id",
+            offer_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        )
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let offers_text = offers_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
+
+    let mut offer_by_id: std::collections::HashMap<String, serde_json::Value> =
+        std::collections::HashMap::new();
+    for row in offer_rows {
+        if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+            offer_by_id.insert(id.to_string(), row);
+        }
+    }
+
+    let mut result: Vec<CreatorTransferRow> = vec![];
+    for t in &transfer_rows {
+        let offer_id = t
+            .get("offer_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let offer = offer_by_id
+            .get(&offer_id)
+            .cloned()
+            .unwrap_or_else(|| json!({}));
+
+        let offer_title = offer
+            .get("offer_title")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .or_else(|| {
+                offer
+                    .get("brand_campaigns")
+                    .and_then(|v| v.get("name"))
+                    .and_then(|v| v.as_str())
+            })
+            .unwrap_or("Offer")
+            .to_string();
+
+        let brand_name = offer
+            .get("brands")
+            .and_then(|v| v.get("company_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Brand")
+            .to_string();
+
+        result.push(CreatorTransferRow {
+            offer_id: offer_id.clone(),
+            offer_title,
+            brand_name,
+            amount_cents: t.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0),
+            currency: t
+                .get("currency")
+                .and_then(|v| v.as_str())
+                .unwrap_or("USD")
+                .to_string(),
+            transfer_status: t
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("not_attempted")
+                .to_string(),
+            failure_reason: t
+                .get("failure_reason")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            retry_count: t.get("retry_count").and_then(|v| v.as_i64()).unwrap_or(0),
+            retried_at: t
+                .get("retried_at")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            stripe_transfer_id: t
+                .get("stripe_transfer_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+            escrow_status: offer
+                .get("escrow_status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("holding")
+                .to_string(),
+            paid_at: offer
+                .get("paid_at")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+        });
+    }
+
+    Ok(Json(json!({ "transfers": result })))
+}

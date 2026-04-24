@@ -7,8 +7,22 @@ import React, {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type {
+  SupabaseClient,
+  User,
+  AuthMFAChallengeResponse,
+  AuthMFAEnrollResponse,
+  AuthMFAListFactorsResponse,
+  AuthMFAUnenrollResponse,
+  AuthMFAVerifyResponse,
+  MFAEnrollParams,
+} from "@supabase/supabase-js";
 import { readAuthIntent } from "./onboarding";
+
+export type MFAResult = {
+  requiresMFA: boolean;
+  factors: { id: string; friendly_name?: string; status: string }[];
+};
 
 interface AuthContextValue {
   supabase: SupabaseClient;
@@ -17,7 +31,7 @@ interface AuthContextValue {
   token?: string | undefined;
   user?: User | null;
   profile?: Profile | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<MFAResult>;
   loginWithProvider: (
     provider: "google",
     options?: { redirectTo?: string },
@@ -34,6 +48,25 @@ interface AuthContextValue {
     redirectTo?: string,
   ) => Promise<void>;
   refreshProfile: () => Promise<void>;
+  mfa: {
+    enroll: (params: MFAEnrollParams) => Promise<AuthMFAEnrollResponse>;
+    challenge: (factorId: string) => Promise<AuthMFAChallengeResponse>;
+    verify: (
+      factorId: string,
+      challengeId: string,
+      code: string,
+    ) => Promise<AuthMFAVerifyResponse>;
+    challengeAndVerify: (
+      factorId: string,
+      code: string,
+    ) => Promise<AuthMFAVerifyResponse>;
+    unenroll: (factorId: string) => Promise<AuthMFAUnenrollResponse>;
+    listFactors: () => Promise<AuthMFAListFactorsResponse>;
+    getAuthenticatorAssuranceLevel: () => Promise<{
+      currentLevel: string;
+      nextLevel: string;
+    }>;
+  };
 }
 
 export interface Profile {
@@ -100,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userFullName?: string,
     role?: string,
     isOAuthUser?: boolean,
-  ) => {
+  ): Promise<void> => {
     if (fetchingRef.current === userId) {
       console.log(
         "[AuthProvider] fetchProfile ALREADY IN PROGRESS for:",
@@ -133,14 +166,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { data, error };
       };
 
-      const tryFetchMembership = async () => {
+      const tryFetchMembership = async (bustCache = false) => {
+        // Add cache busting for retries by selecting an additional computed field
+        const selectFields = bustCache
+          ? "organization_type, organization_id, role, status, email, created_at"
+          : "organization_type, organization_id, role, status, email";
+
         const { data, error } = await supabase
           .from("organization_memberships")
-          .select("organization_type, organization_id, role, status, email")
+          .select(selectFields)
           .eq("user_id", userId)
           .eq("status", "active")
           .limit(1)
           .maybeSingle();
+
+        console.log("[AuthProvider] tryFetchMembership result:", {
+          data,
+          error,
+          userId,
+          bustCache,
+        });
         return { data, error };
       };
 
@@ -182,7 +227,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log(
               "[AuthProvider] Found membership, using organization profile",
             );
-            setProfile({
+            const newProfile = {
               ...(orgData || {}),
               id: userId,
               email:
@@ -198,7 +243,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               organization_name: organizationName,
               membership_role: membership.role,
               onboarding_step: null,
-            });
+            };
+            setProfile(newProfile);
+            // Wait for next tick to ensure state update is processed
+            await new Promise((resolve) => setTimeout(resolve, 0));
             return;
           }
         }
@@ -273,6 +321,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         profileRef.current = nextProfile;
         setProfile(nextProfile);
+        // Wait for next tick to ensure state update is processed
+        await new Promise((resolve) => setTimeout(resolve, 0));
       } else {
         // Fallback to membership check for non-agency/brand roles
         const membershipResp = await tryFetchMembership();
@@ -317,6 +367,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             membership_role: membership.role,
             onboarding_step: null,
           });
+          // Wait for next tick to ensure state update is processed
+          await new Promise((resolve) => setTimeout(resolve, 0));
           return;
         }
 
@@ -331,6 +383,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
         profileRef.current = null;
         setProfile(null);
+        // Wait for next tick to ensure state update is processed
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
       console.log("[AuthProvider] fetchProfile END", {
@@ -496,6 +550,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           password,
         });
         if (error) throw error;
+
+        const { data: factorsData } = await supabase.auth.mfa.listFactors();
+        const verifiedFactors =
+          factorsData?.all?.filter((f) => f.status === "verified") || [];
+
+        return {
+          requiresMFA: verifiedFactors.length > 0,
+          factors: verifiedFactors.map((f) => ({
+            id: f.id,
+            friendly_name: f.friendly_name,
+            status: f.status,
+          })),
+        };
       },
       loginWithProvider: async (
         provider: "google",
@@ -554,14 +621,120 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       refreshProfile: async () => {
         if (user) {
           const isOAuth = user.app_metadata?.provider === "google";
-          await fetchProfile(
-            user.id,
-            user.email,
-            user.user_metadata?.full_name,
-            getUserRoleHint(user) || readAuthIntent()?.role || "",
-            isOAuth,
+          const roleHint =
+            getUserRoleHint(user) || readAuthIntent()?.role || "";
+
+          console.log(
+            `[AuthProvider] refreshProfile called for role: ${roleHint}`,
           );
+
+          // For brand/agency users, retry fetching profile to handle race condition
+          // after invitation acceptance (membership may not be immediately available)
+          if (roleHint === "brand" || roleHint === "agency") {
+            console.log(
+              `[AuthProvider] Using retry logic for ${roleHint} user`,
+            );
+            const maxRetries = 5;
+            const retryDelay = 800; // ms - increased for database replication
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+              console.log(
+                `[AuthProvider] Attempt ${attempt + 1}/${maxRetries}, profileRef.current:`,
+                profileRef.current,
+              );
+
+              // Reset fetching ref to allow retry
+              if (attempt > 0) {
+                fetchingRef.current = null;
+                console.log(
+                  `[AuthProvider] Retry attempt ${attempt + 1}/${maxRetries} - reset fetchingRef`,
+                );
+              }
+
+              await fetchProfile(
+                user.id,
+                user.email,
+                user.user_metadata?.full_name,
+                roleHint,
+                isOAuth,
+              );
+
+              console.log(
+                `[AuthProvider] After fetchProfile, profileRef.current:`,
+                profileRef.current,
+              );
+
+              // Check if profile was successfully loaded (not null)
+              if (
+                profileRef.current !== null &&
+                profileRef.current !== undefined
+              ) {
+                console.log(
+                  `[AuthProvider] Profile loaded successfully on attempt ${attempt + 1}`,
+                  profileRef.current,
+                );
+                return;
+              }
+
+              // If not the last attempt, wait before retrying
+              if (attempt < maxRetries - 1) {
+                console.log(
+                  `[AuthProvider] Profile is null, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${maxRetries})`,
+                );
+                await new Promise((resolve) => setTimeout(resolve, retryDelay));
+              }
+            }
+
+            console.error(
+              "[AuthProvider] Profile still null after all retries - this indicates a database issue",
+            );
+          } else {
+            // For other roles, fetch normally without retry
+            await fetchProfile(
+              user.id,
+              user.email,
+              user.user_metadata?.full_name,
+              roleHint,
+              isOAuth,
+            );
+          }
         }
+      },
+      mfa: {
+        enroll: async (params) => {
+          if (!supabase) throw new Error("Supabase not configured");
+          return supabase.auth.mfa.enroll(params);
+        },
+        challenge: async (factorId) => {
+          if (!supabase) throw new Error("Supabase not configured");
+          return supabase.auth.mfa.challenge({ factorId });
+        },
+        verify: async (factorId, challengeId, code) => {
+          if (!supabase) throw new Error("Supabase not configured");
+          return supabase.auth.mfa.verify({ factorId, challengeId, code });
+        },
+        challengeAndVerify: async (factorId, code) => {
+          if (!supabase) throw new Error("Supabase not configured");
+          return supabase.auth.mfa.challengeAndVerify({ factorId, code });
+        },
+        unenroll: async (factorId) => {
+          if (!supabase) throw new Error("Supabase not configured");
+          return supabase.auth.mfa.unenroll({ factorId });
+        },
+        listFactors: async () => {
+          if (!supabase) throw new Error("Supabase not configured");
+          return supabase.auth.mfa.listFactors();
+        },
+        getAuthenticatorAssuranceLevel: async () => {
+          if (!supabase) throw new Error("Supabase not configured");
+          const { data, error } =
+            await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (error) throw error;
+          return {
+            currentLevel: data?.currentLevel || "aal1",
+            nextLevel: data?.nextLevel || "aal1",
+          };
+        },
       },
     }),
     [initialized, user, profile],
