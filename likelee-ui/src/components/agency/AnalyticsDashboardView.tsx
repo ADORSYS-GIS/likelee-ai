@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +71,28 @@ const AnalyticsDashboardView = ({
   licenseComplianceData,
   talentData,
 }: AnalyticsDashboardViewProps) => {
+  const { t } = useTranslation();
+
+  const subTabs = useMemo(() => {
+    const tabs =
+      agencyMode === "AI"
+        ? ["Overview", "Roster Insights", "Clients & Campaigns", "Compliance"]
+        : ["Overview", "Roster Insights", "Clients & Campaigns"];
+    return tabs;
+  }, [agencyMode]);
+
+  const getTabLabel = (tab: string) => {
+    const labelMap: Record<string, string> = {
+      Overview: t("agencyDashboard.analytics.tabs.overview"),
+      "Roster Insights": t("agencyDashboard.analytics.tabs.rosterInsights"),
+      "Clients & Campaigns": t(
+        "agencyDashboard.analytics.tabs.clientsCampaigns",
+      ),
+      Compliance: t("agencyDashboard.analytics.tabs.compliance"),
+    };
+    return labelMap[tab] || tab;
+  };
+
   // Use a single shared cache key - data is fetched for the current mode
   // and persisted so switching modes doesn't cause a re-fetch within TTL.
   const analyticsCacheKey =
@@ -124,11 +147,6 @@ const AnalyticsDashboardView = ({
       active = false;
     };
   }, [activeTab]);
-
-  const subTabs =
-    agencyMode === "AI"
-      ? ["Overview", "Roster Insights", "Clients & Campaigns", "Compliance"]
-      : ["Overview", "Roster Insights", "Clients & Campaigns"];
 
   useEffect(() => {
     let isMounted = true;
@@ -203,7 +221,7 @@ const AnalyticsDashboardView = ({
         console.error(err);
         setError(err.message);
         toast({
-          title: "Analytics error",
+          title: t("agencyDashboard.analytics.toastError"),
           description: err.message,
           variant: "destructive",
         });
@@ -225,7 +243,9 @@ const AnalyticsDashboardView = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-gray-500">Loading analytics...</div>
+        <div className="text-gray-500">
+          {t("agencyDashboard.analytics.loading")}
+        </div>
       </div>
     );
   }
@@ -233,24 +253,26 @@ const AnalyticsDashboardView = ({
   if (error || !analytics) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-red-500">Failed to load analytics data</div>
+        <div className="text-red-500">
+          {t("agencyDashboard.analytics.error")}
+        </div>
       </div>
     );
   }
 
   const campaignStatusData = [
     {
-      name: "In Progress",
+      name: t("agencyDashboard.analytics.overview.inProgress"),
       value: analytics.campaign_status.in_progress,
       color: "#111827",
     },
     {
-      name: "Ready to Launch",
+      name: t("agencyDashboard.analytics.overview.readyToLaunch"),
       value: analytics.campaign_status.ready_to_launch,
       color: "#9ca3af",
     },
     {
-      name: "Completed",
+      name: t("agencyDashboard.analytics.overview.completed"),
       value: analytics.campaign_status.completed,
       color: "#374151",
     },
@@ -266,7 +288,7 @@ const AnalyticsDashboardView = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center bg-white p-4 sm:p-6 border-b border-gray-100">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Analytics Dashboard
+            {t("agencyDashboard.analytics.title")}
           </h2>
           <div className="mt-6 overflow-x-auto">
             <div className="flex w-max min-w-full bg-gray-100 p-1 rounded-xl">
@@ -280,7 +302,7 @@ const AnalyticsDashboardView = ({
                       : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
                   }`}
                 >
-                  {tab}
+                  {getTabLabel(tab)}
                 </button>
               ))}
             </div>
@@ -290,7 +312,8 @@ const AnalyticsDashboardView = ({
           variant="outline"
           className="w-full sm:w-auto gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm hover:bg-gray-50 transition-all"
         >
-          <Download className="w-4 h-4" /> Export Report
+          <Download className="w-4 h-4" />{" "}
+          {t("agencyDashboard.analytics.exportReport")}
         </Button>
       </div>
 
@@ -307,7 +330,7 @@ const AnalyticsDashboardView = ({
                   <TrendingUp className="w-5 h-5 text-green-500" />
                 </div>
                 <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">
-                  Total Earnings (30d)
+                  {t("agencyDashboard.analytics.overview.totalEarnings")}
                 </p>
                 <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter mb-4 break-words">
                   {analytics.overview.total_earnings_formatted}
@@ -323,8 +346,8 @@ const AnalyticsDashboardView = ({
                   {analytics.overview.earnings_growth_percentage >= 0
                     ? "+"
                     : ""}
-                  {analytics.overview.earnings_growth_percentage}% vs last
-                  period
+                  {analytics.overview.earnings_growth_percentage}%{" "}
+                  {t("agencyDashboard.analytics.overview.vsLastPeriod")}
                 </p>
               </div>
             </Card>
@@ -339,7 +362,7 @@ const AnalyticsDashboardView = ({
                         <BarChart2 className="w-8 h-8 text-indigo-600" />
                       </div>
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
-                        Active Licenses
+                        {t("agencyDashboard.analytics.overview.activeLicenses")}
                       </p>
                       <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.overview.active_campaigns}
@@ -360,7 +383,7 @@ const AnalyticsDashboardView = ({
                         <TrendingUp className="w-8 h-8 text-purple-600" />
                       </div>
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
-                        AI Usages (30d)
+                        {t("agencyDashboard.analytics.overview.aiUsages")}
                       </p>
                       <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.ai_usage.total_usages_30d}
@@ -385,7 +408,9 @@ const AnalyticsDashboardView = ({
                     </div>
                     <div>
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                        Active Campaigns
+                        {t(
+                          "agencyDashboard.analytics.overview.activeCampaigns",
+                        )}
                       </p>
                       <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.overview.active_campaigns}
@@ -552,7 +577,7 @@ const AnalyticsDashboardView = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
             <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
               <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
-                AI Usage Type Distribution
+                {t("agencyDashboard.analytics.overview.earningsChart")}
               </h3>
               <div className="flex flex-col items-center">
                 <div className="h-[280px] w-full">
@@ -625,7 +650,7 @@ const AnalyticsDashboardView = ({
 
             <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
               <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
-                Consent Status Breakdown
+                {t("agencyDashboard.analytics.overview.consentBreakdown")}
               </h3>
               <div className="flex flex-col items-center">
                 <div className="h-[280px] w-full">
@@ -664,7 +689,9 @@ const AnalyticsDashboardView = ({
                         ...(otherPct > 0
                           ? [
                               {
-                                name: "No Consent Data",
+                                name: t(
+                                  "agencyDashboard.analytics.overview.noConsentData",
+                                ),
                                 value: otherPct,
                                 color: "#e5e7eb",
                               },
@@ -740,7 +767,7 @@ const AnalyticsDashboardView = ({
         rosterInsights ? (
           <div className="space-y-8 animate-in fade-in duration-500 pb-20">
             <h3 className="text-xl font-black text-gray-900 uppercase tracking-[0.15em] mb-10">
-              Earnings by Talent (Last 30 Days)
+              {t("agencyDashboard.analytics.rosterInsights.title")}
             </h3>
             <Card className="p-4 sm:p-10 bg-white border border-gray-900 shadow-sm mb-8">
               <div className="h-[320px] sm:h-[500px] w-full">
@@ -800,8 +827,12 @@ const AnalyticsDashboardView = ({
                       formatter={(value) => (
                         <span className="text-gray-700 uppercase tracking-widest px-2">
                           {value === "earnings"
-                            ? "30D Earnings ($)"
-                            : "Projected ($)"}
+                            ? t(
+                                "agencyDashboard.analytics.rosterInsights.topPerformer",
+                              )
+                            : t(
+                                "agencyDashboard.analytics.rosterInsights.highestFollowers",
+                              )}
                         </span>
                       )}
                     />
@@ -827,7 +858,9 @@ const AnalyticsDashboardView = ({
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
               {[
                 {
-                  label: "Top Performer (Earnings)",
+                  label: t(
+                    "agencyDashboard.analytics.rosterInsights.topPerformer",
+                  ),
                   data: rosterInsights.top_performer,
                   borderColor: "border-green-500",
                   textColor: "text-green-600",
@@ -839,10 +872,12 @@ const AnalyticsDashboardView = ({
                   textColor: "text-blue-600",
                 },
                 {
-                  label: "Highest Followers",
-                  data: rosterInsights.highest_engagement,
-                  borderColor: "border-purple-500",
-                  textColor: "text-purple-600",
+                  label: t(
+                    "agencyDashboard.analytics.rosterInsights.highestFollowers",
+                  ),
+                  data: rosterInsights.highest_followers,
+                  borderColor: "border-blue-500",
+                  textColor: "text-blue-600",
                 },
               ].map(({ label, data, borderColor, textColor }) => (
                 <Card
@@ -883,7 +918,7 @@ const AnalyticsDashboardView = ({
                     </div>
                   ) : (
                     <div className="text-gray-400 text-sm">
-                      No data available
+                      {t("agencyDashboard.analytics.rosterInsights.noData")}
                     </div>
                   )}
                 </Card>
@@ -904,7 +939,7 @@ const AnalyticsDashboardView = ({
                         "Talent",
                         "30D Earnings",
                         agencyMode === "AI" ? "Licenses" : "Campaigns",
-                        "Avg Value",
+                        t("agencyDashboard.analytics.rosterInsights.avgValue"),
                         "Status",
                       ].map((h) => (
                         <th
@@ -965,7 +1000,9 @@ const AnalyticsDashboardView = ({
           </div>
         ) : (
           <div className="flex items-center justify-center h-96">
-            <div className="text-gray-500">Loading roster insights...</div>
+            <div className="text-gray-500">
+              {t("agencyDashboard.analytics.loading")}
+            </div>
           </div>
         )
       ) : activeTab === "Clients & Campaigns" ? (
@@ -974,7 +1011,7 @@ const AnalyticsDashboardView = ({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="p-4 sm:p-10 bg-white border border-gray-900 shadow-sm">
                 <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
-                  Earnings by Client
+                  {t("agencyDashboard.analytics.clientsCampaigns.title")}
                 </h3>
                 <div className="h-[350px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1178,7 +1215,7 @@ const AnalyticsDashboardView = ({
         ) : (
           <div className="flex items-center justify-center h-96">
             <div className="text-gray-500">
-              Loading clients &amp; campaigns analytics...
+              {t("agencyDashboard.analytics.loading")}
             </div>
           </div>
         )
@@ -1267,7 +1304,9 @@ const AnalyticsDashboardView = ({
                 {[
                   {
                     icon: <ShieldCheck className="w-5 h-5 text-green-600" />,
-                    label: "Verification Rate",
+                    label: t(
+                      "agencyDashboard.analytics.compliance.verificationRate",
+                    ),
                     value: `${verificationPct}%`,
                     sub: `${verifiedCount} of ${totalTalents} verified`,
                     pct: verificationPct,
@@ -1275,7 +1314,9 @@ const AnalyticsDashboardView = ({
                   },
                   {
                     icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
-                    label: "Active Consents",
+                    label: t(
+                      "agencyDashboard.analytics.compliance.activeConsents",
+                    ),
                     value: `${activePct}%`,
                     sub: `${activeCount} of ${totalTalents} complete`,
                     pct: activePct,
@@ -1283,7 +1324,9 @@ const AnalyticsDashboardView = ({
                   },
                   {
                     icon: <AlertCircle className="w-5 h-5 text-orange-600" />,
-                    label: "Expiring Soon",
+                    label: t(
+                      "agencyDashboard.analytics.compliance.expiringSoon",
+                    ),
                     value: String(expiringSoonLicensesCount),
                     sub: "Next 10 days",
                     pct: null,
@@ -1360,7 +1403,10 @@ const AnalyticsDashboardView = ({
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-black text-gray-900 truncate">
-                              {license.talent_name || "Assigned Talent"}
+                              {license.talent_name ||
+                                t(
+                                  "agencyDashboard.analytics.compliance.assignedTalent",
+                                )}
                             </p>
                             <p className="text-xs font-bold text-gray-500 truncate">
                               Expired on {formatLicenseDate(license.end_date)}
@@ -1371,7 +1417,10 @@ const AnalyticsDashboardView = ({
                           className="w-full sm:w-auto bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-6 h-10 rounded-lg uppercase tracking-widest gap-2"
                           onClick={() => onRenewLicense?.(license)}
                         >
-                          <RefreshCw className="w-4 h-4" /> Renew
+                          <RefreshCw className="w-4 h-4" />{" "}
+                          {t(
+                            "agencyDashboard.analytics.compliance.renewLicense",
+                          )}
                         </Button>
                       </div>
                     ))

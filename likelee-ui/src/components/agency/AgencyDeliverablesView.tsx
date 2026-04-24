@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -78,6 +79,7 @@ import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 export function AgencyDeliverablesView() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { hasPermission } = useTeamAccess("agency");

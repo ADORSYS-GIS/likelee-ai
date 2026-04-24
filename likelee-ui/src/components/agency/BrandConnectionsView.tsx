@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -108,6 +109,7 @@ const extractDeliverableCount = (value: unknown): number => {
 };
 
 const BrandConnectionsView = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -1282,14 +1284,14 @@ const BrandConnectionsView = () => {
           variant={activeTab === "connections" ? "default" : "outline"}
           onClick={() => setActiveTab("connections")}
         >
-          Connected Brands
+          {t("agencyDashboard.brandConnections.connectedBrands")}
         </Button>
         <Button
           variant={activeTab === "requests" ? "default" : "outline"}
           onClick={() => setActiveTab("requests")}
           className="relative"
         >
-          Requests
+          {t("agencyDashboard.brandConnections.requests")}
           {showRequestsBadge && (
             <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
               {pendingRequests - (seenCounts.requests || 0)}
@@ -1301,7 +1303,7 @@ const BrandConnectionsView = () => {
           onClick={() => setActiveTab("offers")}
           className="relative"
         >
-          Brand Offers
+          {t("agencyDashboard.brandConnections.brandOffers")}
           {showOffersBadge && (
             <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
               {pendingOffers - (seenCounts.offers || 0)}
@@ -1312,7 +1314,7 @@ const BrandConnectionsView = () => {
           variant={activeTab === "contract_hub" ? "default" : "outline"}
           onClick={() => setActiveTab("contract_hub")}
         >
-          Contract Hub
+          {t("agencyDashboard.brandConnections.contractHub")}
         </Button>
         <Button
           variant={activeTab === "deliverables" ? "default" : "outline"}
@@ -1321,14 +1323,14 @@ const BrandConnectionsView = () => {
             setActiveTab("connections");
           }}
         >
-          Deliverables
+          {t("agencyDashboard.brandConnections.deliverables")}
         </Button>
         <Button
           variant={activeTab === "feedback" ? "default" : "outline"}
           onClick={() => setActiveTab("feedback")}
           className="relative"
         >
-          Package Feedback
+          {t("agencyDashboard.brandConnections.packageFeedback")}
           {showFeedbackBadge && (
             <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
               {pendingFeedback - (seenCounts.feedback || 0)}
@@ -1340,20 +1342,24 @@ const BrandConnectionsView = () => {
       {activeTab === "connections" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-bold text-gray-900 mb-3">
-            Connected Brands
+            {t("agencyDashboard.brandConnections.connectedBrands")}
           </h3>
           {connectionsQuery.isLoading && (
-            <p className="text-sm text-gray-500">Loading connected brands...</p>
+            <p className="text-sm text-gray-500">
+              {t("agencyDashboard.brandConnections.loadingBrands")}
+            </p>
           )}
           {!connectionsQuery.isLoading && connectionsQuery.error && (
             <p className="text-sm text-red-600">
-              Failed to load connected brands.
+              {t("agencyDashboard.brandConnections.loadBrandsFailed")}
             </p>
           )}
           {!connectionsQuery.isLoading &&
             !connectionsQuery.error &&
             connections.length === 0 && (
-              <p className="text-sm text-gray-500">No connected brands yet.</p>
+              <p className="text-sm text-gray-500">
+                {t("agencyDashboard.brandConnections.noBrands")}
+              </p>
             )}
           {!connectionsQuery.isLoading &&
             !connectionsQuery.error &&
