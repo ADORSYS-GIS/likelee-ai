@@ -28,6 +28,7 @@ interface ChatWindowProps {
   onSend: (content: string) => void;
   onEdit: (id: string, content: string) => void;
   onDelete: (id: string) => void;
+  translationPrefix?: string;
 }
 
 export function ChatWindow({
@@ -39,6 +40,7 @@ export function ChatWindow({
   onSend,
   onEdit,
   onDelete,
+  translationPrefix = "talentPortal.chat",
 }: ChatWindowProps) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState("");
@@ -113,7 +115,9 @@ export function ChatWindow({
             {otherParticipant.name}
           </p>
           <p className="text-xs text-gray-400 capitalize">
-            {otherParticipant.role}
+            {t(`${translationPrefix}.roles.${otherParticipant.role}`, {
+              defaultValue: otherParticipant.role,
+            })}
           </p>
         </div>
       </div>
@@ -138,12 +142,12 @@ export function ChatWindow({
               </svg>
             </div>
             <p className="text-sm font-semibold text-gray-500">
-              {t("talentPortal.chat.noMessagesYet", {
+              {t(`${translationPrefix}.noMessagesYet`, {
                 defaultValue: "No messages yet",
               })}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              {t("talentPortal.chat.sendToStart", {
+              {t(`${translationPrefix}.sendToStart`, {
                 defaultValue: "Send a message to start the conversation.",
               })}
             </p>
@@ -200,7 +204,7 @@ export function ChatWindow({
                           />
                         </svg>
                         <span>
-                          {t("talentPortal.chat.messageDeleted", {
+                          {t(`${translationPrefix}.messageDeleted`, {
                             defaultValue: "This message was deleted",
                           })}
                         </span>
@@ -210,7 +214,7 @@ export function ChatWindow({
                         {msg.content}
                         {msg.edited_at && (
                           <span className="text-[9px] opacity-70 ml-1.5 align-middle">
-                            {t("talentPortal.chat.edited", {
+                            {t(`${translationPrefix}.edited`, {
                               defaultValue: "(edited)",
                             })}
                           </span>
@@ -241,7 +245,7 @@ export function ChatWindow({
                           <DropdownMenuItem
                             onClick={() => handleEditClick(msg.id, msg.content)}
                           >
-                            {t("talentPortal.chat.edit", {
+                            {t(`${translationPrefix}.edit`, {
                               defaultValue: "Edit",
                             })}
                           </DropdownMenuItem>
@@ -249,7 +253,7 @@ export function ChatWindow({
                             onClick={() => handleDeleteClick(msg.id)}
                             className="text-red-600"
                           >
-                            {t("talentPortal.chat.delete", {
+                            {t(`${translationPrefix}.delete`, {
                               defaultValue: "Delete",
                             })}
                           </DropdownMenuItem>
@@ -286,7 +290,7 @@ export function ChatWindow({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={t("talentPortal.chat.typeMessage", {
+            placeholder={t(`${translationPrefix}.typeMessage`, {
               defaultValue: "Type a message… (Enter to send)",
             })}
             className="flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none max-h-36 overflow-y-auto"
@@ -296,7 +300,7 @@ export function ChatWindow({
             onClick={handleSend}
             disabled={!draft.trim() || sending}
             className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-md"
-            aria-label={t("talentPortal.chat.sendMessage", {
+            aria-label={t(`${translationPrefix}.sendMessage`, {
               defaultValue: "Send message",
             })}
           >
@@ -332,7 +336,7 @@ export function ChatWindow({
           </button>
         </div>
         <p className="text-[10px] text-gray-400 mt-1 ml-1">
-          {t("talentPortal.chat.shiftEnter", {
+          {t(`${translationPrefix}.shiftEnter`, {
             defaultValue: "Shift+Enter for new line",
           })}
         </p>
@@ -345,12 +349,12 @@ export function ChatWindow({
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              {t("talentPortal.chat.deleteMessageTitle", {
+              {t(`${translationPrefix}.deleteMessageTitle`, {
                 defaultValue: "Delete Message",
               })}
             </DialogTitle>
             <DialogDescription>
-              {t("talentPortal.chat.deleteMessageDescription", {
+              {t(`${translationPrefix}.deleteMessageDescription`, {
                 defaultValue:
                   "Are you sure you want to delete this message? This action cannot be undone.",
               })}
@@ -358,10 +362,10 @@ export function ChatWindow({
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="ghost" onClick={() => setDeleteMessageId(null)}>
-              {t("talentPortal.chat.cancel", { defaultValue: "Cancel" })}
+              {t(`${translationPrefix}.cancel`, { defaultValue: "Cancel" })}
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>
-              {t("talentPortal.chat.delete", { defaultValue: "Delete" })}
+              {t(`${translationPrefix}.delete`, { defaultValue: "Delete" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -374,7 +378,7 @@ export function ChatWindow({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {t("talentPortal.chat.editMessageTitle", {
+              {t(`${translationPrefix}.editMessageTitle`, {
                 defaultValue: "Edit Message",
               })}
             </DialogTitle>
@@ -384,7 +388,7 @@ export function ChatWindow({
               className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px] resize-none"
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              placeholder={t("talentPortal.chat.enterMessage", {
+              placeholder={t(`${translationPrefix}.enterMessage`, {
                 defaultValue: "Enter your message...",
               })}
               autoFocus
@@ -392,14 +396,14 @@ export function ChatWindow({
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="ghost" onClick={() => setEditingMessageId(null)}>
-              {t("talentPortal.chat.cancel", { defaultValue: "Cancel" })}
+              {t(`${translationPrefix}.cancel`, { defaultValue: "Cancel" })}
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
               onClick={saveEdit}
               disabled={!editContent.trim()}
             >
-              {t("talentPortal.chat.saveChanges", {
+              {t(`${translationPrefix}.saveChanges`, {
                 defaultValue: "Save Changes",
               })}
             </Button>

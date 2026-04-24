@@ -5,12 +5,12 @@ import { ThreadList } from "./ThreadList";
 import { ChatWindow } from "./ChatWindow";
 import { useTranslation } from "react-i18next";
 
-import { useTranslation } from "react-i18next";
-
 export function CommunicationHub({
   initialCreatorId,
+  translationPrefix = "talentPortal.chat",
 }: {
   initialCreatorId?: string;
+  translationPrefix?: string;
 }) {
   const { t } = useTranslation();
   const { profile } = useAuth();
@@ -68,7 +68,11 @@ export function CommunicationHub({
     activeConversation && profile?.id
       ? {
           id: profile.id,
-          name: profile?.full_name || "You",
+          name:
+            profile?.full_name ||
+            t(`${translationPrefix}.you`, {
+              defaultValue: "You",
+            }),
           avatarUrl: profile?.profile_photo_url || null,
           role: (activeConversation.agency_id === profile.id
             ? "agency"
@@ -97,6 +101,7 @@ export function CommunicationHub({
               onSelect={openConversation}
               onStartChat={startConversation}
               getParticipant={(conv, uid) => getParticipant(conv, uid)}
+              translationPrefix={translationPrefix}
             />
           </div>
         )}
@@ -119,6 +124,7 @@ export function CommunicationHub({
               onSend={sendMessage}
               onEdit={editMessage}
               onDelete={deleteMessage}
+              translationPrefix={translationPrefix}
             />
           )
         ) : (
@@ -141,17 +147,17 @@ export function CommunicationHub({
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-700">
-                  {t("talentPortal.chat.selectConversation", {
+                  {t(`${translationPrefix}.selectConversation`, {
                     defaultValue: "Select a conversation",
                   })}
                 </p>
                 <p className="text-xs text-gray-400 mt-1 max-w-xs">
-                  {t("talentPortal.chat.chooseThread", {
+                  {t(`${translationPrefix}.chooseThread`, {
                     role: isCreator
-                      ? t("talentPortal.chat.roleAgency", {
+                      ? t(`${translationPrefix}.roleAgency`, {
                           defaultValue: "an agency",
                         })
-                      : t("talentPortal.chat.roleCreator", {
+                      : t(`${translationPrefix}.roleCreator`, {
                           defaultValue: "a creator",
                         }),
                     defaultValue:
@@ -167,7 +173,7 @@ export function CommunicationHub({
                 <textarea
                   rows={1}
                   disabled
-                  placeholder={t("talentPortal.chat.selectChatToType", {
+                  placeholder={t(`${translationPrefix}.selectChatToType`, {
                     defaultValue: "Select a chat to start typing…",
                   })}
                   className="flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none max-h-36 overflow-y-auto cursor-not-allowed"

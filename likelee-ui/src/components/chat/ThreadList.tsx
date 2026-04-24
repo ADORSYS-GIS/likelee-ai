@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 function formatTime(
   dateString: string,
   t: (key: string, opts?: any) => string,
+  translationPrefix: string,
 ) {
   try {
     const date = new Date(dateString).getTime();
@@ -13,13 +14,14 @@ function formatTime(
     const minutes = Math.floor(diffMs / (60 * 1000));
     const hours = Math.floor(diffMs / (60 * 60 * 1000));
     const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-    if (days > 0) return t("talentPortal.chat.time.daysAgo", { count: days });
+    if (days > 0)
+      return t(`${translationPrefix}.time.daysAgo`, { count: days });
     if (hours > 0)
-      return t("talentPortal.chat.time.hoursAgo", { count: hours });
+      return t(`${translationPrefix}.time.hoursAgo`, { count: hours });
     if (minutes > 0) {
-      return t("talentPortal.chat.time.minutesAgo", { count: minutes });
+      return t(`${translationPrefix}.time.minutesAgo`, { count: minutes });
     }
-    return t("talentPortal.chat.time.justNow");
+    return t(`${translationPrefix}.time.justNow`);
   } catch (e) {
     return "";
   }
@@ -34,6 +36,7 @@ interface ThreadListProps {
   onSelect: (conversationId: string) => void;
   onStartChat: (contactId: string) => void;
   getParticipant: (conversation: Conversation, userId: string) => Participant;
+  translationPrefix?: string;
 }
 
 function AvatarPlaceholder({
@@ -91,6 +94,7 @@ export function ThreadList({
   onSelect,
   onStartChat,
   getParticipant,
+  translationPrefix = "talentPortal.chat",
 }: ThreadListProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -139,15 +143,17 @@ export function ThreadList({
           </svg>
         </div>
         <p className="text-sm font-semibold text-gray-500">
-          {t("talentPortal.chat.noActiveConnections", {
+          {t(`${translationPrefix}.noActiveConnections`, {
             defaultValue: "No active connections",
           })}
         </p>
         <p className="text-xs text-gray-400 mt-1">
-          {t("talentPortal.chat.connectToChat", {
+          {t(`${translationPrefix}.connectToChat`, {
             role: isCreator
-              ? t("talentPortal.chat.roleAgency", { defaultValue: "an agency" })
-              : t("talentPortal.chat.roleCreator", {
+              ? t(`${translationPrefix}.roleAgency`, {
+                  defaultValue: "an agency",
+                })
+              : t(`${translationPrefix}.roleCreator`, {
                   defaultValue: "a creator",
                 }),
             defaultValue: "Connect with {{role}} to chat.",
@@ -159,18 +165,20 @@ export function ThreadList({
 
   const countLabel = isCreator
     ? conversations.length === 1
-      ? t("talentPortal.chat.agencySingular", { defaultValue: "Agency" })
-      : t("talentPortal.chat.agencyPlural", { defaultValue: "Agencies" })
+      ? t(`${translationPrefix}.agencySingular`, { defaultValue: "Agency" })
+      : t(`${translationPrefix}.agencyPlural`, { defaultValue: "Agencies" })
     : conversations.length === 1
-      ? t("talentPortal.chat.creatorSingular", { defaultValue: "Creator" })
-      : t("talentPortal.chat.creatorPlural", { defaultValue: "Creators" });
+      ? t(`${translationPrefix}.creatorSingular`, { defaultValue: "Creator" })
+      : t(`${translationPrefix}.creatorPlural`, { defaultValue: "Creators" });
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 bg-white">
         <h2 className="text-xl font-black text-gray-900 tracking-tight">
-          {t("talentPortal.chat.messagesTitle", { defaultValue: "Messages" })}
+          {t(`${translationPrefix}.messagesTitle`, {
+            defaultValue: "Messages",
+          })}
         </h2>
         <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mt-0.5">
           {conversations.length} {countLabel}
@@ -181,7 +189,7 @@ export function ThreadList({
         <div className="relative">
           <input
             type="text"
-            placeholder={t("talentPortal.chat.searchConversations", {
+            placeholder={t(`${translationPrefix}.searchConversations`, {
               defaultValue: "Search conversations…",
             })}
             value={searchQuery}
@@ -211,7 +219,7 @@ export function ThreadList({
                 : "bg-gray-50 text-gray-500 hover:bg-gray-100"
             }`}
           >
-            {t("talentPortal.chat.filterAll", { defaultValue: "All" })}
+            {t(`${translationPrefix}.filterAll`, { defaultValue: "All" })}
           </button>
           <button
             onClick={() => setFilter("unread")}
@@ -221,7 +229,9 @@ export function ThreadList({
                 : "bg-gray-50 text-gray-500 hover:bg-gray-100"
             }`}
           >
-            {t("talentPortal.chat.filterUnread", { defaultValue: "Unread" })}
+            {t(`${translationPrefix}.filterUnread`, {
+              defaultValue: "Unread",
+            })}
             {conversations.some((c) => (c.unread_count || 0) > 0) && (
               <span
                 className={`w-2 h-2 rounded-full ${filter === "unread" ? "bg-white" : "bg-indigo-500"}`}
@@ -239,7 +249,7 @@ export function ThreadList({
           const preview = (conv.last_message_content || "").trim();
           const previewText =
             preview ||
-            t("talentPortal.chat.noMessagesYet", {
+            t(`${translationPrefix}.noMessagesYet`, {
               defaultValue: "No messages yet",
             });
 
@@ -260,7 +270,7 @@ export function ThreadList({
                     {participant.name}
                   </span>
                   <span className="text-[10px] text-gray-400 font-medium flex-shrink-0">
-                    {formatTime(conv.updated_at, t)}
+                    {formatTime(conv.updated_at, t, translationPrefix)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -299,7 +309,7 @@ export function ThreadList({
                 </div>
                 <button
                   className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 shadow-sm"
-                  title={t("talentPortal.chat.startConversation", {
+                  title={t(`${translationPrefix}.startConversation`, {
                     defaultValue: "Start Conversation",
                   })}
                 >
@@ -325,7 +335,7 @@ export function ThreadList({
           filteredContacts.length === 0 && (
             <div className="py-8 px-4 text-center">
               <p className="text-xs text-gray-400">
-                {t("talentPortal.chat.noResults", {
+                {t(`${translationPrefix}.noResults`, {
                   defaultValue: "No results found",
                 })}
               </p>
