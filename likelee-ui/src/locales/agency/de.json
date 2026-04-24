@@ -8,5 +8,748 @@
   "marketingAgencySolutionsDescription": "Eine Plattform für KI-gesteuerte Schöpferkampagnen. Lizenzierung verifizierter Schöpfer, Produktions-Workflows, Compliance und Markenpräsenz.",
   "marketingAgencyCreatorPlatform": "Schöpferplattform für Marketingagenturen",
   "whyMarketingAgenciesWin": "Warum Marketingagenturen gewinnen",
-  "whySportsAgenciesWin": "Warum Sportagenturen gewinnen"
+  "whySportsAgenciesWin": "Warum Sportagenturen gewinnen",
+  "agencyDashboard": {
+    "dashboard": {
+      "entities": {
+        "talent": "Talent",
+        "talentPlural": "Talente",
+        "athlete": "Athlet",
+        "athletePlural": "Athleten"
+      },
+      "banner": {
+        "title": "Willkommen in deinem Agentur-Dashboard",
+        "subtitle": "Dies ist dein Hauptbereich zur Verwaltung deiner Agentur.",
+        "currentPlan": "Aktueller Plan"
+      },
+      "kyc": {
+        "completedTitle": "KYC abgeschlossen",
+        "additionalVerificationTitle": "Zusätzliche Verifizierung erforderlich",
+        "inProgressTitle": "KYC-Verifizierung läuft",
+        "rejectedTitle": "Die Verifizierung wurde nicht genehmigt",
+        "requiredTitle": "KYC-Verifizierung erforderlich",
+        "completedDescription": "Die Identitätsprüfung deiner Agentur ist abgeschlossen.",
+        "additionalVerificationDescription": "Veriff hat vor der Genehmigung noch einen weiteren Schritt angefordert. Fahre unten fort, damit Auszahlungen und Lizenzen für deine {{entityPlural}} verfügbar bleiben.",
+        "resumeDescription": "Deine Verifizierung läuft noch. Wenn das Fenster geschlossen wurde, setze sie unten fort oder aktualisiere nach Abschluss.",
+        "startNewDescription": "Deine Verifizierung läuft noch. Wenn der frühere Link abgelaufen ist, starte unten eine neue Sitzung oder aktualisiere nach Abschluss.",
+        "rejectedDescription": "Deine letzte Verifizierung wurde nicht genehmigt. Prüfe den Grund unten und versuche es erneut, damit Auszahlungen und Lizenzen für deine {{entityPlural}} verfügbar bleiben.",
+        "requiredDescription": "Um Auszahlungen und Lizenzen für dein {{entitySingular}} zu aktivieren, schließe bitte die Identitätsprüfung deiner Agentur ab.",
+        "veriffNote": "Veriff-Hinweis:",
+        "reason": "Grund:",
+        "refreshStatus": "Status aktualisieren",
+        "badges": {
+          "approved": "Genehmigt",
+          "actionNeeded": "Aktion erforderlich",
+          "pending": "Ausstehend",
+          "rejected": "Abgelehnt",
+          "notStarted": "Nicht begonnen"
+        },
+        "actions": {
+          "continue": "KYC fortsetzen",
+          "resume": "KYC wieder aufnehmen",
+          "startNew": "Neues KYC starten",
+          "retry": "KYC erneut versuchen",
+          "complete": "KYC abschließen"
+        }
+      },
+      "cards": {
+        "rosterHealth": "Roster-Gesundheit",
+        "activePercentSuffix": "% aktiv",
+        "revenueThisMonth": "Umsatz diesen Monat",
+        "growthVsLastMonth": "{{value}} vs. letzten Monat",
+        "pendingActions": "Ausstehende Aktionen",
+        "licensingRequests": "{{count}} Lizenzanfrage",
+        "licensingRequests_other": "{{count}} Lizenzanfragen",
+        "expiringLicenses": "{{count}} bald ablaufende Lizenz",
+        "expiringLicenses_other": "{{count}} bald ablaufende Lizenzen",
+        "platformRanking": "Plattform-Ranking"
+      },
+      "sections": {
+        "talentPerformanceSummary": "Zusammenfassung der Talent-Performance",
+        "topRevenueGenerators": "Top 3 Umsatztreiber",
+        "needsActivation": "Aktivierung erforderlich ({{count}})",
+        "allActivelyEarning": "Alle {{entityPlural}} verdienen aktiv!",
+        "newTalentPerformance": "Performance neuer Talente",
+        "onboardedRecently": "Kürzlich aufgenommen",
+        "noEntityYet": "Noch kein {{entitySingular}}",
+        "revenueBreakdown": "Umsatzaufschlüsselung",
+        "byCampaignType": "Nach Kampagnentyp",
+        "byBrandVertical": "Nach Markenbereich",
+        "byRegion": "Nach Region",
+        "licensingPipeline": "Lizenz-Pipeline",
+        "recentActivity": "Letzte Aktivitäten"
+      },
+      "pipeline": {
+        "pendingApproval": "Wartet auf Genehmigung",
+        "reviewNow": "Jetzt prüfen",
+        "active": "Aktiv",
+        "expiringSoon30d": "Läuft bald ab (30 T.)",
+        "review": "Prüfen",
+        "totalThisMonth": "Gesamt diesen Monat"
+      },
+      "recentActivity": {
+        "rosterAdded": "{{name}} zum Roster hinzugefügt",
+        "rosterAddition": "Roster-Ergänzung",
+        "talentFallback": "Ein Talent"
+      },
+      "time": {
+        "justNow": "gerade eben",
+        "minutesAgo": "vor {{count}} Min.",
+        "minutesAgo_other": "vor {{count}} Min.",
+        "hoursAgo": "vor {{count}} Stunde",
+        "hoursAgo_other": "vor {{count}} Stunden",
+        "daysAgo": "vor {{count}} Tag",
+        "daysAgo_other": "vor {{count}} Tagen",
+        "weeksAgo": "vor {{count}} Woche",
+        "weeksAgo_other": "vor {{count}} Wochen",
+        "addedDaysAgo": "Vor {{count}} Tag hinzugefügt",
+        "addedDaysAgo_other": "Vor {{count}} Tagen hinzugefügt",
+        "addedRelative": "{{value}} hinzugefügt",
+        "recentlyAdded": "Kürzlich hinzugefügt",
+        "recently": "Kürzlich"
+      }
+    },
+    "roster": {
+      "entities": {
+        "talent": "Talent",
+        "talents": "Talente",
+        "talentTitle": "Talent",
+        "talentsTitle": "Talente",
+        "athlete": "Athlet",
+        "athletes": "Athleten",
+        "athleteTitle": "Athlet",
+        "athletesTitle": "Athleten"
+      },
+      "header": {
+        "verifiedAgency": "Verifizierte Agentur",
+        "upgradePlan": "Plan upgraden",
+        "editProfile": "Profil bearbeiten",
+        "viewMarketplace": "Marketplace ansehen",
+        "stripe": {
+          "status": "Stripe-Status",
+          "connected": "Stripe verbunden",
+          "connectedIncomplete": "Stripe verbunden (Einrichtung unvollständig)",
+          "notConnected": "Stripe nicht verbunden"
+        },
+        "seatsUsed": "{{used}} / {{total}} Plätze genutzt",
+        "seatBreakdown": {
+          "title": "Platzaufschlüsselung",
+          "description": "Ihre Gesamtzahl an Plätzen kann aus jährlichen und monatlichen Abonnements stammen.",
+          "loadErrorTitle": "Platzaufschlüsselung konnte nicht geladen werden",
+          "tryAgain": "Bitte versuchen Sie es erneut.",
+          "totalActive": "Gesamt aktiv",
+          "annual": "Jährlich",
+          "monthly": "Monatlich",
+          "interval": "Intervall",
+          "source": "Quelle",
+          "seats": "Plätze",
+          "status": "Status",
+          "renewsEnds": "Verlängert/Endet",
+          "noActiveSubscriptions": "Keine aktiven Platz-Abonnements gefunden.",
+          "addOn": "Add-on",
+          "inPlan": "Im Plan"
+        }
+      },
+      "stats": {
+        "activeEntities": "Aktive {{entityPlural}}",
+        "ofTotal": "von insgesamt {{count}}",
+        "monthlyEarnings": "Monatliche Einnahmen",
+        "activeCampaigns": "Aktive Kampagnen",
+        "acrossAllEntities": "über alle {{entityPlural}}",
+        "expiringLicenses": "Auslaufende Lizenzen",
+        "requireRenewal": "müssen verlängert werden"
+      },
+      "tabs": {
+        "roster": "Roster",
+        "digitalsTracking": "Digitals-Tracking",
+        "campaigns": "Kampagnen",
+        "licenses": "Lizenzen",
+        "analytics": "Analysen"
+      },
+      "actions": {
+        "exportCsv": "CSV exportieren",
+        "sendPortalInvite": "Portal-Einladung senden",
+        "addTalent": "Talent hinzufügen",
+        "addAthlete": "Athlet hinzufügen",
+        "close": "Schließen",
+        "cancel": "Abbrechen",
+        "refresh": "Aktualisieren",
+        "send": "Senden",
+        "revoke": "Widerrufen",
+        "reinvite": "Erneut einladen",
+        "view": "Ansehen"
+      },
+      "filters": {
+        "searchEntity": "{{entity}} suchen...",
+        "allStatus": "Alle Status",
+        "active": "Aktiv",
+        "pending": "Ausstehend",
+        "inactive": "Inaktiv",
+        "allCategories": "Alle Kategorien",
+        "advancedFilters": "Erweiterte Filter",
+        "allTalent": "Alle Talente",
+        "allAthletes": "Alle Athleten",
+        "currentOnly": "Nur aktuell",
+        "needsReminder": "Erinnerung nötig",
+        "outdatedOnly": "Nur veraltet"
+      },
+      "categories": {
+        "model": "Model",
+        "actor": "Schauspieler",
+        "creator": "Creator",
+        "voice": "Stimme",
+        "athlete": "Athlet"
+      },
+      "table": {
+        "status": "Status",
+        "aiUsage": "KI-Nutzung",
+        "followers": "Follower",
+        "organization": "Organisation",
+        "sports": "Sportarten",
+        "assets": "Assets",
+        "topBrand": "Top-Marke",
+        "licenseExpiry": "Lizenzablauf",
+        "revenue30d": "30T Umsatz",
+        "revenue": "Umsatz"
+      },
+      "aiUsage": {
+        "video": "Video",
+        "image": "Bild",
+        "voice": "Stimme"
+      },
+      "states": {
+        "loading": "Wird geladen...",
+        "loadingEntities": "{{entityPlural}} werden geladen...",
+        "noEntities": "Keine {{entityPlural}} zum Anzeigen.",
+        "empty": "—",
+        "sending": "Wird gesendet...",
+        "refreshing": "Aktualisieren",
+        "uploading": "Wird hochgeladen..."
+      },
+      "analytics": {
+        "title": "Analysen",
+        "comingSoonDescription": "Kommt bald.",
+        "comingSoonButton": "Kommt bald"
+      },
+      "digitals": {
+        "title": "Digitals-Tracking",
+        "subtitle": "Verwalten Sie die Digitals von {{entity}} (schlichte Fotos, kein Make-up)",
+        "remindAll": "Alle erinnern",
+        "loading": "Digitals werden geladen...",
+        "current": "Aktuell",
+        "upToDate": "Aktuell",
+        "reminderDue": "Erinnerung fällig",
+        "daysOld75to89": "75-89 Tage alt",
+        "outdated": "Veraltet",
+        "daysOld90Plus": "90+ Tage alt",
+        "totalEntities": "{{entityPlural}} gesamt",
+        "inRoster": "Im Roster",
+        "lastUpdated": "Zuletzt aktualisiert:",
+        "never": "Nie",
+        "daysAgo": "vor {{count}} Tag",
+        "daysAgo_other": "vor {{count}} Tagen",
+        "photos": "{{count}} Foto",
+        "photos_other": "{{count}} Fotos",
+        "viewHistory": "Verlauf ansehen",
+        "sendReminder": "Erinnerung senden",
+        "uploadNew": "Neu hochladen"
+      },
+      "licenses": {
+        "comingSoon": "Lizenzverwaltung kommt bald"
+      },
+      "campaigns": {
+        "comingSoon": "Kampagnen-Tracking kommt bald"
+      },
+      "invites": {
+        "title": "Portal-Einladung senden",
+        "description": "Wählen Sie ein bestehendes {{entity}} in Ihrem Roster aus, um eine Portal-Einladung zu senden.",
+        "searchLabel": "{{entity}} suchen",
+        "searchPlaceholder": "Nach Name oder E-Mail suchen",
+        "noMatchingEntity": "Kein passendes {{entity}} gefunden.",
+        "noEmailOnFile": "Keine E-Mail hinterlegt",
+        "alreadyConnectedTitle": "Bereits verbunden",
+        "alreadyConnectedDescription": "Dieser Creator ist bereits mit Ihrer Agentur verbunden. Es wurde keine neue Einladung gesendet.",
+        "sentTitle": "Portal-Einladung gesendet",
+        "sentDescription": "Einladung an {{email}} gesendet",
+        "linkCopiedTitle": "Einladungslink kopiert",
+        "linkCopiedDescription": "Die Einladungs-URL wurde in die Zwischenablage kopiert.",
+        "failedToSendTitle": "Senden fehlgeschlagen",
+        "failedToSendDescription": "Einladung konnte nicht gesendet werden",
+        "pendingInvites": "Ausstehende Einladungen",
+        "noPendingInvites": "Keine ausstehenden Einladungen.",
+        "expires": "Läuft ab",
+        "inviteRevokedTitle": "Einladung widerrufen",
+        "failedToRevokeTitle": "Widerruf fehlgeschlagen",
+        "reinvitedTitle": "Erneut eingeladen",
+        "failedToReinviteTitle": "Erneutes Einladen fehlgeschlagen"
+      },
+      "reminder": {
+        "title": "Digitals-Erinnerung senden",
+        "description": "Sendet eine E-Mail an das ausgewählte {{entity}}. Erfordert eine SMTP-Konfiguration auf dem Server.",
+        "subject": "Betreff",
+        "subjectPlaceholder": "Erinnerung zur Aktualisierung der Digitals",
+        "message": "Nachricht",
+        "personalizeHelp": "Verwenden Sie {name} zur Personalisierung.",
+        "noEmailsTitle": "Keine E-Mails gefunden",
+        "noEmailsDescription": "Keines der ausgewählten {{entityPlural}} hat eine hinterlegte E-Mail-Adresse.",
+        "emailNotSentTitle": "E-Mail nicht gesendet",
+        "emailNotSentDescription": "Das Senden der E-Mail ist fehlgeschlagen",
+        "sentTitle": "Erinnerungen gesendet",
+        "sentDescription": "Gesendet: {{sent}}, Fehlgeschlagen: {{failed}}"
+      },
+      "seats": {
+        "insufficientTitle": "Nicht genügend Plätze!",
+        "insufficientDescription": "Ihr aktueller Plan erlaubt {{count}} {{entity}}. Upgraden Sie, um mehr hinzuzufügen.",
+        "viewPlans": "Pläne ansehen"
+      },
+      "upload": {
+        "title": "Neue Digitals hochladen - {{name}}",
+        "guidelinesTitle": "Digitals-Richtlinien:",
+        "guidelinesDescription": "Schlichte Fotos ohne Make-up, natürliches Licht, einfacher Hintergrund. Enthalten sein sollten: Headshot, 3/4-Körper, Ganzkörper, linkes Profil, rechtes Profil.",
+        "uploadPhotos": "Fotos hochladen",
+        "dragDrop": "Klicken zum Hochladen oder Datei hierher ziehen",
+        "fileHelp": "JPEG oder PNG, max. 5 MB pro Datei",
+        "filesSelected": "{{count}} Datei(en) ausgewählt",
+        "dateTaken": "Aufnahmedatum",
+        "uploadDigitals": "Digitals hochladen",
+        "successTitle": "Digital erfolgreich hochgeladen!",
+        "successDescription": "Die Digitals des {{entity}} wurden aktualisiert.",
+        "errorTitle": "Upload fehlgeschlagen",
+        "errorDescription": "Upload fehlgeschlagen"
+      },
+      "history": {
+        "title": "Digitals-Verlauf - {{name}}",
+        "loading": "Verlauf wird geladen...",
+        "previousUpdates": "Frühere Aktualisierungen",
+        "unknown": "Unbekannt"
+      }
+    },
+    "navigation": {
+      "roster": "Roster",
+      "marketplace": "Marketplace",
+      "messages": "Nachrichten",
+      "jobs": "Jobs",
+      "payouts": "Auszahlungen",
+      "clientCRM": "Kunden-CRM",
+      "catalogs": "Kataloge",
+      "talentPackages": "Talent-Pakete",
+      "athletePackages": "Athleten-Pakete",
+      "openSubmenu": "Untermenü {{label}} öffnen",
+      "submenu": "Untermenü {{label}}",
+      "subItems": {
+        "performanceTiers": "Leistungsstufen"
+      }
+    },
+    "performanceTiers": {
+      "title": "Leistungsstufen",
+      "subtitle": "Konfigurieren Sie Schwellenwerte und prüfen Sie die Performance Ihres Rosters.",
+      "recommendationTitle": "Empfehlung der Agentur",
+      "entitiesInTier": "{{entityPlural}} in dieser Stufe",
+      "actions": {
+        "configure": "Stufen konfigurieren",
+        "tryAgain": "Erneut versuchen",
+        "saveChanges": "Änderungen speichern"
+      },
+      "states": {
+        "loading": "Wird geladen...",
+        "saving": "Wird gespeichert..."
+      },
+      "errors": {
+        "loadFailed": "Leistungsstufen konnten nicht geladen werden",
+        "updateFailed": "Konfiguration konnte nicht aktualisiert werden",
+        "unableToLoad": "Performance-Dashboard konnte nicht geladen werden"
+      },
+      "toasts": {
+        "configSaved": "Stufenschwellen wurden erfolgreich aktualisiert"
+      },
+      "metrics": {
+        "avgMonthlyEarnings": "Durchschn. Monatseinnahmen",
+        "avgBookingFrequency": "Durchschn. Booking-Frequenz",
+        "campaignsPerMonth": "Kampagnen/Monat",
+        "totalEntities": "{{entityPlural}} gesamt",
+        "percentOfRoster": "% des Rosters",
+        "campaignsCount": "{{count}} Kampagnen"
+      },
+      "thresholds": {
+        "dynamic": "Schwellen: {{earnings}}/Monat • {{bookings}} Bookings",
+        "inactive": "Enthält alle Roster-Profile, die die Anforderungen für Stufe 3 nicht erfüllen"
+      },
+      "empty": {
+        "noneAssigned": "Kein {{entitySingular}} dieser Stufe zugewiesen",
+        "thisTierYet": "noch nicht dieser Leistungsstufe"
+      },
+      "modal": {
+        "title": "Schwellenwerte der Leistungsstufen konfigurieren",
+        "description": "Legen Sie Mindesteinnahmen und erforderliche Bookings pro Stufe fest",
+        "minMonthlyEarnings": "Mindesteinnahmen pro Monat ($)",
+        "minBookingsPerMonth": "Min. Bookings/Monat",
+        "noteLabel": "Hinweis:",
+        "noteBody": "Stufe 4 enthält alle Roster-Profile, die die Anforderungen für Stufe 3 nicht erfüllen."
+      },
+      "tiers": {
+        "Premium": {
+          "label": "Stufe 1 - Premium",
+          "recommendation": "Für hochwertige Kampagnen priorisieren. Erwägen Sie exklusive Partnerschaften."
+        },
+        "Core": {
+          "label": "Stufe 2 - Core",
+          "recommendation": "Stabile Performer. Konzentrieren Sie sich auf mehr Kampagnenfrequenz und einen höheren durchschnittlichen Deal-Wert."
+        },
+        "Growth": {
+          "label": "Stufe 3 - Wachstum",
+          "recommendation": "In die Portfolioentwicklung investieren. Markenpräsenz und Kampagnenchancen erhöhen."
+        },
+        "Inactive": {
+          "label": "Stufe 4 - Benötigt Aufmerksamkeit",
+          "recommendation": "Sofortiges Handeln erforderlich. Erwägen Sie Portfolio-Refresh, Marketing-Push oder eine Roster-Prüfung."
+        }
+      }
+    },
+    "chat": {
+      "messagesTitle": "Nachrichten",
+      "searchConversations": "Konversationen suchen...",
+      "filterAll": "Alle",
+      "filterUnread": "Ungelesen",
+      "noMessagesYet": "Noch keine Nachrichten",
+      "noActiveConnections": "Keine aktiven Verbindungen",
+      "connectToChat": "Verbinden Sie sich mit {{role}}, um zu chatten.",
+      "selectConversation": "Wählen Sie eine Konversation aus",
+      "chooseThread": "Wählen Sie links einen Thread aus oder starten Sie eine neue Konversation mit {{role}}.",
+      "selectChatToType": "Wählen Sie einen Chat aus, um zu schreiben...",
+      "sendToStart": "Senden Sie eine Nachricht, um die Konversation zu beginnen.",
+      "messageDeleted": "Diese Nachricht wurde gelöscht",
+      "edited": "(bearbeitet)",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "you": "Sie",
+      "roleAgency": "einer Agentur",
+      "roleCreator": "einem Creator",
+      "agencySingular": "Agentur",
+      "agencyPlural": "Agenturen",
+      "creatorSingular": "Creator",
+      "creatorPlural": "Creators",
+      "roles": {
+        "agency": "Agentur",
+        "creator": "Creator"
+      },
+      "time": {
+        "justNow": "gerade eben",
+        "minutesAgo": "vor {{count}} Min.",
+        "minutesAgo_other": "vor {{count}} Min.",
+        "hoursAgo": "vor {{count}} Std.",
+        "hoursAgo_other": "vor {{count}} Std.",
+        "daysAgo": "vor {{count}} Tag",
+        "daysAgo_other": "vor {{count}} Tagen"
+      },
+      "notifications": {
+        "unreadMessages": "Sie haben {{count}} ungelesene Nachrichten.",
+        "newMessage": "Neue Nachricht"
+      }
+    },
+    "marketplace": {
+      "title": "Likelee Marketplace",
+      "subtitle": "Nur verifizierte Creator",
+      "verifiedBadge": "Verifizierte Profile",
+      "connectLockedReason": "Plan upgraden, um Verbindungen herzustellen.",
+      "entities": {
+        "creator": "Creator",
+        "agency": "Agentur",
+        "creatorTitle": "Creator",
+        "agencyTitle": "Agentur"
+      },
+      "labels": {
+        "verified": "Verifiziert"
+      },
+      "status": {
+        "none": "Keine",
+        "waiting": "Wartet",
+        "pending": "Ausstehend",
+        "connected": "Verbunden",
+        "declined": "Abgelehnt",
+        "disconnected": "Getrennt"
+      },
+      "statuses": {
+        "connected": "Verbunden",
+        "waiting": "Wartet",
+        "declined": "Abgelehnt"
+      },
+      "ownership": {
+        "agency_owned": "Agenturverwaltet",
+        "regular": "Regulär"
+      },
+      "locked": {
+        "highlights": {
+          "connectAgencies": "Mit Agenturen verbinden",
+          "connectCreators": "Mit Creators verbinden",
+          "requestLicenses": "Lizenzen anfragen",
+          "collaboratorWorkflows": "Kollaborative Workflows freischalten",
+          "campaignHandoff": "Vollständige Kampagnenübergabe starten"
+        },
+        "previewFootnote": "In der Vorschau sichtbar. Pro macht jede Aktion live."
+      },
+      "filters": {
+        "button": "Filter",
+        "reset": "Filter zurücksetzen",
+        "resetAllAria": "Alle Filter zurücksetzen",
+        "optionsTitle": "Filteroptionen",
+        "all": "Alle",
+        "allCategories": "Alle Kategorien",
+        "verifiedAgencies": "Verifizierte Agenturen",
+        "verifiedCreators": "Verifizierte Creator",
+        "connected": "Verbunden",
+        "waiting": "Wartet"
+      },
+      "categories": {
+        "models": "Models",
+        "actors": "Schauspieler",
+        "influencers": "Influencer",
+        "athletes": "Athleten",
+        "talentAgencies": "Talentagenturen",
+        "sportsAgencies": "Sportagenturen"
+      },
+      "sort": {
+        "followers": "Follower",
+        "name": "Name",
+        "recent": "Zuletzt aktualisiert"
+      },
+      "states": {
+        "noBio": "Noch keine Biografie verfügbar."
+      },
+      "actions": {
+        "sending": "Wird gesendet...",
+        "upgradeToConnect": "Upgrade zum Verbinden",
+        "waitingForResponse": "Warten auf Antwort von {{entityLabel}}",
+        "connect": "Verbinden"
+      },
+      "details": {
+        "processingDisconnect": "Trennungsanfrage wird verarbeitet...",
+        "marketplaceProfile": "Marketplace-Profil",
+        "agencyDescription": "Agenturprofil und Verbindungsstatus",
+        "creatorDescription": "Verfügbarkeit, Preise, Portfolio und Kampagnenverlauf",
+        "loading": "Profildetails werden geladen...",
+        "loadFailedTitle": "Profildetails konnten nicht geladen werden",
+        "tryAgain": "Bitte versuchen Sie es erneut."
+      },
+      "toasts": {
+        "requestAlreadyDeclinedTitle": "Anfrage bereits abgelehnt",
+        "requestAlreadyDeclinedDescription": "Diese Verbindung wurde bereits abgelehnt. Sie können {{entityLabel}} erneut einladen.",
+        "alreadyConnectedTitle": "Bereits verbunden",
+        "alreadyConnectedDescription": "Dieses Profil ist bereits in Ihrem Netzwerk.",
+        "connectionRequestSentTitle": "Verbindungsanfrage gesendet",
+        "connectionRequestSentDescription": "Warten auf Antwort von {{entityLabel}}. Sie werden benachrichtigt, sobald akzeptiert oder abgelehnt wird.",
+        "requestPendingTitle": "Anfrage bereits ausstehend",
+        "requestPendingDescription": "Warten auf Antwort von {{entityLabel}}.",
+        "failedConnectionRequestTitle": "Verbindungsanfrage konnte nicht gesendet werden",
+        "failedConnectionRequestDescription": "Die Verbindungsanfrage kann derzeit nicht gesendet werden.",
+        "contractSentTitle": "Vertrag gesendet",
+        "contractSentDescription": "Der Vertrag wurde zur Unterschrift gesendet.",
+        "contractSentWithLinkDescription": "Der Vertrag wurde zur Unterschrift gesendet und der Signaturlink der Agentur wurde in einem neuen Tab geöffnet."
+      }
+    },
+    "jobs": {
+      "title": "Job-Einladungen",
+      "subtitle": "Prüfen Sie eingeladene Jobs und antworten Sie direkt im Agentur-Dashboard.",
+      "brandOffers": "Markenangebote",
+      "brandFallback": "Marke",
+      "jobInviteFallback": "Job-Einladung",
+      "thisJob": "Dieser Job",
+      "states": {
+        "loading": "Job-Einladungen werden geladen...",
+        "empty": "Noch keine Job-Einladungen.",
+        "working": "Wird verarbeitet..."
+      },
+      "actions": {
+        "viewDetails": "Jobdetails ansehen",
+        "accept": "Annehmen",
+        "decline": "Ablehnen",
+        "apply": "Bewerben",
+        "cancel": "Abbrechen",
+        "okay": "Okay"
+      },
+      "confirm": {
+        "title": "{{action}} bestätigen",
+        "acceptance": "Annahme",
+        "declineLabel": "Ablehnung",
+        "description": "Möchten Sie diese Job-Einladung wirklich {{action}}?",
+        "yesAction": "Ja, {{action}}"
+      },
+      "closed": {
+        "title": "Job geschlossen oder keine offenen Stellen",
+        "description": "{{jobLabel}} akzeptiert keine Bewerbungen mehr."
+      },
+      "toasts": {
+        "accepted": "Job-Einladung angenommen",
+        "declined": "Job-Einladung abgelehnt",
+        "errorAcceptingTitle": "Fehler beim Annehmen der Einladung",
+        "errorDecliningTitle": "Fehler beim Ablehnen der Einladung"
+      }
+    },
+    "clientCRM": {
+      "title": "Client-Relationship-Management",
+      "subtitle": "Verwalten Sie Kundenbeziehungen, verfolgen Sie Kommunikation und überwachen Sie die Pipeline",
+      "stats": {
+        "activeClients": "Aktive Kunden",
+        "prospects": "Interessenten",
+        "totalRevenue": "Gesamtumsatz",
+        "followUpsDue": "Fällige Follow-ups"
+      },
+      "filters": {
+        "search": "Kunden suchen...",
+        "allStages": "Alle Phasen",
+        "leads": "Leads",
+        "prospects": "Interessenten",
+        "activeClients": "Aktive Kunden",
+        "inactive": "Inaktiv",
+        "lastBooking": "Letztes Booking",
+        "companyName": "Firmenname"
+      },
+      "actions": {
+        "addClient": "Kunden hinzufügen",
+        "cancel": "Abbrechen",
+        "deleteClient": "Kunden löschen"
+      },
+      "states": {
+        "deleting": "Wird gelöscht..."
+      },
+      "deleteDialog": {
+        "title": "Kunden löschen?",
+        "description": "Möchten Sie {{clientName}} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden und entfernt alle zugehörigen Daten."
+      },
+      "toasts": {
+        "successTitle": "Erfolg",
+        "errorTitle": "Fehler",
+        "clientDeleted": "Kunde erfolgreich gelöscht",
+        "deleteFailed": "Kunde konnte nicht gelöscht werden"
+      }
+    },
+    "packages": {
+      "stats": {
+        "totalPackages": "Pakete gesamt",
+        "activeShares": "Aktive Freigaben",
+        "totalViews": "Aufrufe gesamt"
+      },
+      "tabs": {
+        "templates": "Vorlagen",
+        "sent": "Gesendete Pakete"
+      },
+      "actions": {
+        "useExisting": "Vorhandenes nutzen",
+        "createNew": "Neu erstellen",
+        "template": "Vorlage",
+        "package": "Paket",
+        "packagePlural": "Pakete"
+      },
+      "offerBanner": {
+        "title": "Für Angebot senden",
+        "description": "Wählen Sie, ob Sie ein bestehendes Paket/eine Vorlage senden oder ein neues erstellen möchten.",
+        "pickTemplate": "Wählen Sie unten eine Vorlage (oder senden Sie ein bestehendes Paket erneut) und klicken Sie dann auf „Senden“, um es an den Posteingang der Marke für dieses Angebot zu schicken."
+      },
+      "search": "{{target}} suchen...",
+      "empty": {
+        "title": "Keine {{target}} gefunden",
+        "templatesDescription": "Erstellen Sie wiederverwendbare Vorlagen für mehrere Kunden."
+      },
+      "pagination": {
+        "previous": "Zurück",
+        "next": "Weiter"
+      },
+      "status": {
+        "expired": "Abgelaufen",
+        "active": "Aktiv"
+      },
+      "labels": {
+        "campaignOffer": "Kampagnenangebot"
+      },
+      "toasts": {
+        "deleted": "Paket gelöscht",
+        "linkCopied": "Link in die Zwischenablage kopiert!"
+      }
+    },
+    "catalogs": {
+      "title": "Asset-Kataloge",
+      "subtitle": "Liefern Sie lizenzierte Assets und Sprachaufnahmen nach Zahlung an Kunden aus.",
+      "stats": {
+        "totalCatalogs": "Kataloge gesamt",
+        "sent": "Gesendet",
+        "pendingDelivery": "Lieferung ausstehend"
+      },
+      "actions": {
+        "newCatalog": "Neuer Katalog",
+        "createCatalog": "Katalog erstellen",
+        "copyLink": "Link kopieren",
+        "cancel": "Abbrechen",
+        "delete": "Löschen",
+        "close": "Schließen"
+      },
+      "states": {
+        "deleting": "Wird gelöscht…"
+      },
+      "status": {
+        "paid": "Bezahlt",
+        "unpaid": "Unbezahlt",
+        "expired": "Abgelaufen",
+        "sent": "Gesendet",
+        "draft": "Entwurf",
+        "active": "Aktiv",
+        "no": "Nein"
+      },
+      "empty": {
+        "title": "Noch keine Kataloge",
+        "description": "Sobald eine Lizenzzahlung eingegangen ist, erstellen Sie einen Katalog, um Assets und Aufnahmen an Ihren Kunden zu liefern."
+      },
+      "deleteDialog": {
+        "title": "Katalog löschen?",
+        "description": "Dadurch werden der Katalog und sein Freigabelink dauerhaft entfernt. Dies kann nicht rückgängig gemacht werden."
+      },
+      "preview": {
+        "title": "Katalogvorschau",
+        "description": "Zusammenfassung der Verteilungseinstellungen dieses Katalogs.",
+        "missingExpiration": "Pflichtfeld (fehlt)",
+        "fields": {
+          "title": "Titel",
+          "client": "Kunde",
+          "recipient": "Empfänger",
+          "payment": "Zahlung",
+          "assets": "Assets",
+          "voice": "Sprache",
+          "linkedReceipt": "Verknüpfter Beleg",
+          "createdOn": "Erstellt am",
+          "expiration": "Ablauf",
+          "internalNotes": "Interne Notizen"
+        }
+      },
+      "toasts": {
+        "deleted": "Katalog gelöscht",
+        "deleteFailedTitle": "Katalog konnte nicht gelöscht werden",
+        "linkCopied": "Link in die Zwischenablage kopiert!"
+      }
+    },
+    "payouts": {
+      "title": "Provisions- und Auszahlungsverwaltung",
+      "actions": {
+        "exportReport": "Bericht exportieren"
+      },
+      "banner": {
+        "title": "Auszahlungen und Gebühren",
+        "description": "Bei Lizenzanfragen werden Plattformgebühren und die Provision des/der {{entitySingular}} vom Gesamtbetrag abgezogen."
+      },
+      "tabs": {
+        "commissionStructure": "Provisionsstruktur",
+        "payoutPreferences": "Auszahlungseinstellungen",
+        "commissionBreakdown": "Provisionsaufteilung",
+        "paymentHistory": "Zahlungsverlauf",
+        "royaltiesAndPayouts": "Royalties und Auszahlungen"
+      },
+      "stats": {
+        "accruedThisMonth": "Diesen Monat aufgelaufen",
+        "readyForPayout": "Bereit zur Auszahlung",
+        "pendingApproval": "Ausstehende Freigabe",
+        "awaitingBrandConfirmation": "Warten auf Markenbestätigung",
+        "paidYTD": "YTD ausgezahlt",
+        "toEntityThisYear": "Dieses Jahr an {{entitySingular}} ausgezahlt",
+        "agencyCommissionYTD": "Agenturprovision YTD",
+        "avgCommissionRate": "{{rate}}% durchschnittliche Provision"
+      }
+    }
+  }
 }

@@ -8,5 +8,748 @@
   "marketingAgencySolutionsDescription": "Una plataforma para campañas de creadores impulsadas por IA. Licenciamiento de creadores verificados, flujos de trabajo de producción, cumplimiento y exposición de marca.",
   "marketingAgencyCreatorPlatform": "Plataforma de Creadores para Agencias de Marketing",
   "whyMarketingAgenciesWin": "Por Qué Ganan las Agencias de Marketing",
-  "whySportsAgenciesWin": "Por Qué Ganan las Agencias Deportivas"
+  "whySportsAgenciesWin": "Por Qué Ganan las Agencias Deportivas",
+  "agencyDashboard": {
+    "dashboard": {
+      "entities": {
+        "talent": "talento",
+        "talentPlural": "talentos",
+        "athlete": "atleta",
+        "athletePlural": "atletas"
+      },
+      "banner": {
+        "title": "Bienvenido al panel de tu agencia",
+        "subtitle": "Este es tu centro principal para gestionar tu agencia.",
+        "currentPlan": "Plan actual"
+      },
+      "kyc": {
+        "completedTitle": "KYC completado",
+        "additionalVerificationTitle": "Se necesita verificación adicional",
+        "inProgressTitle": "Verificación KYC en curso",
+        "rejectedTitle": "La verificación no fue aprobada",
+        "requiredTitle": "Se requiere verificación KYC",
+        "completedDescription": "La verificación de identidad de tu agencia está completa.",
+        "additionalVerificationDescription": "Veriff solicitó un paso más antes de la aprobación. Continúa abajo para que los pagos y las licencias sigan disponibles para tus {{entityPlural}}.",
+        "resumeDescription": "Tu verificación sigue en curso. Si se cerró la ventana, retómala abajo o actualiza cuando hayas terminado.",
+        "startNewDescription": "Tu verificación sigue en curso. Si el enlace anterior expiró, inicia una nueva sesión abajo o actualiza cuando hayas terminado.",
+        "rejectedDescription": "Tu última verificación no fue aprobada. Revisa la razón abajo y vuelve a intentarlo para que los pagos y las licencias sigan disponibles para tus {{entityPlural}}.",
+        "requiredDescription": "Para habilitar pagos y licencias para tu {{entitySingular}}, completa la verificación de identidad de tu agencia.",
+        "veriffNote": "Nota de Veriff:",
+        "reason": "Motivo:",
+        "refreshStatus": "Actualizar estado",
+        "badges": {
+          "approved": "Aprobado",
+          "actionNeeded": "Acción requerida",
+          "pending": "Pendiente",
+          "rejected": "Rechazado",
+          "notStarted": "No iniciado"
+        },
+        "actions": {
+          "continue": "Continuar KYC",
+          "resume": "Reanudar KYC",
+          "startNew": "Iniciar nuevo KYC",
+          "retry": "Reintentar KYC",
+          "complete": "Completar KYC"
+        }
+      },
+      "cards": {
+        "rosterHealth": "Salud del roster",
+        "activePercentSuffix": "% activos",
+        "revenueThisMonth": "Ingresos este mes",
+        "growthVsLastMonth": "{{value}} vs el mes pasado",
+        "pendingActions": "Acciones pendientes",
+        "licensingRequests": "{{count}} solicitud de licencia",
+        "licensingRequests_other": "{{count}} solicitudes de licencia",
+        "expiringLicenses": "{{count}} licencia por vencer",
+        "expiringLicenses_other": "{{count}} licencias por vencer",
+        "platformRanking": "Clasificación en la plataforma"
+      },
+      "sections": {
+        "talentPerformanceSummary": "Resumen del rendimiento del talento",
+        "topRevenueGenerators": "Top 3 generadores de ingresos",
+        "needsActivation": "Necesitan activación ({{count}})",
+        "allActivelyEarning": "¡Todos los {{entityPlural}} están generando ingresos activamente!",
+        "newTalentPerformance": "Rendimiento del nuevo talento",
+        "onboardedRecently": "Incorporados recientemente",
+        "noEntityYet": "Aún no hay {{entitySingular}}",
+        "revenueBreakdown": "Desglose de ingresos",
+        "byCampaignType": "Por tipo de campaña",
+        "byBrandVertical": "Por vertical de marca",
+        "byRegion": "Por región",
+        "licensingPipeline": "Pipeline de licencias",
+        "recentActivity": "Actividad reciente"
+      },
+      "pipeline": {
+        "pendingApproval": "Pendiente de aprobación",
+        "reviewNow": "Revisar ahora",
+        "active": "Activo",
+        "expiringSoon30d": "Vence pronto (30d)",
+        "review": "Revisar",
+        "totalThisMonth": "Total este mes"
+      },
+      "recentActivity": {
+        "rosterAdded": "{{name}} añadido al roster",
+        "rosterAddition": "Adición al roster",
+        "talentFallback": "Un talento"
+      },
+      "time": {
+        "justNow": "ahora mismo",
+        "minutesAgo": "hace {{count}} min",
+        "minutesAgo_other": "hace {{count}} min",
+        "hoursAgo": "hace {{count}} hora",
+        "hoursAgo_other": "hace {{count}} horas",
+        "daysAgo": "hace {{count}} día",
+        "daysAgo_other": "hace {{count}} días",
+        "weeksAgo": "hace {{count}} semana",
+        "weeksAgo_other": "hace {{count}} semanas",
+        "addedDaysAgo": "Añadido hace {{count}} día",
+        "addedDaysAgo_other": "Añadido hace {{count}} días",
+        "addedRelative": "Añadido {{value}}",
+        "recentlyAdded": "Añadido recientemente",
+        "recently": "Recientemente"
+      }
+    },
+    "roster": {
+      "entities": {
+        "talent": "talento",
+        "talents": "talentos",
+        "talentTitle": "Talento",
+        "talentsTitle": "Talentos",
+        "athlete": "atleta",
+        "athletes": "atletas",
+        "athleteTitle": "Atleta",
+        "athletesTitle": "Atletas"
+      },
+      "header": {
+        "verifiedAgency": "Agencia verificada",
+        "upgradePlan": "Mejorar plan",
+        "editProfile": "Editar perfil",
+        "viewMarketplace": "Ver marketplace",
+        "stripe": {
+          "status": "Estado de Stripe",
+          "connected": "Stripe conectado",
+          "connectedIncomplete": "Stripe conectado (configuración incompleta)",
+          "notConnected": "Stripe no conectado"
+        },
+        "seatsUsed": "{{used}} / {{total}} plazas usadas",
+        "seatBreakdown": {
+          "title": "Desglose de plazas",
+          "description": "Tus plazas totales pueden provenir de suscripciones anuales y mensuales.",
+          "loadErrorTitle": "No se pudo cargar el desglose de plazas",
+          "tryAgain": "Inténtalo de nuevo.",
+          "totalActive": "Total activo",
+          "annual": "Anual",
+          "monthly": "Mensual",
+          "interval": "Intervalo",
+          "source": "Origen",
+          "seats": "Plazas",
+          "status": "Estado",
+          "renewsEnds": "Renueva/Termina",
+          "noActiveSubscriptions": "No se encontraron suscripciones de plazas activas.",
+          "addOn": "Complemento",
+          "inPlan": "Incluido en el plan"
+        }
+      },
+      "stats": {
+        "activeEntities": "{{entityPlural}} activos",
+        "ofTotal": "de {{count}} en total",
+        "monthlyEarnings": "Ganancias mensuales",
+        "activeCampaigns": "Campañas activas",
+        "acrossAllEntities": "en todos los {{entityPlural}}",
+        "expiringLicenses": "Licencias por vencer",
+        "requireRenewal": "requieren renovación"
+      },
+      "tabs": {
+        "roster": "Roster",
+        "digitalsTracking": "Seguimiento de digitals",
+        "campaigns": "Campañas",
+        "licenses": "Licencias",
+        "analytics": "Analítica"
+      },
+      "actions": {
+        "exportCsv": "Exportar CSV",
+        "sendPortalInvite": "Enviar invitación al portal",
+        "addTalent": "Añadir talento",
+        "addAthlete": "Añadir atleta",
+        "close": "Cerrar",
+        "cancel": "Cancelar",
+        "refresh": "Actualizar",
+        "send": "Enviar",
+        "revoke": "Revocar",
+        "reinvite": "Reinvitar",
+        "view": "Ver"
+      },
+      "filters": {
+        "searchEntity": "Buscar {{entity}}...",
+        "allStatus": "Todos los estados",
+        "active": "Activo",
+        "pending": "Pendiente",
+        "inactive": "Inactivo",
+        "allCategories": "Todas las categorías",
+        "advancedFilters": "Filtros avanzados",
+        "allTalent": "Todo el talento",
+        "allAthletes": "Todos los atletas",
+        "currentOnly": "Solo vigentes",
+        "needsReminder": "Necesita recordatorio",
+        "outdatedOnly": "Solo desactualizados"
+      },
+      "categories": {
+        "model": "Modelo",
+        "actor": "Actor",
+        "creator": "Creador",
+        "voice": "Voz",
+        "athlete": "Atleta"
+      },
+      "table": {
+        "status": "Estado",
+        "aiUsage": "Uso de IA",
+        "followers": "Seguidores",
+        "organization": "Organización",
+        "sports": "Deportes",
+        "assets": "Recursos",
+        "topBrand": "Marca principal",
+        "licenseExpiry": "Vencimiento de licencia",
+        "revenue30d": "Ingresos 30D",
+        "revenue": "Ingresos"
+      },
+      "aiUsage": {
+        "video": "Video",
+        "image": "Imagen",
+        "voice": "Voz"
+      },
+      "states": {
+        "loading": "Cargando...",
+        "loadingEntities": "Cargando {{entityPlural}}...",
+        "noEntities": "No hay {{entityPlural}} para mostrar.",
+        "empty": "—",
+        "sending": "Enviando...",
+        "refreshing": "Actualizando",
+        "uploading": "Subiendo..."
+      },
+      "analytics": {
+        "title": "Analítica",
+        "comingSoonDescription": "Próximamente.",
+        "comingSoonButton": "Próximamente"
+      },
+      "digitals": {
+        "title": "Seguimiento de digitals",
+        "subtitle": "Supervisa y gestiona los digitals de {{entity}} (fotos simples, sin maquillaje)",
+        "remindAll": "Recordar a todos",
+        "loading": "Cargando digitals...",
+        "current": "Vigentes",
+        "upToDate": "Actualizados",
+        "reminderDue": "Recordatorio pendiente",
+        "daysOld75to89": "75-89 días",
+        "outdated": "Desactualizado",
+        "daysOld90Plus": "90+ días",
+        "totalEntities": "{{entityPlural}} totales",
+        "inRoster": "En el roster",
+        "lastUpdated": "Última actualización:",
+        "never": "Nunca",
+        "daysAgo": "hace {{count}} día",
+        "daysAgo_other": "hace {{count}} días",
+        "photos": "{{count}} foto",
+        "photos_other": "{{count}} fotos",
+        "viewHistory": "Ver historial",
+        "sendReminder": "Enviar recordatorio",
+        "uploadNew": "Subir nuevo"
+      },
+      "licenses": {
+        "comingSoon": "La gestión de licencias llegará pronto"
+      },
+      "campaigns": {
+        "comingSoon": "El seguimiento de campañas llegará pronto"
+      },
+      "invites": {
+        "title": "Enviar invitación al portal",
+        "description": "Selecciona un {{entity}} existente en tu roster para enviarle una invitación al portal.",
+        "searchLabel": "Buscar {{entity}}",
+        "searchPlaceholder": "Buscar por nombre o correo",
+        "noMatchingEntity": "No hay {{entity}} coincidente.",
+        "noEmailOnFile": "Sin correo registrado",
+        "alreadyConnectedTitle": "Ya conectado",
+        "alreadyConnectedDescription": "Este creador ya está conectado a tu agencia. No se envió una nueva invitación.",
+        "sentTitle": "Invitación al portal enviada",
+        "sentDescription": "Invitación enviada a {{email}}",
+        "linkCopiedTitle": "Enlace de invitación copiado",
+        "linkCopiedDescription": "La URL de invitación se copió al portapapeles.",
+        "failedToSendTitle": "Error al enviar",
+        "failedToSendDescription": "No se pudo enviar la invitación",
+        "pendingInvites": "Invitaciones pendientes",
+        "noPendingInvites": "No hay invitaciones pendientes.",
+        "expires": "Expira",
+        "inviteRevokedTitle": "Invitación revocada",
+        "failedToRevokeTitle": "Error al revocar",
+        "reinvitedTitle": "Invitación reenviada",
+        "failedToReinviteTitle": "Error al reenviar"
+      },
+      "reminder": {
+        "title": "Enviar recordatorio de digitals",
+        "description": "Envía un correo al {{entity}} seleccionado. Requiere configuración SMTP en el servidor.",
+        "subject": "Asunto",
+        "subjectPlaceholder": "Recordatorio de actualización de digitals",
+        "message": "Mensaje",
+        "personalizeHelp": "Usa {name} para personalizar.",
+        "noEmailsTitle": "No se encontraron correos",
+        "noEmailsDescription": "Ninguno de los {{entityPlural}} seleccionados tiene un correo registrado.",
+        "emailNotSentTitle": "Correo no enviado",
+        "emailNotSentDescription": "El envío del correo falló",
+        "sentTitle": "Recordatorios enviados",
+        "sentDescription": "Enviados: {{sent}}, Fallidos: {{failed}}"
+      },
+      "seats": {
+        "insufficientTitle": "¡Plazas insuficientes!",
+        "insufficientDescription": "Tu plan actual permite {{count}} {{entity}}. Mejora tu plan para añadir más.",
+        "viewPlans": "Ver planes"
+      },
+      "upload": {
+        "title": "Subir nuevos digitals - {{name}}",
+        "guidelinesTitle": "Guía de digitals:",
+        "guidelinesDescription": "Fotos simples sin maquillaje, luz natural y fondo sencillo. Incluye: retrato, cuerpo 3/4, cuerpo completo, perfil izquierdo y perfil derecho.",
+        "uploadPhotos": "Subir fotos",
+        "dragDrop": "Haz clic para subir o arrastra y suelta",
+        "fileHelp": "JPEG o PNG, máximo 5 MB cada uno",
+        "filesSelected": "{{count}} archivo(s) seleccionado(s)",
+        "dateTaken": "Fecha de captura",
+        "uploadDigitals": "Subir digitals",
+        "successTitle": "¡Digital subido correctamente!",
+        "successDescription": "Los digitals del {{entity}} se han actualizado.",
+        "errorTitle": "Error al subir",
+        "errorDescription": "La subida falló"
+      },
+      "history": {
+        "title": "Historial de digitals - {{name}}",
+        "loading": "Cargando historial...",
+        "previousUpdates": "Actualizaciones anteriores",
+        "unknown": "Desconocido"
+      }
+    },
+    "navigation": {
+      "roster": "Roster",
+      "marketplace": "Marketplace",
+      "messages": "Mensajes",
+      "jobs": "Trabajos",
+      "payouts": "Pagos",
+      "clientCRM": "CRM de clientes",
+      "catalogs": "Catálogos",
+      "talentPackages": "Paquetes de talento",
+      "athletePackages": "Paquetes de atletas",
+      "openSubmenu": "Abrir submenú de {{label}}",
+      "submenu": "Submenú de {{label}}",
+      "subItems": {
+        "performanceTiers": "Niveles de rendimiento"
+      }
+    },
+    "performanceTiers": {
+      "title": "Niveles de rendimiento",
+      "subtitle": "Configura los umbrales y revisa cómo rinde tu roster.",
+      "recommendationTitle": "Recomendación de la agencia",
+      "entitiesInTier": "{{entityPlural}} en este nivel",
+      "actions": {
+        "configure": "Configurar niveles",
+        "tryAgain": "Intentar de nuevo",
+        "saveChanges": "Guardar cambios"
+      },
+      "states": {
+        "loading": "Cargando...",
+        "saving": "Guardando..."
+      },
+      "errors": {
+        "loadFailed": "No se pudieron cargar los niveles de rendimiento",
+        "updateFailed": "No se pudo actualizar la configuración",
+        "unableToLoad": "No se pudo cargar el panel de rendimiento"
+      },
+      "toasts": {
+        "configSaved": "Los umbrales de los niveles se actualizaron correctamente"
+      },
+      "metrics": {
+        "avgMonthlyEarnings": "Ingresos mensuales promedio",
+        "avgBookingFrequency": "Frecuencia promedio de bookings",
+        "campaignsPerMonth": "campañas/mes",
+        "totalEntities": "{{entityPlural}} totales",
+        "percentOfRoster": "% del roster",
+        "campaignsCount": "{{count}} campañas"
+      },
+      "thresholds": {
+        "dynamic": "Umbrales: {{earnings}}/mes • {{bookings}} bookings",
+        "inactive": "Incluye todos los perfiles del roster que no cumplen con los requisitos del nivel 3"
+      },
+      "empty": {
+        "noneAssigned": "No hay {{entitySingular}} asignado a",
+        "thisTierYet": "este nivel de rendimiento todavía"
+      },
+      "modal": {
+        "title": "Configurar umbrales de los niveles de rendimiento",
+        "description": "Establece los ingresos mínimos y la cantidad de bookings requeridos para cada nivel",
+        "minMonthlyEarnings": "Ingresos mensuales mínimos ($)",
+        "minBookingsPerMonth": "Bookings mínimos/mes",
+        "noteLabel": "Nota:",
+        "noteBody": "El nivel 4 incluye todos los perfiles del roster que no cumplen con los requisitos del nivel 3."
+      },
+      "tiers": {
+        "Premium": {
+          "label": "Nivel 1 - Premium",
+          "recommendation": "Priorízalos para campañas de alto valor. Considera alianzas exclusivas."
+        },
+        "Core": {
+          "label": "Nivel 2 - Core",
+          "recommendation": "Perfiles estables. Enfócate en aumentar la frecuencia de campañas y el valor promedio de los acuerdos."
+        },
+        "Growth": {
+          "label": "Nivel 3 - Crecimiento",
+          "recommendation": "Invierte en el desarrollo del portafolio. Aumenta la exposición de marca y las oportunidades de campaña."
+        },
+        "Inactive": {
+          "label": "Nivel 4 - Requiere atención",
+          "recommendation": "Requiere acción inmediata. Considera renovar el portafolio, impulsar marketing o revisar el roster."
+        }
+      }
+    },
+    "chat": {
+      "messagesTitle": "Mensajes",
+      "searchConversations": "Buscar conversaciones...",
+      "filterAll": "Todos",
+      "filterUnread": "No leídos",
+      "noMessagesYet": "Aún no hay mensajes",
+      "noActiveConnections": "No hay conexiones activas",
+      "connectToChat": "Conéctate con {{role}} para chatear.",
+      "selectConversation": "Selecciona una conversación",
+      "chooseThread": "Elige un hilo a la izquierda o inicia una nueva conversación con {{role}}.",
+      "selectChatToType": "Selecciona un chat para comenzar a escribir...",
+      "sendToStart": "Envía un mensaje para comenzar la conversación.",
+      "messageDeleted": "Este mensaje fue eliminado",
+      "edited": "(editado)",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "you": "Tú",
+      "roleAgency": "una agencia",
+      "roleCreator": "un creador",
+      "agencySingular": "Agencia",
+      "agencyPlural": "Agencias",
+      "creatorSingular": "Creador",
+      "creatorPlural": "Creadores",
+      "roles": {
+        "agency": "Agencia",
+        "creator": "Creador"
+      },
+      "time": {
+        "justNow": "justo ahora",
+        "minutesAgo": "hace {{count}} min",
+        "minutesAgo_other": "hace {{count}} min",
+        "hoursAgo": "hace {{count}} h",
+        "hoursAgo_other": "hace {{count}} h",
+        "daysAgo": "hace {{count}} día",
+        "daysAgo_other": "hace {{count}} días"
+      },
+      "notifications": {
+        "unreadMessages": "Tienes {{count}} mensajes sin leer.",
+        "newMessage": "Nuevo mensaje"
+      }
+    },
+    "marketplace": {
+      "title": "Marketplace de Likelee",
+      "subtitle": "Solo creadores verificados",
+      "verifiedBadge": "Perfiles verificados",
+      "connectLockedReason": "Mejora tu plan para conectar.",
+      "entities": {
+        "creator": "creador",
+        "agency": "agencia",
+        "creatorTitle": "Creador",
+        "agencyTitle": "Agencia"
+      },
+      "labels": {
+        "verified": "Verificado"
+      },
+      "status": {
+        "none": "Ninguno",
+        "waiting": "En espera",
+        "pending": "Pendiente",
+        "connected": "Conectado",
+        "declined": "Rechazado",
+        "disconnected": "Desconectado"
+      },
+      "statuses": {
+        "connected": "Conectado",
+        "waiting": "En espera",
+        "declined": "Rechazado"
+      },
+      "ownership": {
+        "agency_owned": "Gestionado por la agencia",
+        "regular": "Regular"
+      },
+      "locked": {
+        "highlights": {
+          "connectAgencies": "Conectar con agencias",
+          "connectCreators": "Conectar con creadores",
+          "requestLicenses": "Solicitar licencias",
+          "collaboratorWorkflows": "Desbloquear flujos colaborativos",
+          "campaignHandoff": "Lanzar traspaso completo de campaña"
+        },
+        "previewFootnote": "Visible en vista previa. Pro activa todas las acciones."
+      },
+      "filters": {
+        "button": "Filtros",
+        "reset": "Restablecer filtros",
+        "resetAllAria": "Restablecer todos los filtros",
+        "optionsTitle": "Opciones de filtro",
+        "all": "Todos",
+        "allCategories": "Todas las categorías",
+        "verifiedAgencies": "Agencias verificadas",
+        "verifiedCreators": "Creadores verificados",
+        "connected": "Conectado",
+        "waiting": "En espera"
+      },
+      "categories": {
+        "models": "Modelos",
+        "actors": "Actores",
+        "influencers": "Influencers",
+        "athletes": "Atletas",
+        "talentAgencies": "Agencias de talento",
+        "sportsAgencies": "Agencias deportivas"
+      },
+      "sort": {
+        "followers": "Seguidores",
+        "name": "Nombre",
+        "recent": "Actualizados recientemente"
+      },
+      "states": {
+        "noBio": "Aún no hay biografía disponible."
+      },
+      "actions": {
+        "sending": "Enviando...",
+        "upgradeToConnect": "Mejorar para conectar",
+        "waitingForResponse": "Esperando la respuesta de {{entityLabel}}",
+        "connect": "Conectar"
+      },
+      "details": {
+        "processingDisconnect": "Procesando solicitud de desconexión...",
+        "marketplaceProfile": "Perfil del marketplace",
+        "agencyDescription": "Perfil de la agencia y estado de conexión",
+        "creatorDescription": "Disponibilidad, tarifas, portafolio e historial de campañas",
+        "loading": "Cargando detalles del perfil...",
+        "loadFailedTitle": "No se pudieron cargar los detalles del perfil",
+        "tryAgain": "Inténtalo de nuevo."
+      },
+      "toasts": {
+        "requestAlreadyDeclinedTitle": "Solicitud ya rechazada",
+        "requestAlreadyDeclinedDescription": "Esta conexión fue rechazada anteriormente. Puedes volver a invitar a este/a {{entityLabel}}.",
+        "alreadyConnectedTitle": "Ya conectado",
+        "alreadyConnectedDescription": "Este perfil ya forma parte de tu red.",
+        "connectionRequestSentTitle": "Solicitud de conexión enviada",
+        "connectionRequestSentDescription": "Esperando la respuesta de {{entityLabel}}. Te avisaremos cuando acepte o rechace.",
+        "requestPendingTitle": "Solicitud ya pendiente",
+        "requestPendingDescription": "Esperando la respuesta de {{entityLabel}}.",
+        "failedConnectionRequestTitle": "No se pudo enviar la solicitud de conexión",
+        "failedConnectionRequestDescription": "No se puede enviar la solicitud de conexión en este momento.",
+        "contractSentTitle": "Contrato enviado",
+        "contractSentDescription": "El contrato fue enviado para firma.",
+        "contractSentWithLinkDescription": "El contrato fue enviado para firma y el enlace de firma de la agencia se abrió en una nueva pestaña."
+      }
+    },
+    "jobs": {
+      "title": "Invitaciones de trabajo",
+      "subtitle": "Revisa los trabajos invitados y responde desde el panel de la agencia.",
+      "brandOffers": "Ofertas de marcas",
+      "brandFallback": "Marca",
+      "jobInviteFallback": "Invitación de trabajo",
+      "thisJob": "Este trabajo",
+      "states": {
+        "loading": "Cargando invitaciones...",
+        "empty": "Aún no hay invitaciones.",
+        "working": "Procesando..."
+      },
+      "actions": {
+        "viewDetails": "Ver detalles del trabajo",
+        "accept": "Aceptar",
+        "decline": "Rechazar",
+        "apply": "Postular",
+        "cancel": "Cancelar",
+        "okay": "Aceptar"
+      },
+      "confirm": {
+        "title": "Confirmar {{action}}",
+        "acceptance": "aceptación",
+        "declineLabel": "rechazo",
+        "description": "¿Seguro que quieres {{action}} esta invitación?",
+        "yesAction": "Sí, {{action}}"
+      },
+      "closed": {
+        "title": "Trabajo cerrado o sin vacantes",
+        "description": "{{jobLabel}} ya no acepta postulaciones."
+      },
+      "toasts": {
+        "accepted": "Invitación aceptada",
+        "declined": "Invitación rechazada",
+        "errorAcceptingTitle": "Error al aceptar la invitación",
+        "errorDecliningTitle": "Error al rechazar la invitación"
+      }
+    },
+    "clientCRM": {
+      "title": "Gestión de relaciones con clientes",
+      "subtitle": "Gestiona relaciones con clientes, haz seguimiento de comunicaciones y monitorea el pipeline",
+      "stats": {
+        "activeClients": "Clientes activos",
+        "prospects": "Prospectos",
+        "totalRevenue": "Ingresos totales",
+        "followUpsDue": "Seguimientos pendientes"
+      },
+      "filters": {
+        "search": "Buscar clientes...",
+        "allStages": "Todas las etapas",
+        "leads": "Leads",
+        "prospects": "Prospectos",
+        "activeClients": "Clientes activos",
+        "inactive": "Inactivos",
+        "lastBooking": "Último booking",
+        "companyName": "Nombre de la empresa"
+      },
+      "actions": {
+        "addClient": "Agregar cliente",
+        "cancel": "Cancelar",
+        "deleteClient": "Eliminar cliente"
+      },
+      "states": {
+        "deleting": "Eliminando..."
+      },
+      "deleteDialog": {
+        "title": "¿Eliminar cliente?",
+        "description": "¿Seguro que quieres eliminar a {{clientName}}? Esta acción no se puede deshacer y eliminará todos los datos asociados."
+      },
+      "toasts": {
+        "successTitle": "Éxito",
+        "errorTitle": "Error",
+        "clientDeleted": "Cliente eliminado correctamente",
+        "deleteFailed": "No se pudo eliminar el cliente"
+      }
+    },
+    "packages": {
+      "stats": {
+        "totalPackages": "Paquetes totales",
+        "activeShares": "Enlaces activos",
+        "totalViews": "Vistas totales"
+      },
+      "tabs": {
+        "templates": "Plantillas",
+        "sent": "Paquetes enviados"
+      },
+      "actions": {
+        "useExisting": "Usar existente",
+        "createNew": "Crear nuevo",
+        "template": "Plantilla",
+        "package": "Paquete",
+        "packagePlural": "Paquetes"
+      },
+      "offerBanner": {
+        "title": "Envío para oferta",
+        "description": "Elige si quieres enviar un paquete/plantilla existente o crear uno nuevo.",
+        "pickTemplate": "Elige una plantilla (o reenvía un paquete existente) abajo, luego haz clic en \"Enviar\" para mandarlo a la bandeja de entrada de la marca para esta oferta."
+      },
+      "search": "Buscar {{target}}...",
+      "empty": {
+        "title": "No se encontraron {{target}}",
+        "templatesDescription": "Crea plantillas reutilizables para enviar a múltiples clientes."
+      },
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Siguiente"
+      },
+      "status": {
+        "expired": "Vencido",
+        "active": "Activo"
+      },
+      "labels": {
+        "campaignOffer": "Oferta de campaña"
+      },
+      "toasts": {
+        "deleted": "Paquete eliminado",
+        "linkCopied": "¡Enlace copiado al portapapeles!"
+      }
+    },
+    "catalogs": {
+      "title": "Catálogos de assets",
+      "subtitle": "Entrega assets con licencia y grabaciones de voz a clientes después del pago.",
+      "stats": {
+        "totalCatalogs": "Catálogos totales",
+        "sent": "Enviados",
+        "pendingDelivery": "Entrega pendiente"
+      },
+      "actions": {
+        "newCatalog": "Nuevo catálogo",
+        "createCatalog": "Crear catálogo",
+        "copyLink": "Copiar enlace",
+        "cancel": "Cancelar",
+        "delete": "Eliminar",
+        "close": "Cerrar"
+      },
+      "states": {
+        "deleting": "Eliminando…"
+      },
+      "status": {
+        "paid": "Pagado",
+        "unpaid": "No pagado",
+        "expired": "Vencido",
+        "sent": "Enviado",
+        "draft": "Borrador",
+        "active": "Activo",
+        "no": "No"
+      },
+      "empty": {
+        "title": "Aún no hay catálogos",
+        "description": "Cuando se confirme un pago de licencia, crea un catálogo para entregar los assets y grabaciones a tu cliente."
+      },
+      "deleteDialog": {
+        "title": "¿Eliminar catálogo?",
+        "description": "Esto eliminará permanentemente el catálogo y su enlace compartido. No se puede deshacer."
+      },
+      "preview": {
+        "title": "Vista previa del catálogo",
+        "description": "Resumen de la configuración de distribución de este catálogo.",
+        "missingExpiration": "Obligatorio (faltante)",
+        "fields": {
+          "title": "Título",
+          "client": "Cliente",
+          "recipient": "Destinatario",
+          "payment": "Pago",
+          "assets": "Assets",
+          "voice": "Voz",
+          "linkedReceipt": "Recibo vinculado",
+          "createdOn": "Creado el",
+          "expiration": "Vencimiento",
+          "internalNotes": "Notas internas"
+        }
+      },
+      "toasts": {
+        "deleted": "Catálogo eliminado",
+        "deleteFailedTitle": "No se pudo eliminar el catálogo",
+        "linkCopied": "¡Enlace copiado al portapapeles!"
+      }
+    },
+    "payouts": {
+      "title": "Gestión de comisiones y pagos",
+      "actions": {
+        "exportReport": "Exportar informe"
+      },
+      "banner": {
+        "title": "Pagos y comisiones",
+        "description": "Para solicitudes de licencia, las comisiones de plataforma y del/de la {{entitySingular}} se deducirán del monto total pagado."
+      },
+      "tabs": {
+        "commissionStructure": "Estructura de comisiones",
+        "payoutPreferences": "Preferencias de pago",
+        "commissionBreakdown": "Desglose de comisiones",
+        "paymentHistory": "Historial de pagos",
+        "royaltiesAndPayouts": "Royalties y pagos"
+      },
+      "stats": {
+        "accruedThisMonth": "Acumulado este mes",
+        "readyForPayout": "Listo para pago",
+        "pendingApproval": "Pendiente de aprobación",
+        "awaitingBrandConfirmation": "Esperando confirmación de la marca",
+        "paidYTD": "Pagado YTD",
+        "toEntityThisYear": "Pagado al/a la {{entitySingular}} este año",
+        "agencyCommissionYTD": "Comisión de agencia YTD",
+        "avgCommissionRate": "{{rate}}% de comisión promedio"
+      }
+    }
+  }
 }
