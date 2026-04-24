@@ -53,7 +53,10 @@ erDiagram
         text recipient_type "agency, creator"
         uuid recipient_id
         bigint amount_cents
-        text status "created, failed, reversed"
+        text status "created, failed, pending_retry, reversed"
+        integer retry_count
+        timestamptz retried_at
+        timestamptz notified_at
     }
 ```
 
@@ -92,6 +95,8 @@ sequenceDiagram
     Server->>Server: escrow_status: holding -> releasing -> released
     Server->>S: Stripe Transfers (agency + talent splits)
     Note over Server: Internal "held" balances remain until transfer succeeds; "cashout" is Stripe available on connected accounts
+    Note over A: Payout Status panel shows per-recipient transfer state
+    Note over A: Failed transfers can be retried via POST /api/agency/campaign-offers/:id/retry-transfers
 ```
 
 ## Key Interactions
@@ -156,3 +161,136 @@ Example (net = 5,000 USD, 3 creators, agency commission = 12%):
 - Each creator share ≈ 1,666.67
 - Each creator earns 88% ≈ 1,466.67
 - Agency earns 12% ≈ 200.00 per creator → 600.00 total
+
+### 5. Transfer Failure Recovery & Retry
+
+Stripe transfers to connected accounts can fail silently (e.g. account not fully onboarded, transfers capability not active). The system handles this without blocking escrow release.
+
+**Key principle**: Escrow release is the brand's obligation being fulfilled. Whether the recipient can *receive* the funds is a separate operational concern. Funds that fail to transfer remain on the platform's Stripe balance until a retry succeeds.
+
+#### Transfer Status Lifecycle
+
+```
+escrow_status = "released"  (permanent — set on brand approval)
+campaign_offer_transfers per recipient:
+  "created"       → Stripe transfer succeeded, funds in recipient's connected account
+  "failed"        → Transfer failed; funds held on platform Stripe balance
+  "pending_retry" → Retry in progress (transient state)
+  "reversed"      → Transfer was reversed by Stripe
+```
+
+#### Retry Rules
+
+- Retry is only available when `escrow_status = "released"` (brand has approved).
+- Only rows with `status = "failed"` are retried — succeeded rows are never touched.
+- Each retry increments `retry_count` and sets `retried_at`.
+- The retry endpoint re-fetches the recipient's current Stripe account ID, so if they fix their onboarding between attempts the retry will succeed.
+
+#### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/agency/campaign-offers/:offer_id/transfer-status` | Live Stripe account health + transfer row status per recipient |
+| `POST` | `/api/agency/campaign-offers/:offer_id/retry-transfers` | Retry all failed transfers for an offer |
+
+Both endpoints require `manage_billing` permission and verify the offer belongs to the calling agency.
+
+#### `GET /api/agency/campaign-offers/:offer_id/transfer-status` Response
+
+```json
+{
+  "offer_id": "...",
+  "escrow_status": "released",
+  "payment_status": "paid",
+  "recipients": [
+    {
+      "recipient_type": "agency",
+      "recipient_id": "...",
+      "name": "Tecno Agency",
+      "amount_cents": 4000,
+      "currency": "USD",
+      "transfer_status": "created",
+      "failure_reason": null,
+      "retry_count": 0,
+      "retried_at": null,
+      "stripe_connected": true,
+      "stripe_transfers_enabled": true,
+      "stripe_payouts_enabled": true,
+      "stripe_details_submitted": true,
+      "stripe_account_id": "acct_..."
+    },
+    {
+      "recipient_type": "creator",
+      "recipient_id": "...",
+      "name": "Marcello",
+      "amount_cents": 6000,
+      "currency": "USD",
+      "transfer_status": "failed",
+      "failure_reason": "insufficient_capabilities_for_transfer: ...",
+      "retry_count": 1,
+      "retried_at": "2026-04-22T14:00:00Z",
+      "stripe_connected": true,
+      "stripe_transfers_enabled": false,
+      "stripe_payouts_enabled": false,
+      "stripe_details_submitted": false,
+      "stripe_account_id": "acct_..."
+    }
+  ]
+}
+```
+
+#### `POST /api/agency/campaign-offers/:offer_id/retry-transfers` Response
+
+```json
+{
+  "offer_id": "...",
+  "nothing_to_retry": false,
+  "retried": [
+    {
+      "recipient_type": "creator",
+      "recipient_id": "...",
+      "name": "Marcello",
+      "amount_cents": 6000,
+      "result": "succeeded",
+      "failure_reason": null,
+      "stripe_transfer_id": "tr_..."
+    }
+  ]
+}
+```
+
+Possible `result` values: `succeeded`, `failed`, `skipped_no_account`.
+
+#### Error Codes
+
+| Code | HTTP | Meaning |
+|------|------|---------|
+| `escrow_not_released` | 400 | Brand has not approved yet — retry not allowed |
+| `offer_not_paid` | 400 | Offer payment not completed |
+| `offer_not_found` | 404 | Offer does not belong to this agency |
+
+#### DB Schema Changes (migration `2026-04-22_campaign_offer_transfer_retry.sql`)
+
+```sql
+-- New columns on campaign_offer_transfers
+retry_count   integer     NOT NULL DEFAULT 0
+retried_at    timestamptz
+notified_at   timestamptz
+
+-- Status constraint now includes pending_retry
+status IN ('created', 'failed', 'pending_retry', 'reversed')
+
+-- New RPCs
+mark_transfer_pending_retry(p_offer_id, p_recipient_type, p_recipient_id)
+mark_transfer_notified(p_offer_id, p_recipient_type, p_recipient_id)
+```
+
+#### Frontend (AgencyDeliverablesView)
+
+When an offer's `escrow_status` is `"released"` and the offer card is expanded, a **Payout Status** panel is shown inline:
+
+- One row per recipient (agency + each assigned talent)
+- Shows: name, type, amount, Stripe health indicator, transfer status badge
+- Failed transfers show a human-readable failure reason
+- **Refresh** button re-polls the status endpoint
+- **Retry failed** button (only visible when at least one transfer has `status: failed`) calls the retry endpoint and refreshes the panel

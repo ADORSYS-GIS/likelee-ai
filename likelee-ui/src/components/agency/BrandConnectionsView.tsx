@@ -45,6 +45,8 @@ import {
   AlertCircle,
   ArrowRight,
   Lock,
+  Mail,
+  UserX,
 } from "lucide-react";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,6 +54,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { getAgencyTalents } from "@/api/functions";
 import {
   Tooltip,
   TooltipContent,
@@ -154,6 +157,11 @@ const BrandConnectionsView = () => {
   const [assignSearch, setAssignSearch] = useState("");
   const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [inviteRequiredDialog, setInviteRequiredDialog] = useState<{
+    open: boolean;
+    talentName: string;
+    talentId: string;
+  }>({ open: false, talentName: "", talentId: "" });
   const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
   const [unassignConfirm, setUnassignConfirm] = useState<{
     open: boolean;
@@ -313,11 +321,28 @@ const BrandConnectionsView = () => {
   const rosterQuery = useQuery({
     queryKey: ["agency", "roster"],
     queryFn: async () => {
-      const resp = await base44.get<any>("/agency/roster");
-      if (Array.isArray(resp)) return resp;
-      if (Array.isArray(resp?.talents)) return resp.talents;
-      if (Array.isArray(resp?.data?.talents)) return resp.data.talents;
-      return [];
+      const resp: any = await getAgencyTalents();
+      const rows = Array.isArray(resp?.talents)
+        ? resp.talents
+        : Array.isArray(resp?.data?.talents)
+          ? resp.data.talents
+          : Array.isArray(resp)
+            ? resp
+            : [];
+      return rows.map((row: any) => ({
+        id: String(row?.id || row?.creator_id || ""),
+        creator_id: String(row?.creator_id || ""),
+        stage_name: row?.full_name || "",
+        full_legal_name: row?.full_name || "",
+        profile_photo_url: row?.profile_photo_url || "",
+        img: row?.profile_photo_url || "",
+        email: row?.email || "",
+        has_creator_account:
+          typeof row?.has_creator_account === "boolean"
+            ? row.has_creator_account
+            : Boolean(row?.creator_id),
+        is_connected_creator: Boolean(row?.is_connected_creator),
+      }));
     },
   });
 
@@ -362,6 +387,7 @@ const BrandConnectionsView = () => {
   const assignedTalentIds = useMemo(() => {
     return new Set(
       (offerAssignmentsQuery.data || []).map((a: any) =>
+        // Offer assignments are creator-first; talent_id is a legacy fallback.
         String(
           a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
         ),
@@ -648,11 +674,12 @@ const BrandConnectionsView = () => {
         : [];
       const currentByCreatorId = new Map<string, string>();
       current.forEach((a: any) => {
-        const tid = String(
+        const creatorScopedId = String(
           a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
         ).trim();
         const aid = String(a?.id || "").trim();
-        if (tid && aid) currentByCreatorId.set(tid, aid);
+        if (creatorScopedId && aid)
+          currentByCreatorId.set(creatorScopedId, aid);
       });
 
       const desiredIds = new Set(
@@ -674,13 +701,13 @@ const BrandConnectionsView = () => {
       }
 
       await Promise.all([
-        ...toAdd.map((talentId) =>
+        ...toAdd.map((creatorId) =>
           base44.post(`/api/campaign-offers/${offerId}/assignments`, {
-            creator_id: talentId,
+            creator_id: creatorId,
           }),
         ),
-        ...toRemove.map((talentId) => {
-          const assignmentId = currentByCreatorId.get(talentId);
+        ...toRemove.map((creatorId) => {
+          const assignmentId = currentByCreatorId.get(creatorId);
           if (!assignmentId) return Promise.resolve(null);
           return base44.delete(
             `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
@@ -3154,16 +3181,29 @@ const BrandConnectionsView = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filteredRoster.map((talent: any) => {
                   const id = String(talent?.creator_id || talent?.id || "");
-                  const canAssign =
-                    Boolean(talent?.has_creator_account) && Boolean(id);
+                  const needsInvite = !talent?.has_creator_account;
+                  const canAssign = !needsInvite && Boolean(id);
                   const alreadyAssigned = assignedTalentIds.has(id);
                   const isSelected = assignSelectedIds.includes(id);
                   const willUnassign = alreadyAssigned && !isSelected;
+                  const talentName =
+                    talent?.stage_name ||
+                    talent?.name ||
+                    talent?.full_legal_name ||
+                    "Talent";
                   return (
                     <Card
-                      key={id}
+                      key={id || talent?.id}
                       onClick={() => {
                         if (assignmentLockedForOffer) return;
+                        if (needsInvite) {
+                          setInviteRequiredDialog({
+                            open: true,
+                            talentName,
+                            talentId: talent?.id || id,
+                          });
+                          return;
+                        }
                         if (!canAssign) return;
                         setAssignSelectedIds((prev) =>
                           prev.includes(id)
@@ -3172,13 +3212,15 @@ const BrandConnectionsView = () => {
                         );
                       }}
                       className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
-                        assignmentLockedForOffer
-                          ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                          : "cursor-pointer"
+                        needsInvite
+                          ? "border-dashed border-amber-200 bg-amber-50/30 cursor-pointer hover:border-amber-300"
+                          : assignmentLockedForOffer
+                            ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                            : "cursor-pointer border-gray-50 hover:border-gray-100 bg-white"
                       } ${
                         isSelected
                           ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
-                          : "border-gray-50 hover:border-gray-100 bg-white"
+                          : ""
                       }`}
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
@@ -3191,39 +3233,34 @@ const BrandConnectionsView = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
-                          {talent?.stage_name ||
-                            talent?.name ||
-                            talent?.full_legal_name ||
-                            "Talent"}
+                          {talentName}
                         </h6>
                         <div className="mt-1 flex items-center gap-2 flex-wrap">
                           {alreadyAssigned && (
-                            <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
-                              Assigned
+                            <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] tracking-widest font-black px-2 py-0.5">
+                              assigned
                             </Badge>
                           )}
                           {willUnassign && (
-                            <Badge className="bg-red-50 text-red-700 border-red-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
-                              Will unassign
+                            <Badge className="bg-red-50 text-red-700 border-red-200 text-[10px] tracking-widest font-black px-2 py-0.5">
+                              will unassign
                             </Badge>
                           )}
-                          <Badge
-                            className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
-                              talent?.has_creator_account
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
-                            }`}
-                          >
-                            {talent?.has_creator_account
-                              ? "Dashboard Access"
-                              : "No Dashboard Access"}
-                          </Badge>
+                          {needsInvite && (
+                            <Badge className="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] tracking-widest font-black px-2 py-0.5 flex items-center gap-1">
+                              <Mail className="w-2.5 h-2.5" />
+                              invite required
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       {isSelected && (
                         <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
                           <Check className="w-4 h-4 text-white" />
                         </div>
+                      )}
+                      {needsInvite && !isSelected && (
+                        <UserX className="w-4 h-4 text-amber-400 flex-shrink-0" />
                       )}
                     </Card>
                   );
@@ -3246,6 +3283,65 @@ const BrandConnectionsView = () => {
             ) : null}
             Confirm Selection ({assignSelectedIds.length})
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Required Modal */}
+      <Dialog
+        open={inviteRequiredDialog.open}
+        onOpenChange={(open) =>
+          setInviteRequiredDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-sm rounded-2xl p-8 border-none bg-white shadow-2xl text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center">
+              <UserX className="w-7 h-7 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-gray-900 tracking-tight">
+                Onboarding not completed
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                <span className="font-semibold text-gray-700">
+                  {inviteRequiredDialog.talentName}
+                </span>{" "}
+                hasn't accepted their portal invite yet. They need to complete
+                onboarding before they can be assigned to a contract.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              <Button
+                onClick={() => {
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  });
+                  navigate(
+                    `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent("All Talent")}&openTalentId=${encodeURIComponent(inviteRequiredDialog.talentId || "")}`,
+                  );
+                }}
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold text-sm flex items-center justify-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Go to Roster &amp; Invite
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  })
+                }
+                className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

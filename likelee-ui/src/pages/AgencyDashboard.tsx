@@ -37,7 +37,7 @@ const ScoutingTrips = lazy(() =>
     default: m.ScoutingTrips,
   })),
 );
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -143,6 +143,7 @@ import {
   FolderCheck,
   Gift,
   MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useChat";
 import {
@@ -283,6 +284,7 @@ import {
   getAgencyActiveLicensesStats,
   syncAgencyCheckoutSession,
   getAgencyBillingStatus,
+  createAgencyBillingPortal,
   startAgencyProTrial,
   getAgencyBrandLicenseRequests,
 } from "@/api/functions";
@@ -732,6 +734,33 @@ const ConnectBankView = ({
                     Account ending in ••••{accountLast4}
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Transfers not enabled warning — shown when connected but Stripe capability is inactive */}
+          {connected && !status?.transfers_enabled && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-900">
+                  Transfers not enabled
+                </p>
+                <p className="text-xs text-amber-800 font-medium mt-1">
+                  Your Stripe account is connected but the{" "}
+                  <strong>transfers</strong> capability is not active. This
+                  means payouts from brand offers cannot be sent to your account
+                  until you complete Stripe onboarding.
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-3 h-8 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5"
+                  onClick={connect}
+                  disabled={loading || actionsLocked}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Complete Stripe setup
+                </Button>
               </div>
             </div>
           )}
@@ -9992,6 +10021,8 @@ const ScoutingHubView = ({
   setIsProspectModalOpen,
   prospectToEdit,
   setProspectToEdit,
+  isSavingEvent,
+  setIsSavingEvent,
 }: {
   isSportsAgency?: boolean;
   activeTab: string;
@@ -10006,10 +10037,51 @@ const ScoutingHubView = ({
   setIsProspectModalOpen: (open: boolean) => void;
   prospectToEdit: ScoutingProspect | null;
   setProspectToEdit: (prospect: ScoutingProspect | null) => void;
+  isSavingEvent: boolean;
+  setIsSavingEvent: (saving: boolean) => void;
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<ScoutingEvent | null>(
+    null,
+  );
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
+
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
+  };
+
+  const handleDeleteEvent = (event: ScoutingEvent) => {
+    setEventToDelete(event);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!eventToDelete) return;
+    setIsDeletingEvent(true);
+
+    try {
+      await scoutingService.deleteEvent(eventToDelete.id);
+      refreshData();
+      toast({
+        title: "Event deleted",
+        description: `"${eventToDelete.name}" has been successfully removed.`,
+      });
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast({
+        title: "Delete failed",
+        description: "An error occurred while deleting the event.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingEvent(false);
+      setEventToDelete(null);
+      setIsDeleteConfirmOpen(false);
+    }
+  };
 
   const [eventForm, setEventForm] = useState<{
     name: string;
@@ -10177,6 +10249,7 @@ const ScoutingHubView = ({
               setEventToEdit(null);
               setIsEventModalOpen(true);
             }}
+            onDeleteEvent={handleDeleteEvent}
             isVisible={activeTab === "Scouting Map"}
           />
         </div>
@@ -10194,6 +10267,7 @@ const ScoutingHubView = ({
               setEventToEdit(event);
               setIsEventModalOpen(true);
             }}
+            onDeleteEvent={handleDeleteEvent}
           />
         )}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
@@ -10324,7 +10398,9 @@ const ScoutingHubView = ({
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              disabled={isSavingEvent}
               onClick={async () => {
+                setIsSavingEvent(true);
                 try {
                   const agencyId = await scoutingService.getUserAgencyId();
                   if (!agencyId) {
@@ -10333,6 +10409,7 @@ const ScoutingHubView = ({
                       description: "Could not determine agency.",
                       variant: "destructive",
                     });
+                    setIsSavingEvent(false);
                     return;
                   }
                   if (
@@ -10345,6 +10422,7 @@ const ScoutingHubView = ({
                       description: "Name, date, and location are required.",
                       variant: "destructive",
                     });
+                    setIsSavingEvent(false);
                     return;
                   }
 
@@ -10377,10 +10455,67 @@ const ScoutingHubView = ({
                     description: e?.message || "Failed to save event.",
                     variant: "destructive",
                   });
+                } finally {
+                  setIsSavingEvent(false);
                 }
               }}
             >
-              Save
+              {isSavingEvent ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={isDeleteConfirmOpen}
+        onOpenChange={(open) => {
+          setIsDeleteConfirmOpen(open);
+          if (!open) setEventToDelete(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500" />
+              Delete Event
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium pt-2">
+              Are you sure you want to delete{" "}
+              <span className="font-bold text-gray-900">
+                "{eventToDelete?.name}"
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              className="flex-1 font-bold border-gray-200"
+              disabled={isDeletingEvent}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteEvent}
+              className="flex-1 font-bold bg-red-600 hover:bg-red-700 shadow-sm"
+              disabled={isDeletingEvent}
+            >
+              {isDeletingEvent ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Event"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -11251,27 +11386,37 @@ const MarketplaceTab = ({
   connectLocked?: boolean;
   onConnectLocked?: () => void;
 }) => (
-  <MarketplaceSection
-    title="Likelee Marketplace"
-    subtitle="Verified creators only"
-    verifiedBadgeLabel="Verified Profiles"
-    queryScope="scouting-marketplace"
-    enableAgencyContractConnect
-    connectLocked={connectLocked}
-    connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
-    onConnectLocked={onConnectLocked}
-  />
+  <Suspense
+    fallback={
+      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl h-[600px] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </Card>
+    }
+  >
+    <MarketplaceSection
+      title="Likelee Marketplace"
+      subtitle="Verified creators only"
+      verifiedBadgeLabel="Verified Profiles"
+      queryScope="scouting-marketplace"
+      enableAgencyContractConnect
+      connectLocked={connectLocked}
+      connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
+      onConnectLocked={onConnectLocked}
+    />
+  </Suspense>
 );
 
 const ScoutingMapTab = ({
   onEditEvent,
   onViewProspect,
   onAddEvent,
+  onDeleteEvent,
   isVisible = true,
 }: {
   onEditEvent: (event: ScoutingEvent) => void;
   onViewProspect: (prospect: ScoutingProspect) => void;
   onAddEvent: () => void;
+  onDeleteEvent: (event: ScoutingEvent) => void;
   isVisible?: boolean;
 }) => (
   <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
@@ -11279,6 +11424,7 @@ const ScoutingMapTab = ({
       onEditEvent={onEditEvent}
       onViewProspect={onViewProspect}
       onAddEvent={onAddEvent}
+      onDeleteEvent={onDeleteEvent}
       isVisible={isVisible}
     />
   </Card>
@@ -11326,9 +11472,11 @@ const SubmissionsTab = () => (
 const OpenCallsTab = ({
   onCreateEvent,
   onEditEvent,
+  onDeleteEvent,
 }: {
   onCreateEvent: () => void;
   onEditEvent: (event: ScoutingEvent) => void;
+  onDeleteEvent: (event: ScoutingEvent) => void;
 }) => {
   const { user } = useAuth();
   const { data: events, isLoading } = useQuery({
@@ -11428,13 +11576,27 @@ const OpenCallsTab = ({
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-white px-2 py-0.5 rounded border border-gray-100">
                   {(event as any).event_type || "EVENT"}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
-                >
-                  Edit Details
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-red-500 font-bold hover:bg-red-50 hover:text-red-600 transition-all text-[11px] px-3 rounded-md border border-transparent"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteEvent(event);
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Delete
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
+                  >
+                    Edit Details
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
@@ -17352,8 +17514,14 @@ export default function AgencyDashboard() {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { user, profile, authenticated, logout, refreshProfile } = useAuth();
+
+  const isAgencyUser =
+    String((user as any)?.role || (profile as any)?.role || "")
+      .trim()
+      .toLowerCase() === "agency";
 
   const [renewalLaunchContext, setRenewalLaunchContext] =
     useState<RenewalLaunchContext | null>(null);
@@ -17412,6 +17580,19 @@ export default function AgencyDashboard() {
   const checkoutSessionId = String(searchParams.get("session_id") || "").trim();
   const billingSyncRequested =
     searchParams.get("billing_sync") === "1" || checkoutSuccess;
+
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflowX = html.style.overflowX;
+    const prevBodyOverflowX = body.style.overflowX;
+    html.style.overflowX = "hidden";
+    body.style.overflowX = "hidden";
+    return () => {
+      html.style.overflowX = prevHtmlOverflowX;
+      body.style.overflowX = prevBodyOverflowX;
+    };
+  }, []);
 
   useEffect(() => {
     const nextTab = String(searchParams.get("tab") || "").trim();
@@ -17888,14 +18069,14 @@ export default function AgencyDashboard() {
     const t =
       (agencyProfileQuery.data as any)?.plan_tier ||
       (profile as any)?.plan_tier;
-    return typeof t === "string" && t.trim() ? t.trim().toLowerCase() : "free";
+    return typeof t === "string" && t.trim() ? t.trim().toLowerCase() : "none";
   }, [agencyProfileQuery.data, profile]);
 
   const agencyPlanLabel = useMemo(() => {
     if (agencyPlanTier === "pro") return "Pro";
     if (agencyPlanTier === "basic") return "Basic";
     if (agencyPlanTier === "enterprise") return "Enterprise";
-    return "Free";
+    return "Unsubscribed";
   }, [agencyPlanTier]);
 
   const [agencyBilling, setAgencyBilling] = useState<any>(null);
@@ -17907,22 +18088,90 @@ export default function AgencyDashboard() {
     : "";
   const agencyTrialStartAt = agencyBilling?.trial_start_at;
   const agencyHasPaidAccess =
-    agencyBilling?.has_paid_access ?? agencyPlanTier !== "free";
+    agencyBilling?.has_paid_access ?? agencyPlanTier !== "none";
+  const agencySubscriptionLocked = !agencyHasPaidAccess;
   const agencyCanConnectMarketplace =
     agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
   const agencyCanUseBrandConnections =
     agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
+
+  const agencyPlanIntervalLabel = useMemo(() => {
+    const raw = String(agencyBilling?.display_plan_label || "")
+      .trim()
+      .toLowerCase();
+    if (raw.includes("annual") || raw.includes("year")) return "Annual";
+    if (raw.includes("monthly") || raw.includes("month")) return "Monthly";
+
+    const interval = String(agencyBilling?.plan_interval || "").toLowerCase();
+    if (interval === "year" || interval === "annual") return "Annual";
+    if (interval === "month" || interval === "monthly") return "Monthly";
+
+    return "";
+  }, [agencyBilling?.display_plan_label, agencyBilling?.plan_interval]);
+
   const agencyDisplayPlanLabel = (() => {
     const raw = String(agencyBilling?.display_plan_label || "").trim();
     const normalized = raw
-      .replace(/\b(annual|monthly)\b/gi, "")
       .replace(/\bplan\b/gi, "")
       .replace(/\s+/g, " ")
       .trim();
+    if (agencySubscriptionLocked) return "Choose a plan";
     if (normalized) return normalized;
-    return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
+    return agencyPlanLabel;
   })();
+
+  const agencyTrialTierLabel = useMemo(() => {
+    const rawEffective = String(agencyBilling?.effective_plan_tier || "")
+      .trim()
+      .toLowerCase();
+    const rawTier = String(agencyBilling?.plan_tier || "")
+      .trim()
+      .toLowerCase();
+    const rawLabel = String(agencyBilling?.display_plan_label || "")
+      .trim()
+      .toLowerCase();
+
+    const candidate = rawEffective || rawTier || rawLabel;
+    if (candidate.includes("basic")) return "BASIC";
+    if (candidate.includes("pro")) return "PRO";
+    if (candidate.includes("enterprise")) return "ENTERPRISE";
+    if (agencyPlanTier === "basic") return "BASIC";
+    if (agencyPlanTier === "pro") return "PRO";
+    if (agencyPlanTier === "enterprise") return "ENTERPRISE";
+    return "TRIAL";
+  }, [
+    agencyBilling?.display_plan_label,
+    agencyBilling?.effective_plan_tier,
+    agencyBilling?.plan_tier,
+    agencyPlanTier,
+  ]);
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
+
+  const handleOpenAgencyBillingPortal = async () => {
+    try {
+      const resp: any = await createAgencyBillingPortal();
+      const url =
+        resp?.checkout_url ||
+        resp?.data?.checkout_url ||
+        resp?.data?.url ||
+        resp?.url;
+      if (typeof url === "string" && url.trim()) {
+        window.location.assign(url);
+        return;
+      }
+      toast({
+        title: "Billing portal unavailable",
+        description: "Could not open billing portal. Please try again.",
+        variant: "destructive" as any,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Billing portal unavailable",
+        description: e?.message || "Could not open billing portal.",
+        variant: "destructive" as any,
+      });
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -17941,7 +18190,25 @@ export default function AgencyDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    if (!isAgencyUser) return;
+    if (agencyBillingLoading) return;
+    if (!agencySubscriptionLocked) return;
+
+    const current = String(location?.pathname || "").toLowerCase();
+    if (current === "/agencysubscribe") return;
+    navigate("/AgencySubscribe", { replace: true });
+  }, [
+    agencyBillingLoading,
+    agencySubscriptionLocked,
+    authenticated,
+    isAgencyUser,
+    location?.pathname,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (!agencyTrialActive || !agencyTrialEndsAt) {
@@ -17980,8 +18247,7 @@ export default function AgencyDashboard() {
       await agencyProfileQuery.refetch();
       toast({
         title: "Pro trial started",
-        description:
-          "Your agency now has 30 days of Pro access. When the trial ends, the account will return to the Free plan automatically.",
+        description: "Your agency now has 30 days of Pro access.",
       });
     } catch (e: any) {
       const msg = String(e?.message || e || "");
@@ -17993,11 +18259,10 @@ export default function AgencyDashboard() {
         await agencyProfileQuery.refetch();
         return;
       }
-      if (msg.includes("trial_only_available_for_free_accounts")) {
+      if (msg.includes("trial_only_available_for_unsubscribed_accounts")) {
         toast({
           title: "Trial unavailable",
-          description:
-            "The Pro trial is only available while your agency is on the Free plan.",
+          description: "Trial is only available for unsubscribed agencies.",
           variant: "destructive" as any,
         });
         return;
@@ -18272,6 +18537,7 @@ export default function AgencyDashboard() {
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<any>(null);
   const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
@@ -18728,6 +18994,8 @@ export default function AgencyDashboard() {
     try {
       const payload = {
         talent_id: bookOut.talentId || bookOut.talent_id,
+        creator_id: bookOut.creator_id,
+        relationship_id: bookOut.relationship_id,
         start_date: bookOut.startDate || bookOut.start_date,
         end_date: bookOut.endDate || bookOut.end_date,
         reason: bookOut.reason,
@@ -18872,6 +19140,14 @@ export default function AgencyDashboard() {
 
   const setActiveScoutingTab = (tab: string) => {
     setActiveScoutingTabState(tab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("scoutingTab", tab);
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   // Helper for API URLs
@@ -19212,7 +19488,13 @@ export default function AgencyDashboard() {
     effectiveAgencyMode === "AI"
       ? [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          { id: "marketplace", label: "Marketplace", icon: Store },
+          {
+            id: "marketplace",
+            label: "Marketplace",
+            icon: Store,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "jobs",
             label: "Jobs",
@@ -19220,22 +19502,28 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabled: agencySubscriptionLocked || !hasProAccess,
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires Pro",
           },
           {
             id: "roster",
             label: "Roster",
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "messages",
             label: "Messages",
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabled: agencySubscriptionLocked || !hasProAccess,
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires Pro",
           },
           {
             id: "licensing",
@@ -19257,14 +19545,30 @@ export default function AgencyDashboard() {
                   ? pendingLicensingRequestsCount
                   : undefined,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
-          { id: "payouts", label: "Payouts", icon: DollarSign },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "payouts",
+            label: "Payouts",
+            icon: DollarSign,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "client-crm",
+            label: "Client CRM",
+            icon: Building2,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "protection",
             label: "Protection & Usage",
             icon: Shield,
             badge: "Coming soon",
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "analytics",
@@ -19272,18 +19576,40 @@ export default function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
             disabledSubItems: {
-              "Analytics Dashboard": !hasProAccess,
+              "Analytics Dashboard": agencySubscriptionLocked || !hasProAccess,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
-          { id: "packages", label: packagesTabLabel, icon: Package },
-          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
-          { id: "catalogs", label: "Catalogs", icon: Library },
+          {
+            id: "packages",
+            label: packagesTabLabel,
+            icon: Package,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            icon: FolderCheck,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "catalogs",
+            label: "Catalogs",
+            icon: Library,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
-            disabled: !agencyCanUseBrandConnections,
-            disabledReason: "Requires a paid plan",
+            disabled: agencySubscriptionLocked || !agencyCanUseBrandConnections,
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -19298,7 +19624,13 @@ export default function AgencyDashboard() {
         ]
       : [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          { id: "marketplace", label: "Marketplace", icon: Store },
+          {
+            id: "marketplace",
+            label: "Marketplace",
+            icon: Store,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "jobs",
             label: "Jobs",
@@ -19306,25 +19638,43 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabled: agencySubscriptionLocked || !hasProAccess,
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires Pro",
           },
           {
             id: "roster",
             label: "Roster",
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "messages",
             label: "Messages",
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabled: agencySubscriptionLocked || !hasProAccess,
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires Pro",
           },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "scouting",
+            label: "Scouting",
+            icon: Target,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "client-crm",
+            label: "Client CRM",
+            icon: Building2,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "bookings",
             label: "Bookings",
@@ -19337,8 +19687,16 @@ export default function AgencyDashboard() {
               "Management & Analytics",
               "Campaigns",
             ],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
-          { id: "payouts", label: "Payouts", icon: DollarSign },
+          {
+            id: "payouts",
+            label: "Payouts",
+            icon: DollarSign,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "accounting",
             label: "Accounting & Invoicing",
@@ -19353,9 +19711,11 @@ export default function AgencyDashboard() {
               "Connect Bank",
             ],
             disabledSubItems: {
-              "Financial Reports": !hasProAccess,
-              "Expense Tracking": !hasProAccess,
+              "Financial Reports": agencySubscriptionLocked || !hasProAccess,
+              "Expense Tracking": agencySubscriptionLocked || !hasProAccess,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "analytics",
@@ -19363,18 +19723,40 @@ export default function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
             disabledSubItems: {
-              "Analytics Dashboard": !hasProAccess,
+              "Analytics Dashboard": agencySubscriptionLocked || !hasProAccess,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
-          { id: "packages", label: packagesTabLabel, icon: Package },
-          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
-          { id: "catalogs", label: "Catalogs", icon: Library },
+          {
+            id: "packages",
+            label: packagesTabLabel,
+            icon: Package,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            icon: FolderCheck,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "catalogs",
+            label: "Catalogs",
+            icon: Library,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
-            disabled: !agencyCanUseBrandConnections,
-            disabledReason: "Requires a paid plan",
+            disabled: agencySubscriptionLocked || !agencyCanUseBrandConnections,
+            disabledReason: agencySubscriptionLocked
+              ? "Choose a plan"
+              : "Requires a paid plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -19412,7 +19794,7 @@ export default function AgencyDashboard() {
   }, [activeTab, activeSubTab, sidebarItems]);
 
   return (
-    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-body text-slate-800">
+    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-body text-slate-800 overflow-x-hidden">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -19423,7 +19805,7 @@ export default function AgencyDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
+        className={`bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 overflow-x-hidden transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
         style={{ width: isMobile ? "16rem" : `${sidebarWidth}px` }}
       >
         <div
@@ -19513,6 +19895,15 @@ export default function AgencyDashboard() {
                 }}
                 onClick={() => {
                   if (item.disabled) {
+                    navigate("/AgencySubscribe");
+                    setSidebarOpen(false);
+                    return;
+                  }
+                  if (
+                    agencySubscriptionLocked &&
+                    item.id !== "dashboard" &&
+                    item.id !== "settings"
+                  ) {
                     navigate("/AgencySubscribe");
                     setSidebarOpen(false);
                     return;
@@ -19640,7 +20031,10 @@ export default function AgencyDashboard() {
                         className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
                         style={{ opacity: labelOpacity }}
                       >
-                        Pro
+                        {agencySubscriptionLocked &&
+                        item.disabledReason === "Choose a plan"
+                          ? "Plan"
+                          : "Pro"}
                       </span>
                     )}
                     {item.subItems && (
@@ -19666,6 +20060,15 @@ export default function AgencyDashboard() {
                           if (
                             item.disabledSubItems &&
                             item.disabledSubItems[subItem]
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
+                            agencySubscriptionLocked &&
+                            item.id !== "dashboard" &&
+                            item.id !== "settings"
                           ) {
                             navigate("/AgencySubscribe");
                             setSidebarOpen(false);
@@ -19820,6 +20223,15 @@ export default function AgencyDashboard() {
                             return;
                           }
                           if (
+                            agencySubscriptionLocked &&
+                            item.id !== "dashboard" &&
+                            item.id !== "settings"
+                          ) {
+                            navigate("/AgencySubscribe");
+                            setSidebarOpen(false);
+                            return;
+                          }
+                          if (
                             item.id === "jobs" &&
                             subItem === "Open Job Board"
                           ) {
@@ -19873,8 +20285,11 @@ export default function AgencyDashboard() {
 
       {/* Main Content Area */}
       <div
-        className="flex-1 flex flex-col ml-0 overflow-hidden"
-        style={{ marginLeft: isMobile ? 0 : sidebarWidth }}
+        className="flex-1 flex flex-col ml-0 overflow-hidden box-border"
+        style={{
+          marginLeft: isMobile ? 0 : sidebarWidth,
+          width: isMobile ? "100%" : `calc(100% - ${sidebarWidth}px)`,
+        }}
       >
         {/* Top Header */}
         <header className="h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
@@ -19891,19 +20306,19 @@ export default function AgencyDashboard() {
             {!agencyBillingLoading &&
               !agencyTrialActive &&
               !agencyTrialEndsAt &&
-              agencyPlanTier === "free" && (
+              agencySubscriptionLocked && (
                 <motion.button
                   type="button"
                   onClick={() => navigate("/AgencySubscribe")}
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   className="group relative inline-flex items-center gap-2 rounded-full border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-1.5 text-xs font-black text-amber-900 shadow-sm transition-all hover:border-amber-300 hover:shadow-md"
-                  title="Activate Pro Trial"
+                  title="Choose a plan"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-inner">
                     <Gift className="h-4 w-4 text-white" />
                   </span>
-                  <span className="uppercase tracking-wide">PRO</span>
+                  <span className="uppercase tracking-wide">PLAN</span>
                   <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-80" />
                   <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 opacity-60 animate-ping" />
                 </motion.button>
@@ -20140,7 +20555,7 @@ export default function AgencyDashboard() {
                     <button
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
-                        navigate("/agencysubscribe");
+                        void handleOpenAgencyBillingPortal();
                         setShowProfileMenu(false);
                       }}
                     >

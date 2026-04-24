@@ -7,7 +7,7 @@ import {
   getAgencyPayoutsAccountStatus,
   getTeamAuditLogs,
 } from "@/api/functions";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import {
   Building2,
   Upload,
@@ -88,6 +88,7 @@ type GeneralSettingsViewProps = {
   hasIrlBookingAddon?: boolean;
   hasProAccess?: boolean;
   agencyDisplayPlanLabel?: string;
+  agencyPlanIntervalLabel?: string;
   kycStatus?: string;
 };
 
@@ -538,6 +539,13 @@ const ActivityLogModal = ({
           icon: XCircle,
           color: "text-red-600 bg-red-50",
         };
+      case "member_removed":
+        return {
+          label: "Member removed",
+          details: `${log.target_email || "A member"} was removed from the team`,
+          icon: User,
+          color: "text-red-600 bg-red-50",
+        };
       default:
         return {
           label: log.action.replaceAll("_", " "),
@@ -607,12 +615,14 @@ const ActivityLogModal = ({
   );
 };
 
-const GeneralSettingsView = ({
-  kycStatus,
-  hasIrlBookingAddon = false,
-  hasProAccess = false,
-  agencyDisplayPlanLabel,
-}: GeneralSettingsViewProps) => {
+const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
+  const {
+    hasIrlBookingAddon,
+    hasProAccess,
+    agencyDisplayPlanLabel,
+    agencyPlanIntervalLabel,
+    kycStatus,
+  } = props;
   const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -645,6 +655,8 @@ const GeneralSettingsView = ({
   const [isLoadingTeamContext, setIsLoadingTeamContext] = useState(false);
   const [isSubmittingTeamInvite, setIsSubmittingTeamInvite] = useState(false);
   const [isUpdatingTeamRole, setIsUpdatingTeamRole] = useState(false);
+  const [isDeletingTeamMember, setIsDeletingTeamMember] = useState(false);
+  const [showDeleteMemberModal, setShowDeleteMemberModal] = useState(false);
   const [teamInviteEmail, setTeamInviteEmail] = useState("");
   const [teamInviteRole, setTeamInviteRole] =
     useState<Exclude<TeamRoleValue, "owner">>("reviewer");
@@ -863,6 +875,44 @@ const GeneralSettingsView = ({
       });
     } finally {
       setIsUpdatingTeamRole(false);
+    }
+  };
+
+  const handleRemoveTeamMember = async () => {
+    if (!selectedMember) return;
+    try {
+      setIsDeletingTeamMember(true);
+      const resp = await fetch(
+        `/api/team/members/${encodeURIComponent(selectedMember.user_id)}?organization_type=agency`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        },
+      );
+      const payload = await parseApiResponse(resp);
+      if (!resp.ok) {
+        throw new Error(
+          payload?.message || payload?.error || "Failed to remove member.",
+        );
+      }
+      setShowDeleteMemberModal(false);
+      setSelectedMember(null);
+      toast({
+        title: "Member removed",
+        description: `${selectedMember.email} has been removed from the team.`,
+      });
+      await fetchTeamContext();
+      await fetchTeamAuditLogs();
+    } catch (error: any) {
+      toast({
+        title: "Removal failed",
+        description: error?.message || "Could not remove the member.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingTeamMember(false);
     }
   };
 
@@ -1144,7 +1194,6 @@ const GeneralSettingsView = ({
   const currentPlanDisplay = useMemo(() => {
     const label = String(agencyDisplayPlanLabel || "").trim();
     const normalized = label
-      .replace(/\b(annual|monthly)\b/gi, "")
       .replace(/\bplan\b/gi, "")
       .replace(/\s+/g, " ")
       .trim();
@@ -2037,6 +2086,11 @@ const GeneralSettingsView = ({
                       }`}
                     >
                       {currentPlanDisplay}
+                      {agencyPlanIntervalLabel && (
+                        <span className="ml-1 text-sm font-bold opacity-60">
+                          ({agencyPlanIntervalLabel})
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -3076,6 +3130,12 @@ const GeneralSettingsView = ({
                             ) &&
                             member.role !== "owner" &&
                             !(actorRole === "admin" && member.role === "admin");
+                          const canRemove =
+                            teamContext?.permissions?.includes(
+                              "remove_team_members",
+                            ) &&
+                            member.role !== "owner" &&
+                            !(actorRole === "admin" && member.role === "admin");
                           return (
                             <div
                               key={member.user_id}
@@ -3100,16 +3160,29 @@ const GeneralSettingsView = ({
                                     Owner
                                   </Badge>
                                 ) : (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 sm:h-8 rounded-lg bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold text-[10px] sm:text-xs transition-all w-full sm:w-auto"
-                                    disabled={!canEditRole}
-                                    onClick={() => openRoleEditor(member)}
-                                  >
-                                    <Edit2 className="w-3 h-3 mr-1.5" />
-                                    Edit Role
-                                  </Button>
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      className="rounded-xl"
+                                      disabled={!canEditRole}
+                                      onClick={() => openRoleEditor(member)}
+                                    >
+                                      <Edit2 className="w-4 h-4 mr-2" />
+                                      Edit Role
+                                    </Button>
+                                    {canRemove && (
+                                      <Button
+                                        variant="outline"
+                                        className="rounded-xl border-red-300 text-red-600 hover:bg-red-50"
+                                        onClick={() => {
+                                          setSelectedMember(member);
+                                          setShowDeleteMemberModal(true);
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -3679,6 +3752,53 @@ const GeneralSettingsView = ({
           onOpenChange={setShowActivityModal}
           logs={teamAuditLogs}
         />
+        <Dialog
+          open={showDeleteMemberModal}
+          onOpenChange={setShowDeleteMemberModal}
+        >
+          <DialogContent className="max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-900">
+                Remove Team Member
+              </DialogTitle>
+              <DialogDescription className="text-sm text-gray-500 font-medium">
+                Are you sure you want to remove{" "}
+                {selectedMember?.email || "this member"} from the team?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+                <p className="text-xs text-red-700 font-medium leading-relaxed">
+                  This action cannot be undone. The member will lose access to
+                  all organization resources immediately.
+                </p>
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="ghost"
+                onClick={() => setShowDeleteMemberModal(false)}
+                className="font-bold"
+                disabled={isDeletingTeamMember}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRemoveTeamMember}
+                disabled={isDeletingTeamMember}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+              >
+                {isDeletingTeamMember ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                {isDeletingTeamMember ? "Removing..." : "Remove Member"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

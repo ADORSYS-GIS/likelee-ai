@@ -164,8 +164,96 @@ export const createAgencySubscriptionCheckout = (data: {
   };
 }) => base44Client.post(`/agency/billing/checkout`, data);
 
+export const createBrandSubscriptionCheckout = (data: {
+  plan: "basic" | "pro" | "enterprise";
+  billing_cycle?: "monthly" | "annual";
+  next_path?: string;
+}) => base44Client.post(`/brand/billing/checkout`, data);
+
+export const createBrandBillingPortal = () =>
+  base44Client.post<{ checkout_url: string }>(`/brand/billing/portal`, {});
+
+export const getBrandBillingStatus = () =>
+  base44Client.get<{
+    brand_id: string;
+    plan_tier: string;
+    subscription_status: string;
+    stripe_customer_id?: string | null;
+    stripe_subscription_id?: string | null;
+    current_period_end?: string | null;
+    cancel_at_period_end: boolean;
+    trial_active: boolean;
+    trial_ends_at?: string | null;
+  }>(`/api/brand/billing/status`);
+
+export const getBrandSpendAnalytics = () =>
+  base44Client.get<{
+    monthly_spend: Array<{ month: string; spend: number }>;
+    ytd_spend: number;
+    monthly_avg: number;
+    current_month_spend: number;
+    previous_month_spend: number;
+    current_month_growth_percentage: number;
+    projected_eoy: number;
+  }>(`/api/brand/billing/spend`);
+
+export const listBrandInvoices = () =>
+  base44Client.get<{
+    invoices: Array<{
+      id: string;
+      number?: string;
+      amount: number;
+      currency: string;
+      status: string;
+      created_at?: string;
+      invoice_url?: string;
+    }>;
+  }>(`/api/brand/billing/invoices`);
+
+export const getBrandBudgetSettings = () =>
+  base44Client.get<{
+    monthly_budget_limit: number | null;
+    budget_alert_enabled: boolean;
+  }>(`/api/brand/billing/budget-settings`);
+
+export const updateBrandBudgetSettings = (data: {
+  monthly_budget_limit?: number | null;
+  budget_alert_enabled?: boolean;
+}) =>
+  base44Client.put<{
+    monthly_budget_limit: number | null;
+    budget_alert_enabled: boolean;
+  }>(`/api/brand/billing/budget-settings`, data);
+
+export const createBrandStudioAddonCheckout = (data?: { next_path?: string }) =>
+  base44Client.post(`/brand/billing/studio-addon/checkout`, data || {});
+
+export const verifyBrandStudioAddonCheckout = (data: { session_id: string }) =>
+  base44Client.post<{ studio_addon_active: boolean }>(
+    `/brand/billing/studio-addon/verify`,
+    data,
+  );
+
+export const createCreatorSubscriptionCheckout = (data: {
+  plan: "basic" | "pro";
+  interval?: "month" | "year";
+  start_trial?: boolean;
+  agreement_accepted?: boolean;
+}) => base44Client.post(`/creator/billing/checkout`, data);
+
+export const getCreatorBillingStatus = () =>
+  base44Client.get(`/creator/billing/status`);
+
+export const createCreatorBillingPortal = () =>
+  base44Client.post<{ checkout_url: string }>(
+    `/api/creator/billing/portal`,
+    {},
+  );
 export const createAgencyIrlBookingAddonCheckout = () =>
   base44Client.post(`/agency/billing/addons/irl-booking/checkout`, {});
+
+export const createAgencyStudioAddonCheckout = () =>
+  base44Client.post(`/agency/billing/addons/studio/checkout`, {});
 
 export const startAgencyProTrial = () =>
   base44Client.post<{
@@ -230,8 +318,40 @@ export const syncAgencyCheckoutSession = (data?: { session_id?: string }) =>
     addon_irl_booking_enabled: boolean;
   }>(`/agency/billing/checkout/sync`, data || {});
 
+export const syncCreatorCheckoutSession = (data?: { session_id?: string }) =>
+  base44Client.post<{
+    entitlement_tier: string;
+    plan_tier: string;
+    trial_active: boolean;
+  }>(`/creator/billing/checkout/sync`, data || {});
+
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/brand-profile`, data);
+
+// Brand Notifications
+export const listBrandNotifications = (params?: { limit?: number }) =>
+  base44Client.get(`/brand/notifications`, { params });
+
+export const markBrandNotificationRead = (id: string) =>
+  base44Client.post(`/brand/notifications/${id}/read`);
+
+export const getBrandNotificationCount = () =>
+  base44Client.get(`/brand/notifications/count`);
+
+export const getInboxUnreadCount = () =>
+  base44Client.get(`/brand/inbox/unread-count`);
+
+export const markInboxPackagesViewed = () =>
+  base44Client.post(`/brand/inbox/mark-viewed`, {});
+
+export const getJobsUnreadCount = () =>
+  base44Client.get(`/brand/jobs/unread-count`);
+
+export const markJobApplicationsViewed = () =>
+  base44Client.post(`/brand/jobs/mark-viewed`, {});
+
+export const getLicensingContractsCount = () =>
+  base44Client.get(`/brand/licensing/contracts-count`);
 
 export const createBrandCampaignLicenseRequest = (
   campaignId: string,
@@ -844,10 +964,12 @@ export const listAgencyStorageFilesPaged = (params?: {
 export const uploadAgencyStorageFile = async (data: {
   file: File;
   folder_id?: string;
+  visibility?: "public" | "private";
 }) => {
   const fd = new FormData();
   fd.append("file", data.file);
   if (data.folder_id) fd.append("folder_id", data.folder_id);
+  if (data.visibility) fd.append("visibility", data.visibility);
   return base44Client.post(`/agency/storage/files/upload`, fd);
 };
 
@@ -962,6 +1084,15 @@ export const deleteOfferTalentAssignment = (
   base44Client.delete(
     `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
   );
+
+export const getOfferTransferStatus = (offerId: string) =>
+  base44Client.get(`/api/agency/campaign-offers/${offerId}/transfer-status`);
+
+export const retryOfferTransfers = (offerId: string) =>
+  base44Client.post(`/api/agency/campaign-offers/${offerId}/retry-transfers`);
+
+export const getCreatorTransferStatus = () =>
+  base44Client.get(`/api/talent/campaign-offers/transfer-status`);
 
 export const uploadOfferAssetRequestFile = (offerId: string, file: File) =>
   base44Client.post(

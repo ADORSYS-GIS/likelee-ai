@@ -13,6 +13,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tracing::info;
 
+const CACHE_METRICS_ENABLED: bool = false;
+
 /// Cache level identifier
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CacheLevel {
@@ -92,6 +94,9 @@ impl CacheMetrics {
 
     /// Log metrics periodically
     fn maybe_log(&self) {
+        if !CACHE_METRICS_ENABLED {
+            return;
+        }
         let mut last_log = self.last_log.lock().unwrap();
         if last_log.elapsed() >= self.log_interval {
             *last_log = Instant::now();
@@ -102,6 +107,9 @@ impl CacheMetrics {
 
     /// Log a summary of all cache metrics
     pub fn log_summary(&self) {
+        if !CACHE_METRICS_ENABLED {
+            return;
+        }
         let l1_hits = self.l1.hits.load(Ordering::Relaxed);
         let l1_misses = self.l1.misses.load(Ordering::Relaxed);
         let l2_hits = self.l2.hits.load(Ordering::Relaxed);

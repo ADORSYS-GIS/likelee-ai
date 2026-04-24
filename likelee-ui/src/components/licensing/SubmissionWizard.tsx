@@ -25,6 +25,7 @@ import {
   getLicenseSubmissions,
   createLicenseSubmissionDraft,
   finalizeLicenseSubmission,
+  getLicenseSubmissionDetails,
   syncLicenseSubmissionStatus,
 } from "@/api/licenseSubmissions";
 import { getAgencyTalents, getAgencyBrandConnections } from "@/api/functions";
@@ -207,15 +208,27 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   });
 
   const formData = watch();
+  const brandRequestId = brandRequestContext?.licensing_request_id || "";
+  const brandRequestBrandId = brandRequestContext?.brand_id || "";
+  const brandRequestBrandName = brandRequestContext?.brand_name || "";
+  const brandRequestBrandEmail = brandRequestContext?.brand_email || "";
+  const brandRequestTalentId = brandRequestContext?.talent_id || "";
+  const brandRequestTalentName = brandRequestContext?.talent_name || "";
+  const builderExternalId = useMemo(
+    () =>
+      currentTemplate?.id
+        ? `temp-${currentTemplate.id}-${Date.now()}`
+        : undefined,
+    [currentTemplate?.id, isOpen],
+  );
 
   // Auto-enable dropdown and pre-select brand when coming from brand request
   useEffect(() => {
-    const prefilledBrandId =
-      brandRequestContext?.brand_id || initialValues?.brand_id;
+    const prefilledBrandId = brandRequestBrandId || initialValues?.brand_id;
     const prefilledBrandName =
-      brandRequestContext?.brand_name || initialValues?.client_name;
+      brandRequestBrandName || initialValues?.client_name;
     const prefilledBrandEmail =
-      brandRequestContext?.brand_email || initialValues?.client_email;
+      brandRequestBrandEmail || initialValues?.client_email;
 
     if (isOpen && prefilledBrandId && brandOptions.length > 0) {
       setAllowBrandChange(true); // Turn on the toggle
@@ -231,34 +244,38 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         if (prefilledBrandEmail) setValue("client_email", prefilledBrandEmail);
       }
     }
-  }, [isOpen, brandRequestContext, initialValues, brandOptions, setValue]);
+  }, [
+    isOpen,
+    brandRequestBrandId,
+    brandRequestBrandName,
+    brandRequestBrandEmail,
+    initialValues?.brand_id,
+    initialValues?.client_name,
+    initialValues?.client_email,
+    brandOptions,
+    setValue,
+  ]);
 
   useEffect(() => {
     if (isOpen) {
       setStep(1);
+      setDraftId(null);
       setRequiresAgencySignature(
-        brandRequestContext?.licensing_request_id
-          ? false
-          : Boolean(initialValues?.requires_agency_signature),
+        Boolean(initialValues?.requires_agency_signature),
       );
       setAgencySignOpen(false);
       setAgencySignUrl(null);
       setCurrentSubmissionId(null);
-      setAgencySignOpen(false);
-      setAgencySignUrl(null);
-      setCurrentSubmissionId(null);
       setSelectedTalentIds(
-        brandRequestContext?.talent_id
-          ? [brandRequestContext.talent_id]
+        brandRequestTalentId
+          ? [brandRequestTalentId]
           : initialValues?.talent_id
             ? [initialValues.talent_id]
             : [],
       );
       reset({
-        client_name:
-          brandRequestContext?.brand_name || initialValues?.client_name || "",
-        talent_name:
-          brandRequestContext?.talent_name || initialValues?.talent_name || "",
+        client_name: brandRequestBrandName || initialValues?.client_name || "",
+        talent_name: brandRequestTalentName || initialValues?.talent_name || "",
         start_date:
           initialValues?.start_date ||
           template.start_date ||
@@ -280,7 +297,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           initialValues?.custom_terms || template.custom_terms || "",
         contract_body: template.contract_body || "",
         client_email:
-          brandRequestContext?.brand_email || initialValues?.client_email || "", // Reset for new field
+          brandRequestBrandEmail || initialValues?.client_email || "",
       });
 
       // Fetch agency talents
@@ -292,7 +309,28 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           console.error(`Failed to fetch ${entityPluralLower}:`, err);
         });
     }
-  }, [isOpen, template, reset, brandRequestContext, initialValues]);
+  }, [
+    isOpen,
+    reset,
+    template,
+    initialValues?.client_name,
+    initialValues?.talent_name,
+    initialValues?.start_date,
+    initialValues?.duration_days,
+    initialValues?.territory,
+    initialValues?.exclusivity,
+    initialValues?.modifications_allowed,
+    initialValues?.license_fee,
+    initialValues?.custom_terms,
+    initialValues?.client_email,
+    initialValues?.talent_id,
+    initialValues?.requires_agency_signature,
+    brandRequestId,
+    brandRequestBrandName,
+    brandRequestBrandEmail,
+    brandRequestTalentId,
+    brandRequestTalentName,
+  ]);
 
   const replacePlaceholders = (text: string, data: any) => {
     return text.replace(/{(\w+)}/g, (match, key) => {
@@ -455,7 +493,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       }
 
       // Step 2: Finalize the submission (this creates the licensing_request)
-      const finalizeResult = await finalizeLicenseSubmission(submissionId, {
+      let finalizeResult = await finalizeLicenseSubmission(submissionId, {
         docuseal_template_id: currentTemplate.docuseal_template_id,
         client_name: currentData.client_name,
         client_email: currentData.client_email,
@@ -467,15 +505,37 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         licensing_request_id: brandRequestContext?.licensing_request_id,
       });
 
-      const embedUrl =
+      const finalizedSubmissionId = (finalizeResult as any)?.id || submissionId;
+      let embedUrl =
         (finalizeResult as any)?.agency_embed_src ||
         ((finalizeResult as any)?.agency_submitter_slug
           ? `https://docuseal.co/s/${(finalizeResult as any).agency_submitter_slug}`
-          : (finalizeResult as any)?.docuseal_slug
-            ? `https://docuseal.co/s/${(finalizeResult as any).docuseal_slug}`
+          : null);
+
+      // Finalize can succeed before the agency signer URL is present on the first response.
+      // Refresh once so we don't bounce the user out of the signing flow.
+      if (requiresAgencySignature && !embedUrl && finalizedSubmissionId) {
+        finalizeResult = await getLicenseSubmissionDetails(
+          finalizedSubmissionId,
+        );
+        embedUrl =
+          (finalizeResult as any)?.agency_embed_src ||
+          ((finalizeResult as any)?.agency_submitter_slug
+            ? `https://docuseal.co/s/${(finalizeResult as any).agency_submitter_slug}`
             : null);
-      if (requiresAgencySignature && embedUrl) {
-        setCurrentSubmissionId((finalizeResult as any)?.id || submissionId);
+      }
+
+      if (requiresAgencySignature) {
+        if (!embedUrl) {
+          throw new Error(
+            "The agency signature link is not ready yet. Please reopen the submission and try again.",
+          );
+        }
+
+        setCurrentSubmissionId(finalizedSubmissionId);
+        // Close the builder before opening the signing modal so we don't
+        // bounce back through the wizard state.
+        setStep(2);
         setAgencySignUrl(embedUrl);
         setAgencySignOpen(true);
         toast({
@@ -1086,7 +1146,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           onClose={() => setStep(2)}
           templateName={currentTemplate.template_name}
           docusealTemplateId={currentTemplate.docuseal_template_id}
-          externalId={`temp-${currentTemplate.id}-${Date.now()}`}
+          externalId={builderExternalId}
           contractBody={formData.contract_body} // Pass the deal-specific body!
           builderRoles={
             requiresAgencySignature

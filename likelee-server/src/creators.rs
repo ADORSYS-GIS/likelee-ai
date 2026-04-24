@@ -1,4 +1,11 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    entitlements::{
+        creator_category_limit, creator_has_cameo_uploads, creator_has_likeness_access,
+        get_creator_entitlement_tier_for_user, PlanTier,
+    },
+};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -6,6 +13,24 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use tracing::warn;
+
+fn sanitize_db_error(error_text: &str) -> String {
+    // Log the full error for debugging
+    warn!("Database error: {}", error_text);
+
+    // Return a generic message to clients to avoid exposing internal details
+    if error_text.contains("unique constraint") || error_text.contains("duplicate key") {
+        "A profile with this information already exists".to_string()
+    } else if error_text.contains("foreign key") {
+        "Invalid reference in profile data".to_string()
+    } else if error_text.contains("not null") || error_text.contains("null value") {
+        "Required field is missing".to_string()
+    } else if error_text.contains("invalid input") || error_text.contains("malformed") {
+        "Invalid data format provided".to_string()
+    } else {
+        "Failed to save profile. Please try again".to_string()
+    }
+}
 
 fn visibility_maps_to_public_profile(visibility: &str) -> bool {
     matches!(
@@ -35,15 +60,29 @@ fn sync_public_profile_visibility(body: &mut serde_json::Value) {
     }
 }
 
+fn normalized_string_array(values: Option<&serde_json::Value>) -> Vec<String> {
+    values
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
+}
+
 pub async fn upsert_profile(
     State(state): State<AppState>,
     user: AuthUser,
     Json(mut body): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // Force the ID and email from the authenticated user
-    body["id"] = serde_json::Value::String(user.id.clone());
-    if let Some(email) = user.email {
-        body["email"] = serde_json::Value::String(email);
+    // Always trust the authenticated email, but resolve the actual creator row id
+    // separately so talent-portal users linked through agency_users update the
+    // creator record instead of forcing their auth user id into the payload.
+    if let Some(email) = user.email.as_ref() {
+        body["email"] = serde_json::Value::String(email.clone());
     }
 
     let email = body
@@ -67,6 +106,12 @@ pub async fn upsert_profile(
                 "base_weekly_price_cents must be non-negative".to_string(),
             ));
         }
+        if v == 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "base_weekly_price_cents must be greater than 0 when provided".to_string(),
+            ));
+        }
     }
     if let Some(v) = monthly {
         if v < 0 {
@@ -75,8 +120,31 @@ pub async fn upsert_profile(
                 "base_monthly_price_cents must be non-negative".to_string(),
             ));
         }
+        if v == 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "base_monthly_price_cents must be greater than 0 when provided".to_string(),
+            ));
+        }
     }
-    match (weekly, monthly) {
+    let normalized_weekly = weekly.filter(|v| *v > 0);
+    let normalized_monthly = monthly.filter(|v| *v > 0);
+    if normalized_weekly.is_none() {
+        if let Some(obj) = body.as_object_mut() {
+            obj.remove("base_weekly_price_cents");
+        }
+    }
+    if normalized_monthly.is_none() {
+        if let Some(obj) = body.as_object_mut() {
+            obj.remove("base_monthly_price_cents");
+        }
+    }
+    if normalized_weekly.is_none() && normalized_monthly.is_none() {
+        if let Some(obj) = body.as_object_mut() {
+            obj.remove("pricing_updated_at");
+        }
+    }
+    match (normalized_weekly, normalized_monthly) {
         (Some(w), None) => {
             body["base_monthly_price_cents"] =
                 serde_json::Value::from(((w as f64) * 4.345).round() as i64);
@@ -96,58 +164,182 @@ pub async fn upsert_profile(
         body["updated_at"] = serde_json::Value::String(now.clone());
     }
     sync_public_profile_visibility(&mut body);
+
+    let (effective_creator_id, _, tier) = get_creator_entitlement_tier_for_user(&state, &user)
+        .await
+        .unwrap_or((user.id.clone(), PlanTier::Free, PlanTier::Free));
+
+    // Allow Free tier users to save their profile, but if they are on Free,
+    // they cannot be "Public" yet.
+    if !creator_has_likeness_access(tier)
+        && body
+            .get("visibility")
+            .and_then(|v| v.as_str())
+            .map(visibility_maps_to_public_profile)
+            .unwrap_or(false)
+    {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "basic_plan_required_for_public_profile".to_string(),
+        ));
+    }
+
+    if !creator_has_cameo_uploads(tier)
+        && body
+            .get("cameo_front_url")
+            .and_then(|v| v.as_str())
+            .map(|s| !s.trim().is_empty())
+            .unwrap_or(false)
+    {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "cameo_uploads_require_pro".to_string(),
+        ));
+    }
+
+    if let Some(limit) = creator_category_limit(tier) {
+        let mut combined = normalized_string_array(body.get("content_types"));
+        combined.extend(normalized_string_array(body.get("industries")));
+        combined.sort();
+        combined.dedup();
+        if combined.len() > limit {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!("Basic plan allows up to {limit} combined categories"),
+            ));
+        }
+    }
+
     // Remove legacy field if present to avoid DB errors if strict
     if body.get("updated_date").is_some() {
         body.as_object_mut().unwrap().remove("updated_date");
     }
 
-    let exists = match state
-        .pg
-        .from("creators")
-        .select("id")
-        .eq("email", &email)
-        .limit(1)
-        .execute()
-        .await
-    {
-        Ok(resp) => {
-            let text = resp
-                .text()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let rows: serde_json::Value = serde_json::from_str(&text)
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            rows.as_array().map(|a| !a.is_empty()).unwrap_or(false)
-        }
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("42703") || (msg.contains("relation") && msg.contains("does not exist"))
-            {
-                warn!(%msg, "profiles table missing; cannot upsert");
-                return Err((
-                    StatusCode::PRECONDITION_FAILED,
-                    "profiles table missing".into(),
-                ));
+    let existing_row = {
+        let by_effective_id = match state
+            .pg
+            .from("creators")
+            .select("id")
+            .eq("id", &effective_creator_id)
+            .limit(1)
+            .execute()
+            .await
+        {
+            Ok(resp) => {
+                let text = resp
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let rows: serde_json::Value = serde_json::from_str(&text)
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                rows.as_array().and_then(|a| a.first()).cloned()
             }
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
+            Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+        };
+
+        if by_effective_id.is_some() {
+            by_effective_id
+        } else {
+            let by_id = match state
+                .pg
+                .from("creators")
+                .select("id")
+                .eq("id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                Ok(resp) => {
+                    let text = resp
+                        .text()
+                        .await
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                    let rows: serde_json::Value = serde_json::from_str(&text)
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                    rows.as_array().and_then(|a| a.first()).cloned()
+                }
+                Err(e) => {
+                    let msg = e.to_string();
+                    if msg.contains("42703")
+                        || (msg.contains("relation") && msg.contains("does not exist"))
+                    {
+                        warn!(%msg, "profiles table missing; cannot upsert");
+                        return Err((
+                            StatusCode::PRECONDITION_FAILED,
+                            "profiles table missing".into(),
+                        ));
+                    }
+                    return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
+                }
+            };
+
+            if by_id.is_some() {
+                by_id
+            } else {
+                match state
+                    .pg
+                    .from("creators")
+                    .select("id")
+                    .eq("email", &email)
+                    .limit(1)
+                    .execute()
+                    .await
+                {
+                    Ok(resp) => {
+                        let text = resp
+                            .text()
+                            .await
+                            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                        let rows: serde_json::Value = serde_json::from_str(&text)
+                            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                        rows.as_array().and_then(|a| a.first()).cloned()
+                    }
+                    Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string())),
+                }
+            }
         }
     };
 
-    let body_str =
-        serde_json::to_string(&body).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-    if exists {
+    if let Some(existing) = existing_row {
+        let target_id = existing
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&effective_creator_id)
+            .to_string();
+        body["id"] = serde_json::Value::String(target_id.clone());
+        let body_str =
+            serde_json::to_string(&body).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+
         let resp = state
             .pg
             .from("creators")
-            .eq("email", &email)
+            .eq("id", &target_id)
             .update(body_str)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let text = resp.text().await.unwrap_or_else(|_| "{}".into());
-        let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!({}));
+
+        if !resp.status().is_success() {
+            let err = resp.text().await.unwrap_or_default();
+            warn!(creator_id = %target_id, body = %err, "creator profile update failed");
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, sanitize_db_error(&err)));
+        }
+
+        // Refresh using the same target_id that was updated
+        let refreshed = state
+            .pg
+            .from("creators")
+            .select("*")
+            .eq("id", &target_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let text = refreshed.text().await.unwrap_or_else(|_| "[]".into());
+        let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
         Ok(Json(v))
     } else {
+        body["id"] = serde_json::Value::String(effective_creator_id.clone());
         if body.get("created_at").is_none() {
             body["created_at"] = serde_json::Value::String(now);
         }
@@ -165,8 +357,24 @@ pub async fn upsert_profile(
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let text = resp.text().await.unwrap_or_else(|_| "{}".into());
-        let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!({}));
+
+        if !resp.status().is_success() {
+            let err = resp.text().await.unwrap_or_default();
+            warn!(creator_id = %user.id, body = %err, "creator profile insert failed");
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, sanitize_db_error(&err)));
+        }
+
+        let refreshed = state
+            .pg
+            .from("creators")
+            .select("*")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let text = refreshed.text().await.unwrap_or_else(|_| "[]".into());
+        let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
         Ok(Json(v))
     }
 }
@@ -308,6 +516,12 @@ pub async fn upload_profile_photo(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        warn!(creator_id = %user_id, body = %err, "creator profile photo update failed");
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
 
     let text = resp
         .text()

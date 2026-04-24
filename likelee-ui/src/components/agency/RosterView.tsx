@@ -91,6 +91,7 @@ interface RosterViewProps {
   isLoading?: boolean;
   onRosterChanged?: () => void;
   isSportsAgency?: boolean;
+  initialOpenTalentId?: string;
 }
 
 const RosterView = ({
@@ -118,6 +119,7 @@ const RosterView = ({
   isLoading = false,
   onRosterChanged,
   isSportsAgency = false,
+  initialOpenTalentId,
 }: RosterViewProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -297,6 +299,17 @@ const RosterView = ({
       setSelectedTalent(latest);
     }
   }, [safeRosterData, selectedTalent]);
+
+  // Auto-open side modal when navigated here with a specific talent id
+  useEffect(() => {
+    if (!initialOpenTalentId || safeRosterData.length === 0) return;
+    const match = safeRosterData.find(
+      (t: any) =>
+        String(t?.id || "") === initialOpenTalentId ||
+        String(t?.creator_id || "") === initialOpenTalentId,
+    );
+    if (match) setSelectedTalent(match);
+  }, [initialOpenTalentId, safeRosterData]);
   const activeTalentCount = safeRosterData.filter(
     (t) => t.status === "active",
   ).length;

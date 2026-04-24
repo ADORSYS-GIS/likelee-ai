@@ -261,7 +261,6 @@ pub async fn get_performance_tiers(
             .eq("agency_id", agency_id)
             .eq("role", "talent")
             .in_("status", vec!["active", "inactive"])
-            .not("is", "creator_id", "null")
             .limit(500)
             .select("id, creator_id, full_legal_name, profile_photo_url, performance_tier_name")
             .execute(),
@@ -587,6 +586,14 @@ pub async fn get_performance_tiers(
                         true,
                         rate,
                         true,
+                    )
+                } else if creator_id.is_none() {
+                    (
+                        "internal".to_string(),
+                        "tier_default".to_string(),
+                        false,
+                        assigned_tier.commission_rate,
+                        false,
                     )
                 } else {
                     (

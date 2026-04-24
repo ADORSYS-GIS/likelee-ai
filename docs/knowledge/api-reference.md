@@ -24,25 +24,26 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 
 ### Talent Portal
 
-| Method | Path                                         | Description                   |
-| ------ | -------------------------------------------- | ----------------------------- |
-| GET    | `/api/talent/me`                             | Get talent profile            |
-| POST   | `/api/talent/profile`                        | Update profile                |
-| GET    | `/api/talent/settings`                       | Get portal settings           |
-| POST   | `/api/talent/settings`                       | Update settings               |
-| GET    | `/api/talent/licensing-requests`             | List pending license requests |
-| POST   | `/api/talent/licensing-requests/:id/approve` | Approve license               |
-| POST   | `/api/talent/licensing-requests/:id/decline` | Decline license               |
-| GET    | `/api/talent/licenses`                       | List active licenses          |
-| GET    | `/api/talent/licensing/revenue`              | Revenue summary               |
-| GET    | `/api/talent/bookings`                       | List bookings                 |
-| GET    | `/api/talent/book-outs`                      | List book-outs                |
-| POST   | `/api/talent/book-outs`                      | Create book-out               |
-| DELETE | `/api/talent/book-outs/:id`                  | Delete book-out               |
-| GET    | `/api/talent/payouts/account-status`         | Stripe Connect status         |
-| POST   | `/api/talent/payouts/onboarding-link`        | Get onboarding link           |
-| GET    | `/api/talent/payouts/balance`                | Available balance             |
-| POST   | `/api/talent/payouts/request`                | Request payout                |
+| Method | Path                                         | Description                                       |
+| ------ | -------------------------------------------- | ------------------------------------------------- |
+| GET    | `/api/talent/me`                             | Get talent profile                                |
+| POST   | `/api/talent/profile`                        | Update profile                                    |
+| GET    | `/api/talent/settings`                       | Get portal settings                               |
+| POST   | `/api/talent/settings`                       | Update settings                                   |
+| GET    | `/api/talent/licensing-requests`             | List pending license requests                     |
+| POST   | `/api/talent/licensing-requests/:id/approve` | Approve license                                   |
+| POST   | `/api/talent/licensing-requests/:id/decline` | Decline license                                   |
+| GET    | `/api/talent/licenses`                       | List active licenses                              |
+| GET    | `/api/talent/licensing/revenue`              | Revenue summary                                   |
+| GET    | `/api/talent/bookings`                       | List bookings                                     |
+| GET    | `/api/talent/book-outs`                      | List book-outs                                    |
+| POST   | `/api/talent/book-outs`                      | Create book-out                                   |
+| DELETE | `/api/talent/book-outs/:id`                  | Delete book-out                                   |
+| GET    | `/api/talent/payouts/account-status`         | Stripe Connect status                             |
+| POST   | `/api/talent/payouts/onboarding-link`        | Get onboarding link                               |
+| GET    | `/api/talent/payouts/balance`                | Available balance                                 |
+| POST   | `/api/talent/payouts/request`                | Request payout                                    |
+| GET    | `/api/talent/analytics`                      | Creator analytics with plan-aware advanced fields |
 
 ### Agency Dashboard
 
@@ -62,6 +63,47 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 | POST   | `/api/agency/payouts`                   | Create payout          |
 | GET    | `/api/agency/payouts/account-status`    | Stripe Connect status  |
 | POST   | `/api/agency/payouts/onboarding-link`   | Get onboarding link    |
+
+### Campaign Offer Transfers (Agency)
+
+These endpoints are agency-only and require the `manage_billing` permission. They are only meaningful after `escrow_status = "released"` (i.e. after the brand has approved at least one deliverable).
+
+| Method | Path                                                        | Description                                                                 |
+| ------ | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| GET    | `/api/agency/campaign-offers/:offer_id/transfer-status`     | Live Stripe account health + transfer row status for every recipient        |
+| POST   | `/api/agency/campaign-offers/:offer_id/retry-transfers`     | Retry all failed Stripe transfers for an offer                              |
+
+#### Transfer Status Response Fields (per recipient)
+
+| Field                    | Type    | Description                                                        |
+| ------------------------ | ------- | ------------------------------------------------------------------ |
+| `recipient_type`         | string  | `"agency"` or `"creator"`                                          |
+| `recipient_id`           | string  | UUID of the recipient                                              |
+| `name`                   | string  | Display name                                                       |
+| `amount_cents`           | integer | Amount owed in cents                                               |
+| `transfer_status`        | string  | `created` / `failed` / `pending_retry` / `reversed` / `not_attempted` |
+| `failure_reason`         | string? | Raw Stripe failure reason (if failed)                              |
+| `retry_count`            | integer | Number of retry attempts made                                      |
+| `stripe_connected`       | boolean | Whether a Stripe Connect account exists                            |
+| `stripe_transfers_enabled` | boolean | Whether the `transfers` capability is active on the account      |
+| `stripe_payouts_enabled` | boolean | Whether payouts are enabled on the account                         |
+| `stripe_details_submitted` | boolean | Whether Stripe onboarding details have been submitted            |
+
+#### Retry Response Fields (per retried recipient)
+
+| Field               | Type    | Description                                                  |
+| ------------------- | ------- | ------------------------------------------------------------ |
+| `result`            | string  | `succeeded` / `failed` / `skipped_no_account`                |
+| `failure_reason`    | string? | Reason if failed                                             |
+| `stripe_transfer_id`| string? | Stripe transfer ID if succeeded                              |
+
+#### Retry Error Codes
+
+| Code                  | HTTP | Meaning                                              |
+| --------------------- | ---- | ---------------------------------------------------- |
+| `escrow_not_released` | 400  | Brand has not approved yet — retry not allowed       |
+| `offer_not_paid`      | 400  | Offer payment not completed                          |
+| `offer_not_found`     | 404  | Offer does not belong to this agency                 |
 
 ### Studio (AI Generation)
 
@@ -120,10 +162,12 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 
 ### Billing
 
-| Method | Path                                  | Description                  |
-| ------ | ------------------------------------- | ---------------------------- |
-| POST   | `/api/stripe/create-checkout-session` | Create Stripe checkout       |
-| POST   | `/api/agency/billing/checkout`        | Agency subscription checkout |
+| Method | Path                                  | Description                            |
+| ------ | ------------------------------------- | -------------------------------------- |
+| POST   | `/api/stripe/create-checkout-session` | Create Stripe checkout                 |
+| POST   | `/api/agency/billing/checkout`        | Agency subscription checkout           |
+| POST   | `/api/creator/billing/checkout`       | Creator subscription checkout          |
+| GET    | `/api/creator/billing/status`         | Creator billing state and entitlements |
 
 ## Webhooks
 
@@ -217,3 +261,16 @@ No server-side rate limiting implemented. Rate limits are enforced by:
 - Supabase (database queries)
 - Stripe (API calls)
 - External providers (Fal, Veriff, etc.)
+
+## Creator Billing Notes
+
+- Creator plan source of truth lives on `public.creators.plan_tier`.
+- Supported values are `free`, `basic`, and `pro`.
+- `GET /api/creator/billing/status` returns entitlement metadata used by the creator dashboard and talent portal:
+  - `category_limit`
+  - `can_use_cameo_uploads`
+  - `can_use_unauthorized_monitoring`
+  - `can_use_voice_profiles`
+  - `voice_tone_limit`
+  - `can_use_advanced_analytics`
+- Voice creation and Cameo uploads are enforced server-side; UI gating is only a convenience layer.

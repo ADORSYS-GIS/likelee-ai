@@ -32,7 +32,9 @@ import {
   Video,
   Trash2,
   Play,
+  UserCheck,
 } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 import { createAgencyTalent } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
@@ -74,6 +76,12 @@ export default function AddTalent() {
   const [uploading, setUploading] = useState(false);
   const [uploadingVoice, setUploadingVoice] = useState(false);
   const totalSteps = 3;
+  const [duplicateConflict, setDuplicateConflict] = useState<{
+    open: boolean;
+    talentName: string;
+    talentId: string;
+    sameAgency: boolean;
+  }>({ open: false, talentName: "", talentId: "", sameAgency: false });
 
   const [profilePhotoIndex, setProfilePhotoIndex] = useState<number | null>(
     null,
@@ -129,6 +137,7 @@ export default function AddTalent() {
     .toLowerCase()
     .replace(/\s+/g, "_");
   const isSportsAgency = normalizedAgencyType === "sports_agency";
+  const showOrganizationField = isSportsAgency;
   const entityTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityTitlePlural = isSportsAgency ? "Athletes" : "Talent";
   const entityLower = isSportsAgency ? "athlete" : "talent";
@@ -516,7 +525,7 @@ export default function AddTalent() {
         city: formData.city,
         state_province: formData.state,
         country: formData.country,
-        organization: formData.organization,
+        organization: showOrganizationField ? formData.organization : undefined,
         sports: formData.sports,
         licensing_rate_monthly_cents: Math.round(
           Number(formData.licensing_rate_monthly_usd || 0) * 100,
@@ -551,13 +560,33 @@ export default function AddTalent() {
           { replace: true },
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({
-        title: "Error",
-        description: `Failed to create ${entityLower}. Please try again.`,
-        variant: "destructive",
-      });
+      // The base44Client attaches the raw parsed response body to err.data
+      // and the HTTP status to err.status.
+      const status = error?.status;
+      const raw = error?.data;
+      const code =
+        typeof raw === "object" && raw !== null ? String(raw?.code || "") : "";
+
+      if (
+        status === 409 &&
+        (code === "duplicate_email_same_agency" ||
+          code === "duplicate_email_other_agency")
+      ) {
+        setDuplicateConflict({
+          open: true,
+          talentName: raw?.existing_talent_name || "",
+          talentId: raw?.existing_talent_id || "",
+          sameAgency: raw?.same_agency === true,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: `Failed to create ${entityLower}. Please try again.`,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -808,23 +837,28 @@ export default function AddTalent() {
                     placeholder="USA"
                   />
                 </div>
-                <div>
-                  <Label
-                    htmlFor="organization"
-                    className="text-sm font-medium text-gray-700 mb-2 block"
-                  >
-                    Organization
-                  </Label>
-                  <Input
-                    id="organization"
-                    value={formData.organization}
-                    onChange={(e) =>
-                      setFormData({ ...formData, organization: e.target.value })
-                    }
-                    className="border-2 border-gray-300"
-                    placeholder="e.g. UCLA"
-                  />
-                </div>
+                {showOrganizationField && (
+                  <div>
+                    <Label
+                      htmlFor="organization"
+                      className="text-sm font-medium text-gray-700 mb-2 block"
+                    >
+                      Organization
+                    </Label>
+                    <Input
+                      id="organization"
+                      value={formData.organization}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          organization: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                      placeholder="e.g. UCLA"
+                    />
+                  </div>
+                )}
                 {isSportsAgency && (
                   <div className="md:col-span-2">
                     <Label
@@ -1599,6 +1633,85 @@ export default function AddTalent() {
           )}
         </Card>
       </div>
+
+      {/* Duplicate email conflict modal */}
+      <Dialog
+        open={duplicateConflict.open}
+        onOpenChange={(open) =>
+          setDuplicateConflict((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-sm rounded-2xl p-8 border-none bg-white shadow-2xl text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-indigo-50 flex items-center justify-center">
+              <UserCheck className="w-7 h-7 text-indigo-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-gray-900 tracking-tight">
+                {duplicateConflict.sameAgency
+                  ? "Already on your roster"
+                  : "Email already in use"}
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                {duplicateConflict.sameAgency ? (
+                  <>
+                    <span className="font-semibold text-gray-700">
+                      {duplicateConflict.talentName}
+                    </span>{" "}
+                    is already on your roster with this email. Each talent must
+                    have a unique email.
+                  </>
+                ) : (
+                  <>
+                    This email is already registered to a talent on another
+                    agency's roster. Each talent must have a unique email across
+                    the platform. Please use a different email address.
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              {duplicateConflict.sameAgency && duplicateConflict.talentId && (
+                <Button
+                  onClick={() => {
+                    const rosterSubTab = isSportsAgency
+                      ? "All Athletes"
+                      : "All Talent";
+                    setDuplicateConflict({
+                      open: false,
+                      talentName: "",
+                      talentId: "",
+                      sameAgency: false,
+                    });
+                    navigate(
+                      `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent(rosterSubTab)}&openTalentId=${encodeURIComponent(duplicateConflict.talentId)}`,
+                    );
+                  }}
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold text-sm"
+                >
+                  View existing talent
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setDuplicateConflict({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                    sameAgency: false,
+                  })
+                }
+                className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
+              >
+                {duplicateConflict.sameAgency
+                  ? "Go back and fix email"
+                  : "Use a different email"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

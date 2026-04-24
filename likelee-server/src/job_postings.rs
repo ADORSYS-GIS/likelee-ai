@@ -1,11 +1,10 @@
 use crate::{
+    activity::log_activity_event_with_subject,
     auth::AuthUser,
-    brand_campaigns::{
-        log_activity_event_with_subject, resolve_agency_name, resolve_brand_name,
-        resolve_creator_name,
-    },
+    brand_campaigns::{resolve_agency_name, resolve_brand_name, resolve_creator_name},
     config::AppState,
     errors::sanitize_db_error,
+    team::require_brand_permission,
 };
 use axum::{
     extract::{Path, Query, State},
@@ -181,6 +180,13 @@ pub async fn update_job(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+
+    require_brand_permission(
+        &state,
+        &user,
+        crate::team::permissions::Permission::ManageJobs,
+    )
+    .await?;
     let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let job_check = state
@@ -432,6 +438,12 @@ pub async fn create_job(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    require_brand_permission(
+        &state,
+        &user,
+        crate::team::permissions::Permission::ManageJobs,
+    )
+    .await?;
     let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
     let status = payload

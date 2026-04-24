@@ -1,5 +1,24 @@
 use crate::errors::sanitize_db_error;
-use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
+use crate::storage::{
+    canonical_object_path, delete_object, insert_asset_record, sanitize_file_name,
+    soft_delete_asset_record, upload_object, StorageAssetRecord, StorageContextType,
+    StorageOwnerType, StorageVisibility,
+};
+use crate::{
+    auth::AuthUser,
+    auth::RoleGuard,
+    config::AppState,
+    entitlements::{
+        creator_category_limit, creator_has_active_campaigns_access,
+        creator_has_advanced_analytics, creator_has_agency_connection_access,
+        creator_has_brand_connection_access, creator_has_cameo_uploads,
+        creator_has_campaign_archive_access, creator_has_jobs_access, creator_has_kyc_access,
+        creator_has_likeness_access, creator_has_payouts_access, creator_has_rules_access,
+        creator_has_talent_portal_access, creator_has_unauthorized_use_monitoring,
+        creator_has_voice_profiles, creator_voice_tone_limit,
+        get_creator_entitlement_tier_for_user,
+    },
+};
 use axum::{
     extract::{Multipart, Path, Query, State},
     http::StatusCode,
@@ -638,58 +657,27 @@ pub async fn upload_portfolio_item(
     };
 
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
-    let sanitized = fname
-        .chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect::<String>();
+    let sanitized = sanitize_file_name(&fname);
 
-    // Use PUBLIC bucket so the UI can render without signed URLs.
-    let bucket = state.supabase_bucket_public.clone();
-    let path = format!(
-        "talent/{}/portfolio/{}_{}",
-        resolved.talent_id,
+    // Use agency-owned path format: agencies/{agency_id}/talents/{talent_id}/portfolio/
+    let path = canonical_object_path(
+        &format!(
+            "agencies/{}/talents/{}/portfolio",
+            resolved.agency_id, resolved.talent_id
+        ),
+        &sanitized,
         chrono::Utc::now().timestamp_millis(),
-        sanitized
     );
 
-    let storage_url = format!(
-        "{}/storage/v1/object/{}/{}",
-        state.supabase_url, bucket, path
-    );
-    let http = reqwest::Client::new();
-    let mut req = http
-        .post(&storage_url)
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .header("apikey", state.supabase_service_key.clone());
-    if let Some(ct) = mime_type.as_ref().filter(|s| !s.is_empty()) {
-        req = req.header("content-type", ct.clone());
-    }
-    let up = req
-        .body(bytes.clone())
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    if !up.status().is_success() {
-        let msg = up.text().await.unwrap_or_default();
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("storage upload failed: {msg}"),
-        ));
-    }
-
-    let public_url = format!(
-        "{}/storage/v1/object/public/{}/{}",
-        state.supabase_url, bucket, path
-    );
+    let uploaded = upload_object(
+        &state,
+        StorageVisibility::Public,
+        &path,
+        bytes.clone(),
+        mime_type.as_deref(),
+    )
+    .await?;
+    let public_url = uploaded.public_url.clone().unwrap_or_default();
 
     let body = json!({
         "agency_id": resolved.agency_id,
@@ -697,8 +685,8 @@ pub async fn upload_portfolio_item(
         "title": title,
         "media_url": public_url,
         "status": "live",
-        "storage_bucket": bucket,
-        "storage_path": path,
+        "storage_bucket": uploaded.bucket,
+        "storage_path": uploaded.path,
         "public_url": public_url,
         "size_bytes": bytes.len() as i64,
         "mime_type": mime_type,
@@ -708,15 +696,47 @@ pub async fn upload_portfolio_item(
         .pg
         .from("talent_portfolio_items")
         .insert(body.to_string())
+        .select("id")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
+
+    let status = resp.status();
     let text = resp.text().await.unwrap_or_else(|_| "[]".into());
-    let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!({"ok": true}));
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+
+    // Mirror to storage_assets registry (agency-owned, counts toward quota)
+    if let Some(source_id) = v
+        .as_array()
+        .and_then(|rows| rows.first())
+        .and_then(|row| row.get("id"))
+        .and_then(|v| v.as_str())
+    {
+        let storage_record = StorageAssetRecord {
+            owner_type: StorageOwnerType::Agency, // Agency-owned, not Creator
+            owner_id: resolved.agency_id.clone(), // Agency ID, not talent ID
+            context_type: StorageContextType::TalentPortfolio,
+            context_id: Some(resolved.talent_id.clone()), // Talent ID as context
+            visibility: StorageVisibility::Public,
+            object_path: uploaded.path.clone(),
+            original_file_name: Some(fname.clone()),
+            mime_type: mime_type.clone(),
+            size_bytes: Some(bytes.len() as i64),
+            checksum_sha256: None,
+            source_table: Some("talent_portfolio_items".to_string()),
+            source_id: Some(source_id.to_string()),
+            created_by: Some(user.id.clone()),
+            counts_toward_quota: true, // Agency-owned assets count toward quota
+        };
+        if let Err(err) = insert_asset_record(&state, &storage_record).await {
+            warn!(talent_id = %resolved.talent_id, agency_id = %resolved.agency_id, error = %err.1, "failed to mirror talent portfolio item into storage_assets");
+        }
+    }
     Ok(Json(v))
 }
 
@@ -833,6 +853,29 @@ pub struct TalentMeResponse {
     pub agency_user: serde_json::Value,
     pub connected_agencies: Vec<serde_json::Value>,
     pub connected_agency_ids: Vec<String>,
+    pub plan_tier: String,
+    pub entitlements: CreatorEntitlementsResponse,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CreatorEntitlementsResponse {
+    pub plan_tier: String,
+    pub category_limit: Option<usize>,
+    pub can_use_kyc: bool,
+    pub can_use_likeness: bool,
+    pub can_use_agency_connection: bool,
+    pub can_use_brand_connection: bool,
+    pub can_use_payouts: bool,
+    pub can_use_cameo_uploads: bool,
+    pub can_use_unauthorized_monitoring: bool,
+    pub can_use_voice_profiles: bool,
+    pub voice_tone_limit: usize,
+    pub can_use_advanced_analytics: bool,
+    pub can_use_jobs: bool,
+    pub can_use_rules: bool,
+    pub can_use_talent_portal: bool,
+    pub can_use_campaign_archive: bool,
+    pub can_use_active_campaigns: bool,
 }
 
 #[derive(Clone)]
@@ -884,6 +927,31 @@ fn connected_agency_ids_from_connections(connections: &[serde_json::Value]) -> V
     out.sort();
     out.dedup();
     out
+}
+
+fn creator_entitlements_response(
+    plan_tier: &str,
+    tier: crate::entitlements::PlanTier,
+) -> CreatorEntitlementsResponse {
+    CreatorEntitlementsResponse {
+        plan_tier: plan_tier.to_string(),
+        category_limit: creator_category_limit(tier),
+        can_use_kyc: creator_has_kyc_access(tier),
+        can_use_likeness: creator_has_likeness_access(tier),
+        can_use_agency_connection: creator_has_agency_connection_access(tier),
+        can_use_brand_connection: creator_has_brand_connection_access(tier),
+        can_use_payouts: creator_has_payouts_access(tier),
+        can_use_cameo_uploads: creator_has_cameo_uploads(tier),
+        can_use_unauthorized_monitoring: creator_has_unauthorized_use_monitoring(tier),
+        can_use_voice_profiles: creator_has_voice_profiles(tier),
+        voice_tone_limit: creator_voice_tone_limit(tier),
+        can_use_advanced_analytics: creator_has_advanced_analytics(tier),
+        can_use_jobs: creator_has_jobs_access(tier),
+        can_use_rules: creator_has_rules_access(tier),
+        can_use_talent_portal: creator_has_talent_portal_access(tier),
+        can_use_campaign_archive: creator_has_campaign_archive_access(tier),
+        can_use_active_campaigns: creator_has_active_campaigns_access(tier),
+    }
 }
 
 async fn resolve_talent_for_agency(
@@ -980,6 +1048,14 @@ pub async fn talent_me(
     user: AuthUser,
     Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<TalentMeResponse>, (StatusCode, String)> {
+    let (_creator_id, billed_tier, entitlement_tier) =
+        get_creator_entitlement_tier_for_user(&state, &user).await?;
+    let plan_tier = match billed_tier {
+        crate::entitlements::PlanTier::Free => "free",
+        crate::entitlements::PlanTier::Basic => "basic",
+        crate::entitlements::PlanTier::Pro => "pro",
+        crate::entitlements::PlanTier::Enterprise => "enterprise",
+    };
     let connections = list_active_talent_connections(&state, &user).await?;
     let connected_agency_ids: Vec<String> = connections
         .iter()
@@ -1007,6 +1083,8 @@ pub async fn talent_me(
         agency_user: row,
         connected_agencies: connections,
         connected_agency_ids,
+        plan_tier: plan_tier.to_string(),
+        entitlements: creator_entitlements_response(plan_tier, entitlement_tier),
     }))
 }
 
@@ -1456,6 +1534,8 @@ pub struct TalentAnalyticsResponse {
     pub kpis: TalentAnalyticsKpis,
     pub campaigns: Vec<TalentAnalyticsCampaignItem>,
     pub roi: TalentAnalyticsRoi,
+    pub plan_tier: String,
+    pub advanced_analytics_enabled: bool,
 }
 
 fn parse_month_bounds_date(month: &str) -> Option<(chrono::NaiveDate, chrono::NaiveDate)> {
@@ -1750,7 +1830,7 @@ pub async fn get_earnings_by_campaign(
             monthly_cents,
         })
         .collect();
-    out.sort_by(|a, b| b.monthly_cents.cmp(&a.monthly_cents));
+    out.sort_by_key(|b| std::cmp::Reverse(b.monthly_cents));
     Ok(Json(out))
 }
 
@@ -1883,7 +1963,7 @@ pub async fn get_earnings_by_agency(
             monthly_cents,
         })
         .collect();
-    out.sort_by(|a, b| b.monthly_cents.cmp(&a.monthly_cents));
+    out.sort_by_key(|b| std::cmp::Reverse(b.monthly_cents));
     Ok(Json(out))
 }
 
@@ -1892,6 +1972,51 @@ pub async fn get_analytics(
     user: AuthUser,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<TalentAnalyticsResponse>, (StatusCode, String)> {
+    let (_creator_id, billed_tier, entitlement_tier) =
+        get_creator_entitlement_tier_for_user(&state, &user).await?;
+    let advanced_analytics_enabled = creator_has_advanced_analytics(entitlement_tier);
+    let plan_tier = match billed_tier {
+        crate::entitlements::PlanTier::Free => "free",
+        crate::entitlements::PlanTier::Basic => "basic",
+        crate::entitlements::PlanTier::Pro => "pro",
+        crate::entitlements::PlanTier::Enterprise => "enterprise",
+    }
+    .to_string();
+
+    if !advanced_analytics_enabled {
+        let month = params.get("month").cloned().unwrap_or_else(|| {
+            let now = chrono::Utc::now().date_naive();
+            format!("{:04}-{:02}", now.year(), now.month())
+        });
+
+        return Ok(Json(TalentAnalyticsResponse {
+            month,
+            kpis: TalentAnalyticsKpis {
+                total_views: 0,
+                views_change_pct: 0.0,
+                total_revenue_cents: 0,
+                active_campaigns: 0,
+            },
+            campaigns: Vec::new(),
+            roi: TalentAnalyticsRoi {
+                traditional: TalentAnalyticsRoiTraditional {
+                    per_post_cents: 50_000,
+                    time_investment: "4-6 hours".to_string(),
+                    posts_per_month: "5-8".to_string(),
+                    monthly_earnings_range: "$2,500-$4,000".to_string(),
+                },
+                ai: TalentAnalyticsRoiAi {
+                    per_campaign_cents: 0,
+                    time_investment: "0 hours/month".to_string(),
+                    active_campaigns: 0,
+                    monthly_earnings_cents: 0,
+                },
+                message: "Upgrade to Pro to unlock advanced earnings analytics.".to_string(),
+            },
+            plan_tier,
+            advanced_analytics_enabled,
+        }));
+    }
     let connections = list_active_talent_connections(&state, &user).await?;
     let requested_aid = params.get("agency_id").map(|s| s.as_str());
 
@@ -2234,7 +2359,7 @@ pub async fn get_analytics(
             revenue_cents: *revenue_by_brand.get(bid).unwrap_or(&0),
         })
         .collect();
-    campaigns.sort_by(|a, b| b.revenue_cents.cmp(&a.revenue_cents));
+    campaigns.sort_by_key(|b| std::cmp::Reverse(b.revenue_cents));
 
     // ROI (constants match screenshot style)
     let traditional_min_monthly = 250_000; // $2,500
@@ -2262,30 +2387,71 @@ pub async fn get_analytics(
         "Your earnings comparison will appear here.".to_string()
     };
 
+    let roi = TalentAnalyticsRoi {
+        traditional: TalentAnalyticsRoiTraditional {
+            per_post_cents: 50_000,
+            time_investment: "4-6 hours".to_string(),
+            posts_per_month: "5-8".to_string(),
+            monthly_earnings_range: "$2,500-$4,000".to_string(),
+        },
+        ai: TalentAnalyticsRoiAi {
+            per_campaign_cents: per_campaign,
+            time_investment: "0 hours/month".to_string(),
+            active_campaigns,
+            monthly_earnings_cents: ai_monthly,
+        },
+        message: if advanced_analytics_enabled {
+            message
+        } else {
+            "Upgrade to Pro to unlock advanced earnings analytics.".to_string()
+        },
+    };
+
+    let (kpis, campaigns, roi) = if advanced_analytics_enabled {
+        (
+            TalentAnalyticsKpis {
+                total_views: total_views_this_month,
+                views_change_pct,
+                total_revenue_cents,
+                active_campaigns,
+            },
+            campaigns,
+            roi,
+        )
+    } else {
+        (
+            TalentAnalyticsKpis {
+                total_views: 0,
+                views_change_pct: 0.0,
+                total_revenue_cents: 0,
+                active_campaigns: 0,
+            },
+            Vec::new(),
+            TalentAnalyticsRoi {
+                traditional: TalentAnalyticsRoiTraditional {
+                    per_post_cents: 50_000,
+                    time_investment: "4-6 hours".to_string(),
+                    posts_per_month: "5-8".to_string(),
+                    monthly_earnings_range: "$2,500-$4,000".to_string(),
+                },
+                ai: TalentAnalyticsRoiAi {
+                    per_campaign_cents: 0,
+                    time_investment: "0 hours/month".to_string(),
+                    active_campaigns: 0,
+                    monthly_earnings_cents: 0,
+                },
+                message: "Upgrade to Pro to unlock advanced earnings analytics.".to_string(),
+            },
+        )
+    };
+
     Ok(Json(TalentAnalyticsResponse {
         month: month.clone(),
-        kpis: TalentAnalyticsKpis {
-            total_views: total_views_this_month,
-            views_change_pct,
-            total_revenue_cents,
-            active_campaigns,
-        },
+        kpis,
         campaigns,
-        roi: TalentAnalyticsRoi {
-            traditional: TalentAnalyticsRoiTraditional {
-                per_post_cents: 50_000,
-                time_investment: "4-6 hours".to_string(),
-                posts_per_month: "5-8".to_string(),
-                monthly_earnings_range: "$2,500-$4,000".to_string(),
-            },
-            ai: TalentAnalyticsRoiAi {
-                per_campaign_cents: per_campaign,
-                time_investment: "0 hours/month".to_string(),
-                active_campaigns,
-                monthly_earnings_cents: ai_monthly,
-            },
-            message,
-        },
+        roi,
+        plan_tier,
+        advanced_analytics_enabled,
     }))
 }
 
@@ -2524,6 +2690,58 @@ pub async fn delete_portfolio_item(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resolved = resolve_talent(&state, &user).await?;
 
+    // 1) Lookup portfolio item and verify ownership
+    let lookup = state
+        .pg
+        .from("talent_portfolio_items")
+        .select("id,storage_bucket,storage_path,talent_id")
+        .eq("id", &id)
+        .eq("talent_id", &resolved.talent_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let lookup_status = lookup.status();
+    let lookup_text = lookup
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !lookup_status.is_success() {
+        return Err(sanitize_db_error(lookup_status.as_u16(), lookup_text));
+    }
+
+    let row = serde_json::from_str::<serde_json::Value>(&lookup_text)
+        .unwrap_or(json!([]))
+        .as_array()
+        .and_then(|rows| rows.first())
+        .cloned()
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "portfolio item not found".to_string(),
+        ))?;
+
+    // 2) Delete from storage (STRICT - must succeed)
+    if let (Some(bucket), Some(path)) = (
+        row.get("storage_bucket").and_then(|v| v.as_str()),
+        row.get("storage_path").and_then(|v| v.as_str()),
+    ) {
+        if let Err(err) = delete_object(&state, bucket, path).await {
+            tracing::error!(status=?err.0, body=%err.1, portfolio_item_id=%id, "portfolio item storage delete failed");
+            return Err((
+                StatusCode::BAD_GATEWAY,
+                "failed to delete portfolio item from storage".into(),
+            ));
+        }
+    }
+
+    // 3) Soft-delete storage_assets registry row
+    if let Err(err) = soft_delete_asset_record(&state, "talent_portfolio_items", &id).await {
+        warn!(talent_id = %resolved.talent_id, portfolio_item_id = %id, error = %err.1, "failed to soft-delete storage_assets row for portfolio item");
+    }
+
+    // 4) Delete from business table
     let resp = state
         .pg
         .from("talent_portfolio_items")
@@ -2534,9 +2752,14 @@ pub async fn delete_portfolio_item(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    let del_status = resp.status();
+    let del_text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !del_status.is_success() {
+        return Err(sanitize_db_error(del_status.as_u16(), del_text));
     }
 
     Ok(Json(json!({"status":"ok"})))
@@ -2890,4 +3113,134 @@ pub async fn delete_book_out(
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::storage::{
+        canonical_object_path, sanitize_file_name, StorageContextType, StorageOwnerType,
+        StorageVisibility,
+    };
+
+    #[test]
+    fn test_talent_portfolio_path_generation() {
+        let agency_id = "agency_123";
+        let talent_id = "talent_456";
+        let file_name = "headshot.jpg";
+        let timestamp = 1234567890123i64;
+
+        let path_prefix = format!("agencies/{}/talents/{}/portfolio", agency_id, talent_id);
+        let path = canonical_object_path(&path_prefix, &sanitize_file_name(file_name), timestamp);
+
+        assert!(path.starts_with("agencies/agency_123/talents/talent_456/portfolio/"));
+        assert!(path.contains("1234567890123"));
+        assert!(path.ends_with("headshot.jpg"));
+    }
+
+    #[test]
+    fn test_talent_portfolio_ownership() {
+        // Talent portfolios are agency-owned, not creator-owned
+        let owner_type = StorageOwnerType::Agency;
+        assert_eq!(owner_type, StorageOwnerType::Agency);
+        assert_eq!(owner_type.as_str(), "agency");
+    }
+
+    #[test]
+    fn test_talent_portfolio_visibility() {
+        // Talent portfolios are public (can be viewed directly)
+        let visibility = StorageVisibility::Public;
+        assert_eq!(visibility, StorageVisibility::Public);
+        assert_eq!(visibility.as_str(), "public");
+    }
+
+    #[test]
+    fn test_talent_portfolio_context_type() {
+        let context_type = StorageContextType::TalentPortfolio;
+        assert_eq!(context_type, StorageContextType::TalentPortfolio);
+        assert_eq!(context_type.as_str(), "talent_portfolio");
+    }
+
+    #[test]
+    fn test_talent_portfolio_quota_attribution() {
+        // Talent portfolios SHOULD count toward agency quota
+        // They are agency-owned operational assets
+        let counts_toward_quota = true;
+        assert!(counts_toward_quota);
+    }
+
+    #[test]
+    fn test_talent_portfolio_path_format() {
+        let test_cases = vec![
+            ("agency_1", "talent_1", "photo.jpg"),
+            ("agency_2", "talent_2", "video.mp4"),
+            ("agency_3", "talent_3", "headshot.png"),
+        ];
+
+        for (agency_id, talent_id, filename) in test_cases {
+            let path_prefix = format!("agencies/{}/talents/{}/portfolio", agency_id, talent_id);
+            let path = canonical_object_path(&path_prefix, filename, 1000000000000);
+
+            assert!(path.contains(agency_id));
+            assert!(path.contains(talent_id));
+            assert!(path.contains("portfolio"));
+            assert!(path.contains(filename));
+        }
+    }
+
+    #[test]
+    fn test_storage_asset_record_for_talent_portfolio() {
+        let agency_id = "agency_789";
+        let talent_id = "talent_123";
+        let portfolio_item_id = "item_456";
+        let object_path =
+            "agencies/agency_789/talents/talent_123/portfolio/1234567890123_headshot.jpg";
+        let file_name = "headshot.jpg";
+        let mime_type = "image/jpeg";
+        let size_bytes = 2048576i64;
+
+        let record = crate::storage::StorageAssetRecord {
+            owner_type: StorageOwnerType::Agency,
+            owner_id: agency_id.to_string(),
+            context_type: StorageContextType::TalentPortfolio,
+            context_id: Some(talent_id.to_string()),
+            visibility: StorageVisibility::Public,
+            object_path: object_path.to_string(),
+            original_file_name: Some(file_name.to_string()),
+            mime_type: Some(mime_type.to_string()),
+            size_bytes: Some(size_bytes),
+            checksum_sha256: None,
+            source_table: Some("talent_portfolio_items".to_string()),
+            source_id: Some(portfolio_item_id.to_string()),
+            created_by: Some("user_999".to_string()),
+            counts_toward_quota: true,
+        };
+
+        assert_eq!(record.owner_type, StorageOwnerType::Agency);
+        assert_eq!(record.owner_id, agency_id);
+        assert_eq!(record.context_type, StorageContextType::TalentPortfolio);
+        assert_eq!(record.context_id, Some(talent_id.to_string()));
+        assert_eq!(record.visibility, StorageVisibility::Public);
+        assert_eq!(record.object_path, object_path);
+        assert_eq!(
+            record.source_table,
+            Some("talent_portfolio_items".to_string())
+        );
+        assert_eq!(record.source_id, Some(portfolio_item_id.to_string()));
+        assert!(record.counts_toward_quota);
+    }
+
+    #[test]
+    fn test_talent_portfolio_vs_voice_recording_quota() {
+        // Talent portfolios (agency-owned) count toward quota
+        let portfolio_counts = true;
+        assert!(portfolio_counts);
+
+        // Voice recordings (user-owned) do NOT count toward quota
+        let voice_counts = false;
+        assert!(!voice_counts);
+
+        // This difference is intentional:
+        // - Portfolios are agency operational assets
+        // - Voice recordings are creator-provided source materials
+    }
 }

@@ -1,16 +1,36 @@
-use axum::{extract::State, http::StatusCode, Json};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use axum::{
+    extract::Query,
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    Json,
+};
+use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Utc};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::str::FromStr;
-use std::time::Duration;
+use std::time::Duration as StdDuration;
 use tracing::{info, warn};
 
 use crate::{
     auth::AuthUser,
     config::AppState,
+    entitlements::{
+        creator_category_limit, creator_has_active_campaigns_access,
+        creator_has_advanced_analytics, creator_has_agency_connection_access,
+        creator_has_brand_connection_access, creator_has_cameo_uploads,
+        creator_has_campaign_archive_access, creator_has_jobs_access, creator_has_kyc_access,
+        creator_has_likeness_access, creator_has_payouts_access, creator_has_rules_access,
+        creator_has_talent_portal_access, creator_has_unauthorized_use_monitoring,
+        creator_has_voice_profiles, creator_voice_tone_limit,
+        get_creator_entitlement_tier_for_user, get_creator_plan_tier_for_user, PlanTier,
+    },
     team::{self, permissions::Permission},
+    utils::parse_budget_cents,
 };
+
+pub const BRAND_STUDIO_ADDON_STUDIO_PLAN: &str = "pro";
+pub const BRAND_STUDIO_ADDON_STUDIO_CREDITS: i64 = 2000;
 
 fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
     let raw = raw.trim();
@@ -525,6 +545,64 @@ pub struct AgencyTrialStartResponse {
     pub display_plan_label: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CreatorCheckoutRequest {
+    pub plan: String,
+    #[serde(default)]
+    pub interval: Option<String>,
+    #[serde(default)]
+    pub start_trial: bool,
+    #[serde(default)]
+    pub agreement_accepted: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreatorUpgradeRequest {
+    pub plan: String,
+    #[serde(default)]
+    pub interval: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreatorBillingStatusResponse {
+    pub creator_id: String,
+    pub plan_tier: String,
+    pub entitlement_tier: String,
+    pub plan_interval: String,
+    pub subscription_status: String,
+    pub stripe_customer_id: Option<String>,
+    pub stripe_subscription_id: Option<String>,
+    pub plan_updated_at: Option<String>,
+    pub stripe_current_period_end: Option<String>,
+    pub stripe_cancel_at_period_end: bool,
+    pub trial_active: bool,
+    pub trial_ends_at: Option<String>,
+    pub trial_start_at: Option<String>,
+    pub trial_basic_start_at: Option<String>,
+    pub trial_pro_start_at: Option<String>,
+    pub can_use_kyc: bool,
+    pub can_use_likeness: bool,
+    pub can_use_agency_connection: bool,
+    pub can_use_brand_connection: bool,
+    pub can_use_payouts: bool,
+    pub can_use_cameo_uploads: bool,
+    pub can_use_unauthorized_monitoring: bool,
+    pub can_use_voice_profiles: bool,
+    pub voice_tone_limit: usize,
+    pub category_limit: Option<usize>,
+    pub can_use_advanced_analytics: bool,
+    pub can_use_jobs: bool,
+    pub can_use_rules: bool,
+    pub can_use_talent_portal: bool,
+    pub can_use_campaign_archive: bool,
+    pub can_use_active_campaigns: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreatorCheckoutResponse {
+    pub checkout_url: String,
+}
+
 const AGENCY_MIN_SELF_SERVE_ROSTER_MODELS: u32 = 2;
 const AGENCY_MAX_SELF_SERVE_ROSTER_MODELS: u32 = 1000;
 
@@ -599,6 +677,230 @@ fn recurring_price_line_item(
     }
 }
 
+fn normalize_brand_billing_cycle(value: Option<&str>) -> &'static str {
+    match value.unwrap_or("monthly").trim().to_lowercase().as_str() {
+        "annual" => "annual",
+        _ => "monthly",
+    }
+}
+
+fn brand_plan_to_price_id_for_billing_cycle(
+    state: &AppState,
+    plan: &str,
+    billing_cycle: &str,
+) -> Option<String> {
+    match (
+        plan.trim().to_lowercase().as_str(),
+        normalize_brand_billing_cycle(Some(billing_cycle)),
+    ) {
+        ("basic", "annual") => Some(state.stripe_brand_basic_annual_price_id.clone()),
+        ("basic", _) => Some(state.stripe_brand_basic_price_id.clone()),
+        ("pro", "annual") => Some(state.stripe_brand_pro_annual_price_id.clone()),
+        ("pro", _) => Some(state.stripe_brand_pro_price_id.clone()),
+        _ => None,
+    }
+}
+
+fn creator_plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
+    match plan.trim().to_lowercase().as_str() {
+        "basic" => Some(state.stripe_creator_basic_price_id.clone()),
+        "pro" => Some(state.stripe_creator_pro_price_id.clone()),
+        _ => None,
+    }
+}
+
+fn brand_plan_to_price_env_var_for_billing_cycle(
+    plan: &str,
+    billing_cycle: &str,
+) -> Option<&'static str> {
+    match (
+        plan.trim().to_lowercase().as_str(),
+        normalize_brand_billing_cycle(Some(billing_cycle)),
+    ) {
+        ("basic", "annual") => Some("STRIPE_BRAND_BASIC_ANNUAL_PRICE_ID"),
+        ("basic", _) => Some("STRIPE_BRAND_BASIC_PRICE_ID"),
+        ("pro", "annual") => Some("STRIPE_BRAND_PRO_ANNUAL_PRICE_ID"),
+        ("pro", _) => Some("STRIPE_BRAND_PRO_PRICE_ID"),
+        _ => None,
+    }
+}
+
+fn creator_plan_to_price_env_var(plan: &str) -> Option<&'static str> {
+    match plan.trim().to_lowercase().as_str() {
+        "basic" => Some("STRIPE_CREATOR_BASIC_PRICE_ID"),
+        "pro" => Some("STRIPE_CREATOR_PRO_PRICE_ID"),
+        _ => None,
+    }
+}
+
+fn sanitize_next_path(next_path: Option<&str>) -> Option<String> {
+    let candidate = next_path?.trim();
+    if candidate.is_empty() || !candidate.starts_with('/') || candidate.starts_with("//") {
+        return None;
+    }
+    Some(candidate.to_string())
+}
+
+fn brand_billing_frontend_url(
+    state: &AppState,
+    params: Vec<(&str, String)>,
+) -> Result<String, (StatusCode, String)> {
+    let base = state.frontend_url.trim();
+    if base.is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "frontend_url_not_configured".to_string(),
+        ));
+    }
+
+    let mut url = Url::parse(base).map_err(|e| {
+        (
+            StatusCode::PRECONDITION_FAILED,
+            format!("invalid_frontend_url:{e}"),
+        )
+    })?;
+    url.set_path("/brandpricing");
+    url.set_query(None);
+
+    {
+        let mut query = url.query_pairs_mut();
+        for (key, value) in params {
+            if !value.trim().is_empty() {
+                query.append_pair(key, value.as_str());
+            }
+        }
+    }
+
+    Ok(url.to_string())
+}
+
+fn agency_studio_frontend_url(state: &AppState) -> Result<String, (StatusCode, String)> {
+    let base = state.frontend_url.trim();
+    if base.is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "frontend_url_not_configured".to_string(),
+        ));
+    }
+
+    let mut url = Url::parse(base).map_err(|e| {
+        (
+            StatusCode::PRECONDITION_FAILED,
+            format!("invalid_frontend_url:{e}"),
+        )
+    })?;
+    url.set_path("/studio");
+    url.set_query(None);
+    Ok(url.to_string())
+}
+
+async fn get_brand_checkout_row(
+    state: &AppState,
+    brand_id: &str,
+) -> Result<serde_json::Value, (StatusCode, String)> {
+    let brand_resp = state
+        .pg
+        .from("brands")
+        .select(
+            "id,email,company_name,stripe_customer_id,stripe_subscription_id,plan_tier,subscription_status,studio_addon_active",
+        )
+        .eq("id", brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = brand_resp.status();
+    let text = brand_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    rows.first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "brand_profile_not_found".to_string()))
+}
+
+async fn ensure_brand_customer(
+    state: &AppState,
+    brand_id: &str,
+    email: &str,
+    company_name: &str,
+    existing_customer: &str,
+) -> Result<String, (StatusCode, String)> {
+    if !existing_customer.trim().is_empty() {
+        return Ok(existing_customer.to_string());
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut params = stripe_sdk::CreateCustomer::new();
+    if !email.trim().is_empty() {
+        params.email = Some(email);
+    }
+    params.name = Some(company_name);
+    params.metadata = Some(std::collections::HashMap::from([(
+        "brand_id".to_string(),
+        brand_id.to_string(),
+    )]));
+
+    let customer = stripe_sdk::Customer::create(&client, params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let customer_id = customer.id.to_string();
+    let cust_update_resp = state
+        .pg
+        .from("brands")
+        .eq("id", brand_id)
+        .update(json!({ "stripe_customer_id": customer_id }).to_string())
+        .execute()
+        .await;
+
+    match cust_update_resp {
+        Ok(resp) if !resp.status().is_success() => {
+            let body = resp.text().await.unwrap_or_default();
+            warn!(brand_id = %brand_id, status = %body, "failed to persist stripe_customer_id to brands table");
+        }
+        Err(e) => {
+            warn!(brand_id = %brand_id, error = %e, "transport error persisting stripe_customer_id to brands table");
+        }
+        _ => {}
+    }
+
+    Ok(customer.id.to_string())
+}
+
+fn creator_plan_to_price_id_with_interval(
+    state: &AppState,
+    plan: &str,
+    interval: &str,
+) -> Option<String> {
+    let plan = plan.trim().to_lowercase();
+    let interval = interval.trim().to_lowercase();
+    match (plan.as_str(), interval.as_str()) {
+        ("basic", "year") => Some(state.stripe_creator_basic_annual_price_id.clone()),
+        ("pro", "year") => Some(state.stripe_creator_pro_annual_price_id.clone()),
+        ("basic", "month") => Some(state.stripe_creator_basic_price_id.clone()),
+        ("pro", "month") => Some(state.stripe_creator_pro_price_id.clone()),
+        _ => None,
+    }
+}
+
+fn creator_plan_to_price_env_var_with_interval(plan: &str, interval: &str) -> Option<&'static str> {
+    let plan = plan.trim().to_lowercase();
+    let interval = interval.trim().to_lowercase();
+    match (plan.as_str(), interval.as_str()) {
+        ("basic", "year") => Some("STRIPE_CREATOR_BASIC_ANNUAL_PRICE_ID"),
+        ("pro", "year") => Some("STRIPE_CREATOR_PRO_ANNUAL_PRICE_ID"),
+        ("basic", "month") => Some("STRIPE_CREATOR_BASIC_PRICE_ID"),
+        ("pro", "month") => Some("STRIPE_CREATOR_PRO_PRICE_ID"),
+        _ => None,
+    }
+}
 fn agency_base_price_id_matches(state: &AppState, price_id: &str) -> bool {
     let price_id = price_id.trim();
     !price_id.is_empty()
@@ -701,7 +1003,7 @@ async fn fetch_agency_checkout_sync_state(
         plan_tier: row
             .get("plan_tier")
             .and_then(|v| v.as_str())
-            .unwrap_or("free")
+            .unwrap_or("none")
             .to_string(),
         seats_limit: row.get("seats_limit").and_then(|v| v.as_i64()).unwrap_or(1),
         addon_irl_booking_enabled: row
@@ -853,6 +1155,7 @@ struct AgencyBillingContext {
     agency_name: String,
     customer_id: String,
     addon_irl_booking_enabled: bool,
+    studio_addon_active: bool,
 }
 
 async fn get_or_create_agency_billing_context(
@@ -862,7 +1165,9 @@ async fn get_or_create_agency_billing_context(
     let agency_resp = state
         .pg
         .from("agencies")
-        .select("id,email,agency_name,stripe_customer_id,addon_irl_booking_enabled")
+        .select(
+            "id,email,agency_name,stripe_customer_id,addon_irl_booking_enabled,studio_addon_active",
+        )
         .eq("id", agency_id)
         .limit(1)
         .execute()
@@ -906,6 +1211,10 @@ async fn get_or_create_agency_billing_context(
         .get("addon_irl_booking_enabled")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let studio_addon_active = row
+        .get("studio_addon_active")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let customer_id = if !existing_customer.trim().is_empty() {
@@ -929,13 +1238,24 @@ async fn get_or_create_agency_billing_context(
 
         let cust_id = cust.id.to_string();
 
-        let _ = state
+        let cust_update_resp = state
             .pg
             .from("agencies")
             .eq("id", agency_id)
             .update(json!({"stripe_customer_id": cust_id}).to_string())
             .execute()
             .await;
+
+        match cust_update_resp {
+            Ok(resp) if !resp.status().is_success() => {
+                let body = resp.text().await.unwrap_or_default();
+                warn!(agency_id = %agency_id, status = %body, "failed to persist stripe_customer_id to agencies table");
+            }
+            Err(e) => {
+                warn!(agency_id = %agency_id, error = %e, "transport error persisting stripe_customer_id to agencies table");
+            }
+            _ => {}
+        }
 
         cust.id.to_string()
     };
@@ -944,6 +1264,7 @@ async fn get_or_create_agency_billing_context(
         agency_name,
         customer_id,
         addon_irl_booking_enabled,
+        studio_addon_active,
     })
 }
 
@@ -975,13 +1296,19 @@ pub async fn create_agency_subscription_checkout(
     let normalized_plan = normalize_self_serve_plan(payload.plan.as_str())?;
     let interval = normalize_interval(payload.interval.as_deref())?;
 
+    let mut inherited_trial_days: Option<u32> = None;
+    let mut previous_subscription_id: Option<String> = None;
+    let existing_subscription_id: String;
+    let current_plan_tier: String;
+    let current_plan_interval: String;
+
     // Prevent Basic annual -> Basic monthly downgrade via direct checkout creation.
     // (Plan changes should be upgrades only; downgrades require support intervention.)
     {
         let agency_resp = state
             .pg
             .from("agencies")
-            .select("plan_tier,plan_interval")
+            .select("plan_tier,plan_interval,stripe_subscription_id")
             .eq("id", &user.id)
             .limit(1)
             .execute()
@@ -1000,18 +1327,24 @@ pub async fn create_agency_subscription_checkout(
         }
         let rows: Vec<serde_json::Value> = serde_json::from_str(&agency_text).unwrap_or_default();
         let row = rows.first().cloned().unwrap_or_else(|| json!({}));
-        let current_plan_tier = row
+        current_plan_tier = row
             .get("plan_tier")
             .and_then(|value| value.as_str())
-            .unwrap_or("free")
+            .unwrap_or("none")
             .trim()
             .to_lowercase();
-        let current_plan_interval = row
+        current_plan_interval = row
             .get("plan_interval")
             .and_then(|value| value.as_str())
             .unwrap_or("month")
             .trim()
             .to_lowercase();
+        existing_subscription_id = row
+            .get("stripe_subscription_id")
+            .and_then(|value| value.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
 
         if normalized_plan == "basic"
             && current_plan_tier == "basic"
@@ -1023,6 +1356,22 @@ pub async fn create_agency_subscription_checkout(
                 "downgrade_not_allowed",
                 "Downgrades are not allowed from this endpoint.",
             ));
+        }
+
+        // If the agency is already on a paid plan (including active trial), they should not
+        // start a new trial via this endpoint.
+        // Exception: when currently trialing and switching plan, we allow Checkout with inherited
+        // remaining trial days (handled below).
+        if payload.start_trial && current_plan_tier != "none" {
+            // Allow if they have an existing Stripe subscription and it is currently trialing.
+            // Otherwise reject.
+            if existing_subscription_id.trim().is_empty() {
+                return Err(billing_error(
+                    StatusCode::BAD_REQUEST,
+                    "trial_only_available_for_unsubscribed_accounts",
+                    "Trial is only available for unsubscribed agencies.",
+                ));
+            }
         }
     }
 
@@ -1102,6 +1451,54 @@ pub async fn create_agency_subscription_checkout(
     }
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    if payload.start_trial && current_plan_tier != "none" {
+        if existing_subscription_id.trim().is_empty() {
+            return Err(billing_error(
+                StatusCode::BAD_REQUEST,
+                "trial_only_available_for_unsubscribed_accounts",
+                "Trial is only available for unsubscribed agencies.",
+            ));
+        }
+
+        if let Ok(parsed_subscription) =
+            existing_subscription_id.parse::<stripe_sdk::SubscriptionId>()
+        {
+            if let Ok(subscription) =
+                stripe_sdk::Subscription::retrieve(&client, &parsed_subscription, &[]).await
+            {
+                let is_trialing = subscription.status == stripe_sdk::SubscriptionStatus::Trialing;
+
+                let current_price_id = subscription
+                    .items
+                    .data
+                    .first()
+                    .and_then(|item| item.price.as_ref())
+                    .map(|p| p.id.to_string())
+                    .unwrap_or_default();
+
+                if is_trialing
+                    && !current_price_id.is_empty()
+                    && current_price_id != base_plan_price_id
+                {
+                    let now = chrono::Utc::now().timestamp();
+                    let trial_end = subscription.trial_end.unwrap_or(0);
+                    let seconds_left = trial_end.saturating_sub(now);
+                    let days_left = (seconds_left as f64 / 86400.0).ceil() as i64;
+                    let final_days = days_left.max(1) as u32;
+
+                    inherited_trial_days = Some(final_days);
+                    previous_subscription_id = Some(existing_subscription_id.clone());
+                } else if !is_trialing {
+                    return Err(billing_error(
+                        StatusCode::BAD_REQUEST,
+                        "trial_only_available_for_unsubscribed_accounts",
+                        "Trial is only available for unsubscribed agencies.",
+                    ));
+                }
+            }
+        }
+    }
 
     // Create a subscription checkout session.
     let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
@@ -1193,11 +1590,11 @@ pub async fn create_agency_subscription_checkout(
         },
     );
     if payload.start_trial {
-        if access.has_paid_access() {
+        if access.has_paid_access() && inherited_trial_days.is_none() {
             return Err(billing_error(
                 StatusCode::BAD_REQUEST,
-                "trial_only_available_for_free_accounts",
-                "Trial is only available for free agencies.",
+                "trial_only_available_for_unsubscribed_accounts",
+                "Trial is only available for unsubscribed agencies.",
             ));
         }
         if !payload.agreement_accepted {
@@ -1212,6 +1609,9 @@ pub async fn create_agency_subscription_checkout(
             "trial_agreement_accepted_at".to_string(),
             chrono::Utc::now().to_rfc3339(),
         );
+        if let Some(ref prev) = previous_subscription_id {
+            md.insert("previous_subscription_id".to_string(), prev.clone());
+        }
     }
     cs_params.metadata = Some(md);
 
@@ -1260,6 +1660,9 @@ pub async fn create_agency_subscription_checkout(
             "trial_agreement_accepted_at".to_string(),
             chrono::Utc::now().to_rfc3339(),
         );
+        if let Some(ref prev) = previous_subscription_id {
+            sub_md.insert("previous_subscription_id".to_string(), prev.clone());
+        }
     }
     let deepfake_models = payload.addons.deepfake_protection_models.unwrap_or(0);
     let team_members = payload.addons.additional_team_members.unwrap_or(0);
@@ -1274,10 +1677,19 @@ pub async fn create_agency_subscription_checkout(
         sub_md.insert("addon_team_members".to_string(), team_members.to_string());
     }
     cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
-        trial_period_days: if payload.start_trial { Some(30) } else { None },
+        trial_period_days: if payload.start_trial {
+            Some(inherited_trial_days.unwrap_or(30))
+        } else {
+            None
+        },
         metadata: Some(sub_md),
         ..Default::default()
     });
+
+    if payload.start_trial {
+        cs_params.payment_method_collection =
+            Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);
+    }
 
     let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
         .await
@@ -1472,7 +1884,7 @@ pub async fn change_agency_subscription_plan(
                 .to_string(),
             row.get("plan_tier")
                 .and_then(|v| v.as_str())
-                .unwrap_or("free")
+                .unwrap_or("none")
                 .trim()
                 .to_lowercase(),
             row.get("plan_interval")
@@ -1500,9 +1912,9 @@ pub async fn change_agency_subscription_plan(
             && target_interval == "month")
     {
         return Err(billing_error(
-            StatusCode::BAD_REQUEST,
-            "downgrade_not_allowed",
-            "Downgrades are not allowed from this endpoint.",
+            StatusCode::CONFLICT,
+            "plan_change_requires_billing_portal",
+            "This plan change takes effect at the end of the current billing period. Please use the billing portal.",
         ));
     }
 
@@ -1752,7 +2164,7 @@ pub async fn create_or_update_agency_seat_addon(
     let current_plan_tier = row
         .get("plan_tier")
         .and_then(|value| value.as_str())
-        .unwrap_or("free")
+        .unwrap_or("none")
         .trim()
         .to_lowercase();
     let _current_plan_interval = row
@@ -1862,62 +2274,14 @@ pub async fn create_or_update_agency_seat_addon(
 }
 
 pub async fn start_agency_pro_trial(
-    State(state): State<AppState>,
-    user: AuthUser,
+    State(_state): State<AppState>,
+    _user: AuthUser,
 ) -> Result<Json<AgencyTrialStartResponse>, (StatusCode, String)> {
-    let agency_access =
-        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
-    let agency_id = agency_access.organization_id.clone();
-
-    let access = crate::entitlements::get_agency_access_state(&state, &agency_id).await?;
-    if access.trial_active {
-        return Err(billing_error(
-            StatusCode::CONFLICT,
-            "trial_already_active",
-            "Trial is already active.",
-        ));
-    }
-    if access.trial_ends_at.is_some() {
-        return Err(billing_error(
-            StatusCode::BAD_REQUEST,
-            "trial_already_used",
-            "This agency has already used its trial.",
-        ));
-    }
-    if access.billed_tier != crate::entitlements::PlanTier::Free {
-        return Err(billing_error(
-            StatusCode::BAD_REQUEST,
-            "trial_only_available_for_free_accounts",
-            "Trial is only available for free agencies.",
-        ));
-    }
-
-    let trial_ends_at = chrono::Utc::now() + chrono::Duration::days(30);
-    let update = json!({
-        "trial_ends_at": trial_ends_at.to_rfc3339(),
-        "plan_updated_at": chrono::Utc::now().to_rfc3339(),
-        "plan_interval": "month"
-    });
-
-    let resp = state
-        .pg
-        .from("agencies")
-        .eq("id", &agency_id)
-        .update(update.to_string())
-        .execute()
-        .await
-        .map_err(map_postgrest_transport_error)?;
-    let status = resp.status();
-    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
-    if !status.is_success() {
-        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
-    }
-
-    Ok(Json(AgencyTrialStartResponse {
-        trial_active: true,
-        trial_ends_at: Some(trial_ends_at.to_rfc3339()),
-        display_plan_label: "Trial".to_string(),
-    }))
+    Err(billing_error(
+        StatusCode::BAD_REQUEST,
+        "trial_requires_checkout",
+        "Agency trials must be started via Stripe Checkout.",
+    ))
 }
 
 pub async fn create_agency_irl_booking_addon_checkout(
@@ -2025,6 +2389,110 @@ pub async fn create_agency_irl_booking_addon_checkout(
         agency_id = %agency_id,
         agency_name = %billing_ctx.agency_name,
         "created stripe IRL booking addon checkout session"
+    );
+    Ok(Json(AgencyCheckoutResponse {
+        checkout_url: url,
+        seats_limit: None,
+        invoice_id: None,
+        invoice_status: None,
+        invoice_url: None,
+    }))
+}
+
+pub async fn create_agency_studio_addon_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    let agency_access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = agency_access.organization_id;
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
+        ));
+    }
+
+    if state.stripe_brand_studio_addon_price_id.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_price_not_configured",
+            "Studio add-on Stripe price is not configured on the server.",
+        ));
+    }
+
+    let billing_ctx = get_or_create_agency_billing_context(&state, &agency_id).await?;
+    if billing_ctx.studio_addon_active {
+        let studio_url = agency_studio_frontend_url(&state)?;
+        return Ok(Json(AgencyCheckoutResponse {
+            checkout_url: studio_url,
+            seats_limit: None,
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
+        }));
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let studio_url = agency_studio_frontend_url(&state)?;
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(studio_url.as_str());
+    cs_params.cancel_url = Some(studio_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
+    cs_params.customer = Some(billing_ctx.customer_id.parse().map_err(|_| {
+        billing_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id",
+            "Invalid Stripe customer ID.",
+        )
+    })?);
+    cs_params.client_reference_id = Some(agency_id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(state.stripe_brand_studio_addon_price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("billing_domain".to_string(), "studio".to_string());
+    md.insert(
+        "billing_target".to_string(),
+        "agency_studio_addon".to_string(),
+    );
+    md.insert("user_id".to_string(), agency_id.clone());
+    md.insert("agency_id".to_string(), agency_id.clone());
+    md.insert(
+        "studio_plan".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string(),
+    );
+    md.insert(
+        "credits".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_CREDITS.to_string(),
+    );
+    cs_params.metadata = Some(md);
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        return Err(billing_error(
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url",
+            "Stripe checkout session was created without a redirect URL.",
+        ));
+    }
+
+    info!(
+        agency_id = %agency_id,
+        "created agency studio add-on checkout session"
     );
     Ok(Json(AgencyCheckoutResponse {
         checkout_url: url,
@@ -2189,7 +2657,7 @@ pub async fn sync_agency_checkout_session(
     );
 
     let mut latest_state = AgencyCheckoutSessionSyncResponse {
-        plan_tier: "free".to_string(),
+        plan_tier: "none".to_string(),
         seats_limit: 1,
         addon_irl_booking_enabled: false,
     };
@@ -2219,16 +2687,1296 @@ pub async fn sync_agency_checkout_session(
         }
 
         if attempt < 3 {
-            tokio::time::sleep(Duration::from_millis(1500)).await;
+            tokio::time::sleep(StdDuration::from_millis(1500)).await;
         }
     }
 
     Ok(Json(latest_state))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct BrandCheckoutRequest {
+    pub plan: String,
+    #[serde(default)]
+    pub billing_cycle: Option<String>,
+    pub next_path: Option<String>,
+}
+
+pub async fn create_creator_subscription_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<CreatorCheckoutRequest>,
+) -> Result<Json<CreatorCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "creator" && user.role != "talent" {
+        return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    let plan = payload.plan.trim().to_lowercase();
+    if plan != "basic" && plan != "pro" {
+        return Err((StatusCode::BAD_REQUEST, "invalid_creator_plan".to_string()));
+    }
+
+    if payload.start_trial && !payload.agreement_accepted {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "must_accept_agreement_for_trial".to_string(),
+        ));
+    }
+
+    let interval = payload
+        .interval
+        .as_deref()
+        .unwrap_or("month")
+        .trim()
+        .to_lowercase();
+    if interval != "month" && interval != "year" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid_creator_interval".to_string(),
+        ));
+    }
+
+    let price_id = creator_plan_to_price_id_with_interval(&state, &plan, &interval)
+        .or_else(|| creator_plan_to_price_id(&state, &plan))
+        .unwrap_or_default();
+    if price_id.trim().is_empty() {
+        let env_var = creator_plan_to_price_env_var_with_interval(&plan, &interval)
+            .or_else(|| creator_plan_to_price_env_var(&plan))
+            .unwrap_or("creator");
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            format!("{env_var}_not_configured"),
+        ));
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let (creator_id, _) = get_creator_plan_tier_for_user(&state, &user).await?;
+    let creator_resp = state
+        .pg
+        .from("creators")
+        .select("id,email,full_name,stripe_customer_id,stripe_subscription_id,trial_started_at")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let creator_status = creator_resp.status();
+    let creator_text = creator_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !creator_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            creator_status.as_u16(),
+            creator_text,
+        ));
+    }
+
+    let creator_row = serde_json::from_str::<serde_json::Value>(&creator_text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "creator_profile_not_found".to_string(),
+        ))?;
+
+    let existing_customer = creator_row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if payload.start_trial {
+        let (trial_used, _) = match plan.as_str() {
+            "basic" => (
+                creator_row
+                    .get("trial_basic_started_at")
+                    .filter(|v| !v.is_null())
+                    .is_some(),
+                "trial_basic_started_at",
+            ),
+            "pro" => (
+                creator_row
+                    .get("trial_pro_started_at")
+                    .filter(|v| !v.is_null())
+                    .is_some(),
+                "trial_pro_started_at",
+            ),
+            _ => (false, "trial_started_at"),
+        };
+
+        if trial_used {
+            return Err((StatusCode::FORBIDDEN, "trial_already_used".to_string()));
+        }
+    }
+    let customer_id = if !existing_customer.is_empty() {
+        existing_customer
+    } else {
+        let mut params = stripe_sdk::CreateCustomer::new();
+        if let Some(email) = creator_row
+            .get("email")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+        {
+            params.email = Some(email);
+        }
+        params.name = Some(
+            creator_row
+                .get("full_name")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .unwrap_or("Creator"),
+        );
+        params.metadata = Some(std::collections::HashMap::from([(
+            "creator_id".to_string(),
+            creator_id.clone(),
+        )]));
+
+        let customer = stripe_sdk::Customer::create(&client, params)
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let cust_id = customer.id.to_string();
+        let cust_update_resp = state
+            .pg
+            .from("creators")
+            .eq("id", &creator_id)
+            .update(json!({ "stripe_customer_id": cust_id }).to_string())
+            .execute()
+            .await;
+
+        match cust_update_resp {
+            Ok(resp) if !resp.status().is_success() => {
+                let body = resp.text().await.unwrap_or_default();
+                warn!(creator_id = %creator_id, status = %body, "failed to persist stripe_customer_id to creators table");
+            }
+            Err(e) => {
+                warn!(creator_id = %creator_id, error = %e, "transport error persisting stripe_customer_id to creators table");
+            }
+            _ => {}
+        }
+
+        cust_id
+    };
+
+    let mut inherited_trial_days: Option<u32> = None;
+    let existing_subscription = creator_row
+        .get("stripe_subscription_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if !existing_subscription.is_empty() {
+        let parsed_subscription = existing_subscription
+            .parse::<stripe_sdk::SubscriptionId>()
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "invalid_creator_subscription_id".to_string(),
+                )
+            })?;
+        match stripe_sdk::Subscription::retrieve(&client, &parsed_subscription, &[]).await {
+            Ok(subscription) => {
+                let live_subscription = matches!(
+                    subscription.status,
+                    stripe_sdk::SubscriptionStatus::Active
+                        | stripe_sdk::SubscriptionStatus::Trialing
+                        | stripe_sdk::SubscriptionStatus::PastDue
+                        | stripe_sdk::SubscriptionStatus::Incomplete
+                        | stripe_sdk::SubscriptionStatus::Paused
+                        | stripe_sdk::SubscriptionStatus::Unpaid
+                );
+
+                if live_subscription {
+                    let current_price_id = subscription
+                        .items
+                        .data
+                        .first()
+                        .and_then(|item| item.price.as_ref())
+                        .map(|price| price.id.to_string())
+                        .unwrap_or_default();
+
+                    // If plan is DIFFERENT and user is in a TRIAL, we do the "Inheritance via Renewal" flow
+                    if current_price_id != price_id
+                        && subscription.status == stripe_sdk::SubscriptionStatus::Trialing
+                    {
+                        let now = chrono::Utc::now().timestamp();
+                        let trial_end = subscription.trial_end.unwrap_or(now);
+                        let seconds_left = trial_end - now;
+                        let days_left = (seconds_left as f64 / 86400.0).ceil() as i64;
+                        let final_days = days_left.max(1) as u32;
+                        inherited_trial_days = Some(final_days);
+
+                        info!("Inheriting trial: {} days left. Deferring cancellation of old subscription {} until checkout completes.", final_days, existing_subscription);
+                        // Proceed to Checkout Session block below (inherited_trial_days will be used).
+                        // The previous subscription will be cancelled after successful checkout via webhook.
+                    } else if current_price_id != price_id {
+                        // PAID user – Use Portal
+                        let customer =
+                            customer_id.parse::<stripe_sdk::CustomerId>().map_err(|_| {
+                                (
+                                    StatusCode::INTERNAL_SERVER_ERROR,
+                                    "invalid_stripe_customer_id".to_string(),
+                                )
+                            })?;
+                        let mut portal_params =
+                            stripe_sdk::CreateBillingPortalSession::new(customer);
+                        portal_params.return_url = Some(state.stripe_creator_success_url.as_str());
+
+                        let subscription_item = subscription
+                            .items
+                            .data
+                            .first()
+                            .map(|item| item.id.to_string())
+                            .ok_or((
+                                StatusCode::BAD_GATEWAY,
+                                "creator_subscription_missing_items".to_string(),
+                            ))?;
+
+                        portal_params.flow_data =
+                            Some(stripe_sdk::CreateBillingPortalSessionFlowData {
+                                after_completion: Some(
+                                    stripe_sdk::CreateBillingPortalSessionFlowDataAfterCompletion {
+                                        redirect: Some(
+                                            stripe_sdk::CreateBillingPortalSessionFlowDataAfterCompletionRedirect {
+                                                return_url: state
+                                                    .stripe_creator_success_url
+                                                    .clone(),
+                                            },
+                                        ),
+                                        type_: stripe_sdk::CreateBillingPortalSessionFlowDataAfterCompletionType::Redirect,
+                                        ..Default::default()
+                                    },
+                                ),
+                                subscription_update_confirm: Some(
+                                    stripe_sdk::CreateBillingPortalSessionFlowDataSubscriptionUpdateConfirm {
+                                        subscription: existing_subscription.clone(),
+                                        items: vec![
+                                            stripe_sdk::CreateBillingPortalSessionFlowDataSubscriptionUpdateConfirmItems {
+                                                id: subscription_item,
+                                                price: Some(price_id.clone()),
+                                                quantity: Some(1),
+                                            },
+                                        ],
+                                        ..Default::default()
+                                    },
+                                ),
+                                type_: stripe_sdk::CreateBillingPortalSessionFlowDataType::SubscriptionUpdateConfirm,
+                                ..Default::default()
+                            });
+
+                        let portal =
+                            stripe_sdk::BillingPortalSession::create(&client, portal_params)
+                                .await
+                                .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+                        return Ok(Json(CreatorCheckoutResponse {
+                            checkout_url: portal.url,
+                        }));
+                    } else {
+                        // SAME plan – portal for basic management (cancel, etc)
+                        let customer =
+                            customer_id.parse::<stripe_sdk::CustomerId>().map_err(|_| {
+                                (
+                                    StatusCode::INTERNAL_SERVER_ERROR,
+                                    "invalid_stripe_customer_id".to_string(),
+                                )
+                            })?;
+                        let mut portal_params =
+                            stripe_sdk::CreateBillingPortalSession::new(customer);
+                        portal_params.return_url = Some(state.stripe_creator_success_url.as_str());
+                        let portal =
+                            stripe_sdk::BillingPortalSession::create(&client, portal_params)
+                                .await
+                                .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+                        return Ok(Json(CreatorCheckoutResponse {
+                            checkout_url: portal.url,
+                        }));
+                    }
+                }
+            }
+            Err(error) => {
+                let message = error.to_string();
+                let not_found = message.contains("No such subscription")
+                    || message.contains("resource_missing")
+                    || message.contains("invalid_request_error");
+                if !not_found {
+                    return Err((StatusCode::BAD_GATEWAY, message));
+                }
+            }
+        }
+    }
+
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(state.stripe_creator_success_url.as_str());
+    cs_params.cancel_url = Some(state.stripe_creator_cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.customer = Some(customer_id.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?);
+    cs_params.client_reference_id = Some(creator_id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("creator_id".to_string(), creator_id.clone());
+    md.insert("billing_domain".to_string(), "creator".to_string());
+    md.insert("plan_tier".to_string(), plan.clone());
+    md.insert("interval".to_string(), interval.clone());
+    if inherited_trial_days.is_some() && !existing_subscription.trim().is_empty() {
+        md.insert(
+            "previous_subscription_id".to_string(),
+            existing_subscription.trim().to_string(),
+        );
+    }
+    if payload.start_trial {
+        md.insert("trial_started_from_checkout".to_string(), "1".to_string());
+        cs_params.payment_method_collection =
+            Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);
+    }
+
+    info!(
+        "Creating creator checkout session for user {} (creator {}): plan={}, interval={}, start_trial={}, price_id={}",
+        user.id, creator_id, plan, interval, payload.start_trial, price_id
+    );
+
+    cs_params.metadata = Some(md.clone());
+    cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        trial_period_days: if payload.start_trial {
+            Some(inherited_trial_days.unwrap_or(30))
+        } else if inherited_trial_days.is_some() {
+            inherited_trial_days
+        } else {
+            None
+        },
+        metadata: Some(md),
+        ..Default::default()
+    });
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        warn!("stripe checkout session missing url");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    Ok(Json(CreatorCheckoutResponse { checkout_url: url }))
+}
+
+pub async fn upgrade_creator_subscription(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<CreatorUpgradeRequest>,
+) -> Result<Json<CreatorCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "creator" && user.role != "talent" {
+        return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    let plan = payload.plan.trim().to_lowercase();
+    if plan != "basic" && plan != "pro" {
+        return Err((StatusCode::BAD_REQUEST, "invalid_creator_plan".to_string()));
+    }
+
+    let interval = payload
+        .interval
+        .unwrap_or_else(|| "month".to_string())
+        .trim()
+        .to_lowercase();
+    if interval != "month" && interval != "year" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid_billing_interval".to_string(),
+        ));
+    }
+
+    let (creator_id, _) = get_creator_plan_tier_for_user(&state, &user).await?;
+    let resp = state
+        .pg
+        .from("creators")
+        .select("stripe_subscription_id, plan_tier")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let creator_row = rows
+        .first()
+        .and_then(|v| v.as_object())
+        .ok_or((StatusCode::NOT_FOUND, "creator_not_found".to_string()))?;
+
+    let stripe_subscription_id = creator_row
+        .get("stripe_subscription_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or((
+            StatusCode::BAD_REQUEST,
+            "no_active_subscription".to_string(),
+        ))?;
+
+    let stripe_subscription_id_parsed = stripe_subscription_id
+        .parse::<stripe_sdk::SubscriptionId>()
+        .map_err(|_| {
+            (
+                StatusCode::BAD_REQUEST,
+                "invalid_subscription_id".to_string(),
+            )
+        })?;
+
+    let price_id = creator_plan_to_price_id_with_interval(&state, &plan, &interval).ok_or((
+        StatusCode::BAD_REQUEST,
+        "invalid_plan_configuration".to_string(),
+    ))?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let sub = stripe_sdk::Subscription::retrieve(&client, &stripe_subscription_id_parsed, &[])
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let item_id = sub
+        .items
+        .data
+        .first()
+        .ok_or((
+            StatusCode::BAD_GATEWAY,
+            "subscription_has_no_items".to_string(),
+        ))?
+        .id
+        .to_string();
+
+    let req_client = reqwest::Client::new();
+    let res = req_client
+        .post(format!(
+            "https://api.stripe.com/v1/subscriptions/{}",
+            stripe_subscription_id
+        ))
+        .basic_auth(&state.stripe_secret_key, Some(""))
+        .form(&[
+            ("items[0][id]", item_id.as_str()),
+            ("items[0][price]", price_id.as_str()),
+            ("proration_behavior", "create_prorations"),
+        ])
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !res.status().is_success() {
+        warn!("stripe upgrade failed: {:?}", res.text().await);
+        return Err((StatusCode::BAD_GATEWAY, "stripe_upgrade_failed".to_string()));
+    }
+
+    Ok(Json(CreatorCheckoutResponse {
+        checkout_url: String::new(),
+    }))
+}
+
+pub async fn get_creator_billing_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<CreatorBillingStatusResponse>, (StatusCode, String)> {
+    if user.role != "creator" && user.role != "talent" {
+        return Err((StatusCode::FORBIDDEN, "creator_only".to_string()));
+    }
+
+    let (creator_id, billed_tier, entitlement_tier) =
+        get_creator_entitlement_tier_for_user(&state, &user).await?;
+    let resp = state
+        .pg
+        .from("creators")
+        .select("plan_tier,plan_interval,stripe_customer_id,stripe_subscription_id,plan_updated_at,stripe_current_period_end,stripe_cancel_at_period_end,created_at,trial_started_at,trial_basic_started_at,trial_pro_started_at")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    fn parse_db_date(s: &str) -> Option<DateTime<Utc>> {
+        // Try RFC3339 (T delimiter)
+        DateTime::parse_from_rfc3339(s)
+            .map(|dt| dt.with_timezone(&Utc))
+            .ok()
+            .or_else(|| {
+                // Try format with space instead of T
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f%#z")
+                    .ok()
+                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+            })
+            .or_else(|| {
+                // Fallback for space without TZ offset
+                NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S%.f")
+                    .ok()
+                    .map(|ndt| DateTime::<Utc>::from_naive_utc_and_offset(ndt, Utc))
+            })
+    }
+    let plan_tier = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("none")
+        .to_string();
+
+    let trial_start_at_str = row.get("trial_started_at").and_then(|v| v.as_str());
+    let trial_basic_start_at_str = row.get("trial_basic_started_at").and_then(|v| v.as_str());
+    let trial_pro_start_at_str = row.get("trial_pro_started_at").and_then(|v| v.as_str());
+
+    let trial_start_at = trial_start_at_str.and_then(parse_db_date);
+    let trial_basic_start_at = trial_basic_start_at_str.and_then(parse_db_date);
+    let trial_pro_start_at = trial_pro_start_at_str.and_then(parse_db_date);
+
+    // Dynamic trial status based on the CURRENT plan tier.
+    // Important: if the creator is still marked as `free` but has plan-specific trial timestamps,
+    // we must still surface an active countdown.
+    let current_plan_trial_start = match plan_tier.as_str() {
+        "basic" => trial_basic_start_at.or(trial_start_at),
+        "pro" | "enterprise" => trial_pro_start_at.or(trial_start_at),
+        _ => trial_start_at
+            .or(trial_pro_start_at)
+            .or(trial_basic_start_at),
+    };
+
+    // For safety, treat the most recent known trial start as authoritative.
+    let latest_trial_start = [trial_start_at, trial_basic_start_at, trial_pro_start_at]
+        .into_iter()
+        .flatten()
+        .max();
+
+    let resolved_trial_start = current_plan_trial_start.or(latest_trial_start);
+
+    let trial_active = resolved_trial_start.is_some_and(|start_dt| {
+        chrono::Utc::now()
+            .signed_duration_since(start_dt)
+            .num_days()
+            < 30
+    });
+
+    // Trial ends dynamically 30 days after it started
+    let trial_ends_at_dt = resolved_trial_start.map(|dt| dt + chrono::Duration::days(30));
+    let trial_ends_at = trial_ends_at_dt.map(|dt| dt.to_rfc3339());
+
+    Ok(Json(CreatorBillingStatusResponse {
+        creator_id: creator_id.clone(),
+        plan_tier: plan_tier.clone(),
+        entitlement_tier: format!("{:?}", entitlement_tier).to_lowercase(),
+        trial_start_at: trial_start_at.map(|dt| dt.to_rfc3339()),
+        trial_basic_start_at: trial_basic_start_at.map(|dt| dt.to_rfc3339()),
+        trial_pro_start_at: trial_pro_start_at.map(|dt| dt.to_rfc3339()),
+        trial_active,
+        trial_ends_at,
+        subscription_status: if matches!(
+            billed_tier,
+            PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise
+        ) {
+            "active".to_string()
+        } else {
+            "inactive".to_string()
+        },
+        stripe_customer_id: row
+            .get("stripe_customer_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_subscription_id: row
+            .get("stripe_subscription_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        plan_updated_at: row
+            .get("plan_updated_at")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        plan_interval: row
+            .get("plan_interval")
+            .and_then(|v| v.as_str())
+            .unwrap_or("month")
+            .to_string(),
+        stripe_current_period_end: row
+            .get("stripe_current_period_end")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_cancel_at_period_end: row
+            .get("stripe_cancel_at_period_end")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        category_limit: creator_category_limit(entitlement_tier),
+        can_use_kyc: creator_has_kyc_access(entitlement_tier),
+        can_use_likeness: creator_has_likeness_access(entitlement_tier),
+        can_use_agency_connection: creator_has_agency_connection_access(entitlement_tier),
+        can_use_brand_connection: creator_has_brand_connection_access(entitlement_tier),
+        can_use_payouts: creator_has_payouts_access(entitlement_tier),
+        can_use_cameo_uploads: creator_has_cameo_uploads(entitlement_tier),
+        can_use_unauthorized_monitoring: creator_has_unauthorized_use_monitoring(entitlement_tier),
+        can_use_voice_profiles: creator_has_voice_profiles(entitlement_tier),
+        voice_tone_limit: creator_voice_tone_limit(entitlement_tier),
+        can_use_advanced_analytics: creator_has_advanced_analytics(entitlement_tier),
+        can_use_jobs: creator_has_jobs_access(entitlement_tier),
+        can_use_rules: creator_has_rules_access(entitlement_tier),
+        can_use_talent_portal: creator_has_talent_portal_access(entitlement_tier),
+        can_use_campaign_archive: creator_has_campaign_archive_access(entitlement_tier),
+        can_use_active_campaigns: creator_has_active_campaigns_access(entitlement_tier),
+    }))
+}
+
 #[derive(Debug, Serialize)]
 pub struct CampaignCheckoutResponse {
     pub url: String,
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct BrandStudioAddonCheckoutRequest {
+    pub next_path: Option<String>,
+}
+
+pub async fn create_brand_subscription_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<BrandCheckoutRequest>,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    if payload.plan.trim().eq_ignore_ascii_case("enterprise") {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "enterprise_contact_sales".to_string(),
+        ));
+    }
+
+    let billing_cycle = normalize_brand_billing_cycle(payload.billing_cycle.as_deref());
+
+    let base_price_id =
+        brand_plan_to_price_id_for_billing_cycle(&state, &payload.plan, billing_cycle)
+            .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
+    if base_price_id.trim().is_empty() {
+        let ev = brand_plan_to_price_env_var_for_billing_cycle(&payload.plan, billing_cycle)
+            .unwrap_or("STRIPE_BRAND_*_PRICE_ID");
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            format!("stripe_price_not_configured:{ev}"),
+        ));
+    }
+
+    let row = get_brand_checkout_row(&state, &brand_id).await?;
+    let email = row
+        .get("email")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let company_name = row
+        .get("company_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Brand")
+        .to_string();
+    let existing_customer = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let current_plan_tier = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .trim()
+        .to_lowercase();
+    let current_subscription_status = row
+        .get("subscription_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let current_subscription_id = row
+        .get("stripe_subscription_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let has_active_base_subscription =
+        current_subscription_status == "active" || current_subscription_status == "trialing";
+    let target_plan = payload.plan.trim().to_lowercase();
+
+    // Bug Fix #2: Handle subscription changes by canceling old subscription before creating new checkout
+    if has_active_base_subscription {
+        if current_plan_tier == target_plan {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "brand_subscription_already_active".to_string(),
+            ));
+        }
+
+        // Cancel the existing subscription before creating new checkout
+        if !current_subscription_id.is_empty() {
+            let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+            let subscription_id = current_subscription_id
+                .parse::<stripe_sdk::SubscriptionId>()
+                .map_err(|_| {
+                    billing_error(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "invalid_subscription_id",
+                        "Invalid Stripe subscription ID.",
+                    )
+                })?;
+
+            // Cancel the subscription immediately
+            let mut cancel_params = stripe_sdk::CancelSubscription::new();
+            cancel_params.prorate = Some(true);
+
+            match stripe_sdk::Subscription::cancel(&client, &subscription_id, cancel_params).await {
+                Ok(_) => {
+                    info!(
+                        brand_id = %user.id,
+                        old_plan = %current_plan_tier,
+                        new_plan = %target_plan,
+                        "canceled existing brand subscription for plan change"
+                    );
+                }
+                Err(e) => {
+                    return Err((
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("failed_to_cancel_subscription: {}", e),
+                    ));
+                }
+            }
+        }
+    }
+
+    let customer_id =
+        ensure_brand_customer(&state, &user.id, &email, &company_name, &existing_customer).await?;
+
+    let next_path = sanitize_next_path(payload.next_path.as_deref());
+
+    // Success URL redirects to dashboard, not billing page
+    let success_url = {
+        let base = state.frontend_url.trim();
+        let mut url = Url::parse(base).map_err(|e| {
+            (
+                StatusCode::PRECONDITION_FAILED,
+                format!("invalid_frontend_url:{e}"),
+            )
+        })?;
+        url.set_path("/BrandDashboard");
+        {
+            let mut query = url.query_pairs_mut();
+            query.append_pair("billing_success", "1");
+            query.append_pair("plan", target_plan.as_str());
+            if let Some(next) = next_path.as_ref() {
+                if !next.trim().is_empty() {
+                    query.append_pair("next", next.as_str());
+                }
+            }
+        }
+        url.to_string()
+    };
+
+    let cancel_url = brand_billing_frontend_url(
+        &state,
+        vec![
+            ("canceled", "1".to_string()),
+            ("plan", target_plan.clone()),
+            ("billing", billing_cycle.to_string()),
+            ("next", next_path.unwrap_or_default()),
+        ],
+    )?;
+
+    let should_start_trial = !has_active_base_subscription;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Subscription);
+    cs_params.customer = Some(customer_id.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?);
+    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(base_price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("brand_id".to_string(), user.id.clone());
+    md.insert("billing_domain".to_string(), "brand".to_string());
+    md.insert("billing_target".to_string(), "base".to_string());
+    md.insert("plan".to_string(), target_plan.clone());
+    md.insert("billing_cycle".to_string(), billing_cycle.to_string());
+    if should_start_trial {
+        md.insert("trial_active".to_string(), "1".to_string());
+    }
+    cs_params.metadata = Some(md);
+
+    let mut sub_md = std::collections::HashMap::new();
+    sub_md.insert("brand_id".to_string(), user.id.clone());
+    sub_md.insert("billing_domain".to_string(), "brand".to_string());
+    sub_md.insert("billing_target".to_string(), "base".to_string());
+    sub_md.insert("plan".to_string(), target_plan.clone());
+    sub_md.insert("billing_cycle".to_string(), billing_cycle.to_string());
+
+    if should_start_trial {
+        cs_params.payment_method_collection =
+            Some(stripe_sdk::CheckoutSessionPaymentMethodCollection::Always);
+    }
+
+    cs_params.subscription_data = Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+        metadata: Some(sub_md),
+        trial_period_days: if should_start_trial {
+            Some(state.brand_trial_days)
+        } else {
+            None
+        },
+        ..Default::default()
+    });
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        warn!("stripe checkout session missing url");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    info!(
+        brand_id = %brand_id,
+        plan = %target_plan,
+        billing_cycle = %billing_cycle,
+        trial_applied = should_start_trial,
+        trial_days = %state.brand_trial_days,
+        "created brand subscription checkout session"
+    );
+    Ok(Json(AgencyCheckoutResponse {
+        checkout_url: url,
+        seats_limit: None,
+        invoice_id: None,
+        invoice_status: None,
+        invoice_url: None,
+    }))
+}
+
+pub async fn create_brand_studio_addon_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<BrandStudioAddonCheckoutRequest>,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    if state.stripe_brand_studio_addon_price_id.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_price_not_configured:STRIPE_BRAND_STUDIO_ADDON_PRICE_ID".to_string(),
+        ));
+    }
+
+    let row = get_brand_checkout_row(&state, &brand_id).await?;
+    let email = row
+        .get("email")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let company_name = row
+        .get("company_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Brand")
+        .to_string();
+    let existing_customer = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let current_plan_tier = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .trim()
+        .to_lowercase();
+    let studio_addon_active = row
+        .get("studio_addon_active")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    if current_plan_tier == "enterprise" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "studio_addon_included_with_enterprise".to_string(),
+        ));
+    }
+
+    if studio_addon_active {
+        let studio_url = agency_studio_frontend_url(&state)?;
+        return Ok(Json(AgencyCheckoutResponse {
+            checkout_url: studio_url,
+            seats_limit: None,
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
+        }));
+    }
+
+    let customer_id =
+        ensure_brand_customer(&state, &user.id, &email, &company_name, &existing_customer).await?;
+
+    let next_path = sanitize_next_path(payload.next_path.as_deref());
+    let success_url_base = brand_billing_frontend_url(
+        &state,
+        vec![
+            ("success", "1".to_string()),
+            ("focus", "studio".to_string()),
+            ("next", next_path.clone().unwrap_or_default()),
+        ],
+    )?;
+    // Append the Stripe session ID template so the frontend can verify immediately on redirect.
+    let success_url = format!("{success_url_base}&session_id={{CHECKOUT_SESSION_ID}}");
+    let cancel_url = brand_billing_frontend_url(
+        &state,
+        vec![
+            ("canceled", "1".to_string()),
+            ("focus", "studio".to_string()),
+            ("next", next_path.unwrap_or_default()),
+        ],
+    )?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
+    cs_params.customer = Some(customer_id.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_stripe_customer_id".to_string(),
+        )
+    })?);
+    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(state.stripe_brand_studio_addon_price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("brand_id".to_string(), user.id.clone());
+    md.insert("billing_domain".to_string(), "studio".to_string());
+    md.insert(
+        "billing_target".to_string(),
+        "brand_studio_addon".to_string(),
+    );
+    md.insert(
+        "studio_plan".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string(),
+    );
+    md.insert(
+        "credits".to_string(),
+        BRAND_STUDIO_ADDON_STUDIO_CREDITS.to_string(),
+    );
+    cs_params.metadata = Some(md);
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        warn!("stripe checkout session missing url");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    info!(brand_id = %user.id, "created brand studio add-on checkout session");
+    Ok(Json(AgencyCheckoutResponse {
+        checkout_url: url,
+        seats_limit: None,
+        invoice_id: None,
+        invoice_status: None,
+        invoice_url: None,
+    }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BrandStudioAddonVerifyRequest {
+    pub session_id: String,
+}
+
+/// Verifies a completed Stripe checkout session for the brand studio add-on and provisions
+/// access immediately. Called from the success-redirect page so activation does not depend
+/// solely on the webhook arriving.
+pub async fn verify_brand_studio_addon_checkout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<BrandStudioAddonVerifyRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let session_id_raw = payload.session_id.trim().to_string();
+    if session_id_raw.is_empty() {
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "missing_session_id",
+            "session_id is required.",
+        ));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
+        ));
+    }
+
+    // Retrieve the session from Stripe.
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let session_id = session_id_raw
+        .parse::<stripe_sdk::CheckoutSessionId>()
+        .map_err(|_| {
+            billing_error(
+                StatusCode::BAD_REQUEST,
+                "invalid_session_id",
+                "Invalid checkout session id.",
+            )
+        })?;
+    let session = stripe_sdk::CheckoutSession::retrieve(&client, &session_id, &[])
+        .await
+        .map_err(|e| billing_error_msg(StatusCode::BAD_GATEWAY, "stripe_error", e.to_string()))?;
+
+    // Verify the session belongs to this brand.
+    let session_brand_id = session
+        .client_reference_id
+        .as_deref()
+        .or_else(|| {
+            session
+                .metadata
+                .as_ref()
+                .and_then(|m| m.get("brand_id"))
+                .map(|v| v.as_str())
+        })
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if session_brand_id.is_empty() || session_brand_id != user.id {
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "checkout_session_not_owned",
+            "Checkout session does not belong to this brand.",
+        ));
+    }
+
+    // Verify it is a paid studio addon session.
+    let billing_target = session
+        .metadata
+        .as_ref()
+        .and_then(|m| m.get("billing_target"))
+        .map(|v| v.trim().to_lowercase())
+        .unwrap_or_default();
+    if billing_target != "brand_studio_addon" {
+        return Err(billing_error(
+            StatusCode::BAD_REQUEST,
+            "not_studio_addon_session",
+            "Checkout session is not a studio add-on session.",
+        ));
+    }
+
+    let is_paid = matches!(
+        session.payment_status,
+        stripe_sdk::CheckoutSessionPaymentStatus::Paid
+    );
+    if !is_paid {
+        return Ok(Json(
+            json!({ "studio_addon_active": false, "payment_status": "unpaid" }),
+        ));
+    }
+
+    // Idempotency: skip if already active.
+    let brand_resp = state
+        .pg
+        .from("brands")
+        .select("studio_addon_active")
+        .eq("id", user.id.as_str())
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows_text = brand_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&rows_text).unwrap_or_default();
+    let already_active = rows
+        .first()
+        .and_then(|row| row.get("studio_addon_active"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    if already_active {
+        return Ok(Json(json!({ "studio_addon_active": true })));
+    }
+
+    // Check wallet idempotency via session id.
+    let session_str = session_id_raw.as_str();
+    let already_credited =
+        crate::studio::wallet::has_stripe_credit_transaction(&state.pg, session_str)
+            .await
+            .unwrap_or(false);
+
+    if !already_credited {
+        let credits = session
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("credits"))
+            .and_then(|v| v.parse::<i64>().ok())
+            .filter(|&c| c > 0)
+            .unwrap_or(BRAND_STUDIO_ADDON_STUDIO_CREDITS);
+
+        let studio_plan = session
+            .metadata
+            .as_ref()
+            .and_then(|m| m.get("studio_plan"))
+            .map(|v| v.trim().to_lowercase())
+            .filter(|v| v == "lite" || v == "pro")
+            .unwrap_or_else(|| BRAND_STUDIO_ADDON_STUDIO_PLAN.to_string());
+
+        crate::studio::wallet::add_credits(&state.pg, &user.id, credits, Some(session_str))
+            .await
+            .map_err(|e| {
+                warn!(brand_id = %user.id, error = %e, "failed to add studio credits after verified checkout");
+                billing_error(StatusCode::INTERNAL_SERVER_ERROR, "credit_add_failed", "Failed to add studio credits.")
+            })?;
+        crate::studio::wallet::set_current_plan(
+            &state.pg,
+            &user.id,
+            Some(studio_plan.as_str()),
+        )
+        .await
+        .map_err(|e| {
+            warn!(brand_id = %user.id, error = %e, "failed to set studio plan after verified checkout");
+            billing_error(StatusCode::INTERNAL_SERVER_ERROR, "plan_set_failed", "Failed to set studio plan.")
+        })?;
+    }
+
+    let addon_resp = state
+        .pg
+        .from("brands")
+        .eq("id", user.id.as_str())
+        .update(
+            json!({
+                "studio_addon_active": true,
+                "studio_addon_activated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await
+        .map_err(|e| {
+            warn!(brand_id = %user.id, error = %e, "transport error marking studio_addon_active");
+            billing_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "addon_activate_failed",
+                "Failed to activate studio add-on.",
+            )
+        })?;
+
+    if !addon_resp.status().is_success() {
+        let body = addon_resp.text().await.unwrap_or_default();
+        warn!(brand_id = %user.id, status = %body, "DB rejected studio_addon_active update");
+        return Err(billing_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "addon_activate_failed",
+            "Failed to activate studio add-on.",
+        ));
+    }
+
+    info!(brand_id = %user.id, stripe_session_id = %session_id_raw, "brand studio add-on verified and activated");
+    Ok(Json(json!({ "studio_addon_active": true })))
 }
 
 pub async fn create_campaign_offer_checkout(
@@ -2237,7 +3985,7 @@ pub async fn create_campaign_offer_checkout(
     axum::extract::Path(offer_id): axum::extract::Path<String>,
 ) -> Result<Json<CampaignCheckoutResponse>, (StatusCode, String)> {
     let brand_access =
-        team::require_brand_permission(&state, &user, Permission::ManageBilling).await?;
+        team::require_brand_permission(&state, &user, Permission::ManagePayOffers).await?;
     let brand_id = brand_access.organization_id;
 
     if state.stripe_secret_key.trim().is_empty() {
@@ -2308,47 +4056,10 @@ pub async fn create_campaign_offer_checkout(
 
     // Hard requirements for campaign offers:
     // - Agency offers: at least one talent must be assigned BEFORE the brand can pay.
-    // - Agency offers: agency + all assigned talents must have Stripe Connect accounts (like licensing flow),
-    //   otherwise escrow will get stuck on the platform with no ability to transfer out.
-    // - Creator offers: the creator must have a Stripe Connect account.
+    // - Recipient (Agency/Talent) Stripe Connectivity: now DEFERRED.
+    //   Funds are held in platform escrow until recipients connect their accounts.
     if target_type == "agency" {
-        // 1) Agency must be connected to Stripe
-        let agency_acct_resp = state
-            .pg
-            .from("agencies")
-            .select("stripe_connect_account_id")
-            .eq("id", target_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !agency_acct_resp.status().is_success() {
-            return Err(crate::errors::sanitize_db_error(
-                agency_acct_resp.status().as_u16(),
-                agency_acct_resp.text().await.unwrap_or_default(),
-            ));
-        }
-        let agency_acct_text = agency_acct_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".into());
-        let agency_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&agency_acct_text).unwrap_or_default();
-        let agency_stripe_account_id = agency_rows
-            .first()
-            .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if agency_stripe_account_id.is_empty() {
-            return Err(billing_error(
-                StatusCode::BAD_REQUEST,
-                "agency_stripe_connect_required",
-                "Agency must connect a Stripe account before the brand can pay for this offer.",
-            ));
-        }
-
-        // 2) At least one creator-backed talent must be assigned
+        // At least one creator-backed talent must be assigned
         let assignments_resp = state
             .pg
             .from("offer_talent_assignments")
@@ -2384,108 +4095,6 @@ pub async fn create_campaign_offer_checkout(
                 StatusCode::BAD_REQUEST,
                 "offer_requires_assigned_talent",
                 "At least one talent must be assigned before the brand can pay for this offer.",
-            ));
-        }
-
-        // 3) Every assigned creator must have a connected Stripe account
-        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
-        let creators_resp = state
-            .pg
-            .from("creators")
-            .select("id,full_name,stripe_connect_account_id")
-            .in_("id", creator_refs)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !creators_resp.status().is_success() {
-            return Err(crate::errors::sanitize_db_error(
-                creators_resp.status().as_u16(),
-                creators_resp.text().await.unwrap_or_default(),
-            ));
-        }
-        let creators_text = creators_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let creators_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&creators_text).unwrap_or_default();
-        let mut stripe_by_creator: std::collections::HashMap<String, String> =
-            std::collections::HashMap::new();
-        let mut name_by_creator: std::collections::HashMap<String, String> =
-            std::collections::HashMap::new();
-        for r in &creators_rows {
-            let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
-            if cid.is_empty() {
-                continue;
-            }
-            let name = r
-                .get("full_name")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            if !name.is_empty() {
-                name_by_creator.insert(cid.to_string(), name);
-            }
-            let acct = r
-                .get("stripe_connect_account_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            if !acct.is_empty() {
-                stripe_by_creator.insert(cid.to_string(), acct);
-            }
-        }
-
-        let mut missing_stripe: Vec<String> = vec![];
-        for cid in &creator_ids {
-            if !stripe_by_creator.contains_key(cid) {
-                let label = name_by_creator
-                    .get(cid)
-                    .cloned()
-                    .unwrap_or_else(|| cid.clone());
-                missing_stripe.push(label);
-            }
-        }
-        if !missing_stripe.is_empty() {
-            return Err(billing_error(
-                StatusCode::BAD_REQUEST,
-                "creator_stripe_connect_required",
-                format!(
-                    "The following creators must connect their Stripe account before the brand can pay: {}",
-                    missing_stripe.join(", ")
-                )
-                .as_str(),
-            ));
-        }
-    } else if target_type == "creator" {
-        let creator_resp = state
-            .pg
-            .from("creators")
-            .select("stripe_connect_account_id")
-            .eq("id", target_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !creator_resp.status().is_success() {
-            return Err(crate::errors::sanitize_db_error(
-                creator_resp.status().as_u16(),
-                creator_resp.text().await.unwrap_or_default(),
-            ));
-        }
-        let creator_text = creator_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let creator_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&creator_text).unwrap_or_default();
-        let stripe_id = creator_rows
-            .first()
-            .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if stripe_id.is_empty() {
-            return Err(billing_error(
-                StatusCode::BAD_REQUEST,
-                "creator_stripe_connect_required",
-                "Creator must connect a Stripe account before the brand can pay for this offer.",
             ));
         }
     }
@@ -2607,14 +4216,24 @@ pub async fn create_campaign_offer_checkout(
         ));
     }
 
-    // Mark as processing
-    let _ = state
+    let processing_resp = state
         .pg
         .from("campaign_offers")
         .eq("id", &offer_id)
-        .update(json!({"payment_status": "processing", "stripe_checkout_session_id": session.id.to_string()}).to_string())
+        .update(json!({"payment_status": "processing"}).to_string())
         .execute()
         .await;
+
+    match processing_resp {
+        Ok(resp) if !resp.status().is_success() => {
+            let body = resp.text().await.unwrap_or_default();
+            warn!(offer_id = %offer_id, status = %body, "failed to mark campaign offer as processing");
+        }
+        Err(e) => {
+            warn!(offer_id = %offer_id, error = %e, "transport error marking campaign offer as processing");
+        }
+        _ => {}
+    }
 
     info!(offer_id, "created campaign offer checkout session");
     Ok(Json(CampaignCheckoutResponse { url }))
@@ -2693,7 +4312,7 @@ pub async fn get_agency_billing_status(
     let plan_tier_str = row
         .get("plan_tier")
         .and_then(|v| v.as_str())
-        .unwrap_or("free")
+        .unwrap_or("none")
         .to_string();
 
     let trial_start_at = row
@@ -2713,7 +4332,7 @@ pub async fn get_agency_billing_status(
         crate::entitlements::PlanTier::Enterprise => "enterprise",
         crate::entitlements::PlanTier::Pro => "pro",
         crate::entitlements::PlanTier::Basic => "basic",
-        crate::entitlements::PlanTier::Free => "free",
+        crate::entitlements::PlanTier::Free => "none",
     }
     .to_string();
 
@@ -2770,7 +4389,7 @@ pub async fn create_agency_billing_portal(
     let resp = state
         .pg
         .from("agencies")
-        .select("stripe_customer_id")
+        .select("stripe_customer_id,email,agency_name")
         .eq("id", &agency_id)
         .limit(1)
         .execute()
@@ -2791,13 +4410,56 @@ pub async fn create_agency_billing_portal(
         .first()
         .ok_or((StatusCode::NOT_FOUND, "agency_not_found".to_string()))?;
 
-    let customer_id_str = row
+    let existing_customer = row
         .get("stripe_customer_id")
         .and_then(|v| v.as_str())
-        .filter(|s| !s.is_empty())
-        .ok_or((StatusCode::BAD_REQUEST, "no_stripe_customer".to_string()))?;
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let email = row
+        .get("email")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let name = row
+        .get("agency_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Agency")
+        .trim()
+        .to_string();
 
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id_str = if !existing_customer.is_empty() {
+        existing_customer
+    } else {
+        let mut params = stripe_sdk::CreateCustomer::new();
+        if !email.is_empty() {
+            params.email = Some(email.as_str());
+        }
+        if !name.is_empty() {
+            params.name = Some(name.as_str());
+        }
+        params.metadata = Some(std::collections::HashMap::from([(
+            "agency_id".to_string(),
+            agency_id.clone(),
+        )]));
+
+        let customer = stripe_sdk::Customer::create(&client, params)
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let cust_id = customer.id.to_string();
+        let _ = state
+            .pg
+            .from("agencies")
+            .eq("id", &agency_id)
+            .update(json!({ "stripe_customer_id": cust_id }).to_string())
+            .execute()
+            .await;
+        cust_id
+    };
+
     let customer_id = customer_id_str
         .parse::<stripe_sdk::CustomerId>()
         .map_err(|_| {
@@ -2808,9 +4470,10 @@ pub async fn create_agency_billing_portal(
         })?;
 
     let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
-    // Use the AgencySubscribe page as return URL so they come back to the pricing view
+
+    // Return to agency settings – user can still change plans inside the app pricing page.
     let return_url = format!(
-        "{}/agency/subscribe",
+        "{}/AgencyDashboard?tab=settings&subTab=General-settings",
         state.frontend_url.trim_end_matches('/')
     );
     params.return_url = Some(&return_url);
@@ -2828,4 +4491,691 @@ pub async fn create_agency_billing_portal(
             Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
         }
     }
+}
+
+pub async fn create_brand_billing_portal(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<AgencyCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err(billing_error(
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured",
+            "Stripe is not configured on the server.",
+        ));
+    }
+
+    let row = get_brand_checkout_row(&state, &brand_id).await?;
+    let customer_id_str = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            billing_error(
+                StatusCode::BAD_REQUEST,
+                "no_stripe_customer",
+                "No Stripe customer found for this brand.",
+            )
+        })?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = customer_id_str
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| {
+            billing_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_customer_id",
+                "Invalid Stripe customer ID.",
+            )
+        })?;
+
+    let return_url = format!("{}/brandpricing", state.frontend_url.trim_end_matches('/'));
+    let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
+    params.return_url = Some(&return_url);
+
+    match stripe_sdk::BillingPortalSession::create(&client, params).await {
+        Ok(session) => Ok(Json(AgencyCheckoutResponse {
+            checkout_url: session.url,
+            seats_limit: None,
+            invoice_id: None,
+            invoice_status: None,
+            invoice_url: None,
+        })),
+        Err(e) => {
+            warn!(error = %e, brand_id = %user.id, "failed to create stripe billing portal session for brand");
+            Err(billing_error_msg(
+                StatusCode::BAD_GATEWAY,
+                "stripe_error",
+                e.to_string(),
+            ))
+        }
+    }
+}
+
+pub async fn create_creator_billing_portal(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<CreatorCheckoutResponse>, (StatusCode, String)> {
+    if user.role != "creator" {
+        return Err(billing_error(
+            StatusCode::FORBIDDEN,
+            "creator_only",
+            "Only creator accounts can perform this action.",
+        ));
+    }
+
+    let creator_id = user.id.clone();
+    let resp = state
+        .pg
+        .from("creators")
+        .select("stripe_customer_id")
+        .eq("id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let row = rows
+        .first()
+        .ok_or((StatusCode::NOT_FOUND, "creator_not_found".to_string()))?;
+
+    let customer_id_str = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or((StatusCode::BAD_REQUEST, "no_stripe_customer".to_string()))?;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = customer_id_str
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_customer_id".to_string(),
+            )
+        })?;
+
+    let mut params = stripe_sdk::CreateBillingPortalSession::new(customer_id);
+    // Return to dashboard settings with the billing tab active
+    let return_url = format!(
+        "{}/CreatorDashboard?tab=billing",
+        state.frontend_url.trim_end_matches('/')
+    );
+    params.return_url = Some(&return_url);
+
+    match stripe_sdk::BillingPortalSession::create(&client, params).await {
+        Ok(session) => Ok(Json(CreatorCheckoutResponse {
+            checkout_url: session.url,
+        })),
+        Err(e) => {
+            warn!(error = %e, creator_id = %creator_id, "failed to create stripe creator billing portal session");
+            Err((StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandBillingStatusResponse {
+    pub brand_id: String,
+    pub plan_tier: String,
+    pub subscription_status: String,
+    pub stripe_customer_id: Option<String>,
+    pub stripe_subscription_id: Option<String>,
+    pub current_period_end: Option<String>,
+    pub cancel_at_period_end: bool,
+    pub trial_active: bool,
+    pub trial_ends_at: Option<String>,
+}
+
+pub async fn get_brand_billing_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandBillingStatusResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    let resp = state
+        .pg
+        .from("brands")
+        .select("id,plan_tier,subscription_status,stripe_customer_id,stripe_subscription_id,stripe_current_period_end,stripe_cancel_at_period_end,trial_ends_at")
+        .eq("id", &brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    let plan_tier = row
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .to_string();
+
+    let subscription_status = row
+        .get("subscription_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("inactive")
+        .to_string();
+
+    let trial_ends_at_str = row
+        .get("trial_ends_at")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty());
+
+    let trial_active = if let Some(trial_ends_str) = &trial_ends_at_str {
+        chrono::DateTime::parse_from_rfc3339(trial_ends_str)
+            .map(|dt| chrono::Utc::now() < dt.with_timezone(&chrono::Utc))
+            .unwrap_or(false)
+    } else {
+        false
+    };
+
+    Ok(Json(BrandBillingStatusResponse {
+        brand_id,
+        plan_tier,
+        subscription_status,
+        stripe_customer_id: row
+            .get("stripe_customer_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        stripe_subscription_id: row
+            .get("stripe_subscription_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        current_period_end: row
+            .get("stripe_current_period_end")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        cancel_at_period_end: row
+            .get("stripe_cancel_at_period_end")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+        trial_active,
+        trial_ends_at: trial_ends_at_str.map(|s| s.to_string()),
+    }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandInvoice {
+    pub id: String,
+    pub number: Option<String>,
+    pub amount: i64,
+    pub currency: String,
+    pub status: String,
+    pub created_at: Option<String>,
+    pub invoice_url: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandInvoicesResponse {
+    pub invoices: Vec<BrandInvoice>,
+}
+
+pub async fn list_brand_invoices(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandInvoicesResponse>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    if state.stripe_secret_key.trim().is_empty() {
+        return Ok(Json(BrandInvoicesResponse { invoices: vec![] }));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    let row = get_brand_checkout_row(&state, &brand_id).await?;
+    let customer_id_str = row
+        .get("stripe_customer_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty());
+
+    let customer_id_str = match customer_id_str {
+        Some(id) => id.to_string(),
+        None => return Ok(Json(BrandInvoicesResponse { invoices: vec![] })),
+    };
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let customer_id = customer_id_str
+        .parse::<stripe_sdk::CustomerId>()
+        .map_err(|_| {
+            billing_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "invalid_customer_id",
+                "Invalid Stripe customer ID.",
+            )
+        })?;
+
+    let params = stripe_sdk::ListInvoices {
+        customer: Some(customer_id),
+        limit: Some(24),
+        ..Default::default()
+    };
+
+    let invoices = match stripe_sdk::Invoice::list(&client, &params).await {
+        Ok(list) => list.data,
+        Err(e) => {
+            warn!(error = %e, brand_id = %user.id, "failed to list stripe invoices for brand");
+            return Ok(Json(BrandInvoicesResponse { invoices: vec![] }));
+        }
+    };
+
+    let brand_invoices: Vec<BrandInvoice> = invoices
+        .into_iter()
+        .map(|inv| BrandInvoice {
+            id: inv.id.to_string(),
+            number: inv.number,
+            amount: inv.amount_due.unwrap_or(0),
+            currency: inv
+                .currency
+                .map(|c| c.to_string())
+                .unwrap_or_else(|| "usd".to_string()),
+            status: inv
+                .status
+                .map(|s| format!("{:?}", s).to_lowercase())
+                .unwrap_or_else(|| "unknown".to_string()),
+            created_at: inv.created.map(ts_to_rfc3339).unwrap_or(None),
+            invoice_url: inv.hosted_invoice_url,
+        })
+        .collect();
+
+    Ok(Json(BrandInvoicesResponse {
+        invoices: brand_invoices,
+    }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct BrandBudgetSettings {
+    pub monthly_budget_limit: Option<f64>,
+    pub budget_alert_enabled: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateBrandBudgetSettingsRequest {
+    pub monthly_budget_limit: Option<f64>,
+    pub budget_alert_enabled: Option<bool>,
+}
+
+pub async fn get_brand_budget_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<BrandBudgetSettings>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    let resp = state
+        .pg
+        .from("brands")
+        .select("monthly_budget_limit,budget_alert_enabled")
+        .eq("id", &brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let row = serde_json::from_str::<serde_json::Value>(&text)
+        .ok()
+        .and_then(|v| v.as_array().and_then(|a| a.first().cloned()))
+        .unwrap_or(json!({}));
+
+    Ok(Json(BrandBudgetSettings {
+        monthly_budget_limit: row.get("monthly_budget_limit").and_then(|v| v.as_f64()),
+        budget_alert_enabled: row
+            .get("budget_alert_enabled")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false),
+    }))
+}
+
+pub async fn update_brand_budget_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<UpdateBrandBudgetSettingsRequest>,
+) -> Result<Json<BrandBudgetSettings>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "brand_only".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    // Validate monthly_budget_limit
+    if let Some(limit) = payload.monthly_budget_limit {
+        if limit < 0.0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Budget limit cannot be negative".to_string(),
+            ));
+        }
+        if limit > 10_000_000.0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Budget limit cannot exceed $10,000,000".to_string(),
+            ));
+        }
+    }
+
+    let update_body = json!({
+        "monthly_budget_limit": payload.monthly_budget_limit,
+        "budget_alert_enabled": payload.budget_alert_enabled.unwrap_or(false),
+    });
+
+    let resp = state
+        .pg
+        .from("brands")
+        .update(update_body.to_string())
+        .eq("id", &brand_id)
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(BrandBudgetSettings {
+        monthly_budget_limit: payload.monthly_budget_limit,
+        budget_alert_enabled: payload.budget_alert_enabled.unwrap_or(false),
+    }))
+}
+
+fn verify_cron_auth(headers: &HeaderMap, cron_secret: &str) -> Result<(), (StatusCode, String)> {
+    if cron_secret.trim().is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "CRON_SECRET not configured".to_string(),
+        ));
+    }
+
+    let auth_header = headers
+        .get("Authorization")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if !auth_header.starts_with("Bearer ") {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "Missing or invalid Authorization header. Use: Authorization: Bearer <secret>"
+                .to_string(),
+        ));
+    }
+
+    let token = auth_header.strip_prefix("Bearer ").unwrap_or("");
+    if token != cron_secret.trim() {
+        return Err((StatusCode::UNAUTHORIZED, "Invalid cron secret".to_string()));
+    }
+
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CronQueryParams {
+    /// Optional: for idempotency tracking
+    pub idempotency_key: Option<String>,
+}
+
+pub async fn check_budget_alerts_cron(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    verify_cron_auth(&headers, &state.cron_secret)?;
+
+    let now = chrono::Utc::now();
+    let current_month_start = chrono::Utc
+        .with_ymd_and_hms(now.year(), now.month(), 1, 0, 0, 0)
+        .unwrap();
+
+    // Get all brands with budget alerts enabled
+    let resp = state
+        .pg
+        .from("brands")
+        .select("id,email,company_name,monthly_budget_limit,budget_alert_enabled,budget_alert_80_sent_at,budget_alert_100_sent_at")
+        .eq("budget_alert_enabled", "true")
+        .not("monthly_budget_limit", "is", "null")
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    let brands: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let brands_count = brands.len();
+    let mut alerts_sent = 0;
+
+    for brand in brands {
+        let brand_id = brand.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let budget_limit = brand
+            .get("monthly_budget_limit")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+
+        if budget_limit <= 0.0 {
+            continue;
+        }
+
+        // Get current month spend from campaign_offers
+        let offers_resp = state
+            .pg
+            .from("campaign_offers")
+            .select("id,budget_snapshot,payment_status,paid_at,updated_at,created_at")
+            .eq("brand_id", brand_id)
+            .limit(1000)
+            .execute()
+            .await
+            .map_err(map_postgrest_transport_error)?;
+
+        let offers_text = offers_resp.text().await.unwrap_or_default();
+        let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
+
+        let mut current_month_spend: i64 = 0;
+        // Uses shared utils::parse_budget_cents() function
+        for offer in offers {
+            let payment_status = offer
+                .get("payment_status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
+            if payment_status != "paid" {
+                continue;
+            }
+
+            let budget_snapshot = offer.get("budget_snapshot");
+            let budget_cents = budget_snapshot.map(parse_budget_cents).unwrap_or(0);
+            if budget_cents <= 0 {
+                continue;
+            }
+
+            let paid_at_str = offer
+                .get("paid_at")
+                .and_then(|v| v.as_str())
+                .or_else(|| offer.get("created_at").and_then(|v| v.as_str()))
+                .unwrap_or("");
+            let paid_at = chrono::DateTime::parse_from_rfc3339(paid_at_str)
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or(now);
+
+            if paid_at >= current_month_start {
+                current_month_spend += budget_cents;
+            }
+        }
+
+        let current_spend_dollars = (current_month_spend as f64) / 100.0;
+        let spend_percent = (current_spend_dollars / budget_limit) * 100.0;
+
+        // Check 100% threshold
+        let alert_100_sent = brand
+            .get("budget_alert_100_sent_at")
+            .and_then(|v| v.as_str())
+            .is_some();
+        if spend_percent >= 100.0 && !alert_100_sent {
+            if let Err((code, err)) = crate::notifications::send_brand_notification(
+                &state,
+                brand_id,
+                None,
+                "Budget Alert: Monthly Limit Reached",
+                &format!(
+                    "You have reached your monthly budget limit of ${:.2}. Current spend: ${:.2}",
+                    budget_limit, current_spend_dollars
+                ),
+                json!({"type": "budget_alert", "threshold": "100"}),
+                true,
+            )
+            .await
+            {
+                tracing::warn!(
+                    brand_id,
+                    error = %err,
+                    status = %code,
+                    "Failed to send 100% budget alert notification"
+                );
+            }
+
+            if let Err(e) = state
+                .pg
+                .from("brands")
+                .update(json!({"budget_alert_100_sent_at": now.to_rfc3339()}).to_string())
+                .eq("id", brand_id)
+                .execute()
+                .await
+            {
+                tracing::warn!(brand_id, error = %e, "Failed to update budget_alert_100_sent_at");
+            }
+
+            alerts_sent += 1;
+        }
+        // Check 80% threshold
+        else if spend_percent >= 80.0 {
+            let alert_80_sent = brand
+                .get("budget_alert_80_sent_at")
+                .and_then(|v| v.as_str())
+                .is_some();
+            if !alert_80_sent {
+                if let Err((code, err)) = crate::notifications::send_brand_notification(
+                    &state,
+                    brand_id,
+                    None,
+                    "Budget Alert: 80% of Monthly Limit Reached",
+                    &format!(
+                        "You have reached 80% of your monthly budget limit (${:.2} of ${:.2}). Current spend: ${:.2}",
+                        budget_limit * 0.8, budget_limit, current_spend_dollars
+                    ),
+                    json!({"type": "budget_alert", "threshold": "80"}),
+                    true,
+                )
+                .await
+                {
+                    tracing::warn!(
+                        brand_id,
+                        error = %err,
+                        status = %code,
+                        "Failed to send 80% budget alert notification"
+                    );
+                }
+
+                if let Err(e) = state
+                    .pg
+                    .from("brands")
+                    .update(json!({"budget_alert_80_sent_at": now.to_rfc3339()}).to_string())
+                    .eq("id", brand_id)
+                    .execute()
+                    .await
+                {
+                    tracing::warn!(brand_id, error = %e, "Failed to update budget_alert_80_sent_at");
+                }
+
+                alerts_sent += 1;
+            }
+        }
+    }
+
+    Ok(Json(json!({
+        "success": true,
+        "alerts_sent": alerts_sent,
+        "brands_checked": brands_count
+    })))
+}
+
+pub async fn reset_monthly_budget_alerts(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    verify_cron_auth(&headers, &state.cron_secret)?;
+
+    // Reset alert timestamps for all brands at the start of each month
+    let resp = state
+        .pg
+        .from("brands")
+        .update(
+            json!({
+                "budget_alert_80_sent_at": null,
+                "budget_alert_100_sent_at": null
+            })
+            .to_string(),
+        )
+        .not("monthly_budget_limit", "is", "null")
+        .execute()
+        .await
+        .map_err(map_postgrest_transport_error)?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.map_err(map_postgrest_transport_error)?;
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(json!({
+        "success": true,
+        "message": "Monthly budget alert flags reset"
+    })))
 }

@@ -35,12 +35,12 @@ The Team Member functionality allows organization owners (agencies or brands) to
 
 ### Key Tables
 
-| Table | Purpose |
-|-------|---------|
-| `organization_memberships` | Links users to organizations with roles and status |
-| `organization_invites` | Pending team invitations with token-based acceptance |
-| `organization_audit_logs` | Audit trail for team member actions |
-| `agencies` / `brands` | Organization profiles (owner's data) |
+| Table                      | Purpose                                              |
+| -------------------------- | ---------------------------------------------------- |
+| `organization_memberships` | Links users to organizations with roles and status   |
+| `organization_invites`     | Pending team invitations with token-based acceptance |
+| `organization_audit_logs`  | Audit trail for team member actions                  |
+| `agencies` / `brands`      | Organization profiles (owner's data)                 |
 
 ### Organization ID Pattern
 
@@ -54,12 +54,12 @@ The Team Member functionality allows organization owners (agencies or brands) to
 
 ### Roles and Permissions
 
-| Role | Permissions |
-|------|-------------|
-| **owner** | Full access to all organization features, billing management, team management |
-| **admin** | All permissions except managing billing (configurable) |
-| **project_manager** | Create campaigns, approve deliverables, view team, manage brand connections |
-| **reviewer** | Approve deliverables, view team members, view brand connections (read-only) |
+| Role                | Permissions                                                                                                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **owner**           | Full access to all organization features, billing management, team management, ownership transfer                                                     |
+| **admin**           | All permissions except ownership transfer and organization deletion; includes billing and team management                                             |
+| **project_manager** | Create campaigns, approve deliverables, manage connections, licenses, contracts, jobs, and pay offers (no billing or team management)                 |
+| **reviewer**        | Read-only access to all resources except billing/subscriptions (view deliverables, team, connections, clients, licenses, jobs, contracts, pay offers) |
 
 ### Permission Enum (Backend)
 
@@ -67,31 +67,137 @@ The Team Member functionality allows organization owners (agencies or brands) to
 pub enum Permission {
     CreateCampaigns,
     ApproveDeliverables,
+    ViewDeliverables,
     ManageBilling,
     InviteTeamMembers,
     UpdateMemberRoles,
     ViewTeamMembers,
     ViewBrandConnections,
     ManageBrandConnections,
+    DisconnectBrandConnections,
+    ViewClients,
+    ManageClients,
     ViewLicenses,
     ManageLicenses,
+    TransferOwnership,
+    DeleteOrganisation,
+    ManageJobs,
+    ViewJobs,
+    ManageContracts,
+    ViewContracts,
+    ManageSubscriptions,
+    ViewSubscriptions,
+    ManagePayOffers,
+    ViewPayOffers,
+    RemoveTeamMembers,
 }
 ```
 
-### Role to Permission Mapping
+### Role to Permission Mapping (Current Implementation)
 
-| Permission | Owner | Admin | Project Manager | Reviewer |
-|------------|-------|-------|-----------------|----------|
-| CreateCampaigns | ✅ | ✅ | ✅ | ❌ |
-| ApproveDeliverables | ✅ | ✅ | ✅ | ✅ |
-| ManageBilling | ✅ | ❌ | ❌ | ❌ |
-| InviteTeamMembers | ✅ | ✅ | ❌ | ❌ |
-| UpdateMemberRoles | ✅ | ✅ | ❌ | ❌ |
-| ViewTeamMembers | ✅ | ✅ | ✅ | ✅ |
-| ViewBrandConnections | ✅ | ✅ | ✅ | ✅ |
-| ManageBrandConnections | ✅ | ✅ | ✅ | ❌ |
-| ViewLicenses | ✅ | ✅ | ✅ | ✅ |
-| ManageLicenses | ✅ | ✅ | ✅ | ❌ |
+| Permission                 | Owner | Admin | Project Manager | Reviewer |
+| -------------------------- | ----- | ----- | --------------- | -------- |
+| CreateCampaigns            | ✅    | ✅    | ✅              | ❌       |
+| ApproveDeliverables        | ✅    | ✅    | ✅              | ❌       |
+| ViewDeliverables           | ✅    | ✅    | ✅              | ✅       |
+| ManageBilling              | ✅    | ✅    | ❌              | ❌       |
+| InviteTeamMembers          | ✅    | ✅    | ❌              | ❌       |
+| UpdateMemberRoles          | ✅    | ✅    | ❌              | ❌       |
+| ViewTeamMembers            | ✅    | ✅    | ✅              | ✅       |
+| ViewBrandConnections       | ✅    | ✅    | ✅              | ✅       |
+| ManageBrandConnections     | ✅    | ✅    | ✅              | ❌       |
+| DisconnectBrandConnections | ✅    | ✅    | ✅              | ❌       |
+| ViewClients                | ✅    | ✅    | ✅              | ✅       |
+| ManageClients              | ✅    | ✅    | ✅              | ❌       |
+| ViewLicenses               | ✅    | ✅    | ✅              | ✅       |
+| ManageLicenses             | ✅    | ✅    | ✅              | ❌       |
+| ManageJobs                 | ✅    | ✅    | ✅              | ❌       |
+| ViewJobs                   | ✅    | ✅    | ✅              | ✅       |
+| ManageContracts            | ✅    | ✅    | ✅              | ❌       |
+| ViewContracts              | ✅    | ✅    | ✅              | ✅       |
+| ManageSubscriptions        | ✅    | ✅    | ❌              | ❌       |
+| ViewSubscriptions          | ✅    | ✅    | ✅              | ❌       |
+| ManagePayOffers            | ✅    | ✅    | ✅              | ❌       |
+| ViewPayOffers              | ✅    | ✅    | ✅              | ✅       |
+| RemoveTeamMembers          | ✅    | ✅    | ❌              | ❌       |
+| TransferOwnership          | ✅    | ❌    | ❌              | ❌       |
+| DeleteOrganisation         | ✅    | ❌    | ❌              | ❌       |
+
+### Permission Categories by Role
+
+#### **Reviewer** (Read-Only Access)
+
+**Can View:**
+
+- Deliverables
+- Team members
+- Brand connections
+- Clients
+- Licenses
+- Jobs
+- Contracts
+- Pay offers
+
+**Cannot Do:**
+
+- Create, edit, or approve anything
+- Manage billing or subscriptions
+- Invite team members or update roles
+- Pay offers or manage any resources
+
+#### **Project Manager** (Operational Access)
+
+**Can Do Everything Reviewer Can Do PLUS:**
+
+- Create campaigns
+- Approve deliverables
+- Pay offers
+- Manage jobs, contracts, licenses
+- Manage brand connections and clients
+- View subscriptions & billing (read-only)
+
+**Cannot Do:**
+
+- Manage billing/subscriptions (upgrade plans)
+- Invite team members
+- Update member roles
+
+#### **Admin** (Full Management Access)
+
+**Can Do Everything Project Manager Can Do PLUS:**
+
+- Manage billing & subscriptions
+- Invite team members
+- Update member roles
+- Remove team members
+- Manage all organization settings
+
+**Cannot Do:**
+
+- Transfer ownership
+- Delete organization
+
+#### **Owner** (Complete Access)
+
+**Can Do Everything Admin Can Do PLUS:**
+
+- Transfer ownership to another member
+- Delete the organization
+
+### Organization Type Context
+
+The permission system applies to both **Brands** and **Agencies** with context-specific meanings:
+
+| Permission                 | Brand Context                           | Agency Context                   |
+| -------------------------- | --------------------------------------- | -------------------------------- |
+| ViewBrandConnections       | View creator relationships              | View brand partnerships          |
+| ManageBrandConnections     | Manage creator relationships            | Manage brand partnerships        |
+| DisconnectBrandConnections | Disconnect from creators                | Disconnect from brands           |
+| ManageClients              | Manage brand's customers                | Manage agency's clients (brands) |
+| ManageLicenses             | Manage licensing requests from creators | Manage licensing for talents     |
+| ManagePayOffers            | Pay creator offers                      | Pay talent offers                |
+
+**Note:** The permission system is unified across both organization types, ensuring consistent behavior while respecting each organization's context.
 
 ---
 
@@ -115,12 +221,12 @@ pub enum Permission {
 
 ### Invitation States
 
-| Status | Description |
-|--------|-------------|
-| `pending` | Invitation sent, awaiting acceptance |
-| `accepted` | User has joined the organization |
-| `expired` | 72 hours have passed without acceptance |
-| `revoked` | Owner/admin cancelled the invitation |
+| Status     | Description                             |
+| ---------- | --------------------------------------- |
+| `pending`  | Invitation sent, awaiting acceptance    |
+| `accepted` | User has joined the organization        |
+| `expired`  | 72 hours have passed without acceptance |
+| `revoked`  | Owner/admin cancelled the invitation    |
 
 ---
 
@@ -138,7 +244,7 @@ pub async fn get_profile(
     // Resolves to organization_id for team members
     // or user.id for owners
     let agency_id = resolve_effective_agency_id(&state, &user).await?;
-    
+
     let resp = state
         .pg
         .from("agencies")
@@ -171,9 +277,9 @@ if (roleHint === "agency" || roleHint === "brand") {
     const { data: orgData } = await supabase
       .from(organizationTable)
       .select("*")
-      .eq("id", organizationId)  // organization_id from membership
+      .eq("id", organizationId) // organization_id from membership
       .maybeSingle();
-    
+
     // Set profile with organization data + membership info
     setProfile({
       ...(orgData || {}),
@@ -189,14 +295,14 @@ if (roleHint === "agency" || roleHint === "brand") {
 
 ### Profile Fields for Team Members
 
-| Field | Source | Description |
-|-------|--------|-------------|
-| `id` | Team member's user ID | The user's own ID |
-| `organization_id` | Membership | The organization's ID (owner's user ID) |
-| `organization_name` | Organization profile | Organization's display name |
-| `membership_role` | Membership | The member's role (admin, project_manager, etc.) |
-| `plan_tier` | Organization profile | Organization's subscription level |
-| `agency_name`, `logo_url`, etc. | Organization profile | All settings inherited from organization |
+| Field                           | Source                | Description                                      |
+| ------------------------------- | --------------------- | ------------------------------------------------ |
+| `id`                            | Team member's user ID | The user's own ID                                |
+| `organization_id`               | Membership            | The organization's ID (owner's user ID)          |
+| `organization_name`             | Organization profile  | Organization's display name                      |
+| `membership_role`               | Membership            | The member's role (admin, project_manager, etc.) |
+| `plan_tier`                     | Organization profile  | Organization's subscription level                |
+| `agency_name`, `logo_url`, etc. | Organization profile  | All settings inherited from organization         |
 
 ---
 
@@ -238,14 +344,14 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 ### Tables with Team Member RLS
 
-| Table | Policy Pattern |
-|-------|----------------|
-| `agencies` | SELECT/UPDATE using `is_agency_team_member(id)` |
-| `brands` | SELECT/UPDATE using `is_brand_team_member(id)` |
+| Table                          | Policy Pattern                                   |
+| ------------------------------ | ------------------------------------------------ |
+| `agencies`                     | SELECT/UPDATE using `is_agency_team_member(id)`  |
+| `brands`                       | SELECT/UPDATE using `is_brand_team_member(id)`   |
 | `agency_notification_settings` | All ops using `is_agency_team_member(agency_id)` |
 | `agency_tax_currency_settings` | All ops using `is_agency_team_member(agency_id)` |
-| `agency_email_templates` | All ops using `is_agency_team_member(agency_id)` |
-| `agency_commission_settings` | All ops using `is_agency_team_member(agency_id)` |
+| `agency_email_templates`       | All ops using `is_agency_team_member(agency_id)` |
+| `agency_commission_settings`   | All ops using `is_agency_team_member(agency_id)` |
 
 ### Example RLS Policy
 
@@ -270,17 +376,17 @@ CREATE POLICY "agency_notification_settings update own"
 
 ## Shared Data Between Owner and Team Members
 
-| Data Type | Shared? | Notes |
-|-----------|---------|-------|
-| **Profile** (agency_name, logo, etc.) | ✅ Yes | Team members see organization's profile |
-| **Subscription/Plan** (plan_tier) | ✅ Yes | Team members have same plan entitlements |
-| **Billing** (Stripe customer, invoices) | ✅ Read-only | Managed by owner/admin only |
-| **Settings** (notifications, tax, email templates) | ✅ Yes | All team members can view/modify based on role |
-| **Roster** (talent cards) | ✅ Yes | Shared across organization |
-| **Campaigns** | ✅ Yes | Based on permission to create/edit |
-| **Team Management** | Role-based | Only owner/admin can manage team |
-| **Licensing Requests** | ✅ Yes | Based on permission |
-| **Brand Connections** | ✅ Yes | Based on permission |
+| Data Type                                          | Shared?      | Notes                                          |
+| -------------------------------------------------- | ------------ | ---------------------------------------------- |
+| **Profile** (agency_name, logo, etc.)              | ✅ Yes       | Team members see organization's profile        |
+| **Subscription/Plan** (plan_tier)                  | ✅ Yes       | Team members have same plan entitlements       |
+| **Billing** (Stripe customer, invoices)            | ✅ Read-only | Managed by owner/admin only                    |
+| **Settings** (notifications, tax, email templates) | ✅ Yes       | All team members can view/modify based on role |
+| **Roster** (talent cards)                          | ✅ Yes       | Shared across organization                     |
+| **Campaigns**                                      | ✅ Yes       | Based on permission to create/edit             |
+| **Team Management**                                | Role-based   | Only owner/admin can manage team               |
+| **Licensing Requests**                             | ✅ Yes       | Based on permission                            |
+| **Brand Connections**                              | ✅ Yes       | Based on permission                            |
 
 ---
 
@@ -288,29 +394,30 @@ CREATE POLICY "agency_notification_settings update own"
 
 ### Team Management
 
-| Endpoint | Method | Purpose | Permission Required |
-|----------|--------|---------|---------------------|
-| `/api/team/context` | GET | Get team context (members, invites, permissions) | ViewTeamMembers |
-| `/api/team/members` | GET | List team members | ViewTeamMembers |
-| `/api/team/invites` | GET | List invites | ViewTeamMembers |
-| `/api/team/invites` | POST | Create invite | InviteTeamMembers |
-| `/api/team/members/:user_id/role` | POST | Update member role | UpdateMemberRoles |
-| `/api/team/audit-logs` | GET | Get team activity | ViewTeamMembers |
+| Endpoint                          | Method | Purpose                                          | Permission Required |
+| --------------------------------- | ------ | ------------------------------------------------ | ------------------- |
+| `/api/team/context`               | GET    | Get team context (members, invites, permissions) | ViewTeamMembers     |
+| `/api/team/members`               | GET    | List team members                                | ViewTeamMembers     |
+| `/api/team/invites`               | GET    | List invites                                     | ViewTeamMembers     |
+| `/api/team/invites`               | POST   | Create invite                                    | InviteTeamMembers   |
+| `/api/team/members/:user_id/role` | POST   | Update member role                               | UpdateMemberRoles   |
+| `/api/team/members/:user_id`      | DELETE | Remove member from organization                  | RemoveTeamMembers   |
+| `/api/team/audit-logs`            | GET    | Get team activity                                | ViewTeamMembers     |
 
 ### Invitation (Public)
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/invites/team/:token` | GET | Get invite details by token |
-| `/api/invites/team/:token/accept` | POST | Accept invitation |
-| `/api/invites/team/:token/decline` | POST | Decline invitation |
+| Endpoint                           | Method | Purpose                     |
+| ---------------------------------- | ------ | --------------------------- |
+| `/api/invites/team/:token`         | GET    | Get invite details by token |
+| `/api/invites/team/:token/accept`  | POST   | Accept invitation           |
+| `/api/invites/team/:token/decline` | POST   | Decline invitation          |
 
 ### Profile (Resolves to Organization)
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/agency-profile/user` | GET | Get agency profile (returns org data for team members) |
-| `/api/brand-profile/user` | GET | Get brand profile (returns org data for team members) |
+| Endpoint                   | Method | Purpose                                                |
+| -------------------------- | ------ | ------------------------------------------------------ |
+| `/api/agency-profile/user` | GET    | Get agency profile (returns org data for team members) |
+| `/api/brand-profile/user`  | GET    | Get brand profile (returns org data for team members)  |
 
 ---
 
@@ -380,13 +487,13 @@ When adding new features for agencies/brands, ensure:
 
 ### Common Issues
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| 403 Forbidden on settings | RLS policy doesn't include team member check | Update RLS to use `is_agency_team_member()` |
-| Wrong plan_tier shown | Frontend using `profile.id` instead of `organization_id` | Use `effectiveAgencyId` pattern |
-| Team member sees empty profile | Backend using `user.id` directly | Use `resolve_effective_agency_id()` |
-| Can't invite team members | Missing `InviteTeamMembers` permission | Check user's role has the permission |
-| Settings not saving | Using wrong agency_id in upsert | Use `organization_id` from profile |
+| Issue                          | Cause                                                    | Solution                                    |
+| ------------------------------ | -------------------------------------------------------- | ------------------------------------------- |
+| 403 Forbidden on settings      | RLS policy doesn't include team member check             | Update RLS to use `is_agency_team_member()` |
+| Wrong plan_tier shown          | Frontend using `profile.id` instead of `organization_id` | Use `effectiveAgencyId` pattern             |
+| Team member sees empty profile | Backend using `user.id` directly                         | Use `resolve_effective_agency_id()`         |
+| Can't invite team members      | Missing `InviteTeamMembers` permission                   | Check user's role has the permission        |
+| Settings not saving            | Using wrong agency_id in upsert                          | Use `organization_id` from profile          |
 
 ### Debug Logging
 
@@ -407,10 +514,10 @@ console.log("[AuthProvider] Organization profile fetch:", {
 
 ## Migration Files
 
-| File | Purpose |
-|------|---------|
-| `2026-04-04_team_rbac_foundation.sql` | Core tables: memberships, invites, audit_logs |
-| `2026-04-06_team_member_rls_policies.sql` | RLS policies for team member access |
+| File                                      | Purpose                                       |
+| ----------------------------------------- | --------------------------------------------- |
+| `2026-04-04_team_rbac_foundation.sql`     | Core tables: memberships, invites, audit_logs |
+| `2026-04-06_team_member_rls_policies.sql` | RLS policies for team member access           |
 
 ---
 
@@ -422,15 +529,15 @@ Team members share the same KYC verification status as the organization owner. T
 
 ### KYC Fields (stored on agencies/brands table)
 
-| Field | Description |
-|-------|-------------|
-| `kyc_status` | Current status: `not_started`, `pending`, `approved`, `rejected` |
-| `liveness_status` | Liveness check status |
-| `kyc_provider` | Provider used (e.g., `veriff`) |
-| `kyc_session_id` | Current/last session ID |
-| `verified_at` | Timestamp when verified |
-| `kyc_rejection_reason` | Human-readable rejection reason |
-| `kyc_rejection_code` | Machine-readable rejection code |
+| Field                  | Description                                                      |
+| ---------------------- | ---------------------------------------------------------------- |
+| `kyc_status`           | Current status: `not_started`, `pending`, `approved`, `rejected` |
+| `liveness_status`      | Liveness check status                                            |
+| `kyc_provider`         | Provider used (e.g., `veriff`)                                   |
+| `kyc_session_id`       | Current/last session ID                                          |
+| `verified_at`          | Timestamp when verified                                          |
+| `kyc_rejection_reason` | Human-readable rejection reason                                  |
+| `kyc_rejection_code`   | Machine-readable rejection code                                  |
 
 ### Backend Implementation
 
@@ -452,7 +559,7 @@ pub async fn create_session(
         let requested = req.organization_id.as_ref().unwrap_or(&user.id);
         resolve_profile_id_for_role(&state, &user, requested).await?
     };
-    
+
     // Check current KYC status from organization's profile
     let current_status = get_current_kyc_status(&state, &profile_id, &user.role).await?;
     // ... rest of KYC session creation
@@ -471,11 +578,11 @@ CREATE POLICY "agency_veriff_sessions select own"
 
 ### Permission Requirements
 
-| Action | Permission Required | Notes |
-|--------|---------------------|-------|
-| View KYC Status | ViewTeamMembers | Available to all roles |
-| Create KYC Session | Owner or Admin only | Typically restricted to billing managers |
-| View KYC Session History | ViewTeamMembers | For audit purposes |
+| Action                   | Permission Required | Notes                                    |
+| ------------------------ | ------------------- | ---------------------------------------- |
+| View KYC Status          | ViewTeamMembers     | Available to all roles                   |
+| Create KYC Session       | Owner or Admin only | Typically restricted to billing managers |
+| View KYC Session History | ViewTeamMembers     | For audit purposes                       |
 
 ### Team Member KYC Flow
 

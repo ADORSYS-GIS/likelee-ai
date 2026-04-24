@@ -44,6 +44,18 @@ async fn main() {
         }
     }
 
+    // Validate BRAND_TRIAL_DAYS is within reasonable bounds
+    if cfg.brand_trial_days == 0 || cfg.brand_trial_days > 365 {
+        panic!(
+            "BRAND_TRIAL_DAYS must be between 1 and 365 days, got {}",
+            cfg.brand_trial_days
+        );
+    }
+    info!(
+        brand_trial_days = cfg.brand_trial_days,
+        "brand_trial_config_loaded"
+    );
+
     let pg_url =
         if cfg.supabase_url.ends_with("/rest/v1") || cfg.supabase_url.ends_with("/rest/v1/") {
             cfg.supabase_url.clone()
@@ -125,6 +137,7 @@ async fn main() {
         supabase_jwt_secret: cfg.supabase_jwt_secret.clone(),
         supabase_bucket_public: cfg.supabase_bucket_public.clone(),
         supabase_bucket_private: cfg.supabase_bucket_private.clone(),
+        supabase_bucket_temp: cfg.supabase_bucket_temp.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
         stripe_secret_key: cfg.stripe_secret_key.clone(),
         stripe_client_id: cfg.stripe_client_id.clone(),
@@ -145,6 +158,10 @@ async fn main() {
             .stripe_agency_basic_headcount_annual_price_id
             .clone(),
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
+        stripe_creator_basic_price_id: cfg.stripe_creator_basic_price_id.clone(),
+        stripe_creator_pro_price_id: cfg.stripe_creator_pro_price_id.clone(),
+        stripe_creator_basic_annual_price_id: cfg.stripe_creator_basic_annual_price_id.clone(),
+        stripe_creator_pro_annual_price_id: cfg.stripe_creator_pro_annual_price_id.clone(),
         stripe_agency_pro_base_annual_price_id: cfg.stripe_agency_pro_base_annual_price_id.clone(),
         stripe_agency_pro_headcount_price_id: cfg.stripe_agency_pro_headcount_price_id.clone(),
         stripe_agency_pro_headcount_annual_price_id: cfg
@@ -154,6 +171,11 @@ async fn main() {
         stripe_agency_irl_booking_annual_price_id: cfg
             .stripe_agency_irl_booking_annual_price_id
             .clone(),
+        stripe_brand_basic_price_id: cfg.stripe_brand_basic_price_id.clone(),
+        stripe_brand_basic_annual_price_id: cfg.stripe_brand_basic_annual_price_id.clone(),
+        stripe_brand_pro_price_id: cfg.stripe_brand_pro_price_id.clone(),
+        stripe_brand_pro_annual_price_id: cfg.stripe_brand_pro_annual_price_id.clone(),
+        stripe_brand_studio_addon_price_id: cfg.stripe_brand_studio_addon_price_id.clone(),
         stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
             format!(
                 "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
@@ -185,6 +207,22 @@ async fn main() {
             )
         } else {
             cfg.stripe_licensing_cancel_url.trim().to_string()
+        },
+        stripe_creator_success_url: if cfg.stripe_creator_success_url.trim().is_empty() {
+            format!(
+                "{}/CreatorSubscribe?success=1&session_id={{CHECKOUT_SESSION_ID}}",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_creator_success_url.trim().to_string()
+        },
+        stripe_creator_cancel_url: if cfg.stripe_creator_cancel_url.trim().is_empty() {
+            format!(
+                "{}/CreatorSubscribe?canceled=1",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_creator_cancel_url.trim().to_string()
         },
 
         stripe_studio_success_url: {
@@ -269,6 +307,12 @@ async fn main() {
         cache_l3,
         cache_idempotency,
         cache_metrics,
+
+        // Cron authentication
+        cron_secret: cfg.cron_secret.clone(),
+
+        // Brand trial configuration
+        brand_trial_days: cfg.brand_trial_days,
     };
 
     // Start background jobs

@@ -25,7 +25,7 @@ import {
 export default function AgencyInviteLanding() {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { authenticated, profile, supabase } = useAuth();
+  const { authenticated, profile, refreshProfile, supabase } = useAuth();
 
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState(false);
@@ -100,14 +100,16 @@ export default function AgencyInviteLanding() {
 
     try {
       await acceptAgencyTalentInviteByToken(effectiveToken);
+      await refreshProfile();
       setOtpDialogOpen(false);
       setPassword("");
       setConfirmPassword("");
       toast({
         title: "Invitation accepted",
-        description: "Welcome! Redirecting you to the Talent Portal…",
+        description:
+          "Invitation accepted. Continue setting up your creator profile…",
       });
-      navigate("/talentportal", { replace: true });
+      window.location.replace("/ReserveProfile?mode=signup&step=2");
     } catch (e: any) {
       const message = e?.message || String(e);
       setActionError(message);
@@ -119,7 +121,7 @@ export default function AgencyInviteLanding() {
     } finally {
       setActionLoading(false);
     }
-  }, [effectiveToken, navigate]);
+  }, [effectiveToken, refreshProfile]);
 
   const handleInviteOtpVerify = async (code: string) => {
     const client = requireSupabase();
@@ -243,15 +245,14 @@ export default function AgencyInviteLanding() {
     }
   };
 
-  const declineInvite = async () => {
-    if (!effectiveToken) return;
+  const startDeclineFlow = async () => {
+    if (!effectiveToken || !isPending) return;
 
     setActionLoading(true);
     setActionError(null);
 
     try {
       await declineAgencyTalentInviteByToken(effectiveToken);
-      await supabase?.auth.signOut();
       toast({
         title: "Invitation declined",
         description: "You declined the invitation.",
@@ -392,7 +393,7 @@ export default function AgencyInviteLanding() {
                 variant="outline"
                 className="h-11 w-full"
                 disabled={!isPending || actionLoading}
-                onClick={declineInvite}
+                onClick={startDeclineFlow}
               >
                 Decline
               </Button>
@@ -418,8 +419,8 @@ export default function AgencyInviteLanding() {
 
               <div className="text-xs text-gray-500">
                 {requiresPasswordSetup
-                  ? "Create your password first, then we’ll email a 6-digit code and keep you on this page while we verify it."
-                  : "We’ll email a 6-digit sign-in code and keep you on this page while we verify it."}
+                  ? "Create your password first, then we'll email a 6-digit code and keep you on this page while we verify it."
+                  : "We'll email a 6-digit sign-in code and keep you on this page while we verify it."}
               </div>
 
               {authenticated ? (
@@ -438,7 +439,7 @@ export default function AgencyInviteLanding() {
                       !hasInviteRole ||
                       !emailMatchesInvite
                     }
-                    onClick={declineInvite}
+                    onClick={startDeclineFlow}
                   >
                     Decline
                   </Button>

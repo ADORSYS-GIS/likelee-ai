@@ -1,7 +1,8 @@
-use crate::brand_campaigns::{
-    log_activity_event_with_subject, resolve_agency_name, resolve_brand_name, resolve_creator_name,
-};
+use crate::activity::log_activity_event_with_subject;
+use crate::brand_campaigns::{resolve_agency_name, resolve_brand_name, resolve_creator_name};
 use crate::config::AppState;
+use crate::entitlements::{brand_allows_campaign_collaboration, get_brand_plan_tier};
+
 use crate::errors::sanitize_db_error;
 use crate::pricing_defaults::{is_default_pricing, should_default_visibility_on};
 use crate::team::permissions::Permission;
@@ -236,7 +237,8 @@ pub async fn search_faces(
         .from("creators")
         .select("*")
         .eq("role", "creator")
-        .eq("public_profile_visible", "true");
+        .eq("public_profile_visible", "true")
+        .eq("kyc_status", "approved");
 
     if let Some(search) = q.query {
         if !search.is_empty() {
@@ -659,7 +661,7 @@ pub async fn search_marketplace_profiles(
             let mut request = state
                 .pg
                 .from("creators")
-                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations")
+                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,plan_tier")
                 .eq("role", "creator")
                 .eq("kyc_status", "approved")
                 .limit(limit);
@@ -1276,7 +1278,11 @@ pub async fn get_marketplace_profile_details(
         ));
     }
 
-    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let effective_agency_id = if user.role == "agency" {
+        resolve_effective_agency_id(&state, &user).await?
+    } else {
+        String::new()
+    };
     let mut response = serde_json::json!({
         "profile_type": profile_type,
         "profile": serde_json::Value::Null,
@@ -1296,7 +1302,7 @@ pub async fn get_marketplace_profile_details(
         let creator_resp = state
             .pg
             .from("creators")
-            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility,plan_tier")
             .eq("id", &profile_id)
             .limit(1)
             .execute()
@@ -1453,27 +1459,36 @@ pub async fn get_marketplace_profile_details(
                 .map(|s| s.as_str())
                 .collect::<Vec<_>>();
 
-            let availability_resp = state
-                .pg
-                .from("talent_booking_preferences")
-                .select("willing_to_travel,min_day_rate_cents,currency,updated_at")
-                .in_("talent_id", id_refs.clone())
-                .eq("agency_id", &effective_agency_id)
-                .order("updated_at.desc")
-                .limit(1)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let availability_status = availability_resp.status();
-            let availability_text = availability_resp
-                .text()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            if availability_status.is_success() {
-                let rows: Vec<serde_json::Value> =
-                    serde_json::from_str(&availability_text).unwrap_or_default();
-                if let Some(first) = rows.first() {
-                    response["availability"] = first.clone();
+            // Filter by user's agency if available, otherwise by the talent's representing agency
+            let target_agency_id = if !effective_agency_id.is_empty() {
+                Some(effective_agency_id.as_str())
+            } else {
+                licensing_agency_id.as_deref()
+            };
+
+            if let Some(target_agency_id) = target_agency_id {
+                let availability_resp = state
+                    .pg
+                    .from("talent_booking_preferences")
+                    .select("willing_to_travel,min_day_rate_cents,currency,updated_at")
+                    .in_("talent_id", id_refs.clone())
+                    .eq("agency_id", target_agency_id)
+                    .order("updated_at.desc")
+                    .limit(1)
+                    .execute()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let availability_status = availability_resp.status();
+                let availability_text = availability_resp
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                if availability_status.is_success() {
+                    let rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&availability_text).unwrap_or_default();
+                    if let Some(first) = rows.first() {
+                        response["availability"] = first.clone();
+                    }
                 }
             }
 
@@ -1753,6 +1768,16 @@ pub async fn create_marketplace_connection_request(
     Json(payload): Json<MarketplaceConnectPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency", "brand"]).check(&user.role)?;
+    if user.role == "brand" {
+        let effective_brand_id = resolve_effective_brand_id(&state, &user).await?;
+        let tier = get_brand_plan_tier(&state, &effective_brand_id).await?;
+        if !brand_allows_campaign_collaboration(tier) {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "brand_talent_browsing_requires_pro_plan".to_string(),
+            ));
+        }
+    }
     let profile_type = payload.profile_type.trim().to_lowercase();
     let target_id = payload.target_id.trim();
     if target_id.is_empty() {
@@ -1768,7 +1793,7 @@ pub async fn create_marketplace_connection_request(
             let creator_exists_resp = state
                 .pg
                 .from("creators")
-                .select("id")
+                .select("id,plan_tier")
                 .eq("id", &creator_id)
                 .eq("kyc_status", "approved")
                 .limit(1)
@@ -3194,6 +3219,14 @@ pub async fn create_brand_licensing_request(
     Json(payload): Json<BrandLicensingRequestPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["brand"]).check(&user.role)?;
+    let effective_brand_id = resolve_effective_brand_id(&state, &user).await?;
+    let tier = get_brand_plan_tier(&state, &effective_brand_id).await?;
+    if !brand_allows_campaign_collaboration(tier) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "brand_talent_browsing_requires_pro_plan".to_string(),
+        ));
+    }
 
     let agency_id = payload
         .agency_id
@@ -3201,6 +3234,7 @@ pub async fn create_brand_licensing_request(
         .map(|s| s.trim().to_string())
         .unwrap_or_default();
     let creator_id = payload.creator_id.trim().to_string();
+
     let campaign_title = payload.campaign_title.trim().to_string();
     if creator_id.is_empty() || campaign_title.is_empty() {
         return Err((
@@ -3264,6 +3298,7 @@ pub async fn create_brand_licensing_request(
             .text()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
         let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
             serde_json::from_str(&connected_text).unwrap_or_default()
         } else if is_missing_relation_error(&connected_text, "brand_agency_connections") {
@@ -3286,10 +3321,13 @@ pub async fn create_brand_licensing_request(
             if !fallback_status.is_success() {
                 return Err(sanitize_db_error(fallback_status.as_u16(), fallback_text));
             }
-            serde_json::from_str(&fallback_text).unwrap_or_default()
+            let fallback_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&fallback_text).unwrap_or_default();
+            fallback_rows
         } else {
             return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
         };
+
         if connected_rows.is_empty() {
             return Err((
                 StatusCode::FORBIDDEN,

@@ -227,7 +227,12 @@ export function CreatePackageWizard({
           const embeddedTalent =
             it?.talent || it?.agency_users || it?.talent_profile || null;
           const talentId = String(
-            it?.talent_id || embeddedTalent?.id || it?.id || "",
+            it?.talent_id ||
+              embeddedTalent?.id ||
+              it?.creator_id ||
+              it?.relationship_id ||
+              it?.id ||
+              "",
           ).trim();
           if (!talentId) return null;
           const assets = Array.isArray(it?.assets)
@@ -570,6 +575,15 @@ export function CreatePackageWizard({
       }
     }
 
+    if (formData.password_protected && !formData.password.trim()) {
+      return toast({
+        title: "Password Required",
+        description:
+          "Please set a password for this protected package in the 'Customize' step.",
+        variant: "destructive",
+      });
+    }
+
     if (isOfferMode) {
       if (!offerContext?.offerId) {
         return toast({
@@ -819,17 +833,21 @@ export function CreatePackageWizard({
                               setCoverUploading(true);
                               try {
                                 const fd = new FormData();
+                                fd.append("visibility", "public");
                                 fd.append("file", file);
                                 const resp = await base44.post<{
                                   file_url?: string;
+                                  public_url?: string;
                                 }>("/api/agency/storage/files/upload", fd);
-                                const url = resp?.file_url;
+                                const url = resp?.public_url || resp?.file_url;
                                 if (url) {
                                   setFormData((prev) => ({
                                     ...prev,
                                     cover_image_url: url,
                                   }));
                                   toast({ title: "Image uploaded" });
+                                } else {
+                                  throw new Error("Upload returned no URL");
                                 }
                               } catch (err: any) {
                                 toast({
@@ -1251,6 +1269,24 @@ export function CreatePackageWizard({
                             : "Complete the recipient details to publish the package"}
                         </p>
                       </div>
+
+                      {formData.password_protected &&
+                        !formData.password.trim() && (
+                          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3">
+                            <Lock className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-xs font-black text-red-900 uppercase tracking-widest">
+                                Password Missing
+                              </p>
+                              <p className="text-sm text-red-700 font-medium mt-1">
+                                This package has access control enabled but no
+                                password is set. Please go back to the{" "}
+                                <span className="font-bold">Customize</span>{" "}
+                                step to set one.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       {isOfferMode && (
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
@@ -1481,7 +1517,11 @@ export function CreatePackageWizard({
                                 >
                                   <opt.icon className="w-3 h-3" />
                                   <span className="text-[10px] font-black uppercase tracking-tight">
-                                    {opt.label}
+                                    {opt.label === "Locked" && opt.enabled
+                                      ? formData.password.trim()
+                                        ? "Locked (Set)"
+                                        : "Locked (Empty!)"
+                                      : opt.label}
                                   </span>
                                 </div>
                               ))}

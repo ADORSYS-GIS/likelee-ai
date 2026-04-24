@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,19 @@ import {
   Video,
   Trash2,
   X,
+  Mail,
+  UserX,
+  AlertTriangle,
+  CheckCircle2,
+  ArrowRight,
+  RotateCcw,
 } from "lucide-react";
 import {
   createOfferAssetRequest,
   createOfferTalentAssignment,
-  getAgencyRoster,
+  getAgencyTalents,
+  getOfferTransferStatus,
+  retryOfferTransfers,
   listMyCampaignOffers,
   listOfferAssetRequests,
   listOfferDeliverables,
@@ -69,6 +78,7 @@ import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 export function AgencyDeliverablesView() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { hasPermission } = useTeamAccess("agency");
   const canApproveDeliverables = hasPermission("approve_deliverables");
@@ -100,6 +110,32 @@ export function AgencyDeliverablesView() {
   const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
+  const [inviteRequiredDialog, setInviteRequiredDialog] = useState<{
+    open: boolean;
+    talentName: string;
+    talentId: string;
+  }>({ open: false, talentName: "", talentId: "" });
+  // Transfer status panel: keyed by offerId
+  const [transferStatusByOffer, setTransferStatusByOffer] = useState<
+    Record<string, any>
+  >({});
+  const [loadingTransferStatus, setLoadingTransferStatus] = useState<
+    Record<string, boolean>
+  >({});
+  const [retryingTransfers, setRetryingTransfers] = useState<
+    Record<string, boolean>
+  >({});
+  const [retryResultDialog, setRetryResultDialog] = useState<{
+    open: boolean;
+    results: Array<{
+      name: string;
+      recipient_id: string;
+      recipient_type: string;
+      amount_cents: number;
+      result: string;
+      failure_reason?: string;
+    }>;
+  }>({ open: false, results: [] });
   const [unassignDialog, setUnassignDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -261,18 +297,32 @@ export function AgencyDeliverablesView() {
   const rosterQuery = useIndexedDbQuery<{ talents: any[] }>({
     queryKey: ["agency-roster", "deliverables"],
     queryFn: async () => {
-      const resp = await getAgencyRoster();
-      const talents = Array.isArray(resp)
-        ? resp
-        : Array.isArray((resp as any)?.talents)
-          ? (resp as any).talents
-          : Array.isArray((resp as any)?.data?.talents)
-            ? (resp as any).data.talents
+      const resp: any = await getAgencyTalents();
+      const rows = Array.isArray(resp?.talents)
+        ? resp.talents
+        : Array.isArray(resp?.data?.talents)
+          ? resp.data.talents
+          : Array.isArray(resp)
+            ? resp
             : [];
+      const talents = rows.map((row: any) => ({
+        id: String(row?.id || row?.creator_id || ""),
+        creator_id: String(row?.creator_id || ""),
+        stage_name: row?.full_name || "",
+        full_legal_name: row?.full_name || "",
+        profile_photo_url: row?.profile_photo_url || "",
+        img: row?.profile_photo_url || "",
+        email: row?.email || "",
+        has_creator_account:
+          typeof row?.has_creator_account === "boolean"
+            ? row.has_creator_account
+            : Boolean(row?.creator_id),
+        is_connected_creator: Boolean(row?.is_connected_creator),
+      }));
       return { talents };
     },
-    maxAge: 5 * 60 * 1000, // 5 minutes
-    syncInterval: 60 * 1000,
+    maxAge: 60 * 1000, // 1 minute
+    syncInterval: 30 * 1000,
     staleWhileRevalidate: true,
   });
 
@@ -787,6 +837,74 @@ export function AgencyDeliverablesView() {
         loadAssignments(next),
         loadDeliverablesWithCache(next),
       ]);
+      // Auto-load transfer status if offer is released
+      const offer = (offersQuery.data?.offers ?? []).find(
+        (o: any) => String(o?.id || "") === next,
+      );
+      if (String(offer?.escrow_status || "") === "released") {
+        loadTransferStatus(next);
+      }
+    }
+  };
+
+  const loadTransferStatus = async (offerId: string) => {
+    if (loadingTransferStatus[offerId]) return;
+    setLoadingTransferStatus((prev) => ({ ...prev, [offerId]: true }));
+    try {
+      const data = await getOfferTransferStatus(offerId);
+      setTransferStatusByOffer((prev) => ({ ...prev, [offerId]: data }));
+    } catch (_) {
+      // best-effort — don't surface errors for status polling
+    } finally {
+      setLoadingTransferStatus((prev) => ({ ...prev, [offerId]: false }));
+    }
+  };
+
+  const handleRetryTransfers = async (offerId: string) => {
+    if (retryingTransfers[offerId]) return;
+    setRetryingTransfers((prev) => ({ ...prev, [offerId]: true }));
+    try {
+      const result: any = await retryOfferTransfers(offerId);
+      if (result?.nothing_to_retry) {
+        toast({
+          title: "Nothing to retry",
+          description: "All transfers are already successful.",
+        });
+      } else {
+        // Show professional result modal
+        setRetryResultDialog({
+          open: true,
+          results: (result?.retried ?? []).map((r: any) => ({
+            name: r.name || "Recipient",
+            recipient_id: r.recipient_id || "",
+            recipient_type: r.recipient_type,
+            amount_cents: r.amount_cents ?? 0,
+            result: r.result,
+            failure_reason: r.failure_reason,
+          })),
+        });
+      }
+      // Refresh transfer status after retry
+      await loadTransferStatus(offerId);
+    } catch (err: any) {
+      const body = err?.data;
+      const code = body?.code;
+      if (code === "escrow_not_released") {
+        toast({
+          title: "Not yet available",
+          description:
+            "Transfers can only be retried after the brand approves the deliverables.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Retry failed",
+          description: err?.message || "Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setRetryingTransfers((prev) => ({ ...prev, [offerId]: false }));
     }
   };
 
@@ -1134,6 +1252,13 @@ export function AgencyDeliverablesView() {
           const hasDraftAgencyDeliverables = agencyDeliverables.some(
             (d: any) => String(d?.status || "").toLowerCase() === "draft",
           );
+          // For the Submit to Brand button: check ALL agency drafts for this offer,
+          // not just those matching the currently selected talent.
+          const hasAnyDraftAgencyDeliverables = deliverables.some(
+            (d: any) =>
+              String(d?.submitted_by_role || "") === "agency" &&
+              String(d?.status || "").toLowerCase() === "draft",
+          );
           const isOfferPaid =
             String(offer?.payment_status || "").toLowerCase() === "paid";
           const isOfferSigned = (() => {
@@ -1259,6 +1384,256 @@ export function AgencyDeliverablesView() {
                     </span>
                   </div>
                 )}
+
+                {/* ── Payout Status Panel ── visible once escrow is released ── */}
+                {String(offer?.escrow_status || "") === "released" &&
+                  expanded &&
+                  (() => {
+                    const ts = transferStatusByOffer[offerId];
+                    const isLoading = loadingTransferStatus[offerId];
+                    const isRetrying = retryingTransfers[offerId];
+                    const hasFailedTransfers = ts?.recipients?.some(
+                      (r: any) => r.transfer_status === "failed",
+                    );
+                    const allSucceeded =
+                      ts?.recipients?.length > 0 &&
+                      ts?.recipients?.every(
+                        (r: any) => r.transfer_status === "created",
+                      );
+
+                    const statusIcon = (r: any) => {
+                      if (r.transfer_status === "created")
+                        return (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                        );
+                      if (
+                        r.transfer_status === "failed" ||
+                        r.transfer_status === "pending_retry"
+                      )
+                        return (
+                          <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        );
+                      return (
+                        <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      );
+                    };
+
+                    const statusLabel = (r: any) => {
+                      if (r.transfer_status === "created") return "transferred";
+                      if (r.transfer_status === "pending_retry")
+                        return "retrying\u2026";
+                      if (r.transfer_status === "failed") return "failed";
+                      if (r.transfer_status === "reversed") return "reversed";
+                      return "not attempted";
+                    };
+
+                    const friendlyReason = (reason: string) => {
+                      if (!reason) return null;
+                      if (
+                        reason.includes(
+                          "insufficient_capabilities_for_transfer",
+                        )
+                      )
+                        return "Stripe account not fully set up \u2014 transfers not enabled.";
+                      if (reason.includes("transfers_not_allowed"))
+                        return "Transfers not allowed on this Stripe account.";
+                      if (reason.includes("payouts_not_allowed"))
+                        return "Payouts not allowed on this Stripe account.";
+                      if (reason.includes("balance_insufficient"))
+                        return "Platform balance insufficient \u2014 contact support.";
+                      if (
+                        reason.includes("no_stripe_account") ||
+                        reason.includes("No Stripe Connect")
+                      )
+                        return "No Stripe account connected. Ask them to complete Stripe onboarding.";
+                      return reason.length > 120
+                        ? reason.slice(0, 120) + "\u2026"
+                        : reason;
+                    };
+
+                    return (
+                      <div className="mx-5 mb-4 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-gray-800">
+                              Payout Status
+                            </span>
+                            {allSucceeded && (
+                              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                all transferred
+                              </span>
+                            )}
+                            {hasFailedTransfers && (
+                              <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                action required
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                              onClick={() => loadTransferStatus(offerId)}
+                              disabled={isLoading}
+                            >
+                              <RefreshCw
+                                className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`}
+                              />
+                              Refresh
+                            </Button>
+                            {hasFailedTransfers && (
+                              <Button
+                                size="sm"
+                                className="h-7 px-3 text-xs bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-lg flex items-center gap-1.5"
+                                onClick={() => handleRetryTransfers(offerId)}
+                                disabled={isRetrying}
+                              >
+                                {isRetrying ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="w-3 h-3" />
+                                )}
+                                Retry failed
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Body */}
+                        {isLoading && !ts ? (
+                          <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-xs">
+                              Loading payout status\u2026
+                            </span>
+                          </div>
+                        ) : !ts ? (
+                          <div className="px-4 py-4 text-xs text-gray-400 text-center">
+                            Click refresh to load payout status.
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-100">
+                            {(ts.recipients ?? []).map((r: any) => (
+                              <div
+                                key={`${r.recipient_type}-${r.recipient_id}`}
+                                className="px-4 py-3"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {statusIcon(r)}
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-sm font-semibold text-gray-900 truncate">
+                                          {r.name}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
+                                          {r.recipient_type === "agency"
+                                            ? "agency"
+                                            : "talent"}
+                                        </span>
+                                      </div>
+                                      {/* Stripe health */}
+                                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                        {!r.stripe_connected ? (
+                                          <span className="text-[10px] text-red-600 font-semibold">
+                                            No Stripe account
+                                          </span>
+                                        ) : !r.stripe_transfers_enabled ? (
+                                          <span className="text-[10px] text-amber-600 font-semibold">
+                                            Transfers not enabled
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] text-emerald-600 font-semibold">
+                                            Stripe ready
+                                          </span>
+                                        )}
+                                        {r.retry_count > 0 && (
+                                          <span className="text-[10px] text-gray-400">
+                                            {r.retry_count}{" "}
+                                            {r.retry_count === 1
+                                              ? "retry"
+                                              : "retries"}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {r.transfer_status === "failed" &&
+                                        r.failure_reason && (
+                                          <p className="text-[11px] text-amber-700 mt-1 leading-snug">
+                                            {friendlyReason(r.failure_reason)}
+                                          </p>
+                                        )}
+                                      {/* Fix Stripe account CTA */}
+                                      {r.transfer_status === "failed" &&
+                                        !r.stripe_transfers_enabled && (
+                                          <>
+                                            {r.recipient_type === "agency" ? (
+                                              // Agency = this user's own account → navigate to payouts
+                                              <button
+                                                className="mt-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1"
+                                                onClick={() =>
+                                                  navigate(
+                                                    `/AgencyDashboard?tab=payouts`,
+                                                  )
+                                                }
+                                              >
+                                                <ArrowRight className="w-3 h-3" />
+                                                Fix your Stripe account
+                                              </button>
+                                            ) : (
+                                              // Creator = talent's account → agency can't fix it, show guidance + message button
+                                              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                                                <p className="text-[11px] text-gray-500 leading-snug">
+                                                  Ask this talent to complete
+                                                  their Stripe onboarding in
+                                                  their portal.
+                                                </p>
+                                                <button
+                                                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1 flex-shrink-0"
+                                                  onClick={() =>
+                                                    navigate(
+                                                      `/AgencyDashboard?tab=messages&openCreatorId=${encodeURIComponent(r.recipient_id)}`,
+                                                    )
+                                                  }
+                                                >
+                                                  <Mail className="w-3 h-3" />
+                                                  Message talent
+                                                </button>
+                                              </div>
+                                            )}
+                                          </>
+                                        )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3 flex-shrink-0">
+                                    <span className="text-sm font-bold text-gray-900">
+                                      $
+                                      {((r.amount_cents ?? 0) / 100).toFixed(2)}
+                                    </span>
+                                    <span
+                                      className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                                        r.transfer_status === "created"
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                          : r.transfer_status === "failed"
+                                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                                            : r.transfer_status ===
+                                                "pending_retry"
+                                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                                              : "bg-gray-50 text-gray-500 border-gray-200"
+                                      }`}
+                                    >
+                                      {statusLabel(r)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                 <AnimatePresence>
                   {expanded && (
@@ -1420,12 +1795,9 @@ export function AgencyDeliverablesView() {
                                   variant="outline"
                                   className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                   disabled={
-                                    !hasDraftAgencyDeliverables ||
+                                    !hasAnyDraftAgencyDeliverables ||
                                     submittingDrafts[offerId] ||
-                                    !canApproveDeliverables ||
-                                    (offer?.status ===
-                                      "contract_fully_signed" &&
-                                      !isOfferPaid)
+                                    !canApproveDeliverables
                                   }
                                   onClick={() => handleSubmitDrafts(offerId)}
                                 >
@@ -1585,13 +1957,19 @@ export function AgencyDeliverablesView() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filteredRoster.map((talent: any) => {
                   const creatorId = getRosterCreatorId(talent);
-                  const canAssign = Boolean(creatorId);
+                  const needsInvite = !talent?.has_creator_account;
+                  const canAssign = Boolean(creatorId) && !needsInvite;
                   const alreadyAssigned = creatorId
                     ? assignedTalentIds.has(creatorId)
                     : false;
                   const isSelected = creatorId
                     ? assignSelectedIds.includes(creatorId)
                     : false;
+                  const talentName =
+                    talent?.stage_name ||
+                    talent?.name ||
+                    talent?.full_legal_name ||
+                    "Talent";
                   return (
                     <Card
                       key={
@@ -1605,16 +1983,15 @@ export function AgencyDeliverablesView() {
                       }
                       onClick={() => {
                         if (assignmentLockedForOffer) return;
-                        if (!canAssign) {
-                          toast({
-                            title: "Talent not ready",
-                            description:
-                              "This talent needs a creator account before they can be assigned to a contract. Ask them to accept the invite and finish onboarding.",
-                            variant: "destructive",
+                        if (needsInvite) {
+                          setInviteRequiredDialog({
+                            open: true,
+                            talentName,
+                            talentId: talent?.id || creatorId,
                           });
                           return;
                         }
-                        if (alreadyAssigned) return;
+                        if (!canAssign || alreadyAssigned) return;
                         setAssignSelectedIds((prev) =>
                           prev.includes(creatorId)
                             ? prev.filter((x) => x !== creatorId)
@@ -1622,15 +1999,15 @@ export function AgencyDeliverablesView() {
                         );
                       }}
                       className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
-                        alreadyAssigned
-                          ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                          : assignmentLockedForOffer
+                        needsInvite
+                          ? "border-dashed border-amber-200 bg-amber-50/30 cursor-pointer hover:border-amber-300"
+                          : alreadyAssigned || assignmentLockedForOffer
                             ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
-                            : "cursor-pointer"
+                            : "cursor-pointer border-gray-50 hover:border-gray-100 bg-white"
                       } ${
                         isSelected
                           ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
-                          : "border-gray-50 hover:border-gray-100 bg-white"
+                          : ""
                       }`}
                     >
                       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
@@ -1643,35 +2020,29 @@ export function AgencyDeliverablesView() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
-                          {talent?.stage_name ||
-                            talent?.name ||
-                            talent?.full_name ||
-                            talent?.full_legal_name ||
-                            "Talent"}
+                          {talentName}
                         </h6>
                         <div className="mt-1 flex items-center gap-2 flex-wrap">
                           {alreadyAssigned && (
-                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
-                              Assigned
+                            <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] tracking-widest font-black px-2 py-0.5">
+                              assigned
                             </Badge>
                           )}
-                          <Badge
-                            className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
-                              talent?.has_creator_account
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
-                            }`}
-                          >
-                            {talent?.has_creator_account
-                              ? "Dashboard Access"
-                              : "No Dashboard Access"}
-                          </Badge>
+                          {needsInvite && (
+                            <Badge className="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] tracking-widest font-black px-2 py-0.5 flex items-center gap-1">
+                              <Mail className="w-2.5 h-2.5" />
+                              invite required
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       {isSelected && (
                         <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
                           <Check className="w-4 h-4 text-white" />
                         </div>
+                      )}
+                      {needsInvite && !isSelected && (
+                        <UserX className="w-4 h-4 text-amber-400 flex-shrink-0" />
                       )}
                     </Card>
                   );
@@ -1694,6 +2065,262 @@ export function AgencyDeliverablesView() {
             ) : null}
             Confirm Selection ({assignSelectedIds.length})
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Required Modal */}
+      <Dialog
+        open={inviteRequiredDialog.open}
+        onOpenChange={(open) =>
+          setInviteRequiredDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-sm rounded-2xl p-8 border-none bg-white shadow-2xl text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center">
+              <UserX className="w-7 h-7 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-gray-900 tracking-tight">
+                Onboarding not completed
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                <span className="font-semibold text-gray-700">
+                  {inviteRequiredDialog.talentName}
+                </span>{" "}
+                hasn't accepted their portal invite yet. They need to complete
+                onboarding before they can be assigned to a contract.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              <Button
+                onClick={() => {
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  });
+                  setAssignDialog({ open: false, offerId: "" });
+                  navigate(
+                    `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent("All Talent")}&openTalentId=${encodeURIComponent(inviteRequiredDialog.talentId || "")}`,
+                  );
+                }}
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold text-sm flex items-center justify-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Go to Roster &amp; Invite
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  })
+                }
+                className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Retry Transfer Result Modal */}
+      <Dialog
+        open={retryResultDialog.open}
+        onOpenChange={(open) =>
+          setRetryResultDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-md rounded-2xl p-0 border-none bg-white shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              {retryResultDialog.results.every(
+                (r) => r.result === "succeeded",
+              ) ? (
+                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                </div>
+              )}
+              <div>
+                <h3 className="text-base font-black text-gray-900 tracking-tight">
+                  Transfer Retry Results
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {
+                    retryResultDialog.results.filter(
+                      (r) => r.result === "succeeded",
+                    ).length
+                  }{" "}
+                  of {retryResultDialog.results.length} transfers succeeded
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Results list */}
+          <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
+            {retryResultDialog.results.map((r, i) => (
+              <div
+                key={i}
+                className="px-6 py-3 flex items-start justify-between gap-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-900 truncate">
+                      {r.name}
+                    </span>
+                    <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium flex-shrink-0">
+                      {r.recipient_type === "agency" ? "agency" : "talent"}
+                    </span>
+                  </div>
+                  {r.result === "failed" && r.failure_reason && (
+                    <p className="text-[11px] text-amber-700 mt-0.5 leading-snug">
+                      {r.failure_reason.includes(
+                        "insufficient_capabilities_for_transfer",
+                      )
+                        ? "Stripe account not fully set up — transfers not enabled."
+                        : r.failure_reason.includes("transfers_not_allowed")
+                          ? "Transfers not allowed on this Stripe account."
+                          : r.failure_reason.includes("no_stripe_account") ||
+                              r.failure_reason.includes("No Stripe Connect")
+                            ? "No Stripe account connected."
+                            : r.failure_reason.length > 100
+                              ? r.failure_reason.slice(0, 100) + "\u2026"
+                              : r.failure_reason}
+                    </p>
+                  )}
+                  {r.result === "skipped_no_account" && (
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      No Stripe account connected yet.
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-sm font-bold text-gray-900">
+                    ${(r.amount_cents / 100).toFixed(2)}
+                  </span>
+                  <span
+                    className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                      r.result === "succeeded"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : r.result === "skipped_no_account"
+                          ? "bg-gray-50 text-gray-500 border-gray-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}
+                  >
+                    {r.result === "succeeded"
+                      ? "transferred"
+                      : r.result === "skipped_no_account"
+                        ? "no account"
+                        : "failed"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 bg-gray-50/60 border-t border-gray-100 space-y-3">
+            {retryResultDialog.results.some(
+              (r) => r.result === "failed" || r.result === "skipped_no_account",
+            ) && (
+              <div className="space-y-1.5">
+                {/* Agency-specific guidance */}
+                {retryResultDialog.results.some(
+                  (r) =>
+                    (r.result === "failed" ||
+                      r.result === "skipped_no_account") &&
+                    r.recipient_type === "agency",
+                ) && (
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Your Stripe account needs attention. Complete your Stripe
+                    onboarding to receive transfers.
+                  </p>
+                )}
+                {/* Creator-specific guidance */}
+                {retryResultDialog.results.some(
+                  (r) =>
+                    (r.result === "failed" ||
+                      r.result === "skipped_no_account") &&
+                    r.recipient_type === "creator",
+                ) && (
+                  <div>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      One or more talents need to complete their Stripe
+                      onboarding before funds can be sent to them.
+                    </p>
+                    {/* Message buttons for each failed creator */}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {retryResultDialog.results
+                        .filter(
+                          (r) =>
+                            (r.result === "failed" ||
+                              r.result === "skipped_no_account") &&
+                            r.recipient_type === "creator",
+                        )
+                        .map((r) => (
+                          <button
+                            key={r.recipient_id}
+                            className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1"
+                            onClick={() => {
+                              setRetryResultDialog({
+                                open: false,
+                                results: [],
+                              });
+                              navigate(
+                                `/AgencyDashboard?tab=messages&openCreatorId=${encodeURIComponent(r.recipient_id)}`,
+                              );
+                            }}
+                          >
+                            <Mail className="w-3 h-3" />
+                            Message {r.name}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="flex gap-2">
+              {retryResultDialog.results.some(
+                (r) =>
+                  (r.result === "failed" ||
+                    r.result === "skipped_no_account") &&
+                  r.recipient_type === "agency",
+              ) && (
+                <Button
+                  size="sm"
+                  className="h-9 px-4 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl text-xs flex items-center gap-1.5"
+                  onClick={() => {
+                    setRetryResultDialog({ open: false, results: [] });
+                    navigate(`/AgencyDashboard?tab=payouts`);
+                  }}
+                >
+                  <ArrowRight className="w-3 h-3" />
+                  Fix your Stripe account
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-9 px-4 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-700 ml-auto"
+                onClick={() =>
+                  setRetryResultDialog({ open: false, results: [] })
+                }
+              >
+                Close
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

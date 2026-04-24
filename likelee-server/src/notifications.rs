@@ -106,6 +106,76 @@ pub async fn list_booking_notifications(
     Ok(Json(v))
 }
 
+async fn is_notification_enabled(
+    state: &AppState,
+    agency_id: &str,
+    event_key: &str,
+    channel: &str,
+    talent_id: Option<&str>,
+) -> bool {
+    let resp_res = state
+        .pg
+        .from("agency_notification_settings")
+        .select("prefs")
+        .eq("agency_id", agency_id)
+        .single()
+        .execute()
+        .await;
+
+    let Ok(resp) = resp_res else {
+        return true;
+    };
+    if !resp.status().is_success() {
+        return true;
+    }
+
+    let Ok(text) = resp.text().await else {
+        return true;
+    };
+    let Ok(json) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return true;
+    };
+
+    let Some(prefs) = json.get("prefs").and_then(|p| p.as_array()) else {
+        return true;
+    };
+
+    let mut enabled = true;
+
+    // 1. Check global event setting
+    if let Some(global) = prefs
+        .iter()
+        .find(|p| p.get("key").and_then(|k| k.as_str()) == Some(event_key))
+    {
+        if let Some(chan_val) = global
+            .get("channels")
+            .and_then(|c| c.get(channel))
+            .and_then(|v| v.as_bool())
+        {
+            enabled = chan_val;
+        }
+    }
+
+    // 2. Check talent override
+    if let Some(tid) = talent_id {
+        let override_key = format!("athlete:{}", tid);
+        if let Some(over) = prefs
+            .iter()
+            .find(|p| p.get("key").and_then(|k| k.as_str()) == Some(&override_key))
+        {
+            if let Some(chan_val) = over
+                .get("channels")
+                .and_then(|c| c.get(channel))
+                .and_then(|v| v.as_bool())
+            {
+                enabled = chan_val;
+            }
+        }
+    }
+
+    enabled
+}
+
 pub async fn booking_created_email(
     State(state): State<AppState>,
     user: AuthUser,
@@ -155,12 +225,31 @@ pub async fn booking_created_email(
         .get("notify_calendar")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let notify_email = b
-        .get("notify_email")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(true);
     let booking_type = b.get("type").and_then(|v| v.as_str()).unwrap_or("");
     let client_id_opt = b.get("client_id").and_then(|v| v.as_str());
+
+    // Check notification preferences
+    let effective_agency_id = user.effective_org_id();
+    let preference_enabled = is_notification_enabled(
+        &state,
+        effective_agency_id,
+        "booking_confirmation",
+        "email",
+        talent_id_opt,
+    )
+    .await;
+
+    if !preference_enabled {
+        info!(
+            booking_id = %payload.booking_id,
+            agency_id = %effective_agency_id,
+            "Email notification skipped due to agency/athlete preferences"
+        );
+        return Ok(Json(json!({
+            "status": "skipped",
+            "message": "Email notification disabled by preference"
+        })));
+    }
 
     // Defaults (fallback if no active template)
     let fallback_subject = format!("New Booking: {} on {}", client_name, date_str);
@@ -575,7 +664,7 @@ pub async fn booking_created_email(
             .await;
     }
 
-    if notify_email {
+    if preference_enabled {
         let send_res =
             email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref());
 
@@ -598,14 +687,140 @@ pub async fn booking_created_email(
             .execute()
             .await;
 
-        match send_res {
+        return match send_res {
             Ok(_) => Ok(Json(json!({"status":"ok"}))),
             Err((code, msg)) => Err((
                 StatusCode::BAD_GATEWAY,
                 format!("email_send_failed upstream_status={} message={}", code, msg),
             )),
-        }
-    } else {
-        Ok(Json(json!({"status":"ok"})))
+        };
     }
+
+    Ok(Json(json!({"status":"toggle_off_skipped"})))
+}
+
+pub async fn send_brand_notification(
+    state: &AppState,
+    brand_id: &str,
+    agency_id: Option<&str>,
+    subject: &str,
+    message: &str,
+    meta_json: serde_json::Value,
+    notify_email: bool,
+) -> Result<(), (StatusCode, String)> {
+    // 1. Resolve brand email
+    let resp = state
+        .pg
+        .from("brands")
+        .select("email")
+        .eq("id", brand_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "brand_not_found".to_string()));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let brand_data: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let brand_email = brand_data.get("email").and_then(|v| v.as_str());
+
+    // 2. Persist to in-app inbox
+    let insert = json!({
+        "brand_id": brand_id,
+        "agency_id": agency_id,
+        "subject": subject,
+        "message": message,
+        "meta_json": meta_json,
+    });
+
+    if let Err(e) = state
+        .pg
+        .from("brand_notifications")
+        .insert(insert.to_string())
+        .execute()
+        .await
+    {
+        tracing::warn!(error = %e, brand_id, "failed to persist brand notification");
+    }
+
+    // 3. Send email if enabled
+    if notify_email {
+        if let Some(email) = brand_email {
+            if let Err((code, err)) =
+                crate::email::send_plain_text_email(state, email, subject, message, None)
+            {
+                tracing::warn!(
+                    status = %code,
+                    error = %err,
+                    brand_id,
+                    "failed to send brand notification email"
+                );
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub struct BrandNotificationRequest<'a> {
+    pub brand_id: &'a str,
+    pub agency_id: Option<&'a str>,
+    pub pref_key: &'a str,
+    pub subject: &'a str,
+    pub message: &'a str,
+    pub meta_json: serde_json::Value,
+    pub notify_email: bool,
+}
+
+pub async fn notify_brand_if_enabled(
+    state: &AppState,
+    request: BrandNotificationRequest<'_>,
+) -> Result<(), (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("brands")
+        .select("notification_prefs")
+        .eq("id", request.brand_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        return Ok(());
+    }
+
+    let prefs: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let notify_enabled = prefs
+        .get("notification_prefs")
+        .and_then(|p| p.get(request.pref_key))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    if !notify_enabled {
+        return Ok(());
+    }
+
+    send_brand_notification(
+        state,
+        request.brand_id,
+        request.agency_id,
+        request.subject,
+        request.message,
+        request.meta_json,
+        request.notify_email,
+    )
+    .await
 }

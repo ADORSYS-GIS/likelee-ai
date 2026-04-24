@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock,
   DollarSign,
+  Loader2,
   MapPin,
   Plus,
   Search,
@@ -38,7 +39,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { parseBackendError } from "@/utils/errorParser";
 import {
-  getAgencyTalents,
+  getAgencyRoster,
   getAgencyClients,
   getAgencyCalendlySettings,
   createAgencyClient,
@@ -98,6 +99,7 @@ export const NewBookingModal = ({
     return parsed;
   };
   const [talents, setTalents] = useState<any[]>([]);
+  const [talentsLoading, setTalentsLoading] = useState(false);
   const [bookingType, setBookingType] = useState("confirmed");
   const [multiTalent, setMultiTalent] = useState(false);
   const [talentSearch, setTalentSearch] = useState("");
@@ -277,17 +279,33 @@ export const NewBookingModal = ({
   useEffect(() => {
     const loadTalents = async () => {
       if (!open) return;
+      setTalentsLoading(true);
       try {
-        const rows = await getAgencyTalents();
+        const resp = await getAgencyRoster();
+        const rows = Array.isArray(resp)
+          ? resp
+          : Array.isArray((resp as any)?.talents)
+            ? (resp as any).talents
+            : Array.isArray((resp as any)?.data?.talents)
+              ? (resp as any).data.talents
+              : [];
         const mapped = Array.isArray(rows)
           ? rows.map((r: any) => ({
-              id: r.id || r.user_id,
+              id: r.id,
               name: r.full_name || r.name || "Unnamed",
-              img: r.profile_photo_url || null,
+              img: r.img || r.profile_photo_url || null,
+              creator_id: r.creator_id || null,
+              relationship_id: r.relationship_id || null,
+              relationship_type: r.relationship_type || "internal",
+              contract_controlled: Boolean(r.contract_controlled),
             }))
           : [];
         setTalents(mapped);
-      } catch (_e) {}
+      } catch (_e) {
+        setTalents([]);
+      } finally {
+        setTalentsLoading(false);
+      }
     };
     loadTalents();
   }, [open]);
@@ -455,20 +473,42 @@ export const NewBookingModal = ({
   useEffect(() => {
     let cancelled = false;
     const t = setTimeout(async () => {
+      if (!open) return;
+      setTalentsLoading(true);
       try {
-        const rows = await getAgencyTalents(
-          talentSearch ? { q: talentSearch } : undefined,
-        );
+        const resp = await getAgencyRoster();
         if (cancelled) return;
-        const mapped = Array.isArray(rows)
-          ? rows.map((r: any) => ({
-              id: r.id || r.user_id,
+        const rows = Array.isArray(resp)
+          ? resp
+          : Array.isArray((resp as any)?.talents)
+            ? (resp as any).talents
+            : Array.isArray((resp as any)?.data?.talents)
+              ? (resp as any).data.talents
+              : [];
+        const filteredRows = talentSearch
+          ? rows.filter((r: any) =>
+              String(r.full_name || r.name || "")
+                .toLowerCase()
+                .includes(talentSearch.toLowerCase()),
+            )
+          : rows;
+        const mapped = Array.isArray(filteredRows)
+          ? filteredRows.map((r: any) => ({
+              id: r.id,
               name: r.full_name || r.name || "Unnamed",
-              img: r.profile_photo_url || null,
+              img: r.img || r.profile_photo_url || null,
+              creator_id: r.creator_id || null,
+              relationship_id: r.relationship_id || null,
+              relationship_type: r.relationship_type || "internal",
+              contract_controlled: Boolean(r.contract_controlled),
             }))
           : [];
         setTalents(mapped);
-      } catch (_e) {}
+      } catch (_e) {
+        if (!cancelled) setTalents([]);
+      } finally {
+        if (!cancelled) setTalentsLoading(false);
+      }
     }, 200);
     return () => {
       cancelled = true;
@@ -689,6 +729,8 @@ export const NewBookingModal = ({
           status: "pending",
           client_id: selectedClient?.id,
           talent_id: talent.id,
+          creator_id: talent.creator_id || undefined,
+          relationship_id: talent.relationship_id || undefined,
           talent_name: talent.name,
           client_name: selectedClient.company,
           date: date,
@@ -889,46 +931,60 @@ export const NewBookingModal = ({
               </div>
 
               <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto bg-white">
-                {filteredTalents.map((t) => (
-                  <div
-                    key={t.id}
-                    onClick={() => handleSelectTalent(t)}
-                    className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
-                      selectedTalents.find((st) => st.id === t.id)
-                        ? "bg-indigo-50/50"
-                        : ""
-                    }`}
-                  >
-                    {t.img ? (
-                      <img
-                        src={t.img}
-                        className="w-10 h-10 rounded-full object-cover border border-gray-100"
-                        alt={t.name}
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
-                        <User className="w-5 h-5" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="text-sm font-bold text-gray-900">
-                        {t.name}
-                      </p>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <p className="text-xs text-green-600 font-medium lowercase">
-                          available
-                        </p>
-                      </div>
+                {talentsLoading ? (
+                  <div className="p-8 text-center text-gray-500 text-sm">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{`Loading ${entitySingularLower}...`}</span>
                     </div>
-                    {selectedTalents.find((st) => st.id === t.id) && (
-                      <div className="text-indigo-600">
-                        <CheckCircle2 className="w-5 h-5" />
-                      </div>
-                    )}
                   </div>
-                ))}
-                {filteredTalents.length === 0 && (
+                ) : (
+                  filteredTalents.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => handleSelectTalent(t)}
+                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 ${
+                        selectedTalents.find((st) => st.id === t.id)
+                          ? "bg-indigo-50/50"
+                          : ""
+                      }`}
+                    >
+                      {t.img ? (
+                        <img
+                          src={t.img}
+                          className="w-10 h-10 rounded-full object-cover border border-gray-100"
+                          alt={t.name}
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
+                          <User className="w-5 h-5" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm font-bold text-gray-900">
+                          {t.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          <p className="text-xs text-green-600 font-medium lowercase">
+                            available
+                          </p>
+                          <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded leading-none lowercase">
+                            {t.relationship_type === "marketplace_connected"
+                              ? "Connected"
+                              : "Internal Talent"}
+                          </span>
+                        </div>
+                      </div>
+                      {selectedTalents.find((st) => st.id === t.id) && (
+                        <div className="text-indigo-600">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+                {!talentsLoading && filteredTalents.length === 0 && (
                   <div className="p-8 text-center text-gray-500 text-sm">
                     {talentSearch
                       ? `No ${entitySingularLower} found matching "${talentSearch}"`
@@ -960,6 +1016,11 @@ export const NewBookingModal = ({
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded leading-none lowercase">
+                        {t.relationship_type === "marketplace_connected"
+                          ? "Connected"
+                          : "Internal Talent"}
+                      </span>
                       <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded leading-none uppercase">
                         Available
                       </span>

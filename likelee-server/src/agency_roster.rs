@@ -1,4 +1,5 @@
 use crate::{
+    agency_talent_refs::list_agency_talent_refs,
     auth::AuthUser,
     config::AppState,
     team::{permissions::Permission, require_agency_access, require_agency_permission},
@@ -138,6 +139,9 @@ pub struct TalentRow {
     pub id: String,
     pub talent_id: Option<String>,
     pub creator_id: Option<String>,
+    pub relationship_id: Option<String>,
+    pub relationship_type: String,
+    pub contract_controlled: bool,
     pub name: String,
     pub stage_name: String,
     pub role: String,
@@ -204,11 +208,23 @@ pub async fn get_roster(
     let access = require_agency_access(&state, &user).await?;
     let agency_id = &access.organization_id;
     crate::agency_marketplace_contracts::sync_open_contracts_for_agency(&state, agency_id).await?;
+    let talent_refs = list_agency_talent_refs(&state, agency_id, None).await?;
+    let mut ref_by_key: HashMap<String, crate::agency_talent_refs::AgencyTalentRef> =
+        HashMap::new();
+    for talent_ref in talent_refs {
+        ref_by_key.insert(talent_ref.id.clone(), talent_ref.clone());
+        if let Some(agency_user_id) = talent_ref.agency_user_id.as_ref() {
+            ref_by_key.insert(agency_user_id.clone(), talent_ref.clone());
+        }
+        if let Some(creator_id) = talent_ref.creator_id.as_ref() {
+            ref_by_key.insert(creator_id.clone(), talent_ref.clone());
+        }
+    }
     // Fetch all talents linked to this agency
     let resp = state
         .pg
         .from("agency_talent_relationships")
-        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,agency_users(*)")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,performance_tier_name,agency_users(*),creators(full_name,email,profile_photo_url)")
         .eq("agency_id", agency_id)
         .execute()
         .await
@@ -234,29 +250,49 @@ pub async fn get_roster(
                 .get("agency_users")
                 .cloned()
                 .unwrap_or_else(|| serde_json::json!({}));
+            let creator = item
+                .get("creators")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({}));
             let get_field = |k: &str| talent.get(k).or_else(|| item.get(k));
             let talent_id_raw = item
                 .get("talent_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            if talent_id_raw.trim().is_empty() {
+                continue;
+            }
             let creator_id_raw = item
                 .get("creator_id")
                 .or_else(|| get_field("creator_id"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let id = if !talent_id_raw.trim().is_empty() {
-                talent_id_raw.clone()
-            } else {
-                creator_id_raw.clone()
-            };
+            let id = talent_id_raw.clone();
+            if id.trim().is_empty() {
+                continue;
+            }
+            let talent_ref = ref_by_key
+                .get(&id)
+                .or_else(|| ref_by_key.get(&talent_id_raw))
+                .or_else(|| ref_by_key.get(&creator_id_raw));
+
+            if let Some(tr) = talent_ref {
+                if tr.relationship_type != "internal" || tr.is_connected_creator {
+                    continue;
+                }
+            } else if item.get("agency_users").is_none() {
+                continue;
+            }
             // Try full_legal_name, then stage_name, then full_name
             let name = get_field("full_legal_name")
                 .or(get_field("stage_name"))
+                .or(creator.get("full_name"))
                 .or(get_field("full_name"))
                 .and_then(|v| v.as_str())
-                .unwrap_or("Unknown")
+                .or_else(|| creator.get("email").and_then(|v| v.as_str()))
+                .unwrap_or("Unnamed")
                 .to_string();
 
             let stage_name = get_field("stage_name")
@@ -265,6 +301,7 @@ pub async fn get_roster(
                 .to_string();
 
             let email = get_field("email")
+                .or(creator.get("email"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
@@ -355,6 +392,7 @@ pub async fn get_roster(
                 .map(parse_string_array_value)
                 .unwrap_or_default();
             let profile_photo = get_field("profile_photo_url")
+                .or(creator.get("profile_photo_url"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .trim();
@@ -408,6 +446,7 @@ pub async fn get_roster(
 
             let is_verified = false;
             let img = get_field("profile_photo_url")
+                .or(creator.get("profile_photo_url"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
@@ -578,6 +617,22 @@ pub async fn get_roster(
                 } else {
                     Some(creator_id_str.clone())
                 },
+                relationship_id: item
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string()),
+                relationship_type: talent_ref
+                    .map(|value| value.relationship_type.clone())
+                    .unwrap_or_else(|| {
+                        if creator_id_str.trim().is_empty() {
+                            "internal".to_string()
+                        } else {
+                            "marketplace_connected".to_string()
+                        }
+                    }),
+                contract_controlled: talent_ref
+                    .map(|value| value.contract_controlled)
+                    .unwrap_or(false),
                 name,
                 stage_name,
                 role,
@@ -1490,7 +1545,7 @@ pub async fn create_talent(
     let plan_tier = agency_data
         .get("plan_tier")
         .and_then(|v| v.as_str())
-        .unwrap_or("free")
+        .unwrap_or("none")
         .trim()
         .to_lowercase();
     let mut seats_limit = agency_data
@@ -1499,7 +1554,8 @@ pub async fn create_talent(
         .unwrap_or(0);
     if seats_limit <= 0 {
         seats_limit = match plan_tier.as_str() {
-            "basic" | "pro" | "enterprise" => 186,
+            "basic" => 5,
+            "pro" | "enterprise" => 10,
             _ => 1,
         };
     }
@@ -1532,38 +1588,72 @@ pub async fn create_talent(
         ));
     }
 
-    // 3. Reuse existing global talent row by email when possible, else insert identity row once.
+    // 3. Block duplicate email globally — email must be unique across all agencies.
     let normalized_email = payload
         .email
         .as_deref()
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty());
 
-    let existing_talent = if let Some(email) = normalized_email.as_deref() {
+    if let Some(email) = normalized_email.as_deref() {
         let existing_resp = state
             .pg
             .from("agency_users")
-            .select("id,creator_id")
+            .select("id,agency_id,full_legal_name,stage_name")
             .eq("role", "talent")
             .ilike("email", email)
-            .order("updated_at.desc")
             .limit(1)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let existing_status = existing_resp.status();
         let existing_text = existing_resp
             .text()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !existing_status.is_success() {
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, existing_text));
+            .unwrap_or_else(|_| "[]".to_string());
+        let existing_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&existing_text).unwrap_or_default();
+        if let Some(row) = existing_rows.first() {
+            let existing_id = row
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let existing_name = row
+                .get("stage_name")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .or_else(|| row.get("full_legal_name").and_then(|v| v.as_str()))
+                .unwrap_or("this talent")
+                .to_string();
+            let same_agency = row.get("agency_id").and_then(|v| v.as_str()).unwrap_or("")
+                == effective_agency_id.as_str();
+            let (code, message) = if same_agency {
+                (
+                    "duplicate_email_same_agency",
+                    format!(
+                        "A talent with this email already exists on your roster ({}).",
+                        existing_name
+                    ),
+                )
+            } else {
+                (
+                    "duplicate_email_other_agency",
+                    "This email is already registered to a talent on another agency's roster. Each talent must have a unique email across the platform.".to_string(),
+                )
+            };
+            return Err((
+                StatusCode::CONFLICT,
+                serde_json::to_string(&serde_json::json!({
+                    "code": code,
+                    "message": message,
+                    "existing_talent_id": if same_agency { existing_id } else { "".to_string() },
+                    "existing_talent_name": if same_agency { existing_name } else { "".to_string() },
+                    "same_agency": same_agency,
+                }))
+                .unwrap_or_else(|_| code.to_string()),
+            ));
         }
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&existing_text).unwrap_or_default();
-        rows.first().cloned()
-    } else {
-        None
-    };
+    }
 
     let mut identity_payload = json!({
         "full_legal_name": payload.full_name,
@@ -1616,37 +1706,7 @@ pub async fn create_talent(
         }
     }
 
-    let (talent_id, creator_id): (String, Option<String>) = if let Some(row) = existing_talent {
-        let talent_id = row
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        if talent_id.is_empty() {
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "unable to resolve existing talent id".to_string(),
-            ));
-        }
-        let update_resp = state
-            .pg
-            .from("agency_users")
-            .eq("id", &talent_id)
-            .update(identity_payload.to_string())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !update_resp.status().is_success() {
-            let err_text = update_resp.text().await.unwrap_or_default();
-            return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
-        }
-        (
-            talent_id,
-            row.get("creator_id")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string()),
-        )
-    } else {
+    let (talent_id, creator_id): (String, Option<String>) = {
         if let serde_json::Value::Object(ref mut map) = identity_payload {
             map.insert("agency_id".to_string(), json!(effective_agency_id));
         }

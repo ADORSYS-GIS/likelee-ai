@@ -1,12 +1,15 @@
 #![allow(clippy::uninlined_format_args)]
 
 pub mod active_licenses;
+pub mod activity;
+pub mod admin;
 pub mod agencies;
 pub mod agency_clients;
 pub mod agency_dashboard;
 pub mod agency_marketplace_contracts;
 pub mod agency_roster;
 pub mod agency_talent_invites;
+pub mod agency_talent_refs;
 pub mod analytics;
 pub mod auth;
 pub mod billing;
@@ -53,8 +56,11 @@ pub mod reference_images;
 pub mod router;
 pub mod scouting;
 pub mod services;
+pub mod sessions;
+pub mod storage;
 pub mod studio;
 pub mod talent;
 pub mod talent_statements;
 pub mod team;
+pub mod utils;
 pub mod voice;

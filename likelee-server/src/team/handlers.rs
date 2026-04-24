@@ -1,10 +1,11 @@
-use super::access::resolve_scope;
+use super::access::{invalidate_org_access_cache, resolve_scope};
 use super::permissions::{Permission, TeamRole};
 use super::queries::{
-    ensure_member_not_active, ensure_pending_invite_not_exists, expire_invite_if_needed,
-    fetch_invite_by_raw_token, fetch_membership_by_user, fetch_organization_name,
-    fetch_target_membership, latest_invite_for_email, list_audit_logs_for_scope,
-    list_invites_for_scope, list_members_for_scope, write_audit_log, AuditLogEntry,
+    count_active_members, count_pending_invites, ensure_member_not_active,
+    ensure_pending_invite_not_exists, expire_invite_if_needed, fetch_invite_by_raw_token,
+    fetch_membership_by_user, fetch_organization_name, fetch_target_membership,
+    latest_invite_for_email, list_audit_logs_for_scope, list_invites_for_scope,
+    list_members_for_scope, write_audit_log, AuditLogEntry,
 };
 use super::support::{
     ensure_assignable_role, ensure_permission, hash_token, internal_error, normalize_email,
@@ -14,7 +15,14 @@ use super::types::{
     ActionResponse, CreateInvitePayload, InviteRecord, MembershipRecord, OrganizationType,
     TeamContextResponse, TeamScopeQuery, UpdateMemberRolePayload,
 };
-use crate::{auth::AuthUser, config::AppState, email};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    email,
+    entitlements::{
+        format_seat_limit_error_with_upgrade, get_agency_seat_limit_info, get_brand_seat_limit_info,
+    },
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -159,6 +167,48 @@ pub async fn create_invite(
     let invited_role = parse_assignable_role(payload.role.as_str())?;
 
     ensure_assignable_role(&scope.membership.role, invited_role)?;
+
+    let current_members = count_active_members(
+        &state,
+        scope.organization_type,
+        scope.organization_id.as_str(),
+    )
+    .await?;
+    let pending_invites = count_pending_invites(
+        &state,
+        scope.organization_type,
+        scope.organization_id.as_str(),
+    )
+    .await?;
+
+    let seat_info = match scope.organization_type {
+        OrganizationType::Brand => {
+            get_brand_seat_limit_info(
+                &state,
+                scope.organization_id.as_str(),
+                current_members,
+                pending_invites,
+            )
+            .await?
+        }
+        OrganizationType::Agency => {
+            get_agency_seat_limit_info(
+                &state,
+                scope.organization_id.as_str(),
+                current_members,
+                pending_invites,
+            )
+            .await?
+        }
+    };
+
+    if !seat_info.can_add_member() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            format_seat_limit_error_with_upgrade(&seat_info, scope.organization_type.as_str()),
+        ));
+    }
+
     ensure_member_not_active(
         &state,
         scope.organization_type,
@@ -338,6 +388,16 @@ pub async fn update_member_role(
         return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
+    invalidate_org_access_cache(&state, &target_user_id, scope.organization_type.as_str());
+
+    tracing::info!(
+        user_id = %target_user_id,
+        org_type = %scope.organization_type.as_str(),
+        old_role = %target_role.as_str(),
+        new_role = %next_role.as_str(),
+        "User role updated and cache invalidated"
+    );
+
     write_audit_log(
         &state,
         AuditLogEntry {
@@ -377,6 +437,116 @@ pub async fn update_member_role(
     );
 
     Ok(Json(updated))
+}
+
+pub async fn remove_member(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(target_user_id): Path<String>,
+    Query(query): Query<TeamScopeQuery>,
+) -> Result<Json<ActionResponse>, (StatusCode, String)> {
+    let scope = resolve_scope(&state, &user, &query).await?;
+    ensure_permission(&scope.membership, Permission::RemoveTeamMembers)?;
+
+    let current_role = TeamRole::parse(scope.membership.role.as_str()).ok_or((
+        StatusCode::FORBIDDEN,
+        "Invalid actor membership role".to_string(),
+    ))?;
+
+    let target_membership = fetch_target_membership(
+        &state,
+        scope.organization_type,
+        scope.organization_id.as_str(),
+        target_user_id.as_str(),
+    )
+    .await?;
+    let target_role = TeamRole::parse(target_membership.role.as_str()).ok_or((
+        StatusCode::BAD_REQUEST,
+        "Invalid target membership role".to_string(),
+    ))?;
+
+    if target_role == TeamRole::Owner {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Cannot remove the organization owner".to_string(),
+        ));
+    }
+
+    match current_role {
+        TeamRole::Owner => {}
+        TeamRole::Admin => {
+            if target_role == TeamRole::Admin {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Only the owner can remove another admin".to_string(),
+                ));
+            }
+        }
+        _ => {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "Only owner or admin can remove team members".to_string(),
+            ));
+        }
+    }
+
+    let resp = state
+        .pg
+        .from("organization_memberships")
+        .eq("organization_type", scope.organization_type.as_str())
+        .eq("organization_id", scope.organization_id.as_str())
+        .eq("user_id", target_user_id.as_str())
+        .delete()
+        .execute()
+        .await
+        .map_err(internal_error)?;
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
+    invalidate_org_access_cache(&state, &target_user_id, scope.organization_type.as_str());
+
+    tracing::info!(
+        user_id = %target_user_id,
+        org_type = %scope.organization_type.as_str(),
+        role = %target_role.as_str(),
+        "User removed from organization"
+    );
+
+    write_audit_log(
+        &state,
+        AuditLogEntry {
+            organization_type: scope.organization_type,
+            organization_id: scope.organization_id.as_str(),
+            actor_user_id: user.id.as_str(),
+            target_user_id: Some(target_user_id.as_str()),
+            target_email: Some(target_membership.email.as_str()),
+            action: "member_removed",
+            old_role: Some(target_role.as_str()),
+            new_role: None,
+            metadata: json!({}),
+        },
+    )
+    .await?;
+
+    let subject = format!("You've been removed from {}", scope.organization_name);
+    let body = format!(
+        "Hi,\n\nYou have been removed from {} on Likelee. If you believe this was an error, please contact the organization owner.",
+        scope.organization_name
+    );
+    let _ = email::send_plain_text_email(
+        &state,
+        target_membership.email.as_str(),
+        subject.as_str(),
+        body.as_str(),
+        Some(scope.organization_name.as_str()),
+    );
+
+    Ok(Json(ActionResponse {
+        status: "ok".to_string(),
+    }))
 }
 
 pub async fn accept_invite_by_token(
@@ -426,6 +596,61 @@ pub async fn accept_invite_by_token(
     .await?;
 
     if existing_membership.is_none() {
+        let current_members =
+            count_active_members(&state, organization_type, invite.organization_id.as_str())
+                .await?;
+        let pending_invites =
+            count_pending_invites(&state, organization_type, invite.organization_id.as_str())
+                .await?;
+
+        let seat_info = match organization_type {
+            OrganizationType::Brand => {
+                get_brand_seat_limit_info(
+                    &state,
+                    invite.organization_id.as_str(),
+                    current_members,
+                    pending_invites.saturating_sub(1),
+                )
+                .await?
+            }
+            OrganizationType::Agency => {
+                get_agency_seat_limit_info(
+                    &state,
+                    invite.organization_id.as_str(),
+                    current_members,
+                    pending_invites.saturating_sub(1),
+                )
+                .await?
+            }
+        };
+
+        if !seat_info.can_add_member() {
+            let update_resp = state
+                .pg
+                .from("organization_invites")
+                .eq("id", invite.id.as_str())
+                .update(
+                    json!({
+                        "status": "expired",
+                        "updated_at": now_rfc3339(),
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await
+                .map_err(internal_error)?;
+            if !update_resp.status().is_success() {
+                tracing::warn!(
+                    invite_id = %invite.id,
+                    "Failed to mark invite as expired due to seat limit"
+                );
+            }
+            return Err((
+                StatusCode::FORBIDDEN,
+                format_seat_limit_error_with_upgrade(&seat_info, organization_type.as_str()),
+            ));
+        }
+
         let resp = state
             .pg
             .from("organization_memberships")
@@ -451,6 +676,14 @@ pub async fn accept_invite_by_token(
             let text = resp.text().await.unwrap_or_default();
             return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
         }
+
+        invalidate_org_access_cache(&state, &user.id, organization_type.as_str());
+        tracing::info!(
+            user_id = %user.id,
+            org_type = %organization_type.as_str(),
+            role = %invite.role,
+            "User accepted invite, cache invalidated"
+        );
     }
 
     let update_resp = state
@@ -498,7 +731,6 @@ pub async fn accept_invite_by_token(
 
 pub async fn decline_invite_by_token(
     State(state): State<AppState>,
-    user: AuthUser,
     Path(raw_token): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     let invite = fetch_invite_by_raw_token(&state, raw_token.as_str()).await?;
@@ -511,18 +743,13 @@ pub async fn decline_invite_by_token(
         ));
     }
 
-    let user_email = user.email.clone().unwrap_or_default().trim().to_lowercase();
-    if user_email.is_empty() || user_email != invite.email.trim().to_lowercase() {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Signed-in email does not match the invitation".to_string(),
-        ));
-    }
-
-    let organization_type = OrganizationType::parse(invite.organization_type.as_str()).ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Invalid organization type on invite".to_string(),
-    ))?;
+    let organization_type =
+        OrganizationType::parse(&invite.organization_type).ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Invalid organization_type".to_string(),
+            )
+        })?;
 
     let update_resp = state
         .pg
@@ -549,13 +776,16 @@ pub async fn decline_invite_by_token(
         AuditLogEntry {
             organization_type,
             organization_id: invite.organization_id.as_str(),
-            actor_user_id: user.id.as_str(),
+            actor_user_id: "anonymous",
             target_user_id: None,
-            target_email: Some(user_email.as_str()),
+            target_email: Some(invite.email.as_str()),
             action: "team_invite_declined",
             old_role: None,
-            new_role: Some(invite.role.as_str()),
-            metadata: json!({ "invite_id": invite.id }),
+            new_role: None,
+            metadata: json!({
+                "invite_id": invite.id,
+                "declined_via": "token",
+            }),
         },
     )
     .await?;

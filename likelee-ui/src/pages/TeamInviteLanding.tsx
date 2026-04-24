@@ -40,7 +40,7 @@ function dashboardForOrganization(type: "agency" | "brand") {
 export default function TeamInviteLanding() {
   const { token } = useParams();
   const navigate = useNavigate();
-  const { authenticated, profile, supabase } = useAuth();
+  const { authenticated, profile, supabase, refreshProfile } = useAuth();
 
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState(false);
@@ -100,7 +100,22 @@ export default function TeamInviteLanding() {
     setActionLoading(true);
     setActionError(null);
     try {
+      console.log("[TeamInviteLanding] Accepting invitation...");
       await acceptTeamInviteByToken(effectiveToken);
+
+      console.log(
+        "[TeamInviteLanding] Invitation accepted by backend, waiting for database replication...",
+      );
+      // Wait for database replication/cache invalidation to propagate
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      console.log("[TeamInviteLanding] Refreshing profile...");
+      await refreshProfile();
+
+      console.log(
+        "[TeamInviteLanding] Profile refresh complete, navigating to dashboard",
+      );
+
       setOtpDialogOpen(false);
       setPassword("");
       setConfirmPassword("");
@@ -108,6 +123,7 @@ export default function TeamInviteLanding() {
         title: "Invitation accepted",
         description: `Redirecting you to ${organizationName}…`,
       });
+
       navigate(dashboardForOrganization(invite.organization_type), {
         replace: true,
       });
@@ -122,7 +138,7 @@ export default function TeamInviteLanding() {
     } finally {
       setActionLoading(false);
     }
-  }, [effectiveToken, invite, navigate, organizationName]);
+  }, [effectiveToken, invite, navigate, organizationName, refreshProfile]);
 
   const handleOtpVerify = async (code: string) => {
     const client = requireSupabase();
@@ -227,13 +243,12 @@ export default function TeamInviteLanding() {
     }
   };
 
-  const declineInvite = async () => {
-    if (!effectiveToken) return;
+  const startDeclineFlow = async () => {
+    if (!invite || !effectiveToken || !isPending) return;
     setActionLoading(true);
     setActionError(null);
     try {
       await declineTeamInviteByToken(effectiveToken);
-      await supabase?.auth.signOut();
       toast({
         title: "Invitation declined",
         description: "You declined the team invitation.",
@@ -358,7 +373,7 @@ export default function TeamInviteLanding() {
             variant="outline"
             className="h-11 w-full"
             disabled={!isPending || actionLoading}
-            onClick={declineInvite}
+            onClick={startDeclineFlow}
           >
             Decline
           </Button>
