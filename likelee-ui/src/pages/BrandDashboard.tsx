@@ -7842,18 +7842,30 @@ export default function BrandDashboard() {
       if (!contractSearch.trim()) return true;
       const q = contractSearch.toLowerCase();
       return (
-        String(c?.title || c?.offer_title || "").toLowerCase().includes(q) ||
-        String(c?.target_name || "").toLowerCase().includes(q) ||
-        String(c?.brand_name || "").toLowerCase().includes(q)
+        String(c?.title || c?.offer_title || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(c?.target_name || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(c?.brand_name || "")
+          .toLowerCase()
+          .includes(q)
       );
     });
 
     const contractsSorted = [...contractsFiltered].sort((a: any, b: any) => {
       if (contractSort === "oldest") {
-        return new Date(a?.sent_at || 0).getTime() - new Date(b?.sent_at || 0).getTime();
+        return (
+          new Date(a?.sent_at || 0).getTime() -
+          new Date(b?.sent_at || 0).getTime()
+        );
       }
       // newest (default)
-      return new Date(b?.sent_at || 0).getTime() - new Date(a?.sent_at || 0).getTime();
+      return (
+        new Date(b?.sent_at || 0).getTime() -
+        new Date(a?.sent_at || 0).getTime()
+      );
     });
 
     const statusBadge = (c: any) => {
@@ -7957,7 +7969,9 @@ export default function BrandDashboard() {
             {contractSearch.trim() ? (
               <>
                 <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-base font-semibold text-gray-700">No results</p>
+                <p className="text-base font-semibold text-gray-700">
+                  No results
+                </p>
                 <p className="text-sm text-gray-400 mt-1">
                   No contracts match &ldquo;{contractSearch}&rdquo;
                 </p>
