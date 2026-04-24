@@ -34,28 +34,29 @@ CREATE INDEX IF NOT EXISTS idx_brand_payment_methods_active ON public.brand_paym
 ALTER TABLE public.brand_payment_methods ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies for payment methods
+-- Uses is_brand_team_member() to allow brand team members (not just owners) to manage payment methods
 DROP POLICY IF EXISTS "Brands can view their own payment methods" ON public.brand_payment_methods;
 CREATE POLICY "Brands can view their own payment methods"
   ON public.brand_payment_methods
   FOR SELECT
-  USING (brand_id = auth.uid());
+  USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "Brands can insert their own payment methods" ON public.brand_payment_methods;
 CREATE POLICY "Brands can insert their own payment methods"
   ON public.brand_payment_methods
   FOR INSERT
-  WITH CHECK (brand_id = auth.uid());
+  WITH CHECK (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "Brands can update their own payment methods" ON public.brand_payment_methods;
 CREATE POLICY "Brands can update their own payment methods"
   ON public.brand_payment_methods
   FOR UPDATE
-  USING (brand_id = auth.uid());
+  USING (public.is_brand_team_member(brand_id));
 
 DROP POLICY IF EXISTS "Brands can delete their own payment methods" ON public.brand_payment_methods;
 CREATE POLICY "Brands can delete their own payment methods"
   ON public.brand_payment_methods
   FOR DELETE
-  USING (brand_id = auth.uid());
+  USING (public.is_brand_team_member(brand_id));
 
 COMMIT;
