@@ -3628,7 +3628,7 @@ export default function BrandDashboard() {
                   <Badge className={`border ${statusClass}`}>{status}</Badge>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">Start Date</p>
                     <p className="font-semibold text-gray-900">
@@ -3887,9 +3887,9 @@ export default function BrandDashboard() {
                     </p>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     <Button
-                      className={`flex-1 rounded-none ${
+                      className={`flex-1 min-w-[120px] rounded-none text-sm ${
                         isExpired || !canManagePayOffers
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-black hover:bg-gray-800 text-white"
@@ -3907,7 +3907,7 @@ export default function BrandDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="border border-gray-300 rounded-none"
+                      className="flex-1 min-w-[120px] border border-gray-300 rounded-none text-sm"
                       disabled={isDone || isExpired}
                       onClick={() => {
                         const token = pkg?.meta?.agency_package_token;
@@ -3921,14 +3921,13 @@ export default function BrandDashboard() {
                     >
                       Open Package
                     </Button>
-                    {canManagePayOffers && (
-                      <Button
-                        variant="outline"
-                        className="border border-gray-300 rounded-none"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      className="border border-gray-300 rounded-none flex-shrink-0"
+                      disabled={!canManagePayOffers}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </Card>
               );
@@ -4448,7 +4447,7 @@ export default function BrandDashboard() {
                         return (
                           <div
                             key={String(contract?.id)}
-                            className="bg-white p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                            className="bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50/50 transition-colors"
                           >
                             <div className="flex items-center gap-4">
                               <div
@@ -4832,19 +4831,19 @@ export default function BrandDashboard() {
                 className="rounded-2xl border-2 border-sky-300/80 bg-white/70 backdrop-blur-xl shadow-sm ring-1 ring-sky-100/70 overflow-hidden transition-shadow hover:shadow-md"
               >
                 <div
-                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer hover:bg-white/80 transition-colors"
                   onClick={() => {
                     setExpandedCampaignHubId(
                       campaignExpanded ? "" : campaignId,
                     );
                   }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-gray-100 text-gray-600">
-                      <Briefcase className="w-5 h-5" />
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="p-2 sm:p-3 rounded-xl bg-gray-100 text-gray-600 flex-shrink-0">
+                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-gray-900 truncate">
                         {group?.campaignName || "Campaign"}
                       </h3>
                       <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
@@ -4852,20 +4851,20 @@ export default function BrandDashboard() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
                       {aggregate.reviewed} reviewed
                     </Badge>
-                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
                       {aggregate.approved} approved
                     </Badge>
-                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                       {completionPct}%
                     </Badge>
                     {campaignExpanded ? (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     )}
                   </div>
                 </div>
@@ -4947,7 +4946,7 @@ export default function BrandDashboard() {
                             className="rounded-xl border border-sky-200/60 bg-white/60 backdrop-blur-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md"
                           >
                             <div
-                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
+                              className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 cursor-pointer hover:bg-white/80 transition-colors"
                               onClick={async (event) => {
                                 event.stopPropagation();
                                 const next = expanded ? "" : offerId;
@@ -4955,15 +4954,15 @@ export default function BrandDashboard() {
                                 await loadOfferHubDetails(next);
                               }}
                             >
-                              <div className="flex items-center gap-3">
-                                <Avatar className="w-9 h-9">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <Avatar className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
                                   <AvatarImage src={collaboratorAvatar} />
                                   <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
                                     {collaboratorInitial}
                                   </AvatarFallback>
                                 </Avatar>
-                                <div>
-                                  <p className="text-sm font-bold text-gray-900">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-gray-900 truncate">
                                     {collaboratorName}
                                   </p>
                                   <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
@@ -4979,14 +4978,14 @@ export default function BrandDashboard() {
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
                                   {reviewedCount} reviewed
                                 </Badge>
-                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
                                   {approvedCount} approved
                                 </Badge>
-                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                                   {completionPct}%
                                 </Badge>
                                 {expanded ? (
@@ -6855,12 +6854,12 @@ export default function BrandDashboard() {
             Download, manage, and organize all your creative assets
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="border-2 border-gray-300">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className="border-2 border-gray-300 text-sm">
             <Download className="w-4 h-4 mr-2" />
             Batch Download
           </Button>
-          <Button variant="outline" className="border-2 border-gray-300">
+          <Button variant="outline" className="border-2 border-gray-300 text-sm">
             <Filter className="w-4 h-4 mr-2" />
             Filter
           </Button>
@@ -6928,15 +6927,15 @@ export default function BrandDashboard() {
       {/* Organization Features */}
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Collections</h3>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-2 border-gray-300">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Button variant="outline" className="border-2 border-gray-300 text-sm">
             <Plus className="w-4 h-4 mr-2" />
             Create Collection
           </Button>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 cursor-pointer hover:bg-gray-200">
+          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-200 text-xs sm:text-sm">
             Holiday 2024 (12 assets)
           </Badge>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 cursor-pointer hover:bg-gray-200">
+          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-200 text-xs sm:text-sm">
             Evergreen (5 assets)
           </Badge>
         </div>
