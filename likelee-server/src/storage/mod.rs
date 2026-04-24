@@ -38,9 +38,7 @@ pub fn validate_url_for_fetch(url_str: &str) -> Result<String, (StatusCode, Stri
 
     let host_start = url_str.find("://").map(|i| i + 3).unwrap_or(0);
     let after_scheme = &url_str[host_start..];
-    let host_end = after_scheme
-        .find('/')
-        .unwrap_or(after_scheme.len());
+    let host_end = after_scheme.find('/').unwrap_or(after_scheme.len());
     let host = &after_scheme[..host_end];
     let host = host.split(':').next().unwrap_or(host);
 
@@ -103,11 +101,12 @@ pub async fn safe_fetch_url(
         .build()
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let response = client
-        .get(&validated_url)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Failed to fetch URL: {}", e)))?;
+    let response = client.get(&validated_url).send().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to fetch URL: {}", e),
+        )
+    })?;
 
     if !response.status().is_success() {
         return Err((
@@ -139,10 +138,12 @@ pub async fn safe_fetch_url(
         }
     }
 
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Failed to read response: {}", e)))?;
+    let bytes = response.bytes().await.map_err(|e| {
+        (
+            StatusCode::BAD_GATEWAY,
+            format!("Failed to read response: {}", e),
+        )
+    })?;
 
     if bytes.len() > config.max_size_bytes {
         return Err((

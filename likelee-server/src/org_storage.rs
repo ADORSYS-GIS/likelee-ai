@@ -3,9 +3,9 @@ use crate::{
     config::AppState,
     errors::sanitize_db_error,
     storage::{
-        canonical_object_path, generate_signed_url, insert_asset_record, sanitize_file_name,
-        safe_fetch_url, upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
-        StorageVisibility,
+        canonical_object_path, generate_signed_url, insert_asset_record, safe_fetch_url,
+        sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType,
+        StorageOwnerType, StorageVisibility,
     },
     team::{require_agency_access, require_brand_access},
 };

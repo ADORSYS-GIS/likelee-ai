@@ -4,8 +4,9 @@ use super::wallet;
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use crate::storage::{
-    canonical_object_path, download_object, insert_asset_record, safe_fetch_url, sanitize_file_name,
-    upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType, StorageVisibility,
+    canonical_object_path, download_object, insert_asset_record, safe_fetch_url,
+    sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
+    StorageVisibility,
 };
 use crate::team::{require_agency_access, require_brand_access};
 use anyhow::anyhow;
@@ -1069,15 +1070,13 @@ pub async fn save_generation_to_storage(
     for (idx, url) in output_urls.iter().enumerate() {
         let downloaded = match download_object(&state, &state.supabase_bucket_public, url).await {
             Ok(d) => d,
-            Err(_) => {
-                match safe_fetch_url(url, None).await {
-                    Ok(d) => d,
-                    Err(e) => {
-                        warn!(generation_id = %generation_id, idx, error = ?e, "failed to safely fetch generation output from external URL");
-                        continue;
-                    }
+            Err(_) => match safe_fetch_url(url, None).await {
+                Ok(d) => d,
+                Err(e) => {
+                    warn!(generation_id = %generation_id, idx, error = ?e, "failed to safely fetch generation output from external URL");
+                    continue;
                 }
-            }
+            },
         };
 
         let file_bytes = downloaded.bytes.to_vec();
