@@ -1474,9 +1474,19 @@ export function MarketplaceSection({
                               </p>
                             </div>
                             <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <p className="text-gray-500">Connection Status</p>
+                              <p className="text-gray-500">
+                                {t(
+                                  "agencyDashboard.marketplace.connectionStatus",
+                                  {
+                                    defaultValue: "Connection Status",
+                                  },
+                                )}
+                              </p>
                               <p className="font-semibold text-gray-900 mt-1 capitalize">
-                                {detailsQuery.data?.connection_status || "none"}
+                                {detailsQuery.data?.connection_status ||
+                                  t("agencyDashboard.marketplace.none", {
+                                    defaultValue: "none",
+                                  })}
                               </p>
                             </div>
                           </div>
@@ -1491,7 +1501,9 @@ export function MarketplaceSection({
                         <div className="space-y-5">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 mb-2">
-                              Open to work
+                              {t("agencyDashboard.marketplace.openToWork", {
+                                defaultValue: "Open to work",
+                              })}
                             </h4>
                             {openToWork.length ? (
                               <div className="flex flex-wrap gap-2">
@@ -1513,7 +1525,9 @@ export function MarketplaceSection({
 
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 mb-2">
-                              Industries
+                              {t("agencyDashboard.marketplace.industries", {
+                                defaultValue: "Industries",
+                              })}
                             </h4>
                             {industries.length ? (
                               <div className="flex flex-wrap gap-2">
@@ -1540,15 +1554,33 @@ export function MarketplaceSection({
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900">
-                              Licensing rate
+                              {t("agencyDashboard.marketplace.licensingRate", {
+                                defaultValue: "Licensing rate",
+                              })}
                             </h4>
                             <p className="text-xs text-gray-500 mt-1">
-                              Base rate from public profile
+                              {t(
+                                "agencyDashboard.marketplace.baseRateFromProfile",
+                                {
+                                  defaultValue: "Base rate from public profile",
+                                },
+                              )}
                             </p>
                             <p className="text-xs text-emerald-700 mt-2 font-medium">
                               {openToNegotiations
-                                ? "Open to negotiations"
-                                : "Negotiation preferences not specified"}
+                                ? t(
+                                    "agencyDashboard.marketplace.openToNegotiations",
+                                    {
+                                      defaultValue: "Open to negotiations",
+                                    },
+                                  )
+                                : t(
+                                    "agencyDashboard.marketplace.negotiationPreferencesNotSpecified",
+                                    {
+                                      defaultValue:
+                                        "Negotiation preferences not specified",
+                                    },
+                                  )}
                             </p>
                           </div>
                           <div className="text-right">
@@ -1557,7 +1589,11 @@ export function MarketplaceSection({
                                 ? formatMoney(baseRateCents, rateCurrency)
                                 : "N/A"}
                             </p>
-                            <p className="text-xs text-gray-500">/month</p>
+                            <p className="text-xs text-gray-500">
+                              {t("agencyDashboard.marketplace.perMonth", {
+                                defaultValue: "/month",
+                              })}
+                            </p>
                           </div>
                         </div>
                       </Card>
@@ -1573,7 +1609,9 @@ export function MarketplaceSection({
                           {selectedProfile?.display_name || "Profile"}
                         </h4>
                         <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
-                          Verified
+                          {t("agencyDashboard.marketplace.verified", {
+                            defaultValue: "Verified",
+                          })}
                         </Badge>
                         {/* Regular/Agency-Owned badge removed to keep layout clean */}
                       </div>
@@ -1583,7 +1621,9 @@ export function MarketplaceSection({
                       <p className="text-sm text-slate-600 mt-3 break-words whitespace-pre-line">
                         {selectedProfile?.tagline ||
                           selectedProfile?.bio ||
-                          "No profile summary available yet."}
+                          t("agencyDashboard.marketplace.noProfileSummary", {
+                            defaultValue: "No profile summary available yet.",
+                          })}
                       </p>
                       <div
                         className={`grid gap-3 mt-4 text-xs ${
@@ -1663,11 +1703,21 @@ export function MarketplaceSection({
                             <div className="flex items-start justify-between gap-3">
                               <div>
                                 <h4 className="text-sm font-bold text-gray-900">
-                                  Marketplace contract
+                                  {t(
+                                    "agencyDashboard.marketplace.marketplaceContract",
+                                    {
+                                      defaultValue: "Marketplace contract",
+                                    },
+                                  )}
                                 </h4>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Contract terms for this agency-creator
-                                  connection.
+                                  {t(
+                                    "agencyDashboard.marketplace.contractTerms",
+                                    {
+                                      defaultValue:
+                                        "Contract terms for this agency-creator connection.",
+                                    },
+                                  )}
                                 </p>
                               </div>
                               {pendingDisconnect ? (
@@ -1681,7 +1731,9 @@ export function MarketplaceSection({
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <Percent className="w-3 h-3" />
-                                  Commission
+                                  {t("agencyDashboard.marketplace.commission", {
+                                    defaultValue: "Commission",
+                                  })}
                                 </div>
                                 <p className="font-semibold text-gray-900 mt-1">
                                   {Number(
@@ -1691,7 +1743,11 @@ export function MarketplaceSection({
                                 </p>
                               </div>
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                                <div className="text-gray-500">Status</div>
+                                <div className="text-gray-500">
+                                  {t("agencyDashboard.marketplace.status", {
+                                    defaultValue: "Status",
+                                  })}
+                                </div>
                                 <p className="font-semibold text-gray-900 mt-1 capitalize">
                                   {String(
                                     marketplaceContract?.status || "unknown",
@@ -1701,7 +1757,9 @@ export function MarketplaceSection({
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <CalendarDays className="w-3 h-3" />
-                                  Start date
+                                  {t("agencyDashboard.marketplace.startDate", {
+                                    defaultValue: "Start date",
+                                  })}
                                 </div>
                                 <p className="font-semibold text-gray-900 mt-1">
                                   {marketplaceContract?.valid_from || "—"}
@@ -1710,7 +1768,9 @@ export function MarketplaceSection({
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <CalendarDays className="w-3 h-3" />
-                                  End date
+                                  {t("agencyDashboard.marketplace.endDate", {
+                                    defaultValue: "End date",
+                                  })}
                                 </div>
                                 <p className="font-semibold text-gray-900 mt-1">
                                   {marketplaceContract?.valid_until || "—"}
@@ -1750,7 +1810,12 @@ export function MarketplaceSection({
                                   }
                                 >
                                   <ExternalLink className="w-4 h-4 mr-2" />
-                                  View signed contract
+                                  {t(
+                                    "agencyDashboard.marketplace.viewSignedContract",
+                                    {
+                                      defaultValue: "View signed contract",
+                                    },
+                                  )}
                                 </Button>
                               ) : null}
                               {pendingDisconnect ? (
@@ -1784,11 +1849,17 @@ export function MarketplaceSection({
 
                     <Card className="p-4 border border-gray-200 rounded-xl">
                       <h4 className="text-sm font-bold text-gray-900 mb-3">
-                        Availability & Rates
+                        {t("agencyDashboard.marketplace.availabilityRates", {
+                          defaultValue: "Availability & Rates",
+                        })}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                         <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                          <p className="text-gray-500">Willing to Travel</p>
+                          <p className="text-gray-500">
+                            {t("agencyDashboard.marketplace.willingToTravel", {
+                              defaultValue: "Willing to Travel",
+                            })}
+                          </p>
                           <p className="font-semibold text-gray-900 mt-1">
                             {typeof detailsQuery.data?.availability
                               ?.willing_to_travel === "boolean"
@@ -1796,7 +1867,9 @@ export function MarketplaceSection({
                                   ?.willing_to_travel
                                 ? "Yes"
                                 : "No"
-                              : "Not specified"}
+                              : t("agencyDashboard.marketplace.notSpecified", {
+                                  defaultValue: "Not specified",
+                                })}
                           </p>
                         </div>
                         <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
@@ -1808,7 +1881,13 @@ export function MarketplaceSection({
                             {selectedProfile?.talent_ownership ===
                               "agency_owned" && (
                               <p className="text-[10px] text-indigo-600 font-semibold mt-1.5">
-                                Automatically connected (Created by you)
+                                {t(
+                                  "agencyDashboard.marketplace.automaticallyConnected",
+                                  {
+                                    defaultValue:
+                                      "Automatically connected (Created by you)",
+                                  },
+                                )}
                               </p>
                             )}
                           </div>
@@ -1846,7 +1925,9 @@ export function MarketplaceSection({
                 {selectedProfile?.profile_type === "creator" && (
                   <Card className="p-4 border border-gray-200 rounded-xl">
                     <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      Portfolio
+                      {t("agencyDashboard.marketplace.portfolio", {
+                        defaultValue: "Portfolio",
+                      })}
                     </h4>
                     {!!detailsQuery.data?.profile?.portfolio_link && (
                       <a
@@ -1855,7 +1936,9 @@ export function MarketplaceSection({
                         rel="noreferrer"
                         className="mb-3 inline-flex items-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-100"
                       >
-                        Open portfolio link
+                        {t("agencyDashboard.marketplace.openPortfolioLink", {
+                          defaultValue: "Open portfolio link",
+                        })}
                       </a>
                     )}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1890,8 +1973,19 @@ export function MarketplaceSection({
                       {(detailsQuery.data?.portfolio || []).length === 0 && (
                         <p className="text-sm text-gray-500">
                           {detailsQuery.data?.profile?.portfolio_link
-                            ? "No uploaded portfolio media yet."
-                            : "No portfolio items yet."}
+                            ? t(
+                                "agencyDashboard.marketplace.noUploadedPortfolio",
+                                {
+                                  defaultValue:
+                                    "No uploaded portfolio media yet.",
+                                },
+                              )
+                            : t(
+                                "agencyDashboard.marketplace.noPortfolioItems",
+                                {
+                                  defaultValue: "No portfolio items yet.",
+                                },
+                              )}
                         </p>
                       )}
                     </div>
@@ -1901,7 +1995,9 @@ export function MarketplaceSection({
                 {selectedProfile?.profile_type === "creator" && (
                   <Card className="p-4 border border-gray-200 rounded-xl">
                     <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      Past Campaigns
+                      {t("agencyDashboard.marketplace.pastCampaigns", {
+                        defaultValue: "Past Campaigns",
+                      })}
                     </h4>
                     <div className="space-y-2">
                       {(detailsQuery.data?.campaigns || [])

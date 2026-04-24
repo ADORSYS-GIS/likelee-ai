@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Folder,
   FolderPlus,
@@ -963,6 +964,7 @@ const ShareFileModal = ({
 };
 
 const FileStorageView = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
