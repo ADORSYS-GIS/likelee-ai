@@ -677,6 +677,8 @@ export default function BrandDashboard() {
   const [showContractHub, setShowContractHub] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractHubTab, setContractHubTab] = useState("active");
+  const [contractSearch, setContractSearch] = useState("");
+  const [contractSort, setContractSort] = useState("newest");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
   const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
@@ -1288,7 +1290,8 @@ export default function BrandDashboard() {
       activeSection !== "billing" &&
       activeSection !== "campaign-offers" &&
       activeSection !== "campaigns-contract-hub" &&
-      activeSection !== "campaigns-deliverables"
+      activeSection !== "campaigns-deliverables" &&
+      activeSection !== "usage"
     ) {
       return;
     }
@@ -1363,7 +1366,8 @@ export default function BrandDashboard() {
   }, [activeSection, selectedOfferHubId]);
 
   useEffect(() => {
-    if (activeSection !== "licensing-requests") return;
+    if (activeSection !== "licensing-requests" && activeSection !== "usage")
+      return;
     let mounted = true;
     const loadBrandLicenses = async () => {
       try {
@@ -1805,8 +1809,6 @@ export default function BrandDashboard() {
   }, [brandOfferItems]);
 
   const pendingApprovalCount = 0; // Now calculated from real campaign data
-  const activeLicenses: any[] = []; // Now loaded from real license data
-  const expiringLicenses: any[] = []; // Now loaded from real license data
 
   const navigationItems = [
     { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -1827,7 +1829,24 @@ export default function BrandDashboard() {
       id: "usage",
       label: "Usage Rights",
       icon: FileText,
-      badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
+      badge: (() => {
+        const today = new Date();
+        const in15 = new Date(today);
+        in15.setDate(in15.getDate() + 15);
+        const count = (
+          Array.isArray(brandLicensingRequests) ? brandLicensingRequests : []
+        )
+          .filter(
+            (r: any) => String(r?.status || "").toLowerCase() === "approved",
+          )
+          .filter((r: any) => {
+            const end = r?.license_end_date
+              ? new Date(r.license_end_date)
+              : null;
+            return end && end >= today && end <= in15;
+          }).length;
+        return count > 0 ? count : undefined;
+      })(),
     },
     ...(canViewSubscriptions
       ? [{ id: "billing", label: "Billing", icon: CreditCard }]
@@ -7782,277 +7801,269 @@ export default function BrandDashboard() {
       return renderContractDetail();
     }
 
-    // Contracts are now loaded from real API data
-    const activeContracts: any[] = [];
-    const pendingContracts: any[] = [];
+    // Aggregate all contracts from brandOfferItems (already loaded with offer_contracts)
+    const allContracts = (
+      Array.isArray(brandOfferItems) ? brandOfferItems : []
+    ).flatMap((offer: any) => {
+      const contracts = Array.isArray(offer?.offer_contracts)
+        ? offer.offer_contracts
+        : [];
+      return contracts.map((c: any) => ({
+        ...c,
+        offer_title:
+          offer?.offer_title || offer?.brand_campaigns?.name || "Offer",
+        brand_name: offer?.brands?.company_name || "",
+        target_type: offer?.target_type || "",
+        target_name:
+          offer?.agencies?.agency_name || offer?.creators?.full_name || "",
+        budget_snapshot: offer?.budget_snapshot || {},
+        offer_id: offer?.id || "",
+      }));
+    });
+
+    const activeContracts = allContracts.filter(
+      (c: any) =>
+        String(c?.docuseal_status || "").toLowerCase() === "completed",
+    );
+    const pendingContracts = allContracts.filter((c: any) => {
+      const s = String(c?.docuseal_status || "").toLowerCase();
+      return s === "sent" || s === "pending" || s === "awaiting_signatures";
+    });
+
+    const contractsForTab =
+      contractHubTab === "active"
+        ? activeContracts
+        : contractHubTab === "pending"
+          ? pendingContracts
+          : allContracts;
+
+    // Client-side search + sort (all data already in memory)
+    const contractsFiltered = contractsForTab.filter((c: any) => {
+      if (!contractSearch.trim()) return true;
+      const q = contractSearch.toLowerCase();
+      return (
+        String(c?.title || c?.offer_title || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(c?.target_name || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(c?.brand_name || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+
+    const contractsSorted = [...contractsFiltered].sort((a: any, b: any) => {
+      if (contractSort === "oldest") {
+        return (
+          new Date(a?.sent_at || 0).getTime() -
+          new Date(b?.sent_at || 0).getTime()
+        );
+      }
+      // newest (default)
+      return (
+        new Date(b?.sent_at || 0).getTime() -
+        new Date(a?.sent_at || 0).getTime()
+      );
+    });
+
+    const statusBadge = (c: any) => {
+      const s = String(c?.docuseal_status || "").toLowerCase();
+      if (s === "completed")
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            ✓ Fully Signed
+          </span>
+        );
+      if (s === "sent" || s === "awaiting_signatures")
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            ⏳ Awaiting Signature
+          </span>
+        );
+      if (s === "draft")
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
+            Draft
+          </span>
+        );
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
+          {c?.docuseal_status || "Unknown"}
+        </span>
+      );
+    };
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Contract Hub
-            </h1>
-            <p className="text-gray-600">
+            <h2 className="text-2xl font-bold text-gray-900">Contract Hub</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
               All your verified licensing agreements in one place
             </p>
           </div>
-          <Button variant="outline" className="border-2 border-gray-300">
-            <Download className="w-4 h-4 mr-2" />
-            Bulk Export
-          </Button>
         </div>
 
-        {/* Search & Filter */}
-        <Card className="p-4 bg-white border border-gray-200">
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                placeholder="Search by creator, project, date..."
-                className="pl-10 border-2 border-gray-300"
-              />
-            </div>
-            <Select defaultValue="newest">
-              <SelectTrigger className="w-48 border-2 border-gray-300">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="expiring">Expiring Soon</SelectItem>
-                <SelectItem value="fee_high">Fee (High to Low)</SelectItem>
-                <SelectItem value="fee_low">Fee (Low to High)</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Search & Sort */}
+        <div className="flex gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search by creator, agency, or title…"
+              value={contractSearch}
+              onChange={(e) => setContractSearch(e.target.value)}
+              className="pl-9 h-9 text-sm border-gray-200"
+            />
           </div>
-        </Card>
-
-        {/* Contract Tabs */}
-        <div className="flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => setContractHubTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "active"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Active ({activeContracts.length})
-          </button>
-          <button
-            onClick={() => setContractHubTab("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "pending"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Pending Signature ({pendingContracts.length})
-          </button>
-          <button
-            onClick={() => setContractHubTab("all")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "all"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            All Contracts (0)
-          </button>
+          <Select value={contractSort} onValueChange={setContractSort}>
+            <SelectTrigger className="w-40 h-9 text-sm border-gray-200">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Active Contracts */}
-        {contractHubTab === "active" && (
-          <div className="space-y-4">
-            {activeContracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {contract.project_name}
-                    </h3>
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <span>
-                        {contract.creator_name} ({contract.creator_handle})
-                      </span>
-                      {contract.agency && (
-                        <>
-                          <span>•</span>
-                          <span>via {contract.agency}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-700 border border-green-300">
-                    ✓ Fully Signed
-                  </Badge>
-                </div>
+        {/* Sub-tabs */}
+        <div className="flex gap-1 border-b border-gray-200">
+          {[
+            { key: "active", label: "Active", count: activeContracts.length },
+            {
+              key: "pending",
+              label: "Pending Signature",
+              count: pendingContracts.length,
+            },
+            { key: "all", label: "All Contracts", count: allContracts.length },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setContractHubTab(tab.key)}
+              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                contractHubTab === tab.key
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-                <div className="grid md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Signed</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.signed_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Expires</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.expiration_date).toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      ({contract.duration_days} days)
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.territory}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Fee</p>
-                    <p className="font-bold text-gray-900">
-                      ${contract.total_fee.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                    onClick={() => setSelectedContract(contract.id)}
-                  >
-                    View Full Contract
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download PDF
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    Archive
-                  </Button>
-                </div>
-              </Card>
-            ))}
+        {/* Contract list */}
+        {loadingBrandOfferItems ? (
+          <div className="flex items-center justify-center py-16 gap-3 text-gray-400">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Loading contracts…</span>
           </div>
-        )}
-
-        {/* Pending Signature */}
-        {contractHubTab === "pending" && (
-          <div className="space-y-4">
-            {pendingContracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className="p-6 bg-yellow-50 border-2 border-yellow-300"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {contract.project_name}
-                    </h3>
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <span>
-                        {contract.creator_name} ({contract.creator_handle})
-                      </span>
-                      {contract.agency && (
-                        <>
-                          <span>•</span>
-                          <span>via {contract.agency}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <Badge className="bg-yellow-500 text-white">
-                    ⏳ Awaiting Signature ({contract.days_pending} days)
-                  </Badge>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Sent</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.sent_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.territory}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Fee</p>
-                    <p className="font-bold text-gray-900">
-                      ${contract.total_fee.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                    onClick={() => setSelectedContract(contract.id)}
-                  >
-                    View Contract
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    <Send className="w-4 h-4 mr-2" />
-                    Resend Signature Request
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-red-300 text-red-600 hover:bg-red-50"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </Card>
-            ))}
-
-            {pendingContracts.length === 0 && (
-              <Card className="p-12 bg-white border border-gray-200 text-center">
-                <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  All contracts signed!
-                </h3>
-                <p className="text-gray-600">
-                  No pending signatures at this time
+        ) : contractsSorted.length === 0 ? (
+          <div className="py-16 text-center">
+            {contractSearch.trim() ? (
+              <>
+                <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-base font-semibold text-gray-700">
+                  No results
                 </p>
-              </Card>
+                <p className="text-sm text-gray-400 mt-1">
+                  No contracts match &ldquo;{contractSearch}&rdquo;
+                </p>
+              </>
+            ) : contractHubTab === "pending" ? (
+              <>
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                <p className="text-base font-semibold text-gray-700">
+                  All contracts signed
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  No pending signatures at this time.
+                </p>
+              </>
+            ) : (
+              <>
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-base font-semibold text-gray-700">
+                  No contracts yet
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Contracts will appear here once campaigns are created and
+                  sent.
+                </p>
+              </>
             )}
           </div>
-        )}
-
-        {/* All Contracts */}
-        {contractHubTab === "all" && (
-          <div className="space-y-4">
-            {/* Contracts are now loaded from real API data */}
-            <Card className="p-12 bg-white border border-gray-200 text-center">
-              <p className="text-gray-500">
-                No contracts available yet. Contracts will appear here once
-                campaigns are created.
-              </p>
-            </Card>
+        ) : (
+          <div className="space-y-3">
+            {contractsSorted.map((contract: any) => {
+              const sentAt = contract?.sent_at
+                ? new Date(contract.sent_at).toLocaleDateString()
+                : "—";
+              const budget = contract?.budget_snapshot?.budget_total
+                ? `$${Number(String(contract.budget_snapshot.budget_total).replace(/,/g, "")).toLocaleString()}`
+                : "—";
+              return (
+                <div
+                  key={contract.id}
+                  className="p-5 rounded-xl border border-gray-200 bg-white hover:shadow-sm transition-shadow"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-gray-900 truncate">
+                          {contract.title || contract.offer_title || "Contract"}
+                        </span>
+                        {statusBadge(contract)}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                        {contract.target_name && (
+                          <span>
+                            {contract.target_type === "agency"
+                              ? "Agency"
+                              : "Creator"}
+                            :{" "}
+                            <span className="font-medium text-gray-700">
+                              {contract.target_name}
+                            </span>
+                          </span>
+                        )}
+                        <span>
+                          Sent:{" "}
+                          <span className="font-medium text-gray-700">
+                            {sentAt}
+                          </span>
+                        </span>
+                        <span>
+                          Budget:{" "}
+                          <span className="font-medium text-gray-700">
+                            {budget}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {contract.file_url && (
+                        <a
+                          href={contract.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                        >
+                          <Download className="w-3 h-3" />
+                          Download
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -8064,199 +8075,206 @@ export default function BrandDashboard() {
       return renderContractDetail();
     }
 
+    // ── Derive real data from already-loaded state ──────────────────────────
+
+    // Approved licensing requests = active licenses
+    const approvedLicenses = (
+      Array.isArray(brandLicensingRequests) ? brandLicensingRequests : []
+    ).filter((r: any) => String(r?.status || "").toLowerCase() === "approved");
+
+    // Expiring within 15 days
+    const today = new Date();
+    const in15 = new Date(today);
+    in15.setDate(in15.getDate() + 15);
+    const expiringLicensesReal = approvedLicenses.filter((r: any) => {
+      const end = r?.license_end_date ? new Date(r.license_end_date) : null;
+      return end && end >= today && end <= in15;
+    });
+
+    const displayLicenses =
+      usageRightsTab === "expiring" ? expiringLicensesReal : approvedLicenses;
+
+    const licenseStatusBadge = (r: any) => {
+      const end = r?.license_end_date ? new Date(r.license_end_date) : null;
+      if (!end) return <span className="text-xs text-gray-400">—</span>;
+      if (end < today)
+        return (
+          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+            Expired
+          </span>
+        );
+      if (end <= in15)
+        return (
+          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            Expiring soon
+          </span>
+        );
+      return (
+        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Active
+        </span>
+      );
+    };
+
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Usage Rights & Compliance
-          </h1>
-          <p className="text-gray-600">
-            Manage licensing, prevent misuse, ensure compliance
+          <h2 className="text-2xl font-bold text-gray-900">Usage Rights</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Manage your licensing agreements and monitor expiry
           </p>
         </div>
 
-        {/* Usage Rights Tabs */}
-        <div className="flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => setUsageRightsTab("licenses")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "licenses"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Active Licenses
-          </button>
-          <button
-            onClick={() => setUsageRightsTab("expiring")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "expiring"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Expiring Soon{" "}
-            {expiringLicenses.length > 0 && `(${expiringLicenses.length})`}
-          </button>
-          <button
-            onClick={() => setUsageRightsTab("contracts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "contracts"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Contract Hub
-          </button>
-          <button
-            onClick={() => setUsageRightsTab("compliance")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "compliance"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Compliance
-          </button>
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-gray-200">
+          {[
+            { key: "licenses", label: "Active Licenses" },
+            {
+              key: "expiring",
+              label: "Expiring Soon (15d)",
+              count: expiringLicensesReal.length,
+            },
+            { key: "contracts", label: "Contract Hub" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setUsageRightsTab(tab.key)}
+              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                usageRightsTab === tab.key
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {tab.label}
+              {tab.count != null && tab.count > 0 && (
+                <span className="ml-1.5 text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Licenses Tab */}
-        {usageRightsTab === "licenses" && (
+        {/* ── Active Licenses / Expiring Soon ── */}
+        {(usageRightsTab === "licenses" || usageRightsTab === "expiring") && (
           <div className="space-y-6">
-            {/* License Stats */}
-            <div className="grid md:grid-cols-4 gap-6">
-              <Card className="p-6 bg-white border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Active Licenses</p>
-                <p className="text-4xl font-bold text-gray-900">
-                  {activeLicenses.length}
+            {/* Metrics */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-5 rounded-xl border border-gray-200 bg-white">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  Active Licenses
                 </p>
-              </Card>
-              <Card className="p-6 bg-white border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Expiring (30d)</p>
-                <p className="text-4xl font-bold text-gray-900">
-                  {expiringLicenses.length}
+                <p className="text-3xl font-black text-gray-900">
+                  {approvedLicenses.length}
                 </p>
-                {expiringLicenses.length > 0 && (
-                  <Badge className="mt-1 bg-orange-100 text-orange-700 border border-orange-300">
+              </div>
+              <div className="p-5 rounded-xl border border-gray-200 bg-white">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  Expiring (15d)
+                </p>
+                <p
+                  className={`text-3xl font-black ${expiringLicensesReal.length > 0 ? "text-amber-600" : "text-gray-900"}`}
+                >
+                  {expiringLicensesReal.length}
+                </p>
+                {expiringLicensesReal.length > 0 && (
+                  <p className="text-xs text-amber-600 font-semibold mt-0.5">
                     Renew soon
-                  </Badge>
+                  </p>
                 )}
-              </Card>
-              <Card className="p-6 bg-white border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Royalties Paid</p>
-                <p className="text-4xl font-bold text-gray-900">
-                  {brandSpendData
-                    ? `$${(brandSpendData.ytd_spend / 100000).toFixed(1)}K`
-                    : "$0"}
-                </p>
-              </Card>
-              <Card className="p-6 bg-white border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Violations</p>
-                <p className="text-4xl font-bold text-green-600">0</p>
-                <Badge className="mt-1 bg-green-100 text-green-700 border border-green-300">
-                  All clear
-                </Badge>
-              </Card>
+              </div>
             </div>
 
-            {/* Active Licenses Table */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                Active Licenses
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b-2 border-gray-300">
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Asset
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Creator
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Territory
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Duration
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Channels
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Expires
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Status
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {/* Licenses are now loaded from real API data */}
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="px-4 py-12 text-center text-gray-500"
-                      >
-                        No licenses available yet. Licenses will appear here
-                        once campaigns are completed.
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* License table */}
+            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900">
+                  {usageRightsTab === "expiring"
+                    ? "Expiring Licenses"
+                    : "Active Licenses"}
+                </h3>
               </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Expiring Tab */}
-        {usageRightsTab === "expiring" && (
-          <div className="space-y-6">
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                License Expiration Calendar
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {/* Expiring licenses are now loaded from real API data */}
-                <div className="col-span-3 text-center py-12">
-                  <p className="text-gray-500">
-                    No expiring licenses at this time.
+              {loadingBrandLicensingRequests ? (
+                <div className="flex items-center justify-center py-12 gap-3 text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Loading licenses…</span>
+                </div>
+              ) : displayLicenses.length === 0 ? (
+                <div className="py-14 text-center">
+                  <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-gray-600">
+                    {usageRightsTab === "expiring"
+                      ? "No licenses expiring in the next 15 days"
+                      : "No active licenses yet"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Licenses appear here once licensing requests are approved.
                   </p>
                 </div>
-              </div>
-            </Card>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50/60">
+                        {[
+                          "Creator / Talent",
+                          "Campaign",
+                          "Territory",
+                          "Usage Scope",
+                          "Duration",
+                          "Expires",
+                          "Status",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {displayLicenses.map((r: any) => (
+                        <tr
+                          key={r.id}
+                          className="hover:bg-gray-50/50 transition-colors"
+                        >
+                          <td className="px-4 py-3 font-semibold text-gray-900">
+                            {r.talent_name || r.creator_name || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 truncate max-w-[160px]">
+                            {r.campaign_title || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {r.territory || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {r.usage_scope || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {r.duration_days ? `${r.duration_days}d` : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {r.license_end_date
+                              ? new Date(
+                                  r.license_end_date,
+                                ).toLocaleDateString()
+                              : "—"}
+                          </td>
+                          <td className="px-4 py-3">{licenseStatusBadge(r)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Contracts Tab - Contract Hub */}
+        {/* ── Contract Hub ── */}
         {usageRightsTab === "contracts" && renderContractHub()}
-
-        {/* Compliance Tab */}
-        {usageRightsTab === "compliance" && (
-          <div className="space-y-6">
-            {/* Watermark Verification */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Watermark Verification Tool
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Upload an asset to verify its watermark and license status
-              </p>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#F7B750] transition-colors cursor-pointer">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-700 mb-2">
-                  Drag & drop file or click to upload
-                </p>
-                <p className="text-sm text-gray-500">
-                  Verify watermark and license authenticity
-                </p>
-              </div>
-            </Card>
-          </div>
-        )}
       </div>
     );
   };
