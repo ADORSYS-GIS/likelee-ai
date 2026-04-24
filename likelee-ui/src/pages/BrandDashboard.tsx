@@ -1364,7 +1364,8 @@ export default function BrandDashboard() {
   }, [activeSection, selectedOfferHubId]);
 
   useEffect(() => {
-    if (activeSection !== "licensing-requests" && activeSection !== "usage") return;
+    if (activeSection !== "licensing-requests" && activeSection !== "usage")
+      return;
     let mounted = true;
     const loadBrandLicenses = async () => {
       try {
@@ -1830,10 +1831,16 @@ export default function BrandDashboard() {
         const today = new Date();
         const in15 = new Date(today);
         in15.setDate(in15.getDate() + 15);
-        const count = (Array.isArray(brandLicensingRequests) ? brandLicensingRequests : [])
-          .filter((r: any) => String(r?.status || "").toLowerCase() === "approved")
+        const count = (
+          Array.isArray(brandLicensingRequests) ? brandLicensingRequests : []
+        )
+          .filter(
+            (r: any) => String(r?.status || "").toLowerCase() === "approved",
+          )
           .filter((r: any) => {
-            const end = r?.license_end_date ? new Date(r.license_end_date) : null;
+            const end = r?.license_end_date
+              ? new Date(r.license_end_date)
+              : null;
             return end && end >= today && end <= in15;
           }).length;
         return count > 0 ? count : undefined;
@@ -7793,24 +7800,24 @@ export default function BrandDashboard() {
     }
 
     // Aggregate all contracts from brandOfferItems (already loaded with offer_contracts)
-    const allContracts = (Array.isArray(brandOfferItems) ? brandOfferItems : [])
-      .flatMap((offer: any) => {
-        const contracts = Array.isArray(offer?.offer_contracts)
-          ? offer.offer_contracts
-          : [];
-        return contracts.map((c: any) => ({
-          ...c,
-          offer_title: offer?.offer_title || offer?.brand_campaigns?.name || "Offer",
-          brand_name: offer?.brands?.company_name || "",
-          target_type: offer?.target_type || "",
-          target_name:
-            offer?.agencies?.agency_name ||
-            offer?.creators?.full_name ||
-            "",
-          budget_snapshot: offer?.budget_snapshot || {},
-          offer_id: offer?.id || "",
-        }));
-      });
+    const allContracts = (
+      Array.isArray(brandOfferItems) ? brandOfferItems : []
+    ).flatMap((offer: any) => {
+      const contracts = Array.isArray(offer?.offer_contracts)
+        ? offer.offer_contracts
+        : [];
+      return contracts.map((c: any) => ({
+        ...c,
+        offer_title:
+          offer?.offer_title || offer?.brand_campaigns?.name || "Offer",
+        brand_name: offer?.brands?.company_name || "",
+        target_type: offer?.target_type || "",
+        target_name:
+          offer?.agencies?.agency_name || offer?.creators?.full_name || "",
+        budget_snapshot: offer?.budget_snapshot || {},
+        offer_id: offer?.id || "",
+      }));
+    });
 
     const activeContracts = allContracts.filter(
       (c: any) =>
@@ -7870,7 +7877,11 @@ export default function BrandDashboard() {
         <div className="flex gap-1 border-b border-gray-200">
           {[
             { key: "active", label: "Active", count: activeContracts.length },
-            { key: "pending", label: "Pending Signature", count: pendingContracts.length },
+            {
+              key: "pending",
+              label: "Pending Signature",
+              count: pendingContracts.length,
+            },
             { key: "all", label: "All Contracts", count: allContracts.length },
           ].map((tab) => (
             <button
@@ -7903,15 +7914,22 @@ export default function BrandDashboard() {
             {contractHubTab === "pending" ? (
               <>
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-                <p className="text-base font-semibold text-gray-700">All contracts signed</p>
-                <p className="text-sm text-gray-400 mt-1">No pending signatures at this time.</p>
+                <p className="text-base font-semibold text-gray-700">
+                  All contracts signed
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  No pending signatures at this time.
+                </p>
               </>
             ) : (
               <>
                 <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-base font-semibold text-gray-700">No contracts yet</p>
+                <p className="text-base font-semibold text-gray-700">
+                  No contracts yet
+                </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  Contracts will appear here once campaigns are created and sent.
+                  Contracts will appear here once campaigns are created and
+                  sent.
                 </p>
               </>
             )}
@@ -7941,14 +7959,27 @@ export default function BrandDashboard() {
                       <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
                         {contract.target_name && (
                           <span>
-                            {contract.target_type === "agency" ? "Agency" : "Creator"}:{" "}
+                            {contract.target_type === "agency"
+                              ? "Agency"
+                              : "Creator"}
+                            :{" "}
                             <span className="font-medium text-gray-700">
                               {contract.target_name}
                             </span>
                           </span>
                         )}
-                        <span>Sent: <span className="font-medium text-gray-700">{sentAt}</span></span>
-                        <span>Budget: <span className="font-medium text-gray-700">{budget}</span></span>
+                        <span>
+                          Sent:{" "}
+                          <span className="font-medium text-gray-700">
+                            {sentAt}
+                          </span>
+                        </span>
+                        <span>
+                          Budget:{" "}
+                          <span className="font-medium text-gray-700">
+                            {budget}
+                          </span>
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -7984,9 +8015,7 @@ export default function BrandDashboard() {
     // Approved licensing requests = active licenses
     const approvedLicenses = (
       Array.isArray(brandLicensingRequests) ? brandLicensingRequests : []
-    ).filter(
-      (r: any) => String(r?.status || "").toLowerCase() === "approved",
-    );
+    ).filter((r: any) => String(r?.status || "").toLowerCase() === "approved");
 
     // Expiring within 15 days
     const today = new Date();
@@ -8180,9 +8209,7 @@ export default function BrandDashboard() {
                                 ).toLocaleDateString()
                               : "—"}
                           </td>
-                          <td className="px-4 py-3">
-                            {licenseStatusBadge(r)}
-                          </td>
+                          <td className="px-4 py-3">{licenseStatusBadge(r)}</td>
                         </tr>
                       ))}
                     </tbody>
