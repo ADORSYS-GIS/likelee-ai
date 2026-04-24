@@ -34,8 +34,10 @@ import ClientCard from "./ClientCard";
 import AddClientModal from "./AddClientModal";
 import EditClientModal from "./EditClientModal";
 import ClientProfileModal from "./ClientProfileModal";
+import { useTranslation } from "react-i18next";
 
 const ClientCRMView = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [sortBy, setSortBy] = useState("last-booking");
@@ -54,16 +56,26 @@ const ClientCRMView = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency-clients"] });
       toast({
-        title: "Success",
-        description: "Client deleted successfully",
+        title: t("agencyDashboard.clientCRM.toasts.successTitle", {
+          defaultValue: "Success",
+        }),
+        description: t("agencyDashboard.clientCRM.toasts.clientDeleted", {
+          defaultValue: "Client deleted successfully",
+        }),
       });
       setIsDeleteClientOpen(false);
       setClientToDelete(null);
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: parseBackendError(error) || "Failed to delete client",
+        title: t("agencyDashboard.clientCRM.toasts.errorTitle", {
+          defaultValue: "Error",
+        }),
+        description:
+          parseBackendError(error) ||
+          t("agencyDashboard.clientCRM.toasts.deleteFailed", {
+            defaultValue: "Failed to delete client",
+          }),
         variant: "destructive",
       });
     },
@@ -135,11 +147,15 @@ const ClientCRMView = () => {
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Client Relationship Management
+            {t("agencyDashboard.clientCRM.title", {
+              defaultValue: "Client Relationship Management",
+            })}
           </h1>
           <p className="text-gray-600 font-medium">
-            Manage client relationships, track communications, and monitor
-            pipeline
+            {t("agencyDashboard.clientCRM.subtitle", {
+              defaultValue:
+                "Manage client relationships, track communications, and monitor pipeline",
+            })}
           </p>
         </div>
         <Button
@@ -147,7 +163,9 @@ const ClientCRMView = () => {
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2 w-full md:w-auto"
         >
           <Plus className="w-5 h-5" />
-          Add Client
+          {t("agencyDashboard.clientCRM.actions.addClient", {
+            defaultValue: "Add Client",
+          })}
         </Button>
       </div>
 
@@ -159,7 +177,9 @@ const ClientCRMView = () => {
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
             <span className="text-base font-bold text-green-800">
-              Active Clients
+              {t("agencyDashboard.clientCRM.stats.activeClients", {
+                defaultValue: "Active Clients",
+              })}
             </span>
           </div>
           <span className="text-3xl font-bold text-green-900">
@@ -171,7 +191,11 @@ const ClientCRMView = () => {
             <div className="p-2 bg-blue-100 rounded-lg">
               <Users className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-base font-bold text-blue-800">Prospects</span>
+            <span className="text-base font-bold text-blue-800">
+              {t("agencyDashboard.clientCRM.stats.prospects", {
+                defaultValue: "Prospects",
+              })}
+            </span>
           </div>
           <span className="text-3xl font-bold text-blue-900">
             {
@@ -187,7 +211,9 @@ const ClientCRMView = () => {
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
             <span className="text-base font-bold text-purple-800">
-              Total Revenue
+              {t("agencyDashboard.clientCRM.stats.totalRevenue", {
+                defaultValue: "Total Revenue",
+              })}
             </span>
           </div>
           <span className="text-3xl font-bold text-purple-900">
@@ -210,7 +236,9 @@ const ClientCRMView = () => {
               <Clock className="w-5 h-5 text-orange-600" />
             </div>
             <span className="text-base font-bold text-orange-800">
-              Follow-ups Due
+              {t("agencyDashboard.clientCRM.stats.followUpsDue", {
+                defaultValue: "Follow-ups Due",
+              })}
             </span>
           </div>
           <span className="text-3xl font-bold text-orange-900">
@@ -230,7 +258,9 @@ const ClientCRMView = () => {
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
-            placeholder="Search clients..."
+            placeholder={t("agencyDashboard.clientCRM.filters.search", {
+              defaultValue: "Search clients...",
+            })}
             className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -238,24 +268,64 @@ const ClientCRMView = () => {
         </div>
         <Select value={stageFilter} onValueChange={setStageFilter}>
           <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue placeholder="All Stages" />
+            <SelectValue
+              placeholder={t("agencyDashboard.clientCRM.filters.allStages", {
+                defaultValue: "All Stages",
+              })}
+            />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Stages</SelectItem>
-            <SelectItem value="leads">Leads</SelectItem>
-            <SelectItem value="prospects">Prospects</SelectItem>
-            <SelectItem value="active">Active Clients</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
+            <SelectItem value="all">
+              {t("agencyDashboard.clientCRM.filters.allStages", {
+                defaultValue: "All Stages",
+              })}
+            </SelectItem>
+            <SelectItem value="leads">
+              {t("agencyDashboard.clientCRM.filters.leads", {
+                defaultValue: "Leads",
+              })}
+            </SelectItem>
+            <SelectItem value="prospects">
+              {t("agencyDashboard.clientCRM.filters.prospects", {
+                defaultValue: "Prospects",
+              })}
+            </SelectItem>
+            <SelectItem value="active">
+              {t("agencyDashboard.clientCRM.filters.activeClients", {
+                defaultValue: "Active Clients",
+              })}
+            </SelectItem>
+            <SelectItem value="inactive">
+              {t("agencyDashboard.clientCRM.filters.inactive", {
+                defaultValue: "Inactive",
+              })}
+            </SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue placeholder="Last Booking" />
+            <SelectValue
+              placeholder={t("agencyDashboard.clientCRM.filters.lastBooking", {
+                defaultValue: "Last Booking",
+              })}
+            />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="last-booking">Last Booking</SelectItem>
-            <SelectItem value="revenue">Total Revenue</SelectItem>
-            <SelectItem value="name">Company Name</SelectItem>
+            <SelectItem value="last-booking">
+              {t("agencyDashboard.clientCRM.filters.lastBooking", {
+                defaultValue: "Last Booking",
+              })}
+            </SelectItem>
+            <SelectItem value="revenue">
+              {t("agencyDashboard.clientCRM.stats.totalRevenue", {
+                defaultValue: "Total Revenue",
+              })}
+            </SelectItem>
+            <SelectItem value="name">
+              {t("agencyDashboard.clientCRM.filters.companyName", {
+                defaultValue: "Company Name",
+              })}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -306,15 +376,16 @@ const ClientCRMView = () => {
         <DialogContent className="sm:max-w-[425px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900">
-              Delete Client?
+              {t("agencyDashboard.clientCRM.deleteDialog.title", {
+                defaultValue: "Delete Client?",
+              })}
             </DialogTitle>
             <DialogDescription className="text-gray-500">
-              Are you sure you want to delete{" "}
-              <span className="font-bold text-gray-900">
-                {clientToDelete?.company}
-              </span>
-              ? This action cannot be undone and will remove all associated
-              data.
+              {t("agencyDashboard.clientCRM.deleteDialog.description", {
+                clientName: clientToDelete?.company || "",
+                defaultValue:
+                  "Are you sure you want to delete {{clientName}}? This action cannot be undone and will remove all associated data.",
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -323,7 +394,9 @@ const ClientCRMView = () => {
               onClick={() => setIsDeleteClientOpen(false)}
               className="rounded-xl font-bold border-gray-200"
             >
-              Cancel
+              {t("agencyDashboard.clientCRM.actions.cancel", {
+                defaultValue: "Cancel",
+              })}
             </Button>
             <Button
               variant="destructive"
@@ -331,7 +404,13 @@ const ClientCRMView = () => {
               disabled={deleteClientMutation.isPending}
               className="rounded-xl font-bold bg-red-600 hover:bg-red-700"
             >
-              {deleteClientMutation.isPending ? "Deleting..." : "Delete Client"}
+              {deleteClientMutation.isPending
+                ? t("agencyDashboard.clientCRM.states.deleting", {
+                    defaultValue: "Deleting...",
+                  })
+                : t("agencyDashboard.clientCRM.actions.deleteClient", {
+                    defaultValue: "Delete Client",
+                  })}
             </Button>
           </DialogFooter>
         </DialogContent>
