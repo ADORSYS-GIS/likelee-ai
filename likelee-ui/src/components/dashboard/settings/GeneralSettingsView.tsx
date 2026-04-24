@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
@@ -315,6 +316,7 @@ const InviteTeamMemberModal = ({
   onSubmit: () => void;
   submitting: boolean;
 }) => {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-2xl">
@@ -339,7 +341,9 @@ const InviteTeamMemberModal = ({
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">User Role</Label>
+            <Label className="text-sm font-bold text-gray-900">
+              {t("agencyDashboard.settings.team.userRole")}
+            </Label>
             <Select
               value={role}
               onValueChange={(value) =>
@@ -347,7 +351,9 @@ const InviteTeamMemberModal = ({
               }
             >
               <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
-                <SelectValue placeholder="Select role" />
+                <SelectValue
+                  placeholder={t("agencyDashboard.settings.team.selectRole")}
+                />
               </SelectTrigger>
               <SelectContent>
                 {TEAM_ROLE_OPTIONS.map((option) => (
@@ -360,9 +366,10 @@ const InviteTeamMemberModal = ({
           </div>
           <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
             <p className="text-xs text-indigo-700 font-medium leading-relaxed">
-              <span className="font-bold">Note:</span> The invited user will
-              receive an email with instructions to set up their account and
-              access the dashboard with the assigned role.
+              <span className="font-bold">
+                {t("agencyDashboard.settings.team.note")}:
+              </span>{" "}
+              {t("agencyDashboard.settings.team.inviteNote")}
             </p>
           </div>
         </div>
@@ -410,6 +417,7 @@ const EditPermissionsModal = ({
   onSubmit: () => void;
   submitting: boolean;
 }) => {
+  const { t } = useTranslation();
   if (!member) return null;
 
   return (
@@ -425,7 +433,9 @@ const EditPermissionsModal = ({
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
           <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">New Role</Label>
+            <Label className="text-sm font-bold text-gray-900">
+              {t("agencyDashboard.settings.team.newRole")}
+            </Label>
             <Select
               value={nextRole}
               onValueChange={(value) =>
@@ -433,7 +443,9 @@ const EditPermissionsModal = ({
               }
             >
               <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
-                <SelectValue placeholder="Select role" />
+                <SelectValue
+                  placeholder={t("agencyDashboard.settings.team.selectRole")}
+                />
               </SelectTrigger>
               <SelectContent>
                 {TEAM_ROLE_OPTIONS.map((option) => (
@@ -591,6 +603,7 @@ const ActivityLogModal = ({
 };
 
 const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
+  const { t } = useTranslation();
   const {
     hasIrlBookingAddon,
     hasProAccess,
@@ -2011,34 +2024,55 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
       <div className="space-y-6 animate-in fade-in duration-500">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Agency Settings
+            {t("agencyDashboard.settings.title")}
           </h2>
           <p className="text-sm sm:text-base text-gray-600 font-medium">
-            Configure your agency profile and preferences
+            {t("agencyDashboard.settings.profile.subtitle")}
           </p>
         </div>
 
         <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
           {[
-            "Profile",
-            "Commissions",
-            "Email Templates",
-            "Notifications",
-            "Tax & Currency",
-            "Team",
-            "File Storage",
-            "Integrations",
+            {
+              key: "Profile",
+              label: t("agencyDashboard.settings.subTabs.profile"),
+            },
+            {
+              key: "Commissions",
+              label: t("agencyDashboard.settings.subTabs.commissions"),
+            },
+            {
+              key: "Email Templates",
+              label: t("agencyDashboard.settings.subTabs.emailTemplates"),
+            },
+            {
+              key: "Notifications",
+              label: t("agencyDashboard.settings.subTabs.notifications"),
+            },
+            {
+              key: "Tax & Currency",
+              label: t("agencyDashboard.settings.subTabs.taxAndCurrency"),
+            },
+            { key: "Team", label: t("agencyDashboard.settings.subTabs.team") },
+            {
+              key: "File Storage",
+              label: t("agencyDashboard.settings.subTabs.fileStorage"),
+            },
+            {
+              key: "Integrations",
+              label: t("agencyDashboard.settings.subTabs.integrations"),
+            },
           ].map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
               className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab
+                activeTab === tab.key
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
               }`}
             >
-              {tab}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -2063,7 +2097,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       planTier === "pro" ? "text-indigo-300" : "text-gray-400"
                     }`}
                   >
-                    Current Plan
+                    {t("agencyDashboard.settings.profile.currentPlan")}
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <div
@@ -2647,7 +2681,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                     <div>
-                      <p className="text-sm font-bold text-gray-900">Active</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {t("agencyDashboard.settings.team.active")}
+                      </p>
                       <p className="text-xs text-gray-500 font-medium">
                         Enable this template for automated emails
                       </p>
