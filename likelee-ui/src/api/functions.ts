@@ -947,7 +947,7 @@ export const deleteAgencyStorageFolder = (folder_id: string) =>
 export const updateAgencyStorageFolder = (
   folder_id: string,
   data: { name: string },
-) => base44Client.put(`/agency/storage/folders/${folder_id}`, data);
+) => base44Client.patch(`/agency/storage/folders/${folder_id}`, data);
 
 export const listAgencyStorageFiles = (params?: { folder_id?: string }) =>
   base44Client.get(`/agency/storage/files`, { params: params || {} });
@@ -999,7 +999,7 @@ export const deleteBrandStorageFolder = (folder_id: string) =>
 export const updateBrandStorageFolder = (
   folder_id: string,
   data: { name: string },
-) => base44Client.put(`/brand/storage/folders/${folder_id}`, data);
+) => base44Client.patch(`/brand/storage/folders/${folder_id}`, data);
 
 export const listBrandStorageFiles = (params?: { folder_id?: string }) =>
   base44Client.get(`/brand/storage/files`, { params: params || {} });
