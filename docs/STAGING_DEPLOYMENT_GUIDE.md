@@ -215,11 +215,6 @@ Paste and configure:
 # === STAGING ENVIRONMENT ===
 # Frontend build-time variables
 
-# Keycloak (use staging realm if available, or same as prod for testing)
-VITE_KEYCLOAK_URL=https://your-keycloak.example.com/auth
-VITE_KEYCLOAK_REALM=likelee-staging
-VITE_KEYCLOAK_CLIENT_ID=likelee-web-staging
-
 # STAGING Supabase (NOT production!)
 VITE_SUPABASE_URL=https://<staging-project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<staging-anon-key>
@@ -229,10 +224,6 @@ VITE_API_BASE_URL=/api
 
 # Brand trial period
 VITE_BRAND_TRIAL_DAYS=14
-
-# AWS (if using Cognito)
-VITE_AWS_REGION=eu-central-1
-VITE_COGNITO_IDENTITY_POOL_ID=<staging-identity-pool-if-used>
 ```
 
 Save with `Ctrl+O`, exit with `Ctrl+X`.
@@ -302,7 +293,8 @@ export COMPOSE_PROJECT_NAME=likelee-staging
 
 docker compose -p likelee-staging --env-file ./.env \
   -f docker-compose.yml \
-  -f docker-compose.prod.yml up -d
+  -f docker-compose.prod.yml \
+  -f docker-compose.staging.yml up -d
 ```
 
 Verify:
