@@ -261,6 +261,16 @@
     }
   },
   "faces.hero.signUpButton": "Anmelden",
+  "unauthorized": {
+    "title": "Zugriff verweigert",
+    "description": "Hoppla! Sie haben nicht die erforderlichen Berechtigungen, um diese Seite anzuzeigen. Dieser Bereich ist nur für {role} zugänglich.",
+    "roles": {
+      "brandsAndAgencies": "Marken und Agenturen",
+      "authorizedUsers": "autorisierte Benutzer"
+    },
+    "goBack": "Zurück",
+    "contactSupport": "Wenn Sie glauben, dass dies ein Fehler ist, wenden Sie sich bitte an den Support oder überprüfen Sie Ihre Kontoeinstellungen."
+  },
   "forgotPasswordPage": {
     "title": "Setzen Sie Ihr Passwort zurück",
     "instructions": "Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen Ihres Passworts.",

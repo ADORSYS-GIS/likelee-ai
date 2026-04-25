@@ -161,6 +161,7 @@ import {
 } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ActiveSessionAudit } from "@/components/security/ActiveSessionAudit";
+import { useTranslation } from "react-i18next";
 
 const ensureProtocol = (url: string | null | undefined) => {
   if (!url) return "";
@@ -186,6 +187,7 @@ const formatBillingDate = (value: unknown) => {
 
 const brandPlanSummaryTheme = (
   tier: BrandPlanTier,
+  t: (key: string) => string,
 ): {
   eyebrow: string;
   containerClass: string;
@@ -204,7 +206,7 @@ const brandPlanSummaryTheme = (
   switch (tier) {
     case "basic":
       return {
-        eyebrow: "Starter",
+        eyebrow: t("dashboard.planLabels.starter"),
         containerClass: "border-[#D7E6ED] bg-white",
         bandClass: "bg-gradient-to-r from-[#6CE5E0] to-[#18B1AE]",
         badgeClass:
@@ -216,12 +218,12 @@ const brandPlanSummaryTheme = (
         statValueClass: "text-[#19305A]",
         statMetaClass: "text-[#6F8F99]",
         buttonClass: "bg-[#18B1AE] hover:bg-[#119693] text-white",
-        actionLabel: "Upgrade to Pro",
+        actionLabel: t("dashboard.planActions.upgradeToPro"),
         actionPath: "/brandpricing",
       };
     case "pro":
       return {
-        eyebrow: "Most popular",
+        eyebrow: t("dashboard.planLabels.mostPopular"),
         containerClass: "border-[#2B4B8A] bg-[#17315E]",
         bandClass: "bg-gradient-to-r from-[#1A4E74] to-[#17315E]",
         badgeClass:
@@ -233,12 +235,12 @@ const brandPlanSummaryTheme = (
         statValueClass: "text-white",
         statMetaClass: "text-[#9CB1D5]",
         buttonClass: "bg-white text-[#17315E] hover:bg-[#F4F8FD]",
-        actionLabel: "Talk to Sales",
+        actionLabel: t("dashboard.planActions.talkToSales"),
         actionPath: "/SalesInquiry",
       };
     case "enterprise":
       return {
-        eyebrow: "Full suite",
+        eyebrow: t("dashboard.planLabels.fullSuite"),
         containerClass: "border-[#D9E4FF] bg-white",
         bandClass: "bg-gradient-to-r from-[#89A7FF] to-[#4978FF]",
         badgeClass:
@@ -251,12 +253,12 @@ const brandPlanSummaryTheme = (
         statMetaClass: "text-[#7C88A5]",
         buttonClass:
           "border border-[#D5DDF1] bg-white text-[#253C67] hover:bg-[#F8FAFF]",
-        actionLabel: "Contact Sales",
+        actionLabel: t("dashboard.planActions.contactSales"),
         actionPath: "/SalesInquiry",
       };
     default:
       return {
-        eyebrow: "Free",
+        eyebrow: t("dashboard.planLabels.free"),
         containerClass: "border-slate-200 bg-white",
         bandClass: "bg-gradient-to-r from-slate-300 to-slate-200",
         badgeClass:
@@ -268,7 +270,7 @@ const brandPlanSummaryTheme = (
         statValueClass: "text-slate-900",
         statMetaClass: "text-slate-500",
         buttonClass: "bg-[#F7B750] hover:bg-[#E6A640] text-white",
-        actionLabel: "View Plans",
+        actionLabel: t("dashboard.planActions.viewPlans"),
         actionPath: "/brandpricing",
       };
   }
@@ -297,6 +299,7 @@ const getBrandInitials = (name: string) => {
 // Mock licenses removed - licenses are now loaded from real API data
 
 export default function BrandDashboard() {
+  const { t } = useTranslation();
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -470,9 +473,8 @@ export default function BrandDashboard() {
   const handleAgencyCollaborationEntry = () => {
     if (!brandCanUseCampaignCollaboration) {
       toast({
-        title: "Upgrade to Pro",
-        description:
-          "Agency collaboration, talent browsing, and campaign launch workflows start on the Pro plan.",
+        title: t("dashboard.toasts.upgradeToPro"),
+        description: t("dashboard.toasts.upgradeToProAgencyDesc"),
       });
       navigate("/brandpricing");
       return;
@@ -483,17 +485,18 @@ export default function BrandDashboard() {
   const handleCompanySeatEntry = () => {
     if ((brandSeatLimit ?? 0) === 0) {
       toast({
-        title: "Upgrade required",
-        description:
-          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
+        title: t("dashboard.toasts.upgradeRequired"),
+        description: t("dashboard.toasts.upgradeRequiredSeatsDesc"),
       });
       navigate("/brandpricing");
       return;
     }
     if (brandSeatLimitReached) {
       toast({
-        title: "Seat limit reached",
-        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
+        title: t("dashboard.toasts.seatLimitReached"),
+        description: t("dashboard.toasts.seatLimitReachedDesc", {
+          count: brandSeatLimitLabel,
+        }),
         variant: "destructive" as any,
       });
       return;
@@ -504,21 +507,30 @@ export default function BrandDashboard() {
   };
 
   const formatRelativeTime = (value?: string | null) => {
-    if (!value) return "Just now";
+    if (!value) return t("dashboard.time.justNow");
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Just now";
+    if (Number.isNaN(date.getTime())) return t("dashboard.time.justNow");
     const diffMs = Date.now() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    if (diffMins < 1) return "Just now";
+    if (diffMins < 1) return t("dashboard.time.justNow");
     if (diffMins < 60)
-      return `${diffMins} minute${diffMins === 1 ? "" : "s"} ago`;
+      return diffMins === 1
+        ? t("dashboard.time.minuteAgo", { count: diffMins })
+        : t("dashboard.time.minutesAgo", { count: diffMins });
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24)
-      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+      return diffHours === 1
+        ? t("dashboard.time.hourAgo", { count: diffHours })
+        : t("dashboard.time.hoursAgo", { count: diffHours });
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+    if (diffDays < 7)
+      return diffDays === 1
+        ? t("dashboard.time.dayAgo", { count: diffDays })
+        : t("dashboard.time.daysAgo", { count: diffDays });
     const diffWeeks = Math.floor(diffDays / 7);
-    return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ago`;
+    return diffWeeks === 1
+      ? t("dashboard.time.weekAgo", { count: diffWeeks })
+      : t("dashboard.time.weeksAgo", { count: diffWeeks });
   };
 
   const resolveJobAssetUrl = (asset: any) => {
@@ -680,7 +692,7 @@ export default function BrandDashboard() {
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
   const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
-  const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
+  const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier, t);
   const brandPlanLabel = formatBrandPlanLabel(brandPlanTier);
   const brandHasStudioAddon = hasBrandStudioAccess(profile);
   const brandSubscriptionStatus = formatBrandSubscriptionStatus(profile);
@@ -1809,30 +1821,56 @@ export default function BrandDashboard() {
   const expiringLicenses: any[] = []; // Now loaded from real license data
 
   const navigationItems = [
-    { id: "home", label: "Dashboard", icon: LayoutDashboard },
-    { id: "marketplace", label: "Find Creators", icon: Search },
-    { id: "marketplace-agencies", label: "Find Agencies", icon: Building2 },
+    {
+      id: "home",
+      label: t("dashboard.navigation.dashboard"),
+      icon: LayoutDashboard,
+    },
+    {
+      id: "marketplace",
+      label: t("dashboard.navigation.findCreators"),
+      icon: Search,
+    },
+    {
+      id: "marketplace-agencies",
+      label: t("dashboard.navigation.findAgencies"),
+      icon: Building2,
+    },
     {
       id: "campaigns",
-      label: "My Campaigns",
+      label: t("dashboard.navigation.myCampaigns"),
       icon: Target,
     },
     {
       id: "licensing-requests",
-      label: "Licensing Requests",
+      label: t("dashboard.navigation.licensingRequests"),
       icon: FileText,
     },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    {
+      id: "analytics",
+      label: t("dashboard.navigation.analytics"),
+      icon: BarChart3,
+    },
     {
       id: "usage",
-      label: "Usage Rights",
+      label: t("dashboard.navigation.usageRights"),
       icon: FileText,
       badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
     },
     ...(canViewSubscriptions
-      ? [{ id: "billing", label: "Billing", icon: CreditCard }]
+      ? [
+          {
+            id: "billing",
+            label: t("dashboard.navigation.billing"),
+            icon: CreditCard,
+          },
+        ]
       : []),
-    { id: "settings", label: "Settings", icon: Settings },
+    {
+      id: "settings",
+      label: t("dashboard.navigation.settings"),
+      icon: Settings,
+    },
   ];
 
   const handleLogoUpload = (e) => {
@@ -1868,7 +1906,7 @@ export default function BrandDashboard() {
   const getBrandTalentEntitlementMessage = (error: unknown) => {
     const message = String((error as any)?.message || error || "").trim();
     if (message.includes("brand_talent_browsing_requires_pro_plan")) {
-      return "Talent browsing, licensing, and creator outreach start on the Pro plan.";
+      return t("dashboard.toasts.upgradeToProTalentDesc");
     }
     return message || "Please try again.";
   };
@@ -1880,9 +1918,8 @@ export default function BrandDashboard() {
     if (!creator) return;
     if (!brandCanUseCampaignCollaboration) {
       toast({
-        title: "Upgrade to Pro",
-        description:
-          "Talent browsing, licensing, and creator outreach start on the Pro plan.",
+        title: t("dashboard.toasts.upgradeToPro"),
+        description: t("dashboard.toasts.upgradeToProTalentDesc"),
       });
       navigate("/brandpricing");
       return;
@@ -2108,13 +2145,13 @@ export default function BrandDashboard() {
           onClick={() => setShowEscrowDetails(false)}
           className="border-2 border-gray-300 hover:bg-gray-100 transition-colors"
         >
-          ← Back to Dashboard
+          {t("dashboard.escrow.backToDashboard")}
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Escrow Details</h1>
-          <p className="text-gray-600">
-            Securely held payments for your active projects
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {t("dashboard.escrow.title")}
+          </h1>
+          <p className="text-gray-600">{t("dashboard.escrow.subtitle")}</p>
         </div>
       </div>
 
@@ -2126,22 +2163,23 @@ export default function BrandDashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
             <h3 className="text-lg font-semibold text-blue-900 uppercase tracking-wider mb-1">
-              Active Escrow
+              {t("dashboard.escrow.activeEscrow")}
             </h3>
             <p className="text-6xl font-black text-blue-600">
               ${(escrowTotal / 1000).toFixed(2)}K
             </p>
             <p className="text-blue-800 mt-2 font-medium">
-              Protecting {escrowProjects.length}{" "}
-              {escrowProjects.length === 1 ? "project" : "projects"}
+              {t("dashboard.escrow.protecting")} {escrowProjects.length}{" "}
+              {escrowProjects.length === 1
+                ? t("dashboard.escrow.project")
+                : t("dashboard.escrow.projects")}
             </p>
           </div>
           <Alert className="bg-white/80 backdrop-blur-sm border border-blue-200 max-w-md shadow-sm">
             <ShieldCheck className="h-5 w-5 text-blue-600" />
             <AlertDescription className="text-blue-900 leading-relaxed">
-              <strong>Guaranteed Payment:</strong> Funds are held in a neutral
-              balance. Approval triggers immediate transfer. All payments
-              require manual approval to ensure quality.
+              <strong>{t("dashboard.escrow.guaranteedPayment")}</strong>{" "}
+              {t("dashboard.escrow.guaranteedPaymentDesc")}
             </AlertDescription>
           </Alert>
         </div>
@@ -2150,26 +2188,28 @@ export default function BrandDashboard() {
       {/* Actionable Project List */}
       <Card className="p-0 bg-white border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="text-xl font-bold text-gray-900">Escrow Inventory</h3>
+          <h3 className="text-xl font-bold text-gray-900">
+            {t("dashboard.escrow.inventory")}
+          </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 text-left bg-gray-50/30">
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Campaign / Project
+                  {t("dashboard.escrow.table.campaignProject")}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Partner
+                  {t("dashboard.escrow.table.partner")}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
-                  Held Amount
+                  {t("dashboard.escrow.table.heldAmount")}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t("dashboard.escrow.table.status")}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
-                  Est. Release
+                  {t("dashboard.escrow.table.estRelease")}
                 </th>
               </tr>
             </thead>
@@ -2180,8 +2220,7 @@ export default function BrandDashboard() {
                     colSpan={5}
                     className="px-6 py-12 text-center text-gray-500 italic"
                   >
-                    No active escrow records found. All payments are either
-                    released or pending initial funding.
+                    {t("dashboard.escrow.table.noRecords")}
                   </td>
                 </tr>
               ) : (
@@ -2213,7 +2252,7 @@ export default function BrandDashboard() {
                         </div>
                         <span className="text-sm font-medium text-gray-700">
                           {project.creator === "Unknown"
-                            ? "Collaborator"
+                            ? t("dashboard.escrow.table.collaborator")
                             : project.creator}
                         </span>
                       </div>
@@ -2230,8 +2269,8 @@ export default function BrandDashboard() {
                         }
                       >
                         {project.status === "releasing"
-                          ? "Process Started"
-                          : "Protected"}
+                          ? t("dashboard.escrow.table.processStarted")
+                          : t("dashboard.escrow.table.protected")}
                       </Badge>
                     </td>
                     <td className="px-6 py-5 text-right">
@@ -2258,9 +2297,10 @@ export default function BrandDashboard() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back{brand?.name ? `, ${brand.name}` : ""}
+            {t("dashboard.home.welcomeBack")}
+            {brand?.name ? `, ${brand.name}` : ""}
           </h1>
-          <p className="text-gray-600">Your creative workspace is ready.</p>
+          <p className="text-gray-600">{t("dashboard.home.workspaceReady")}</p>
         </div>
 
         {/* Top Stats Cards */}
@@ -2268,7 +2308,7 @@ export default function BrandDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Active Projects
+                {t("dashboard.home.stats.activeProjects")}
               </p>
               <Target className="w-5 h-5 text-gray-400" />
             </div>
@@ -2276,7 +2316,8 @@ export default function BrandDashboard() {
               {campaignMetrics.active_projects_count}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              {campaignMetrics.pending_approvals_count} awaiting approval
+              {campaignMetrics.pending_approvals_count}{" "}
+              {t("dashboard.home.stats.awaitingApproval")}
             </p>
           </Card>
 
@@ -2285,21 +2326,23 @@ export default function BrandDashboard() {
             onClick={() => setShowEscrowDetails(true)}
           >
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">In Escrow</p>
+              <p className="text-sm font-medium text-gray-600">
+                {t("dashboard.home.stats.inEscrow")}
+              </p>
               <DollarSign className="w-5 h-5 text-gray-400" />
             </div>
             <p className="text-4xl font-bold text-gray-900">
               ${(escrowTotal / 1000).toFixed(1)}K
             </p>
             <p className="text-sm text-blue-600 mt-1 font-medium">
-              Click for details →
+              {t("dashboard.home.stats.clickForDetails")}
             </p>
           </Card>
 
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Pending Approvals
+                {t("dashboard.home.stats.pendingApprovals")}
               </p>
               <AlertCircle className="w-5 h-5 text-yellow-600" />
             </div>
@@ -2308,7 +2351,7 @@ export default function BrandDashboard() {
             </p>
             {campaignMetrics.pending_approvals_count > 0 && (
               <Badge className="mt-1 bg-yellow-100 text-yellow-700 border border-yellow-300">
-                Action needed
+                {t("dashboard.home.stats.actionNeeded")}
               </Badge>
             )}
           </Card>
@@ -2316,7 +2359,7 @@ export default function BrandDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                This Month's Spend
+                {t("dashboard.home.stats.thisMonthSpend")}
               </p>
               <TrendingUp className="w-5 h-5 text-gray-400" />
             </div>
@@ -2331,7 +2374,7 @@ export default function BrandDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Avg. Turnaround
+                {t("dashboard.home.stats.avgTurnaround")}
               </p>
               <Clock className="w-5 h-5 text-gray-400" />
             </div>
@@ -2346,7 +2389,7 @@ export default function BrandDashboard() {
         {/* Quick Actions */}
         <Card className="p-6 bg-white border border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Quick Actions
+            {t("dashboard.home.quickActions.title")}
           </h2>
           <div className="grid md:grid-cols-5 gap-4">
             <Button
@@ -2356,14 +2399,16 @@ export default function BrandDashboard() {
               className="h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
             >
               <Plus className="w-6 h-6" />
-              <span className="font-semibold">Start New Project</span>
+              <span className="font-semibold">
+                {t("dashboard.home.quickActions.startNewProject")}
+              </span>
             </Button>
             <Button
               onClick={() => navigateToSection("marketplace")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Search className="w-6 h-6" />
-              <span>Browse Creators</span>
+              <span>{t("dashboard.home.quickActions.browseCreators")}</span>
             </Button>
             <Button
               onClick={() => {
@@ -2372,21 +2417,23 @@ export default function BrandDashboard() {
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <CheckCircle2 className="w-6 h-6" />
-              <span>View Active Campaigns</span>
+              <span>
+                {t("dashboard.home.quickActions.viewActiveCampaigns")}
+              </span>
             </Button>
             <Button
               onClick={handleAgencyCollaborationEntry}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
-              <span>Invite Agency</span>
+              <span>{t("dashboard.home.quickActions.inviteAgency")}</span>
             </Button>
             <Button
               onClick={() => navigateToSection("marketplace-agencies")}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <Users className="w-6 h-6" />
-              <span>Browse Agencies</span>
+              <span>{t("dashboard.home.quickActions.browseAgencies")}</span>
             </Button>
           </div>
         </Card>
@@ -2395,13 +2442,13 @@ export default function BrandDashboard() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Recent Projects
+              {t("dashboard.home.recentProjects.title")}
             </h3>
             <div className="space-y-3">
               {loadingBrandOfferItems && (
                 <Card className="p-4 bg-gray-50 border border-gray-200">
                   <p className="text-sm text-gray-600">
-                    Loading recent projects...
+                    {t("dashboard.home.recentProjects.loading")}
                   </p>
                 </Card>
               )}
@@ -2436,14 +2483,15 @@ export default function BrandDashboard() {
                         </Badge>
                         {campaign.completed_at && (
                           <Badge className="bg-green-100 text-green-700 border border-green-300">
-                            Done
+                            {t("dashboard.home.recentProjects.done")}
                           </Badge>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
-                        Due: {campaign.due_date.toLocaleDateString()}
+                        {t("dashboard.home.recentProjects.due")}:{" "}
+                        {campaign.due_date.toLocaleDateString()}
                       </span>
                       <Button
                         variant="link"
@@ -2463,7 +2511,7 @@ export default function BrandDashboard() {
                           });
                         }}
                       >
-                        View Project →
+                        {t("dashboard.home.recentProjects.viewProject")}
                       </Button>
                     </div>
                   </Card>
@@ -2471,7 +2519,7 @@ export default function BrandDashboard() {
               {!loadingBrandOfferItems && recentProjects.length === 0 && (
                 <Card className="p-4 bg-gray-50 border border-gray-200">
                   <p className="text-sm text-gray-600">
-                    No recent projects yet.
+                    {t("dashboard.home.recentProjects.noProjects")}
                   </p>
                 </Card>
               )}
@@ -2480,20 +2528,20 @@ export default function BrandDashboard() {
 
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Activity Feed
+              {t("dashboard.home.activityFeed.title")}
             </h3>
             <div className="space-y-3">
               {loadingActivityEvents && (
                 <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
                   <p className="text-sm text-gray-600">
-                    Loading activity feed...
+                    {t("dashboard.home.activityFeed.loading")}
                   </p>
                 </div>
               )}
               {!loadingActivityEvents && activityEvents.length === 0 && (
                 <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
                   <p className="text-sm text-gray-600">
-                    No recent activity yet.
+                    {t("dashboard.home.activityFeed.noActivity")}
                   </p>
                 </div>
               )}
@@ -2514,46 +2562,76 @@ export default function BrandDashboard() {
                   const actorLabel =
                     actor ||
                     (actorTypeRaw === "agency"
-                      ? "Agency"
+                      ? t("dashboard.home.activityFeed.agency")
                       : actorTypeRaw === "creator"
-                        ? "Creator"
+                        ? t("dashboard.home.activityFeed.creator")
                         : actorTypeRaw === "brand"
-                          ? "You"
-                          : "Someone");
+                          ? t("dashboard.home.activityFeed.you")
+                          : t("dashboard.home.activityFeed.someone"));
                   const description = String(event?.description || "");
                   const createdAt = formatRelativeTime(event?.created_at);
                   const fallbackActionMap: Record<string, string> = {
-                    "campaign.created": "created a campaign",
-                    "campaign.completed": "marked a campaign as done",
-                    "offer.sent": "sent an offer",
-                    "deliverable.submitted": "submitted a deliverable",
-                    "deliverable.changes_requested":
-                      "requested edits on a deliverable",
-                    "deliverable.approved": "approved a deliverable",
-                    "deliverable.comment": "left feedback on a deliverable",
-                    "job.created": "created a job",
-                    "job.invite.sent": "sent a job invite",
-                    "job.invite.accepted": "accepted a job invite",
-                    "job.invite.declined": "declined a job invite",
-                    "job.application.submitted": "applied for a job",
-                    "connection.request.sent": "sent a connection request",
-                    "connection.request.accepted":
-                      "accepted a connection request",
-                    "connection.request.declined":
-                      "declined a connection request",
+                    "campaign.created": t(
+                      "dashboard.home.activityFeed.actions.campaignCreated",
+                    ),
+                    "campaign.completed": t(
+                      "dashboard.home.activityFeed.actions.campaignCompleted",
+                    ),
+                    "offer.sent": t(
+                      "dashboard.home.activityFeed.actions.offerSent",
+                    ),
+                    "deliverable.submitted": t(
+                      "dashboard.home.activityFeed.actions.deliverableSubmitted",
+                    ),
+                    "deliverable.changes_requested": t(
+                      "dashboard.home.activityFeed.actions.deliverableChangesRequested",
+                    ),
+                    "deliverable.approved": t(
+                      "dashboard.home.activityFeed.actions.deliverableApproved",
+                    ),
+                    "deliverable.comment": t(
+                      "dashboard.home.activityFeed.actions.deliverableComment",
+                    ),
+                    "job.created": t(
+                      "dashboard.home.activityFeed.actions.jobCreated",
+                    ),
+                    "job.invite.sent": t(
+                      "dashboard.home.activityFeed.actions.jobInviteSent",
+                    ),
+                    "job.invite.accepted": t(
+                      "dashboard.home.activityFeed.actions.jobInviteAccepted",
+                    ),
+                    "job.invite.declined": t(
+                      "dashboard.home.activityFeed.actions.jobInviteDeclined",
+                    ),
+                    "job.application.submitted": t(
+                      "dashboard.home.activityFeed.actions.jobApplicationSubmitted",
+                    ),
+                    "connection.request.sent": t(
+                      "dashboard.home.activityFeed.actions.connectionRequestSent",
+                    ),
+                    "connection.request.accepted": t(
+                      "dashboard.home.activityFeed.actions.connectionRequestAccepted",
+                    ),
+                    "connection.request.declined": t(
+                      "dashboard.home.activityFeed.actions.connectionRequestDeclined",
+                    ),
                   };
                   const fallbackAction =
                     fallbackActionMap[eventType] ||
                     (eventType
                       ? eventType.replace(/_/g, " ").replace(/\./g, " ")
-                      : "performed an action");
+                      : t(
+                          "dashboard.home.activityFeed.actions.performedAction",
+                        ));
                   const fallbackDescription = `${actorLabel} ${fallbackAction}.`;
                   let message = description || fallbackDescription;
                   if (actorTypeRaw === "brand" && message) {
+                    const youLabel = t("dashboard.home.activityFeed.you");
                     if (actor && message.startsWith(actor)) {
-                      message = `You${message.slice(actor.length)}`;
+                      message = `${youLabel}${message.slice(actor.length)}`;
                     } else if (message.startsWith("Brand")) {
-                      message = `You${message.slice("Brand".length)}`;
+                      message = `${youLabel}${message.slice("Brand".length)}`;
                     }
                   }
                   return (
@@ -2590,7 +2668,7 @@ export default function BrandDashboard() {
         {/* Spend Chart */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-6">
-            Monthly Spend Trend
+            {t("dashboard.home.monthlySpendTrend")}
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart
@@ -3465,19 +3543,27 @@ export default function BrandDashboard() {
   const renderCreatorMarketplace = () => {
     return (
       <MarketplaceSection
-        title="Likelee Marketplace"
-        subtitle="Verified creators only"
+        title={t("dashboard.marketplace.search.creatorMarketplaceTitle", {
+          defaultValue: "Creator Marketplace",
+        })}
+        subtitle={t("dashboard.marketplace.search.verifiedCreatorsOnly", {
+          defaultValue: "Verified creators only",
+        })}
         verifiedBadgeLabel=""
+        searchPlaceholder={t("dashboard.marketplace.search.creatorPlaceholder", {
+          defaultValue: "Search by name, role, bio, or skills...",
+        })}
         queryScope="brand-creator-marketplace"
         showRequestLicense
         onRequestLicense={(profile, details) =>
           handleOpenLicenseRequest(profile, details)
         }
         actionsLocked={!brandCanUseCampaignCollaboration}
-        lockedTitle="Pro feature preview"
-        lockedDescription="Browse verified creators now. Upgrade to Pro to connect, request licenses, and move from the brief into collaborator selection."
-        lockedCtaLabel="Upgrade to Pro"
+        lockedTitle={t("dashboard.locked.proFeaturePreview")}
+        lockedDescription={t("dashboard.locked.creatorsLockedDesc")}
+        lockedCtaLabel={t("dashboard.locked.upgradeToProCta")}
         onLockedAction={() => navigate("/brandpricing")}
+        translationPrefix="dashboard.marketplace"
       />
     );
   };
@@ -3486,17 +3572,24 @@ export default function BrandDashboard() {
     return (
       <MarketplaceSection
         entityType="agency"
-        title="Agency Marketplace"
-        subtitle="Verified agencies only"
+        title={t("dashboard.marketplace.search.agencyMarketplaceTitle", {
+          defaultValue: "Agency Marketplace",
+        })}
+        subtitle={t("dashboard.marketplace.search.verifiedAgenciesOnly", {
+          defaultValue: "Verified agencies only",
+        })}
         verifiedBadgeLabel=""
-        searchPlaceholder="Search by agency name, type, service, or location..."
+        searchPlaceholder={t("dashboard.marketplace.search.agencyPlaceholder", {
+          defaultValue: "Search by agency name, type, service, or location...",
+        })}
         resultLimit={60}
         queryScope="brand-agency-marketplace"
         actionsLocked={!brandCanUseCampaignCollaboration}
-        lockedTitle="Pro feature preview"
-        lockedDescription="Browse agencies now. Upgrade to Pro to connect with them and unlock campaign collaboration workflows."
-        lockedCtaLabel="Upgrade to Pro"
+        lockedTitle={t("dashboard.locked.proFeaturePreview")}
+        lockedDescription={t("dashboard.locked.agenciesLockedDesc")}
+        lockedCtaLabel={t("dashboard.locked.upgradeToProCta")}
         onLockedAction={() => navigate("/brandpricing")}
+        translationPrefix="dashboard.marketplace"
       />
     );
   };
@@ -4380,7 +4473,7 @@ export default function BrandDashboard() {
               {isFullySigned && offer?.payment_status === "paid" && (
                 <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
                   <span className="text-emerald-700 text-xs font-semibold">
-                    ✅ Payment confirmed — deliverables can be submitted.
+                    ✅ {t("campaigns.deliverables.status.paymentConfirmed")}
                   </span>
                 </div>
               )}
@@ -4848,16 +4941,16 @@ export default function BrandDashboard() {
                         {group?.campaignName || "Campaign"}
                       </h3>
                       <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
-                        {group?.offers?.length || 0} collaborators
+                        {group?.offers?.length || 0} {t("campaigns.deliverables.badges.collaborators")}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
-                      {aggregate.reviewed} reviewed
+                      {aggregate.reviewed} {t("campaigns.deliverables.badges.reviewed")}
                     </Badge>
                     <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
-                      {aggregate.approved} approved
+                      {aggregate.approved} {t("campaigns.deliverables.badges.approved")}
                     </Badge>
                     <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                       {completionPct}%
@@ -4981,10 +5074,10 @@ export default function BrandDashboard() {
                               </div>
                               <div className="flex items-center gap-3">
                                 <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
-                                  {reviewedCount} reviewed
+                                  {reviewedCount} {t("campaigns.deliverables.badges.reviewed")}
                                 </Badge>
                                 <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
-                                  {approvedCount} approved
+                                  {approvedCount} {t("campaigns.deliverables.badges.approved")}
                                 </Badge>
                                 <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                                   {completionPct}%
@@ -5266,9 +5359,8 @@ export default function BrandDashboard() {
       const campaignId = String(campaign?.brand_campaign_id || "").trim();
       if (!campaignId) {
         toast({
-          title: "Campaign ID missing",
-          description:
-            "This offer is not linked to a campaign yet. Please create a campaign first.",
+          title: t("dashboard.toasts.campaignIdMissing"),
+          description: t("dashboard.toasts.campaignIdMissingDesc"),
           variant: "destructive" as any,
         });
         return;
@@ -6138,10 +6230,10 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Offers</h1>
-          <p className="text-gray-600">
-            Review and manage campaign offers and ongoing collaborations
-          </p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {t("campaigns.myOffers.title")}
+          </h1>
+          <p className="text-gray-600">{t("campaigns.myOffers.subtitle")}</p>
         </div>
 
         {/* Campaign Tabs */}
@@ -6415,8 +6507,8 @@ export default function BrandDashboard() {
               className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
             >
               {brandCanUseCampaignCollaboration
-                ? "Invite Agency"
-                : "Upgrade to Pro"}
+                ? t("dashboard.quickActions.inviteAgency")
+                : t("dashboard.planActions.upgradeToPro")}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
@@ -6439,10 +6531,12 @@ export default function BrandDashboard() {
               className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
             >
               {(brandSeatLimit ?? 0) === 0
-                ? "Upgrade to Basic"
+                ? t("dashboard.quickActions.upgradeToBasic")
                 : brandSeatLimitReached
-                  ? "Seat limit reached"
-                  : `Up to ${brandSeatLimitLabel} seats`}
+                  ? t("dashboard.quickActions.seatLimitReached")
+                  : t("dashboard.quickActions.upToSeats", {
+                      count: brandSeatLimitLabel,
+                    })}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
@@ -6460,10 +6554,10 @@ export default function BrandDashboard() {
               }
             >
               {brandHasStudioAddon
-                ? "Open Studio"
+                ? t("dashboard.planLabels.openStudio")
                 : brandCanSelfServeStudioAddon
-                  ? "Enable Add-On"
-                  : "Upgrade to Pro"}
+                  ? t("dashboard.quickActions.enableAddon")
+                  : t("dashboard.planActions.upgradeToPro")}
             </Button>
           </Card>
           <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
@@ -6492,28 +6586,28 @@ export default function BrandDashboard() {
                 onClick={() => setCampaignHubTab("active")}
                 className={`border-2 rounded-none ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Active
+                {t("campaigns.myOffers.tabs.active")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("pending_approval")}
                 className={`border-2 rounded-none ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Pending Approval
+                {t("campaigns.myOffers.tabs.pendingApproval")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("completed")}
                 className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Expired
+                {t("campaigns.myOffers.tabs.expired")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("jobs")}
                 className={`border-2 rounded-none ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Jobs
+                {t("campaigns.myOffers.tabs.jobs")}
               </Button>
             </div>
           </div>
@@ -7763,7 +7857,7 @@ export default function BrandDashboard() {
                     ).toLocaleDateString()}
                   </p>
                 </div>
-                <Badge className="bg-green-500 text-white">Completed</Badge>
+                <Badge className="bg-green-500 text-white">{t("campaigns.deliverables.status.completed")}</Badge>
               </div>
               {contract.stripe_payout_id && (
                 <p className="text-xs text-gray-500 mt-2">
@@ -11331,7 +11425,9 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <Target className="w-4 h-4" />
-                        <span className="flex-1 text-left">My Offers</span>
+                        <span className="flex-1 text-left">
+                          {t("campaigns.myOffers.title")}
+                        </span>
                       </button>
                       <button
                         onClick={() => {
@@ -11354,7 +11450,7 @@ export default function BrandDashboard() {
                         }
                       >
                         <Mail className="w-4 h-4" />
-                        <span className="flex-1 text-left">Inbox</span>
+                        <span className="flex-1 text-left">{t("campaigns.inbox.title")}</span>
                         {canViewInbox && inboxPendingCount > 0 && (
                           <Badge className="bg-gray-200 text-gray-700">
                             {inboxPendingCount}
@@ -11372,7 +11468,7 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <FileText className="w-4 h-4" />
-                        <span className="flex-1 text-left">Contract Hub</span>
+                        <span className="flex-1 text-left">{t("campaigns.contractHub.title")}</span>
                         {contractHubPendingCount > 0 && (
                           <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
                             {contractHubPendingCount}
@@ -11390,7 +11486,7 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span className="flex-1 text-left">Deliverables</span>
+                        <span className="flex-1 text-left">{t("campaigns.deliverables.title")}</span>
                       </button>
                       <button
                         onClick={() => {
@@ -11406,7 +11502,7 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <Briefcase className="w-4 h-4" />
-                        <span className="flex-1 text-left">Jobs</span>
+                        <span className="flex-1 text-left">{t("campaigns.jobs.title")}</span>
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}
@@ -11417,7 +11513,7 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <ImageIcon className="w-4 h-4" />
-                        <span className="text-left">Asset Library</span>
+                        <span className="text-left">{t("campaigns.assetLibrary.title")}</span>
                       </button>
                     </div>
                   )}
