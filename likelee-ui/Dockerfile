@@ -17,7 +17,6 @@ COPY likelee-ui/package*.json ./
 COPY likelee-ui/vite.config.* likelee-ui/tsconfig*.json ./
 RUN npm ci
 COPY likelee-ui/ ./
-ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
 
 # ---- Runtime Stage ----

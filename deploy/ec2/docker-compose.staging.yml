@@ -1,4 +1,0 @@
-services:
-  gateway:
-    volumes:
-      - ./nginx.staging.conf:/etc/nginx/nginx.conf:ro
