@@ -9,8 +9,11 @@ import {
   XCircle,
   Activity,
   User,
-  Users,
   Edit2,
+  Check,
+  ArrowRight,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useToast } from "@/components/ui/use-toast";
@@ -34,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 type TeamRoleValue = "owner" | "admin" | "project_manager" | "reviewer";
 
@@ -76,21 +80,53 @@ const TEAM_ROLE_OPTIONS: Array<{
   value: Exclude<TeamRoleValue, "owner">;
   label: string;
   description: string;
+  permissions: string[];
 }> = [
   {
     value: "admin",
     label: "Admin",
     description: "Full team management, billing, campaigns, and approvals.",
+    permissions: [
+      "Full team management",
+      "Billing & subscriptions",
+      "Campaigns & approvals",
+      "Pay offers",
+      "Jobs management",
+      "Contracts management",
+      "License management",
+      "Brand connections",
+    ],
   },
   {
     value: "project_manager",
     label: "Project Manager",
     description: "Campaign creation and deliverable approvals without billing.",
+    permissions: [
+      "Pay offers",
+      "Manage jobs",
+      "Manage contracts",
+      "Manage licenses",
+      "Manage brand connections",
+      "Manage clients",
+      "View subscriptions & billing",
+      "Campaign creation",
+      "Deliverable approvals",
+    ],
   },
   {
     value: "reviewer",
     label: "Reviewer",
     description: "Read-only access to deliverables with team visibility.",
+    permissions: [
+      "View pay offers",
+      "View jobs",
+      "View contracts",
+      "View deliverables",
+      "View team members",
+      "View brand connections",
+      "View clients",
+      "View licenses",
+    ],
   },
 ];
 
@@ -128,14 +164,19 @@ export function TeamManagementCard({
   title = "Team Management",
   description,
   accentClassName = "bg-[#F7B750] hover:bg-[#E6A640] text-white",
+  seatLimit,
+  seatLimitReached,
 }: {
   organizationType: "agency" | "brand";
   title?: string;
   description?: string;
   accentClassName?: string;
+  seatLimit?: number | null;
+  seatLimitReached?: boolean;
 }) {
   const { token } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [context, setContext] = React.useState<TeamContextResponse | null>(
     null,
   );
@@ -144,6 +185,11 @@ export function TeamManagementCard({
   const [showInviteModal, setShowInviteModal] = React.useState(false);
   const [showRoleModal, setShowRoleModal] = React.useState(false);
   const [showActivityModal, setShowActivityModal] = React.useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
+  const [seatLimitError, setSeatLimitError] = React.useState<string | null>(
+    null,
+  );
   const [selectedMember, setSelectedMember] =
     React.useState<TeamMemberRecord | null>(null);
   const [inviteEmail, setInviteEmail] = React.useState("");
@@ -153,6 +199,19 @@ export function TeamManagementCard({
     React.useState<Exclude<TeamRoleValue, "owner">>("reviewer");
   const [submittingInvite, setSubmittingInvite] = React.useState(false);
   const [updatingRole, setUpdatingRole] = React.useState(false);
+  const [deletingMember, setDeletingMember] = React.useState(false);
+
+  const seatLimitBlocked = seatLimit === 0 || seatLimitReached === true;
+
+  const inviteRoleOption = React.useMemo(
+    () => TEAM_ROLE_OPTIONS.find((option) => option.value === inviteRole),
+    [inviteRole],
+  );
+
+  const pendingRoleOption = React.useMemo(
+    () => TEAM_ROLE_OPTIONS.find((option) => option.value === pendingRoleValue),
+    [pendingRoleValue],
+  );
 
   const authHeaders = React.useMemo(
     () => ({
@@ -217,6 +276,22 @@ export function TeamManagementCard({
   const canUpdateRoles = Boolean(
     context?.permissions?.includes("update_member_roles"),
   );
+  const canRemoveMembers = Boolean(
+    context?.permissions?.includes("remove_team_members"),
+  );
+
+  const handleInviteButtonClick = () => {
+    if (seatLimitBlocked) {
+      const message =
+        seatLimit === 0
+          ? "Upgrade to Basic or above to unlock team seats."
+          : `You've reached your ${seatLimit ?? 0} seat limit. Upgrade to add more team members.`;
+      setSeatLimitError(message);
+      setShowUpgradeModal(true);
+    } else {
+      setShowInviteModal(true);
+    }
+  };
 
   const handleInvite = async () => {
     const normalizedEmail = String(inviteEmail || "")
@@ -241,9 +316,15 @@ export function TeamManagementCard({
       );
       const payload = await parseApiResponse(resp);
       if (!resp.ok) {
-        throw new Error(
-          payload?.message || payload?.error || "Failed to send invite.",
-        );
+        const errorMessage =
+          payload?.message || payload?.error || "Failed to send invite.";
+        if (errorMessage.startsWith("SEAT_LIMIT_EXCEEDED:")) {
+          setSeatLimitError(errorMessage.replace("SEAT_LIMIT_EXCEEDED: ", ""));
+          setShowInviteModal(false);
+          setShowUpgradeModal(true);
+          throw new Error(errorMessage);
+        }
+        throw new Error(errorMessage);
       }
       setInviteEmail("");
       setInviteRole("reviewer");
@@ -255,11 +336,13 @@ export function TeamManagementCard({
         description: `${normalizedEmail} has been invited.`,
       });
     } catch (err: any) {
-      toast({
-        title: "Invite failed",
-        description: err?.message || "Could not send invite.",
-        variant: "destructive",
-      });
+      if (!err?.message?.startsWith("SEAT_LIMIT_EXCEEDED:")) {
+        toast({
+          title: "Invite failed",
+          description: err?.message || "Could not send invite.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setSubmittingInvite(false);
     }
@@ -320,6 +403,47 @@ export function TeamManagementCard({
     setShowRoleModal(true);
   };
 
+  const openRemoveDialog = (member: TeamMemberRecord) => {
+    setSelectedMember(member);
+    setShowDeleteModal(true);
+  };
+
+  const handleRemove = async () => {
+    if (!selectedMember) return;
+    try {
+      setDeletingMember(true);
+      const resp = await fetch(
+        `/api/team/members/${encodeURIComponent(selectedMember.user_id)}?organization_type=${encodeURIComponent(organizationType)}`,
+        {
+          method: "DELETE",
+          headers: authHeaders,
+        },
+      );
+      const payload = await parseApiResponse(resp);
+      if (!resp.ok) {
+        throw new Error(
+          payload?.message || payload?.error || "Failed to remove member.",
+        );
+      }
+      setShowDeleteModal(false);
+      setSelectedMember(null);
+      await loadContext();
+      await loadAuditLogs();
+      toast({
+        title: "Member removed",
+        description: `${selectedMember.email} has been removed from the team.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Removal failed",
+        description: err?.message || "Could not remove the member.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingMember(false);
+    }
+  };
+
   const decorateActivity = (log: TeamAuditLogRecord) => {
     switch (log.action) {
       case "team_invite_created":
@@ -348,6 +472,12 @@ export function TeamManagementCard({
           details: `${log.target_email || "A member"} declined the invitation`,
           icon: XCircle,
         };
+      case "member_removed":
+        return {
+          label: "Member removed",
+          details: `${log.target_email || "A member"} was removed from the team`,
+          icon: User,
+        };
       default:
         return {
           label: log.action.replaceAll("_", " "),
@@ -359,39 +489,57 @@ export function TeamManagementCard({
 
   return (
     <>
-      <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
-            </div>
-            <div>
-              <h3 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">
-                {title}
-              </h3>
-              <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
-                {description || "Manage team members, roles, and permissions."}
-              </p>
-            </div>
+      <Card
+        className={
+          organizationType === "brand"
+            ? "p-6 bg-white border-2 border-gray-900 rounded-none shadow-none"
+            : "p-6 bg-white border border-gray-200"
+        }
+      >
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0">
+            <h3
+              className={
+                organizationType === "brand"
+                  ? "text-xl font-black text-gray-900 uppercase tracking-tighter"
+                  : "text-xl font-bold text-gray-900"
+              }
+            >
+              {title}
+            </h3>
+            <p
+              className={
+                organizationType === "brand"
+                  ? "text-xs text-gray-500 font-bold uppercase tracking-widest mt-2"
+                  : "text-gray-600 mt-1"
+              }
+            >
+              {description ||
+                `Manage members, roles, and invitations for ${context?.organization_name || "your team"}.`}
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Button
               variant="outline"
-              size="sm"
-              className="h-8 rounded-xl bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold transition-all px-3"
+              className={
+                organizationType === "brand"
+                  ? "rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-4 sm:px-6 hover:bg-gray-950 hover:text-white"
+                  : "border-2 border-gray-300"
+              }
               onClick={() => setShowActivityModal(true)}
             >
-              <History className="w-3.5 h-3.5 mr-1.5" />
-              <span className="text-[10px] sm:text-xs">Activity</span>
+              <History className="w-4 h-4 mr-2" />
+              Activity
             </Button>
             <Button
-              size="sm"
-              className="h-8 sm:h-9 px-3 sm:px-4 bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all"
-              onClick={() => setShowInviteModal(true)}
-              disabled={!canInvite}
+              className={`${accentClassName} text-xs sm:text-sm px-3 sm:px-4`}
+              onClick={handleInviteButtonClick}
+              disabled={!canInvite && !seatLimitBlocked}
             >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="text-xs sm:text-sm">Invite</span>
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              {seatLimitBlocked
+                ? "Upgrade to Add Members"
+                : "Invite"}
             </Button>
           </div>
         </div>
@@ -404,124 +552,227 @@ export function TeamManagementCard({
         ) : (
           <div className="mt-6 space-y-6">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight">
-                    Active Members
-                  </h4>
-                  <Badge className="bg-gray-50 text-gray-500 border-gray-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
-                    {context?.members?.length || 0}
-                  </Badge>
-                </div>
+              <div className="flex items-center justify-between mb-3">
+                <h4
+                  className={
+                    organizationType === "brand"
+                      ? "text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]"
+                      : "text-sm font-bold text-gray-900 uppercase tracking-wide"
+                  }
+                >
+                  Active Members
+                </h4>
+                <Badge
+                  variant="secondary"
+                  className={
+                    organizationType === "brand"
+                      ? "rounded-none font-black uppercase tracking-widest text-[10px]"
+                      : ""
+                  }
+                >
+                  {(context?.members || []).length} Members
+                </Badge>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {(context?.members || []).length === 0 ? (
-                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
-                    No active team members yet.
-                  </div>
-                ) : (
-                  (context?.members || []).map((member) => {
-                    const actorRole = context?.membership_role;
-                    const canEditRole =
-                      canUpdateRoles &&
-                      member.role !== "owner" &&
-                      !(actorRole === "admin" && member.role === "admin");
-                    return (
-                      <div
-                        key={member.user_id}
-                        className="flex flex-col justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 hover:border-indigo-100 transition-all duration-300"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
-                            {member.email}
-                          </div>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                            <Badge className="bg-white text-gray-600 border-gray-100 text-[9px] sm:text-[10px] px-1.5 py-0">
-                              {formatTeamRoleLabel(member.role)}
-                            </Badge>
-                            <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                              {member.status}
-                            </span>
-                          </div>
+              <div className="space-y-3">
+                {(context?.members || []).map((member) => {
+                  const actorRole = context?.membership_role;
+                  const canEditRole =
+                    canUpdateRoles &&
+                    member.role !== "owner" &&
+                    !(actorRole === "admin" && member.role === "admin");
+                  const canRemove =
+                    canRemoveMembers &&
+                    member.role !== "owner" &&
+                    !(actorRole === "admin" && member.role === "admin");
+                  return (
+                    <div
+                      key={member.user_id}
+                      className={
+                        organizationType === "brand"
+                          ? "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-none"
+                          : "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                      }
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={
+                            organizationType === "brand"
+                              ? "w-10 h-10 bg-gray-900 rounded-none flex items-center justify-center shrink-0"
+                              : "w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center shrink-0"
+                          }
+                        >
+                          <User
+                            className={
+                              organizationType === "brand"
+                                ? "w-5 h-5 text-white"
+                                : "w-5 h-5 text-gray-600"
+                            }
+                          />
                         </div>
-                        <div className="flex items-center justify-end border-t border-gray-100 pt-3">
-                          {member.role === "owner" ? (
-                            <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 text-[9px] font-black uppercase tracking-widest px-2">
-                              Owner
-                            </Badge>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 sm:h-8 rounded-lg bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold text-[10px] sm:text-xs transition-all w-full sm:w-auto"
-                              disabled={!canEditRole}
-                              onClick={() => openRoleEditor(member)}
-                            >
-                              <Edit2 className="w-3 h-3 mr-1.5" />
-                              Edit Role
-                            </Button>
-                          )}
+                        <div className="min-w-0">
+                          <p
+                            className={
+                              organizationType === "brand"
+                                ? "font-black text-gray-900 text-sm truncate"
+                                : "font-semibold text-gray-900 truncate"
+                            }
+                          >
+                            {member.email}
+                          </p>
+                          <p
+                            className={
+                              organizationType === "brand"
+                                ? "text-[10px] text-gray-500 font-bold uppercase tracking-widest"
+                                : "text-sm text-gray-600"
+                            }
+                          >
+                            Added{" "}
+                            {member.created_at
+                              ? new Date(member.created_at).toLocaleDateString()
+                              : "recently"}
+                          </p>
                         </div>
                       </div>
-                    );
-                  })
-                )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge
+                          className={
+                            organizationType === "brand"
+                              ? "bg-amber-100 text-amber-900 border-2 border-amber-300 rounded-none font-black uppercase tracking-widest text-[10px]"
+                              : "bg-blue-100 text-blue-700 border border-blue-300"
+                          }
+                        >
+                          {formatTeamRoleLabel(member.role)}
+                        </Badge>
+                        {canEditRole ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={
+                              organizationType === "brand"
+                                ? "rounded-none border-2 border-gray-900 hover:bg-gray-950 hover:text-white"
+                                : "border-2 border-gray-300"
+                            }
+                            onClick={() => openRoleEditor(member)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        ) : null}
+                        {canRemove ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={
+                              organizationType === "brand"
+                                ? "rounded-none border-2 border-red-500 text-red-600 hover:bg-red-50"
+                                : "border-2 border-red-300 text-red-600 hover:bg-red-50"
+                            }
+                            onClick={() => openRemoveDialog(member)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+                {(context?.members || []).length === 0 ? (
+                  <div
+                    className={
+                      organizationType === "brand"
+                        ? "rounded-none border-2 border-dashed border-gray-300 p-4 text-xs text-gray-500 font-bold uppercase tracking-widest"
+                        : "rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500"
+                    }
+                  >
+                    No team members found yet.
+                  </div>
+                ) : null}
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm sm:text-base font-bold text-gray-900 tracking-tight">
-                    Invitations
-                  </h4>
-                  <Badge className="bg-orange-50 text-orange-600 border-orange-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
-                    {
-                      (context?.invites || []).filter(
-                        (invite) => invite.status === "pending",
-                      ).length
-                    }
-                  </Badge>
-                </div>
+              <div className="flex items-center justify-between mb-3">
+                <h4
+                  className={
+                    organizationType === "brand"
+                      ? "text-[10px] font-black text-gray-900 uppercase tracking-[0.2em]"
+                      : "text-sm font-bold text-gray-900 uppercase tracking-wide"
+                  }
+                >
+                  Pending Invites
+                </h4>
+                <Badge
+                  variant="secondary"
+                  className={
+                    organizationType === "brand"
+                      ? "rounded-none font-black uppercase tracking-widest text-[10px]"
+                      : ""
+                  }
+                >
+                  {
+                    (context?.invites || []).filter(
+                      (invite) => invite.status === "pending",
+                    ).length
+                  }{" "}
+                  Pending
+                </Badge>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="space-y-3">
+                {(context?.invites || [])
+                  .filter((invite) => invite.status === "pending")
+                  .map((invite) => (
+                    <div
+                      key={invite.id}
+                      className={
+                        organizationType === "brand"
+                          ? "flex items-center justify-between p-4 bg-gray-50 border-2 border-gray-200 rounded-none"
+                          : "flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                      }
+                    >
+                      <div>
+                        <p
+                          className={
+                            organizationType === "brand"
+                              ? "font-black text-gray-900 text-sm"
+                              : "font-semibold text-gray-900"
+                          }
+                        >
+                          {invite.email}
+                        </p>
+                        <p
+                          className={
+                            organizationType === "brand"
+                              ? "text-[10px] text-gray-500 font-bold uppercase tracking-widest"
+                              : "text-sm text-gray-600"
+                          }
+                        >
+                          {formatTeamRoleLabel(invite.role)} · Expires{" "}
+                          {new Date(invite.expires_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <Badge
+                        className={
+                          organizationType === "brand"
+                            ? "bg-amber-100 text-amber-900 border-2 border-amber-300 rounded-none font-black uppercase tracking-widest text-[10px]"
+                            : "bg-amber-100 text-amber-700 border border-amber-300"
+                        }
+                      >
+                        Pending
+                      </Badge>
+                    </div>
+                  ))}
                 {(context?.invites || []).filter(
                   (invite) => invite.status === "pending",
                 ).length === 0 ? (
-                  <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
-                    No pending invitations.
+                  <div
+                    className={
+                      organizationType === "brand"
+                        ? "rounded-none border-2 border-dashed border-gray-300 p-4 text-xs text-gray-500 font-bold uppercase tracking-widest"
+                        : "rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500"
+                    }
+                  >
+                    No pending invites.
                   </div>
-                ) : (
-                  (context?.invites || [])
-                    .filter((invite) => invite.status === "pending")
-                    .map((invite) => (
-                      <div
-                        key={invite.id}
-                        className="flex flex-col justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 hover:border-orange-100 transition-all duration-300"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
-                            {invite.email}
-                          </div>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                            <Badge className="bg-white text-gray-600 border-gray-100 text-[9px] sm:text-[10px] px-1.5 py-0">
-                              {formatTeamRoleLabel(invite.role)}
-                            </Badge>
-                            <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                              Pending
-                            </span>
-                          </div>
-                        </div>
-                        <div className="border-t border-gray-100 pt-3">
-                          <div className="text-[9px] sm:text-[10px] text-gray-400 font-bold flex items-center gap-1.5">
-                            <History className="w-2.5 h-2.5" />
-                            Exp:{" "}
-                            {new Date(invite.expires_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                )}
+                ) : null}
               </div>
             </div>
           </div>
@@ -529,29 +780,65 @@ export function TeamManagementCard({
       </Card>
 
       <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-        <DialogContent className="max-w-md w-[95vw] rounded-2xl p-4 sm:p-6 overflow-hidden">
-          <DialogHeader className="space-y-1 sm:space-y-1.5 text-left">
-            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
+        <DialogContent
+          className={
+            organizationType === "brand"
+              ? "max-w-md rounded-none border-2 border-gray-900 shadow-[8px_8px_0px_rgba(0,0,0,0.1)]"
+              : "max-w-md rounded-2xl"
+          }
+        >
+          <DialogHeader>
+            <DialogTitle
+              className={
+                organizationType === "brand"
+                  ? "text-xl font-black text-gray-900 uppercase tracking-tighter"
+                  : "text-xl font-bold text-gray-900"
+              }
+            >
               Invite Team Member
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
-              Send an email invitation to join your team
+            <DialogDescription
+              className={
+                organizationType === "brand"
+                  ? "text-xs text-gray-500 font-bold uppercase tracking-widest"
+                  : "text-sm text-gray-500 font-medium"
+              }
+            >
+              {organizationType === "brand"
+                ? "Add a new collaborator to your brand"
+                : "Send an email invitation to join your team"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 sm:space-y-6 py-4">
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm font-bold text-gray-900">
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label
+                className={
+                  organizationType === "brand"
+                    ? "text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block"
+                    : "text-sm font-bold text-gray-900"
+                }
+              >
                 Email Address
               </Label>
               <Input
                 value={inviteEmail}
                 onChange={(event) => setInviteEmail(event.target.value)}
                 placeholder="colleague@example.com"
-                className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm"
+                className={
+                  organizationType === "brand"
+                    ? "rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                    : "h-11 bg-gray-50 border-gray-200 rounded-xl"
+                }
               />
             </div>
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm font-bold text-gray-900">
+            <div className="space-y-2">
+              <Label
+                className={
+                  organizationType === "brand"
+                    ? "text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block"
+                    : "text-sm font-bold text-gray-900"
+                }
+              >
                 User Role
               </Label>
               <Select
@@ -560,39 +847,101 @@ export function TeamManagementCard({
                   setInviteRole(value as Exclude<TeamRoleValue, "owner">)
                 }
               >
-                <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
+                <SelectTrigger
+                  className={
+                    organizationType === "brand"
+                      ? "rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
+                      : "h-11 bg-gray-50 border-gray-200 rounded-xl"
+                  }
+                >
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl">
+                <SelectContent>
                   {TEAM_ROLE_OPTIONS.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className="text-xs font-bold py-2.5"
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <span>{option.label}</span>
-                        <span className="text-[10px] text-gray-400 font-medium">
-                          {option.description}
-                        </span>
-                      </div>
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label} - {option.description}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="p-3 sm:p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-              <p className="text-[10px] sm:text-xs text-indigo-700 font-medium leading-relaxed">
+
+            {inviteRoleOption?.permissions?.length ? (
+              <div
+                className={
+                  organizationType === "brand"
+                    ? "border-2 border-gray-200 bg-gray-50 p-5 rounded-none"
+                    : "border border-gray-200 bg-gray-50 p-5 rounded-xl"
+                }
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div
+                    className={
+                      organizationType === "brand"
+                        ? "text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]"
+                        : "text-xs font-bold text-gray-700 uppercase tracking-wide"
+                    }
+                  >
+                    Access Rights
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      organizationType === "brand"
+                        ? "rounded-none font-black uppercase tracking-widest text-[10px]"
+                        : ""
+                    }
+                  >
+                    {inviteRoleOption.permissions.length}
+                  </Badge>
+                </div>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                  {inviteRoleOption.permissions.map((permission) => (
+                    <div key={permission} className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-gray-700 mt-0.5" />
+                      <div
+                        className={
+                          organizationType === "brand"
+                            ? "text-[13px] font-bold text-gray-900 leading-snug"
+                            : "text-xs font-medium text-gray-700 leading-snug"
+                        }
+                      >
+                        {permission}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div
+              className={
+                organizationType === "brand"
+                  ? "p-4 bg-amber-50 border-2 border-amber-200 rounded-none"
+                  : "p-4 bg-indigo-50 border border-indigo-100 rounded-xl"
+              }
+            >
+              <p
+                className={
+                  organizationType === "brand"
+                    ? "text-xs text-amber-900 font-bold leading-relaxed"
+                    : "text-xs text-indigo-700 font-medium leading-relaxed"
+                }
+              >
                 <span className="font-bold">Note:</span> The invited user will
-                receive instructions via email to access the dashboard.
+                receive an email with instructions to set up their account and
+                access the dashboard with the assigned role.
               </p>
             </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="ghost"
               onClick={() => setShowInviteModal(false)}
-              className="w-full sm:w-auto font-bold text-xs sm:text-sm"
+              className={
+                organizationType === "brand"
+                  ? "font-black uppercase tracking-widest rounded-none"
+                  : "font-bold"
+              }
               disabled={submittingInvite}
             >
               Cancel
@@ -600,7 +949,11 @@ export function TeamManagementCard({
             <Button
               onClick={handleInvite}
               disabled={submittingInvite}
-              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-6 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm"
+              className={
+                organizationType === "brand"
+                  ? "rounded-none bg-[#F7B750] hover:bg-[#E6A640] text-white font-black uppercase tracking-widest px-8 shadow-[4px_4px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none flex items-center gap-2"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+              }
             >
               {submittingInvite ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -614,19 +967,19 @@ export function TeamManagementCard({
       </Dialog>
 
       <Dialog open={showRoleModal} onOpenChange={setShowRoleModal}>
-        <DialogContent className="max-w-md w-[95vw] rounded-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
-            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
+        <DialogContent className="max-w-md rounded-2xl max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle className="text-xl font-bold text-gray-900">
               Update Team Role
             </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
+            <DialogDescription className="text-sm text-gray-500 font-medium">
               {selectedMember?.email || "Member"} is currently{" "}
               {formatTeamRoleLabel(selectedMember?.role)}.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-5 sm:space-y-6">
-            <div className="space-y-1.5 sm:space-y-2">
-              <Label className="text-xs sm:text-sm font-bold text-gray-900">
+          <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-900">
                 New Role
               </Label>
               <Select
@@ -635,37 +988,51 @@ export function TeamManagementCard({
                   setPendingRoleValue(value as Exclude<TeamRoleValue, "owner">)
                 }
               >
-                <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
+                <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl">
+                <SelectContent>
                   {TEAM_ROLE_OPTIONS.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className="text-xs font-bold py-2.5"
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        <span>{option.label}</span>
-                        <span className="text-[10px] text-gray-400 font-medium">
-                          {option.description}
-                        </span>
-                      </div>
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label} - {option.description}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 sm:p-4 text-[10px] sm:text-xs font-medium text-amber-800">
+
+            {pendingRoleOption?.permissions?.length ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-bold text-gray-700 uppercase tracking-wide">
+                    Access Rights
+                  </div>
+                  <Badge variant="secondary">
+                    {pendingRoleOption.permissions.length}
+                  </Badge>
+                </div>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                  {pendingRoleOption.permissions.map((permission) => (
+                    <div key={permission} className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-gray-700 mt-0.5" />
+                      <div className="text-xs font-medium text-gray-700 leading-snug">
+                        {permission}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium text-amber-800">
               This change takes effect immediately for the member's active
               session.
             </div>
           </div>
-          <DialogFooter className="p-4 sm:p-6 border-t border-gray-100 flex-col sm:flex-row gap-2 sm:gap-0">
+          <DialogFooter className="p-6 border-t border-gray-100 gap-2 sm:gap-0">
             <Button
               variant="ghost"
               onClick={() => setShowRoleModal(false)}
-              className="w-full sm:w-auto font-bold text-xs sm:text-sm"
+              className="font-bold"
               disabled={updatingRole}
             >
               Cancel
@@ -673,7 +1040,7 @@ export function TeamManagementCard({
             <Button
               onClick={handleRoleUpdate}
               disabled={updatingRole}
-              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-8 rounded-xl text-xs sm:text-sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl"
             >
               {updatingRole ? "Saving..." : "Confirm Role Change"}
             </Button>
@@ -682,18 +1049,16 @@ export function TeamManagementCard({
       </Dialog>
 
       <Dialog open={showActivityModal} onOpenChange={setShowActivityModal}>
-        <DialogContent className="max-w-lg w-[95vw] rounded-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
-          <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
-            <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
-              Team Activity Log
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Team Activity</DialogTitle>
+            <DialogDescription>
               Recent invite, role, and membership events.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-3 sm:space-y-4">
+          <div className="space-y-3">
             {logs.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
+              <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
                 No activity recorded yet.
               </div>
             ) : (
@@ -702,19 +1067,17 @@ export function TeamManagementCard({
                 return (
                   <div
                     key={log.id}
-                    className="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
+                    className="flex gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg"
                   >
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
-                      <activity.icon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                    <activity.icon className="w-5 h-5 text-gray-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-gray-900">
                         {activity.label}
                       </p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 font-medium mt-0.5 leading-tight">
+                      <p className="text-sm text-gray-600">
                         {activity.details}
                       </p>
-                      <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-wider">
+                      <p className="text-xs text-gray-400 mt-1">
                         {new Date(log.created_at).toLocaleString()}
                       </p>
                     </div>
@@ -723,13 +1086,171 @@ export function TeamManagementCard({
               })
             )}
           </div>
-          <DialogFooter className="p-4 sm:p-6 border-t border-gray-100">
-            <Button
-              variant="outline"
-              onClick={() => setShowActivityModal(false)}
-              className="w-full font-bold rounded-xl h-9 sm:h-11 text-xs sm:text-sm"
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+        <DialogContent
+          className={
+            organizationType === "brand"
+              ? "max-w-md rounded-none border-2 border-gray-900 shadow-[8px_8px_0px_rgba(0,0,0,0.1)]"
+              : "max-w-md rounded-2xl"
+          }
+        >
+          <DialogHeader>
+            <DialogTitle
+              className={
+                organizationType === "brand"
+                  ? "text-xl font-black text-gray-900 uppercase tracking-tighter"
+                  : "text-xl font-bold text-gray-900"
+              }
             >
-              Close
+              Seat Limit Reached
+            </DialogTitle>
+            <DialogDescription
+              className={
+                organizationType === "brand"
+                  ? "text-xs text-gray-500 font-bold uppercase tracking-widest"
+                  : "text-sm text-gray-500 font-medium"
+              }
+            >
+              {seatLimitError || "You've reached your team member limit."}
+            </DialogDescription>
+          </DialogHeader>
+          <div
+            className={
+              organizationType === "brand"
+                ? "p-4 bg-amber-50 border-2 border-amber-200 rounded-none"
+                : "p-4 bg-indigo-50 border border-indigo-100 rounded-xl"
+            }
+          >
+            <p
+              className={
+                organizationType === "brand"
+                  ? "text-xs text-amber-900 font-bold leading-relaxed"
+                  : "text-xs text-indigo-700 font-medium leading-relaxed"
+              }
+            >
+              Upgrade your plan to add more team members and unlock additional
+              features.
+            </p>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowUpgradeModal(false);
+                setSeatLimitError(null);
+              }}
+              className={
+                organizationType === "brand"
+                  ? "font-black uppercase tracking-widest rounded-none"
+                  : "font-bold"
+              }
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setShowUpgradeModal(false);
+                setSeatLimitError(null);
+                if (organizationType === "brand") {
+                  navigate("/brandpricing");
+                } else {
+                  navigate("/agency/billing");
+                }
+              }}
+              className={
+                organizationType === "brand"
+                  ? "rounded-none bg-[#F7B750] hover:bg-[#E6A640] text-white font-black uppercase tracking-widest px-8 shadow-[4px_4px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none flex items-center gap-2"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+              }
+            >
+              Upgrade Plan
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent
+          className={
+            organizationType === "brand"
+              ? "max-w-md rounded-none border-2 border-gray-900 shadow-[8px_8px_0px_rgba(0,0,0,0.1)]"
+              : "max-w-md rounded-2xl"
+          }
+        >
+          <DialogHeader>
+            <DialogTitle
+              className={
+                organizationType === "brand"
+                  ? "text-xl font-black text-gray-900 uppercase tracking-tighter"
+                  : "text-xl font-bold text-gray-900"
+              }
+            >
+              Remove Team Member
+            </DialogTitle>
+            <DialogDescription
+              className={
+                organizationType === "brand"
+                  ? "text-xs text-gray-500 font-bold uppercase tracking-widest"
+                  : "text-sm text-gray-500 font-medium"
+              }
+            >
+              Are you sure you want to remove{" "}
+              {selectedMember?.email || "this member"} from the team?
+            </DialogDescription>
+          </DialogHeader>
+          <div
+            className={
+              organizationType === "brand"
+                ? "p-4 bg-red-50 border-2 border-red-200 rounded-none"
+                : "p-4 bg-red-50 border border-red-100 rounded-xl"
+            }
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+              <p
+                className={
+                  organizationType === "brand"
+                    ? "text-xs text-red-900 font-bold leading-relaxed"
+                    : "text-xs text-red-700 font-medium leading-relaxed"
+                }
+              >
+                This action cannot be undone. The member will lose access to all
+                organization resources immediately.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setShowDeleteModal(false)}
+              className={
+                organizationType === "brand"
+                  ? "font-black uppercase tracking-widest rounded-none"
+                  : "font-bold"
+              }
+              disabled={deletingMember}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRemove}
+              disabled={deletingMember}
+              className={
+                organizationType === "brand"
+                  ? "rounded-none bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest px-8 flex items-center gap-2"
+                  : "bg-red-600 hover:bg-red-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+              }
+            >
+              {deletingMember ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              {deletingMember ? "Removing..." : "Remove Member"}
             </Button>
           </DialogFooter>
         </DialogContent>
