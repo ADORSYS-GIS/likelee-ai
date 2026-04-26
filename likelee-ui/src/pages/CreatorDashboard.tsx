@@ -6208,8 +6208,16 @@ export default function CreatorDashboard() {
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -ml-32 -mb-32" />
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-8 relative z-10">
                 <motion.div
-                  animate={{ y: [0, -12, 0], rotate: [0, -8, 8, 0], scale: [1, 1.05, 1] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                  animate={{
+                    y: [0, -12, 0],
+                    rotate: [0, -8, 8, 0],
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{
+                    duration: 4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                   className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-[20px] sm:rounded-[24px] bg-white/10 ring-1 ring-white/20 backdrop-blur-xl shadow-2xl"
                 >
                   <Gift className="h-8 w-8 sm:h-10 sm:w-10 text-[#5eead4]" />
@@ -6220,19 +6228,30 @@ export default function CreatorDashboard() {
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black tracking-tight sm:text-4xl leading-tight">
                     Experience Likelee{" "}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">Pro</span>{" "}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">
+                      Pro
+                    </span>{" "}
                     for 30 Days
                   </h2>
                   <p className="mt-3 text-sm sm:text-lg text-slate-300 leading-relaxed font-medium">
-                    Unlock professional features including AI Voice profiles, advanced analytics, content monitoring, and premium campaign opportunities.
+                    Unlock professional features including AI Voice profiles,
+                    advanced analytics, content monitoring, and premium campaign
+                    opportunities.
                   </p>
                 </div>
               </div>
               <div className="w-full lg:w-auto lg:min-w-[300px] relative z-10">
                 <div className="rounded-[20px] sm:rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-6 backdrop-blur-md">
                   <div className="space-y-3 mb-5 sm:mb-8">
-                    {["30 Days of Premium Access", "Cancel anytime during trial", "Automatic billing after 30 days"].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 text-slate-200">
+                    {[
+                      "30 Days of Premium Access",
+                      "Cancel anytime during trial",
+                      "Automatic billing after 30 days",
+                    ].map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 text-slate-200"
+                      >
                         <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
                         <span className="text-sm font-semibold">{item}</span>
                       </div>
@@ -6261,8 +6280,12 @@ export default function CreatorDashboard() {
               </p>
               <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-[#32C8D1] shrink-0" />
             </div>
-            <p className="text-2xl sm:text-4xl font-bold text-gray-900">${totalMonthlyRevenue.toLocaleString()}</p>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t("creatorDashboard.dashboard.revenueInfo")}</p>
+            <p className="text-2xl sm:text-4xl font-bold text-gray-900">
+              ${totalMonthlyRevenue.toLocaleString()}
+            </p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              {t("creatorDashboard.dashboard.revenueInfo")}
+            </p>
           </Card>
           <Card className="p-4 sm:p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
@@ -6271,8 +6294,12 @@ export default function CreatorDashboard() {
               </p>
               <Target className="w-4 h-4 sm:w-5 sm:h-5 text-[#32C8D1] shrink-0" />
             </div>
-            <p className="text-2xl sm:text-4xl font-bold text-gray-900">{activeCampaigns.length}</p>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t("creatorDashboard.dashboard.activeCampaignsInfo")}</p>
+            <p className="text-2xl sm:text-4xl font-bold text-gray-900">
+              {activeCampaigns.length}
+            </p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              {t("creatorDashboard.dashboard.activeCampaignsInfo")}
+            </p>
           </Card>
           <Card className="p-4 sm:p-6 bg-white border border-gray-200 col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-2">
@@ -6281,68 +6308,115 @@ export default function CreatorDashboard() {
               </p>
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[#32C8D1] shrink-0" />
             </div>
-            <p className="text-2xl sm:text-4xl font-bold text-gray-900">${annualRunRate.toLocaleString()}</p>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">{t("creatorDashboard.dashboard.annualRunRateInfo")}</p>
+            <p className="text-2xl sm:text-4xl font-bold text-gray-900">
+              ${annualRunRate.toLocaleString()}
+            </p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              {t("creatorDashboard.dashboard.annualRunRateInfo")}
+            </p>
           </Card>
         </div>
 
-        <h3 className="text-base sm:text-lg font-bold text-gray-900">{t("creatorDashboard.dashboard.quickActions")}</h3>
+        <h3 className="text-base sm:text-lg font-bold text-gray-900">
+          {t("creatorDashboard.dashboard.quickActions")}
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          <Card className="p-4 sm:p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveSection("likeness")}>
+          <Card
+            className="p-4 sm:p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
+            onClick={() => setActiveSection("likeness")}
+          >
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
                 <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#32C8D1]" />
               </div>
-              <Badge className="bg-cyan-100 text-cyan-700 border border-cyan-300 text-xs">{t("creatorDashboard.dashboard.priority")}</Badge>
+              <Badge className="bg-cyan-100 text-cyan-700 border border-cyan-300 text-xs">
+                {t("creatorDashboard.dashboard.priority")}
+              </Badge>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">{t("creatorDashboard.dashboard.completeProfile")}</h3>
-            <p className="text-xs sm:text-sm text-gray-600">{t("creatorDashboard.dashboard.completeProfileInfo")}</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">
+              {t("creatorDashboard.dashboard.completeProfile")}
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600">
+              {t("creatorDashboard.dashboard.completeProfileInfo")}
+            </p>
           </Card>
           <Card
             className="p-4 sm:p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
-            onClick={() => creatorCanUseVoice ? setActiveSection("voice") : navigate("/CreatorSubscribe")}
+            onClick={() =>
+              creatorCanUseVoice
+                ? setActiveSection("voice")
+                : navigate("/CreatorSubscribe")
+            }
           >
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               </div>
               <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs">
-                {creatorCanUseVoice ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}` : "Pro"}
+                {creatorCanUseVoice
+                  ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}`
+                  : "Pro"}
               </Badge>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">{t("creatorDashboard.dashboard.uploadVoiceTone")}</h3>
-            <p className="text-xs sm:text-sm text-gray-600">{t("creatorDashboard.dashboard.uploadVoiceToneInfo")}</p>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">
+              {t("creatorDashboard.dashboard.uploadVoiceTone")}
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600">
+              {t("creatorDashboard.dashboard.uploadVoiceToneInfo")}
+            </p>
           </Card>
         </div>
 
-        <h3 className="text-base sm:text-lg font-bold text-gray-900">{t("creatorDashboard.dashboard.recentActivity")}</h3>
+        <h3 className="text-base sm:text-lg font-bold text-gray-900">
+          {t("creatorDashboard.dashboard.recentActivity")}
+        </h3>
         {activeCampaigns.length === 0 ? (
           <Card className="p-8 sm:p-10 bg-white border border-gray-200 text-center text-gray-600">
             <p>{t("creatorDashboard.dashboard.noCampaigns")}</p>
-            <p className="text-sm text-gray-500 mt-1">{t("creatorDashboard.dashboard.noCampaignsInfo")}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {t("creatorDashboard.dashboard.noCampaignsInfo")}
+            </p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {activeCampaigns.slice(0, 3).map((campaign) => (
-              <Card key={campaign.id} className="p-4 sm:p-5 bg-white border border-gray-200 shadow-sm">
+              <Card
+                key={campaign.id}
+                className="p-4 sm:p-5 bg-white border border-gray-200 shadow-sm"
+              >
                 <div className="flex items-center gap-3 mb-3 sm:mb-4">
                   {campaign.brand_logo ? (
-                    <img src={campaign.brand_logo} alt={campaign.brand} className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover border border-gray-200 shrink-0" />
+                    <img
+                      src={campaign.brand_logo}
+                      alt={campaign.brand}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover border border-gray-200 shrink-0"
+                    />
                   ) : (
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700 shrink-0">
-                      {String(campaign.brand || "B").trim().charAt(0).toUpperCase()}
+                      {String(campaign.brand || "B")
+                        .trim()
+                        .charAt(0)
+                        .toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate text-sm sm:text-base">{campaign.brand}</p>
-                    <p className="text-xs text-gray-500 truncate">{campaign.campaign}</p>
+                    <p className="font-semibold text-gray-900 truncate text-sm sm:text-base">
+                      {campaign.brand}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {campaign.campaign}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <Badge className="bg-green-100 text-green-700 border border-green-300 text-xs">
-                    {campaign.status === "expiring_soon" ? t("creatorDashboard.campaigns.status.expiringSoon") : t("creatorDashboard.campaigns.status.active")}
+                    {campaign.status === "expiring_soon"
+                      ? t("creatorDashboard.campaigns.status.expiringSoon")
+                      : t("creatorDashboard.campaigns.status.active")}
                   </Badge>
-                  <span className="font-bold text-gray-900 text-xs sm:text-sm">${campaign.rate.toLocaleString()}/mo</span>
+                  <span className="font-bold text-gray-900 text-xs sm:text-sm">
+                    ${campaign.rate.toLocaleString()}/mo
+                  </span>
                 </div>
               </Card>
             ))}
@@ -6351,8 +6425,12 @@ export default function CreatorDashboard() {
 
         <Card className="p-4 sm:p-5 bg-white border border-gray-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-            <h3 className="text-base sm:text-lg font-bold text-gray-900">{t("creatorDashboard.dashboard.profileStatus")}</h3>
-            <Badge className="bg-[#32C8D1] text-white text-xs w-fit">{t("creatorDashboard.dashboard.completeToGetDiscovered")}</Badge>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">
+              {t("creatorDashboard.dashboard.profileStatus")}
+            </h3>
+            <Badge className="bg-[#32C8D1] text-white text-xs w-fit">
+              {t("creatorDashboard.dashboard.completeToGetDiscovered")}
+            </Badge>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="p-4 sm:p-5 bg-gray-50 border border-gray-200 rounded-lg">
@@ -6360,8 +6438,13 @@ export default function CreatorDashboard() {
                 <ImageIcon className="w-4 h-4 text-cyan-600 shrink-0" />
                 <span>{t("creatorDashboard.dashboard.referenceImages")}</span>
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900">{imagesFilled}/{imagesTotal}</div>
-              <Progress value={Math.round((imagesFilled / IMAGE_SECTIONS.length) * 100)} className="h-2 mt-3 bg-gray-200" />
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {imagesFilled}/{imagesTotal}
+              </div>
+              <Progress
+                value={Math.round((imagesFilled / IMAGE_SECTIONS.length) * 100)}
+                className="h-2 mt-3 bg-gray-200"
+              />
             </div>
             <div className="p-4 sm:p-5 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="text-xs sm:text-sm text-gray-600 mb-2 flex items-center gap-2">
@@ -6369,10 +6452,20 @@ export default function CreatorDashboard() {
                 <span>{t("creatorDashboard.dashboard.voiceRecordings")}</span>
               </div>
               <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                {creatorCanUseVoice ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}` : "Pro only"}
+                {creatorCanUseVoice
+                  ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}`
+                  : "Pro only"}
               </div>
               <Progress
-                value={creatorCanUseVoice ? Math.min(voiceLibrary.length * (100 / Math.max(1, Math.max(creatorVoiceLimit, 6))), 100) : 0}
+                value={
+                  creatorCanUseVoice
+                    ? Math.min(
+                        voiceLibrary.length *
+                          (100 / Math.max(1, Math.max(creatorVoiceLimit, 6))),
+                        100,
+                      )
+                    : 0
+                }
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
@@ -9752,7 +9845,9 @@ export default function CreatorDashboard() {
     return (
       <div className="space-y-4 sm:space-y-6">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Approval Queue</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Approval Queue
+          </h2>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Review brand requests, contract actions, and deliverable feedback.
           </p>
@@ -9760,25 +9855,46 @@ export default function CreatorDashboard() {
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
-            <div className="text-xs text-gray-500 h-8 sm:h-10">Pending requests</div>
-            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">{pending.length}</div>
-            <Button className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3" onClick={() => openBrandConnectionSubTab("requests")}>
+            <div className="text-xs text-gray-500 h-8 sm:h-10">
+              Pending requests
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
+              {pending.length}
+            </div>
+            <Button
+              className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
+              onClick={() => openBrandConnectionSubTab("requests")}
+            >
               Open requests
             </Button>
           </Card>
 
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
-            <div className="text-xs text-gray-500 h-8 sm:h-10">Offer actions</div>
-            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">{actionableOffers.length}</div>
-            <Button className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3" onClick={() => openBrandConnectionSubTab("offers")}>
+            <div className="text-xs text-gray-500 h-8 sm:h-10">
+              Offer actions
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
+              {actionableOffers.length}
+            </div>
+            <Button
+              className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
+              onClick={() => openBrandConnectionSubTab("offers")}
+            >
               Review offers
             </Button>
           </Card>
 
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
-            <div className="text-xs text-gray-500 h-8 sm:h-10">Deliverable feedback</div>
-            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">{pendingDeliverables.length}</div>
-            <Button className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3" onClick={() => openBrandConnectionSubTab("deliverables")}>
+            <div className="text-xs text-gray-500 h-8 sm:h-10">
+              Deliverable feedback
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
+              {pendingDeliverables.length}
+            </div>
+            <Button
+              className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
+              onClick={() => openBrandConnectionSubTab("deliverables")}
+            >
               View feedback
             </Button>
           </Card>
@@ -9787,11 +9903,17 @@ export default function CreatorDashboard() {
         <Card className="p-4 sm:p-6 border border-[#DDE5EF] shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <div className="text-base sm:text-lg font-semibold text-gray-900">Needs your attention</div>
-              <div className="text-xs sm:text-sm text-gray-600 mt-1">The latest items that still need a response from you.</div>
+              <div className="text-base sm:text-lg font-semibold text-gray-900">
+                Needs your attention
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 mt-1">
+                The latest items that still need a response from you.
+              </div>
             </div>
             <Badge className="bg-[#1A2140] text-white w-fit">
-              {pending.length + actionableOffers.length + pendingDeliverables.length}
+              {pending.length +
+                actionableOffers.length +
+                pendingDeliverables.length}
             </Badge>
           </div>
 
