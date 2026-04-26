@@ -537,9 +537,7 @@ export function TeamManagementCard({
               disabled={!canInvite && !seatLimitBlocked}
             >
               <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-              {seatLimitBlocked
-                ? "Upgrade to Add Members"
-                : "Invite"}
+              {seatLimitBlocked ? "Upgrade to Add Members" : "Invite"}
             </Button>
           </div>
         </div>

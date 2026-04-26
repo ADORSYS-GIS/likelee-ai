@@ -2726,7 +2726,9 @@ export default function BrandDashboard() {
           ← Back to Dashboard
         </Button>
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Escrow Details</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+            Escrow Details
+          </h1>
           <p className="text-gray-600">
             Securely held payments for your active projects
           </p>
@@ -2971,7 +2973,9 @@ export default function BrandDashboard() {
               className="h-20 sm:h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
             >
               <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="font-semibold text-xs sm:text-sm">Start New Project</span>
+              <span className="font-semibold text-xs sm:text-sm">
+                Start New Project
+              </span>
             </Button>
             <Button
               onClick={() => navigateToSection("marketplace")}
@@ -4386,7 +4390,9 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-5">
         <div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+            Inbox
+          </h2>
           <p className="text-gray-600">
             View packages and licensing proposals from agencies
           </p>
@@ -4883,7 +4889,9 @@ export default function BrandDashboard() {
   const renderCampaignContractHub = () => (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">Contract Hub</h2>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+          Contract Hub
+        </h2>
         <p className="text-gray-600">Campaign contracts and signing status.</p>
       </div>
       <div className="space-y-3">
@@ -6752,7 +6760,9 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">My Offers</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            My Offers
+          </h1>
           <p className="text-gray-600">
             Review and manage campaign offers and ongoing collaborations
           </p>
@@ -7005,7 +7015,9 @@ export default function BrandDashboard() {
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">$12.4K</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+              $12.4K
+            </p>
           </Card>
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <Users className="w-8 h-8 text-[#F7B750] mb-4" />
@@ -9616,7 +9628,9 @@ export default function BrandDashboard() {
   const renderSettings = () => (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          Settings
+        </h1>
         <p className="text-gray-600">
           Manage your company profile and preferences
         </p>
@@ -12285,7 +12299,8 @@ export default function BrandDashboard() {
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
           <span className="text-sm font-bold text-gray-900 truncate">
-            {navigationItems.find((n) => n.id === activeSection)?.label || "Dashboard"}
+            {navigationItems.find((n) => n.id === activeSection)?.label ||
+              "Dashboard"}
           </span>
         </div>
         <div className="p-4 sm:p-6 md:p-8">

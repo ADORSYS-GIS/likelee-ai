@@ -7099,21 +7099,21 @@ export default function CreatorDashboard() {
   };
 
   const renderVoice = () => (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {!creatorCanUseVoice ? (
-        <Card className="p-8 bg-white border border-[#C7B8FF]">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <Card className="p-5 sm:p-8 bg-white border border-[#C7B8FF]">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Voice Profiles
               </h2>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">
                 Upgrade to Pro to unlock ElevenLabs voice profile creation for
                 up to {Math.max(creatorVoiceLimit, 6)} tones.
               </p>
             </div>
             <Button
-              className="bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+              className="bg-[#4B4AE6] hover:bg-[#3F3EE0] shrink-0"
               onClick={() => navigate("/CreatorSubscribe")}
             >
               Upgrade to Pro
@@ -7122,18 +7122,19 @@ export default function CreatorDashboard() {
         </Card>
       ) : (
         <>
-          <div className="flex items-center justify-between">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {t("creatorDashboard.voice.title")}
               </h2>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 {t("creatorDashboard.voice.subtitle")}
               </p>
             </div>
             <Badge
               variant="outline"
-              className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
+              className="bg-purple-100 text-purple-700 border border-purple-300 px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-lg w-fit"
             >
               {voiceLibrary.length}{" "}
               {t(
@@ -7146,32 +7147,32 @@ export default function CreatorDashboard() {
 
           {/* Voice Overview Card */}
           {voiceLibrary.length > 0 && (
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
                 {t("creatorDashboard.voice.overview.title")}
               </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
+              <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">
                     {t("creatorDashboard.voice.overview.totalRecordings")}
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {voiceLibrary.length}
                   </p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">
                     {t("creatorDashboard.voice.overview.elevenLabsProfiles")}
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {voiceLibrary.filter((v) => v.voiceProfileCreated).length}
                   </p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">
                     {t("creatorDashboard.voice.overview.totalUsage")}
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {voiceLibrary.reduce(
                       (sum, v) => sum + (v.usageCount || 0),
                       0,
@@ -7183,15 +7184,15 @@ export default function CreatorDashboard() {
           )}
 
           {/* Record New Voice Sample */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <Card className="p-4 sm:p-6 bg-white border border-gray-200">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4">
               {t("creatorDashboard.voice.record.title")}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
               {t("creatorDashboard.voice.record.subtitle")}
             </p>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               {Object.keys(VOICE_SCRIPTS).map((emotion) => {
                 const hasRecording = voiceLibrary.find(
                   (r) => r.emotion === emotion,
@@ -7199,32 +7200,32 @@ export default function CreatorDashboard() {
                 return (
                   <Card
                     key={emotion}
-                    className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                    className={`p-4 sm:p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
                       hasRecording
                         ? "border-green-300 bg-green-50"
                         : "border-gray-200 hover:border-[#32C8D1]"
                     }`}
                     onClick={() => handleEmotionSelect(emotion)}
                   >
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 ${
                           hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
                         }`}
                       >
-                        <Mic className="w-6 h-6 text-white" />
+                        <Mic className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                       </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 capitalize text-lg">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-gray-900 capitalize text-sm sm:text-lg leading-tight">
                           {t(`creatorDashboard.voice.emotionNames.${emotion}`)}
                         </h4>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 hidden sm:block">
                           {t("creatorDashboard.voice.record.duration")}
                         </p>
                       </div>
                     </div>
                     {hasRecording && (
-                      <Badge className="bg-green-500 text-white">
+                      <Badge className="bg-green-500 text-white text-xs">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
                         {t("creatorDashboard.voice.record.recorded")}
                       </Badge>
@@ -7237,35 +7238,36 @@ export default function CreatorDashboard() {
 
           {/* Voice Library */}
           {voiceLibrary.length > 0 && (
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                 {t("creatorDashboard.voice.library.title")}
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {voiceLibrary.map((recording) => (
                   <div
                     key={recording.id}
-                    className="p-6 bg-gray-50 border-2 border-gray-200 rounded-lg"
+                    className="p-4 sm:p-6 bg-gray-50 border-2 border-gray-200 rounded-lg"
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-4">
+                    {/* Recording header — stacks on mobile */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-3">
                         <div
-                          className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                          className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shrink-0 ${
                             recording.accessible
                               ? "bg-green-500"
                               : "bg-gray-400"
                           }`}
                         >
-                          <Mic className="w-7 h-7 text-white" />
+                          <Mic className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                         </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 capitalize text-xl">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-gray-900 capitalize text-base sm:text-xl">
                             {t(
                               `creatorDashboard.voice.emotionNames.${recording.emotion.toLowerCase()}`,
                               recording.emotion,
                             )}
                           </h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs sm:text-sm text-gray-600">
                             {new Date(recording.date).toLocaleDateString()} •{" "}
                             {recording.duration}s •{" "}
                             {t("creatorDashboard.voice.library.used", {
@@ -7274,9 +7276,10 @@ export default function CreatorDashboard() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      {/* Action buttons — wrap on mobile */}
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
                         {recording.voiceProfileCreated && (
-                          <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
+                          <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs">
                             {t(
                               "creatorDashboard.voice.library.elevenLabsReady",
                             )}
@@ -7297,6 +7300,7 @@ export default function CreatorDashboard() {
                           onClick={() => handleEmotionSelect(recording.emotion)}
                           variant="outline"
                           size="sm"
+                          className="text-xs sm:text-sm"
                         >
                           {t("creatorDashboard.voice.library.reRecord")}
                         </Button>
@@ -7343,22 +7347,14 @@ export default function CreatorDashboard() {
                     )}
                   </div>
                 ))}
-                {!recording.voiceProfileCreated && recording.accessible && (
-                  <Button
-                    disabled={true}
-                    className="w-full bg-gray-400 cursor-not-allowed text-white"
-                  >
-                    <PlayCircle className="w-4 h-4 mr-2" />
-                    Coming Soon
-                  </Button>
-                )}
               </div>
             </Card>
           )}
+
           {/* Voice Training Tips */}
-          <div className="bg-purple-50 border border-purple-200">
-            <Volume2 className="h-5 w-5 text-purple-600" />
-            <p className="text-purple-900">
+          <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <Volume2 className="h-5 w-5 text-purple-600 shrink-0 mt-0.5" />
+            <p className="text-purple-900 text-sm sm:text-base">
               <strong>{t("creatorDashboard.voice.tips.title")}</strong>{" "}
               {t("creatorDashboard.voice.tips.message")}
             </p>

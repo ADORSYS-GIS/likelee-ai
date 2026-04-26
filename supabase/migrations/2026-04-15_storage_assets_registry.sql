@@ -1,4 +1,4 @@
-BEGIN;
+1BEGIN;
 
 CREATE TABLE IF NOT EXISTS public.storage_assets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

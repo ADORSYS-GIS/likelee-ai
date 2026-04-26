@@ -247,13 +247,21 @@ const ClientProfileModal = ({
               {/* Scrollable tab bar on mobile */}
               <div className="overflow-x-auto -mx-1 px-1 mb-4 sm:mb-6 shrink-0">
                 <TabsList className="inline-flex w-max sm:w-full justify-start bg-gray-50/50 p-1 rounded-xl h-10 sm:h-12 gap-0.5">
-                  {["overview", "contacts", "communications", "bookings", "files"].map((tab) => (
+                  {[
+                    "overview",
+                    "contacts",
+                    "communications",
+                    "bookings",
+                    "files",
+                  ].map((tab) => (
                     <TabsTrigger
                       key={tab}
                       value={tab}
                       className="rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-xs sm:text-sm transition-all px-3 sm:px-4 capitalize whitespace-nowrap"
                     >
-                      {tab === "files" ? "Files & Notes" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                      {tab === "files"
+                        ? "Files & Notes"
+                        : tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -444,7 +452,9 @@ const ClientProfileModal = ({
                               <div className="p-1.5 bg-gray-50 rounded-lg flex-shrink-0">
                                 <Mail className="w-3.5 h-3.5 text-gray-400" />
                               </div>
-                              <span className="truncate">{contact.email || "—"}</span>
+                              <span className="truncate">
+                                {contact.email || "—"}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2 text-gray-600">
                               <div className="p-1.5 bg-gray-50 rounded-lg flex-shrink-0">
