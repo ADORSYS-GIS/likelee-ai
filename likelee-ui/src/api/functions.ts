@@ -949,7 +949,7 @@ export const deleteAgencyStorageFolder = (folder_id: string) =>
 export const updateAgencyStorageFolder = (
   folder_id: string,
   data: { name: string },
-) => base44Client.put(`/agency/storage/folders/${folder_id}`, data);
+) => base44Client.patch(`/agency/storage/folders/${folder_id}`, data);
 
 export const listAgencyStorageFiles = (params?: { folder_id?: string }) =>
   base44Client.get(`/agency/storage/files`, { params: params || {} });
@@ -978,6 +978,78 @@ export const deleteAgencyStorageFile = (file_id: string) =>
 
 export const getAgencyStorageFileSignedUrl = (file_id: string) =>
   base44Client.get(`/agency/storage/files/${file_id}/signed-url`);
+
+export const getBrandStorageUsage = () =>
+  base44Client.get(`/brand/storage/usage`);
+
+export const listBrandStorageFolders = () =>
+  base44Client.get(`/brand/storage/folders`);
+
+export const createBrandStorageFolder = (data: {
+  name: string;
+  parent_id?: string | null;
+}) => base44Client.post(`/brand/storage/folders`, data);
+
+export const listBrandStorageFoldersPaged = (params?: {
+  limit?: number;
+  offset?: number;
+}) => base44Client.get(`/brand/storage/folders`, { params: params || {} });
+
+export const deleteBrandStorageFolder = (folder_id: string) =>
+  base44Client.delete(`/brand/storage/folders/${folder_id}`);
+
+export const updateBrandStorageFolder = (
+  folder_id: string,
+  data: { name: string },
+) => base44Client.patch(`/brand/storage/folders/${folder_id}`, data);
+
+export const listBrandStorageFiles = (params?: { folder_id?: string }) =>
+  base44Client.get(`/brand/storage/files`, { params: params || {} });
+
+export const listBrandStorageFilesPaged = (params?: {
+  folder_id?: string;
+  root_only?: boolean;
+  limit?: number;
+  offset?: number;
+  mime_type?: string;
+  source_type?: string;
+}) => base44Client.get(`/brand/storage/files`, { params: params || {} });
+
+export const uploadBrandStorageFile = async (data: {
+  file: File;
+  folder_id?: string;
+  visibility?: "public" | "private";
+}) => {
+  const fd = new FormData();
+  fd.append("file", data.file);
+  if (data.folder_id) fd.append("folder_id", data.folder_id);
+  if (data.visibility) fd.append("visibility", data.visibility);
+  return base44Client.post(`/brand/storage/files/upload`, fd);
+};
+
+export const deleteBrandStorageFile = (file_id: string) =>
+  base44Client.delete(`/brand/storage/files/${file_id}`);
+
+export const getBrandStorageFileSignedUrl = (file_id: string) =>
+  base44Client.get(`/brand/storage/files/${file_id}/signed-url`);
+
+export const getBrandStorageAnalytics = () =>
+  base44Client.get<{
+    by_source_type: Array<{
+      source_type: string;
+      mime_type: string | null;
+      file_count: number;
+      total_bytes: number;
+      avg_file_size: number;
+    }>;
+    by_mime_type: Array<{
+      source_type: string;
+      mime_type: string | null;
+      file_count: number;
+      total_bytes: number;
+      avg_file_size: number;
+    }>;
+  }>(`/brand/storage/analytics`);
 
 // Email
 export const getEmailTemplates = () => base44Client.get(`/email/templates`);

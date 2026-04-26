@@ -7,6 +7,7 @@ import { BrandSettingsTeam } from "./BrandSettingsTeam";
 import { BrandSettingsSecurity } from "./BrandSettingsSecurity";
 import { BrandSettingsLegal } from "./BrandSettingsLegal";
 import { BrandSettingsSupport } from "./BrandSettingsSupport";
+import BrandFileStorageView from "@/components/dashboard/settings/BrandFileStorageView";
 
 type BrandSettingsPanelProps = {
   activeSettingsTab: string;
@@ -97,6 +98,12 @@ export const BrandSettingsPanel = ({
         >
           Support & Help
         </TabsTrigger>
+        <TabsTrigger
+          value="file-storage"
+          className="rounded-lg border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold text-xs"
+        >
+          File Storage
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="profile" className="space-y-6 mt-0">
@@ -138,6 +145,10 @@ export const BrandSettingsPanel = ({
 
       <TabsContent value="support" className="space-y-6 mt-0">
         <BrandSettingsSupport />
+      </TabsContent>
+
+      <TabsContent value="file-storage" className="space-y-6 mt-0">
+        <BrandFileStorageView />
       </TabsContent>
     </Tabs>
   </div>

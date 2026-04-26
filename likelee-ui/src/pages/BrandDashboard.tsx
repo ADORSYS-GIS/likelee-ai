@@ -22,7 +22,15 @@ import {
   listBrandInvoices,
   getBrandBudgetSettings,
   updateBrandBudgetSettings,
+  listBrandStorageFilesPaged,
+  listBrandStorageFoldersPaged,
+  getBrandStorageFileSignedUrl,
 } from "@/api/functions";
+import {
+  listGenerations,
+  listCampaignGenerations,
+  StudioGenerationRow,
+} from "@/api/studio";
 import { useAuth } from "@/auth/AuthProvider";
 import {
   BRAND_STUDIO_ADDON_PRICE,
@@ -632,6 +640,73 @@ export default function BrandDashboard() {
   }, [selectedJobForApplications]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
+  const [studioGenerations, setStudioGenerations] = useState<
+    StudioGenerationRow[]
+  >([]);
+  const [studioFiles, setStudioFiles] = useState<any[]>([]);
+  const [studioFolders, setStudioFolders] = useState<any[]>([]);
+  const [studioLoading, setStudioLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [studioSearchQuery, setStudioSearchQuery] = useState("");
+  const [studioSourceFilter, setStudioSourceFilter] = useState<
+    "all" | "studio_generation"
+  >("all");
+  const [studioAssetUrls, setStudioAssetUrls] = useState<
+    Record<string, string>
+  >({});
+  const [studioDataCache, setStudioDataCache] = useState<{
+    files: any[];
+    generations: any[];
+    folders: any[];
+    timestamp: number;
+  } | null>(null);
+  const [signedUrlsCache, setSignedUrlsCache] = useState<
+    Record<string, { url: string; expires: number }>
+  >({});
+  const [assetSizesCache, setAssetSizesCache] = useState<
+    Record<string, number>
+  >({});
+  const [activeDownloads, setActiveDownloads] = useState<Set<string>>(
+    new Set(),
+  );
+  const [isBatchDownloading, setIsBatchDownloading] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [assetToDelete, setAssetToDelete] = useState<any>(null);
+  const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [collections, setCollections] = useState<
+    { id: string; name: string; assetIds: string[] }[]
+  >(() => {
+    const saved = localStorage.getItem("studio-collections");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [
+          { id: "1", name: "Holiday 2024", assetIds: [] },
+          { id: "2", name: "Evergreen", assetIds: [] },
+        ];
+      }
+    }
+    return [
+      { id: "1", name: "Holiday 2024", assetIds: [] },
+      { id: "2", name: "Evergreen", assetIds: [] },
+    ];
+  });
+  const [showCreateCollectionDialog, setShowCreateCollectionDialog] =
+    useState(false);
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [selectedCollectionId, setSelectedCollectionId] = useState<
+    string | null
+  >(null);
+  const [filterType, setFilterType] = useState<"all" | "image" | "video">(
+    "all",
+  );
+  const [filterDateRange, setFilterDateRange] = useState<
+    "all" | "week" | "month" | "year"
+  >("all");
   const [showEscrowDetails, setShowEscrowDetails] = useState(false);
   const [showBriefDetails, setShowBriefDetails] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
@@ -677,6 +752,8 @@ export default function BrandDashboard() {
   const [showContractHub, setShowContractHub] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractHubTab, setContractHubTab] = useState("active");
+  const [contractSearch, setContractSearch] = useState("");
+  const [contractSort, setContractSort] = useState("newest");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
   const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
@@ -852,8 +929,8 @@ export default function BrandDashboard() {
     // Support both 'view=settings' and 'section=settings' for backward compatibility
     if (view === "settings" || section === "settings") {
       setActiveSection("settings");
-      if (tab === "team") {
-        setActiveSettingsTab("team");
+      if (tab) {
+        setActiveSettingsTab(tab);
       }
     }
   }, [location.search]);
@@ -1288,7 +1365,8 @@ export default function BrandDashboard() {
       activeSection !== "billing" &&
       activeSection !== "campaign-offers" &&
       activeSection !== "campaigns-contract-hub" &&
-      activeSection !== "campaigns-deliverables"
+      activeSection !== "campaigns-deliverables" &&
+      activeSection !== "usage"
     ) {
       return;
     }
@@ -1363,7 +1441,8 @@ export default function BrandDashboard() {
   }, [activeSection, selectedOfferHubId]);
 
   useEffect(() => {
-    if (activeSection !== "licensing-requests") return;
+    if (activeSection !== "licensing-requests" && activeSection !== "usage")
+      return;
     let mounted = true;
     const loadBrandLicenses = async () => {
       try {
@@ -1453,6 +1532,527 @@ export default function BrandDashboard() {
       mounted = false;
     };
   }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== "studio") return;
+    const CACHE_KEY = "studio-data-cache";
+    const CACHE_TTL = 5 * 60 * 1000;
+    let mounted = true;
+
+    const loadStudioData = async (forceRefresh = false) => {
+      setStudioLoading(true);
+      try {
+        const cachedJson = localStorage.getItem(CACHE_KEY);
+        let useCache = false;
+
+        if (cachedJson && !forceRefresh) {
+          try {
+            const cached = JSON.parse(cachedJson);
+            if (Date.now() - cached.timestamp < CACHE_TTL) {
+              useCache = true;
+              if (mounted) {
+                setStudioDataCache(cached);
+                setStudioGenerations(cached.generations || []);
+                setStudioFiles(cached.files || []);
+                setStudioFolders(cached.folders || []);
+                setStudioLoading(false);
+              }
+            }
+          } catch {}
+        }
+
+        if (!useCache || forceRefresh) {
+          const [generations, files, folders] = await Promise.all([
+            listGenerations({ limit: 100 }).catch(() => []),
+            listBrandStorageFilesPaged({ limit: 100 }).catch(() => []),
+            listBrandStorageFoldersPaged().catch(() => []),
+          ]);
+          if (mounted) {
+            const cacheData = {
+              files: files || [],
+              generations: generations || [],
+              folders: folders || [],
+              timestamp: Date.now(),
+            };
+            setStudioDataCache(cacheData);
+            setStudioGenerations(generations || []);
+            setStudioFiles(files || []);
+            setStudioFolders(folders || []);
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+            if (useCache && !forceRefresh) {
+              toast({
+                title: "Updated from server",
+                description: "Asset library refreshed with latest data.",
+              });
+            }
+          }
+        }
+      } catch {
+      } finally {
+        if (mounted) setStudioLoading(false);
+      }
+    };
+
+    loadStudioData();
+
+    const refetchTimer = setInterval(() => {
+      loadStudioData(true);
+    }, 30 * 1000);
+
+    return () => {
+      mounted = false;
+      clearInterval(refetchTimer);
+    };
+  }, [activeSection]);
+
+  useEffect(() => {
+    localStorage.setItem("studio-collections", JSON.stringify(collections));
+  }, [collections]);
+
+  useEffect(() => {
+    if (activeSection !== "studio" || studioFiles.length === 0) return;
+    let mounted = true;
+    const loadSignedUrls = async () => {
+      const urls: Record<string, string> = {};
+      const now = Date.now();
+      const imageFiles = studioFiles.filter((f) =>
+        f.mime_type?.startsWith("image/"),
+      );
+
+      const filesToFetch = imageFiles.slice(0, 50);
+      const BATCH_SIZE = 5;
+
+      for (let i = 0; i < filesToFetch.length; i += BATCH_SIZE) {
+        const batch = filesToFetch.slice(i, i + BATCH_SIZE);
+        const batchPromises = batch.map(async (file) => {
+          const cached = signedUrlsCache[file.id];
+          if (cached && cached.expires > now) {
+            return { id: file.id, url: cached.url };
+          }
+
+          try {
+            const res = await getBrandStorageFileSignedUrl(file.id);
+            if (res?.signed_url) {
+              return {
+                id: file.id,
+                url: res.signed_url,
+                expires: now + 59 * 60 * 1000,
+              };
+            }
+            return null;
+          } catch {
+            return null;
+          }
+        });
+
+        const results = await Promise.all(batchPromises);
+        const newCache: Record<string, { url: string; expires: number }> = {};
+
+        for (const result of results) {
+          if (result && result.url) {
+            urls[result.id] = result.url;
+            newCache[result.id] = {
+              url: result.url,
+              expires: result.expires || now + 59 * 60 * 1000,
+            };
+          }
+        }
+
+        if (mounted && Object.keys(newCache).length > 0) {
+          setStudioAssetUrls((prev) => ({ ...prev, ...urls }));
+          setSignedUrlsCache((prev) => ({ ...prev, ...newCache }));
+        }
+      }
+
+      if (mounted) {
+        setStudioAssetUrls(urls);
+      }
+    };
+    loadSignedUrls();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection, studioFiles]);
+
+  const studioAssets = useMemo(() => {
+    const assets: Array<{
+      id: string;
+      file_name: string;
+      url: string;
+      mime_type: string;
+      source_type: string;
+      size_bytes: number;
+      created_at: string;
+      generation_id?: string;
+    }> = [];
+
+    for (const f of studioFiles) {
+      const isImage = f.mime_type?.startsWith("image/");
+      const isVideo = f.mime_type?.startsWith("video/");
+      if (!isImage && !isVideo) continue;
+      if (
+        studioSourceFilter === "studio_generation" &&
+        f.source_type !== "studio_generation"
+      )
+        continue;
+      if (
+        studioSearchQuery &&
+        !f.file_name.toLowerCase().includes(studioSearchQuery.toLowerCase())
+      )
+        continue;
+      assets.push({
+        id: f.id,
+        file_name: f.file_name,
+        url: studioAssetUrls[f.id] || f.public_url || "",
+        mime_type: f.mime_type || "",
+        source_type: f.source_type || "upload",
+        size_bytes: f.size_bytes || 0,
+        created_at: f.created_at,
+        generation_id: f.generation_id,
+      });
+    }
+
+    for (const g of studioGenerations) {
+      if (
+        g.status !== "completed" ||
+        !g.output_urls ||
+        g.output_urls.length === 0
+      )
+        continue;
+      for (const url of g.output_urls) {
+        const isImage = url.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i);
+        const isVideo = url.match(/\.(mp4|webm|mov)(\?|$)/i);
+        if (!isImage && !isVideo) continue;
+        const fname = url.split("/").pop()?.split("?")[0] || "asset";
+        if (
+          studioSearchQuery &&
+          !fname.toLowerCase().includes(studioSearchQuery.toLowerCase())
+        )
+          continue;
+        const alreadyAdded = assets.some(
+          (a) => a.generation_id === g.id && a.url === url,
+        );
+        if (alreadyAdded) continue;
+
+        const cachedSize = assetSizesCache[url];
+        assets.push({
+          id: `gen-${g.id}-${url}`,
+          file_name: fname,
+          url,
+          mime_type: isImage ? "image/jpeg" : "video/mp4",
+          source_type: "studio_generation",
+          size_bytes: cachedSize || 0,
+          created_at: g.created_at,
+          generation_id: g.id,
+        });
+
+        if (!cachedSize) {
+          fetch(url, { method: "HEAD" })
+            .then((res) => {
+              const size = parseInt(
+                res.headers.get("content-length") || "0",
+                10,
+              );
+              if (size > 0) {
+                setAssetSizesCache((prev) => ({ ...prev, [url]: size }));
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    }
+
+    return assets;
+  }, [
+    studioFiles,
+    studioGenerations,
+    studioAssetUrls,
+    studioSearchQuery,
+    studioSourceFilter,
+  ]);
+
+  const studioStats = useMemo(() => {
+    const videos = studioAssets.filter((a) => a.mime_type.startsWith("video/"));
+    const images = studioAssets.filter((a) => a.mime_type.startsWith("image/"));
+    const totalBytes = studioAssets.reduce(
+      (sum, a) => sum + (a.size_bytes || 0),
+      0,
+    );
+    return {
+      total: studioAssets.length,
+      videos: videos.length,
+      images: images.length,
+      totalSize: totalBytes,
+    };
+  }, [studioAssets]);
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 MB";
+    const mb = bytes / (1024 * 1024);
+    if (mb < 1) return `${Math.round(bytes / 1024)} KB`;
+    return `${mb.toFixed(1)} MB`;
+  };
+
+  const toggleAssetSelection = (assetId: string) => {
+    setSelectedAssetIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(assetId)) {
+        next.delete(assetId);
+      } else {
+        next.add(assetId);
+      }
+      return next;
+    });
+  };
+
+  const selectAllAssets = () => {
+    if (selectedAssetIds.size === studioAssets.length) {
+      setSelectedAssetIds(new Set());
+    } else {
+      setSelectedAssetIds(new Set(studioAssets.map((a) => a.id)));
+    }
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedAssetIds.size === 0) {
+      toast({
+        title: "No assets selected",
+        description: "Please select assets to download.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const selectedAssets = studioAssets.filter((a) =>
+      selectedAssetIds.has(a.id),
+    );
+    setIsBatchDownloading(true);
+    toast({
+      title: "Starting download...",
+      description: `Preparing to download ${selectedAssets.length} asset(s)`,
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const asset of selectedAssets) {
+      try {
+        setActiveDownloads((prev) => new Set([...prev, asset.id]));
+        const response = await fetch(asset.url);
+        if (!response.ok) throw new Error("Download failed");
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = asset.file_name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        successCount++;
+      } catch (error) {
+        failCount++;
+        console.error(`Failed to download ${asset.file_name}:`, error);
+      } finally {
+        setActiveDownloads((prev) => {
+          const next = new Set(prev);
+          next.delete(asset.id);
+          return next;
+        });
+      }
+    }
+
+    setIsBatchDownloading(false);
+    if (failCount === 0) {
+      toast({
+        title: "Download complete",
+        description: `${successCount} asset(s) downloaded successfully.`,
+      });
+    } else if (successCount > 0) {
+      toast({
+        title: "Download complete with errors",
+        description: `${successCount} downloaded, ${failCount} failed.`,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Download failed",
+        description: `Could not download any assets.`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadAsset = async (asset: any) => {
+    setActiveDownloads((prev) => new Set([...prev, asset.id]));
+    try {
+      const response = await fetch(asset.url);
+      if (!response.ok) throw new Error("Download failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = asset.file_name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: `Could not download ${asset.file_name}`,
+        variant: "destructive",
+      });
+    } finally {
+      setActiveDownloads((prev) => {
+        const next = new Set(prev);
+        next.delete(asset.id);
+        return next;
+      });
+    }
+  };
+
+  const handleCreateCollection = () => {
+    if (!newCollectionName.trim()) {
+      toast({
+        title: "Collection name required",
+        description: "Please enter a name for the collection.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const newCollection = {
+      id: Date.now().toString(),
+      name: newCollectionName.trim(),
+      assetIds: Array.from(selectedAssetIds),
+    };
+    setCollections((prev) => [...prev, newCollection]);
+    setNewCollectionName("");
+    setShowCreateCollectionDialog(false);
+    toast({
+      title: "Collection created",
+      description: `"${newCollection.name}" created with ${newCollection.assetIds.length} asset(s).`,
+    });
+  };
+
+  const handleSelectCollection = (collectionId: string) => {
+    if (selectedCollectionId === collectionId) {
+      setSelectedCollectionId(null);
+    } else {
+      setSelectedCollectionId(collectionId);
+    }
+  };
+
+  const getFilteredAssets = () => {
+    let filtered = [...studioAssets];
+    if (selectedCollectionId) {
+      const collection = collections.find((c) => c.id === selectedCollectionId);
+      if (collection) {
+        filtered = filtered.filter((a) => collection.assetIds.includes(a.id));
+      }
+    }
+    if (filterType === "image") {
+      filtered = filtered.filter((a) => a.mime_type.startsWith("image/"));
+    } else if (filterType === "video") {
+      filtered = filtered.filter((a) => a.mime_type.startsWith("video/"));
+    }
+    if (filterDateRange !== "all") {
+      const now = new Date();
+      const cutoff = new Date();
+      if (filterDateRange === "week") cutoff.setDate(now.getDate() - 7);
+      else if (filterDateRange === "month") cutoff.setMonth(now.getMonth() - 1);
+      else if (filterDateRange === "year")
+        cutoff.setFullYear(now.getFullYear() - 1);
+      filtered = filtered.filter((a) => new Date(a.created_at) >= cutoff);
+    }
+    return filtered;
+  };
+
+  const displayedAssets = getFilteredAssets();
+
+  const handleRefreshAssets = () => {
+    setStudioLoading(true);
+    setIsRefreshing(true);
+    const CACHE_KEY = "studio-data-cache";
+    localStorage.removeItem(CACHE_KEY);
+    const loadStudioData = async () => {
+      try {
+        const [generations, files, folders] = await Promise.all([
+          listGenerations({ limit: 100 }).catch(() => []),
+          listBrandStorageFilesPaged({ limit: 100 }).catch(() => []),
+          listBrandStorageFoldersPaged().catch(() => []),
+        ]);
+        const cacheData = {
+          files: files || [],
+          generations: generations || [],
+          folders: folders || [],
+          timestamp: Date.now(),
+        };
+        setStudioDataCache(cacheData);
+        setStudioGenerations(generations || []);
+        setStudioFiles(files || []);
+        setStudioFolders(folders || []);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        setSignedUrlsCache({});
+        toast({
+          title: "Refreshed",
+          description: "Asset library has been refreshed.",
+        });
+      } catch {
+      } finally {
+        setStudioLoading(false);
+        setIsRefreshing(false);
+      }
+    };
+    loadStudioData();
+  };
+
+  const handleDeleteAsset = async (asset: any) => {
+    setAssetToDelete(asset);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteAsset = async () => {
+    if (!assetToDelete) return;
+    setShowDeleteDialog(false);
+
+    try {
+      if (
+        assetToDelete.source_type === "upload" ||
+        assetToDelete.generation_id === undefined
+      ) {
+        setStudioFiles((prev) => prev.filter((f) => f.id !== assetToDelete.id));
+      } else if (assetToDelete.source_type === "studio_generation") {
+        setStudioGenerations((prev) =>
+          prev.filter((g) => g.id !== assetToDelete.generation_id),
+        );
+      }
+
+      setCollections((prev) =>
+        prev.map((c) => ({
+          ...c,
+          assetIds: c.assetIds.filter((id) => id !== assetToDelete.id),
+        })),
+      );
+      setSelectedAssetIds((prev) => {
+        const next = new Set(prev);
+        next.delete(assetToDelete.id);
+        return next;
+      });
+
+      toast({
+        title: "Asset deleted",
+        description: `"${assetToDelete.file_name}" has been removed.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: "Could not delete the asset.",
+        variant: "destructive",
+      });
+    }
+
+    setAssetToDelete(null);
+  };
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -1805,8 +2405,6 @@ export default function BrandDashboard() {
   }, [brandOfferItems]);
 
   const pendingApprovalCount = 0; // Now calculated from real campaign data
-  const activeLicenses: any[] = []; // Now loaded from real license data
-  const expiringLicenses: any[] = []; // Now loaded from real license data
 
   const navigationItems = [
     { id: "home", label: "Dashboard", icon: LayoutDashboard },
@@ -1827,7 +2425,24 @@ export default function BrandDashboard() {
       id: "usage",
       label: "Usage Rights",
       icon: FileText,
-      badge: expiringLicenses.length > 0 ? expiringLicenses.length : undefined,
+      badge: (() => {
+        const today = new Date();
+        const in15 = new Date(today);
+        in15.setDate(in15.getDate() + 15);
+        const count = (
+          Array.isArray(brandLicensingRequests) ? brandLicensingRequests : []
+        )
+          .filter(
+            (r: any) => String(r?.status || "").toLowerCase() === "approved",
+          )
+          .filter((r: any) => {
+            const end = r?.license_end_date
+              ? new Date(r.license_end_date)
+              : null;
+            return end && end >= today && end <= in15;
+          }).length;
+        return count > 0 ? count : undefined;
+      })(),
     },
     ...(canViewSubscriptions
       ? [{ id: "billing", label: "Billing", icon: CreditCard }]
@@ -6854,14 +7469,39 @@ export default function BrandDashboard() {
             Download, manage, and organize all your creative assets
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className="border-2 border-gray-300 text-sm">
-            <Download className="w-4 h-4 mr-2" />
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={handleBatchDownload}
+            disabled={selectedAssetIds.size === 0 || isBatchDownloading}
+          >
+            {isBatchDownloading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
             Batch Download
+            {selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
           </Button>
-          <Button variant="outline" className="border-2 border-gray-300 text-sm">
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300 text-sm"
+            onClick={() => setShowFilterDialog(true)}
+          >
             <Filter className="w-4 h-4 mr-2" />
             Filter
+          </Button>
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={handleRefreshAssets}
+            disabled={studioLoading}
+          >
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${studioLoading ? "animate-spin" : ""}`}
+            />
+            Refresh
           </Button>
         </div>
       </div>
@@ -6870,19 +7510,27 @@ export default function BrandDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Assets</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">0</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {studioStats.total}
+          </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Videos</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">0</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {studioStats.videos}
+          </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Images</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">0</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {studioStats.images}
+          </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Size</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">0 MB</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {formatBytes(studioStats.totalSize)}
+          </p>
         </Card>
       </div>
 
@@ -6894,7 +7542,29 @@ export default function BrandDashboard() {
             <Input
               placeholder="Search by project, creator, or filename..."
               className="pl-10 border-2 border-gray-300"
+              value={studioSearchQuery}
+              onChange={(e) => setStudioSearchQuery(e.target.value)}
             />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={studioSourceFilter === "all" ? "default" : "outline"}
+              onClick={() => setStudioSourceFilter("all")}
+              className="border-2 border-gray-300"
+            >
+              All
+            </Button>
+            <Button
+              variant={
+                studioSourceFilter === "studio_generation"
+                  ? "default"
+                  : "outline"
+              }
+              onClick={() => setStudioSourceFilter("studio_generation")}
+              className="border-2 border-gray-300"
+            >
+              Studio
+            </Button>
           </div>
           <Button
             variant={viewMode === "grid" ? "default" : "outline"}
@@ -6914,30 +7584,186 @@ export default function BrandDashboard() {
       </Card>
 
       {/* Asset Grid */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {/* Assets are now loaded from real API data - no mock assets shown */}
+      {studioLoading ? (
+        <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
+          <Loader2 className="w-8 h-8 text-gray-400 mx-auto mb-3 animate-spin" />
+          <p className="text-gray-500">Loading assets...</p>
+        </Card>
+      ) : studioAssets.length === 0 ? (
         <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
           <p className="text-gray-500">
             No assets available yet. Assets will appear here once campaigns are
             completed.
           </p>
         </Card>
-      </div>
+      ) : viewMode === "grid" ? (
+        <div className="grid md:grid-cols-3 gap-6">
+          {displayedAssets.map((asset) => (
+            <Card
+              key={asset.id}
+              className="overflow-hidden border border-gray-200 hover:border-indigo-300 transition-colors"
+            >
+              <div className="aspect-video bg-gray-100 relative group">
+                {asset.mime_type.startsWith("image/") ? (
+                  <img
+                    src={asset.url}
+                    alt={asset.file_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <video
+                    src={asset.url}
+                    className="w-full h-full object-cover"
+                    controls
+                  />
+                )}
+                <div className="absolute top-2 left-2 flex items-center gap-2">
+                  <Checkbox
+                    checked={selectedAssetIds.has(asset.id)}
+                    onCheckedChange={() => toggleAssetSelection(asset.id)}
+                    className="bg-white/90 border-white data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
+                  />
+                  {asset.source_type === "studio_generation" && (
+                    <Badge className="bg-purple-600 text-white">Studio</Badge>
+                  )}
+                </div>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="bg-white/90 hover:bg-white"
+                    onClick={() => handleDownloadAsset(asset)}
+                    disabled={activeDownloads.has(asset.id)}
+                  >
+                    {activeDownloads.has(asset.id) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="bg-white/90 hover:bg-red-50 text-red-600 hover:text-red-700"
+                    onClick={() => handleDeleteAsset(asset)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="p-3">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {asset.file_name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {formatBytes(asset.size_bytes)}
+                </p>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="border border-gray-200">
+          <div className="divide-y divide-gray-100">
+            <div className="flex items-center gap-4 p-4 bg-gray-50">
+              <Checkbox
+                checked={
+                  displayedAssets.length > 0 &&
+                  selectedAssetIds.size === displayedAssets.length
+                }
+                onCheckedChange={selectAllAssets}
+              />
+              <span className="text-sm text-gray-500">
+                {displayedAssets.length} assets
+              </span>
+            </div>
+            {displayedAssets.map((asset) => (
+              <div
+                key={asset.id}
+                className="flex items-center gap-4 p-4 hover:bg-gray-50"
+              >
+                <Checkbox
+                  checked={selectedAssetIds.has(asset.id)}
+                  onCheckedChange={() => toggleAssetSelection(asset.id)}
+                />
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  {asset.mime_type.startsWith("image/") ? (
+                    <img
+                      src={asset.url}
+                      alt={asset.file_name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  ) : (
+                    <Video className="w-6 h-6 text-gray-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {asset.file_name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {formatBytes(asset.size_bytes)} ·{" "}
+                    {new Date(asset.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                {asset.source_type === "studio_generation" && (
+                  <Badge className="bg-purple-100 text-purple-700">
+                    Studio
+                  </Badge>
+                )}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDownloadAsset(asset)}
+                    disabled={activeDownloads.has(asset.id)}
+                  >
+                    {activeDownloads.has(asset.id) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => handleDeleteAsset(asset)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Organization Features */}
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Collections</h3>
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <Button variant="outline" className="border-2 border-gray-300 text-sm">
+        <div className="flex gap-3 flex-wrap">
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={() => setShowCreateCollectionDialog(true)}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create Collection
           </Button>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-200 text-xs sm:text-sm">
-            Holiday 2024 (12 assets)
-          </Badge>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-3 sm:px-4 py-2 cursor-pointer hover:bg-gray-200 text-xs sm:text-sm">
-            Evergreen (5 assets)
-          </Badge>
+          {collections.map((collection) => (
+            <Badge
+              key={collection.id}
+              className={`px-4 py-2 cursor-pointer border border-gray-300 ${
+                selectedCollectionId === collection.id
+                  ? "bg-indigo-100 text-indigo-700 border-indigo-300"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+              onClick={() => handleSelectCollection(collection.id)}
+            >
+              {collection.name} ({collection.assetIds.length} assets)
+            </Badge>
+          ))}
         </div>
       </Card>
     </div>
@@ -7781,9 +8607,99 @@ export default function BrandDashboard() {
       return renderContractDetail();
     }
 
-    // Contracts are now loaded from real API data
-    const activeContracts: any[] = [];
-    const pendingContracts: any[] = [];
+    // Aggregate all contracts from brandOfferItems (already loaded with offer_contracts)
+    const allContracts = (
+      Array.isArray(brandOfferItems) ? brandOfferItems : []
+    ).flatMap((offer: any) => {
+      const contracts = Array.isArray(offer?.offer_contracts)
+        ? offer.offer_contracts
+        : [];
+      return contracts.map((c: any) => ({
+        ...c,
+        offer_title:
+          offer?.offer_title || offer?.brand_campaigns?.name || "Offer",
+        brand_name: offer?.brands?.company_name || "",
+        target_type: offer?.target_type || "",
+        target_name:
+          offer?.agencies?.agency_name || offer?.creators?.full_name || "",
+        budget_snapshot: offer?.budget_snapshot || {},
+        offer_id: offer?.id || "",
+      }));
+    });
+
+    const activeContracts = allContracts.filter(
+      (c: any) =>
+        String(c?.docuseal_status || "").toLowerCase() === "completed",
+    );
+    const pendingContracts = allContracts.filter((c: any) => {
+      const s = String(c?.docuseal_status || "").toLowerCase();
+      return s === "sent" || s === "pending" || s === "awaiting_signatures";
+    });
+
+    const contractsForTab =
+      contractHubTab === "active"
+        ? activeContracts
+        : contractHubTab === "pending"
+          ? pendingContracts
+          : allContracts;
+
+    // Client-side search + sort (all data already in memory)
+    const contractsFiltered = contractsForTab.filter((c: any) => {
+      if (!contractSearch.trim()) return true;
+      const q = contractSearch.toLowerCase();
+      return (
+        String(c?.title || c?.offer_title || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(c?.target_name || "")
+          .toLowerCase()
+          .includes(q) ||
+        String(c?.brand_name || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    });
+
+    const contractsSorted = [...contractsFiltered].sort((a: any, b: any) => {
+      if (contractSort === "oldest") {
+        return (
+          new Date(a?.sent_at || 0).getTime() -
+          new Date(b?.sent_at || 0).getTime()
+        );
+      }
+      // newest (default)
+      return (
+        new Date(b?.sent_at || 0).getTime() -
+        new Date(a?.sent_at || 0).getTime()
+      );
+    });
+
+    const statusBadge = (c: any) => {
+      const s = String(c?.docuseal_status || "").toLowerCase();
+      if (s === "completed")
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            ✓ Fully Signed
+          </span>
+        );
+      if (s === "sent" || s === "awaiting_signatures")
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            ⏳ Awaiting Signature
+          </span>
+        );
+      if (s === "draft")
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
+            Draft
+          </span>
+        );
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
+          {c?.docuseal_status || "Unknown"}
+        </span>
+      );
+    };
 
     return (
       <div className="space-y-6">
@@ -7796,262 +8712,166 @@ export default function BrandDashboard() {
               All your verified licensing agreements in one place
             </p>
           </div>
-          <Button variant="outline" className="border-2 border-gray-300">
-            <Download className="w-4 h-4 mr-2" />
-            Bulk Export
-          </Button>
         </div>
 
-        {/* Search & Filter */}
-        <Card className="p-4 bg-white border border-gray-200">
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                placeholder="Search by creator, project, date..."
-                className="pl-10 border-2 border-gray-300"
-              />
-            </div>
-            <Select defaultValue="newest">
-              <SelectTrigger className="w-48 border-2 border-gray-300">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="expiring">Expiring Soon</SelectItem>
-                <SelectItem value="fee_high">Fee (High to Low)</SelectItem>
-                <SelectItem value="fee_low">Fee (Low to High)</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Search & Sort */}
+        <div className="flex gap-3">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search by creator, agency, or title…"
+              value={contractSearch}
+              onChange={(e) => setContractSearch(e.target.value)}
+              className="pl-9 h-9 text-sm border-gray-200"
+            />
           </div>
-        </Card>
-
-        {/* Contract Tabs */}
-        <div className="flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => setContractHubTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "active"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Active ({activeContracts.length})
-          </button>
-          <button
-            onClick={() => setContractHubTab("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "pending"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Pending Signature ({pendingContracts.length})
-          </button>
-          <button
-            onClick={() => setContractHubTab("all")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "all"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            All Contracts (0)
-          </button>
+          <Select value={contractSort} onValueChange={setContractSort}>
+            <SelectTrigger className="w-40 h-9 text-sm border-gray-200">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest first</SelectItem>
+              <SelectItem value="oldest">Oldest first</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Active Contracts */}
-        {contractHubTab === "active" && (
-          <div className="space-y-4">
-            {activeContracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-all"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {contract.project_name}
-                    </h3>
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <span>
-                        {contract.creator_name} ({contract.creator_handle})
-                      </span>
-                      {contract.agency && (
-                        <>
-                          <span>•</span>
-                          <span>via {contract.agency}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-700 border border-green-300">
-                    ✓ Fully Signed
-                  </Badge>
-                </div>
+        {/* Sub-tabs */}
+        <div className="flex gap-1 border-b border-gray-200">
+          {[
+            { key: "active", label: "Active", count: activeContracts.length },
+            {
+              key: "pending",
+              label: "Pending Signature",
+              count: pendingContracts.length,
+            },
+            { key: "all", label: "All Contracts", count: allContracts.length },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setContractHubTab(tab.key)}
+              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                contractHubTab === tab.key
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-                <div className="grid md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Signed</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.signed_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Expires</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.expiration_date).toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      ({contract.duration_days} days)
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.territory}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Fee</p>
-                    <p className="font-bold text-gray-900">
-                      ${contract.total_fee.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                    onClick={() => setSelectedContract(contract.id)}
-                  >
-                    View Full Contract
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download PDF
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    Archive
-                  </Button>
-                </div>
-              </Card>
-            ))}
+        {/* Contract list */}
+        {loadingBrandOfferItems ? (
+          <div className="flex items-center justify-center py-16 gap-3 text-gray-400">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="text-sm">Loading contracts…</span>
           </div>
-        )}
-
-        {/* Pending Signature */}
-        {contractHubTab === "pending" && (
-          <div className="space-y-4">
-            {pendingContracts.map((contract) => (
-              <Card
-                key={contract.id}
-                className="p-6 bg-yellow-50 border-2 border-yellow-300"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {contract.project_name}
-                    </h3>
-                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                      <span>
-                        {contract.creator_name} ({contract.creator_handle})
-                      </span>
-                      {contract.agency && (
-                        <>
-                          <span>•</span>
-                          <span>via {contract.agency}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <Badge className="bg-yellow-500 text-white">
-                    ⏳ Awaiting Signature ({contract.days_pending} days)
-                  </Badge>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Sent</p>
-                    <p className="font-semibold text-gray-900">
-                      {new Date(contract.sent_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {contract.territory}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Fee</p>
-                    <p className="font-bold text-gray-900">
-                      ${contract.total_fee.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                    onClick={() => setSelectedContract(contract.id)}
-                  >
-                    View Contract
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    <Send className="w-4 h-4 mr-2" />
-                    Resend Signature Request
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="border-2 border-red-300 text-red-600 hover:bg-red-50"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </Card>
-            ))}
-
-            {pendingContracts.length === 0 && (
-              <Card className="p-12 bg-white border border-gray-200 text-center">
-                <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  All contracts signed!
-                </h3>
-                <p className="text-gray-600">
-                  No pending signatures at this time
+        ) : contractsSorted.length === 0 ? (
+          <div className="py-16 text-center">
+            {contractSearch.trim() ? (
+              <>
+                <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-base font-semibold text-gray-700">
+                  No results
                 </p>
-              </Card>
+                <p className="text-sm text-gray-400 mt-1">
+                  No contracts match &ldquo;{contractSearch}&rdquo;
+                </p>
+              </>
+            ) : contractHubTab === "pending" ? (
+              <>
+                <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
+                <p className="text-base font-semibold text-gray-700">
+                  All contracts signed
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  No pending signatures at this time.
+                </p>
+              </>
+            ) : (
+              <>
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-base font-semibold text-gray-700">
+                  No contracts yet
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Contracts will appear here once campaigns are created and
+                  sent.
+                </p>
+              </>
             )}
           </div>
-        )}
-
-        {/* All Contracts */}
-        {contractHubTab === "all" && (
-          <div className="space-y-4">
-            {/* Contracts are now loaded from real API data */}
-            <Card className="p-12 bg-white border border-gray-200 text-center">
-              <p className="text-gray-500">
-                No contracts available yet. Contracts will appear here once
-                campaigns are created.
-              </p>
-            </Card>
+        ) : (
+          <div className="space-y-3">
+            {contractsSorted.map((contract: any) => {
+              const sentAt = contract?.sent_at
+                ? new Date(contract.sent_at).toLocaleDateString()
+                : "—";
+              const budget = contract?.budget_snapshot?.budget_total
+                ? `$${Number(String(contract.budget_snapshot.budget_total).replace(/,/g, "")).toLocaleString()}`
+                : "—";
+              return (
+                <div
+                  key={contract.id}
+                  className="p-5 rounded-xl border border-gray-200 bg-white hover:shadow-sm transition-shadow"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-gray-900 truncate">
+                          {contract.title || contract.offer_title || "Contract"}
+                        </span>
+                        {statusBadge(contract)}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                        {contract.target_name && (
+                          <span>
+                            {contract.target_type === "agency"
+                              ? "Agency"
+                              : "Creator"}
+                            :{" "}
+                            <span className="font-medium text-gray-700">
+                              {contract.target_name}
+                            </span>
+                          </span>
+                        )}
+                        <span>
+                          Sent:{" "}
+                          <span className="font-medium text-gray-700">
+                            {sentAt}
+                          </span>
+                        </span>
+                        <span>
+                          Budget:{" "}
+                          <span className="font-medium text-gray-700">
+                            {budget}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {contract.file_url && (
+                        <a
+                          href={contract.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                        >
+                          <Download className="w-3 h-3" />
+                          Download
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -8062,6 +8882,47 @@ export default function BrandDashboard() {
     if (selectedContract) {
       return renderContractDetail();
     }
+
+    // ── Derive real data from already-loaded state ──────────────────────────
+
+    // Approved licensing requests = active licenses
+    const approvedLicenses = (
+      Array.isArray(brandLicensingRequests) ? brandLicensingRequests : []
+    ).filter((r: any) => String(r?.status || "").toLowerCase() === "approved");
+
+    // Expiring within 15 days
+    const today = new Date();
+    const in15 = new Date(today);
+    in15.setDate(in15.getDate() + 15);
+    const expiringLicensesReal = approvedLicenses.filter((r: any) => {
+      const end = r?.license_end_date ? new Date(r.license_end_date) : null;
+      return end && end >= today && end <= in15;
+    });
+
+    const displayLicenses =
+      usageRightsTab === "expiring" ? expiringLicensesReal : approvedLicenses;
+
+    const licenseStatusBadge = (r: any) => {
+      const end = r?.license_end_date ? new Date(r.license_end_date) : null;
+      if (!end) return <span className="text-xs text-gray-400">—</span>;
+      if (end < today)
+        return (
+          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+            Expired
+          </span>
+        );
+      if (end <= in15)
+        return (
+          <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            Expiring soon
+          </span>
+        );
+      return (
+        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Active
+        </span>
+      );
+    };
 
     return (
       <div className="space-y-6">
@@ -8074,188 +8935,156 @@ export default function BrandDashboard() {
           </p>
         </div>
 
-        {/* Usage Rights Tabs */}
-        <div className="flex gap-2 border-b border-gray-200">
-          <button
-            onClick={() => setUsageRightsTab("licenses")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "licenses"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Active Licenses
-          </button>
-          <button
-            onClick={() => setUsageRightsTab("expiring")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "expiring"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Expiring Soon{" "}
-            {expiringLicenses.length > 0 && `(${expiringLicenses.length})`}
-          </button>
-          <button
-            onClick={() => setUsageRightsTab("contracts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "contracts"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Contract Hub
-          </button>
-          <button
-            onClick={() => setUsageRightsTab("compliance")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "compliance"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Compliance
-          </button>
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-gray-200">
+          {[
+            { key: "licenses", label: "Active Licenses" },
+            {
+              key: "expiring",
+              label: "Expiring Soon (15d)",
+              count: expiringLicensesReal.length,
+            },
+            { key: "contracts", label: "Contract Hub" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setUsageRightsTab(tab.key)}
+              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                usageRightsTab === tab.key
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
+            >
+              {tab.label}
+              {tab.count != null && tab.count > 0 && (
+                <span className="ml-1.5 text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Licenses Tab */}
-        {usageRightsTab === "licenses" && (
+        {/* ── Active Licenses / Expiring Soon ── */}
+        {(usageRightsTab === "licenses" || usageRightsTab === "expiring") && (
           <div className="space-y-6">
-            {/* License Stats */}
-            <div className="grid md:grid-cols-4 gap-6">
-              <Card className="p-6 bg-white border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Active Licenses</p>
-                <p className="text-4xl font-bold text-gray-900">
-                  {activeLicenses.length}
+            {/* Metrics */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-5 rounded-xl border border-gray-200 bg-white">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  Active Licenses
                 </p>
-              </Card>
-              <Card className="p-6 bg-white border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Expiring (30d)</p>
-                <p className="text-4xl font-bold text-gray-900">
-                  {expiringLicenses.length}
+                <p className="text-3xl font-black text-gray-900">
+                  {approvedLicenses.length}
                 </p>
-                {expiringLicenses.length > 0 && (
-                  <Badge className="mt-1 bg-orange-100 text-orange-700 border border-orange-300">
+              </div>
+              <div className="p-5 rounded-xl border border-gray-200 bg-white">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  Expiring (15d)
+                </p>
+                <p
+                  className={`text-3xl font-black ${expiringLicensesReal.length > 0 ? "text-amber-600" : "text-gray-900"}`}
+                >
+                  {expiringLicensesReal.length}
+                </p>
+                {expiringLicensesReal.length > 0 && (
+                  <p className="text-xs text-amber-600 font-semibold mt-0.5">
                     Renew soon
-                  </Badge>
+                  </p>
                 )}
-              </Card>
-              <Card className="p-6 bg-white border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Royalties Paid</p>
-                <p className="text-4xl font-bold text-gray-900">
-                  {brandSpendData
-                    ? `$${(brandSpendData.ytd_spend / 100000).toFixed(1)}K`
-                    : "$0"}
-                </p>
-              </Card>
-              <Card className="p-6 bg-white border border-gray-200">
-                <p className="text-sm text-gray-600 mb-1">Violations</p>
-                <p className="text-4xl font-bold text-green-600">0</p>
-                <Badge className="mt-1 bg-green-100 text-green-700 border border-green-300">
-                  All clear
-                </Badge>
-              </Card>
+              </div>
             </div>
 
-            {/* Active Licenses Table */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                Active Licenses
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b-2 border-gray-300">
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Asset
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Creator
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Territory
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Duration
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Channels
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Expires
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Status
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {/* Licenses are now loaded from real API data */}
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="px-4 py-12 text-center text-gray-500"
-                      >
-                        No licenses available yet. Licenses will appear here
-                        once campaigns are completed.
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* License table */}
+            <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900">
+                  {usageRightsTab === "expiring"
+                    ? "Expiring Licenses"
+                    : "Active Licenses"}
+                </h3>
               </div>
-            </Card>
-          </div>
-        )}
-
-        {/* Expiring Tab */}
-        {usageRightsTab === "expiring" && (
-          <div className="space-y-6">
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                License Expiration Calendar
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {/* Expiring licenses are now loaded from real API data */}
-                <div className="col-span-3 text-center py-12">
-                  <p className="text-gray-500">
-                    No expiring licenses at this time.
+              {loadingBrandLicensingRequests ? (
+                <div className="flex items-center justify-center py-12 gap-3 text-gray-400">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Loading licenses…</span>
+                </div>
+              ) : displayLicenses.length === 0 ? (
+                <div className="py-14 text-center">
+                  <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-gray-600">
+                    {usageRightsTab === "expiring"
+                      ? "No licenses expiring in the next 15 days"
+                      : "No active licenses yet"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Licenses appear here once licensing requests are approved.
                   </p>
                 </div>
-              </div>
-            </Card>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-gray-50/60">
+                        {[
+                          "Creator / Talent",
+                          "Campaign",
+                          "Territory",
+                          "Usage Scope",
+                          "Duration",
+                          "Expires",
+                          "Status",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {displayLicenses.map((r: any) => (
+                        <tr
+                          key={r.id}
+                          className="hover:bg-gray-50/50 transition-colors"
+                        >
+                          <td className="px-4 py-3 font-semibold text-gray-900">
+                            {r.talent_name || r.creator_name || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 truncate max-w-[160px]">
+                            {r.campaign_title || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {r.territory || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {r.usage_scope || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {r.duration_days ? `${r.duration_days}d` : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">
+                            {r.license_end_date
+                              ? new Date(
+                                  r.license_end_date,
+                                ).toLocaleDateString()
+                              : "—"}
+                          </td>
+                          <td className="px-4 py-3">{licenseStatusBadge(r)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Contracts Tab - Contract Hub */}
+        {/* ── Contract Hub ── */}
         {usageRightsTab === "contracts" && renderContractHub()}
-
-        {/* Compliance Tab */}
-        {usageRightsTab === "compliance" && (
-          <div className="space-y-6">
-            {/* Watermark Verification */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Watermark Verification Tool
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Upload an asset to verify its watermark and license status
-              </p>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#F7B750] transition-colors cursor-pointer">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-700 mb-2">
-                  Drag & drop file or click to upload
-                </p>
-                <p className="text-sm text-gray-500">
-                  Verify watermark and license authenticity
-                </p>
-              </div>
-            </Card>
-          </div>
-        )}
       </div>
     );
   };
@@ -12129,6 +12958,169 @@ export default function BrandDashboard() {
               Done
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Collection Dialog */}
+      <Dialog
+        open={showCreateCollectionDialog}
+        onOpenChange={setShowCreateCollectionDialog}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Collection</DialogTitle>
+            <DialogDescription>
+              Organize your selected assets into a new collection.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="collection-name">Collection Name</Label>
+              <Input
+                id="collection-name"
+                placeholder="e.g., Summer Campaign 2025"
+                value={newCollectionName}
+                onChange={(e) => setNewCollectionName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleCreateCollection();
+                }}
+              />
+            </div>
+            <p className="text-sm text-gray-500">
+              {selectedAssetIds.size > 0
+                ? `${selectedAssetIds.size} asset(s) will be added to this collection.`
+                : "No assets selected. You can add assets later."}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateCollectionDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreateCollection}>Create Collection</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Filter Dialog */}
+      <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Filter Assets</DialogTitle>
+            <DialogDescription>
+              Narrow down your asset library view.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Asset Type</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={filterType === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("all")}
+                  className="flex-1"
+                >
+                  All
+                </Button>
+                <Button
+                  variant={filterType === "image" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("image")}
+                  className="flex-1"
+                >
+                  <ImageIcon className="w-4 h-4 mr-1" />
+                  Images
+                </Button>
+                <Button
+                  variant={filterType === "video" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterType("video")}
+                  className="flex-1"
+                >
+                  <Video className="w-4 h-4 mr-1" />
+                  Videos
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Date Range</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant={filterDateRange === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterDateRange("all")}
+                  className="flex-1"
+                >
+                  All Time
+                </Button>
+                <Button
+                  variant={filterDateRange === "week" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterDateRange("week")}
+                  className="flex-1"
+                >
+                  Last Week
+                </Button>
+                <Button
+                  variant={filterDateRange === "month" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterDateRange("month")}
+                  className="flex-1"
+                >
+                  Last Month
+                </Button>
+                <Button
+                  variant={filterDateRange === "year" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterDateRange("year")}
+                  className="flex-1"
+                >
+                  Last Year
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFilterType("all");
+                setFilterDateRange("all");
+              }}
+            >
+              Reset Filters
+            </Button>
+            <Button onClick={() => setShowFilterDialog(false)}>
+              Apply Filters
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Asset Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Asset</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{assetToDelete?.file_name}"? This
+              action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDeleteAsset}>
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
+import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { createPageUrl, clampAndSnapCommissionPct } from "@/utils";
 import {
@@ -1988,24 +1989,19 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
-    // For team members, update the organization's profile (owner's profile)
     const effectiveAgencyId = (profile as any).organization_id || profile.id;
 
     try {
       setIsUploading(true);
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${effectiveAgencyId}-${Math.random()}.${fileExt}`;
-      const filePath = `agency-logos/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("likelee-public")
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("likelee-public").getPublicUrl(filePath);
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("visibility", "public");
+      const uploadResult = await base44.post<{
+        id: string;
+        public_url: string | null;
+        storage_path: string;
+      }>("/agency/storage/files/upload", fd);
+      const publicUrl = uploadResult.public_url || "";
 
       const { error: updateError } = await supabase
         .from("agencies")
