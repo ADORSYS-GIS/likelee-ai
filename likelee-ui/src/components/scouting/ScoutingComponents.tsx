@@ -20,8 +20,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-
-interface ProspectListProps {
 import {
   Dialog,
   DialogContent,
@@ -38,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect } from "@/types/scouting";
 
@@ -561,7 +560,10 @@ export const ProspectPipelineTab = ({
           <Carousel opts={{ align: "start", dragFree: true }}>
             <CarouselContent>
               {stats.map((stat) => (
-                <CarouselItem key={stat.label} className="basis-1/2 sm:basis-1/3">
+                <CarouselItem
+                  key={stat.label}
+                  className="basis-1/2 sm:basis-1/3"
+                >
                   <div
                     className={`p-4 sm:p-6 border rounded-2xl ${stat.color} transition-all h-full flex flex-col justify-center`}
                   >
