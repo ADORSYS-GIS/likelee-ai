@@ -27,44 +27,44 @@ import frCommon from "./locales/common/fr.json";
 import frAgency from "./locales/agency/fr.json";
 import frAuth from "./locales/auth/fr.json";
 
+// Deep merge utility — prevents shared top-level keys (e.g. "common") in
+// different locale modules from silently overwriting each other during spread.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function deepMerge(...sources: Record<string, any>[]): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: Record<string, any> = {};
+  for (const source of sources) {
+    for (const key of Object.keys(source)) {
+      if (
+        result[key] &&
+        typeof result[key] === "object" &&
+        !Array.isArray(result[key]) &&
+        typeof source[key] === "object" &&
+        !Array.isArray(source[key])
+      ) {
+        result[key] = deepMerge(result[key], source[key]);
+      } else {
+        result[key] = source[key];
+      }
+    }
+  }
+  return result;
+}
+
 // Merge all modules into single translation object for backward compatibility
 // This allows existing components to work without changes
 const resources = {
   en: {
-    translation: {
-      ...enCommon,
-      ...enCreator,
-      ...enBrand,
-      ...enAgency,
-      ...enAuth,
-    },
+    translation: deepMerge(enCommon, enCreator, enBrand, enAgency, enAuth),
   },
   es: {
-    translation: {
-      ...esCommon,
-      ...esCreator,
-      ...esBrand,
-      ...esAgency,
-      ...esAuth,
-    },
+    translation: deepMerge(esCommon, esCreator, esBrand, esAgency, esAuth),
   },
   de: {
-    translation: {
-      ...deCommon,
-      ...deCreator,
-      ...deBrand,
-      ...deAgency,
-      ...deAuth,
-    },
+    translation: deepMerge(deCommon, deCreator, deBrand, deAgency, deAuth),
   },
   fr: {
-    translation: {
-      ...frCommon,
-      ...frCreator,
-      ...frBrand,
-      ...frAgency,
-      ...frAuth,
-    },
+    translation: deepMerge(frCommon, frCreator, frBrand, frAgency, frAuth),
   },
 };
 
