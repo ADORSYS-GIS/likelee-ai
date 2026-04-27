@@ -168,6 +168,7 @@ export default function BrandCampaignDashboard({
   const [loadingSelectedCampaignDetails, setLoadingSelectedCampaignDetails] =
     useState(false);
   const [brandCampaignId, setBrandCampaignId] = useState<string>("");
+  const [isExistingCampaign, setIsExistingCampaign] = useState(false);
   const [campaignCards, setCampaignCards] = useState<any[]>([]);
   const [loadingCampaignCards, setLoadingCampaignCards] = useState(false);
   const [showEscrowReleaseModal, setShowEscrowReleaseModal] = useState(false);
@@ -307,6 +308,7 @@ export default function BrandCampaignDashboard({
       const brandCampaignId = String(context?.brandCampaignId || "").trim();
 
       setBrandCampaignId(brandCampaignId);
+      setIsExistingCampaign(true);
       setCampaignForm((prev) => ({
         ...prev,
         name: String(context?.name || prev.name || "").trim(),
@@ -1442,6 +1444,7 @@ export default function BrandCampaignDashboard({
     setAwaitingBrandSignature(false);
     setNewCampaignStep(1);
     setBrandCampaignId("");
+    setIsExistingCampaign(false);
     setExistingCampaignAgencyIds(new Set());
     setExistingCampaignCreatorIds(new Set());
     setLoadingExistingCollaborators(false);
@@ -3056,9 +3059,10 @@ export default function BrandCampaignDashboard({
                         setStep2FieldErrors((p) => ({ ...p, [field]: "" }));
                     }}
                     onBack={() => {
-                      if (brandCampaignId) return;
+                      if (isExistingCampaign) return;
                       setNewCampaignStep(1);
                     }}
+                    hideBack={isExistingCampaign}
                     onNext={handleStep2Next}
                     uploading={uploadingImages}
                   />
