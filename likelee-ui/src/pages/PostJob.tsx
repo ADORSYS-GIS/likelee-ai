@@ -727,9 +727,7 @@ export default function PostJob() {
               <h1 className="text-3xl font-bold text-gray-900">
                 {t("postJobPage.title")}
               </h1>
-              <p className="text-gray-600">
-                {t("postJobPage.subtitle")}
-              </p>
+              <p className="text-gray-600">{t("postJobPage.subtitle")}</p>
             </div>
           </div>
 
@@ -1378,7 +1376,9 @@ export default function PostJob() {
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue
-                      placeholder={t("postJobPage.placeholders.selectUsageType")}
+                      placeholder={t(
+                        "postJobPage.placeholders.selectUsageType",
+                      )}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -1451,7 +1451,9 @@ export default function PostJob() {
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue
-                      placeholder={t("postJobPage.placeholders.selectTerritories")}
+                      placeholder={t(
+                        "postJobPage.placeholders.selectTerritories",
+                      )}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -1577,7 +1579,9 @@ export default function PostJob() {
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
                     <SelectValue
-                      placeholder={t("postJobPage.placeholders.selectPaymentType")}
+                      placeholder={t(
+                        "postJobPage.placeholders.selectPaymentType",
+                      )}
                     />
                   </SelectTrigger>
                   <SelectContent>

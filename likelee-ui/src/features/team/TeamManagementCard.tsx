@@ -225,9 +225,12 @@ export function TeamManagementCard({
             defaultValue: "Reviewer",
           });
         default:
-          return role || t("dashboard.teamManagement.roles.unknown", {
-            defaultValue: "Unknown",
-          });
+          return (
+            role ||
+            t("dashboard.teamManagement.roles.unknown", {
+              defaultValue: "Unknown",
+            })
+          );
       }
     },
     [t],
@@ -869,8 +872,7 @@ export function TeamManagementCard({
                     defaultValue: "Add a new collaborator to your brand",
                   })
                 : t("dashboard.teamManagement.inviteDescription", {
-                    defaultValue:
-                      "Send an email invitation to join your team",
+                    defaultValue: "Send an email invitation to join your team",
                   })}
             </DialogDescription>
           </DialogHeader>

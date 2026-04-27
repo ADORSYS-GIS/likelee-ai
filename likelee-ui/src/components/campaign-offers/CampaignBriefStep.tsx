@@ -53,7 +53,9 @@ export default function CampaignBriefStep({
               onChange={(e) =>
                 setCampaignBrief((prev) => ({ ...prev, voice: e.target.value }))
               }
-              placeholder={t("campaignsDashboard.builder.brief.placeholders.voice")}
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.voice",
+              )}
               className="border-2 border-gray-300 rounded-none min-h-[90px]"
             />
           </div>
@@ -66,7 +68,9 @@ export default function CampaignBriefStep({
               onChange={(e) =>
                 setCampaignBrief((prev) => ({ ...prev, tone: e.target.value }))
               }
-              placeholder={t("campaignsDashboard.builder.brief.placeholders.tone")}
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.tone",
+              )}
               className="border-2 border-gray-300 rounded-none min-h-[90px]"
             />
           </div>
@@ -175,7 +179,9 @@ export default function CampaignBriefStep({
               onChange={(e) =>
                 setCampaignBrief((prev) => ({ ...prev, dos: e.target.value }))
               }
-              placeholder={t("campaignsDashboard.builder.brief.placeholders.do")}
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.do",
+              )}
               className="border-2 border-gray-300 rounded-none min-h-[120px]"
             />
           </div>
@@ -253,7 +259,9 @@ export default function CampaignBriefStep({
             className="border-2 border-gray-300 rounded-none"
           />
           <p className="text-xs text-gray-500">
-            {t("campaignsDashboard.builder.brief.totalExpectedDeliverablesHelp")}
+            {t(
+              "campaignsDashboard.builder.brief.totalExpectedDeliverablesHelp",
+            )}
           </p>
         </div>
 
@@ -623,9 +631,9 @@ export default function CampaignBriefStep({
           </div>
         </div>
         <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-700">
-          {t("campaignsDashboard.builder.brief.renewalTerms")}
-        </p>
+          <p className="text-sm font-medium text-gray-700">
+            {t("campaignsDashboard.builder.brief.renewalTerms")}
+          </p>
           <Input
             value={campaignBrief.budget_renewal_terms}
             onChange={(e) =>
