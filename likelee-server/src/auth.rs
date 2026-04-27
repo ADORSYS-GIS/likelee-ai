@@ -5,7 +5,7 @@ use axum::{
     http::{request::Parts, StatusCode},
     response::{IntoResponse, Response},
 };
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::decode;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
@@ -165,10 +165,26 @@ where
             ));
         };
 
-        // 2. Verify JWT
-        let decoding_key = DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
-        let mut validation = Validation::default();
-        validation.set_audience(&["authenticated"]);
+        // 2. Verify JWT - support both ES256 (Supabase default) and HS256 (legacy)
+        // Supabase ES256 JWT secret is base64-encoded SPKI public key
+        let pem = format!(
+            "-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----",
+            app_state.supabase_jwt_secret
+        );
+        let (decoding_key, validation) = match jsonwebtoken::DecodingKey::from_ec_pem(pem.as_bytes()) {
+            Ok(key) => {
+                let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::ES256);
+                validation.set_audience(&["authenticated"]);
+                (key, validation)
+            }
+            Err(e) => {
+                tracing::debug!("ES256 key parse failed, falling back to HS256: {}", e);
+                let key = jsonwebtoken::DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
+                let mut validation = jsonwebtoken::Validation::default();
+                validation.set_audience(&["authenticated"]);
+                (key, validation)
+            }
+        };
         let token_data = decode::<Claims>(&token, &decoding_key, &validation)
             .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {e}")))?;
 
