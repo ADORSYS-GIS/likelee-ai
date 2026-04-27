@@ -43,6 +43,7 @@ const ALLOWED_TRANSITIVE = new Set([
   "@base44/sdk",
   "aws-amplify",
   "fast-xml-parser",
+  "postcss",
   "recharts",
   "uuid",
   "workbox-build",
