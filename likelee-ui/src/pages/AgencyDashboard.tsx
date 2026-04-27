@@ -3222,9 +3222,9 @@ const ExpenseTrackingView = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Expense Tracking</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t("agencyDashboard.brandConnections.accounting.expenseTracking")}</h2>
           <p className="text-gray-600 font-medium">
-            Track and manage agency expenses
+            {t("agencyDashboard.brandConnections.accounting.expenseTrackingSubtitle")}
           </p>
         </div>
         <Button
@@ -4265,9 +4265,9 @@ const PaymentTrackingView = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Payment Tracking</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t("agencyDashboard.brandConnections.accounting.paymentTracking")}</h2>
         <p className="text-gray-600 font-medium">
-          Monitor payments and manage reminders
+          {t("agencyDashboard.brandConnections.accounting.paymentTrackingSubtitle")}
         </p>
       </div>
 
@@ -4575,7 +4575,7 @@ const FinancialReportsView = () => {
         setExpenseRows(asArray(expenses));
       } catch (e: any) {
         toast({
-          title: "Failed to load financial reports",
+          title: t("agencyDashboard.brandConnections.accounting.loadFailed"),
           description: String(e?.message || e),
           variant: "destructive" as any,
         });
@@ -5392,9 +5392,9 @@ const FinancialReportsView = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Financial Reports</h2>
+        <h2 className="text-2xl font-bold text-gray-900">{t("agencyDashboard.brandConnections.accounting.financialReports")}</h2>
         <p className="text-gray-600 font-medium">
-          Comprehensive financial analytics and insights
+          {t("agencyDashboard.brandConnections.accounting.financialReportsSubtitle")}
         </p>
       </div>
 
@@ -5449,7 +5449,7 @@ const FinancialReportsView = () => {
 
       <Card className="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-          <h3 className="text-lg font-bold text-gray-900">Financial Reports</h3>
+          <h3 className="text-lg font-bold text-gray-900">{t("agencyDashboard.brandConnections.accounting.financialReports")}</h3>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
@@ -8831,13 +8831,13 @@ const InvoiceManagementView = ({
   };
 
   const accountingTabs = [
-    { id: "Invoice Management", label: "Invoice Management", icon: FileText },
-    { id: "Invoice Generation", label: "Generate Invoice", icon: Plus },
-    { id: "Payment Tracking", label: "Payment Tracking", icon: DollarSign },
+    { id: "Invoice Management", label: t("agencyDashboard.brandConnections.accounting.invoiceManagement"), icon: FileText },
+    { id: "Invoice Generation", label: t("agencyDashboard.brandConnections.accounting.invoiceGeneration"), icon: Plus },
+    { id: "Payment Tracking", label: t("agencyDashboard.brandConnections.accounting.paymentTracking"), icon: DollarSign },
     { id: statementsTabLabel, label: statementsTabLabel, icon: Receipt },
-    { id: "Financial Reports", label: "Financial Reports", icon: BarChart2 },
-    { id: "Expense Tracking", label: "Expense Tracking", icon: CreditCard },
-    { id: "Connect Bank", label: "Connect Bank", icon: CreditCard },
+    { id: "Financial Reports", label: t("agencyDashboard.brandConnections.accounting.financialReports"), icon: BarChart2 },
+    { id: "Expense Tracking", label: t("agencyDashboard.brandConnections.accounting.expenseTracking"), icon: CreditCard },
+    { id: "Connect Bank", label: t("agencyDashboard.brandConnections.accounting.connectBank"), icon: CreditCard },
   ];
 
   return (
@@ -8869,10 +8869,10 @@ const InvoiceManagementView = ({
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Invoice Management
+            {t("agencyDashboard.brandConnections.accounting.invoiceManagement")}
           </h2>
           <p className="text-gray-600 font-medium">
-            View and manage all client invoices
+            {t("agencyDashboard.brandConnections.accounting.invoiceManagementSubtitle")}
           </p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
@@ -21563,7 +21563,7 @@ export default function AgencyDashboard() {
                         Upgrade required
                       </div>
                       <div className="text-gray-500 font-medium mt-1">
-                        Financial Reports are available on the Pro plan.
+                        {t("agencyDashboard.brandConnections.accounting.financialReportsProOnly")}
                       </div>
                       <div className="mt-4">
                         <Button
@@ -21584,7 +21584,7 @@ export default function AgencyDashboard() {
                         Upgrade required
                       </div>
                       <div className="text-gray-500 font-medium mt-1">
-                        Expense Tracking is available on the Pro plan.
+                        {t("agencyDashboard.brandConnections.accounting.expenseTrackingProOnly")}
                       </div>
                       <div className="mt-4">
                         <Button
