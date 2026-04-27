@@ -20,6 +20,57 @@
       "title": "Générateur d'Images IA",
       "subtitle": "Studio Premium",
       "topUp": "Recharger"
+    },
+    "landing": {
+      "nav": {
+        "home": "Accueil",
+        "videoAi": "IA Vidéo",
+        "imageAi": "IA Image",
+        "effects": "Effets",
+        "aiTools": "Outils IA",
+        "pricing": "Tarifs",
+        "generate": "Générer",
+        "aiVideoGenerator": "Générateur vidéo IA",
+        "backToLikelee": "Retour à likelee.ai"
+      },
+      "hero": {
+        "titlePrefix": "Que souhaitez-vous",
+        "titleAccent": "créer aujourd’hui ?",
+        "subtitle": "Choisissez votre outil créatif et commencez à générer"
+      },
+      "tools": {
+        "video": "Générer une vidéo IA",
+        "image": "Générer une image IA",
+        "shorts": "Générer des Shorts IA",
+        "effects": "Générer des effets IA",
+        "cardSubtitle": "Commencez à créer avec l’IA",
+        "getStarted": "Commencer"
+      },
+      "stats": {
+        "aiModels": "Modèles IA",
+        "creativeTools": "Outils créatifs",
+        "templates": "Modèles"
+      },
+      "models": {
+        "title": "Choisir un modèle",
+        "subtitle": "Choisissez parmi les derniers modèles IA pris en charge par Likelee Studio.",
+        "videoModels": "Modèles vidéo",
+        "imageModels": "Modèles image",
+        "select": "Sélectionner",
+        "footnote": "Nous ajoutons constamment de nouveaux modèles. Votre abonnement inclut l’accès à tous."
+      },
+      "pricing": {
+        "subscribeNow": "S’abonner"
+      },
+      "faq": {
+        "title": "Questions fréquentes",
+        "q1": "Que puis-je créer avec Likelee Studio ?",
+        "a1": "Des vidéos, images, avatars et effets créatifs générés par IA — au même endroit.",
+        "q2": "Dois-je coder ?",
+        "a2": "Non. Téléchargez simplement un fichier ou décrivez ce que vous voulez.",
+        "q3": "Est-ce illimité ?",
+        "a3": "Chaque offre a une limite d’utilisation raisonnable pour garantir les performances. L’offre Agence inclut des générations illimitées."
+      }
     }
   },
   "brandPricingStudioAddon": {

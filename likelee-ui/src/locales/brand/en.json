@@ -59,6 +59,57 @@
       "title": "AI Image Generator",
       "subtitle": "Premium Studio",
       "topUp": "Top Up"
+    },
+    "landing": {
+      "nav": {
+        "home": "Home",
+        "videoAi": "Video AI",
+        "imageAi": "Image AI",
+        "effects": "Effects",
+        "aiTools": "AI Tools",
+        "pricing": "Pricing",
+        "generate": "Generate",
+        "aiVideoGenerator": "AI Video Generator",
+        "backToLikelee": "Back to likelee.ai"
+      },
+      "hero": {
+        "titlePrefix": "What would you like to",
+        "titleAccent": "create today?",
+        "subtitle": "Choose your creative tool and start generating"
+      },
+      "tools": {
+        "video": "Generate AI Video",
+        "image": "Generate AI Image",
+        "shorts": "Generate AI Shorts",
+        "effects": "Generate AI Effects",
+        "cardSubtitle": "Start creating with AI",
+        "getStarted": "Get started"
+      },
+      "stats": {
+        "aiModels": "AI Models",
+        "creativeTools": "Creative Tools",
+        "templates": "Templates"
+      },
+      "models": {
+        "title": "Choose a model",
+        "subtitle": "Pick from the latest AI models supported by Likelee Studio.",
+        "videoModels": "Video Models",
+        "imageModels": "Image Models",
+        "select": "Select",
+        "footnote": "We constantly add new models. Your subscription includes access to all."
+      },
+      "pricing": {
+        "subscribeNow": "Subscribe Now"
+      },
+      "faq": {
+        "title": "Frequently Asked Questions",
+        "q1": "What can I make with Likelee Studio?",
+        "a1": "AI-generated videos, images, avatars, and creative effects — all in one place.",
+        "q2": "Do I need to code?",
+        "a2": "Nope. Just upload or describe what you want.",
+        "q3": "Is this unlimited?",
+        "a3": "Each plan has a fair-use limit to ensure performance. The Agency Plan includes unlimited generations."
+      }
     }
   },
   "brandPricingStudioAddon": {
@@ -95,6 +146,43 @@
       "usageRights": "Usage Rights",
       "billing": "Billing",
       "settings": "Settings"
+    },
+    "licensingRequest": {
+      "title": "Request License",
+      "subtitle": "Send a licensing request for {{talentName}}.",
+      "subtitleGeneric": "Send a licensing request.",
+      "startDate": "Start Date",
+      "duration": "Duration (Days)",
+      "licenseFee": "License Fee",
+      "licenseFeePlaceholder": "e.g. 5000",
+      "category": "Category",
+      "selectCategory": "Select category",
+      "categories": {
+        "socialMedia": "Social Media",
+        "ecommerce": "E-commerce",
+        "advertising": "Advertising",
+        "editorial": "Editorial",
+        "filmTv": "Film & TV",
+        "custom": "Custom"
+      },
+      "territory": "Territory",
+      "territoryPlaceholder": "Global",
+      "exclusivity": "Exclusivity",
+      "selectExclusivity": "Select exclusivity",
+      "exclusivityOptions": {
+        "nonExclusive": "Non-exclusive",
+        "categoryExclusive": "Category exclusive",
+        "fullExclusivity": "Full exclusivity"
+      },
+      "modificationsAllowed": "Modifications Allowed",
+      "modificationsPlaceholder": "e.g. Light edits allowed",
+      "description": "Description",
+      "descriptionPlaceholder": "Add a short description for this license request",
+      "additionalCustomTerms": "Additional Custom Terms",
+      "customTermsPlaceholder": "Add any custom licensing terms...",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "createRequest": "Create licensing request"
     },
     "time": {
       "justNow": "Just now",
@@ -764,6 +852,7 @@
       "title": "Contract Hub",
       "subtitle": "Manage and track all contracts",
       "campaignContractsStatus": "Campaign contracts and signing status.",
+      "noContractSubmissions": "No contract submissions yet.",
       "tabs": {
         "active": "Active",
         "pending": "Pending",
@@ -1626,11 +1715,6 @@
       "title": "Join Our Pilot Program",
       "getStartedButton": "Get Started",
       "bookDemoButton": "Book a Demo"
-    }
-  },
-  "campaigns": {
-    "contractHub": {
-      "noContractSubmissions": "No contract submissions yet"
     }
   }
 }

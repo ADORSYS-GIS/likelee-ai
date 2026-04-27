@@ -1,6 +1,19 @@
 {
   "greeting": "Bonjour, bienvenue !",
   "getStarted": "Commencer",
+  "statuses": {
+    "draft": "Brouillon",
+    "sent": "Envoyé",
+    "accepted": "Accepté",
+    "declined": "Refusé",
+    "new": "Nouveau",
+    "contractSent": "Contrat envoyé",
+    "contractFullySigned": "Contrat entièrement signé",
+    "completed": "Terminé",
+    "changesRequested": "Modifications demandées",
+    "sentToBrand": "Envoyé à la marque",
+    "brandApproved": "Approuvé par la marque"
+  },
   "agencies": "Agences",
   "learnMore": "En savoir plus",
   "landingHeadline": "Vous cherchez quelque chose de réel à l'ère de l'IA ?",

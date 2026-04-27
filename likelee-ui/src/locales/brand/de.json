@@ -1130,6 +1130,57 @@
       "title": "KI-Bildgenerator",
       "subtitle": "Premium Studio",
       "topUp": "Aufladen"
+    },
+    "landing": {
+      "nav": {
+        "home": "Startseite",
+        "videoAi": "Video-KI",
+        "imageAi": "Bild-KI",
+        "effects": "Effekte",
+        "aiTools": "KI-Tools",
+        "pricing": "Preise",
+        "generate": "Generieren",
+        "aiVideoGenerator": "KI-Video-Generator",
+        "backToLikelee": "Zurück zu likelee.ai"
+      },
+      "hero": {
+        "titlePrefix": "Was möchtest du",
+        "titleAccent": "heute erstellen?",
+        "subtitle": "Wähle dein Kreativ-Tool und lege direkt los"
+      },
+      "tools": {
+        "video": "KI-Video generieren",
+        "image": "KI-Bild generieren",
+        "shorts": "KI-Shorts generieren",
+        "effects": "KI-Effekte generieren",
+        "cardSubtitle": "Starte mit KI-Kreation",
+        "getStarted": "Loslegen"
+      },
+      "stats": {
+        "aiModels": "KI-Modelle",
+        "creativeTools": "Kreativ-Tools",
+        "templates": "Vorlagen"
+      },
+      "models": {
+        "title": "Wähle ein Modell",
+        "subtitle": "Wähle aus den neuesten KI-Modellen, die Likelee Studio unterstützt.",
+        "videoModels": "Video-Modelle",
+        "imageModels": "Bild-Modelle",
+        "select": "Auswählen",
+        "footnote": "Wir fügen ständig neue Modelle hinzu. Dein Abo enthält Zugriff auf alle."
+      },
+      "pricing": {
+        "subscribeNow": "Jetzt abonnieren"
+      },
+      "faq": {
+        "title": "Häufige Fragen",
+        "q1": "Was kann ich mit Likelee Studio erstellen?",
+        "a1": "KI-generierte Videos, Bilder, Avatare und kreative Effekte — alles an einem Ort.",
+        "q2": "Muss ich programmieren?",
+        "a2": "Nein. Lade einfach etwas hoch oder beschreibe, was du möchtest.",
+        "q3": "Ist das unbegrenzt?",
+        "a3": "Jeder Plan hat ein Fair-Use-Limit, um die Performance zu gewährleisten. Der Agentur-Plan beinhaltet unbegrenzte Generationen."
+      }
     }
   },
   "campaignsDashboard": {

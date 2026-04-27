@@ -1,6 +1,19 @@
 {
   "greeting": "Hello, Welcome!",
   "getStarted": "Get Started",
+  "statuses": {
+    "draft": "Draft",
+    "sent": "Sent",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "new": "New",
+    "contractSent": "Contract Sent",
+    "contractFullySigned": "Contract Fully Signed",
+    "completed": "Completed",
+    "changesRequested": "Changes requested",
+    "sentToBrand": "Sent to Brand",
+    "brandApproved": "Brand Approved"
+  },
   "agencies": "Agencies",
   "aboutUs": "About Us",
   "contact": "Contact",

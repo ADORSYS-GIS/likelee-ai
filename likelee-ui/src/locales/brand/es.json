@@ -59,6 +59,57 @@
       "title": "Generador de Imágenes IA",
       "subtitle": "Estudio Premium",
       "topUp": "Recargar"
+    },
+    "landing": {
+      "nav": {
+        "home": "Inicio",
+        "videoAi": "IA de Video",
+        "imageAi": "IA de Imagen",
+        "effects": "Efectos",
+        "aiTools": "Herramientas IA",
+        "pricing": "Precios",
+        "generate": "Generar",
+        "aiVideoGenerator": "Generador de Video IA",
+        "backToLikelee": "Volver a likelee.ai"
+      },
+      "hero": {
+        "titlePrefix": "¿Qué te gustaría",
+        "titleAccent": "crear hoy?",
+        "subtitle": "Elige tu herramienta creativa y empieza a generar"
+      },
+      "tools": {
+        "video": "Generar Video IA",
+        "image": "Generar Imagen IA",
+        "shorts": "Generar Shorts IA",
+        "effects": "Generar Efectos IA",
+        "cardSubtitle": "Empieza a crear con IA",
+        "getStarted": "Comenzar"
+      },
+      "stats": {
+        "aiModels": "Modelos de IA",
+        "creativeTools": "Herramientas creativas",
+        "templates": "Plantillas"
+      },
+      "models": {
+        "title": "Elige un modelo",
+        "subtitle": "Elige entre los modelos de IA más recientes compatibles con Likelee Studio.",
+        "videoModels": "Modelos de video",
+        "imageModels": "Modelos de imagen",
+        "select": "Seleccionar",
+        "footnote": "Agregamos nuevos modelos constantemente. Tu suscripción incluye acceso a todos."
+      },
+      "pricing": {
+        "subscribeNow": "Suscribirse ahora"
+      },
+      "faq": {
+        "title": "Preguntas frecuentes",
+        "q1": "¿Qué puedo crear con Likelee Studio?",
+        "a1": "Videos, imágenes, avatares y efectos creativos generados por IA, todo en un solo lugar.",
+        "q2": "¿Necesito programar?",
+        "a2": "No. Solo sube un archivo o describe lo que quieres.",
+        "q3": "¿Es ilimitado?",
+        "a3": "Cada plan tiene un límite de uso justo para garantizar el rendimiento. El plan de Agencia incluye generaciones ilimitadas."
+      }
     }
   },
   "brandPricingStudioAddon": {

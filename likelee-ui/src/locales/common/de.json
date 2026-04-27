@@ -1,6 +1,19 @@
 {
   "greeting": "Hallo, willkommen!",
   "getStarted": "Loslegen",
+  "statuses": {
+    "draft": "Entwurf",
+    "sent": "Gesendet",
+    "accepted": "Akzeptiert",
+    "declined": "Abgelehnt",
+    "new": "Neu",
+    "contractSent": "Vertrag gesendet",
+    "contractFullySigned": "Vertrag vollständig unterzeichnet",
+    "completed": "Abgeschlossen",
+    "changesRequested": "Änderungen angefordert",
+    "sentToBrand": "An die Marke gesendet",
+    "brandApproved": "Von der Marke genehmigt"
+  },
   "agencies": "Agenturen",
   "aboutUs": "Über uns",
   "contact": "Kontakt",
