@@ -3079,7 +3079,9 @@ export default function BrandCampaignDashboard({
                           </p>
                         ) : filteredConnectedAgencies.length === 0 ? (
                           <p className="text-sm text-gray-500">
-                            {t("campaignsDashboard.builder.noConnectedAgencies")}
+                            {t(
+                              "campaignsDashboard.builder.noConnectedAgencies",
+                            )}
                           </p>
                         ) : (
                           filteredConnectedAgencies.map((agency) => {
@@ -3186,7 +3188,9 @@ export default function BrandCampaignDashboard({
                           </p>
                         ) : marketplaceCreators.length === 0 ? (
                           <p className="text-sm text-gray-500">
-                            {t("campaignsDashboard.builder.noConnectedCreators")}
+                            {t(
+                              "campaignsDashboard.builder.noConnectedCreators",
+                            )}
                           </p>
                         ) : (
                           marketplaceCreators.map((creator) => {
@@ -3334,7 +3338,9 @@ export default function BrandCampaignDashboard({
                     <AlertDescription className="text-blue-900">
                       {campaignForm.collaborator_type === "agency"
                         ? t("campaignsDashboard.builder.summary.selectedAgency")
-                        : t("campaignsDashboard.builder.summary.selectedCreators")}
+                        : t(
+                            "campaignsDashboard.builder.summary.selectedCreators",
+                          )}
                     </AlertDescription>
                   </Alert>
 
@@ -3344,13 +3350,17 @@ export default function BrandCampaignDashboard({
                     </p>
                     <p className="font-semibold text-gray-900">
                       {campaignForm.name ||
-                        t("campaignsDashboard.builder.summary.untitledCampaign")}
+                        t(
+                          "campaignsDashboard.builder.summary.untitledCampaign",
+                        )}
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
                       <p>
                         {campaignForm.collaborator_type === "agency"
                           ? t("campaignsDashboard.builder.summary.agencyNames")
-                          : t("campaignsDashboard.builder.summary.creatorNames")}
+                          : t(
+                              "campaignsDashboard.builder.summary.creatorNames",
+                            )}
                         <span className="font-semibold text-gray-900">
                           {summaryCreatorNames}
                         </span>
@@ -3403,11 +3413,15 @@ export default function BrandCampaignDashboard({
 
                     <div className="pt-3 border-t border-gray-100 flex flex-col gap-1">
                       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        {t("campaignsDashboard.builder.summary.financialSummary")}
+                        {t(
+                          "campaignsDashboard.builder.summary.financialSummary",
+                        )}
                       </p>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-600">
-                          {t("campaignsDashboard.builder.summary.collaboratorPayoutNet")}
+                          {t(
+                            "campaignsDashboard.builder.summary.collaboratorPayoutNet",
+                          )}
                         </span>
                         <span className="font-semibold text-gray-900">
                           ${campaignBrief.budget_creator_payment || "0"}
@@ -3427,7 +3441,9 @@ export default function BrandCampaignDashboard({
                       </div>
                       <div className="flex justify-between items-center text-base pt-1 border-t border-dashed border-gray-200">
                         <span className="font-bold text-gray-900">
-                          {t("campaignsDashboard.builder.summary.totalBrandSpend")}
+                          {t(
+                            "campaignsDashboard.builder.summary.totalBrandSpend",
+                          )}
                         </span>
                         <span className="font-bold text-black">
                           ${campaignBrief.budget_total || "0"}
@@ -3439,7 +3455,9 @@ export default function BrandCampaignDashboard({
                   {campaignForm.collaborator_type === "agency" ? (
                     <div className="space-y-3">
                       <p className="text-sm font-medium text-gray-700">
-                        {t("campaignsDashboard.builder.summary.selectedAgencyLabel")}
+                        {t(
+                          "campaignsDashboard.builder.summary.selectedAgencyLabel",
+                        )}
                       </p>
                       <div className="border border-gray-200 rounded-none p-3 bg-white">
                         <p className="font-semibold text-gray-900">
@@ -3456,7 +3474,9 @@ export default function BrandCampaignDashboard({
                             return (
                               selectedAgency?.display_name ||
                               selectedAgency?.agency_name ||
-                              t("campaignsDashboard.builder.collaborators.agencyFallback")
+                              t(
+                                "campaignsDashboard.builder.collaborators.agencyFallback",
+                              )
                             );
                           })()}
                         </p>
@@ -3562,14 +3582,16 @@ export default function BrandCampaignDashboard({
                   <div className="space-y-6">
                     <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
                       <AlertCircle className="h-5 w-5 text-blue-700" />
-                    <AlertDescription className="text-blue-900">
+                      <AlertDescription className="text-blue-900">
                         {t("campaignsDashboard.builder.contractUploadHelp")}
-                    </AlertDescription>
+                      </AlertDescription>
                     </Alert>
                     <div className="border-2 border-gray-200 rounded-none p-4 space-y-4">
                       <div>
                         <label className="text-sm font-medium text-gray-700 block mb-2">
-                          {t("campaignsDashboard.builder.fields.uploadContractPdf")}
+                          {t(
+                            "campaignsDashboard.builder.fields.uploadContractPdf",
+                          )}
                         </label>
                         <div className="flex flex-wrap items-center gap-3">
                           <input
