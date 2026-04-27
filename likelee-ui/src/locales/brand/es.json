@@ -52,13 +52,25 @@
       "engineActive": "Motor de IA Activo",
       "addCredits": "Agregar Créditos",
       "configuration": "Configuración",
-      "status": "Estado"
+      "status": "Estado",
+      "ui": {
+        "readyToCreate": "Listo para crear",
+        "readyToCreateHint": "Configura los parámetros y haz clic en \"Generar video\" para comenzar."
+      }
     },
     "image": {
       "backToStudio": "Estudio",
       "title": "Generador de Imágenes IA",
       "subtitle": "Estudio Premium",
-      "topUp": "Recargar"
+      "topUp": "Recargar",
+      "ui": {
+        "settings": "Configuración",
+        "intelligence": "Inteligencia",
+        "visualPrompt": "Prompt visual",
+        "visualPromptPlaceholder": "Paisaje surrealista con islas flotantes...",
+        "canvasSize": "Tamaño del lienzo",
+        "batchCount": "Cantidad"
+      }
     },
     "landing": {
       "nav": {
@@ -99,7 +111,13 @@
         "footnote": "Agregamos nuevos modelos constantemente. Tu suscripción incluye acceso a todos."
       },
       "pricing": {
+        "title": "Planes mensuales simples",
+        "subtitle": "Accede a la generación de imágenes y videos con IA.",
         "subscribeNow": "Suscribirse ahora"
+      },
+      "examples": {
+        "title": "Lo que la gente está creando",
+        "subtitle": "Creado con herramientas y modelos de Likelee Studio."
       },
       "faq": {
         "title": "Preguntas frecuentes",
@@ -146,6 +164,43 @@
       "usageRights": "Derechos de Uso",
       "billing": "Facturación",
       "settings": "Configuración"
+    },
+    "licensingRequest": {
+      "title": "Solicitar licencia",
+      "subtitle": "Envía una solicitud de licencia para {{talentName}}.",
+      "subtitleGeneric": "Envía una solicitud de licencia.",
+      "startDate": "Fecha de inicio",
+      "duration": "Duración (días)",
+      "licenseFee": "Tarifa de licencia",
+      "licenseFeePlaceholder": "p. ej. 5000",
+      "category": "Categoría",
+      "selectCategory": "Seleccionar categoría",
+      "categories": {
+        "socialMedia": "Redes sociales",
+        "ecommerce": "Comercio electrónico",
+        "advertising": "Publicidad",
+        "editorial": "Editorial",
+        "filmTv": "Cine y TV",
+        "custom": "Personalizado"
+      },
+      "territory": "Territorio",
+      "territoryPlaceholder": "Global",
+      "exclusivity": "Exclusividad",
+      "selectExclusivity": "Seleccionar exclusividad",
+      "exclusivityOptions": {
+        "nonExclusive": "No exclusiva",
+        "categoryExclusive": "Exclusiva por categoría",
+        "fullExclusivity": "Exclusividad total"
+      },
+      "modificationsAllowed": "Modificaciones permitidas",
+      "modificationsPlaceholder": "p. ej. Se permiten ediciones ligeras",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Agrega una breve descripción para esta solicitud de licencia",
+      "additionalCustomTerms": "Términos personalizados adicionales",
+      "customTermsPlaceholder": "Agrega cualquier término de licencia personalizado…",
+      "cancel": "Cancelar",
+      "creating": "Creando…",
+      "createRequest": "Crear solicitud de licencia"
     },
     "time": {
       "justNow": "Justo ahora",
@@ -252,6 +307,7 @@
       "stats": {
         "activeLicenses": "Licencias activas",
         "expiring30d": "Vencen (30 d)",
+        "expiring15d": "Vencen (15 d)",
         "renewSoon": "Renovar pronto",
         "royaltiesPaid": "Regalías pagadas",
         "violations": "Infracciones",
@@ -272,6 +328,28 @@
       "expiring": {
         "title": "Calendario de vencimiento de licencias",
         "empty": "No hay licencias próximas a vencer en este momento."
+      },
+      "badges": {
+        "expired": "Vencido",
+        "expiringSoon": "Vence pronto",
+        "active": "Activo"
+      },
+      "licenseTable": {
+        "titleExpiring": "Licencias que vencen pronto",
+        "titleActive": "Licencias activas",
+        "loading": "Cargando licencias...",
+        "emptyExpiringTitle": "No hay licencias que venzan en los próximos 15 días",
+        "emptyActiveTitle": "Aún no hay licencias activas",
+        "emptySubtitle": "Las licencias aparecen aquí cuando las solicitudes son aprobadas.",
+        "headers": {
+          "creatorTalent": "Creador / Talento",
+          "campaign": "Campaña",
+          "territory": "Territorio",
+          "usageScope": "Ámbito de uso",
+          "duration": "Duración",
+          "expires": "Vence",
+          "status": "Estado"
+        }
       },
       "compliance": {
         "title": "Herramienta de verificación de marca de agua",
@@ -814,8 +892,32 @@
       "title": "Hub de Contratos",
       "subtitle": "Gestiona y rastrea todos los contratos",
       "campaignContractsStatus": "Contratos de campaña y estado de firma.",
+      "searchPlaceholder": "Buscar por creador, agencia o título…",
+      "sort": {
+        "newestFirst": "Más recientes",
+        "oldestFirst": "Más antiguos"
+      },
+      "targetType": {
+        "agency": "Agencia",
+        "creator": "Creador"
+      },
+      "meta": {
+        "sent": "Enviado",
+        "budget": "Presupuesto"
+      },
+      "backToHub": "Volver al Hub de Contratos",
+      "contractDetails": "Detalles del contrato",
+      "projectOverview": "Resumen del proyecto",
+      "fields": {
+        "project": "Proyecto",
+        "creator": "Creador",
+        "agency": "Agencia",
+        "status": "Estado"
+      },
       "tabs": {
         "active": "Activo",
+        "pendingSignature": "Firma pendiente",
+        "allContracts": "Todos los contratos",
         "pending": "Pendiente",
         "completed": "Completado"
       },
@@ -847,7 +949,11 @@
       "actions": {
         "resend": "Reenviar",
         "archive": "Archivar",
-        "download": "Descargar"
+        "download": "Descargar",
+        "downloadPdf": "Descargar PDF",
+        "downloadWord": "Descargar Word",
+        "email": "Correo",
+        "print": "Imprimir"
       },
       "status": {
         "sent": "Enviado",
@@ -863,7 +969,7 @@
         "paymentReleased": "Pago liberado del depósito en garantía",
         "contractCreatedAndSent": "Contrato creado y enviado a {{creatorName}}"
       },
-      "noContractSubmissions": "No contract submissions yet"
+      "noContractSubmissions": "Aún no hay envíos de contratos."
     },
     "deliverables": {
       "title": "Entregables",

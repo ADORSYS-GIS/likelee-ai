@@ -47,6 +47,43 @@
       "billing": "Abrechnung",
       "settings": "Einstellungen"
     },
+    "licensingRequest": {
+      "title": "Lizenz anfragen",
+      "subtitle": "Sende eine Lizenzanfrage für {{talentName}}.",
+      "subtitleGeneric": "Sende eine Lizenzanfrage.",
+      "startDate": "Startdatum",
+      "duration": "Dauer (Tage)",
+      "licenseFee": "Lizenzgebühr",
+      "licenseFeePlaceholder": "z. B. 5000",
+      "category": "Kategorie",
+      "selectCategory": "Kategorie auswählen",
+      "categories": {
+        "socialMedia": "Soziale Medien",
+        "ecommerce": "E-Commerce",
+        "advertising": "Werbung",
+        "editorial": "Editorial",
+        "filmTv": "Film & TV",
+        "custom": "Benutzerdefiniert"
+      },
+      "territory": "Territorium",
+      "territoryPlaceholder": "Global",
+      "exclusivity": "Exklusivität",
+      "selectExclusivity": "Exklusivität auswählen",
+      "exclusivityOptions": {
+        "nonExclusive": "Nicht exklusiv",
+        "categoryExclusive": "Kategorie-exklusiv",
+        "fullExclusivity": "Voll exklusiv"
+      },
+      "modificationsAllowed": "Änderungen erlaubt",
+      "modificationsPlaceholder": "z. B. leichte Bearbeitungen erlaubt",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Füge eine kurze Beschreibung für diese Lizenzanfrage hinzu",
+      "additionalCustomTerms": "Zusätzliche individuelle Bedingungen",
+      "customTermsPlaceholder": "Füge individuelle Lizenzbedingungen hinzu…",
+      "cancel": "Abbrechen",
+      "creating": "Erstelle…",
+      "createRequest": "Lizenzanfrage erstellen"
+    },
     "time": {
       "justNow": "Gerade eben",
       "minuteAgo": "vor {{count}} Minute",
@@ -152,6 +189,7 @@
       "stats": {
         "activeLicenses": "Aktive Lizenzen",
         "expiring30d": "Ablauf (30 T.)",
+        "expiring15d": "Ablauf (15 T.)",
         "renewSoon": "Bald erneuern",
         "royaltiesPaid": "Gezahlte Lizenzgebühren",
         "violations": "Verstöße",
@@ -172,6 +210,28 @@
       "expiring": {
         "title": "Kalender für Lizenzabläufe",
         "empty": "Derzeit laufen keine Lizenzen bald ab."
+      },
+      "badges": {
+        "expired": "Abgelaufen",
+        "expiringSoon": "Läuft bald ab",
+        "active": "Aktiv"
+      },
+      "licenseTable": {
+        "titleExpiring": "Bald ablaufende Lizenzen",
+        "titleActive": "Aktive Lizenzen",
+        "loading": "Lizenzen werden geladen...",
+        "emptyExpiringTitle": "Keine Lizenzen laufen in den nächsten 15 Tagen ab",
+        "emptyActiveTitle": "Noch keine aktiven Lizenzen",
+        "emptySubtitle": "Lizenzen erscheinen hier, sobald Anfragen genehmigt wurden.",
+        "headers": {
+          "creatorTalent": "Creator / Talent",
+          "campaign": "Kampagne",
+          "territory": "Gebiet",
+          "usageScope": "Nutzungsumfang",
+          "duration": "Dauer",
+          "expires": "Läuft ab",
+          "status": "Status"
+        }
       },
       "compliance": {
         "title": "Tool zur Wasserzeichen-Prüfung",
@@ -714,8 +774,32 @@
       "title": "Vertrags-Hub",
       "subtitle": "Verwalten und verfolgen Sie alle Verträge",
       "campaignContractsStatus": "Kampagnenverträge und Unterzeichnungsstatus.",
+      "searchPlaceholder": "Suche nach Creator, Agentur oder Titel…",
+      "sort": {
+        "newestFirst": "Neueste zuerst",
+        "oldestFirst": "Älteste zuerst"
+      },
+      "targetType": {
+        "agency": "Agentur",
+        "creator": "Creator"
+      },
+      "meta": {
+        "sent": "Gesendet",
+        "budget": "Budget"
+      },
+      "backToHub": "Zurück zum Vertrags-Hub",
+      "contractDetails": "Vertragsdetails",
+      "projectOverview": "Projektübersicht",
+      "fields": {
+        "project": "Projekt",
+        "creator": "Creator",
+        "agency": "Agentur",
+        "status": "Status"
+      },
       "tabs": {
         "active": "Aktiv",
+        "pendingSignature": "Unterschrift ausstehend",
+        "allContracts": "Alle Verträge",
         "pending": "Ausstehend",
         "completed": "Abgeschlossen"
       },
@@ -747,7 +831,11 @@
       "actions": {
         "resend": "Erneut senden",
         "archive": "Archivieren",
-        "download": "Herunterladen"
+        "download": "Herunterladen",
+        "downloadPdf": "PDF herunterladen",
+        "downloadWord": "Word herunterladen",
+        "email": "E-Mail",
+        "print": "Drucken"
       },
       "status": {
         "sent": "Gesendet",
@@ -763,7 +851,7 @@
         "paymentReleased": "Zahlung aus dem Treuhandkonto freigegeben",
         "contractCreatedAndSent": "Vertrag erstellt und an {{creatorName}} gesendet"
       },
-      "noContractSubmissions": "No contract submissions yet"
+      "noContractSubmissions": "Noch keine Vertragseinreichungen."
     },
     "deliverables": {
       "title": "Deliverables",
@@ -1123,13 +1211,25 @@
       "engineActive": "KI-Engine Aktiv",
       "addCredits": "Credits Hinzufügen",
       "configuration": "Konfiguration",
-      "status": "Status"
+      "status": "Status",
+      "ui": {
+        "readyToCreate": "Bereit zum Erstellen",
+        "readyToCreateHint": "Parameter einstellen und auf \"Video generieren\" klicken, um zu starten."
+      }
     },
     "image": {
       "backToStudio": "Studio",
       "title": "KI-Bildgenerator",
       "subtitle": "Premium Studio",
-      "topUp": "Aufladen"
+      "topUp": "Aufladen",
+      "ui": {
+        "settings": "Einstellungen",
+        "intelligence": "Intelligenz",
+        "visualPrompt": "Visueller Prompt",
+        "visualPromptPlaceholder": "Surreale Landschaft mit schwebenden Inseln...",
+        "canvasSize": "Leinwandgröße",
+        "batchCount": "Anzahl"
+      }
     },
     "landing": {
       "nav": {
@@ -1170,7 +1270,13 @@
         "footnote": "Wir fügen ständig neue Modelle hinzu. Dein Abo enthält Zugriff auf alle."
       },
       "pricing": {
+        "title": "Einfache Monatspläne",
+        "subtitle": "Unbegrenzter Zugriff auf KI-Bild- und Videogenerierung.",
         "subscribeNow": "Jetzt abonnieren"
+      },
+      "examples": {
+        "title": "Was andere erstellen",
+        "subtitle": "Erstellt mit Likelee Studio Tools und Modellen."
       },
       "faq": {
         "title": "Häufige Fragen",

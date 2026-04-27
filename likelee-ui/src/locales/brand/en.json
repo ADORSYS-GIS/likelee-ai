@@ -52,13 +52,25 @@
       "engineActive": "AI Engine Active",
       "addCredits": "Add Credits",
       "configuration": "Configuration",
-      "status": "Status"
+      "status": "Status",
+      "ui": {
+        "readyToCreate": "Ready to Create",
+        "readyToCreateHint": "Configure parameters and click \"Generate Video\" to start."
+      }
     },
     "image": {
       "backToStudio": "Studio",
       "title": "AI Image Generator",
       "subtitle": "Premium Studio",
-      "topUp": "Top Up"
+      "topUp": "Top Up",
+      "ui": {
+        "settings": "Settings",
+        "intelligence": "Intelligence",
+        "visualPrompt": "Visual Prompt",
+        "visualPromptPlaceholder": "Surreal landscape with floating islands...",
+        "canvasSize": "Canvas Size",
+        "batchCount": "Batch Count"
+      }
     },
     "landing": {
       "nav": {
@@ -99,7 +111,13 @@
         "footnote": "We constantly add new models. Your subscription includes access to all."
       },
       "pricing": {
+        "title": "Simple Monthly Plans",
+        "subtitle": "Get unlimited access to AI image and video generation.",
         "subscribeNow": "Subscribe Now"
+      },
+      "examples": {
+        "title": "What people are making",
+        "subtitle": "Created using Likelee Studio tools and models."
       },
       "faq": {
         "title": "Frequently Asked Questions",
@@ -309,6 +327,28 @@
       "expiring": {
         "title": "License Expiration Calendar",
         "empty": "No expiring licenses at this time."
+      },
+      "badges": {
+        "expired": "Expired",
+        "expiringSoon": "Expiring soon",
+        "active": "Active"
+      },
+      "licenseTable": {
+        "titleExpiring": "Expiring Licenses",
+        "titleActive": "Active Licenses",
+        "loading": "Loading licenses...",
+        "emptyExpiringTitle": "No licenses expiring in the next 15 days",
+        "emptyActiveTitle": "No active licenses yet",
+        "emptySubtitle": "Licenses appear here once licensing requests are approved.",
+        "headers": {
+          "creatorTalent": "Creator / Talent",
+          "campaign": "Campaign",
+          "territory": "Territory",
+          "usageScope": "Usage Scope",
+          "duration": "Duration",
+          "expires": "Expires",
+          "status": "Status"
+        }
       },
       "compliance": {
         "title": "Watermark Verification Tool",
@@ -853,8 +893,32 @@
       "subtitle": "Manage and track all contracts",
       "campaignContractsStatus": "Campaign contracts and signing status.",
       "noContractSubmissions": "No contract submissions yet.",
+      "searchPlaceholder": "Search by creator, agency, or title…",
+      "sort": {
+        "newestFirst": "Newest first",
+        "oldestFirst": "Oldest first"
+      },
+      "targetType": {
+        "agency": "Agency",
+        "creator": "Creator"
+      },
+      "meta": {
+        "sent": "Sent",
+        "budget": "Budget"
+      },
+      "backToHub": "Back to Contract Hub",
+      "contractDetails": "Contract Details",
+      "projectOverview": "Project Overview",
+      "fields": {
+        "project": "Project",
+        "creator": "Creator",
+        "agency": "Agency",
+        "status": "Status"
+      },
       "tabs": {
         "active": "Active",
+        "pendingSignature": "Pending Signature",
+        "allContracts": "All Contracts",
         "pending": "Pending",
         "completed": "Completed"
       },
@@ -886,7 +950,11 @@
       "actions": {
         "resend": "Resend",
         "archive": "Archive",
-        "download": "Download"
+        "download": "Download",
+        "downloadPdf": "Download PDF",
+        "downloadWord": "Download Word",
+        "email": "Email",
+        "print": "Print"
       },
       "status": {
         "sent": "Sent",
