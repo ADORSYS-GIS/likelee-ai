@@ -77,6 +77,7 @@ interface PerformanceTiersResponse {
 export const TalentCommissionSettings: React.FC<{
   entitySingularLower: string;
 }> = ({ entitySingularLower }) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [draftRates, setDraftRates] = useState<Record<string, string>>({});
@@ -130,7 +131,6 @@ export const TalentCommissionSettings: React.FC<{
   }, [allTalents, searchTerm]);
 
   const handleRateChange = (talentId: string, value: string) => {
-    const { t } = useTranslation();
     setDraftRates((prev) => ({ ...prev, [talentId]: value }));
   };
 
@@ -158,7 +158,9 @@ export const TalentCommissionSettings: React.FC<{
       <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
         <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
         <p className="text-sm font-bold text-gray-500">
-          Loading roster data...
+          {t("agencyDashboard.payouts.commissionStructure.loadingRoster", {
+            defaultValue: "Loading roster data...",
+          })}
         </p>
       </div>
     );
@@ -169,7 +171,9 @@ export const TalentCommissionSettings: React.FC<{
       <div className="flex flex-col items-center justify-center py-20 bg-red-50/50 rounded-2xl border border-dashed border-red-200">
         <AlertCircle className="w-8 h-8 text-red-500 mb-4" />
         <p className="text-sm font-bold text-red-600">
-          Failed to load roster data
+          {t("agencyDashboard.payouts.commissionStructure.loadFailed", {
+            defaultValue: "Failed to load roster data",
+          })}
         </p>
         <Button
           variant="ghost"
@@ -178,7 +182,9 @@ export const TalentCommissionSettings: React.FC<{
           }
           className="mt-4 text-red-700 hover:bg-red-100 font-bold"
         >
-          Try Again
+          {t("agencyDashboard.payouts.commissionStructure.tryAgain", {
+            defaultValue: "Try Again",
+          })}
         </Button>
       </div>
     );
@@ -192,14 +198,21 @@ export const TalentCommissionSettings: React.FC<{
         </div>
         <div>
           <h4 className="text-sm font-bold text-blue-900 leading-tight">
-            Connection Required
+            {t(
+              "agencyDashboard.payouts.commissionStructure.connectionRequired",
+              {
+                defaultValue: "Connection Required",
+              },
+            )}
           </h4>
           <p className="text-xs text-blue-700/80 font-medium mt-0.5 leading-relaxed">
-            Only talents with an active creator account are listed here. To
-            manage commissions for pending or uninvited roster members, please
-            ensure they have accepted their invitation to the talent portal.
-            Marketplace-connected creator accounts are shown as contract
-            controlled once their signed agreement becomes active.
+            {t(
+              "agencyDashboard.payouts.commissionStructure.connectionRequiredDescription",
+              {
+                defaultValue:
+                  "Only talents with an active creator account are listed here. To manage commissions for pending or uninvited roster members, please ensure they have accepted their invitation to the talent portal. Marketplace-connected creator accounts are shown as contract controlled once their signed agreement becomes active.",
+              },
+            )}
           </p>
         </div>
       </div>
@@ -209,7 +222,13 @@ export const TalentCommissionSettings: React.FC<{
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder={`Search ${entitySingularLower} by name...`}
+              placeholder={t(
+                "agencyDashboard.payouts.commissionStructure.searchTalentByName",
+                {
+                  defaultValue: `Search ${entitySingularLower} by name...`,
+                  entity: entitySingularLower,
+                },
+              )}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/10"
@@ -218,15 +237,21 @@ export const TalentCommissionSettings: React.FC<{
           <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-gray-500">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              Contract Locked
+              {t("agencyDashboard.payouts.commissionStructure.contractLocked", {
+                defaultValue: "Contract Locked",
+              })}
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-indigo-500" />
-              Custom Override
+              {t("agencyDashboard.payouts.commissionStructure.customOverride", {
+                defaultValue: "Custom Override",
+              })}
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-gray-300" />
-              Tier Default
+              {t("agencyDashboard.payouts.commissionStructure.tierDefault", {
+                defaultValue: "Tier Default",
+              })}
             </div>
           </div>
         </div>
@@ -240,7 +265,9 @@ export const TalentCommissionSettings: React.FC<{
                 {entitySingularLower}
               </th>
               <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">
-                Current Tier
+                {t("agencyDashboard.payouts.commissionStructure.currentTier", {
+                  defaultValue: "Current Tier",
+                })}
               </th>
               <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">
                 Commission Source
@@ -249,7 +276,9 @@ export const TalentCommissionSettings: React.FC<{
                 Effective Rate
               </th>
               <th className="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">
-                Settings Rate (%)
+                {t("agencyDashboard.payouts.commissionStructure.settingsRate", {
+                  defaultValue: "Settings Rate (%)",
+                })}
               </th>
             </tr>
           </thead>
@@ -270,14 +299,39 @@ export const TalentCommissionSettings: React.FC<{
                     ? "bg-indigo-50 text-indigo-600 border-indigo-100"
                     : "bg-gray-50 text-gray-500 border-gray-100";
                 const sourceBadgeLabel = isContractControlled
-                  ? "Contract Controlled"
+                  ? t(
+                      "agencyDashboard.payouts.commissionStructure.contractControlled",
+                      {
+                        defaultValue: "Contract Controlled",
+                      },
+                    )
                   : talent.is_custom_rate
-                    ? "Custom Override"
-                    : "Tier Default";
+                    ? t(
+                        "agencyDashboard.payouts.commissionStructure.customOverride",
+                        {
+                          defaultValue: "Custom Override",
+                        },
+                      )
+                    : t(
+                        "agencyDashboard.payouts.commissionStructure.tierDefault",
+                        {
+                          defaultValue: "Tier Default",
+                        },
+                      );
                 const relationshipLabel =
                   talent.relationship_type === "marketplace_connected"
-                    ? "Marketplace Connected"
-                    : "Agency Managed";
+                    ? t(
+                        "agencyDashboard.payouts.commissionStructure.marketplaceConnected",
+                        {
+                          defaultValue: "Marketplace Connected",
+                        },
+                      )
+                    : t(
+                        "agencyDashboard.payouts.commissionStructure.agencyManaged",
+                        {
+                          defaultValue: "Agency Managed",
+                        },
+                      );
                 const relationshipBadgeClass =
                   talent.relationship_type === "marketplace_connected"
                     ? "bg-cyan-50 text-cyan-700 border-cyan-100"
@@ -361,7 +415,12 @@ export const TalentCommissionSettings: React.FC<{
                           </span>
                         </div>
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-1">
-                          Agency Share
+                          {t(
+                            "agencyDashboard.payouts.commissionBreakdown.agencyShare",
+                            {
+                              defaultValue: "Agency Share",
+                            },
+                          )}
                         </p>
                       </div>
                     </td>
@@ -413,7 +472,12 @@ export const TalentCommissionSettings: React.FC<{
                             variant="outline"
                             className="border-emerald-200 bg-emerald-50 text-emerald-700 text-[10px] font-bold"
                           >
-                            Locked
+                            {t(
+                              "agencyDashboard.payouts.commissionStructure.locked",
+                              {
+                                defaultValue: "Locked",
+                              },
+                            )}
                           </Badge>
                         )}
 
@@ -431,7 +495,10 @@ export const TalentCommissionSettings: React.FC<{
                                 });
                               }}
                               className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-                              title="Discard change"
+                              title={t(
+                                "agencyDashboard.payouts.commissionStructure.discardChange",
+                                { defaultValue: "Discard change" },
+                              )}
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -443,7 +510,10 @@ export const TalentCommissionSettings: React.FC<{
                             size="icon"
                             variant="ghost"
                             onClick={() => resetRate(creatorId)}
-                            title="Reset to tier default"
+                            title={t(
+                              "agencyDashboard.payouts.commissionStructure.resetToTierDefault",
+                              { defaultValue: "Reset to tier default" },
+                            )}
                             className="w-8 h-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Undo2 className="w-4 h-4" />
@@ -465,8 +535,19 @@ export const TalentCommissionSettings: React.FC<{
                     </div>
                     <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
                       {searchTerm
-                        ? "No results found"
-                        : `No ${entitySingularLower} found`}
+                        ? t(
+                            "agencyDashboard.payouts.commissionStructure.noResultsFound",
+                            {
+                              defaultValue: "No results found",
+                            },
+                          )
+                        : t(
+                            "agencyDashboard.payouts.commissionStructure.noEntityFound",
+                            {
+                              defaultValue: `No ${entitySingularLower} found`,
+                              entity: entitySingularLower,
+                            },
+                          )}
                     </p>
                   </div>
                 </td>
@@ -483,17 +564,33 @@ export const TalentCommissionSettings: React.FC<{
           </div>
           <div>
             <h4 className="text-sm font-bold text-gray-900 mb-1">
-              Commission Model
+              {t(
+                "agencyDashboard.payouts.commissionStructure.commissionModel",
+                {
+                  defaultValue: "Commission Model",
+                },
+              )}
             </h4>
             <p className="text-xs text-indigo-700/80 font-medium leading-relaxed max-w-2xl">
-              Commission rates represent the{" "}
+              {t(
+                "agencyDashboard.payouts.commissionStructure.modelDescriptionPrefix",
+                {
+                  defaultValue: "Commission rates represent the",
+                },
+              )}{" "}
               <span className="font-bold underline decoration-indigo-300">
-                agency's share
+                {t("agencyDashboard.payouts.commissionBreakdown.agencyShare", {
+                  defaultValue: "agency's share",
+                })}
               </span>
-              . Agency-managed {entitySingularLower} accounts can be adjusted
-              here with settings overrides, while marketplace-connected{" "}
-              {entitySingularLower} accounts follow the active signed contract
-              rate and stay locked on this screen.
+              {t(
+                "agencyDashboard.payouts.commissionStructure.modelDescriptionBody",
+                {
+                  defaultValue:
+                    ". Agency-managed {{entity}} accounts can be adjusted here with settings overrides, while marketplace-connected {{entity}} accounts follow the active signed contract rate and stay locked on this screen.",
+                  entity: entitySingularLower,
+                },
+              )}
             </p>
           </div>
         </div>
@@ -505,7 +602,9 @@ export const TalentCommissionSettings: React.FC<{
               onClick={() => setDraftRates({})}
               className="h-12 px-6 rounded-xl font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all border border-gray-200 bg-white"
             >
-              Discard All
+              {t("agencyDashboard.payouts.commissionStructure.discardAll", {
+                defaultValue: "Discard All",
+              })}
             </Button>
           )}
 
@@ -524,12 +623,16 @@ export const TalentCommissionSettings: React.FC<{
             {updateMutation.isPending ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                Saving...
+                {t("agencyDashboard.payouts.commissionStructure.saving", {
+                  defaultValue: "Saving...",
+                })}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes{" "}
+                {t("agencyDashboard.payouts.commissionStructure.saveChanges", {
+                  defaultValue: "Save Changes",
+                })}{" "}
                 {Object.keys(draftRates).length > 0 &&
                   `(${Object.keys(draftRates).length})`}
               </>

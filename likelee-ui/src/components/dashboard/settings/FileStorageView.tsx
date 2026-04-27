@@ -965,7 +965,21 @@ const ShareFileModal = ({
 };
 
 const FileStorageView = () => {
-  const { t } = useTranslation();
+  const { t: rawT } = useTranslation();
+  const t = (key: string, options?: Record<string, any>) => {
+    if (!key.startsWith("agencyDashboard.settings.fileStorage.")) {
+      return rawT(key, options);
+    }
+    const suffix = key.replace("agencyDashboard.settings.fileStorage.", "");
+    const fallback = rawT(
+      `agencyDashboard.analytics.settings.fileStorage.${suffix}`,
+      options,
+    );
+    return rawT(key, {
+      ...(options || {}),
+      defaultValue: fallback,
+    });
+  };
   const { toast } = useToast();
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");

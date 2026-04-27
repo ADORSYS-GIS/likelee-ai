@@ -14137,7 +14137,9 @@ const ProtectionUsageView = () => {
                   : "border-transparent text-gray-500 hover:text-gray-900"
               }`}
             >
-              {tab}
+              {t(`agencyDashboard.payouts.tabs.${tab}`, {
+                defaultValue: tab,
+              })}
             </button>
           ))}
         </div>
@@ -16919,33 +16921,22 @@ const RoyaltiesPayoutsView = ({
   const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
-  const commissionStructureTab = t(
-    "agencyDashboard.payouts.tabs.commissionStructure",
-    {
-      defaultValue: "Commission Structure",
-    },
-  );
-  const payoutPreferencesTab = t(
-    "agencyDashboard.payouts.tabs.payoutPreferences",
-    {
-      defaultValue: "Payout Preferences",
-    },
-  );
-  const commissionBreakdownTab = t(
-    "agencyDashboard.payouts.tabs.commissionBreakdown",
-    {
-      defaultValue: "Commission Breakdown",
-    },
-  );
-  const paymentHistoryTab = t("agencyDashboard.payouts.tabs.paymentHistory", {
-    defaultValue: "Payment History",
-  });
-  const [activeTab, setActiveTab] = useState(commissionStructureTab);
-  const subTabs = [
-    commissionStructureTab,
-    payoutPreferencesTab,
-    commissionBreakdownTab,
-    paymentHistoryTab,
+  const [activeTab, setActiveTab] = useState<
+    | "commissionStructure"
+    | "payoutPreferences"
+    | "commissionBreakdown"
+    | "paymentHistory"
+  >("commissionStructure");
+  const subTabs: Array<
+    | "commissionStructure"
+    | "payoutPreferences"
+    | "commissionBreakdown"
+    | "paymentHistory"
+  > = [
+    "commissionStructure",
+    "payoutPreferences",
+    "commissionBreakdown",
+    "paymentHistory",
   ];
 
   const queryClient = useQueryClient();
@@ -16964,7 +16955,7 @@ const RoyaltiesPayoutsView = ({
     queryFn: async () => {
       return await base44.get<any[]>("/api/agency/payout-schedule/upcoming");
     },
-    enabled: activeTab === payoutPreferencesTab,
+    enabled: activeTab === "payoutPreferences",
   });
 
   const updatePayoutSettingsMutation = useMutation({
@@ -16994,7 +16985,7 @@ const RoyaltiesPayoutsView = ({
       );
       return resp;
     },
-    enabled: activeTab === commissionBreakdownTab,
+    enabled: activeTab === "commissionBreakdown",
   });
 
   const { data: paymentHistoryTopEarners } = useQuery({
@@ -17005,7 +16996,7 @@ const RoyaltiesPayoutsView = ({
       );
       return resp;
     },
-    enabled: activeTab === paymentHistoryTab,
+    enabled: activeTab === "paymentHistory",
   });
 
   // Fetch Royalties & Payouts Summary Metrics
@@ -17175,11 +17166,12 @@ const RoyaltiesPayoutsView = ({
         </div>
       </div>
 
-      {activeTab === commissionStructureTab && (
+      {activeTab === "commissionStructure" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <div className="mb-4">
             <h3 className="text-lg font-bold text-gray-900 mb-1 tracking-tight">
               {t("agencyDashboard.payouts.commissionStructure.title", {
+                entitySingular: entitySingularTitle,
                 defaultValue: `${entitySingularTitle} Commission Rules`,
               })}
             </h3>
@@ -17281,7 +17273,7 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === paymentHistoryTab && (
+      {activeTab === "paymentHistory" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 border-b border-gray-100">
@@ -17368,7 +17360,7 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === payoutPreferencesTab && (
+      {activeTab === "payoutPreferences" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
             <h3 className="text-lg font-bold text-gray-900 mb-6">
@@ -17520,10 +17512,34 @@ const RoyaltiesPayoutsView = ({
                 <ul className="text-sm text-blue-800 space-y-1">
                   {(
                     payoutSettings?.how_it_works_json || [
-                      "1. Brand pays license fee to agency Stripe account",
-                      "2. Agency commission (14%) auto-deducted",
-                      "3. Net amount transferred to talent's connected account",
-                      "4. Automatic payout on schedule (monthly)",
+                      t(
+                        "agencyDashboard.payouts.payoutPreferences.howItWorksStep1",
+                        {
+                          defaultValue:
+                            "1. Brand pays license fee to agency Stripe account",
+                        },
+                      ),
+                      t(
+                        "agencyDashboard.payouts.payoutPreferences.howItWorksStep2",
+                        {
+                          defaultValue:
+                            "2. Agency commission (14%) auto-deducted",
+                        },
+                      ),
+                      t(
+                        "agencyDashboard.payouts.payoutPreferences.howItWorksStep3",
+                        {
+                          defaultValue:
+                            "3. Net amount transferred to talent's connected account",
+                        },
+                      ),
+                      t(
+                        "agencyDashboard.payouts.payoutPreferences.howItWorksStep4",
+                        {
+                          defaultValue:
+                            "4. Automatic payout on schedule (monthly)",
+                        },
+                      ),
                     ]
                   ).map((step: string, idx: number) => (
                     <li key={idx}>
@@ -17563,7 +17579,16 @@ const RoyaltiesPayoutsView = ({
                             {format(new Date(item.date), "MMM d, yyyy")}
                           </h4>
                           <p className="text-xs text-gray-500">
-                            {item.description ||
+                            {(item.description ===
+                            "Next payout date not reached"
+                              ? t(
+                                  "agencyDashboard.payouts.payoutPreferences.nextPayoutDateNotReached",
+                                  {
+                                    defaultValue:
+                                      "Next payout date not reached",
+                                  },
+                                )
+                              : item.description) ||
                               t(
                                 "agencyDashboard.payouts.payoutPreferences.scheduledPayout",
                                 {
@@ -17619,7 +17644,7 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === commissionBreakdownTab && (
+      {activeTab === "commissionBreakdown" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
           <div className="mb-0">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
