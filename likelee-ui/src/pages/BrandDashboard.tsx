@@ -7877,24 +7877,6 @@ export default function BrandDashboard() {
         <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
           <p className="text-gray-500">{t("assetLibrary.emptyState")}</p>
         </Card>
-      </div>
-
-      {/* Organization Features */}
-      <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          {t("assetLibrary.collections")}
-        </h3>
-        <div className="flex gap-3">
-          <Button variant="outline" className="border-2 border-gray-300">
-            <Plus className="w-4 h-4 mr-2" />
-            {t("assetLibrary.actions.createCollection")}
-          </Button>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 cursor-pointer hover:bg-gray-200">
-            Holiday 2024 (12 assets)
-          </Badge>
-          <Badge className="bg-gray-100 text-gray-700 border border-gray-300 px-4 py-2 cursor-pointer hover:bg-gray-200">
-            Evergreen (5 assets)
-          </Badge>
       ) : viewMode === "grid" ? (
         <div className="grid md:grid-cols-3 gap-6">
           {displayedAssets.map((asset) => (
