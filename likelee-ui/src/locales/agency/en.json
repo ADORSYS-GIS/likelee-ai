@@ -732,9 +732,14 @@
         "newCatalog": "New Catalog",
         "createCatalog": "Create Catalog",
         "copyLink": "Copy Link",
+        "edit": "Edit",
         "cancel": "Cancel",
         "delete": "Delete",
         "close": "Close"
+      },
+      "meta": {
+        "created": "Created",
+        "expires": "Expires"
       },
       "states": {
         "deleting": "Deleting…"
@@ -1169,9 +1174,26 @@
         "resendPaymentLink": "Resend payment link",
         "sending": "Sending...",
         "restore": "Restore",
+        "recoverToActive": "Recover to Active",
         "approve": "Approve",
+        "acceptWriteContract": "Accept & Write Contract",
         "counterOffer": "Counter Offer",
         "decline": "Decline"
+      },
+      "brandRequests": {
+        "unknownBrand": "Unknown brand",
+        "noDescription": "No description",
+        "licenseFee": "License fee",
+        "territory": "Territory",
+        "exclusivity": "Exclusivity",
+        "duration": "Duration",
+        "days": "days",
+        "timeline": "Timeline",
+        "from": "From",
+        "modificationsAllowed": "Modifications allowed",
+        "customTerms": "Custom terms",
+        "contractPhase": "Contract phase",
+        "declined": "Declined"
       }
     },
     "activeLicenses": {
@@ -1654,6 +1676,51 @@
         "loadingBrands": "Loading connected brands...",
         "loadBrandsFailed": "Failed to load connected brands.",
         "noBrands": "No connected brands yet.",
+        "ui": {
+          "verifyingAccess": "Verifying access…",
+          "accessRestricted": "Access restricted",
+          "permissionRequired": "Permission required",
+          "permissionDescription": "You don’t have the required permissions to view Brand Connections. Please contact your admin if you believe this is a mistake.",
+          "viewOnlyTitle": "View-only mode",
+          "viewOnlyDescription": "Your role allows viewing, but not managing brand connections.",
+          "subtitle": "Manage connected brands, requests, offers, contracts, and deliverables.",
+          "connected": "Connected",
+          "since": "Since {{date}}",
+          "loadingRequests": "Loading requests…",
+          "failedToLoadRequests": "Failed to load requests.",
+          "noPendingRequests": "No pending requests.",
+          "brandFallback": "Brand",
+          "pending": "Pending",
+          "requestedOn": "Requested on {{date}}",
+          "loadingOffers": "Loading offers…",
+          "noOffers": "No offers found.",
+          "offerNotFound": "Offer not found.",
+          "backToList": "Back to list",
+          "noEmailProvided": "No email provided",
+          "disconnectFromBrand": "Disconnect from brand",
+          "noDisconnectPermission": "You don’t have permission to disconnect brands.",
+          "working": "Working…",
+          "accept": "Accept",
+          "noAcceptRequestPermission": "You don’t have permission to accept requests.",
+          "decline": "Decline",
+          "noDeclineRequestPermission": "You don’t have permission to decline requests."
+        },
+        "toasts": {
+          "requestAccepted": "Request accepted",
+          "requestDeclined": "Request declined",
+          "requestApproved": "The brand has been notified.",
+          "requestDeclinedDesc": "The brand has been notified.",
+          "actionFailed": "Action failed",
+          "pleaseTryAgain": "Please try again.",
+          "pleaseTryAgainShort": "Please try again.",
+          "assignmentsLocked": "Assignments locked",
+          "assignmentsLockedDesc": "Assignments are locked after the contract is sent.",
+          "contractAlreadySigned": "This contract has already been signed.",
+          "cantUnassignAfterSent": "You can’t change assigned talents after the contract is sent.",
+          "disconnected": "Disconnected",
+          "disconnectedDesc": "Brand disconnected successfully.",
+          "disconnectFailed": "Failed to disconnect brand"
+        },
         "tabs": {
           "connections": "Connections",
           "noRequests": "No pending requests",
@@ -1678,7 +1745,20 @@
           "noContracts": "No contracts found",
           "viewContract": "View Contract",
           "download": "Download",
-          "sign": "Sign"
+          "sign": "Sign",
+          "submissions": "Submissions",
+          "newContract": "New contract",
+          "assignTalentBeforeContract": "Assign talent before creating a contract.",
+          "connectStripeBeforeSending": "Connect Stripe before sending contracts.",
+          "setupPayouts": "Set up payouts",
+          "noContractsForOffer": "No contracts for this offer yet.",
+          "createFirstContract": "Create first contract",
+          "uploadingPdf": "Uploading PDF…",
+          "creatingTemplate": "Creating template…",
+          "uploadContractPdf": "Upload contract PDF",
+          "uploadPdfDescription": "Upload a PDF to create a reusable contract template for this offer.",
+          "assignTalentFirst": "Assign talent first",
+          "assignTalentFirstDescription": "Assign at least one talent to this offer before creating a contract."
         },
         "feedback": {
           "title": "Client Feedback",
@@ -1723,19 +1803,57 @@
         },
         "fileStorage": {
           "title": "File Storage",
+          "subtitle": "Organize and manage your agency files",
+          "goToStudio": "Go to Studio",
+          "storageUsage": "Storage usage",
+          "ofUsed": "of {{total}} used",
+          "remaining": "remaining",
+          "billingSubscription": "Billing & subscription",
+          "searchPlaceholder": "Search files and folders",
+          "view": {
+            "grid": "Grid",
+            "list": "List"
+          },
           "search": "Search files and folders",
           "viewMode": {
             "grid": "Grid View",
             "list": "List View"
           },
           "actions": {
+            "back": "Back",
+            "all": "All",
             "newFolder": "New Folder",
+            "loadMoreFolders": "Load more folders",
+            "loadMoreFiles": "Load more files",
+            "uploadFiles": "Upload files",
             "upload": "Upload File",
+            "addFile": "Add file",
             "rename": "Rename",
             "delete": "Delete",
             "download": "Download",
             "share": "Share",
             "preview": "Preview"
+          },
+          "clickToCreate": "Click to create",
+          "clickToUpload": "Click to upload",
+          "loading": "Loading…",
+          "uploading": "Uploading…",
+          "uploadingShort": "Uploading",
+          "noMoreFolders": "No more folders",
+          "noMoreFiles": "No more files",
+          "fileCount": "{{count}} file",
+          "fileCount_other": "{{count}} files",
+          "deleteFile": {
+            "title": "Delete file",
+            "description": "Are you sure you want to delete this file?",
+            "cannotUndo": "This action cannot be undone.",
+            "confirm": "Delete file"
+          },
+          "deleteFolder": {
+            "title": "Delete folder",
+            "description": "Are you sure you want to delete the folder",
+            "descriptionSuffix": "and all of its contents?",
+            "confirm": "Delete folder"
           },
           "folders": {
             "title": "Folders",
