@@ -790,6 +790,16 @@ export default function BrandCampaignDashboard({
       deliverables: totalDeliverables,
       approved: Number(deliverableStats?.approved || 0),
       start_date: String(campaign?.start_date || "N/A"),
+      duration_days: Number(campaign?.duration_days || 0),
+      due_date: (() => {
+        const start = String(campaign?.start_date || "").trim();
+        const days = Number(campaign?.duration_days || 0);
+        if (!start || !days || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return null;
+        const d = new Date(`${start}T00:00:00`);
+        d.setDate(d.getDate() + days - 1);
+        return d.toISOString().slice(0, 10);
+      })(),
+      budget_range: String(campaign?.budget_range || ""),
       has_signed_offer: hasSignedOffer,
       start_reached: isStartDateReached(campaign?.start_date),
       brief_snapshot:
@@ -2475,8 +2485,37 @@ export default function BrandCampaignDashboard({
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-600">
-                      <span>Budget: ${campaign.budget.toLocaleString()}</span>
-                      <span>Start: {campaign.start_date}</span>
+                      {(() => {
+                        const parts = String(campaign.budget_range || "").match(
+                          /(\d[\d,]*)\s*-\s*(\d[\d,]*)/,
+                        );
+                        if (parts) {
+                          const min = Number(
+                            parts[1].replace(/[^\d]/g, ""),
+                          ).toLocaleString();
+                          const max = Number(
+                            parts[2].replace(/[^\d]/g, ""),
+                          ).toLocaleString();
+                          return (
+                            <span>
+                              Budget: ${min} – ${max}
+                            </span>
+                          );
+                        }
+                        if (campaign.budget > 0)
+                          return (
+                            <span>
+                              Budget: ${campaign.budget.toLocaleString()}
+                            </span>
+                          );
+                        return null;
+                      })()}
+                      {campaign.start_date && campaign.start_date !== "N/A" && (
+                        <span>Start: {campaign.start_date}</span>
+                      )}
+                      {campaign.due_date && (
+                        <span>Due: {campaign.due_date}</span>
+                      )}
                       <span>
                         {campaign.collaborators.length} collaborator(s)
                       </span>
