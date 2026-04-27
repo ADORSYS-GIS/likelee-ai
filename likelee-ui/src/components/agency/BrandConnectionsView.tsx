@@ -110,6 +110,16 @@ const extractDeliverableCount = (value: unknown): number => {
 
 const BrandConnectionsView = () => {
   const { t } = useTranslation();
+  const tBrand = (path: string, options?: Record<string, any>) => {
+    const fallback = t(
+      `agencyDashboard.analytics.brandConnections.${path}`,
+      options,
+    );
+    return t(`agencyDashboard.brandConnections.${path}`, {
+      ...(options || {}),
+      defaultValue: fallback,
+    });
+  };
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -1241,7 +1251,7 @@ const BrandConnectionsView = () => {
       <div className="flex flex-col items-center justify-center p-12 min-h-[400px]">
         <Loader2 className="h-10 w-10 text-gray-400 animate-spin mb-4" />
         <p className="text-gray-500 font-medium">
-          {t("agencyDashboard.brandConnections.ui.verifyingAccess")}
+          {tBrand("ui.verifyingAccess")}
         </p>
       </div>
     );
@@ -1252,21 +1262,19 @@ const BrandConnectionsView = () => {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {t("agencyDashboard.brandConnections.title")}
+            {tBrand("title")}
           </h2>
-          <p className="text-gray-600">
-            {t("agencyDashboard.brandConnections.ui.accessRestricted")}
-          </p>
+          <p className="text-gray-600">{tBrand("ui.accessRestricted")}</p>
         </div>
         <Card className="p-12 flex flex-col items-center justify-center text-center border-dashed border-2">
           <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4">
             <Lock className="h-8 w-8" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">
-            {t("agencyDashboard.brandConnections.ui.permissionRequired")}
+            {tBrand("ui.permissionRequired")}
           </h3>
           <p className="text-gray-600 max-w-sm">
-            {t("agencyDashboard.brandConnections.ui.permissionDescription")}
+            {tBrand("ui.permissionDescription")}
           </p>
         </Card>
       </div>
@@ -1280,21 +1288,17 @@ const BrandConnectionsView = () => {
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
             <p className="font-bold text-amber-800">
-              {t("agencyDashboard.brandConnections.ui.viewOnlyTitle")}
+              {tBrand("ui.viewOnlyTitle")}
             </p>
             <p className="text-sm text-amber-700">
-              {t("agencyDashboard.brandConnections.ui.viewOnlyDescription")}
+              {tBrand("ui.viewOnlyDescription")}
             </p>
           </div>
         </div>
       )}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">
-          {t("agencyDashboard.brandConnections.title")}
-        </h2>
-        <p className="text-gray-600">
-          {t("agencyDashboard.brandConnections.ui.subtitle")}
-        </p>
+        <h2 className="text-2xl font-bold text-gray-900">{tBrand("title")}</h2>
+        <p className="text-gray-600">{tBrand("ui.subtitle")}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -1302,14 +1306,14 @@ const BrandConnectionsView = () => {
           variant={activeTab === "connections" ? "default" : "outline"}
           onClick={() => setActiveTab("connections")}
         >
-          {t("agencyDashboard.brandConnections.connectedBrands")}
+          {tBrand("connectedBrands")}
         </Button>
         <Button
           variant={activeTab === "requests" ? "default" : "outline"}
           onClick={() => setActiveTab("requests")}
           className="relative"
         >
-          {t("agencyDashboard.brandConnections.requests")}
+          {tBrand("requests")}
           {showRequestsBadge && (
             <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
               {pendingRequests - (seenCounts.requests || 0)}
@@ -1321,7 +1325,7 @@ const BrandConnectionsView = () => {
           onClick={() => setActiveTab("offers")}
           className="relative"
         >
-          {t("agencyDashboard.brandConnections.brandOffers")}
+          {tBrand("brandOffers")}
           {showOffersBadge && (
             <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
               {pendingOffers - (seenCounts.offers || 0)}
@@ -1332,7 +1336,7 @@ const BrandConnectionsView = () => {
           variant={activeTab === "contract_hub" ? "default" : "outline"}
           onClick={() => setActiveTab("contract_hub")}
         >
-          {t("agencyDashboard.brandConnections.contractHub")}
+          {tBrand("contractHub.title")}
         </Button>
         <Button
           variant={activeTab === "deliverables" ? "default" : "outline"}
@@ -1341,14 +1345,14 @@ const BrandConnectionsView = () => {
             setActiveTab("connections");
           }}
         >
-          {t("agencyDashboard.brandConnections.deliverables")}
+          {tBrand("deliverables")}
         </Button>
         <Button
           variant={activeTab === "feedback" ? "default" : "outline"}
           onClick={() => setActiveTab("feedback")}
           className="relative"
         >
-          {t("agencyDashboard.brandConnections.packageFeedback")}
+          {tBrand("packageFeedback")}
           {showFeedbackBadge && (
             <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
               {pendingFeedback - (seenCounts.feedback || 0)}
@@ -1360,24 +1364,18 @@ const BrandConnectionsView = () => {
       {activeTab === "connections" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-bold text-gray-900 mb-3">
-            {t("agencyDashboard.brandConnections.connectedBrands")}
+            {tBrand("connectedBrands")}
           </h3>
           {connectionsQuery.isLoading && (
-            <p className="text-sm text-gray-500">
-              {t("agencyDashboard.brandConnections.loadingBrands")}
-            </p>
+            <p className="text-sm text-gray-500">{tBrand("loadingBrands")}</p>
           )}
           {!connectionsQuery.isLoading && connectionsQuery.error && (
-            <p className="text-sm text-red-600">
-              {t("agencyDashboard.brandConnections.loadBrandsFailed")}
-            </p>
+            <p className="text-sm text-red-600">{tBrand("loadBrandsFailed")}</p>
           )}
           {!connectionsQuery.isLoading &&
             !connectionsQuery.error &&
             connections.length === 0 && (
-              <p className="text-sm text-gray-500">
-                {t("agencyDashboard.brandConnections.noBrands")}
-              </p>
+              <p className="text-sm text-gray-500">{tBrand("noBrands")}</p>
             )}
           {!connectionsQuery.isLoading &&
             !connectionsQuery.error &&
@@ -1409,7 +1407,7 @@ const BrandConnectionsView = () => {
                         <p className="text-sm text-gray-600">
                           {email ||
                             t(
-                              "agencyDashboard.brandConnections.ui.noEmailProvided",
+                              "agencyDashboard.analytics.brandConnections.ui.noEmailProvided",
                             )}
                         </p>
                       </div>
@@ -1426,7 +1424,7 @@ const BrandConnectionsView = () => {
                                   }
                                   onClick={() => disconnectBrand(brandId)}
                                   aria-label={t(
-                                    "agencyDashboard.brandConnections.ui.disconnectFromBrand",
+                                    "agencyDashboard.analytics.brandConnections.ui.disconnectFromBrand",
                                   )}
                                   className="disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -1437,7 +1435,7 @@ const BrandConnectionsView = () => {
                             {!canDisconnectBrands && (
                               <TooltipContent>
                                 {t(
-                                  "agencyDashboard.brandConnections.ui.noDisconnectPermission",
+                                  "agencyDashboard.analytics.brandConnections.ui.noDisconnectPermission",
                                 )}
                               </TooltipContent>
                             )}
@@ -1445,10 +1443,10 @@ const BrandConnectionsView = () => {
                         </TooltipProvider>
                         <div>
                           <Badge className="bg-green-100 text-green-700 border border-green-300">
-                            {t("agencyDashboard.brandConnections.ui.connected")}
+                            {tBrand("ui.connected")}
                           </Badge>
                           <p className="text-xs text-gray-500 mt-1">
-                            {t("agencyDashboard.brandConnections.ui.since", {
+                            {tBrand("ui.since", {
                               date: connectedAt,
                             })}
                           </p>
@@ -1469,19 +1467,19 @@ const BrandConnectionsView = () => {
           </h3>
           {requestsQuery.isLoading && (
             <p className="text-sm text-gray-500">
-              {t("agencyDashboard.brandConnections.ui.loadingRequests")}
+              {tBrand("ui.loadingRequests")}
             </p>
           )}
           {!requestsQuery.isLoading && requestsQuery.error && (
             <p className="text-sm text-red-600">
-              {t("agencyDashboard.brandConnections.ui.failedToLoadRequests")}
+              {tBrand("ui.failedToLoadRequests")}
             </p>
           )}
           {!requestsQuery.isLoading &&
             !requestsQuery.error &&
             requests.length === 0 && (
               <p className="text-sm text-gray-500">
-                {t("agencyDashboard.brandConnections.ui.noPendingRequests")}
+                {tBrand("ui.noPendingRequests")}
               </p>
             )}
           {!requestsQuery.isLoading &&
@@ -1518,7 +1516,7 @@ const BrandConnectionsView = () => {
                           <p className="text-sm text-gray-600">
                             {email ||
                               t(
-                                "agencyDashboard.brandConnections.ui.noEmailProvided",
+                                "agencyDashboard.analytics.brandConnections.ui.noEmailProvided",
                               )}
                           </p>
                         </div>
@@ -1878,7 +1876,9 @@ const BrandConnectionsView = () => {
                                 }
                               >
                                 <User className="h-4 w-4 mr-2" />
-                                Assign Talent
+                                {tBrand("contractHub.assignTalent", {
+                                  defaultValue: "Assign Talent",
+                                })}
                               </Button>
                             );
                           })()}
@@ -2241,7 +2241,9 @@ const BrandConnectionsView = () => {
                                 }}
                               >
                                 <User className="h-4 w-4 mr-2" />
-                                Assign Talent
+                                {tBrand("contractHub.assignTalent", {
+                                  defaultValue: "Assign Talent",
+                                })}
                               </Button>
                             )}
                           </div>
@@ -3203,7 +3205,9 @@ const BrandConnectionsView = () => {
         <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-              Assign Talent
+              {tBrand("contractHub.assignTalent", {
+                defaultValue: "Assign Talent",
+              })}
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
               Select one or more talents from your roster to assign to this

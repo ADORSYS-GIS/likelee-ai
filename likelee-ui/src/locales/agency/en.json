@@ -877,7 +877,23 @@
         "whyItem3": "Track cash flow and reconcile payments",
         "whyItem4": "Bank-level security with 256-bit encryption",
         "poweredByStripe": "Powered by Stripe Connect",
-        "whatYouNeed": "What you'll need:"
+        "whatYouNeed": "What you'll need:",
+        "heldPendingTransfer": "Held (Pending Transfer)",
+        "trackedInLikelee": "Tracked in Likelee. Not necessarily cashout yet.",
+        "cashoutStripe": "cashout (Stripe)",
+        "availableInStripeAccount": "Available in your connected Stripe account.",
+        "requestPayoutHint": "Request a payout from your available balance.",
+        "requestPayout": "Request Payout",
+        "completeStripeSetup": "Complete Stripe setup",
+        "transfersNotEnabled": "Transfers not enabled",
+        "transfersNotEnabledDesc": "Your Stripe account is connected but the transfers capability is not active. This means payouts from brand offers cannot be sent to your account until you complete Stripe onboarding.",
+        "status": {
+          "pending": "pending",
+          "paid": "paid",
+          "failed": "failed",
+          "processing": "processing",
+          "approved": "approved"
+        }
       },
       "actions": {
         "exportReport": "Export Report"
@@ -1790,6 +1806,7 @@
         "repeatClientRate": "Repeat Client Rate",
         "action": "Action",
         "ofTotal": "{{value}}% of total",
+        "percentOfTotal": "{{value}}% of total",
         "topClientsPerformance": "Top Clients Performance",
         "geographicDistribution": "Geographic Distribution",
         "complianceSummary": "Compliance Summary",
@@ -1798,7 +1815,12 @@
         "licenseExpiryPipeline": "License Expiry Pipeline",
         "expiredOn": "Expired on {{date}}",
         "nextDays": "Next {{count}} days",
+        "next10Days": "Next 10 days",
         "verified": "{{count}} of {{total}} verified",
+        "verifiedOfTotal": "{{count}} of {{total}} verified",
+        "completeOfTotal": "{{count}} of {{total}} complete",
+        "licensesLower": "licenses",
+        "campaignsLower": "campaigns",
         "30dEarnings": "30D Earnings"
       },
       "months": {
@@ -1815,6 +1837,7 @@
         "nov": "Nov",
         "dec": "Dec"
       },
+      "irlComingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon.",
       "loading": "Loading analytics...",
       "error": "Failed to load analytics data",
       "toastError": "Analytics Error",
@@ -2101,7 +2124,57 @@
           "phone": "Phone",
           "email": "Email",
           "website": "Website",
-          "taxIdEin": "Tax ID / EIN"
+          "taxIdEin": "Tax ID / EIN",
+          "selectCountry": "Select country",
+          "selectTimezone": "Select timezone",
+          "countries": {
+            "us": "United States",
+            "uk": "United Kingdom",
+            "ca": "Canada",
+            "de": "Germany"
+          },
+          "timezones": {
+            "est": "Eastern Time (EST)",
+            "cst": "Central Time (CST)",
+            "pst": "Pacific Time (PST)"
+          }
+        },
+        "branding": {
+          "title": "Branding",
+          "agencyLogo": "Agency Logo",
+          "uploadNewLogo": "Upload New Logo",
+          "uploading": "Uploading...",
+          "emailSignature": "Email Signature",
+          "emailSignaturePlaceholder": "Best regards,\\nAgency Name\\nhttps://agency.com/\\n+1 (212) 555-0123"
+        },
+        "saveProfile": {
+          "saving": "Saving...",
+          "saveProfileSettings": "Save Profile Settings"
+        },
+        "commissions": {
+          "title": "Default Commission Rate",
+          "subtitle": "Set the default commission rate for new talent"
+        },
+        "taxAndCurrency": {
+          "title": "Tax & Currency Settings",
+          "defaultCurrency": "Default Currency",
+          "selectCurrency": "Select currency",
+          "currencies": {
+            "usd": "USD - US Dollar",
+            "eur": "EUR - Euro",
+            "gbp": "GBP - British Pound"
+          },
+          "dateFormat": "Date Format",
+          "selectFormat": "Select format",
+          "invoiceSettings": "Invoice Settings",
+          "defaultPaymentTerms": "Default Payment Terms",
+          "selectTerms": "Select terms",
+          "paymentTerms": {
+            "due": "Due on Receipt",
+            "net15": "Net 15",
+            "net30": "Net 30",
+            "net60": "Net 60"
+          }
         },
         "subTabs": {
           "profile": "Profile",

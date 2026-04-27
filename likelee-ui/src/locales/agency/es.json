@@ -1356,7 +1356,23 @@
         "whyItem3": "Controla el flujo de caja y concilia pagos",
         "whyItem4": "Seguridad bancaria con cifrado de 256 bits",
         "poweredByStripe": "Con tecnología de Stripe Connect",
-        "whatYouNeed": "Lo que necesitarás:"
+        "whatYouNeed": "Lo que necesitarás:",
+        "heldPendingTransfer": "Retenido (transferencia pendiente)",
+        "trackedInLikelee": "Rastreado en Likelee. No necesariamente disponible para retiro aún.",
+        "cashoutStripe": "retiro (Stripe)",
+        "availableInStripeAccount": "Disponible en tu cuenta de Stripe conectada.",
+        "requestPayoutHint": "Solicita un pago desde tu saldo disponible.",
+        "requestPayout": "Solicitar pago",
+        "completeStripeSetup": "Completar configuración de Stripe",
+        "transfersNotEnabled": "Transferencias no habilitadas",
+        "transfersNotEnabledDesc": "Tu cuenta de Stripe está conectada, pero la capacidad de transferencias no está activa. Esto significa que los pagos de ofertas de marca no pueden enviarse a tu cuenta hasta completar el onboarding de Stripe.",
+        "status": {
+          "pending": "pendiente",
+          "paid": "pagado",
+          "failed": "fallido",
+          "processing": "procesando",
+          "approved": "aprobado"
+        }
       },
       "actions": {
         "exportReport": "Exportar informe"

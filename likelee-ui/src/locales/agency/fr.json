@@ -1306,7 +1306,23 @@
         "whyItem3": "Suivez la trésorerie et rapprochez les paiements",
         "whyItem4": "Sécurité bancaire avec chiffrement 256 bits",
         "poweredByStripe": "Propulsé par Stripe Connect",
-        "whatYouNeed": "Ce dont vous aurez besoin :"
+        "whatYouNeed": "Ce dont vous aurez besoin :",
+        "heldPendingTransfer": "Retenu (transfert en attente)",
+        "trackedInLikelee": "Suivi dans Likelee. Pas nécessairement encaissable immédiatement.",
+        "cashoutStripe": "encaissement (Stripe)",
+        "availableInStripeAccount": "Disponible sur votre compte Stripe connecté.",
+        "requestPayoutHint": "Demandez un paiement depuis votre solde disponible.",
+        "requestPayout": "Demander un paiement",
+        "completeStripeSetup": "Finaliser la configuration Stripe",
+        "transfersNotEnabled": "Transferts non activés",
+        "transfersNotEnabledDesc": "Votre compte Stripe est connecté mais la capacité de transfert n’est pas active. Cela signifie que les paiements issus des offres de marque ne peuvent pas être envoyés à votre compte tant que vous n’avez pas terminé l’onboarding Stripe.",
+        "status": {
+          "pending": "en attente",
+          "paid": "payé",
+          "failed": "échoué",
+          "processing": "en cours",
+          "approved": "approuvé"
+        }
       },
       "actions": {
         "exportReport": "Exporter le rapport"
@@ -2150,6 +2166,7 @@
         "repeatClientRate": "Taux de clients récurrents",
         "action": "Action",
         "ofTotal": "{{value}}% du total",
+        "percentOfTotal": "{{value}}% du total",
         "topClientsPerformance": "Performance des meilleurs clients",
         "geographicDistribution": "Distribution géographique",
         "complianceSummary": "Résumé de conformité",
@@ -2158,7 +2175,12 @@
         "licenseExpiryPipeline": "Pipeline d'expiration des licences",
         "expiredOn": "Expiré le {{date}}",
         "nextDays": "{{count}} prochains jours",
+        "next10Days": "10 prochains jours",
         "verified": "{{count}} sur {{total}} vérifiés",
+        "verifiedOfTotal": "{{count}} sur {{total}} vérifiés",
+        "completeOfTotal": "{{count}} sur {{total}} complets",
+        "licensesLower": "licences",
+        "campaignsLower": "campagnes",
         "30dEarnings": "Gains 30J"
       },
       "months": {
@@ -2175,6 +2197,7 @@
         "nov": "Nov",
         "dec": "Déc"
       },
+      "irlComingSoonDescription": "Le tableau de bord analytique pour le mode IRL arrive bientôt.",
       "loading": "Chargement des analytiques...",
       "error": "Échec du chargement des données analytiques",
       "toastError": "Erreur d'analytique",
@@ -2476,7 +2499,57 @@
           "phone": "Téléphone",
           "email": "Email",
           "website": "Site web",
-          "taxIdEin": "Numéro fiscal / EIN"
+          "taxIdEin": "Numéro fiscal / EIN",
+          "selectCountry": "Sélectionner un pays",
+          "selectTimezone": "Sélectionner un fuseau horaire",
+          "countries": {
+            "us": "États-Unis",
+            "uk": "Royaume-Uni",
+            "ca": "Canada",
+            "de": "Allemagne"
+          },
+          "timezones": {
+            "est": "Heure de l'Est (EST)",
+            "cst": "Heure du Centre (CST)",
+            "pst": "Heure du Pacifique (PST)"
+          }
+        },
+        "branding": {
+          "title": "Image de marque",
+          "agencyLogo": "Logo de l'agence",
+          "uploadNewLogo": "Télécharger un nouveau logo",
+          "uploading": "Téléchargement...",
+          "emailSignature": "Signature d'email",
+          "emailSignaturePlaceholder": "Cordialement,\\nNom de l'agence\\nhttps://agence.com/\\n+1 (212) 555-0123"
+        },
+        "saveProfile": {
+          "saving": "Enregistrement...",
+          "saveProfileSettings": "Enregistrer les paramètres du profil"
+        },
+        "commissions": {
+          "title": "Taux de commission par défaut",
+          "subtitle": "Définir le taux de commission par défaut pour les nouveaux talents"
+        },
+        "taxAndCurrency": {
+          "title": "Paramètres de taxe et devise",
+          "defaultCurrency": "Devise par défaut",
+          "selectCurrency": "Sélectionner une devise",
+          "currencies": {
+            "usd": "USD - Dollar américain",
+            "eur": "EUR - Euro",
+            "gbp": "GBP - Livre sterling"
+          },
+          "dateFormat": "Format de date",
+          "selectFormat": "Sélectionner un format",
+          "invoiceSettings": "Paramètres de facturation",
+          "defaultPaymentTerms": "Conditions de paiement par défaut",
+          "selectTerms": "Sélectionner les conditions",
+          "paymentTerms": {
+            "due": "Dû à réception",
+            "net15": "Net 15",
+            "net30": "Net 30",
+            "net60": "Net 60"
+          }
         },
         "subTabs": {
           "profile": "Profil",

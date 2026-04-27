@@ -610,7 +610,12 @@ const ConnectBankView = ({
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <DollarSign className="w-4 h-4 text-amber-700" />
                     <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">
-                      Held (Pending Transfer)
+                      {t(
+                        "agencyDashboard.payouts.connectBank.heldPendingTransfer",
+                        {
+                          defaultValue: "Held (Pending Transfer)",
+                        },
+                      )}
                     </p>
                   </div>
                   <p className="text-2xl font-black text-gray-900">
@@ -625,7 +630,10 @@ const ConnectBankView = ({
                       : "$0.00"}
                   </p>
                   <p className="text-[10px] text-gray-500 font-medium mt-1">
-                    Tracked in Likelee. Not necessarily cashout yet.
+                    {t("agencyDashboard.payouts.connectBank.trackedInLikelee", {
+                      defaultValue:
+                        "Tracked in Likelee. Not necessarily cashout yet.",
+                    })}
                   </p>
                 </Card>
 
@@ -633,7 +641,9 @@ const ConnectBankView = ({
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <DollarSign className="w-4 h-4 text-indigo-600" />
                     <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
-                      cashout (Stripe)
+                      {t("agencyDashboard.payouts.connectBank.cashoutStripe", {
+                        defaultValue: "cashout (Stripe)",
+                      })}
                     </p>
                   </div>
                   <p className="text-2xl font-black text-gray-900">
@@ -647,7 +657,13 @@ const ConnectBankView = ({
                     )}
                   </p>
                   <p className="text-[10px] text-gray-500 font-medium mt-1">
-                    Available in your connected Stripe account.
+                    {t(
+                      "agencyDashboard.payouts.connectBank.availableInStripeAccount",
+                      {
+                        defaultValue:
+                          "Available in your connected Stripe account.",
+                      },
+                    )}
                   </p>
                 </Card>
               </div>
@@ -657,7 +673,9 @@ const ConnectBankView = ({
           {connected && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <div className="text-sm text-gray-600 font-medium">
-                Request a payout from your available balance.
+                {t("agencyDashboard.payouts.connectBank.requestPayoutHint", {
+                  defaultValue: "Request a payout from your available balance.",
+                })}
               </div>
               <Button
                 className={`h-10 px-5 rounded-xl font-bold ${actionButtonClass}`}
@@ -665,7 +683,9 @@ const ConnectBankView = ({
                 disabled={loading || actionsLocked}
                 aria-disabled={loading || actionsLocked}
               >
-                Request Payout
+                {t("agencyDashboard.payouts.connectBank.requestPayout", {
+                  defaultValue: "Request Payout",
+                })}
               </Button>
             </div>
           )}
@@ -673,7 +693,11 @@ const ConnectBankView = ({
           <Dialog open={showPayoutDialog} onOpenChange={setShowPayoutDialog}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Request Payout</DialogTitle>
+                <DialogTitle>
+                  {t("agencyDashboard.payouts.connectBank.requestPayout", {
+                    defaultValue: "Request Payout",
+                  })}
+                </DialogTitle>
                 <DialogDescription>
                   Enter an amount (in USD) and request an instant payout.
                 </DialogDescription>
@@ -710,7 +734,9 @@ const ConnectBankView = ({
           {connected && payoutHistory.length > 0 && (
             <div className="mt-6">
               <div className="text-sm font-bold text-gray-900 mb-2">
-                Payout History
+                {t("agencyDashboard.payouts.tabs.paymentHistory", {
+                  defaultValue: "Payment History",
+                })}
               </div>
               <div className="space-y-2">
                 {payoutHistory.slice(0, 5).map((p) => (
@@ -729,7 +755,10 @@ const ConnectBankView = ({
                       variant="secondary"
                       className={`${payoutStatusClass(p.status)} capitalize`}
                     >
-                      {String(p.status || "pending")}
+                      {t(
+                        `agencyDashboard.payouts.connectBank.status.${String(p.status || "pending").toLowerCase()}`,
+                        { defaultValue: String(p.status || "pending") },
+                      )}
                     </Badge>
                   </div>
                 ))}
@@ -759,13 +788,21 @@ const ConnectBankView = ({
               <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-bold text-amber-900">
-                  Transfers not enabled
+                  {t(
+                    "agencyDashboard.payouts.connectBank.transfersNotEnabled",
+                    {
+                      defaultValue: "Transfers not enabled",
+                    },
+                  )}
                 </p>
                 <p className="text-xs text-amber-800 font-medium mt-1">
-                  Your Stripe account is connected but the{" "}
-                  <strong>transfers</strong> capability is not active. This
-                  means payouts from brand offers cannot be sent to your account
-                  until you complete Stripe onboarding.
+                  {t(
+                    "agencyDashboard.payouts.connectBank.transfersNotEnabledDesc",
+                    {
+                      defaultValue:
+                        "Your Stripe account is connected but the transfers capability is not active. This means payouts from brand offers cannot be sent to your account until you complete Stripe onboarding.",
+                    },
+                  )}
                 </p>
                 <Button
                   size="sm"
@@ -774,7 +811,12 @@ const ConnectBankView = ({
                   disabled={loading || actionsLocked}
                 >
                   <ExternalLink className="w-3 h-3" />
-                  Complete Stripe setup
+                  {t(
+                    "agencyDashboard.payouts.connectBank.completeStripeSetup",
+                    {
+                      defaultValue: "Complete Stripe setup",
+                    },
+                  )}
                 </Button>
               </div>
             </div>
@@ -19995,7 +20037,9 @@ export default function AgencyDashboard() {
             id: "protection",
             label: "Protection & Usage",
             icon: Shield,
-            badge: "Coming soon",
+            badge: t("agencyDashboard.analytics.labels.comingSoon", {
+              defaultValue: "Coming soon",
+            }),
             disabled: agencySubscriptionLocked,
             disabledReason: "Choose a plan",
           },
@@ -21598,7 +21642,9 @@ export default function AgencyDashboard() {
             {activeTab === "protection" && (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                 <div className="text-lg font-black text-gray-900">
-                  Coming soon
+                  {t("agencyDashboard.analytics.labels.comingSoon", {
+                    defaultValue: "Coming soon",
+                  })}
                 </div>
                 <div className="text-gray-500 font-medium mt-1">
                   Protection & Usage is coming soon.
@@ -21610,10 +21656,15 @@ export default function AgencyDashboard() {
               (effectiveAgencyMode === "IRL" ? (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                   <div className="text-lg font-black text-gray-900">
-                    Coming soon
+                    {t("agencyDashboard.analytics.labels.comingSoon", {
+                      defaultValue: "Coming soon",
+                    })}
                   </div>
                   <div className="text-gray-500 font-medium mt-1">
-                    Analytics Dashboard for IRL Mode is coming soon.
+                    {t("agencyDashboard.analytics.irlComingSoonDescription", {
+                      defaultValue:
+                        "Analytics Dashboard for IRL Mode is coming soon.",
+                    })}
                   </div>
                 </Card>
               ) : hasProAccess ? (

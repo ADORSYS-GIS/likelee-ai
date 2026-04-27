@@ -2191,7 +2191,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                    Agency Information
+                    {t("agencyDashboard.settings.agencyInformation.title", {
+                      defaultValue: "Agency Information",
+                    })}
                   </h3>
                   {(kycStatus === "approved" ||
                     kycStatus === "verified" ||
@@ -2199,7 +2201,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
                       <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
                       <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
-                        Verified
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.verified",
+                          {
+                            defaultValue: "Verified",
+                          },
+                        )}
                       </span>
                     </div>
                   )}
@@ -2209,7 +2216,13 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Agency Name *
+                    {t(
+                      "agencyDashboard.settings.agencyInformation.agencyName",
+                      {
+                        defaultValue: "Agency Name",
+                      },
+                    )}{" "}
+                    *
                   </Label>
                   <Input
                     value={formData.agency_name}
@@ -2221,7 +2234,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Legal Entity Name
+                    {t(
+                      "agencyDashboard.settings.agencyInformation.legalEntityName",
+                      {
+                        defaultValue: "Legal Entity Name",
+                      },
+                    )}
                   </Label>
                   <Input
                     value={formData.legal_entity_name}
@@ -2233,7 +2251,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Address
+                    {t("agencyDashboard.settings.agencyInformation.address", {
+                      defaultValue: "Address",
+                    })}
                   </Label>
                   <Input
                     value={formData.address}
@@ -2245,7 +2265,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    City
+                    {t("agencyDashboard.settings.agencyInformation.city", {
+                      defaultValue: "City",
+                    })}
                   </Label>
                   <Input
                     value={formData.city}
@@ -2256,7 +2278,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      State/Province
+                      {t(
+                        "agencyDashboard.settings.agencyInformation.stateProvince",
+                        {
+                          defaultValue: "State/Province",
+                        },
+                      )}
                     </Label>
                     <Input
                       value={formData.state}
@@ -2268,7 +2295,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      ZIP/Postal Code
+                      {t(
+                        "agencyDashboard.settings.agencyInformation.zipPostalCode",
+                        {
+                          defaultValue: "ZIP/Postal Code",
+                        },
+                      )}
                     </Label>
                     <Input
                       value={formData.zip_postal_code}
@@ -2281,44 +2313,113 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Country
+                    {t("agencyDashboard.settings.agencyInformation.country", {
+                      defaultValue: "Country",
+                    })}
                   </Label>
                   <Select
                     value={formData.country}
                     onValueChange={(val) => handleInputChange("country", val)}
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
-                      <SelectValue placeholder="Select country" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.agencyInformation.selectCountry",
+                          {
+                            defaultValue: "Select country",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="us">United States</SelectItem>
-                      <SelectItem value="uk">United Kingdom</SelectItem>
-                      <SelectItem value="ca">Canada</SelectItem>
-                      <SelectItem value="de">Germany</SelectItem>
+                      <SelectItem value="us">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.countries.us",
+                          {
+                            defaultValue: "United States",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="uk">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.countries.uk",
+                          {
+                            defaultValue: "United Kingdom",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="ca">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.countries.ca",
+                          {
+                            defaultValue: "Canada",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="de">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.countries.de",
+                          {
+                            defaultValue: "Germany",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Time Zone
+                    {t("agencyDashboard.settings.agencyInformation.timeZone", {
+                      defaultValue: "Time Zone",
+                    })}
                   </Label>
                   <Select
                     value={formData.time_zone}
                     onValueChange={(val) => handleInputChange("time_zone", val)}
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
-                      <SelectValue placeholder="Select timezone" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.agencyInformation.selectTimezone",
+                          {
+                            defaultValue: "Select timezone",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="est">Eastern Time (EST)</SelectItem>
-                      <SelectItem value="cst">Central Time (CST)</SelectItem>
-                      <SelectItem value="pst">Pacific Time (PST)</SelectItem>
+                      <SelectItem value="est">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.timezones.est",
+                          {
+                            defaultValue: "Eastern Time (EST)",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="cst">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.timezones.cst",
+                          {
+                            defaultValue: "Central Time (CST)",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="pst">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.timezones.pst",
+                          {
+                            defaultValue: "Pacific Time (PST)",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Phone
+                    {t("agencyDashboard.settings.agencyInformation.phone", {
+                      defaultValue: "Phone",
+                    })}
                   </Label>
                   <Input
                     value={formData.phone_number}
@@ -2330,7 +2431,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Email
+                    {t("agencyDashboard.settings.agencyInformation.email", {
+                      defaultValue: "Email",
+                    })}
                   </Label>
                   <Input
                     value={formData.email}
@@ -2340,7 +2443,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Website
+                    {t("agencyDashboard.settings.agencyInformation.website", {
+                      defaultValue: "Website",
+                    })}
                   </Label>
                   <Input
                     value={formData.website}
@@ -2352,7 +2457,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Tax ID / EIN
+                    {t("agencyDashboard.settings.agencyInformation.taxIdEin", {
+                      defaultValue: "Tax ID / EIN",
+                    })}
                   </Label>
                   <Input
                     value={formData.tax_id_ein}
@@ -2366,15 +2473,18 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
             </Card>
 
             {/* Branding */}
-            {/* Branding */}
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-                Branding
+                {t("agencyDashboard.settings.branding.title", {
+                  defaultValue: "Branding",
+                })}
               </h3>
               <div className="space-y-8">
                 <div className="space-y-4">
                   <Label className="text-sm font-bold text-gray-900">
-                    Agency Logo
+                    {t("agencyDashboard.settings.branding.agencyLogo", {
+                      defaultValue: "Agency Logo",
+                    })}
                   </Label>
                   <div className="flex items-center gap-6">
                     <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
@@ -2408,21 +2518,35 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       ) : (
                         <Upload className="w-4 h-4" />
                       )}
-                      {isUploading ? "Uploading..." : "Upload New Logo"}
+                      {isUploading
+                        ? t("agencyDashboard.settings.branding.uploading", {
+                            defaultValue: "Uploading...",
+                          })
+                        : t("agencyDashboard.settings.branding.uploadNewLogo", {
+                            defaultValue: "Upload New Logo",
+                          })}
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Email Signature
+                    {t("agencyDashboard.settings.branding.emailSignature", {
+                      defaultValue: "Email Signature",
+                    })}
                   </Label>
                   <Textarea
                     value={formData.email_signature}
                     onChange={(e) =>
                       handleInputChange("email_signature", e.target.value)
                     }
-                    placeholder={`Best regards,\nAgency Name\nhttps://agency.com/\n+1 (212) 555-0123`}
+                    placeholder={t(
+                      "agencyDashboard.settings.branding.emailSignaturePlaceholder",
+                      {
+                        defaultValue:
+                          "Best regards,\\nAgency Name\\nhttps://agency.com/\\n+1 (212) 555-0123",
+                      },
+                    )}
                     className="bg-white border-gray-200 min-h-[120px] text-xs sm:text-sm text-gray-900 font-medium rounded-xl resize-none"
                   />
                 </div>
@@ -2440,7 +2564,16 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSaving ? "Saving..." : "Save Profile Settings"}
+                {isSaving
+                  ? t("agencyDashboard.settings.saveProfile.saving", {
+                      defaultValue: "Saving...",
+                    })
+                  : t(
+                      "agencyDashboard.settings.saveProfile.saveProfileSettings",
+                      {
+                        defaultValue: "Save Profile Settings",
+                      },
+                    )}
               </Button>
             </div>
           </div>
@@ -2911,14 +3044,21 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   <Globe className="w-5 h-5 text-gray-600" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Currency Settings
+                  {t("agencyDashboard.settings.taxAndCurrency.title", {
+                    defaultValue: "Tax & Currency Settings",
+                  })}
                 </h3>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Default Currency
+                    {t(
+                      "agencyDashboard.settings.taxAndCurrency.defaultCurrency",
+                      {
+                        defaultValue: "Default Currency",
+                      },
+                    )}
                   </Label>
                   <Select
                     value={taxCurrencySettings.defaultCurrency}
@@ -2930,18 +3070,48 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                     }
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
-                      <SelectValue placeholder="Select currency" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.taxAndCurrency.selectCurrency",
+                          {
+                            defaultValue: "Select currency",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="usd">USD - US Dollar</SelectItem>
-                      <SelectItem value="eur">EUR - Euro</SelectItem>
-                      <SelectItem value="gbp">GBP - British Pound</SelectItem>
+                      <SelectItem value="usd">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.currencies.usd",
+                          {
+                            defaultValue: "USD - US Dollar",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="eur">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.currencies.eur",
+                          {
+                            defaultValue: "EUR - Euro",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="gbp">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.currencies.gbp",
+                          {
+                            defaultValue: "GBP - British Pound",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Currency Display Format
+                    {t("agencyDashboard.settings.taxAndCurrency.dateFormat", {
+                      defaultValue: "Date Format",
+                    })}
                   </Label>
                   <Select
                     value={taxCurrencySettings.currencyDisplayFormat}
@@ -2953,7 +3123,14 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                     }
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
-                      <SelectValue placeholder="Select format" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.taxAndCurrency.selectFormat",
+                          {
+                            defaultValue: "Select format",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       <SelectItem value="1234.56">$1,234.56</SelectItem>
@@ -2966,7 +3143,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
 
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-                Tax Rates
+                {t("agencyDashboard.settings.taxAndCurrency.invoiceSettings", {
+                  defaultValue: "Invoice Settings",
+                })}
               </h3>
               <div className="space-y-6">
                 <div className="space-y-2">
@@ -3028,7 +3207,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Default Payment Terms
+                    {t(
+                      "agencyDashboard.settings.taxAndCurrency.defaultPaymentTerms",
+                      {
+                        defaultValue: "Default Payment Terms",
+                      },
+                    )}
                   </Label>
                   <Select
                     value={taxCurrencySettings.defaultPaymentTerms}
@@ -3040,13 +3224,48 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                     }
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
-                      <SelectValue placeholder="Select terms" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.taxAndCurrency.selectTerms",
+                          {
+                            defaultValue: "Select terms",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="due">Due on Receipt</SelectItem>
-                      <SelectItem value="net15">Net 15</SelectItem>
-                      <SelectItem value="net30">Net 30</SelectItem>
-                      <SelectItem value="net60">Net 60</SelectItem>
+                      <SelectItem value="due">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.paymentTerms.due",
+                          {
+                            defaultValue: "Due on Receipt",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="net15">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.paymentTerms.net15",
+                          {
+                            defaultValue: "Net 15",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="net30">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.paymentTerms.net30",
+                          {
+                            defaultValue: "Net 30",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="net60">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.paymentTerms.net60",
+                          {
+                            defaultValue: "Net 60",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -262,8 +262,15 @@ export function AgencyDeliverablesView() {
       }
       await loadAssignments(offerId);
       toast({
-        title: "Talent unassigned",
-        description: "Talent was removed from this offer.",
+        title: t("agencyDashboard.brandConnections.toasts.talentUnassigned", {
+          defaultValue: "Talent unassigned",
+        }),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.talentRemovedFromOffer",
+          {
+            defaultValue: "Talent was removed from this offer.",
+          },
+        ),
       });
       setUnassignDialog({
         open: false,
@@ -948,7 +955,9 @@ export function AgencyDeliverablesView() {
     } catch (e: any) {
       const msg = String(e?.message || "");
       toast({
-        title: "Assignment failed",
+        title: t("agencyDashboard.brandConnections.toasts.assignmentFailed", {
+          defaultValue: "Assignment failed",
+        }),
         description: msg.includes(
           "cannot_change_assignments_after_contract_sent",
         )
@@ -1379,7 +1388,12 @@ export function AgencyDeliverablesView() {
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {assignments.length === 0
-                        ? "Assign Talent"
+                        ? t(
+                            "agencyDashboard.brandConnections.contractHub.assignTalent",
+                            {
+                              defaultValue: "Assign Talent",
+                            },
+                          )
                         : "Add Talent"}
                     </Button>
                   </div>
@@ -1775,7 +1789,12 @@ export function AgencyDeliverablesView() {
                                         })
                                       }
                                     >
-                                      Request Asset
+                                      {t(
+                                        "agencyDashboard.deliverables.requestAsset",
+                                        {
+                                          defaultValue: "Request Asset",
+                                        },
+                                      )}
                                     </Button>
                                   </div>
                                 </div>
@@ -1919,7 +1938,9 @@ export function AgencyDeliverablesView() {
         <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-              Assign Talent
+              {t("agencyDashboard.brandConnections.contractHub.assignTalent", {
+                defaultValue: "Assign Talent",
+              })}
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium mt-1">
               Select one or more talents from your roster to assign to this
@@ -2132,7 +2153,9 @@ export function AgencyDeliverablesView() {
                 }
                 className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
               >
-                Cancel
+                {t("agencyDashboard.analytics.createPackage.common.cancel", {
+                  defaultValue: "Cancel",
+                })}
               </Button>
             </div>
           </div>
@@ -2379,7 +2402,9 @@ export function AgencyDeliverablesView() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={unpaidSubmitDialog.submitting}>
-              Cancel
+              {t("agencyDashboard.analytics.createPackage.common.cancel", {
+                defaultValue: "Cancel",
+              })}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={unpaidSubmitDialog.submitting}
@@ -2465,7 +2490,9 @@ export function AgencyDeliverablesView() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={assignSubmitting}>
-              Cancel
+              {t("agencyDashboard.analytics.createPackage.common.cancel", {
+                defaultValue: "Cancel",
+              })}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={assignSubmitting}
@@ -2539,7 +2566,9 @@ export function AgencyDeliverablesView() {
                       <FileText className="w-6 h-6 text-white" />
                     </div>
                     <DialogTitle className="text-2xl font-bold text-white">
-                      Request Asset
+                      {t("agencyDashboard.deliverables.requestAsset", {
+                        defaultValue: "Request Asset",
+                      })}
                     </DialogTitle>
                     <p className="text-gray-400 text-sm">
                       Send a clear brief and optional PDF to guide the talent.
@@ -2656,7 +2685,11 @@ export function AgencyDeliverablesView() {
       >
         <DialogContent className="sm:max-w-[520px] w-full rounded-lg p-6">
           <DialogHeader className="space-y-1">
-            <DialogTitle>Upload Deliverable</DialogTitle>
+            <DialogTitle>
+              {t("agencyDashboard.deliverables.uploadDeliverable", {
+                defaultValue: "Upload Deliverable",
+              })}
+            </DialogTitle>
             <p className="text-xs text-gray-500">
               Add a caption and upload one or more files.
             </p>
@@ -2778,7 +2811,9 @@ export function AgencyDeliverablesView() {
                   setReviewDialog((prev) => ({ ...prev, open: false }))
                 }
               >
-                Cancel
+                {t("agencyDashboard.analytics.createPackage.common.cancel", {
+                  defaultValue: "Cancel",
+                })}
               </Button>
               <Button
                 className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
@@ -2815,7 +2850,10 @@ export function AgencyDeliverablesView() {
                 Delete Deliverable
               </DialogTitle>
               <p className="text-gray-400 text-sm">
-                This will permanently remove the deliverable. Continue?
+                {t("agencyDashboard.deliverables.confirmDelete", {
+                  defaultValue:
+                    "This will permanently remove the deliverable. Continue?",
+                })}
               </p>
             </DialogHeader>
           </div>
@@ -2828,7 +2866,9 @@ export function AgencyDeliverablesView() {
                   setDeleteDialog((prev) => ({ ...prev, open: false }))
                 }
               >
-                Cancel
+                {t("agencyDashboard.analytics.createPackage.common.cancel", {
+                  defaultValue: "Cancel",
+                })}
               </Button>
               <Button
                 className="flex-1 h-11 rounded-none bg-rose-600 hover:bg-rose-700 text-white font-bold"

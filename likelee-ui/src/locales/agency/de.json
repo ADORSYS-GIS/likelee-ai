@@ -1307,7 +1307,23 @@
         "whyItem3": "Cashflow verfolgen und Zahlungen abstimmen",
         "whyItem4": "Bankniveau-Sicherheit mit 256-Bit-Verschlüsselung",
         "poweredByStripe": "Bereitgestellt von Stripe Connect",
-        "whatYouNeed": "Was Sie benötigen:"
+        "whatYouNeed": "Was Sie benötigen:",
+        "heldPendingTransfer": "Einbehalten (ausstehende Überweisung)",
+        "trackedInLikelee": "In Likelee erfasst. Nicht zwingend sofort auszahlbar.",
+        "cashoutStripe": "Auszahlung (Stripe)",
+        "availableInStripeAccount": "In Ihrem verbundenen Stripe-Konto verfügbar.",
+        "requestPayoutHint": "Fordern Sie eine Auszahlung aus Ihrem verfügbaren Guthaben an.",
+        "requestPayout": "Auszahlung anfordern",
+        "completeStripeSetup": "Stripe-Einrichtung abschließen",
+        "transfersNotEnabled": "Überweisungen nicht aktiviert",
+        "transfersNotEnabledDesc": "Ihr Stripe-Konto ist verbunden, aber die Transfer-Funktion ist nicht aktiv. Das bedeutet, dass Auszahlungen aus Markenangeboten nicht an Ihr Konto gesendet werden können, bis Sie das Stripe-Onboarding abgeschlossen haben.",
+        "status": {
+          "pending": "ausstehend",
+          "paid": "bezahlt",
+          "failed": "fehlgeschlagen",
+          "processing": "in Bearbeitung",
+          "approved": "genehmigt"
+        }
       },
       "actions": {
         "exportReport": "Bericht exportieren"
@@ -2151,6 +2167,7 @@
         "repeatClientRate": "Wiederkehrende Kundenrate",
         "action": "Aktion",
         "ofTotal": "{{value}}% der Gesamtzahl",
+        "percentOfTotal": "{{value}}% der Gesamtzahl",
         "topClientsPerformance": "Top-Kunden-Performance",
         "geographicDistribution": "Geografische Verteilung",
         "complianceSummary": "Compliance-Zusammenfassung",
@@ -2159,7 +2176,12 @@
         "licenseExpiryPipeline": "Lizenzablauf-Pipeline",
         "expiredOn": "Abgelaufen am {{date}}",
         "nextDays": "Nächste {{count}} Tage",
+        "next10Days": "Nächste 10 Tage",
         "verified": "{{count}} von {{total}} verifiziert",
+        "verifiedOfTotal": "{{count}} von {{total}} verifiziert",
+        "completeOfTotal": "{{count}} von {{total}} vollständig",
+        "licensesLower": "lizenzen",
+        "campaignsLower": "kampagnen",
         "30dEarnings": "30T Einnahmen"
       },
       "months": {
@@ -2176,6 +2198,7 @@
         "nov": "Nov",
         "dec": "Dez"
       },
+      "irlComingSoonDescription": "Das Analytics-Dashboard für den IRL-Modus kommt bald.",
       "loading": "Lade Analytics...",
       "error": "Fehler beim Laden der Analytics-Daten",
       "toastError": "Analytics-Fehler",
@@ -2477,7 +2500,57 @@
           "phone": "Telefon",
           "email": "E-Mail",
           "website": "Website",
-          "taxIdEin": "Steuernummer / EIN"
+          "taxIdEin": "Steuernummer / EIN",
+          "selectCountry": "Land auswählen",
+          "selectTimezone": "Zeitzone auswählen",
+          "countries": {
+            "us": "Vereinigte Staaten",
+            "uk": "Vereinigtes Königreich",
+            "ca": "Kanada",
+            "de": "Deutschland"
+          },
+          "timezones": {
+            "est": "Ostküstenzeit (EST)",
+            "cst": "Zentrale Zeit (CST)",
+            "pst": "Pazifikzeit (PST)"
+          }
+        },
+        "branding": {
+          "title": "Branding",
+          "agencyLogo": "Agenturlogo",
+          "uploadNewLogo": "Neues Logo hochladen",
+          "uploading": "Hochladen...",
+          "emailSignature": "E-Mail-Signatur",
+          "emailSignaturePlaceholder": "Mit freundlichen Grüßen,\\nAgenturname\\nhttps://agentur.com/\\n+1 (212) 555-0123"
+        },
+        "saveProfile": {
+          "saving": "Speichern...",
+          "saveProfileSettings": "Profileinstellungen speichern"
+        },
+        "commissions": {
+          "title": "Standard-Provisionssatz",
+          "subtitle": "Legen Sie den Standard-Provisionssatz für neue Talente fest"
+        },
+        "taxAndCurrency": {
+          "title": "Steuer- und Währungseinstellungen",
+          "defaultCurrency": "Standardwährung",
+          "selectCurrency": "Währung auswählen",
+          "currencies": {
+            "usd": "USD - US-Dollar",
+            "eur": "EUR - Euro",
+            "gbp": "GBP - Britisches Pfund"
+          },
+          "dateFormat": "Datumsformat",
+          "selectFormat": "Format auswählen",
+          "invoiceSettings": "Rechnungseinstellungen",
+          "defaultPaymentTerms": "Standard-Zahlungsbedingungen",
+          "selectTerms": "Bedingungen auswählen",
+          "paymentTerms": {
+            "due": "Fällig bei Erhalt",
+            "net15": "Netto 15",
+            "net30": "Netto 30",
+            "net60": "Netto 60"
+          }
         },
         "subTabs": {
           "profile": "Profil",
