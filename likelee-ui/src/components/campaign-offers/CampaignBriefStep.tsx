@@ -20,6 +20,7 @@ type Props = {
   uploading?: boolean;
   fieldErrors?: Record<string, string>;
   onFieldChange?: (field: string) => void;
+  hideBack?: boolean;
 };
 
 export default function CampaignBriefStep({
@@ -32,6 +33,7 @@ export default function CampaignBriefStep({
   uploading = false,
   fieldErrors = {},
   onFieldChange,
+  hideBack = false,
 }: Props) {
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const assetInputRef = useRef<HTMLInputElement | null>(null);
@@ -696,14 +698,18 @@ export default function CampaignBriefStep({
       </div>
 
       <div className="flex justify-between gap-3">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        {!hideBack ? (
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        ) : (
+          <div />
+        )}
         <Button
           onClick={onNext}
           disabled={uploading}
