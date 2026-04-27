@@ -508,7 +508,9 @@ export default function StudioImage() {
                 <details className="overflow-hidden">
                   <summary className="cursor-pointer text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-[#32C8D1] transition-colors py-2 flex items-center gap-2">
                     <Layers className="w-3 h-3" />
-                    Fine-tune Parameters
+                    {t("studio.image.ui.fineTuneParameters", {
+                      defaultValue: "Fine-tune Parameters",
+                    })}
                   </summary>
                   <div className="mt-4 space-y-6 p-4 bg-black/20 rounded-2xl border border-white/5 animate-in slide-in-from-top-2 duration-300">
                     <div className="space-y-3">
@@ -563,12 +565,21 @@ export default function StudioImage() {
                   {generateMutation.isPending || generatingJobId ? (
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 border-2 border-[#32C8D1]/30 border-t-[#32C8D1] rounded-full animate-spin" />
-                      <span>Evolving...</span>
+                      <span>
+                        {t("studio.image.ui.evolving", {
+                          defaultValue: "Evolving...",
+                        })}
+                      </span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Wand2 className="w-5 h-5" />
-                      <span>Synthesize ({totalCost})</span>
+                      <span>
+                        {t("studio.image.ui.synthesize", {
+                          defaultValue: "Synthesize ({{count}})",
+                          count: totalCost,
+                        })}
+                      </span>
                     </div>
                   )}
                 </Button>
@@ -581,11 +592,13 @@ export default function StudioImage() {
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-gray-500 mb-1">
-                  Notice
+                  {t("studio.image.ui.notice", { defaultValue: "Notice" })}
                 </p>
                 <p className="text-[11px] text-gray-400 leading-relaxed">
-                  Higher guidance scales follow prompts strictly but may reduce
-                  overall realism.
+                  {t("studio.image.ui.noticeText", {
+                    defaultValue:
+                      "Higher guidance scales follow prompts strictly but may reduce overall realism.",
+                  })}
                 </p>
               </div>
             </div>
@@ -594,7 +607,9 @@ export default function StudioImage() {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
                 <History className="w-6 h-6 text-[#6366F1]" />
-                Recent Artifacts
+                {t("studio.image.ui.recentArtifacts", {
+                  defaultValue: "Recent Artifacts",
+                })}
               </h2>
               <div className="flex gap-2">
                 <Badge
@@ -634,20 +649,26 @@ export default function StudioImage() {
                               className="bg-white text-black hover:bg-white/90 rounded-full font-bold px-6 shadow-2xl"
                             >
                               <Download className="w-3 h-3 mr-2" />
-                              Expand
+                              {t("studio.image.ui.expand", {
+                                defaultValue: "Expand",
+                              })}
                             </Button>
                           </div>
                         </div>
                         <div className="p-4 space-y-3">
                           <p className="text-[11px] text-gray-300 leading-relaxed line-clamp-2 font-medium">
                             {gen.input_params?.prompt ||
-                              "Mysterious generation..."}
+                              t("studio.image.ui.mysteriousGeneration", {
+                                defaultValue: "Mysterious generation...",
+                              })}
                           </p>
                           <div className="flex items-center justify-between pt-1">
                             <div className="flex items-center gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-[#32C8D1] shadow-[0_0_8px_#32C8D1]" />
                               <span className="text-[10px] font-black uppercase tracking-tighter text-[#32C8D1]">
-                                Ready
+                                {t("studio.image.ui.ready", {
+                                  defaultValue: "Ready",
+                                })}
                               </span>
                             </div>
                             <span className="text-[10px] font-bold text-gray-500 tabular-nums bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
@@ -663,10 +684,14 @@ export default function StudioImage() {
                           <div className="absolute inset-0 border-4 border-t-[#32C8D1] rounded-full animate-spin" />
                         </div>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#32C8D1] animate-pulse">
-                          Evolving
+                          {t("studio.image.ui.evolvingShort", {
+                            defaultValue: "Evolving",
+                          })}
                         </p>
                         <p className="text-[9px] text-gray-600 mt-2 uppercase font-bold">
-                          Please wait...
+                          {t("studio.image.ui.pleaseWait", {
+                            defaultValue: "Please wait...",
+                          })}
                         </p>
                       </div>
                     )}
@@ -678,7 +703,9 @@ export default function StudioImage() {
                 <div className="col-span-full text-center py-16">
                   <ImageIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400 text-lg">
-                    No images yet. Create your first one!
+                    {t("studio.image.ui.emptyState", {
+                      defaultValue: "No images yet. Create your first one!",
+                    })}
                   </p>
                 </div>
               )}
@@ -693,11 +720,15 @@ export default function StudioImage() {
               <Coins className="w-8 h-8 text-yellow-500" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-3 text-center">
-              Credit Exhaustion
+              {t("studio.image.ui.creditExhaustionTitle", {
+                defaultValue: "Credit Exhaustion",
+              })}
             </h3>
             <p className="text-sm text-gray-400 mb-8 text-center leading-relaxed">
-              Your creative fuel is low. To continue synthesizing high-fidelity
-              imagery, please replenish your balance.
+              {t("studio.image.ui.creditExhaustionBody", {
+                defaultValue:
+                  "Your creative fuel is low. To continue synthesizing high-fidelity imagery, please replenish your balance.",
+              })}
             </p>
             <div className="grid grid-cols-2 gap-4">
               <Button
@@ -705,13 +736,17 @@ export default function StudioImage() {
                 onClick={() => setShowSubscriptionModal(false)}
                 className="rounded-xl h-12 text-gray-500 hover:text-white"
               >
-                Maybe Later
+                {t("studio.image.ui.maybeLater", {
+                  defaultValue: "Maybe Later",
+                })}
               </Button>
               <Button
                 onClick={() => navigate(createPageUrl("StudioSubscribe"))}
                 className="bg-[#32C8D1] hover:bg-[#32C8D1]/80 text-black font-bold h-12 rounded-xl"
               >
-                Top Up Now
+                {t("studio.image.ui.topUpNow", {
+                  defaultValue: "Top Up Now",
+                })}
               </Button>
             </div>
           </div>

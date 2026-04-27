@@ -1245,10 +1245,14 @@ const StudioVideo = () => {
                           color: "#fff",
                         }}
                       >
-                        Add Media
+                        {t("studio.video.ui.addMedia", {
+                          defaultValue: "Add Media",
+                        })}
                       </p>
                       <p style={{ margin: 0, fontSize: 11, color: "#94A3B8" }}>
-                        Upload or select legacy assets
+                        {t("studio.video.ui.addMediaSubtitle", {
+                          defaultValue: "Upload or select legacy assets",
+                        })}
                       </p>
                     </div>
                   </button>
@@ -1274,7 +1278,9 @@ const StudioVideo = () => {
                         letterSpacing: "0.05em",
                       }}
                     >
-                      Orientation
+                      {t("studio.video.ui.orientation", {
+                        defaultValue: "Orientation",
+                      })}
                     </label>
                     <Select value={aspectRatio} onValueChange={setAspectRatio}>
                       <SelectTrigger
@@ -1337,7 +1343,9 @@ const StudioVideo = () => {
                         letterSpacing: "0.05em",
                       }}
                     >
-                      Duration
+                      {t("studio.video.ui.duration", {
+                        defaultValue: "Duration",
+                      })}
                     </label>
                     {selectedModelData?.duration &&
                     selectedModelData.duration.length > 2 ? (
@@ -1454,10 +1462,14 @@ const StudioVideo = () => {
                         cursor: "pointer",
                       }}
                     >
-                      Generate Audio
+                      {t("studio.video.ui.generateAudio", {
+                        defaultValue: "Generate Audio",
+                      })}
                     </Label>
                     <span style={{ fontSize: 11, color: "#94A3B8" }}>
-                      Model-generated synchronized sound
+                      {t("studio.video.ui.generateAudioHint", {
+                        defaultValue: "Model-generated synchronized sound",
+                      })}
                     </span>
                   </div>
                   <Switch
@@ -1480,7 +1492,9 @@ const StudioVideo = () => {
                       letterSpacing: "0.05em",
                     }}
                   >
-                    Output Quality
+                    {t("studio.video.ui.outputQuality", {
+                      defaultValue: "Output Quality",
+                    })}
                   </label>
                   <div style={{ display: "flex", gap: 8 }}>
                     {(
@@ -1542,10 +1556,15 @@ const StudioVideo = () => {
               }}
             >
               <span style={{ fontSize: 12, color: "#94A3B8" }}>
-                Estimated Cost
+                {t("studio.video.ui.estimatedCost", {
+                  defaultValue: "Estimated Cost",
+                })}
               </span>
               <span style={{ fontSize: 14, fontWeight: 800, color: "#8B5CF6" }}>
-                {currentCost} Credits
+                {t("studio.video.ui.estimatedCostValue", {
+                  defaultValue: "{{count}} Credits",
+                  count: currentCost,
+                })}
               </span>
             </div>
             <button
@@ -1579,12 +1598,16 @@ const StudioVideo = () => {
                     size={18}
                     style={{ animation: "spin 1s linear infinite" }}
                   />
-                  Generating...
+                  {t("studio.video.ui.generating", {
+                    defaultValue: "Generating...",
+                  })}
                 </>
               ) : (
                 <>
                   <Zap size={18} />
-                  Generate Video
+                  {t("studio.video.ui.generateVideo", {
+                    defaultValue: "Generate Video",
+                  })}
                 </>
               )}
             </button>
@@ -1623,7 +1646,9 @@ const StudioVideo = () => {
                 fontFamily: '"Fraunces", ui-serif, Georgia, serif',
               }}
             >
-              Preview Output
+              {t("studio.video.ui.previewOutput", {
+                defaultValue: "Preview Output",
+              })}
             </h3>
             <div style={{ display: "flex", gap: 12 }}>
               <Badge
@@ -2127,6 +2152,9 @@ const StudioVideo = () => {
                                   display: "flex",
                                   alignItems: "center",
                                 }}
+                                title={t("studio.video.ui.download", {
+                                  defaultValue: "Download",
+                                })}
                               >
                                 <Download size={14} />
                               </button>
@@ -2145,7 +2173,10 @@ const StudioVideo = () => {
                     style={{ margin: "0 auto 16px" }}
                   />
                   <p style={{ color: "#4B5563", fontSize: 14 }}>
-                    No generations yet. Start by creating a video.
+                    {t("studio.video.ui.emptyState", {
+                      defaultValue:
+                        "No generations yet. Start by creating a video.",
+                    })}
                   </p>
                 </div>
               )}

@@ -1433,71 +1433,160 @@ export default function Studio() {
             <Card className="p-8 bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-white/20 transition-all rounded-lg">
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-white mb-2 font-display">
-                  Lite Plan
+                  {t("studio.landing.pricing.litePlan.title", {
+                    defaultValue: "Lite Plan",
+                  })}
                 </h3>
                 <div className="flex items-baseline mb-2">
                   <span className="text-5xl font-bold text-white font-display">
                     $15
                   </span>
-                  <span className="text-gray-400 ml-2">/ month</span>
+                  <span className="text-gray-400 ml-2">
+                    {t("studio.landing.pricing.perMonth", {
+                      defaultValue: "/ month",
+                    })}
+                  </span>
                 </div>
-                <p className="text-gray-400">60 credits</p>
+                <p className="text-gray-400">
+                  {t("studio.landing.pricing.litePlan.credits", {
+                    defaultValue: "60 credits",
+                  })}
+                </p>
               </div>
 
               <p className="text-gray-300 mb-6">
-                For individuals who want to explore Likelee Studio.
+                {t("studio.landing.pricing.litePlan.description", {
+                  defaultValue:
+                    "For individuals who want to explore Likelee Studio.",
+                })}
               </p>
 
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>12 videos / month</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.videosPerMonth",
+                      {
+                        defaultValue: "12 videos / month",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>60 images / month</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.imagesPerMonth",
+                      {
+                        defaultValue: "60 images / month",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>2 parallel tasks</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.parallelTasks",
+                      {
+                        defaultValue: "2 parallel tasks",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>All-in-one multi-model support</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.multiModelSupport",
+                      {
+                        defaultValue: "All-in-one multi-model support",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Text to video</span>
+                  <span>
+                    {t("studio.landing.pricing.litePlan.features.textToVideo", {
+                      defaultValue: "Text to video",
+                    })}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Image to video</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.imageToVideo",
+                      {
+                        defaultValue: "Image to video",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Text/Image/Video to video</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.multiToVideo",
+                      {
+                        defaultValue: "Text/Image/Video to video",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Consistent character video</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.consistentCharacter",
+                      {
+                        defaultValue: "Consistent character video",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>AI animation generator</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.animationGenerator",
+                      {
+                        defaultValue: "AI animation generator",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Text/Image/Chat to image</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.multiToImage",
+                      {
+                        defaultValue: "Text/Image/Chat to image",
+                      },
+                    )}
+                  </span>
                 </li>
                 <li className="flex items-center gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>300+ templates & effects</span>
+                  <span>
+                    {t(
+                      "studio.landing.pricing.litePlan.features.templatesEffects",
+                      {
+                        defaultValue: "300+ templates & effects",
+                      },
+                    )}
+                  </span>
                 </li>
               </ul>
 
               <p className="text-sm text-gray-400 mb-6">
-                Perfect for creators just starting with AI image and video
-                generation.
+                {t("studio.landing.pricing.litePlan.note", {
+                  defaultValue:
+                    "Perfect for creators just starting with AI image and video generation.",
+                })}
               </p>
 
               <Button
@@ -1519,29 +1608,42 @@ export default function Studio() {
             <Card className="p-8 bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-white/20 transition-all rounded-lg">
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-white mb-2 font-display">
-                  Pro Plan — Flexible Credits
+                  {t("studio.landing.pricing.proPlan.title", {
+                    defaultValue: "Pro Plan — Flexible Credits",
+                  })}
                 </h3>
                 <div className="flex items-baseline mb-2">
                   <span className="text-5xl font-bold text-white font-display">
                     ${selectedTier.price}
                   </span>
-                  <span className="text-gray-400 ml-2">/ month</span>
+                  <span className="text-gray-400 ml-2">
+                    {t("studio.landing.pricing.perMonth", {
+                      defaultValue: "/ month",
+                    })}
+                  </span>
                 </div>
                 <p className="text-gray-400">
-                  {selectedTier.label} credits per month
+                  {t("studio.landing.pricing.proPlan.creditsPerMonth", {
+                    defaultValue: "{{credits}} credits per month",
+                    credits: selectedTier.label,
+                  })}
                 </p>
               </div>
 
               <p className="text-gray-300 mb-6">
-                Use credits for any generation type (image, video, avatar, or
-                animation).
+                {t("studio.landing.pricing.proPlan.description", {
+                  defaultValue:
+                    "Use credits for any generation type (image, video, avatar, or animation).",
+                })}
               </p>
 
               {/* Credit Slider */}
               <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
                 <div className="mb-6">
                   <label className="text-sm font-semibold text-gray-300 mb-4 block">
-                    Choose your monthly credits:
+                    {t("studio.landing.pricing.proPlan.chooseCredits", {
+                      defaultValue: "Choose your monthly credits:",
+                    })}
                   </label>
                   <input
                     type="range"
@@ -1570,13 +1672,20 @@ export default function Studio() {
                 {/* Price Display */}
                 <div className="mt-6 pt-6 border-t border-white/10">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Monthly total:</span>
+                    <span className="text-gray-300">
+                      {t("studio.landing.pricing.proPlan.monthlyTotal", {
+                        defaultValue: "Monthly total:",
+                      })}
+                    </span>
                     <span className="text-3xl font-bold text-white font-display">
                       ${selectedTier.price}
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 mt-2">
-                    for {selectedTier.label} credits
+                    {t("studio.landing.pricing.proPlan.forCredits", {
+                      defaultValue: "for {{credits}} credits",
+                      credits: selectedTier.label,
+                    })}
                   </p>
                 </div>
               </div>
@@ -1585,16 +1694,27 @@ export default function Studio() {
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                   <span>
-                    Credits renew monthly and can be used across all AI tools
+                    {t("studio.landing.pricing.proPlan.bullets.renewMonthly", {
+                      defaultValue:
+                        "Credits renew monthly and can be used across all AI tools",
+                    })}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>Unused credits roll over for 30 days</span>
+                  <span>
+                    {t("studio.landing.pricing.proPlan.bullets.rollover", {
+                      defaultValue: "Unused credits roll over for 30 days",
+                    })}
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>Cancel anytime</span>
+                  <span>
+                    {t("studio.landing.pricing.proPlan.bullets.cancelAnytime", {
+                      defaultValue: "Cancel anytime",
+                    })}
+                  </span>
                 </li>
               </ul>
 
@@ -1623,13 +1743,27 @@ export default function Studio() {
           {/* Features Comparison Table */}
           <div className="max-w-5xl mx-auto">
             <h3 className="text-2xl font-bold mb-8 text-center">
-              Supported Features
+              {t("studio.landing.supportedFeatures.title", {
+                defaultValue: "Supported Features",
+              })}
             </h3>
             <div className="bg-white/5 border-2 border-white/10 rounded-lg overflow-hidden">
               <div className="grid grid-cols-3 gap-4 p-4 bg-white/5 border-b border-white/10">
-                <div className="font-bold text-white">Feature</div>
-                <div className="font-bold text-white text-center">Lite</div>
-                <div className="font-bold text-white text-center">Pro</div>
+                <div className="font-bold text-white">
+                  {t("studio.landing.supportedFeatures.columns.feature", {
+                    defaultValue: "Feature",
+                  })}
+                </div>
+                <div className="font-bold text-white text-center">
+                  {t("studio.landing.supportedFeatures.columns.lite", {
+                    defaultValue: "Lite",
+                  })}
+                </div>
+                <div className="font-bold text-white text-center">
+                  {t("studio.landing.supportedFeatures.columns.pro", {
+                    defaultValue: "Pro",
+                  })}
+                </div>
               </div>
               {features.map((feature, index) => (
                 <div
