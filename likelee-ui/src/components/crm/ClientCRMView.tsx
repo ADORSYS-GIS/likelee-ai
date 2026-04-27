@@ -152,28 +152,30 @@ const ClientCRMView = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6 bg-green-50/50 border-green-100 rounded-2xl">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-green-100 rounded-lg">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="min-h-[150px] rounded-2xl border-green-100 bg-green-50/50 p-4 shadow-sm sm:p-6">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="rounded-lg bg-green-100 p-2">
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
-            <span className="text-base font-bold text-green-800">
+            <span className="text-sm font-bold text-green-800 sm:text-base">
               Active Clients
             </span>
           </div>
-          <span className="text-3xl font-bold text-green-900">
+          <span className="text-2xl font-bold text-green-900 sm:text-3xl">
             {clients.filter((c) => (c.bookings || 0) > 0).length}
           </span>
         </Card>
-        <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
+        <Card className="min-h-[150px] rounded-2xl border-blue-100 bg-blue-50/50 p-4 shadow-sm sm:p-6">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="rounded-lg bg-blue-100 p-2">
               <Users className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-base font-bold text-blue-800">Prospects</span>
+            <span className="text-sm font-bold text-blue-800 sm:text-base">
+              Prospects
+            </span>
           </div>
-          <span className="text-3xl font-bold text-blue-900">
+          <span className="text-2xl font-bold text-blue-900 sm:text-3xl">
             {
               clients.filter(
                 (c) => c.status === "Prospect" || c.status === "Lead",
@@ -181,16 +183,16 @@ const ClientCRMView = () => {
             }
           </span>
         </Card>
-        <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
+        <Card className="min-h-[150px] rounded-2xl border-purple-100 bg-purple-50/50 p-4 shadow-sm sm:p-6">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="rounded-lg bg-purple-100 p-2">
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
-            <span className="text-base font-bold text-purple-800">
+            <span className="text-sm font-bold text-purple-800 sm:text-base">
               Total Revenue
             </span>
           </div>
-          <span className="text-3xl font-bold text-purple-900">
+          <span className="text-2xl font-bold text-purple-900 sm:text-3xl">
             {(() => {
               const totalCents = clients.reduce(
                 (sum, c) => sum + (c.metrics?.revenue_cents || 0),
@@ -204,16 +206,16 @@ const ClientCRMView = () => {
             })()}
           </span>
         </Card>
-        <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
+        <Card className="min-h-[150px] rounded-2xl border-orange-100 bg-orange-50/50 p-4 shadow-sm sm:p-6">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="rounded-lg bg-orange-100 p-2">
               <Clock className="w-5 h-5 text-orange-600" />
             </div>
-            <span className="text-base font-bold text-orange-800">
+            <span className="text-sm font-bold text-orange-800 sm:text-base">
               Follow-ups Due
             </span>
           </div>
-          <span className="text-3xl font-bold text-orange-900">
+          <span className="text-2xl font-bold text-orange-900 sm:text-3xl">
             {
               clients.filter((c) => {
                 if (!c.next_follow_up_date) return false;

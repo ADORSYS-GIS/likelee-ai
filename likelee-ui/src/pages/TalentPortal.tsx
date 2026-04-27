@@ -1275,9 +1275,9 @@ export default function TalentPortal({
 
   const portalContent = (
     <>
-      <div className="sticky top-0 z-20 space-y-4 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+      <div className="sticky top-0 z-20 space-y-3 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
             <div
               className="h-10 w-10 sm:h-12 sm:w-12 rounded-full p-0.5 border-2 border-[#32C8D1] overflow-hidden flex-shrink-0 cursor-zoom-in hover:scale-105 transition-transform"
               onClick={() => setShowPhotoFull(true)}
@@ -1294,8 +1294,8 @@ export default function TalentPortal({
                 )}
               </div>
             </div>
-            <div>
-              <div className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+            <div className="min-w-0">
+              <div className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">
                 {mode === "irl" ? "IRL Bookings Portal" : "AI Licensing Portal"}
               </div>
               <div className="text-xs sm:text-sm text-gray-600 mt-0.5">
@@ -1305,19 +1305,18 @@ export default function TalentPortal({
               </div>
             </div>
           </div>
-          <div />
           <button
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow self-start sm:self-auto shrink-0"
             onClick={() => setMode(mode === "irl" ? "ai" : "irl")}
           >
             {mode === "irl" ? (
               <>
-                <Briefcase className="h-5 w-5 text-blue-500" />
+                <Briefcase className="h-4 w-4 text-blue-500" />
                 AI Mode
               </>
             ) : (
               <>
-                <Briefcase className="h-5 w-5 text-blue-500" />
+                <Briefcase className="h-4 w-4 text-blue-500" />
                 IRL Mode
               </>
             )}
@@ -1419,76 +1418,76 @@ export default function TalentPortal({
         <>
           {tab === "overview" && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-500">
+                      <div className="text-xs sm:text-sm font-medium text-gray-500">
                         Upcoming Bookings
                       </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
+                      <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {upcomingBookings.length}
                       </div>
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-blue-500" />
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                      <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
                     </div>
                   </div>
                 </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
+                <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-500">
+                      <div className="text-xs sm:text-sm font-medium text-gray-500">
                         Total Earnings
                       </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
+                      <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {fmtCents(
                           (irlEarningsSummary as any)?.total_paid_cents,
                         )}
                       </div>
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-green-500" />
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                      <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                     </div>
                   </div>
                 </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
+                <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-500">
+                      <div className="text-xs sm:text-sm font-medium text-gray-500">
                         Completed Jobs
                       </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
+                      <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {completedBookingsCount}
                       </div>
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
-                      <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
                     </div>
                   </div>
                 </Card>
-                <Card className="p-6 rounded-xl shadow-sm">
+                <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-500">
+                      <div className="text-xs sm:text-sm font-medium text-gray-500">
                         This Month
                       </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
+                      <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {thisMonthBookingsCount}
                       </div>
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                      <Sparkles className="h-5 w-5 text-purple-500" />
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
                     </div>
                   </div>
                 </Card>
               </div>
 
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
+              <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
+                <div className="text-base sm:text-lg font-semibold text-gray-900">
                   Upcoming Bookings
                 </div>
-                <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
+                <div className="mt-4 sm:mt-5 border rounded-xl border-dashed border-gray-200 p-6 sm:p-12 bg-gray-50/50">
                   {upcomingBookings.length === 0 ? (
                     <div className="flex flex-col items-center justify-center text-center">
                       <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -2907,42 +2906,42 @@ export default function TalentPortal({
         <>
           {tab === "overview" && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-5">
+                <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-500">
+                      <div className="text-xs sm:text-sm font-medium text-gray-500">
                         Active Campaigns
                       </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-3">
+                      <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {activeDeals.length}
                       </div>
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                      <Briefcase className="h-5 w-5 text-purple-500" />
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+                      <Briefcase className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
                     </div>
                   </div>
                 </Card>
 
-                <Card className="p-6 rounded-xl shadow-sm">
+                <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                   <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-medium text-gray-500">
+                      <div className="text-xs sm:text-sm font-medium text-gray-500">
                         Monthly Revenue
                       </div>
-                      <div className="text-4xl font-bold text-gray-900 mt-2">
+                      <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2">
                         {fmtCents((licensingRevenue as any)?.total_cents)}
                       </div>
                     </div>
-                    <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
-                      <DollarSign className="h-5 w-5 text-green-500" />
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                      <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
                     </div>
                   </div>
                 </Card>
               </div>
 
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900 mb-5">
+              <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
+                <div className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-5">
                   Latest Licensing Requests
                 </div>
                 <div className="space-y-3">
@@ -2954,17 +2953,20 @@ export default function TalentPortal({
                     licensingRequests.slice(0, 8).map((r: any) => (
                       <div
                         key={r.id}
-                        className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
+                        className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3 sm:p-4 gap-3"
                       >
                         <div className="min-w-0">
-                          <div className="text-base font-semibold text-gray-900 truncate">
+                          <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
                             {r.brand_name || "Brand"}
                           </div>
-                          <div className="text-sm text-gray-500 truncate">
+                          <div className="text-xs sm:text-sm text-gray-500 truncate">
                             {r.campaign_title || "Licensing request"}
                           </div>
                         </div>
-                        <Badge variant="outline" className="capitalize">
+                        <Badge
+                          variant="outline"
+                          className="capitalize shrink-0 text-xs"
+                        >
                           {safeStr(r.status || "pending") || "pending"}
                         </Badge>
                       </div>
@@ -2977,8 +2979,8 @@ export default function TalentPortal({
 
           {tab === "likeness" && (
             <div className="space-y-6">
-              <Card className="p-6 rounded-xl shadow-sm">
-                <div className="text-lg font-semibold text-gray-900">
+              <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
+                <div className="text-base sm:text-lg font-semibold text-gray-900">
                   Likeness Asset Library
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
@@ -2986,22 +2988,22 @@ export default function TalentPortal({
                   content generation
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card className="p-6 bg-[#F0FDFF] border-[#E0F2F1] rounded-xl">
+                <div className="mt-4 sm:mt-6 grid grid-cols-2 gap-3 sm:gap-6">
+                  <Card className="p-4 sm:p-6 bg-[#F0FDFF] border-[#E0F2F1] rounded-xl">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="text-xs font-semibold text-gray-500">
                           Reference Photos
                         </div>
-                        <div className="text-2xl font-bold text-gray-900 mt-2">
+                        <div className="text-xl sm:text-2xl font-bold text-gray-900 mt-2">
                           {photoCount}/15
                         </div>
                       </div>
-                      <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                        <LucideImage className="h-5 w-5 text-[#32C8D1]" />
+                      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-white flex items-center justify-center shadow-sm shrink-0">
+                        <LucideImage className="h-4 w-4 sm:h-5 sm:w-5 text-[#32C8D1]" />
                       </div>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-3 sm:mt-4">
                       <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gray-900 rounded-full"
@@ -3013,21 +3015,21 @@ export default function TalentPortal({
                     </div>
                   </Card>
 
-                  <Card className="p-6 bg-[#F5F3FF] border-[#EDE9FE] rounded-xl">
+                  <Card className="p-4 sm:p-6 bg-[#F5F3FF] border-[#EDE9FE] rounded-xl">
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="text-xs font-semibold text-gray-500">
                           Voice Samples
                         </div>
-                        <div className="text-2xl font-bold text-gray-900 mt-2">
+                        <div className="text-xl sm:text-2xl font-bold text-gray-900 mt-2">
                           {voiceCount}/6
                         </div>
                       </div>
-                      <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                        <MessageSquare className="h-5 w-5 text-purple-500" />
+                      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-white flex items-center justify-center shadow-sm shrink-0">
+                        <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
                       </div>
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-3 sm:mt-4">
                       <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gray-900 rounded-full"
@@ -3040,7 +3042,7 @@ export default function TalentPortal({
                   </Card>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <Button
                     className="h-12 rounded-xl bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                     onClick={() =>

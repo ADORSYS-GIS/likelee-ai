@@ -857,11 +857,12 @@ export default function PostJob() {
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
                   Type of Work (Select all that apply)
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {workTypes.map((type) => (
                     <div
                       key={type}
-                      className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
+                      className="flex items-center gap-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50 cursor-pointer"
+                      onClick={() => toggleArrayItem("work_types", type)}
                     >
                       <Checkbox
                         id={type}
@@ -869,11 +870,11 @@ export default function PostJob() {
                         onCheckedChange={() =>
                           toggleArrayItem("work_types", type)
                         }
-                        className="border-2 border-gray-400"
+                        className="border-2 border-gray-400 shrink-0"
                       />
                       <label
                         htmlFor={type}
-                        className="text-sm text-gray-700 cursor-pointer flex-1"
+                        className="text-xs sm:text-sm text-gray-700 cursor-pointer leading-tight"
                       >
                         {type}
                       </label>
@@ -883,7 +884,7 @@ export default function PostJob() {
                   <Button
                     variant="outline"
                     onClick={() => setShowCustomWorkType(true)}
-                    className="border-2 border-gray-300 rounded-none hover:bg-gray-50 justify-start"
+                    className="col-span-2 border-2 border-gray-300 rounded-none hover:bg-gray-50 justify-start"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Other (Custom)
@@ -892,29 +893,32 @@ export default function PostJob() {
 
                 {showCustomWorkType && (
                   <div className="mt-4 p-4 border-2 border-blue-200 bg-blue-50 rounded-none">
-                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                    <Label className="text-sm font-medium text-gray-700 mb-3 block">
                       Add Custom Work Type
                     </Label>
+                    <Input
+                      value={customWorkType}
+                      onChange={(e) => setCustomWorkType(e.target.value)}
+                      placeholder="e.g., Virtual Event Hosting"
+                      className="w-full border-2 border-gray-300 rounded-none mb-3"
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && addCustomWorkType()
+                      }
+                    />
                     <div className="flex gap-2">
-                      <Input
-                        value={customWorkType}
-                        onChange={(e) => setCustomWorkType(e.target.value)}
-                        placeholder="e.g., Virtual Event Hosting"
-                        className="flex-1 border-2 border-gray-300 rounded-none"
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && addCustomWorkType()
-                        }
-                      />
                       <Button
                         onClick={addCustomWorkType}
-                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                       >
                         Add
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() => setShowCustomWorkType(false)}
-                        className="border-2 border-gray-300 rounded-none"
+                        onClick={() => {
+                          setShowCustomWorkType(false);
+                          setCustomWorkType("");
+                        }}
+                        className="flex-1 border-2 border-gray-300 rounded-none"
                       >
                         Cancel
                       </Button>

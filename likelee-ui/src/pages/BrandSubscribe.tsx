@@ -811,7 +811,7 @@ export default function BrandSubscribe() {
           </div>
         </div>
       )}
-      <div className="mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         <section className="relative overflow-hidden rounded-[38px] border border-[#D7E1ED] bg-[linear-gradient(180deg,#F8FBFF_0%,#F4F7FB_100%)] px-6 py-12 shadow-[0_22px_80px_rgba(7,28,58,0.08)] sm:px-10 sm:py-14 lg:px-16 lg:py-16">
           <div className="absolute -left-10 top-20 h-40 w-40 rounded-full bg-[#CCF4F2] blur-3xl" />
           <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-[#DDE9FF] blur-3xl" />
@@ -951,7 +951,7 @@ export default function BrandSubscribe() {
           </Alert>
         )}
 
-        <div className="relative z-10 mt-10 grid gap-6 px-1 xl:grid-cols-3 xl:px-4">
+        <div className="relative z-10 mt-10 grid gap-6 px-1 sm:grid-cols-2 xl:grid-cols-3 xl:px-4">
           {brandPlans.map((plan) => {
             const dark = plan.tier === "pro";
             const isCurrentPlan = hasBaseSubscription && planTier === plan.tier;
@@ -973,7 +973,7 @@ export default function BrandSubscribe() {
                   }`}
                 />
 
-                <div className="flex min-h-[560px] flex-col">
+                <div className="flex min-h-[480px] sm:min-h-[560px] flex-col">
                   <div className="flex items-start justify-between gap-4">
                     <Badge className={plan.badgeClassName}>
                       {plan.eyebrow}
@@ -1137,8 +1137,8 @@ export default function BrandSubscribe() {
         </div>
 
         {isBrandAccount && (
-          <Card className="mx-auto mt-10 max-w-5xl rounded-[26px] border border-[#D7E6ED] bg-white px-6 py-5 shadow-[0_18px_45px_rgba(7,28,58,0.08)]">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <Card className="mx-auto mt-10 max-w-5xl rounded-[26px] border border-[#D7E6ED] bg-white px-4 sm:px-6 py-5 shadow-[0_18px_45px_rgba(7,28,58,0.08)]">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#8797B4]">
                   Current subscription
@@ -1233,7 +1233,7 @@ export default function BrandSubscribe() {
                 </div>
               </div>
 
-              <div className="w-full max-w-sm rounded-[20px] border border-[#F4DCC5] bg-[#FFF9F4] p-5">
+              <div className="w-full lg:max-w-sm rounded-[20px] border border-[#F4DCC5] bg-[#FFF9F4] p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="font-serif text-4xl font-bold text-[#17315E]">
@@ -1273,10 +1273,10 @@ export default function BrandSubscribe() {
 
         <section className="mt-14">
           <div className="max-w-2xl">
-            <h2 className="font-serif text-4xl font-bold text-[#17315E]">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#17315E]">
               Full comparison
             </h2>
-            <p className="mt-4 text-base text-[#7D8CA9]">
+            <p className="mt-3 sm:mt-4 text-base text-[#7D8CA9]">
               Everything side by side.
             </p>
           </div>
@@ -1334,8 +1334,8 @@ export default function BrandSubscribe() {
         </section>
 
         <section className="mt-12">
-          <div className="rounded-[30px] border border-[#D7E6ED] bg-[linear-gradient(180deg,#F6F9FF_0%,#FFFFFF_32%)] px-6 py-8 shadow-[0_18px_45px_rgba(7,28,58,0.08)] sm:px-8 sm:py-10">
-            <h2 className="text-center font-serif text-4xl font-bold text-[#17315E]">
+          <div className="rounded-[30px] border border-[#D7E6ED] bg-[linear-gradient(180deg,#F6F9FF_0%,#FFFFFF_32%)] px-4 py-6 shadow-[0_18px_45px_rgba(7,28,58,0.08)] sm:px-8 sm:py-10">
+            <h2 className="text-center font-serif text-3xl sm:text-4xl font-bold text-[#17315E]">
               Common questions
             </h2>
 

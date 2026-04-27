@@ -1050,12 +1050,12 @@ export default function AgencySubscribe() {
 
   return (
     <div className="min-h-screen bg-[#F6F3EF] text-[#1B1C23]">
-      <div className="max-w-6xl mx-auto px-6 pt-16 pb-24">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
         <div className="text-center">
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight font-display">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight font-display">
             Simple, transparent pricing
           </h1>
-          <p className="text-gray-500 mt-4 text-lg">
+          <p className="text-gray-500 mt-3 sm:mt-4 text-base sm:text-lg">
             Start with licensing. Add what you need. Scale when you're ready.
           </p>
 
@@ -1199,13 +1199,13 @@ export default function AgencySubscribe() {
           null}
 
         <div className="mt-12">
-          <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <Card className="rounded-[28px] border border-gray-200 bg-white p-5 sm:p-8">
+            <div className="flex flex-col gap-4 sm:gap-6">
               <div>
-                <div className="text-2xl font-black font-display">
+                <div className="text-xl sm:text-2xl font-black font-display">
                   How many models on your roster?
                 </div>
-                <div className="text-gray-500 mt-1">
+                <div className="text-gray-500 mt-1 text-sm sm:text-base">
                   {requiresContactSales
                     ? `Self-serve supports 2 to 1,000 models. Your current setup is ${formatNumber(rosterModels)}, so pricing goes through Sales.`
                     : minimumRosterModels > MIN_ROSTER_MODELS
@@ -1229,7 +1229,7 @@ export default function AgencySubscribe() {
                   }}
                   onBlur={() => setRosterInput(String(rosterModels))}
                   aria-label="Roster size"
-                  className="h-16 w-32 rounded-2xl border-gray-200 bg-white text-center text-3xl font-black font-display"
+                  className="h-14 sm:h-16 w-24 sm:w-32 rounded-2xl border-gray-200 bg-white text-center text-2xl sm:text-3xl font-black font-display"
                 />
                 <div className="text-gray-400">models</div>
               </div>
@@ -1646,27 +1646,27 @@ export default function AgencySubscribe() {
         </Dialog>
 
         <div className="mt-12">
-          <div className="text-center text-3xl font-black font-display">
+          <div className="text-center text-2xl sm:text-3xl font-black font-display">
             Add-Ons
           </div>
-          <div className="text-center text-gray-500 mt-2">
+          <div className="text-center text-gray-500 mt-2 text-sm sm:text-base">
             Already have booking software? No problem — Likelee works as a
             standalone licensing platform. Add what you need.
           </div>
 
           <div className="mt-8 space-y-6">
-            <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <Card className="rounded-[28px] border border-gray-200 bg-white p-5 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black font-display">
+                  <div className="text-xl sm:text-2xl font-black font-display">
                     IRL Booking Software
                   </div>
-                  <div className="text-gray-500 mt-1">
+                  <div className="text-gray-500 mt-1 text-sm sm:text-base">
                     Manage real-world gigs alongside your licensing income, and
                     choose whether to add it to a plan or buy it separately.
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 shrink-0">
                   <div className="flex items-center gap-3 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
                     <span className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
                       {hasIrlBookingAddon
@@ -1738,18 +1738,18 @@ export default function AgencySubscribe() {
               </div>
             </Card>
 
-            <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
-              <div className="flex items-center justify-between gap-4">
+            <Card className="rounded-[28px] border border-gray-200 bg-white p-5 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black font-display">
+                  <div className="text-xl sm:text-2xl font-black font-display">
                     Likelee Studio Access
                   </div>
-                  <div className="text-gray-500 mt-1">
+                  <div className="text-gray-500 mt-1 text-sm sm:text-base">
                     One-time activation for your agency Studio workspace with an
                     initial wallet allocation.
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 shrink-0">
                   <Badge variant="outline" className="bg-white/70">
                     {hasStudioAddon ? "Active" : "One-time"}
                   </Badge>
@@ -1792,18 +1792,18 @@ export default function AgencySubscribe() {
               </div>
             </Card>
 
-            <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
-              <div className="flex items-center justify-between gap-4">
+            <Card className="rounded-[28px] border border-gray-200 bg-white p-5 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black font-display">
+                  <div className="text-xl sm:text-2xl font-black font-display">
                     Deepfake Detection & Protection
                   </div>
-                  <div className="text-gray-500 mt-1">
+                  <div className="text-gray-500 mt-1 text-sm sm:text-base">
                     Track facial usage and unauthorized use of your models
                     across the web
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 shrink-0">
                   <Badge variant="outline" className="bg-white/70">
                     Coming Soon
                   </Badge>
@@ -1811,18 +1811,18 @@ export default function AgencySubscribe() {
               </div>
             </Card>
 
-            <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
-              <div className="flex items-center justify-between gap-4">
+            <Card className="rounded-[28px] border border-gray-200 bg-white p-5 sm:p-8">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black font-display">
+                  <div className="text-xl sm:text-2xl font-black font-display">
                     Additional Team Members
                   </div>
-                  <div className="text-gray-500 mt-1">
+                  <div className="text-gray-500 mt-1 text-sm sm:text-base">
                     Give your team access to the dashboard — bookers, scouts,
                     account managers
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 shrink-0">
                   <Badge variant="outline" className="bg-white/70">
                     Coming Soon
                   </Badge>
@@ -1842,20 +1842,20 @@ export default function AgencySubscribe() {
         </div>
 
         <div className="mt-10">
-          <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
-            <div className="flex items-center justify-between gap-6 flex-wrap">
+          <Card className="rounded-[28px] border border-gray-200 bg-white p-5 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
               <div>
-                <div className="text-2xl font-black font-display">
+                <div className="text-xl sm:text-2xl font-black font-display">
                   Enterprise
                 </div>
-                <div className="text-gray-500 mt-1">
+                <div className="text-gray-500 mt-1 text-sm sm:text-base">
                   Custom storage, security, SLAs, onboarding, integrations, and
                   bespoke billing support for agencies with more than 1,000
                   models.
                 </div>
               </div>
               <Button
-                className="rounded-2xl font-black"
+                className="rounded-2xl font-black shrink-0"
                 variant="outline"
                 onClick={onContact}
               >

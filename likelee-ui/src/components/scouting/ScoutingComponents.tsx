@@ -13,7 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect } from "@/types/scouting";
 
@@ -486,8 +493,8 @@ export const ProspectPipelineTab = ({
 
   return (
     <div className="space-y-6">
-      <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <Card className="p-4 sm:p-8 bg-white border border-gray-200 shadow-sm rounded-2xl sm:rounded-3xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 sm:mb-8">
           <h2 className="text-xl font-bold text-gray-900">Prospect Pipeline</h2>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
@@ -523,7 +530,7 @@ export const ProspectPipelineTab = ({
               </SelectContent>
             </Select>
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm"
+              className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 ring-1 ring-indigo-700/10 font-bold h-10 px-4 sm:px-6 rounded-lg shadow-sm shrink-0"
               onClick={onAddProspect}
             >
               <Plus className="w-4 h-4 mr-2" /> Add Prospect
@@ -531,13 +538,14 @@ export const ProspectPipelineTab = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Desktop Stats Grid */}
+        <div className="hidden lg:grid lg:grid-cols-4 gap-4 mb-8">
           {stats.map((stat) => (
             <div
               key={stat.label}
               className={`p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
             >
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2 w-full truncate">
                 {stat.label}
               </p>
               <p className="text-4xl font-black text-gray-900 tracking-tight">
@@ -545,6 +553,33 @@ export const ProspectPipelineTab = ({
               </p>
             </div>
           ))}
+        </div>
+
+        {/* Mobile/Tablet Stats Carousel */}
+        <div className="lg:hidden mb-8 relative w-[85%] mx-auto">
+          <Carousel opts={{ align: "start", dragFree: true }}>
+            <CarouselContent>
+              {stats.map((stat) => (
+                <CarouselItem
+                  key={stat.label}
+                  className="basis-1/2 sm:basis-1/3"
+                >
+                  <div
+                    className={`p-4 sm:p-6 border rounded-2xl ${stat.color} transition-all h-full flex flex-col justify-center`}
+                  >
+                    <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-tight mb-1 sm:mb-2 w-full truncate">
+                      {stat.label}
+                    </p>
+                    <p className="text-3xl font-black text-gray-900 tracking-tight">
+                      {stat.count}
+                    </p>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="-left-6 sm:-left-10 h-8 w-8 sm:h-10 sm:w-10 bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50" />
+            <CarouselNext className="-right-6 sm:-right-10 h-8 w-8 sm:h-10 sm:w-10 bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50" />
+          </Carousel>
         </div>
 
         <div className="space-y-4">
@@ -562,9 +597,9 @@ export const ProspectPipelineTab = ({
             filteredProspects.map((prospect) => (
               <div
                 key={prospect.id}
-                className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-2xl border border-gray-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all group"
+                className="flex flex-col md:flex-row items-start md:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl border border-gray-100 hover:border-indigo-100 hover:bg-indigo-50/30 transition-all group"
               >
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 font-bold text-lg shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-xl flex items-center justify-center text-gray-400 font-bold text-lg shrink-0">
                   {prospect.full_name.charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
