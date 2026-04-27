@@ -394,14 +394,16 @@ export default function StudioImage() {
               <div className="flex items-center gap-2 mb-6">
                 <Settings2 className="w-5 h-5 text-[#32C8D1]" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">
-                  Settings
+                  {t("studio.image.ui.settings", { defaultValue: "Settings" })}
                 </h3>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    Intelligence
+                    {t("studio.image.ui.intelligence", {
+                      defaultValue: "Intelligence",
+                    })}
                   </label>
                   <Select
                     value={selectedModel}
@@ -433,13 +435,21 @@ export default function StudioImage() {
 
                 <div className="space-y-3">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    Visual Prompt
+                    {t("studio.image.ui.visualPrompt", {
+                      defaultValue: "Visual Prompt",
+                    })}
                   </label>
                   <div className="relative group">
                     <Textarea
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="Surreal landscape with floating islands..."
+                      placeholder={t(
+                        "studio.image.ui.visualPromptPlaceholder",
+                        {
+                          defaultValue:
+                            "Surreal landscape with floating islands...",
+                        },
+                      )}
                       className="bg-white/5 border-white/10 text-white min-h-[160px] rounded-2xl resize-none text-sm p-4 focus:ring-[#32C8D1]/30 transition-all group-hover:bg-white/[0.08]"
                     />
                     <div className="absolute top-3 right-3 opacity-30 group-hover:opacity-100 transition-opacity">
@@ -450,7 +460,9 @@ export default function StudioImage() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    Canvas Size
+                    {t("studio.image.ui.canvasSize", {
+                      defaultValue: "Canvas Size",
+                    })}
                   </label>
                   <Select value={imageSize} onValueChange={setImageSize}>
                     <SelectTrigger className="bg-white/5 border-white/10 text-white h-11 rounded-xl hover:bg-white/10 transition-all">
@@ -475,7 +487,9 @@ export default function StudioImage() {
                 <div className="space-y-4 pt-2">
                   <div className="flex justify-between items-end">
                     <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                      Batch Count
+                      {t("studio.image.ui.batchCount", {
+                        defaultValue: "Batch Count",
+                      })}
                     </label>
                     <span className="text-xl font-bold bg-gradient-to-t from-[#32C8D1] to-white bg-clip-text text-transparent">
                       {numImages}
