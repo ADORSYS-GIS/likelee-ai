@@ -410,7 +410,9 @@ const TalentSideModal = ({
                       onClick={() => setShowPhotoFull(false)}
                       className="absolute -top-10 right-0 text-white hover:text-[#32C8D1] transition-colors"
                     >
-                      Close X
+                      {t("agencyDashboard.talentSideModal.close", {
+                        defaultValue: "Close",
+                      })}
                     </button>
                   </div>
                 </DialogContent>
@@ -614,7 +616,9 @@ const TalentSideModal = ({
                   </div>
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700">
-                      Categories
+                      {t("agencyDashboard.talentSideModal.categories", {
+                        defaultValue: "Categories",
+                      })}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {roleCategories.map((v) => {
@@ -649,7 +653,9 @@ const TalentSideModal = ({
                   </div>
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700">
-                      Hair color
+                      {t("agencyDashboard.talentSideModal.hairColor", {
+                        defaultValue: "Hair color",
+                      })}
                     </div>
                     <Input
                       value={editForm.hair_color}
@@ -658,7 +664,9 @@ const TalentSideModal = ({
                   </div>
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700">
-                      Eye color
+                      {t("agencyDashboard.talentSideModal.eyeColor", {
+                        defaultValue: "Eye color",
+                      })}
                     </div>
                     <Input
                       value={editForm.eye_color}
@@ -667,7 +675,9 @@ const TalentSideModal = ({
                   </div>
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700">
-                      Height (ft)
+                      {t("agencyDashboard.talentSideModal.heightFeet", {
+                        defaultValue: "Height (ft)",
+                      })}
                     </div>
                     <Input
                       type="number"
@@ -677,7 +687,9 @@ const TalentSideModal = ({
                   </div>
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700">
-                      Height (in)
+                      {t("agencyDashboard.talentSideModal.heightInches", {
+                        defaultValue: "Height (in)",
+                      })}
                     </div>
                     <Input
                       type="number"
@@ -689,7 +701,11 @@ const TalentSideModal = ({
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-xs font-bold text-gray-700">Bio</div>
+                  <div className="text-xs font-bold text-gray-700">
+                    {t("agencyDashboard.talentSideModal.bio", {
+                      defaultValue: "Bio",
+                    })}
+                  </div>
                   <Textarea
                     value={editForm.bio}
                     onChange={(e) => setField("bio", e.target.value)}
@@ -698,7 +714,9 @@ const TalentSideModal = ({
                 </div>
                 <div className="space-y-1">
                   <div className="text-xs font-bold text-gray-700">
-                    Race / Ethnicity (comma separated)
+                    {t("agencyDashboard.talentSideModal.raceEthnicityComma", {
+                      defaultValue: "Race / Ethnicity (comma separated)",
+                    })}
                   </div>
                   <Input
                     value={(editForm.race_ethnicity || []).join(", ")}
@@ -780,7 +798,9 @@ const TalentSideModal = ({
                           setField("accept_negotiations", e.target.checked)
                         }
                       />
-                      Open to negotiations
+                      {t("agencyDashboard.talentSideModal.openToNegotiations", {
+                        defaultValue: "Open to negotiations",
+                      })}
                     </label>
                   </div>
                 </div>
@@ -808,7 +828,9 @@ const TalentSideModal = ({
               </div>
               <div className="p-4 border border-gray-100 rounded-xl bg-white shadow-sm">
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                  Total Assets
+                  {t("agencyDashboard.talentSideModal.totalAssets", {
+                    defaultValue: "Total Assets",
+                  })}
                 </p>
                 <p className="text-xl font-bold text-gray-900">
                   {talent.assets || 0}
@@ -816,7 +838,9 @@ const TalentSideModal = ({
               </div>
               <div className="p-4 border border-gray-100 rounded-xl bg-white shadow-sm">
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                  30D Earnings
+                  {t("agencyDashboard.talentSideModal.earnings30d", {
+                    defaultValue: "30D Earnings",
+                  })}
                 </p>
                 <p className="text-xl font-bold text-gray-900">
                   {talent.earnings || "$0"}
@@ -847,7 +871,13 @@ const TalentSideModal = ({
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-gray-900 truncate">
-                          {c.name || "Untitled campaign"}
+                          {c.name ||
+                            t(
+                              "agencyDashboard.talentSideModal.untitledCampaign",
+                              {
+                                defaultValue: "Untitled campaign",
+                              },
+                            )}
                         </p>
                         <p className="text-xs text-gray-500 font-medium mt-0.5">
                           {c.date || "—"}
@@ -855,7 +885,9 @@ const TalentSideModal = ({
 
                         <div className="mt-3 flex items-center justify-between">
                           <div className="text-xs text-gray-500 font-bold">
-                            Talent earns
+                            {t("agencyDashboard.talentSideModal.talentEarns", {
+                              defaultValue: "Talent earns",
+                            })}
                           </div>
                           <div className="text-xs font-bold text-gray-900">
                             {(() => {
