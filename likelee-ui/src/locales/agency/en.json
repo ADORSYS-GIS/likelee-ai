@@ -10,6 +10,13 @@
   "whyMarketingAgenciesWin": "Why Marketing Agencies Win",
   "whySportsAgenciesWin": "Why Sports Agencies Win",
   "agencyDashboard": {
+    "tabs": {
+      "jobs": "Jobs",
+      "roster": "Roster",
+      "messages": "Messages",
+      "licensing": "Licensing",
+      "scouting": "Scouting"
+    },
     "dashboard": {
       "entities": {
         "talent": "talent",
@@ -723,6 +730,71 @@
     "catalogs": {
       "title": "Asset Catalogs",
       "subtitle": "Deliver licensed assets and voice recordings to clients after payment.",
+      "builder": {
+        "title": "Create New Catalog",
+        "description": "Select a paid request and prepare assets and voice recordings for delivery.",
+        "steps": {
+          "select-request": "Request",
+          "info": "Details",
+          "assets": "Assets",
+          "voice": "Voice",
+          "review": "Review"
+        },
+        "fields": {
+          "catalogTitle": "Catalog title",
+          "notesOptional": "Notes (optional)",
+          "catalogExpiration": "Catalog expiration"
+        },
+        "placeholders": {
+          "catalogTitle": "Enter catalog title",
+          "notes": "Add optional notes for this delivery"
+        },
+        "expirationHelp": "Set when this catalog link should expire.",
+        "selectRequestDescription": "Choose the paid request this catalog should be linked to.",
+        "selectRequestEligible": "Eligible request",
+        "unpaidRequestHelp": "Unpaid request. Delivery can be prepared but should be sent after payment.",
+        "loadingAssets": "Loading assets…",
+        "selectedCount": "{{count}} selected",
+        "actions": {
+          "upload": "Upload",
+          "uploadNewRecording": "Upload new recording",
+          "back": "Back",
+          "next": "Next",
+          "creating": "Creating…",
+          "createAndSend": "Create & Send"
+        },
+        "empty": {
+          "noSignedRequests": "No paid requests found.",
+          "unnamedClient": "Unnamed client",
+          "noTalentsAssets": "No talents available for assets.",
+          "noAssetsForTalent": "No assets for this talent yet.",
+          "noTalentsVoice": "No talents available for voice recordings.",
+          "noVoiceForTalent": "No recordings for this talent yet."
+        },
+        "defaults": {
+          "recording": "Recording"
+        },
+        "review": {
+          "sendTo": "Send to",
+          "talents": "Talents",
+          "recordings": "Recordings",
+          "linkedRequest": "Linked request",
+          "yes": "Yes",
+          "no": "No",
+          "emailNotice": "This catalog will be sent to",
+          "noClientEmail": "No client email provided. You can still create and share manually."
+        },
+        "toasts": {
+          "assetUploaded": "Asset uploaded",
+          "recordingUploaded": "Recording uploaded",
+          "uploadFailed": "Upload failed",
+          "genericError": "Something went wrong. Please try again.",
+          "catalogCreated": "Catalog created",
+          "catalogSentTo": "Catalog sent to {{email}}",
+          "catalogCreatedShare": "Catalog created. Copy the link to share it.",
+          "createFailed": "Failed to create catalog"
+        }
+      },
       "stats": {
         "totalCatalogs": "Total Catalogs",
         "sent": "Sent",
@@ -786,6 +858,20 @@
     },
     "payouts": {
       "title": "Commission & Payout Management",
+      "connectBank": {
+        "title": "Connect Your Bank Account",
+        "subtitle": "Link your bank account to receive direct payments from clients and",
+        "changeAccount": "Change account",
+        "connectBankAccount": "Connect Bank Account",
+        "connectStripe": "Connect with Stripe",
+        "whyTitle": "Why Connect Your Bank?",
+        "whyItem1": "Receive invoice payments directly to your account",
+        "whyItem2": "Automate talent commission payouts",
+        "whyItem3": "Track cash flow and reconcile payments",
+        "whyItem4": "Bank-level security with 256-bit encryption",
+        "poweredByStripe": "Powered by Stripe Connect",
+        "whatYouNeed": "What you'll need:"
+      },
       "actions": {
         "exportReport": "Export Report"
       },
@@ -1232,9 +1318,24 @@
         "usageScope": "Usage Scope",
         "value": "Value",
         "status": "Status",
+        "actions": "Actions",
         "autoRenew": "Auto Renew",
         "yes": "Yes",
         "no": "No"
+      },
+      "details": {
+        "title": "License Details",
+        "description": "View comprehensive details for this license.",
+        "talent": "Talent",
+        "athlete": "Athlete",
+        "clientBrand": "Client/Brand",
+        "totalLicenseValue": "Total License Value",
+        "usageRights": "Usage & Rights",
+        "timeline": "Timeline",
+        "daysRemaining": "Days Remaining:",
+        "days": "days",
+        "na": "N/A",
+        "nullDays": "null days"
       },
       "actions": {
         "viewDetails": "View Details",
@@ -1261,8 +1362,17 @@
         "signed": "Signed",
         "sent": "Sent",
         "opened": "Opened",
+        "agencyPending": "Agency pending",
+        "clientPending": "Client pending",
+        "archived": "Archived",
         "declined": "Declined",
         "expired": "Expired"
+      },
+      "table": {
+        "client": "Client",
+        "template": "Template",
+        "status": "Status",
+        "sentDate": "Sent Date"
       },
       "reason": "Reason:",
       "toast": {
@@ -1287,6 +1397,12 @@
         "resendEmail": "Resend Email",
         "archive": "Archive",
         "recover": "Recover",
+        "signHere": "Sign here",
+        "download": "Download",
+        "downloadPdf": "Download PDF",
+        "moreActions": "More actions",
+        "openAgencySigningLink": "Open agency signing link",
+        "openAgencyLink": "Open agency link",
         "copyClientLink": "Copy Client Link",
         "copyAgencyLink": "Copy Agency Link",
         "viewDocument": "View Document"
@@ -1333,6 +1449,25 @@
         "useTemplate": "Use Template",
         "editInBuilder": "Edit in Builder",
         "sendContract": "Send Contract"
+      },
+      "modal": {
+        "newTitle": "New Contract Template",
+        "editTitle": "Edit License Template",
+        "detailsTitle": "License Template Details",
+        "detailsSubtitle": "View your standardized agency terms and details",
+        "editSubtitle": "Standardize your agency terms with dynamic placeholders",
+        "saving": "Saving...",
+        "updateTemplate": "Update Template",
+        "createTemplate": "Create Template"
+      },
+      "wizard": {
+        "dealSpecifics": "Deal Specifics",
+        "contentReview": "Content Review",
+        "dealSpecificsSubtitle": "Enter the core details of this licensing deal",
+        "contentReviewSubtitle": "Review and personalize the contract content",
+        "preparing": "Preparing...",
+        "finalize": "Finalize",
+        "nextStep": "Next Step"
       },
       "deleteModal": {
         "title": "Delete Template",
@@ -1437,6 +1572,41 @@
         "description": "A {{entityLower}} with this email already exists in {{agencyType}}.",
         "sameAgency": "your agency",
         "otherAgency": "another agency"
+      }
+    },
+    "header": {
+      "notifications": {
+        "title": "Notifications",
+        "markAllRead": "Mark all as read",
+        "all": "All",
+        "unread": "Unread ({{count}})",
+        "none": "No notifications found.",
+        "caughtUp": "You're all caught up!",
+        "viewAll": "View all notifications",
+        "viewAllDesc": "Navigating to full notifications page...",
+        "systemAlert": "System Alert",
+        "systemAlertMessage": "Your verification was successfully processed. Welcome to Likelee!",
+        "justNow": "Just now",
+        "summary": {
+          "requests": "{{count}} request(s)",
+          "offers": "{{count}} offer(s)",
+          "feedback": "{{count}} feedback(s)",
+          "pending": "Pending: {{parts}}.",
+          "actionRequired": "Action required",
+          "pendingLicensing": "You have {{count}} pending licensing request(s).",
+          "pendingJobs": "You have {{count}} pending job invite(s).",
+          "newMessage": "New message"
+        }
+      },
+      "profile": {
+        "organizationSettings": "Organization Settings",
+        "manageCompany": "Manage company profile",
+        "teamPermissions": "Team & Permissions",
+        "activeUsers": "{{count}} active users",
+        "billingSubscription": "Billing & Subscription",
+        "legalCompliance": "Legal & Compliance",
+        "legalSubtitle": "Contracts, terms, privacy",
+        "integrations": "Integrations"
       }
     },
     "compCard": {
