@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type CampaignBrief = {
   [key: string]: any;
@@ -29,6 +30,7 @@ export default function CampaignBriefStep({
   onBrandAssetsUpload,
   uploading = false,
 }: Props) {
+  const { t } = useTranslation();
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const assetInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -36,36 +38,42 @@ export default function CampaignBriefStep({
     <div className="space-y-6">
       <div className="border-2 border-gray-200 rounded-none p-4 space-y-4">
         <h3 className="text-lg font-bold text-gray-900">
-          Section 1: General Dialogue & Voice Direction
+          {t("campaignsDashboard.builder.brief.step1Title")}
         </h3>
         <p className="text-sm font-semibold text-gray-700">
-          Brand Voice & Tone
+          {t("campaignsDashboard.builder.brief.brandVoiceTone")}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Voice</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaigns.myOffers.voice")}
+            </p>
             <Textarea
               value={campaignBrief.voice}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({ ...prev, voice: e.target.value }))
               }
-              placeholder="Friendly, authentic, approachable"
+              placeholder={t("campaignsDashboard.builder.brief.placeholders.voice")}
               className="border-2 border-gray-300 rounded-none min-h-[90px]"
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Tone</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaigns.myOffers.tone")}
+            </p>
             <Textarea
               value={campaignBrief.tone}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({ ...prev, tone: e.target.value }))
               }
-              placeholder="Upbeat and energetic, but not over-the-top. Natural enthusiasm that feels genuine."
+              placeholder={t("campaignsDashboard.builder.brief.placeholders.tone")}
               className="border-2 border-gray-300 rounded-none min-h-[90px]"
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Personality</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaigns.myOffers.personality")}
+            </p>
             <Textarea
               value={campaignBrief.personality}
               onChange={(e) =>
@@ -74,13 +82,17 @@ export default function CampaignBriefStep({
                   personality: e.target.value,
                 }))
               }
-              placeholder='Think "your stylish friend giving honest recommendations" rather than polished influencer.'
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.personality",
+              )}
               className="border-2 border-gray-300 rounded-none min-h-[90px]"
             />
           </div>
         </div>
 
-        <p className="text-sm font-semibold text-gray-700">Key Messages</p>
+        <p className="text-sm font-semibold text-gray-700">
+          {t("campaigns.myOffers.keyMessages")}
+        </p>
         <Textarea
           value={campaignBrief.key_messages}
           onChange={(e) =>
@@ -89,17 +101,19 @@ export default function CampaignBriefStep({
               key_messages: e.target.value,
             }))
           }
-          placeholder={
-            '• "Spring collection drops next week - these pieces are incredible"\n• "Quality you can feel, style you can trust"\n• "Perfect for everyday wear or special occasions"\n• Call to action: "Shop now at urbanapparel.com"'
-          }
+          placeholder={t(
+            "campaignsDashboard.builder.brief.placeholders.keyMessages",
+          )}
           className="border-2 border-gray-300 rounded-none min-h-[130px]"
         />
 
         <p className="text-sm font-semibold text-gray-700">
-          Script Guidelines (For Video/Audio)
+          {t("campaignsDashboard.builder.brief.scriptGuidelines")}
         </p>
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Opening (0-5s)</p>
+          <p className="text-sm font-medium text-gray-700">
+            {t("campaignsDashboard.builder.brief.opening")}
+          </p>
           <Textarea
             value={campaignBrief.script_opening}
             onChange={(e) =>
@@ -108,12 +122,16 @@ export default function CampaignBriefStep({
                 script_opening: e.target.value,
               }))
             }
-            placeholder='Hook viewer with energy - "You guys! I just got early access to Urban Apparel&apos;s spring line..."'
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.opening",
+            )}
             className="border-2 border-gray-300 rounded-none min-h-[80px]"
           />
         </div>
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Middle (5-20s)</p>
+          <p className="text-sm font-medium text-gray-700">
+            {t("campaignsDashboard.builder.brief.middle")}
+          </p>
           <Textarea
             value={campaignBrief.script_middle}
             onChange={(e) =>
@@ -122,12 +140,16 @@ export default function CampaignBriefStep({
                 script_middle: e.target.value,
               }))
             }
-            placeholder="Show product features, talk about quality, fit, versatility. Be specific about what you love."
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.middle",
+            )}
             className="border-2 border-gray-300 rounded-none min-h-[80px]"
           />
         </div>
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Closing (20-30s)</p>
+          <p className="text-sm font-medium text-gray-700">
+            {t("campaignsDashboard.builder.brief.closing")}
+          </p>
           <Textarea
             value={campaignBrief.script_closing}
             onChange={(e) =>
@@ -136,35 +158,39 @@ export default function CampaignBriefStep({
                 script_closing: e.target.value,
               }))
             }
-            placeholder='Clear CTA - "Link in bio to shop" or "Head to urbanapparel.com before it sells out"'
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.closing",
+            )}
             className="border-2 border-gray-300 rounded-none min-h-[80px]"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">✓ DO:</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.do")}
+            </p>
             <Textarea
               value={campaignBrief.dos}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({ ...prev, dos: e.target.value }))
               }
-              placeholder={
-                "• Be authentic and natural\n• Show product in real-life settings\n• Speak to camera directly\n• Mention brand name at least once"
-              }
+              placeholder={t("campaignsDashboard.builder.brief.placeholders.do")}
               className="border-2 border-gray-300 rounded-none min-h-[120px]"
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">✗ DON'T:</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.dont")}
+            </p>
             <Textarea
               value={campaignBrief.donts}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({ ...prev, donts: e.target.value }))
               }
-              placeholder={
-                "• Use competitor brands in frame\n• Over-script - keep it natural\n• Include controversial topics\n• Disparage other brands"
-              }
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.dont",
+              )}
               className="border-2 border-gray-300 rounded-none min-h-[120px]"
             />
           </div>
@@ -173,14 +199,14 @@ export default function CampaignBriefStep({
 
       <div className="border-2 border-gray-200 rounded-none p-4 space-y-4">
         <h3 className="text-lg font-bold text-gray-900">
-          Section 2: Visual Requirements & Style Guide
+          {t("campaignsDashboard.builder.brief.step2Title")}
         </h3>
         <p className="text-sm font-semibold text-gray-700">
-          Required Deliverables
+          {t("campaigns.myOffers.requiredDeliverables")}
         </p>
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700">
-            Enter all required deliverables
+            {t("campaignsDashboard.builder.brief.enterDeliverables")}
           </p>
           <Textarea
             value={
@@ -199,15 +225,16 @@ export default function CampaignBriefStep({
                 required_deliverables: e.target.value,
               }))
             }
-            placeholder={
-              "Example:\n3x Instagram Reels (15-30 seconds each)\n1x Hero Image\n5x Story Frames\n\nTip: Include quantity in each line so expected total is tracked automatically."
-            }
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.requiredDeliverables",
+            )}
             className="border-2 border-gray-300 rounded-none min-h-[130px]"
           />
         </div>
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700">
-            Total expected deliverables <span className="text-red-600">*</span>
+            {t("campaignsDashboard.builder.brief.totalExpectedDeliverables")}{" "}
+            <span className="text-red-600">*</span>
           </p>
           <Input
             type="number"
@@ -220,21 +247,24 @@ export default function CampaignBriefStep({
                 total_expected_deliverables: e.target.value,
               }))
             }
-            placeholder="e.g. 6"
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.totalExpectedDeliverables",
+            )}
             className="border-2 border-gray-300 rounded-none"
           />
           <p className="text-xs text-gray-500">
-            Required for tracking progress even when required-deliverables text
-            is not detailed.
+            {t("campaignsDashboard.builder.brief.totalExpectedDeliverablesHelp")}
           </p>
         </div>
 
         <p className="text-sm font-semibold text-gray-700">
-          Visual Style & Aesthetic
+          {t("campaignsDashboard.builder.brief.visualStyle")}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Color Palette</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.colorPalette")}
+            </p>
             <Input
               value={campaignBrief.visual_color_palette}
               onChange={(e) =>
@@ -243,12 +273,16 @@ export default function CampaignBriefStep({
                   visual_color_palette: e.target.value,
                 }))
               }
-              placeholder="Warm earth tones, natural lighting, bright but not oversaturated"
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.colorPalette",
+              )}
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Setting</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.setting")}
+            </p>
             <Input
               value={campaignBrief.visual_setting}
               onChange={(e) =>
@@ -257,12 +291,16 @@ export default function CampaignBriefStep({
                   visual_setting: e.target.value,
                 }))
               }
-              placeholder="Indoor/outdoor lifestyle settings - coffee shop, park, urban backdrop, home"
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.setting",
+              )}
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Framing</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.framing")}
+            </p>
             <Input
               value={campaignBrief.visual_framing}
               onChange={(e) =>
@@ -271,12 +309,16 @@ export default function CampaignBriefStep({
                   visual_framing: e.target.value,
                 }))
               }
-              placeholder="Mix of close-ups and full-body shots. Show product clearly."
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.framing",
+              )}
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Editing</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.editing")}
+            </p>
             <Input
               value={campaignBrief.visual_editing}
               onChange={(e) =>
@@ -285,13 +327,17 @@ export default function CampaignBriefStep({
                   visual_editing: e.target.value,
                 }))
               }
-              placeholder="Clean, minimal cuts. Trendy but not overly filtered. Authentic feel."
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.editing",
+              )}
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
         </div>
 
-        <p className="text-sm font-semibold text-gray-700">Reference Images</p>
+        <p className="text-sm font-semibold text-gray-700">
+          {t("campaigns.myOffers.referenceImages")}
+        </p>
         <div className="border-2 border-dashed border-gray-300 rounded-none p-3">
           <div className="flex items-center gap-3">
             <Button
@@ -300,12 +346,14 @@ export default function CampaignBriefStep({
               className="border-2 border-gray-300 rounded-none"
               onClick={() => referenceInputRef.current?.click()}
             >
-              Choose Files
+              {t("campaignsDashboard.builder.brief.chooseFiles")}
             </Button>
             <span className="text-sm text-gray-600">
               {campaignBrief.reference_images.length > 0
-                ? `${campaignBrief.reference_images.length} image(s) selected`
-                : "No files chosen"}
+                ? t("campaignsDashboard.builder.brief.imagesSelected", {
+                    count: campaignBrief.reference_images.length,
+                  })
+                : t("campaignsDashboard.builder.brief.noFilesChosen")}
             </span>
           </div>
           <input
@@ -324,11 +372,15 @@ export default function CampaignBriefStep({
               >
                 <img
                   src={img.url}
-                  alt={`Style Ref ${idx + 1}`}
+                  alt={t("campaignsDashboard.builder.brief.styleReferenceAlt", {
+                    count: idx + 1,
+                  })}
                   className="w-full h-24 object-contain bg-gray-100"
                 />
                 <p className="text-xs text-gray-700 mt-2 truncate">
-                  Style Ref {idx + 1}
+                  {t("campaignsDashboard.builder.brief.styleReference", {
+                    count: idx + 1,
+                  })}
                 </p>
                 <Button
                   type="button"
@@ -343,7 +395,7 @@ export default function CampaignBriefStep({
                     }))
                   }
                 >
-                  Remove
+                  {t("campaignsDashboard.builder.brief.remove")}
                 </Button>
               </div>
             ))}
@@ -351,7 +403,7 @@ export default function CampaignBriefStep({
         </div>
 
         <p className="text-sm font-semibold text-gray-700">
-          Deliverable Expectations &amp; Brand Guidelines (PDFs)
+          {t("campaignsDashboard.builder.brief.deliverableExpectations")}
         </p>
         <div className="border-2 border-dashed border-gray-300 rounded-none p-3">
           <div className="flex items-center gap-3">
@@ -361,12 +413,14 @@ export default function CampaignBriefStep({
               className="border-2 border-gray-300 rounded-none"
               onClick={() => assetInputRef.current?.click()}
             >
-              Choose Files
+              {t("campaignsDashboard.builder.brief.chooseFiles")}
             </Button>
             <span className="text-sm text-gray-600">
               {campaignBrief.brand_assets.length > 0
-                ? `${campaignBrief.brand_assets.length} PDF(s) selected`
-                : "No files chosen"}
+                ? t("campaignsDashboard.builder.brief.pdfsSelected", {
+                    count: campaignBrief.brand_assets.length,
+                  })
+                : t("campaignsDashboard.builder.brief.noFilesChosen")}
             </span>
           </div>
           <input
@@ -388,7 +442,10 @@ export default function CampaignBriefStep({
                   download={asset.name}
                   className="block text-sm text-blue-700 hover:underline truncate"
                 >
-                  PDF {idx + 1}: {asset.name}
+                  {t("campaignsDashboard.builder.brief.pdfLabel", {
+                    count: idx + 1,
+                    name: asset.name,
+                  })}
                 </a>
                 <Button
                   type="button"
@@ -403,7 +460,7 @@ export default function CampaignBriefStep({
                     }))
                   }
                 >
-                  Remove
+                  {t("campaignsDashboard.builder.brief.remove")}
                 </Button>
               </div>
             ))}
@@ -413,12 +470,16 @@ export default function CampaignBriefStep({
 
       <div className="border-2 border-gray-200 rounded-none p-4 space-y-4">
         <h3 className="text-lg font-bold text-gray-900">
-          Section 3: Campaign Scope & Contract Details
+          {t("campaignsDashboard.builder.brief.step3Title")}
         </h3>
-        <p className="text-sm font-semibold text-gray-700">Campaign Overview</p>
+        <p className="text-sm font-semibold text-gray-700">
+          {t("campaignsDashboard.builder.brief.campaignOverview")}
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Objective</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.objective")}
+            </p>
             <Input
               value={campaignBrief.overview_objective}
               onChange={(e) =>
@@ -427,12 +488,16 @@ export default function CampaignBriefStep({
                   overview_objective: e.target.value,
                 }))
               }
-              placeholder="Drive awareness and sales for Spring 2025 collection launch"
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.objective",
+              )}
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Target Audience</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.targetAudience")}
+            </p>
             <Input
               value={campaignBrief.overview_target_audience}
               onChange={(e) =>
@@ -441,13 +506,15 @@ export default function CampaignBriefStep({
                   overview_target_audience: e.target.value,
                 }))
               }
-              placeholder="Women 25-40, fashion-conscious, urban lifestyle"
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.targetAudience",
+              )}
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              Campaign Duration
+              {t("campaignsDashboard.builder.brief.campaignDuration")}
             </p>
             <Input
               type="number"
@@ -461,12 +528,16 @@ export default function CampaignBriefStep({
                   overview_campaign_duration: e.target.value,
                 }))
               }
-              placeholder="90"
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.campaignDuration",
+              )}
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Launch Date</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("campaignsDashboard.builder.brief.launchDate")}
+            </p>
             <Input
               type="date"
               value={campaignBrief.overview_launch_date}
@@ -483,12 +554,12 @@ export default function CampaignBriefStep({
         </div>
 
         <p className="text-sm font-semibold text-gray-700">
-          Payment & Timeline
+          {t("campaignsDashboard.builder.brief.paymentTimeline")}
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              Collaborator Payout (Net)
+              {t("campaignsDashboard.builder.brief.collaboratorPayout")}
             </p>
             <Input
               type="number"
@@ -505,16 +576,18 @@ export default function CampaignBriefStep({
                   budget_total: total,
                 }));
               }}
-              placeholder="5000"
+              placeholder={t(
+                "campaignsDashboard.builder.brief.placeholders.collaboratorPayout",
+              )}
               className="border-2 border-gray-300 rounded-none"
             />
             <p className="text-[10px] text-gray-500">
-              The exact amount the creator or agency will receive.
+              {t("campaignsDashboard.builder.brief.collaboratorPayoutHelp")}
             </p>
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              Offer Amount (Gross + 2% Fee)
+              {t("campaignsDashboard.builder.brief.offerAmount")}
             </p>
             <Input
               type="number"
@@ -523,7 +596,7 @@ export default function CampaignBriefStep({
               className="border-2 border-gray-300 rounded-none bg-gray-50 font-bold"
             />
             <p className="text-[10px] text-blue-600 font-medium">
-              Includes 2% Likelee platform fee ($
+              {t("campaignsDashboard.builder.brief.platformFeePrefix")} ($
               {(
                 Number(campaignBrief.budget_total || 0) -
                 Number(campaignBrief.budget_creator_payment || 0)
@@ -533,7 +606,7 @@ export default function CampaignBriefStep({
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              Submission Deadline
+              {t("campaignsDashboard.builder.brief.submissionDeadline")}
             </p>
             <Input
               type="date"
@@ -550,7 +623,9 @@ export default function CampaignBriefStep({
           </div>
         </div>
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Renewal Terms</p>
+        <p className="text-sm font-medium text-gray-700">
+          {t("campaignsDashboard.builder.brief.renewalTerms")}
+        </p>
           <Input
             value={campaignBrief.budget_renewal_terms}
             onChange={(e) =>
@@ -559,15 +634,19 @@ export default function CampaignBriefStep({
                 budget_renewal_terms: e.target.value,
               }))
             }
-            placeholder="Auto-renewal available at end of term. Brand must notify 14 days prior if not renewing."
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.renewalTerms",
+            )}
             className="border-2 border-gray-300 rounded-none"
           />
         </div>
 
-        <p className="text-sm font-semibold text-gray-700">Revision Policy</p>
+        <p className="text-sm font-semibold text-gray-700">
+          {t("campaignsDashboard.builder.brief.revisionPolicy")}
+        </p>
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700">
-            Included Revisions
+            {t("campaignsDashboard.builder.brief.includedRevisions")}
           </p>
           <Input
             value={campaignBrief.revision_included}
@@ -577,12 +656,16 @@ export default function CampaignBriefStep({
                 revision_included: e.target.value,
               }))
             }
-            placeholder="2 rounds of minor edits (color correction, text changes, music swaps)"
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.includedRevisions",
+            )}
             className="border-2 border-gray-300 rounded-none"
           />
         </div>
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">Major Changes</p>
+          <p className="text-sm font-medium text-gray-700">
+            {t("campaignsDashboard.builder.brief.majorChanges")}
+          </p>
           <Input
             value={campaignBrief.revision_major_changes}
             onChange={(e) =>
@@ -591,13 +674,15 @@ export default function CampaignBriefStep({
                 revision_major_changes: e.target.value,
               }))
             }
-            placeholder="Require new brief and additional budget (e.g., re-shoot, complete re-edit)"
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.majorChanges",
+            )}
             className="border-2 border-gray-300 rounded-none"
           />
         </div>
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700">
-            Turnaround for Revisions
+            {t("campaignsDashboard.builder.brief.revisionTurnaround")}
           </p>
           <Input
             value={campaignBrief.revision_turnaround}
@@ -607,12 +692,16 @@ export default function CampaignBriefStep({
                 revision_turnaround: e.target.value,
               }))
             }
-            placeholder="24-48 hours depending on scope"
+            placeholder={t(
+              "campaignsDashboard.builder.brief.placeholders.revisionTurnaround",
+            )}
             className="border-2 border-gray-300 rounded-none"
           />
         </div>
 
-        <p className="text-sm font-semibold text-gray-700">Approval Process</p>
+        <p className="text-sm font-semibold text-gray-700">
+          {t("campaignsDashboard.builder.brief.approvalProcess")}
+        </p>
         <Textarea
           value={campaignBrief.approval_process}
           onChange={(e) =>
@@ -621,13 +710,13 @@ export default function CampaignBriefStep({
               approval_process: e.target.value,
             }))
           }
-          placeholder={
-            "1 Creator submits deliverables to platform\n2 Brand has 48 hours to review and approve/request revisions\n3 Once approved, funds release from escrow to creator (3 business days)\n4 If no action taken, payment auto-releases after 48 hours"
-          }
+          placeholder={t(
+            "campaignsDashboard.builder.brief.placeholders.approvalProcess",
+          )}
           className="border-2 border-gray-300 rounded-none min-h-[120px]"
         />
         <p className="text-sm font-semibold text-gray-700">
-          Watermark & Protection
+          {t("campaignsDashboard.builder.brief.watermarkProtection")}
         </p>
         <Textarea
           value={campaignBrief.watermark_protection}
@@ -637,12 +726,14 @@ export default function CampaignBriefStep({
               watermark_protection: e.target.value,
             }))
           }
-          placeholder={
-            "All delivered assets include embedded Likelee watermark for license verification and usage tracking.\nDMCA Protection: Automatic takedown notices if assets used outside approved scope."
-          }
+          placeholder={t(
+            "campaignsDashboard.builder.brief.placeholders.watermarkProtection",
+          )}
           className="border-2 border-gray-300 rounded-none min-h-[90px]"
         />
-        <p className="text-sm font-semibold text-gray-700">Legal Terms</p>
+        <p className="text-sm font-semibold text-gray-700">
+          {t("campaignsDashboard.builder.brief.legalTerms")}
+        </p>
         <Textarea
           value={campaignBrief.legal_terms}
           onChange={(e) =>
@@ -651,9 +742,9 @@ export default function CampaignBriefStep({
               legal_terms: e.target.value,
             }))
           }
-          placeholder={
-            "• Creator retains copyright; Brand receives usage license as specified\n• SAG-AFTRA compliant terms and fair compensation standards\n• Creator has right to approve final usage before publishing\n• Brand cannot sublicense without creator consent\n• Usage limited to approved channels, territories, and duration"
-          }
+          placeholder={t(
+            "campaignsDashboard.builder.brief.placeholders.legalTerms",
+          )}
           className="border-2 border-gray-300 rounded-none min-h-[120px]"
         />
       </div>
@@ -665,7 +756,7 @@ export default function CampaignBriefStep({
           className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          {t("campaignsDashboard.builder.actions.back")}
         </Button>
         <Button
           onClick={onNext}
@@ -675,10 +766,10 @@ export default function CampaignBriefStep({
           {uploading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Uploading...
+              {t("campaignsDashboard.builder.brief.uploading")}
             </>
           ) : (
-            "Next"
+            t("campaignsDashboard.builder.actions.next")
           )}
         </Button>
       </div>
