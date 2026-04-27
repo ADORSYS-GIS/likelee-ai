@@ -9,6 +9,13 @@
   "marketingAgencySolutionsDescription": "Une plateforme unique pour les campagnes de créateurs alimentées par l'IA. Licence de créateur vérifiée, flux de travail de production, conformité et exposition de marque.",
   "marketingAgencyCreatorPlatform": "Plateforme de créateurs pour agence de marketing",
   "agencyDashboard": {
+    "tabs": {
+      "jobs": "Emplois",
+      "roster": "Liste",
+      "messages": "Messages",
+      "licensing": "Licences",
+      "scouting": "Recrutement"
+    },
     "dashboard": {
       "entities": {
         "talent": "talent",
@@ -1152,6 +1159,71 @@
     "catalogs": {
       "title": "Catalogues d'assets",
       "subtitle": "Livrez les assets sous licence et les enregistrements vocaux aux clients après paiement.",
+      "builder": {
+        "title": "Créer un nouveau catalogue",
+        "description": "Sélectionnez une demande payée puis préparez les assets et enregistrements vocaux.",
+        "steps": {
+          "select-request": "Demande",
+          "info": "Détails",
+          "assets": "Assets",
+          "voice": "Voix",
+          "review": "Révision"
+        },
+        "fields": {
+          "catalogTitle": "Titre du catalogue",
+          "notesOptional": "Notes (optionnel)",
+          "catalogExpiration": "Expiration du catalogue"
+        },
+        "placeholders": {
+          "catalogTitle": "Saisissez le titre du catalogue",
+          "notes": "Ajoutez des notes optionnelles pour cette livraison"
+        },
+        "expirationHelp": "Définissez la date d'expiration du lien du catalogue.",
+        "selectRequestDescription": "Choisissez la demande payée à lier à ce catalogue.",
+        "selectRequestEligible": "Demande éligible",
+        "unpaidRequestHelp": "Demande impayée. Vous pouvez préparer la livraison puis l'envoyer après paiement.",
+        "loadingAssets": "Chargement des assets…",
+        "selectedCount": "{{count}} sélectionné(s)",
+        "actions": {
+          "upload": "Téléverser",
+          "uploadNewRecording": "Téléverser un nouvel enregistrement",
+          "back": "Retour",
+          "next": "Suivant",
+          "creating": "Création…",
+          "createAndSend": "Créer et envoyer"
+        },
+        "empty": {
+          "noSignedRequests": "Aucune demande payée trouvée.",
+          "unnamedClient": "Client sans nom",
+          "noTalentsAssets": "Aucun talent disponible pour les assets.",
+          "noAssetsForTalent": "Aucun asset pour ce talent.",
+          "noTalentsVoice": "Aucun talent disponible pour les enregistrements vocaux.",
+          "noVoiceForTalent": "Aucun enregistrement pour ce talent."
+        },
+        "defaults": {
+          "recording": "Enregistrement"
+        },
+        "review": {
+          "sendTo": "Envoyer à",
+          "talents": "Talents",
+          "recordings": "Enregistrements",
+          "linkedRequest": "Demande liée",
+          "yes": "Oui",
+          "no": "Non",
+          "emailNotice": "Ce catalogue sera envoyé à",
+          "noClientEmail": "Aucun e-mail client fourni. Vous pouvez quand même créer puis partager manuellement."
+        },
+        "toasts": {
+          "assetUploaded": "Asset téléversé",
+          "recordingUploaded": "Enregistrement téléversé",
+          "uploadFailed": "Échec du téléversement",
+          "genericError": "Une erreur s'est produite. Veuillez réessayer.",
+          "catalogCreated": "Catalogue créé",
+          "catalogSentTo": "Catalogue envoyé à {{email}}",
+          "catalogCreatedShare": "Catalogue créé. Copiez le lien pour le partager.",
+          "createFailed": "Échec de création du catalogue"
+        }
+      },
       "stats": {
         "totalCatalogs": "Catalogues totaux",
         "sent": "Envoyés",
@@ -1161,9 +1233,14 @@
         "newCatalog": "Nouveau catalogue",
         "createCatalog": "Créer un catalogue",
         "copyLink": "Copier le lien",
+        "edit": "Modifier",
         "cancel": "Annuler",
         "delete": "Supprimer",
         "close": "Fermer"
+      },
+      "meta": {
+        "created": "Créé",
+        "expires": "Expire"
       },
       "states": {
         "deleting": "Suppression…"
@@ -1639,9 +1716,24 @@
         "usageScope": "Portée d'utilisation",
         "value": "Valeur",
         "status": "Statut",
+        "actions": "Actions",
         "autoRenew": "Renouvellement automatique",
         "yes": "Oui",
         "no": "Non"
+      },
+      "details": {
+        "title": "Détails de la licence",
+        "description": "Voir les détails complets de cette licence.",
+        "talent": "Talent",
+        "athlete": "Athlète",
+        "clientBrand": "Client/Marque",
+        "totalLicenseValue": "Valeur totale de la licence",
+        "usageRights": "Utilisation et droits",
+        "timeline": "Chronologie",
+        "daysRemaining": "Jours restants:",
+        "days": "jours",
+        "na": "N/D",
+        "nullDays": "jours nuls"
       },
       "actions": {
         "viewDetails": "Voir les détails",
@@ -2232,19 +2324,57 @@
         },
         "fileStorage": {
           "title": "Stockage de fichiers",
+          "subtitle": "Organisez et gérez les fichiers de votre agence",
+          "goToStudio": "Aller à Studio",
+          "storageUsage": "Utilisation du stockage",
+          "ofUsed": "sur {{total}} utilisés",
+          "remaining": "restants",
+          "billingSubscription": "Facturation et abonnement",
+          "searchPlaceholder": "Rechercher des fichiers et dossiers",
+          "view": {
+            "grid": "Grille",
+            "list": "Liste"
+          },
           "search": "Rechercher des fichiers et dossiers",
           "viewMode": {
             "grid": "Vue grille",
             "list": "Vue liste"
           },
           "actions": {
+            "back": "Retour",
+            "all": "Tous",
             "newFolder": "Nouveau dossier",
+            "loadMoreFolders": "Charger plus de dossiers",
+            "loadMoreFiles": "Charger plus de fichiers",
+            "uploadFiles": "Téléverser des fichiers",
             "upload": "Télécharger un fichier",
+            "addFile": "Ajouter un fichier",
             "rename": "Renommer",
             "delete": "Supprimer",
             "download": "Télécharger",
             "share": "Partager",
             "preview": "Aperçu"
+          },
+          "clickToCreate": "Cliquer pour créer",
+          "clickToUpload": "Cliquer pour téléverser",
+          "loading": "Chargement…",
+          "uploading": "Téléversement…",
+          "uploadingShort": "Téléversement",
+          "noMoreFolders": "Plus de dossiers",
+          "noMoreFiles": "Plus de fichiers",
+          "fileCount": "{{count}} fichier",
+          "fileCount_other": "{{count}} fichiers",
+          "deleteFile": {
+            "title": "Supprimer le fichier",
+            "description": "Voulez-vous vraiment supprimer ce fichier ?",
+            "cannotUndo": "Cette action est irréversible.",
+            "confirm": "Supprimer le fichier"
+          },
+          "deleteFolder": {
+            "title": "Supprimer le dossier",
+            "description": "Voulez-vous vraiment supprimer le dossier",
+            "descriptionSuffix": "et tout son contenu ?",
+            "confirm": "Supprimer le dossier"
           },
           "folders": {
             "title": "Dossiers",

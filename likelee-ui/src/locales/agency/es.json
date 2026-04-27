@@ -10,6 +10,13 @@
   "whyMarketingAgenciesWin": "Por Qué Ganan las Agencias de Marketing",
   "whySportsAgenciesWin": "Por Qué Ganan las Agencias Deportivas",
   "agencyDashboard": {
+    "tabs": {
+      "jobs": "Trabajos",
+      "roster": "Lista",
+      "messages": "Mensajes",
+      "licensing": "Licencias",
+      "scouting": "Scouting"
+    },
     "dashboard": {
       "entities": {
         "talent": "talento",
@@ -1202,6 +1209,71 @@
     "catalogs": {
       "title": "Catálogos de assets",
       "subtitle": "Entrega assets con licencia y grabaciones de voz a clientes después del pago.",
+      "builder": {
+        "title": "Crear nuevo catálogo",
+        "description": "Selecciona una solicitud pagada y prepara assets y grabaciones de voz para la entrega.",
+        "steps": {
+          "select-request": "Solicitud",
+          "info": "Detalles",
+          "assets": "Assets",
+          "voice": "Voz",
+          "review": "Revisión"
+        },
+        "fields": {
+          "catalogTitle": "Título del catálogo",
+          "notesOptional": "Notas (opcional)",
+          "catalogExpiration": "Vencimiento del catálogo"
+        },
+        "placeholders": {
+          "catalogTitle": "Ingresa el título del catálogo",
+          "notes": "Agrega notas opcionales para esta entrega"
+        },
+        "expirationHelp": "Define cuándo debe expirar el enlace del catálogo.",
+        "selectRequestDescription": "Elige la solicitud pagada que se vinculará a este catálogo.",
+        "selectRequestEligible": "Solicitud elegible",
+        "unpaidRequestHelp": "Solicitud no pagada. Puedes preparar la entrega y enviarla después del pago.",
+        "loadingAssets": "Cargando assets…",
+        "selectedCount": "{{count}} seleccionado(s)",
+        "actions": {
+          "upload": "Subir",
+          "uploadNewRecording": "Subir nueva grabación",
+          "back": "Atrás",
+          "next": "Siguiente",
+          "creating": "Creando…",
+          "createAndSend": "Crear y enviar"
+        },
+        "empty": {
+          "noSignedRequests": "No se encontraron solicitudes pagadas.",
+          "unnamedClient": "Cliente sin nombre",
+          "noTalentsAssets": "No hay talentos disponibles para assets.",
+          "noAssetsForTalent": "Aún no hay assets para este talento.",
+          "noTalentsVoice": "No hay talentos disponibles para grabaciones de voz.",
+          "noVoiceForTalent": "Aún no hay grabaciones para este talento."
+        },
+        "defaults": {
+          "recording": "Grabación"
+        },
+        "review": {
+          "sendTo": "Enviar a",
+          "talents": "Talentos",
+          "recordings": "Grabaciones",
+          "linkedRequest": "Solicitud vinculada",
+          "yes": "Sí",
+          "no": "No",
+          "emailNotice": "Este catálogo se enviará a",
+          "noClientEmail": "No se proporcionó correo del cliente. Aún puedes crear y compartir manualmente."
+        },
+        "toasts": {
+          "assetUploaded": "Asset subido",
+          "recordingUploaded": "Grabación subida",
+          "uploadFailed": "Error al subir",
+          "genericError": "Algo salió mal. Por favor intenta nuevamente.",
+          "catalogCreated": "Catálogo creado",
+          "catalogSentTo": "Catálogo enviado a {{email}}",
+          "catalogCreatedShare": "Catálogo creado. Copia el enlace para compartirlo.",
+          "createFailed": "No se pudo crear el catálogo"
+        }
+      },
       "stats": {
         "totalCatalogs": "Catálogos totales",
         "sent": "Enviados",
@@ -1211,9 +1283,14 @@
         "newCatalog": "Nuevo catálogo",
         "createCatalog": "Crear catálogo",
         "copyLink": "Copiar enlace",
+        "edit": "Editar",
         "cancel": "Cancelar",
         "delete": "Eliminar",
         "close": "Cerrar"
+      },
+      "meta": {
+        "created": "Creado",
+        "expires": "Expira"
       },
       "states": {
         "deleting": "Eliminando…"
@@ -1260,6 +1337,20 @@
     },
     "payouts": {
       "title": "Gestión de comisiones y pagos",
+      "connectBank": {
+        "title": "Conecta tu cuenta bancaria",
+        "subtitle": "Vincula tu cuenta bancaria para recibir pagos directos de clientes y",
+        "changeAccount": "Cambiar cuenta",
+        "connectBankAccount": "Conectar cuenta bancaria",
+        "connectStripe": "Conectar con Stripe",
+        "whyTitle": "¿Por qué conectar tu banco?",
+        "whyItem1": "Recibe pagos de facturas directamente en tu cuenta",
+        "whyItem2": "Automatiza los pagos de comisiones al talento",
+        "whyItem3": "Controla el flujo de caja y concilia pagos",
+        "whyItem4": "Seguridad bancaria con cifrado de 256 bits",
+        "poweredByStripe": "Con tecnología de Stripe Connect",
+        "whatYouNeed": "Lo que necesitarás:"
+      },
       "actions": {
         "exportReport": "Exportar informe"
       },
@@ -1648,9 +1739,26 @@
         "resendPaymentLink": "Reenviar enlace de pago",
         "sending": "Enviando...",
         "restore": "Restaurar",
+        "recoverToActive": "Recuperar a Activo",
         "approve": "Aprobar",
+        "acceptWriteContract": "Aceptar y redactar contrato",
         "counterOffer": "Contraoferta",
         "decline": "Rechazar"
+      },
+      "brandRequests": {
+        "unknownBrand": "Marca desconocida",
+        "noDescription": "Sin descripción",
+        "licenseFee": "Tarifa de licencia",
+        "territory": "Territorio",
+        "exclusivity": "Exclusividad",
+        "duration": "Duración",
+        "days": "días",
+        "timeline": "Cronograma",
+        "from": "Desde",
+        "modificationsAllowed": "Modificaciones permitidas",
+        "customTerms": "Términos personalizados",
+        "contractPhase": "Fase del contrato",
+        "declined": "Rechazado"
       }
     },
     "activeLicenses": {
@@ -1689,9 +1797,24 @@
         "usageScope": "Alcance de uso",
         "value": "Valor",
         "status": "Estado",
+        "actions": "Acciones",
         "autoRenew": "Renovación automática",
         "yes": "Sí",
         "no": "No"
+      },
+      "details": {
+        "title": "Detalles de licencia",
+        "description": "Ver detalles completos de esta licencia.",
+        "talent": "Talento",
+        "athlete": "Atleta",
+        "clientBrand": "Cliente/Marca",
+        "totalLicenseValue": "Valor total de licencia",
+        "usageRights": "Uso y derechos",
+        "timeline": "Cronología",
+        "daysRemaining": "Días restantes:",
+        "days": "días",
+        "na": "N/D",
+        "nullDays": "días nulos"
       },
       "actions": {
         "viewDetails": "Ver detalles",
@@ -1718,8 +1841,17 @@
         "signed": "Firmado",
         "sent": "Enviado",
         "opened": "Abierto",
+        "agencyPending": "Pendiente de la agencia",
+        "clientPending": "Pendiente del cliente",
+        "archived": "Archivado",
         "declined": "Rechazado",
         "expired": "Vencido"
+      },
+      "table": {
+        "client": "Cliente",
+        "template": "Plantilla",
+        "status": "Estado",
+        "sentDate": "Fecha de envío"
       },
       "reason": "Motivo:",
       "toast": {
@@ -1744,6 +1876,12 @@
         "resendEmail": "Reenviar correo",
         "archive": "Archivar",
         "recover": "Recuperar",
+        "signHere": "Firmar aquí",
+        "download": "Descargar",
+        "downloadPdf": "Descargar PDF",
+        "moreActions": "Más acciones",
+        "openAgencySigningLink": "Abrir enlace de firma de la agencia",
+        "openAgencyLink": "Abrir enlace de la agencia",
         "copyClientLink": "Copiar enlace del cliente",
         "copyAgencyLink": "Copiar enlace de la agencia",
         "viewDocument": "Ver documento"
@@ -1790,6 +1928,58 @@
         "useTemplate": "Usar plantilla",
         "editInBuilder": "Editar en constructor",
         "sendContract": "Enviar contrato"
+      },
+      "modal": {
+        "newTitle": "Nueva plantilla de contrato",
+        "editTitle": "Editar plantilla de licencia",
+        "detailsTitle": "Detalles de la plantilla de licencia",
+        "detailsSubtitle": "Consulta tus términos y detalles estandarizados de la agencia",
+        "editSubtitle": "Estandariza los términos de tu agencia con marcadores dinámicos",
+        "saving": "Guardando...",
+        "updateTemplate": "Actualizar plantilla",
+        "createTemplate": "Crear plantilla"
+      },
+      "wizard": {
+        "dealSpecifics": "Detalles del acuerdo",
+        "contentReview": "Revisión de contenido",
+        "dealSpecificsSubtitle": "Introduce los detalles principales de este acuerdo de licencia",
+        "contentReviewSubtitle": "Revisa y personaliza el contenido del contrato",
+        "preparing": "Preparando...",
+        "finalize": "Finalizar",
+        "nextStep": "Siguiente paso",
+        "renewalPrefill": "Relleno previo de renovación",
+        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
+        "identification": "Identificación",
+        "brandName": "Nombre de marca",
+        "brandNamePlaceholder": "p. ej. Nike, Spotify",
+        "clientEmail": "Correo del cliente",
+        "sendToConnectedBrands": "Enviar a marcas conectadas",
+        "selectBrand": "Seleccionar marca",
+        "selectedBrand": "Marca seleccionada",
+        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
+        "clientEmailPlaceholder": "cliente@ejemplo.com",
+        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
+        "agencySignsFirst": "La agencia firma primero (en plataforma)",
+        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
+        "startDate": "Fecha de inicio",
+        "commercials": "Condiciones comerciales",
+        "durationDays": "Duración (días)",
+        "territory": "Territorio"
+      },
+      "form": {
+        "templateIdentity": "Identidad de plantilla",
+        "templateName": "Nombre de plantilla",
+        "templateNamePlaceholder": "p. ej. Estándar de redes sociales",
+        "category": "Categoría",
+        "description": "Descripción",
+        "descriptionPlaceholder": "Descripción de la plantilla...",
+        "usageScope": "Alcance de uso",
+        "durationDays": "Duración (días)",
+        "territory": "Territorio",
+        "exclusivity": "Exclusividad",
+        "categoryExclusive": "Exclusivo por categoría",
+        "licenseFee": "Tarifa de licencia ($)",
+        "modificationsAllowed": "Modificaciones permitidas"
       },
       "deleteModal": {
         "title": "Eliminar plantilla",
@@ -1894,6 +2084,41 @@
         "description": "Un {{entityLower}} con este correo ya existe en {{agencyType}}.",
         "sameAgency": "su agencia",
         "otherAgency": "otra agencia"
+      }
+    },
+    "header": {
+      "notifications": {
+        "title": "Notificaciones",
+        "markAllRead": "Marcar todo como leído",
+        "all": "Todas",
+        "unread": "Sin leer ({{count}})",
+        "none": "No se encontraron notificaciones.",
+        "caughtUp": "¡Estás al día!",
+        "viewAll": "Ver todas las notificaciones",
+        "viewAllDesc": "Navegando a la página completa de notificaciones...",
+        "systemAlert": "Alerta del sistema",
+        "systemAlertMessage": "Tu verificación se procesó correctamente. ¡Bienvenido a Likelee!",
+        "justNow": "Justo ahora",
+        "summary": {
+          "requests": "{{count}} solicitud(es)",
+          "offers": "{{count}} oferta(s)",
+          "feedback": "{{count}} comentario(s)",
+          "pending": "Pendiente: {{parts}}.",
+          "actionRequired": "Acción requerida",
+          "pendingLicensing": "Tienes {{count}} solicitud(es) de licencia pendientes.",
+          "pendingJobs": "Tienes {{count}} invitación(es) de trabajo pendientes.",
+          "newMessage": "Nuevo mensaje"
+        }
+      },
+      "profile": {
+        "organizationSettings": "Ajustes de organización",
+        "manageCompany": "Gestionar perfil de la empresa",
+        "teamPermissions": "Equipo y permisos",
+        "activeUsers": "{{count}} usuarios activos",
+        "billingSubscription": "Facturación y suscripción",
+        "legalCompliance": "Legal y cumplimiento",
+        "legalSubtitle": "Contratos, términos, privacidad",
+        "integrations": "Integraciones"
       }
     },
     "compCard": {

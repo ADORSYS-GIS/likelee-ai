@@ -10,6 +10,13 @@
   "whyMarketingAgenciesWin": "Warum Marketingagenturen gewinnen",
   "whySportsAgenciesWin": "Warum Sportagenturen gewinnen",
   "agencyDashboard": {
+    "tabs": {
+      "jobs": "Jobs",
+      "roster": "Kader",
+      "messages": "Nachrichten",
+      "licensing": "Lizenzierung",
+      "scouting": "Scouting"
+    },
     "dashboard": {
       "entities": {
         "talent": "Talent",
@@ -1153,6 +1160,71 @@
     "catalogs": {
       "title": "Asset-Kataloge",
       "subtitle": "Liefern Sie lizenzierte Assets und Sprachaufnahmen nach Zahlung an Kunden aus.",
+      "builder": {
+        "title": "Neuen Katalog erstellen",
+        "description": "Wählen Sie eine bezahlte Anfrage und bereiten Sie Assets sowie Sprachaufnahmen vor.",
+        "steps": {
+          "select-request": "Anfrage",
+          "info": "Details",
+          "assets": "Assets",
+          "voice": "Sprache",
+          "review": "Prüfen"
+        },
+        "fields": {
+          "catalogTitle": "Katalogtitel",
+          "notesOptional": "Notizen (optional)",
+          "catalogExpiration": "Katalogablauf"
+        },
+        "placeholders": {
+          "catalogTitle": "Katalogtitel eingeben",
+          "notes": "Optionale Notizen für diese Lieferung hinzufügen"
+        },
+        "expirationHelp": "Legen Sie fest, wann der Kataloglink ablaufen soll.",
+        "selectRequestDescription": "Wählen Sie die bezahlte Anfrage, die mit diesem Katalog verknüpft wird.",
+        "selectRequestEligible": "Geeignete Anfrage",
+        "unpaidRequestHelp": "Unbezahlte Anfrage. Lieferung kann vorbereitet und nach Zahlung gesendet werden.",
+        "loadingAssets": "Assets werden geladen…",
+        "selectedCount": "{{count}} ausgewählt",
+        "actions": {
+          "upload": "Hochladen",
+          "uploadNewRecording": "Neue Aufnahme hochladen",
+          "back": "Zurück",
+          "next": "Weiter",
+          "creating": "Wird erstellt…",
+          "createAndSend": "Erstellen und senden"
+        },
+        "empty": {
+          "noSignedRequests": "Keine bezahlten Anfragen gefunden.",
+          "unnamedClient": "Unbenannter Kunde",
+          "noTalentsAssets": "Keine Talente für Assets verfügbar.",
+          "noAssetsForTalent": "Noch keine Assets für dieses Talent.",
+          "noTalentsVoice": "Keine Talente für Sprachaufnahmen verfügbar.",
+          "noVoiceForTalent": "Noch keine Aufnahmen für dieses Talent."
+        },
+        "defaults": {
+          "recording": "Aufnahme"
+        },
+        "review": {
+          "sendTo": "Senden an",
+          "talents": "Talente",
+          "recordings": "Aufnahmen",
+          "linkedRequest": "Verknüpfte Anfrage",
+          "yes": "Ja",
+          "no": "Nein",
+          "emailNotice": "Dieser Katalog wird gesendet an",
+          "noClientEmail": "Keine Kunden-E-Mail vorhanden. Sie können den Katalog trotzdem erstellen und manuell teilen."
+        },
+        "toasts": {
+          "assetUploaded": "Asset hochgeladen",
+          "recordingUploaded": "Aufnahme hochgeladen",
+          "uploadFailed": "Hochladen fehlgeschlagen",
+          "genericError": "Etwas ist schiefgelaufen. Bitte erneut versuchen.",
+          "catalogCreated": "Katalog erstellt",
+          "catalogSentTo": "Katalog gesendet an {{email}}",
+          "catalogCreatedShare": "Katalog erstellt. Kopieren Sie den Link zum Teilen.",
+          "createFailed": "Katalog konnte nicht erstellt werden"
+        }
+      },
       "stats": {
         "totalCatalogs": "Kataloge gesamt",
         "sent": "Gesendet",
@@ -1162,9 +1234,14 @@
         "newCatalog": "Neuer Katalog",
         "createCatalog": "Katalog erstellen",
         "copyLink": "Link kopieren",
+        "edit": "Bearbeiten",
         "cancel": "Abbrechen",
         "delete": "Löschen",
         "close": "Schließen"
+      },
+      "meta": {
+        "created": "Erstellt",
+        "expires": "Läuft ab"
       },
       "states": {
         "deleting": "Wird gelöscht…"
@@ -1640,9 +1717,24 @@
         "usageScope": "Nutzungsumfang",
         "value": "Wert",
         "status": "Status",
+        "actions": "Aktionen",
         "autoRenew": "Automatische Verlängerung",
         "yes": "Ja",
         "no": "Nein"
+      },
+      "details": {
+        "title": "Lizenzdetails",
+        "description": "Umfassende Details zu dieser Lizenz anzeigen.",
+        "talent": "Talent",
+        "athlete": "Athlet",
+        "clientBrand": "Kunde/Marke",
+        "totalLicenseValue": "Gesamtlizenzwert",
+        "usageRights": "Nutzung & Rechte",
+        "timeline": "Zeitplan",
+        "daysRemaining": "Verbleibende Tage:",
+        "days": "Tage",
+        "na": "N/V",
+        "nullDays": "null Tage"
       },
       "actions": {
         "viewDetails": "Details anzeigen",
@@ -2233,19 +2325,57 @@
         },
         "fileStorage": {
           "title": "Dateispeicher",
+          "subtitle": "Organisieren und verwalten Sie Ihre Agenturdateien",
+          "goToStudio": "Zu Studio",
+          "storageUsage": "Speichernutzung",
+          "ofUsed": "von {{total}} genutzt",
+          "remaining": "verbleibend",
+          "billingSubscription": "Abrechnung und Abonnement",
+          "searchPlaceholder": "Dateien und Ordner suchen",
+          "view": {
+            "grid": "Raster",
+            "list": "Liste"
+          },
           "search": "Dateien und Ordner suchen",
           "viewMode": {
             "grid": "Rasteransicht",
             "list": "Listenansicht"
           },
           "actions": {
+            "back": "Zurück",
+            "all": "Alle",
             "newFolder": "Neuer Ordner",
+            "loadMoreFolders": "Mehr Ordner laden",
+            "loadMoreFiles": "Mehr Dateien laden",
+            "uploadFiles": "Dateien hochladen",
             "upload": "Datei hochladen",
+            "addFile": "Datei hinzufügen",
             "rename": "Umbenennen",
             "delete": "Löschen",
             "download": "Herunterladen",
             "share": "Teilen",
             "preview": "Vorschau"
+          },
+          "clickToCreate": "Klicken zum Erstellen",
+          "clickToUpload": "Klicken zum Hochladen",
+          "loading": "Wird geladen…",
+          "uploading": "Wird hochgeladen…",
+          "uploadingShort": "Hochladen",
+          "noMoreFolders": "Keine weiteren Ordner",
+          "noMoreFiles": "Keine weiteren Dateien",
+          "fileCount": "{{count}} Datei",
+          "fileCount_other": "{{count}} Dateien",
+          "deleteFile": {
+            "title": "Datei löschen",
+            "description": "Möchten Sie diese Datei wirklich löschen?",
+            "cannotUndo": "Diese Aktion kann nicht rückgängig gemacht werden.",
+            "confirm": "Datei löschen"
+          },
+          "deleteFolder": {
+            "title": "Ordner löschen",
+            "description": "Möchten Sie den Ordner wirklich löschen",
+            "descriptionSuffix": "und seinen gesamten Inhalt?",
+            "confirm": "Ordner löschen"
           },
           "folders": {
             "title": "Ordner",
