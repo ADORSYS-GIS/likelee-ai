@@ -109,134 +109,6 @@
         "recently": "Recientemente"
       }
     },
-    "marketplace": {
-      "perMonth": "/mes",
-      "pastCampaigns": "Campañas Pasadas",
-      "negotiationPreferencesNotSpecified": "Preferencias de negociación no especificadas",
-      "baseRateFromProfile": "Tarifa base del perfil público",
-      "licensingRate": "Tarifa de licencia",
-      "industries": "Industrias",
-      "openToWork": "Abierto a trabajar",
-      "noProfileSummary": "Aún no hay resumen de perfil disponible.",
-      "followersNA": "Seguidores N/D",
-      "availabilityRates": "Disponibilidad y Tarifas",
-      "willingToTravel": "Dispuesto a Viajar",
-      "notSpecified": "No especificado",
-      "connectionStatus": "Estado de Conexión",
-      "none": "ninguno",
-      "noRatesPublished": "Aún no se han publicado tarifas.",
-      "openToNegotiations": "Abierto a negociaciones",
-      "portfolio": "Portafolio",
-      "noPortfolioItems": "Aún no hay elementos de portafolio.",
-      "noCampaignHistory": "Aún no hay historial de campañas.",
-      "confirmed": "Confirmado",
-      "verified": "Verificado",
-      "commission": "Comisión",
-      "marketplaceContract": "Contrato de mercado",
-      "contractTerms": "Términos del contrato para esta conexión agencia-creador.",
-      "status": "Estado",
-      "activeStatus": "activo",
-      "endDate": "Fecha de finalización",
-      "startDate": "Fecha de inicio",
-      "viewSignedContract": "Ver contrato firmado",
-      "automaticallyConnected": "Conectado automáticamente (Creado por ti)",
-      "openPortfolioLink": "Abrir enlace de portafolio",
-      "noUploadedPortfolio": "Aún no hay medios de portafolio cargados.",
-      "creator": "creador"
-    },
-    "jobs": {
-      "irlMode": "Modo IRL",
-      "aiMode": "Modo IA"
-    },
-    "addTalent": {
-      "genders": {
-        "female": "Femenino",
-        "male": "Masculino",
-        "nonBinary": "No binario",
-        "genderFluid": "Género fluido",
-        "preferNotToSay": "Prefiero no decir"
-      },
-      "ethnicities": {
-        "asian": "Asiático",
-        "blackAfrican": "Negro / Afroamericano",
-        "hispanicLatino": "Hispano / Latino",
-        "middleEasternNorthAfrican": "Medio Oriente / Norte de África",
-        "nativeAmericanIndigenous": "Nativo Americano / Indígena",
-        "pacificIslander": "Isleño del Pacífico",
-        "whiteCaucasian": "Blanco / Caucásico",
-        "mixedMultiracial": "Mixto / Multirracial",
-        "preferNotToSay": "Prefiero no decir"
-      },
-      "categories": {
-        "actor": "Actor",
-        "creator": "Creador",
-        "voice": "Voz",
-        "athlete": "Atleta",
-        "model": "Modelo"
-      },
-      "fields": {
-        "select": "Seleccionar",
-        "hips": "Caderas",
-        "measurements": "Medidas (pulg)",
-        "bust": "Busto",
-        "waist": "Cintura",
-        "dancer": "Bailarín",
-        "athlete": "Atleta",
-        "bilingualSpanish": "Bilingüe Español",
-        "username": "@nombreusuario",
-        "imageOrVideoFile": "archivo de imagen o video"
-      },
-      "compCard": {
-        "generator": "Generador de Comp Card",
-        "autoGenerate": "Generar automáticamente comp cards profesionales desde perfiles de talento",
-        "height": "Altura",
-        "eyes": "Ojos",
-        "hair": "Cabello"
-      },
-      "aiUsage": {
-        "image": "imagen",
-        "voice": "voz",
-        "video": "video"
-      },
-      "placeholders": {
-        "fullLegalName": "Nombre legal completo",
-        "optional": "Opcional",
-        "losAngeles": "Los Ángeles",
-        "ca": "CA",
-        "usa": "EE.UU.",
-        "ucla": "p. ej. UCLA",
-        "footballBasketball": "p. ej. Fútbol, Baloncesto",
-        "briefBio": "Breve biografía o notas internas sobre este {{entityLower}}...",
-        "licensingRate": "p. ej. 750",
-        "allowBrands": "Permitir que las marcas propongan tarifas personalizadas para este {{entityLower}}.",
-        "heightFeet": "5",
-        "heightInches": "7",
-        "dancerAthlete": "p. ej., Bailarín, Atleta, Bilingüe Español",
-        "imageOrVideoFile": "Archivo de imagen o video",
-        "mp3WavAudio": "MP3, WAV u otro formato de audio",
-        "username": "@nombredeusuario",
-        "phone": "+1 (555) 123-4567"
-      },
-      "buttons": {
-        "setAsProfile": "Establecer como perfil",
-        "profile": "Perfil"
-      },
-      "uploading": "Subiendo...",
-      "toast": {
-        "invalidDateOfBirth": "Fecha de nacimiento inválida",
-        "mustBeAtLeast18": "{{entityTitle}} debe tener al menos 18 años.",
-        "uploadFailed": "Error al subir",
-        "couldNotUploadPhotos": "No se pudieron subir las fotos. {{entityTitle}} se creará sin fotos.",
-        "heroUploadFailed": "Error al subir el medio principal",
-        "heroUploadFailedDesc": "No se pudo subir el medio principal. {{msg}}",
-        "voiceUploadFailed": "Error al subir la muestra de voz",
-        "voiceUploadFailedDesc": "No se pudo subir la muestra de voz. {{msg}}",
-        "success": "¡Éxito!",
-        "addedSuccessfully": "{{entityTitle}} agregado exitosamente",
-        "error": "Error",
-        "failedToCreate": "Error al crear {{entityLower}}"
-      }
-    },
     "roster": {
       "entities": {
         "talent": "talento",
@@ -1362,64 +1234,6 @@
         "toEntityThisYear": "Pagado al/a la {{entitySingular}} este año",
         "agencyCommissionYTD": "Comisión de agencia YTD",
         "avgCommissionRate": "{{rate}}% de comisión promedio"
-      },
-      "commissionStructure": {
-        "title": "Reglas de comisión {{entitySingular}}",
-        "description": "Los {{entitySingularLower}} gestionados por la agencia pueden usar anulaciones basadas en configuración aquí. Los {{entitySingularLower}} conectados al marketplace siguen la tasa del contrato firmado activo y son de solo lectura en esta pantalla."
-      },
-      "royalties": {
-        "accruedThisMonth": "Acumulado este mes",
-        "liveEarningsPool": "Pool de ganancias en vivo",
-        "pendingApproval": "Pendiente de aprobación",
-        "awaitingPayoutProcessing": "Esperando procesamiento de pago",
-        "ytdPaidToEntity": "Pagado YTD a {{entitySingular}}",
-        "totalNetPayouts": "Pagos netos totales 2024"
-      },
-      "paymentHistory": {
-        "topEarningTitle": "{{entitySingular}} con mayores ingresos (últimos 30 días)",
-        "campaigns": "{{count}} campañas",
-        "talentLabel": "{{entitySingular}}:",
-        "agencyLabel": "Agencia:",
-        "noPayments": "No se encontraron pagos exitosos en los últimos 30 días."
-      },
-      "payoutPreferences": {
-        "scheduleSettings": "Configuración del calendario de pagos",
-        "frequency": "Frecuencia de pago",
-        "selectFrequency": "Seleccionar frecuencia",
-        "weekly": "Semanal",
-        "biWeekly": "Quincenal",
-        "monthly": "Mensual",
-        "frequencyDescription": "Con qué frecuencia {{entitySingularLower}} recibe pagos",
-        "minThreshold": "Umbral mínimo de pago",
-        "minThresholdDescription": "No pagar si el saldo está por debajo de este monto",
-        "method": "Método de pago",
-        "stripeConnected": "Cuenta conectada Stripe",
-        "autoDeduct": "Deducir comisión automáticamente, transferir neto al talento",
-        "active": "Activo",
-        "howItWorks": "Cómo funciona:",
-        "upcomingSchedule": "Calendario de pagos próximos",
-        "scheduledPayout": "Pago programado",
-        "scheduled": "programado",
-        "noUpcoming": "Sin pagos próximos",
-        "noUpcomingDescription": "Tu próximo pago aparecerá aquí cuando esté programado."
-      },
-      "commissionBreakdown": {
-        "title": "Desgloses recientes de transacciones de licencia",
-        "description": "Transparencia total sobre cómo se divide cada transacción de licencia entre el talento y la agencia.",
-        "totalVolume": "Volumen total (últimos 30 días)",
-        "talentTotalShare": "Parte total del talento",
-        "agencyTotalRevenue": "Ingresos totales de la agencia",
-        "exportReport": "Exportar informe",
-        "totalGross": "Total bruto",
-        "talentEarnings": "Ganancias del talento",
-        "agencyCommission": "Comisión de agencia",
-        "talentPool": "POOL DE TALENTOS",
-        "agencyFee": "TARIFA DE AGENCIA",
-        "noDeals": "No se encontraron transacciones de licencia",
-        "noDealsDescription": "Las transacciones de licencia recientes generarán automáticamente desgloses detallados aquí.",
-        "transparencyTitle": "Transparencia de comisiones",
-        "transparencyDescription": "Este desglose es visible para el talento en su historial de pagos. La transparencia total garantiza una contabilidad precisa y crea confianza a largo plazo.",
-        "configure": "Configurar"
       }
     },
     "subscribe": {
@@ -1787,35 +1601,7 @@
         "restore": "Restaurar",
         "approve": "Aprobar",
         "counterOffer": "Contraoferta",
-        "decline": "Rechazar",
-        "recoverToActive": "Recuperar a Activo",
-        "acceptWriteContract": "Aceptar y escribir contrato"
-      },
-      "brandRequests": {
-        "unknownBrand": "Marca desconocida",
-        "noDescription": "No se proporcionó descripción",
-        "licenseFee": "Tarifa de licencia",
-        "territory": "Territorio",
-        "exclusivity": "Exclusividad",
-        "duration": "Duración",
-        "timeline": "Cronograma",
-        "modificationsAllowed": "Modificaciones permitidas",
-        "customTerms": "Términos personalizados",
-        "contractPhase": "Fase de contrato",
-        "declined": "Rechazado",
-        "days": "Días",
-        "from": "Desde"
-      },
-      "detailsModal": {
-        "title": "Detalles de solicitud de licencia",
-        "description": "Contexto adicional de la campaña para la preparación del contrato.",
-        "campaign": "Campaña",
-        "category": "Categoría",
-        "exclusivity": "Exclusividad",
-        "offerAmount": "Monto de oferta",
-        "description": "Descripción",
-        "customTerms": "Términos personalizados",
-        "modificationsAllowed": "Modificaciones permitidas"
+        "decline": "Rechazar"
       }
     },
     "activeLicenses": {
@@ -2118,10 +1904,6 @@
     "analytics": {
       "title": "Panel de Analíticas",
       "exportReport": "Exportar informe",
-      "loading": "Cargando analíticas...",
-      "error": "Error al cargar datos de analíticas",
-      "toastError": "Error de analíticas",
-      "placeholderText": "Esta sección está actualmente en desarrollo. Vuelva pronto para actualizaciones.",
       "tabs": {
         "overview": "Resumen",
         "rosterInsights": "Perspectivas del Roster",
@@ -2141,75 +1923,27 @@
         "consentBreakdown": "Desglose de consentimientos",
         "noConsentData": "Sin datos de consentimiento",
         "withConsent": "Con consentimiento",
-        "withoutConsent": "Sin consentimiento",
-        "growth": "crecimiento",
-        "totalValue": "Valor total",
-        "avgValue": "Valor promedio",
-        "topScope": "Alcance principal",
-        "campaignStatusBreakdown": "Desglose del estado de la campaña",
-        "monthlyPerformanceTrends": "Tendencias de rendimiento mensual",
-        "earnings": "Ganancias ($)",
-        "licenses": "Licencias",
-        "campaigns": "Campañas",
-        "image": "Imagen",
-        "video": "Video",
-        "voice": "Voz",
-        "complete": "Completo",
-        "missing": "Faltante",
-        "expiring": "Expirando",
-        "of": "de"
+        "withoutConsent": "Sin consentimiento"
       },
       "rosterInsights": {
         "title": "Perspectivas del Roster",
         "topPerformer": "Mejor desempeño (Ganancias)",
         "highestFollowers": "Más seguidores",
         "avgValue": "Valor promedio",
-        "noData": "No hay datos de perspectivas del roster disponibles.",
-        "talent": "Talento",
-        "30dEarnings": "Ganancias 30D",
-        "status": "Estado",
-        "talentPerformanceMetrics": "Métricas de rendimiento del talento",
-        "mostActive": "Más activo"
+        "noData": "No hay datos de perspectivas del roster disponibles."
       },
       "clientsCampaigns": {
         "title": "Clientes y Campañas",
-        "noData": "No hay datos de clientes o campañas disponibles.",
-        "geographicDistribution": "Distribución geográfica",
-        "topClientsPerformance": "Rendimiento de los principales clientes",
-        "client": "Cliente",
-        "action": "Acción",
-        "licenses": "licencias",
-        "campaigns": "campañas",
-        "repeatClientRate": "Tasa de clientes recurrentes",
-        "avgCampaignDuration": "Duración promedio de campaña",
-        "fromBookingToCompletion": "Desde reserva hasta finalización",
-        "clientAcquisition": "Adquisición de clientes",
-        "newClientsLast30Days": "Nuevos clientes en los últimos 30 días",
-        "days": "días",
-        "total": "total"
+        "noData": "No hay datos de clientes o campañas disponibles."
       },
       "compliance": {
         "title": "Cumplimiento",
         "verificationRate": "Tasa de verificación",
         "activeConsents": "Consentimientos activos",
         "expiringSoon": "Expira pronto",
-        "assignedTalent": "Talento asignado",
+        "assignedTalent": "Talent asignado",
         "renewLicense": "Renovar licencia",
-        "noData": "No hay datos de cumplimiento disponibles.",
-        "verified": "verificado",
-        "complete": "completo",
-        "next10Days": "Próximos 10 días",
-        "licenseExpiryPipeline": "Pipeline de vencimiento de licencias",
-        "noExpiredLicenses": "No hay licencias vencidas",
-        "expiredContractsAppear": "Los contratos vencidos aparecerán aquí para renovación.",
-        "expiredOn": "Expiró el",
-        "complianceSummary": "Resumen de cumplimiento",
-        "consentStatusDistribution": "Distribución del estado de consentimiento",
-        "likenessProtection": "Protección de imagen",
-        "authorizedUses": "Usos autorizados (30d)",
-        "unauthorizedAlerts": "Alertas no autorizadas",
-        "disputesResolved": "Disputas resueltas",
-        "comingSoon": "Próximamente"
+        "noData": "No hay datos de cumplimiento disponibles."
       },
       "loading": "Cargando analíticas...",
       "error": "Error al cargar datos de analíticas",

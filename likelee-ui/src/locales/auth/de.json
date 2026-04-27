@@ -4,9 +4,9 @@
     "organization": "Organisation",
     "passwordRequired": "Passwort *",
     "confirmPasswordRequired": "Passwort bestätigen *",
-    "companyNamePlaceholder": "common.companyNamePlaceholder",
-    "websitePlaceholder": "common.websitePlaceholder",
-    "phonePlaceholder": "common.phonePlaceholder",
+    "companyNamePlaceholder": "z.B. Acme GmbH",
+    "websitePlaceholder": "https://beispiel.de",
+    "phonePlaceholder": "+49 (0) 123 456789",
     "continue": "Weiter",
     "saving": "Speichern..."
   },
