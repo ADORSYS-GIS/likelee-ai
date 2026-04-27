@@ -300,3 +300,19 @@ pub async fn agency_only(
             .into_response()
     }
 }
+
+pub async fn admin_only(
+    user: AuthUser,
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> Response {
+    if user.role == "admin" {
+        next.run(request).await
+    } else {
+        (
+            StatusCode::FORBIDDEN,
+            "You do not have permission to access this resource (Admin role required)".to_string(),
+        )
+            .into_response()
+    }
+}

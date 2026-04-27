@@ -25,6 +25,7 @@ import {
   Upload,
   Loader2,
   Download,
+  Save,
   Coins,
   ArrowLeft,
   Sparkles,
@@ -47,6 +48,7 @@ import {
   inferProviderFromModel,
   listGenerations,
   listPresets,
+  saveGenerationToStorage,
   type StudioGenerationRow,
   type StudioStylePreset,
 } from "@/api/studio";
@@ -2072,22 +2074,57 @@ const StudioVideo = () => {
                             {new Date(gen.created_at).toLocaleDateString()}
                           </span>
                           {gen.status === "completed" && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                window.open(gen.output_urls?.[0], "_blank");
-                              }}
+                            <div
                               style={{
-                                background: "none",
-                                border: "none",
-                                cursor: "pointer",
-                                color: "#6366F1",
                                 display: "flex",
+                                gap: 4,
                                 alignItems: "center",
                               }}
                             >
-                              <Download size={14} />
-                            </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    await saveGenerationToStorage(gen.id);
+                                    toast({ title: "Saved to My Storage" });
+                                  } catch (err: any) {
+                                    toast({
+                                      title: "Save failed",
+                                      description:
+                                        err?.message ?? "Unknown error",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  color: "#8B5CF6",
+                                  display: "flex",
+                                  alignItems: "center",
+                                }}
+                                title="Save to Storage"
+                              >
+                                <Save size={14} />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(gen.output_urls?.[0], "_blank");
+                                }}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  color: "#6366F1",
+                                  display: "flex",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Download size={14} />
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
