@@ -7011,58 +7011,68 @@ export default function BrandDashboard() {
 
     return (
       <div className="space-y-8">
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+        <div className="grid grid-cols-3 gap-3 sm:gap-6">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
+            <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
+            <p className="text-xs sm:text-sm text-gray-600 mb-1">
+              Total Spend (30d)
+            </p>
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
               $12.4K
             </p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <Users className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Active Collaborators</p>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">8</p>
+          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
+            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
+            <p className="text-xs sm:text-sm text-gray-600 mb-1">
+              Active Collaborators
+            </p>
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+              8
+            </p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
-            <p className="text-2xl sm:text-3xl font-bold text-gray-900">12</p>
+          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
+            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
+            <p className="text-xs sm:text-sm text-gray-600 mb-1">
+              Campaigns Launched
+            </p>
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+              12
+            </p>
           </Card>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
-          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-[#F7B750] rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
               Collaborate with Agency
             </h3>
             <Button
               onClick={handleAgencyCollaborationEntry}
-              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
             >
               {brandCanUseCampaignCollaboration
                 ? "Invite Agency"
                 : "Upgrade to Pro"}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
               Add AI Creator
             </h3>
             <Button
               disabled
-              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed"
+              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed text-xs sm:text-sm h-8 sm:h-10"
             >
               Coming Soon
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-amber-600/60 rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-amber-600/60 rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
               Invite Company Seat
             </h3>
             <Button
               onClick={handleCompanySeatEntry}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
             >
               {(brandSeatLimit ?? 0) === 0
                 ? "Upgrade to Basic"
@@ -7071,12 +7081,12 @@ export default function BrandDashboard() {
                   : `Up to ${brandSeatLimitLabel} seats`}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-orange-600 rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
               AI Studio Add-On
             </h3>
             <Button
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none"
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
               onClick={() =>
                 navigate(
                   brandHasStudioAddon
@@ -7092,10 +7102,12 @@ export default function BrandDashboard() {
                   : "Upgrade to Pro"}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Post a Job</h3>
+          <Card className="p-4 sm:p-6 bg-white border-2 border-blue-600 rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
+              Post a Job
+            </h3>
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
               onClick={() => {
                 if (typeof window !== "undefined") {
                   window.localStorage.removeItem("jobDraftId");
@@ -7110,34 +7122,36 @@ export default function BrandDashboard() {
         </div>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Your Campaigns</h2>
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Your Campaigns
+            </h2>
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("active")}
-                className={`border-2 rounded-none ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Active
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("pending_approval")}
-                className={`border-2 rounded-none ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Pending Approval
+                Pending
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("completed")}
-                className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Expired
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("jobs")}
-                className={`border-2 rounded-none ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Jobs
               </Button>
@@ -7145,9 +7159,9 @@ export default function BrandDashboard() {
           </div>
           {campaignHubTab === "jobs" ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">
                     Job Postings
                   </h3>
                   <p className="text-sm text-gray-600">
@@ -7162,13 +7176,13 @@ export default function BrandDashboard() {
                     }
                     navigate(createPageUrl("PostJob"));
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md shrink-0"
                 >
                   Post Job
                 </Button>
               </div>
               <Card className="p-4 bg-white border border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="md:col-span-2">
                     <div className="relative">
                       <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
@@ -7477,41 +7491,41 @@ export default function BrandDashboard() {
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Asset Library
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm sm:text-base">
             Download, manage, and organize all your creative assets
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
-            className="border-2 border-gray-300"
+            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             onClick={handleBatchDownload}
             disabled={selectedAssetIds.size === 0 || isBatchDownloading}
           >
             {isBatchDownloading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
             ) : (
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-1.5" />
             )}
-            Batch Download
+            Batch
             {selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-gray-300 text-sm"
+            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             onClick={() => setShowFilterDialog(true)}
           >
-            <Filter className="w-4 h-4 mr-2" />
+            <Filter className="w-4 h-4 mr-1.5" />
             Filter
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-gray-300"
+            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             onClick={handleRefreshAssets}
             disabled={studioLoading}
           >
             <RefreshCw
-              className={`w-4 h-4 mr-2 ${studioLoading ? "animate-spin" : ""}`}
+              className={`w-4 h-4 mr-1.5 ${studioLoading ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>
@@ -7547,22 +7561,22 @@ export default function BrandDashboard() {
       </div>
 
       {/* Search & Filter Bar */}
-      <Card className="p-4 bg-white border border-gray-200">
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <Card className="p-3 sm:p-4 bg-white border border-gray-200">
+        <div className="flex flex-wrap gap-2">
+          <div className="flex-1 min-w-[140px] relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search by project, creator, or filename..."
-              className="pl-10 border-2 border-gray-300"
+              placeholder="Search assets..."
+              className="pl-9 border-2 border-gray-300 h-9 text-sm"
               value={studioSearchQuery}
               onChange={(e) => setStudioSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <Button
               variant={studioSourceFilter === "all" ? "default" : "outline"}
               onClick={() => setStudioSourceFilter("all")}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             >
               All
             </Button>
@@ -7573,25 +7587,27 @@ export default function BrandDashboard() {
                   : "outline"
               }
               onClick={() => setStudioSourceFilter("studio_generation")}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             >
               Studio
             </Button>
           </div>
-          <Button
-            variant={viewMode === "grid" ? "default" : "outline"}
-            onClick={() => setViewMode("grid")}
-            className="border-2 border-gray-300"
-          >
-            Grid
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            onClick={() => setViewMode("list")}
-            className="border-2 border-gray-300"
-          >
-            List
-          </Button>
+          <div className="flex gap-1.5">
+            <Button
+              variant={viewMode === "grid" ? "default" : "outline"}
+              onClick={() => setViewMode("grid")}
+              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+            >
+              Grid
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              onClick={() => setViewMode("list")}
+              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+            >
+              List
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -7609,7 +7625,7 @@ export default function BrandDashboard() {
           </p>
         </Card>
       ) : viewMode === "grid" ? (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
           {displayedAssets.map((asset) => (
             <Card
               key={asset.id}

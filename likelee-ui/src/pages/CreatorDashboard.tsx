@@ -12244,8 +12244,8 @@ export default function CreatorDashboard() {
         className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed z-40 ${
           isSmallScreen
             ? sidebarOpen
-              ? "w-64 h-screen top-0"
-              : "-translate-x-full w-64 h-screen top-0"
+              ? "w-72 h-screen top-0 translate-x-0"
+              : "w-72 h-screen top-0 -translate-x-full"
             : sidebarOpen
               ? "w-64 h-[calc(100vh-5rem)] top-20"
               : "w-20 h-[calc(100vh-5rem)] top-20"
@@ -12575,104 +12575,111 @@ export default function CreatorDashboard() {
         )}
       </aside>
 
-      {/* Mobile Header */}
-      {isSmallScreen && (
-        <>
-          <header
-            className={`fixed ${isSmallScreen ? "top-20" : "top-0"} left-0 right-0 bg-white border-b border-gray-200 z-50 flex items-center justify-between p-4 lg:hidden`}
-          >
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-            <h1 className="font-bold text-lg">
-              {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-            </h1>
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-              aria-label="More options"
-            >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-              </svg>
-            </button>
-          </header>
-
-          {/* Mobile Menu Dropdown */}
-          {showMobileMenu && (
-            <>
-              {/* Backdrop to close menu when clicking outside */}
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setShowMobileMenu(false)}
-              />
-              <div className="fixed top-16 right-4 bg-white border-2 border-gray-200 shadow-xl rounded-lg z-[60] w-64">
-                <div className="p-2">
-                  <button
-                    onClick={() => {
-                      navigate("/BrandCompany");
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                  >
-                    <Building2 className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Brands
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/AgencySelection");
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                  >
-                    <Users className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Agencies
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/AboutUs");
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                  >
-                    <AlertCircle className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm font-medium text-gray-900">
-                      About Us
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/Contact");
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                  >
-                    <MessageSquare className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Contact
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </>
+      {/* Mobile sidebar overlay */}
+      {isSmallScreen && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Main Content */}
       <main
-        className={`flex-1 ${isSmallScreen ? "mt-16 pt-0" : sidebarOpen ? "lg:ml-64 pt-0" : "lg:ml-20 pt-0"} transition-all duration-300 overflow-y-auto`}
+        className={`flex-1 ${isSmallScreen ? "" : sidebarOpen ? "lg:ml-64 pt-0" : "lg:ml-20 pt-0"} transition-all duration-300 overflow-y-auto`}
       >
+        {/* Mobile top bar — sticky inside main, same as brand dashboard */}
+        {isSmallScreen && (
+          <div className="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 sticky top-0 z-20">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5 text-gray-600" />
+            </button>
+            <span className="flex-1 text-sm font-bold text-gray-900 truncate">
+              {navigationItems.find((n) => n.id === activeSection)?.label ||
+                activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+            </span>
+            {/* Profile avatar */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center"
+              aria-label="Open profile"
+            >
+              {creator?.kyc_status === "approved" ? (
+                <Avatar className="w-8 h-8 border-2 border-green-500">
+                  {creator?.profile_photo ? (
+                    <AvatarImage
+                      src={creator.profile_photo}
+                      alt={creator.name || "User"}
+                    />
+                  ) : null}
+                  <AvatarFallback className="bg-gray-200 text-gray-800 text-xs font-semibold">
+                    {(() => {
+                      const base = (
+                        creator?.name ||
+                        creator?.email ||
+                        ""
+                      ).trim();
+                      if (!base) return "U";
+                      const parts = base.includes(" ")
+                        ? base.split(/\s+/)
+                        : base.split("@")[0].split(/\.|_/);
+                      return (
+                        parts
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((p) => p[0]?.toUpperCase())
+                          .join("") || "U"
+                      );
+                    })()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div
+                  className="w-8 h-8 rounded-full p-[2px]"
+                  style={{
+                    background:
+                      "conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e)",
+                  }}
+                >
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <Avatar className="w-6 h-6">
+                      {creator?.profile_photo ? (
+                        <AvatarImage
+                          src={creator.profile_photo}
+                          alt={creator.name || "User"}
+                        />
+                      ) : null}
+                      <AvatarFallback className="bg-gray-200 text-gray-800 text-xs font-semibold">
+                        {(() => {
+                          const base = (
+                            creator?.name ||
+                            creator?.email ||
+                            ""
+                          ).trim();
+                          if (!base) return "U";
+                          const parts = base.includes(" ")
+                            ? base.split(/\s+/)
+                            : base.split("@")[0].split(/\.|_/);
+                          return (
+                            parts
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .map((p) => p[0]?.toUpperCase())
+                              .join("") || "U"
+                          );
+                        })()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+              )}
+            </button>
+          </div>
+        )}
+
         <div className={`${isSmallScreen ? "p-4" : "p-8"}`}>
           {activeSection !== "settings" &&
             activeSection !== "talent-portal" && (
