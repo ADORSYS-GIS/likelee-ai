@@ -320,16 +320,16 @@ const InviteTeamMemberModal = ({
       <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Invite Team Member
+            {t("dashboard.settingsPage.team.inviteModal.title", { defaultValue: "Invite Team Member" })}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-500 font-medium">
-            Send an email invitation to join your agency team
+            {t("dashboard.settingsPage.team.inviteModal.description", { defaultValue: "Send an email invitation to join your agency team" })}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-900">
-              Email Address
+              {t("dashboard.settingsPage.team.inviteModal.emailAddress", { defaultValue: "Email Address" })}
             </Label>
             <Input
               value={email}
@@ -339,7 +339,7 @@ const InviteTeamMemberModal = ({
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">User Role</Label>
+            <Label className="text-sm font-bold text-gray-900">{t("dashboard.settingsPage.team.inviteModal.userRole", { defaultValue: "User Role" })}</Label>
             <Select
               value={role}
               onValueChange={(value) =>
@@ -347,7 +347,7 @@ const InviteTeamMemberModal = ({
               }
             >
               <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
-                <SelectValue placeholder="Select role" />
+                <SelectValue placeholder={t("dashboard.settingsPage.team.inviteModal.selectRole", { defaultValue: "Select role" })} />
               </SelectTrigger>
               <SelectContent>
                 {TEAM_ROLE_OPTIONS.map((option) => (
@@ -360,9 +360,7 @@ const InviteTeamMemberModal = ({
           </div>
           <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
             <p className="text-xs text-indigo-700 font-medium leading-relaxed">
-              <span className="font-bold">Note:</span> The invited user will
-              receive an email with instructions to set up their account and
-              access the dashboard with the assigned role.
+              <span className="font-bold">{t("common.note", { defaultValue: "Note" })}:</span> {t("dashboard.settingsPage.team.inviteModal.note", { defaultValue: "The invited user will receive an email with instructions to set up their account and access the dashboard with the assigned role." })}
             </p>
           </div>
         </div>
@@ -373,7 +371,7 @@ const InviteTeamMemberModal = ({
             className="font-bold"
             disabled={submitting}
           >
-            Cancel
+            {t("common.cancel", { defaultValue: "Cancel" })}
           </Button>
           <Button
             onClick={onSubmit}
@@ -385,7 +383,7 @@ const InviteTeamMemberModal = ({
             ) : (
               <Mail className="w-4 h-4" />
             )}
-            {submitting ? "Sending..." : "Send Invitation"}
+            {submitting ? t("common.sending", { defaultValue: "Sending..." }) : t("dashboard.settingsPage.team.inviteModal.sendInvitation", { defaultValue: "Send Invitation" })}
           </Button>
         </DialogFooter>
       </DialogContent>
