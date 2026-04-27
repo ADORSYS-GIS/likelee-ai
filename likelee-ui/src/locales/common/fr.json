@@ -371,7 +371,12 @@
         "verifyIdentity": "Vérifier l'identité maintenant",
         "preparing": "Préparation...",
         "startLiveness": "Démarrer la vérification de vivacité",
-        "livenessApproved": "Vivacité approuvée"
+        "livenessApproved": "Vivacité approuvée",
+        "skip": "Skip",
+        "verifyAndContinue": "Verify & Continue",
+        "checking": "Checking...",
+        "start": "Verify Identity Now",
+        "liveness": "Start Liveness Check"
       },
       "verificationFailedTitle": "Échec de la vérification",
       "statusCheckFailedTitle": "Échec de la vérification du statut",
@@ -485,7 +490,10 @@
       "notAuthenticatedDesc": "Veuillez vous connecter pour continuer.",
       "genericFailedTitle": "Échec générique",
       "genericFailedDesc": "Une erreur s'est produite. Veuillez réessayer.",
-      "unknownDesc": "Une erreur s'est produite. Veuillez réessayer ou contacter le support si le problème persiste."
+      "unknownDesc": "Une erreur s'est produite. Veuillez réessayer ou contacter le support si le problème persiste.",
+      "notAuthenticated": "Please sign in to continue.",
+      "genericFailed": "Something went wrong. Please try again.",
+      "unknown": "[NEEDS TRANSLATION] An error occurred. Please try again or contact support if the problem persists."
     },
     "photos": {
       "label": "Téléchargez au moins 3 photos",
@@ -505,7 +513,8 @@
       "verificationPending": "Attendez ! Nous devons vérifier votre identité avant que vous puissiez télécharger des photos. Cela garantit que votre modèle d'IA n'est entraîné que sur vous.",
       "generateAvatar": "Générer Avatar (Duix)",
       "generatedAvatar": "Avatar généré",
-      "photoFlagged": "Votre photo {{side}} a été signalée et ne peut pas être utilisée. Veuillez télécharger une photo différente."
+      "photoFlagged": "Votre photo {{side}} a été signalée et ne peut pas être utilisée. Veuillez télécharger une photo différente.",
+      "title": "Upload at least 3 photos"
     },
     "skipModal": {
       "title": "Ignorer la vérification d'identité ?",
@@ -529,7 +538,9 @@
       "continue": "Continuer",
       "saveAndVerify": "Enregistrer et vérifier",
       "startingVerification": "Démarrage…",
-      "verifyIdentity": "Vérifier l'identité maintenant"
+      "verifyIdentity": "Vérifier l'identité maintenant",
+      "livenessApproved": "Liveness Approved",
+      "preparing": "Preparing…"
     },
     "alreadyHaveAccount": "Vous avez déjà un compte ?",
     "terms": {
@@ -549,7 +560,8 @@
       "personalDetails": "Détails personnels",
       "verification": "Vérification",
       "photos": "Photos",
-      "finalize": "Finaliser"
+      "finalize": "Finaliser",
+      "representation": "Representation"
     },
     "stepDescriptions": {
       "step1": {
@@ -594,7 +606,12 @@
         "confirmPassword": "Confirmez le mot de passe",
         "fullName": "Nom complet",
         "city": "Ville",
-        "state": "État/Pays"
+        "state": "État/Pays",
+        "socialLink": "Social Media Link (Instagram, TikTok, YouTube)",
+        "location": "Location (City, Country)",
+        "dob": "Date of Birth",
+        "age": "Age",
+        "genderQuestion": "How do you identify?"
       },
       "handle": "Identifiant",
       "placeholders": {
@@ -612,7 +629,9 @@
         "price": "",
         "headshot": "URL de l'image",
         "specify": "Veuillez préciser...",
-        "age": "ex: 25"
+        "age": "ex: 25",
+        "city": "ex: New York",
+        "state": "ex: NY or USA"
       },
       "sport": "Le sport",
       "athleteType": "Type d'athlète",
@@ -672,7 +691,34 @@
       "raceEthnicity": "Race / Ethnicité (sélectionnez tout ce qui s'applique)",
       "primaryPlatform": "Plateforme principale",
       "perMonth": "/mois",
-      "save": "Enregistrer et continuer vers la vérification"
+      "save": "Enregistrer et continuer vers la vérification",
+      "step1": {
+        "athlete": "Create your NIL-ready account",
+        "model_actor": "Create your Likelee account",
+        "influencer": "Let's start with the basics"
+      },
+      "verification": {
+        "title": "Identity Verification",
+        "description": "[NEEDS TRANSLATION] Verify your identity to become visible to brands and unlock opportunities",
+        "whyVerify": {
+          "title": "Why verify your identity?",
+          "reason1": "[NEEDS TRANSLATION] Get discovered by brands looking for verified creators",
+          "reason2": "[NEEDS TRANSLATION] Build trust and credibility with licensing partners",
+          "reason3": "Unlock higher-value campaign opportunities"
+        },
+        "processDesc": "[NEEDS TRANSLATION] We use secure identity verification to ensure all creators on Likelee are authentic. This process typically takes 2–3 minutes.",
+        "requirements": {
+          "title": "What you'll need:",
+          "item1": "[NEEDS TRANSLATION] Government-issued ID (driver's license, passport, or state ID)",
+          "item2": "Good lighting and camera/mic access",
+          "item3": "2–3 minutes in a quiet space"
+        },
+        "actions": {
+          "start": "Verify Identity Now",
+          "liveness": "Start Liveness Check",
+          "livenessApproved": "Liveness Approved"
+        }
+      }
     },
     "warning": {
       "limitedBatches": "Nous lançons par lots limités pour garantir à chaque créateur visibilité et opportunités de campagne. Réservez votre profil pour rejoindre la première cohorte de créateurs."
@@ -750,6 +796,52 @@
       "livenessFailedTitle": "Échec de la vérification de présence",
       "livenessFailedDesc": "Veuillez réessayer avec un bon éclairage et suivre les instructions.",
       "kycErrorTitle": "Erreur KYC"
+    },
+    "createAccount": {
+      "title": "Create Your Account",
+      "subtitle": "Let's start with the basics.",
+      "button": "Create Account",
+      "needAccount": "Need an account?",
+      "signUp": "Sign up",
+      "tabs": {
+        "creator": "Creator",
+        "brand": "Brand",
+        "agency": "Agency"
+      }
+    },
+    "signIn": {
+      "title": "Sign In",
+      "subtitle": "Sign in to your Likelee account.",
+      "button": "Sign In",
+      "prompt": "Already have an account?",
+      "link": "Sign In"
+    },
+    "instagram": "Instagram (optional)",
+    "twitter": "Twitter/X (optional)",
+    "interests": "Interests / Brand Categories",
+    "bio": "Short Bio",
+    "bioPlaceholder": "Tell brands a bit about you...",
+    "visibility": "Profile Visibility",
+    "visibilityOptions": {
+      "public": "Public",
+      "publicDesc": "Visible to everyone",
+      "private": "Private",
+      "privateDesc": "Only discoverable to brands and AI creators"
+    },
+    "save": "Save & Continue to Verification",
+    "representation": {
+      "title": "Representation Status",
+      "options": {
+        "agency": "Agency",
+        "independent": "Independent"
+      }
+    },
+    "represented": "Represented by an Agent",
+    "agencyOwner": "I am an Agency Owner",
+    "agencyDetails": {
+      "name": "Agency Name",
+      "agentName": "Agent Name",
+      "agentEmail": "Agent Email"
     }
   },
   "faces": {
@@ -1529,7 +1621,16 @@
       "genericError": "Une erreur s'est produite. Veuillez réessayer ou contacter le support.",
       "bucketNotFound": "Service de téléchargement indisponible. Veuillez réessayer plus tard.",
       "constraintViolation": "Données invalides. Veuillez vérifier votre saisie et réessayer."
-    }
+    },
+    "fullNameRequired": "Full Name *",
+    "emailRequired": "Email Address *",
+    "cityRequired": "City *",
+    "stateCountryRequired": "State / Country *",
+    "experienceRequired": "Years of AI creative experience *",
+    "portfolioUrl": "Portfolio URL",
+    "socialMediaUrl": "Social Media URL",
+    "profilePhotoOptional": "Profile Photo (optional)",
+    "agencyOptional": "Agency (if applicable)"
   },
   "licensingSettingsPage": {
     "title": "Paramètres de Licence",
@@ -1614,6 +1715,11 @@
       "title": "Variation saisonnière/Tenue",
       "description": "Différents styles saisonniers ou variations de tenues.",
       "bestFor": "Campagnes saisonnières, différents looks"
+    },
+    "signature": {
+      "title": "Your Choice - Signature Moment",
+      "description": "[NEEDS TRANSLATION] A photo that really represents YOU and how people recognize you.",
+      "bestFor": "A photo that really represents YOU"
     }
   },
   "marketingDashboard": {
@@ -2148,5 +2254,194 @@
       "title": "L'infrastructure derrière l'économie de l'identité",
       "description": "Likelee connecte de vrais créateurs, des talents IA et des studios grâce à des licences d'image sécurisées et des outils de collaboration transparents. Chaque campagne est vérifiée par des humains, soutenue par le consentement et prête pour l'avenir des médias."
     }
-  }
+  },
+  "resources": "Resources",
+  "blog": "Blog",
+  "impact": "Impact",
+  "javascriptRequired": "JavaScript Required",
+  "javascriptRequiredMessage": "[NEEDS TRANSLATION] Likelee requires JavaScript to display content and provide full functionality.",
+  "aboutLikelee": "About Likelee:",
+  "protectionAndRights": "Protection & Rights",
+  "protectionAndRightsMessage": "[NEEDS TRANSLATION] Every usage is tracked, consented, and compensated through smart contracts",
+  "enableJavascript": "[NEEDS TRANSLATION] Please enable JavaScript in your browser to access the full platform.",
+  "viewSimplifiedVersion": "View simplified version",
+  "javascriptRequiredFullExperience": "JavaScript Required for Full Experience",
+  "interactivePlatformMessage": "[NEEDS TRANSLATION] Likelee is an interactive platform that requires JavaScript.",
+  "platformFeatures": "Likelee Platform Features:",
+  "ethicalAiStandards": "[NEEDS TRANSLATION] 🔒 <strong>Ethical AI Standards:</strong> SAG-AFTRA aligned, GDPR/CCPA compliant, with automated consent tracking and fair compensation for all creators.",
+  "toAccessPlatform": "To access the full interactive platform:",
+  "enableJavascriptInBrowser": "Enable JavaScript in your browser settings",
+  "refreshPage": "Refresh this page",
+  "orViewOur": "Or view our",
+  "simplifiedTextVersion": "simplified text version",
+  "questionsContactUs": "Questions? Contact us:",
+  "worldwide": "Worldwide",
+  "terms": {
+    "text": "By submitting, I agree to the",
+    "link": "Terms and Conditions",
+    "agree": "and confirm all information is accurate."
+  },
+  "actions": {
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit Profile"
+  },
+  "success": {
+    "title": "Profile reserved—welcome to the Likelee ecosystem",
+    "description": "[NEEDS TRANSLATION] We're onboarding talent in waves to keep demand and visibility balanced. Your profile is saved; we'll notify you when it's time to complete verification and go live.",
+    "dashboardButton": "Go to Dashboard"
+  },
+  "warning": {
+    "limitedBatches": "[NEEDS TRANSLATION] We're launching in limited batches to make sure every Creator gets visibility and campaign opportunities. Reserve your profile to join the first creator cohort."
+  },
+  "skipModal": {
+    "title": "Skip Verification?",
+    "description": "[NEEDS TRANSLATION] Your profile will be saved, but you won't be visible to brands until you verify your identity.",
+    "note": "[NEEDS TRANSLATION] Note: You can return to your dashboard at any time to complete verification.",
+    "actions": {
+      "back": "Go Back",
+      "confirm": "Skip & Finish"
+    }
+  },
+  "dashboard": {
+    "totalMonthlyRevenue": "Total Monthly Revenue",
+    "revenueInfo": "Current recurring monthly income",
+    "activeCampaigns": "Active Campaigns",
+    "activeCampaignsInfo": "Generating revenue right now",
+    "pendingApprovals": "Pending Approvals",
+    "pendingApprovalsInfo": "Campaigns waiting for your review",
+    "annualRunRate": "Annual Run Rate",
+    "annualRunRateInfo": "Projected yearly earnings",
+    "quickActions": "Quick Actions",
+    "priority": "PRIORITY",
+    "completeProfile": "Complete Your Profile",
+    "completeProfileInfo": "[NEEDS TRANSLATION] You're missing X sections. Complete them to get verified.",
+    "uploadVoiceTone": "Upload Voice Tone",
+    "uploadVoiceToneInfo": "Add voice samples to enable audio campaigns",
+    "recentActivity": "Recent Activity",
+    "previewExamples": {
+      "title": "Preview Examples:",
+      "message": "[NEEDS TRANSLATION] These are example campaigns to show you what your dashboard will look like."
+    },
+    "active": "ACTIVE",
+    "noCampaigns": "No Active Campaigns",
+    "noCampaignsInfo": "Complete your profile to start getting offers!",
+    "profileStatus": "Profile Status",
+    "completeToGetDiscovered": "Complete to get discovered",
+    "referenceImages": "Reference Images",
+    "voiceRecordings": "Voice Recordings",
+    "missing": "MISSING"
+  },
+  "content": {
+    "title": "Content",
+    "subtitle": "Track content created with your likeness",
+    "welcome": {
+      "title": "Welcome to your Content page!",
+      "message": "[NEEDS TRANSLATION] This is an example of what brand content and detections will look like. You don't have any content yet — but when brands create content with your likeness, it will appear here!"
+    },
+    "tabs": {
+      "brandContent": "Brand Content",
+      "detections": "Detections"
+    },
+    "brandContent": {
+      "info": "[NEEDS TRANSLATION] This feed shows all authorized content that brands have published using your likeness.",
+      "views": "Views",
+      "engagement": "Engagement",
+      "published": "Published {{date}}",
+      "noContent": "No brand content found."
+    },
+    "detections": {
+      "info": "[NEEDS TRANSLATION] Likeness Protection Active. We continuously scan the web for unauthorized use of your likeness. Review detected content below.",
+      "needsReview": "Needs Review",
+      "takedownRequested": "Takedown Requested",
+      "resolved": "Resolved",
+      "detected": "Detected",
+      "matchConfidence": "Match Confidence",
+      "viewOriginal": "View Original Content",
+      "requestTakedown": "Request Takedown",
+      "dismiss": "Dismiss (It's Authorized)",
+      "takedownSent": "[NEEDS TRANSLATION] Takedown request sent. Platforms typically respond within 24-72 hours.",
+      "contentRemoved": "[NEEDS TRANSLATION] Content has been removed or verified as authorized.",
+      "noDetections": "No detections found.",
+      "howItWorks": {
+        "title": "How This Works:",
+        "text": "[NEEDS TRANSLATION] Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."
+      },
+      "uploaded": "UPLOADED",
+      "missing": "MISSING",
+      "bestFor": "Best For:",
+      "view": "View",
+      "replace": "Replace"
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/mo",
+        "cancel": "Cancel",
+        "save": "Save Rates",
+        "saving": "Saving...",
+        "contentTitle": "Customize Content Type Rates",
+        "industryTitle": "Customize Industry Rates",
+        "contentDesc": "[NEEDS TRANSLATION] Set specific monthly rates for different content types. If left blank, your base rate ({rate}) will apply.",
+        "industryDesc": "[NEEDS TRANSLATION] Set specific monthly rates for different industries. If left blank, your base rate ({rate}) will apply.",
+        "noContentTitle": "No content types selected.",
+        "noContentMsg": "[NEEDS TRANSLATION] Please go back to \"My Rules\" and select the content types you re open to first.",
+        "noIndustryTitle": "No industries selected.",
+        "noIndustryMsg": "[NEEDS TRANSLATION] Please go back to \"My Rules\" and select the industries you work with first.",
+        "contentHeader": "Content Types",
+        "industryHeader": "Industries"
+      }
+    },
+    "toasts": {
+      "profileSaved": "Profile saved successfully!",
+      "profileSaveFailed": "Failed to save profile",
+      "profilePhotoUpdated": "Profile photo updated!",
+      "authRequiredTitle": "Sign in required",
+      "authRequiredPhotoDesc": "Please sign in to upload a profile photo.",
+      "ratesSaved": "Rates saved successfully!",
+      "ratesSaveFailed": "Failed to save rates",
+      "contentSaved": "Content preferences saved!",
+      "industrySaved": "Industry preferences saved!",
+      "saveFailed": "Failed to save",
+      "restrictionsSaved": "Restrictions saved successfully!",
+      "restrictionsSaveFailed": "Failed to save restrictions",
+      "negotiationEnabled": "Negotiation enabled!",
+      "negotiationDisabled": "Negotiation disabled!",
+      "imageUploaded": "Image uploaded successfully!",
+      "imageUploadFailed": "Failed to upload image",
+      "imageDeleted": "Image deleted successfully!",
+      "imageDeleteFailed": "Failed to delete image",
+      "voiceUploaded": "Voice sample uploaded successfully!",
+      "voiceUploadFailed": "Failed to upload voice sample",
+      "voiceDeleted": "Voice sample deleted successfully!",
+      "voiceDeleteFailed": "Failed to delete voice sample",
+      "voiceSuccessTitle": "Voice profile created",
+      "voiceSuccessDesc": "Your voice profile is ready.",
+      "voiceErrorTitle": "Voice error",
+      "voiceErrorDesc": "Failed to create voice profile: {{error}}",
+      "micErrorTitle": "Microphone error",
+      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micNoDataTitle": "No audio captured",
+      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "avatarGenerating": "Generating avatar...",
+      "avatarGenerated": "Avatar generated successfully!",
+      "avatarGenerationFailed": "Failed to generate avatar",
+      "pleaseWait": "Please wait...",
+      "processing": "Processing...",
+      "success": "Success!",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Information"
+    }
+  },
+  "voiceScripts": {
+    "happy": "[NEEDS TRANSLATION] I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+    "emotional": "[NEEDS TRANSLATION] There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+    "excited": "[NEEDS TRANSLATION] Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+    "mellow": "[NEEDS TRANSLATION] Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+    "relaxed": "[NEEDS TRANSLATION] Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+    "angry": "[NEEDS TRANSLATION] I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here."
+  },
+  "credits": "Credits",
+  "credits_lower": "credits",
+  "history": "History"
 }

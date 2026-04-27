@@ -1,0 +1,86 @@
+{
+  "namespaces": {
+    "agency": {
+      "en": 1387,
+      "missing": {
+        "de": [],
+        "es": [],
+        "fr": []
+      }
+    },
+    "brand": {
+      "en": 973,
+      "missing": {
+        "de": [],
+        "es": [],
+        "fr": []
+      }
+    },
+    "creator": {
+      "en": 1631,
+      "missing": {
+        "de": [],
+        "es": [],
+        "fr": [
+          "faces.featuredCreator.title",
+          "faces.featuredCreator.royaltiesEarned",
+          "faces.featuredCreator.royaltiesDescription",
+          "faces.featuredCreator.usageRequests",
+          "faces.featuredCreator.controlSettings",
+          "faces.featuredCreator.allowCommercialUse",
+          "faces.featuredCreator.allowFilmUse",
+          "faces.featuredCreator.viewUsageReportButton",
+          "faces.featuredCreator.updateSettingsButton",
+          "faces.digitalTalentOwner.title",
+          "faces.digitalTalentOwner.subtitle",
+          "faces.digitalTalentOwner.mainContent",
+          "faces.digitalTalentOwner.comparison.title",
+          "faces.digitalTalentOwner.comparison.traditionalPath",
+          "faces.digitalTalentOwner.comparison.traditionalPathDescription1",
+          "faces.digitalTalentOwner.comparison.likeleeModel",
+          "faces.digitalTalentOwner.comparison.likeleeModelDescription1",
+          "faces.digitalTalentOwner.comparison.traditionalPathDescription2",
+          "faces.digitalTalentOwner.comparison.likeleeModelDescription2",
+          "faces.digitalTalentOwner.comparison.traditionalPathDescription3",
+          "faces.digitalTalentOwner.comparison.likeleeModelDescription3",
+          "faces.digitalTalentOwner.comparison.traditionalPathDescription4",
+          "faces.digitalTalentOwner.comparison.likeleeModelDescription4",
+          "faces.digitalTalentOwner.footer"
+        ]
+      }
+    },
+    "common": {
+      "en": 1560,
+      "missing": {
+        "de": [],
+        "es": [],
+        "fr": []
+      }
+    },
+    "auth": {
+      "en": 320,
+      "missing": {
+        "de": [],
+        "es": [],
+        "fr": [
+          "faces.hero.signUpButton"
+        ]
+      }
+    }
+  },
+  "summary": {
+    "totalMissing": 25,
+    "byLanguage": {
+      "de": 0,
+      "es": 0,
+      "fr": 25
+    },
+    "byNamespace": {
+      "agency": 0,
+      "brand": 0,
+      "creator": 24,
+      "common": 0,
+      "auth": 1
+    }
+  }
+}

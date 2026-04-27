@@ -612,7 +612,6 @@
         "rejectRequest": "Anfrage ablehnen",
         "availabilityRates": "Verfügbarkeit & Tarife",
         "pastCampaigns": "Vergangene Kampagnen",
-        "portfolio": "Portfolio",
         "noCampaignHistory": "Noch kein Kampagnenverlauf.",
         "licensingUnavailable": "Lizenzierung nicht verfügbar",
         "licensingUnavailableDesc": "Dieser Creator wird derzeit nicht durch einen aktiven Agentur-Roster-Eintrag vertreten, daher können Lizenzierungsanfragen derzeit nicht vom Marketplace aus gesendet werden.",
@@ -763,7 +762,8 @@
         "contractFullySigned": "Vertrag von beiden Parteien vollständig unterzeichnet",
         "paymentReleased": "Zahlung aus dem Treuhandkonto freigegeben",
         "contractCreatedAndSent": "Vertrag erstellt und an {{creatorName}} gesendet"
-      }
+      },
+      "noContractSubmissions": "No contract submissions yet"
     },
     "deliverables": {
       "title": "Deliverables",
@@ -843,7 +843,6 @@
       "clearSearchButton": "Suche löschen",
       "viewDetails": "Details anzeigen",
       "viewDetailsJobPosting": "Diese Stellenausschreibung und ihre Bewerbungen anzeigen.",
-      "viewApplications": "Bewerbungen anzeigen",
       "closeJob": "Job schließen",
       "noRoleDescription": "Noch keine Rollenbeschreibung hinzugefügt.",
       "budget": "Budget",
@@ -1643,6 +1642,10 @@
     "rejected": "Abgelehnt",
     "active": "Aktiv",
     "inactive": "Inaktiv",
-    "expired": "Abgelaufen"
+    "expired": "Abgelaufen",
+    "inProgress": "In progress",
+    "signed": "Signed",
+    "voided": "Voided",
+    "opened": "Opened"
   }
 }

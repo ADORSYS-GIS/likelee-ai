@@ -2091,7 +2091,10 @@
           "acceptSuccess": "Solicitud aceptada exitosamente",
           "acceptFailed": "Error al aceptar la solicitud",
           "rejectSuccess": "Solicitud rechazada exitosamente",
-          "rejectFailed": "Error al rechazar la solicitud"
+          "rejectFailed": "Error al rechazar la solicitud",
+          "noRequests": "No pending requests",
+          "accept": "Accept",
+          "reject": "Reject"
         },
         "offers": {
           "title": "Ofertas",
@@ -2113,7 +2116,15 @@
           "title": "Comentarios del cliente",
           "noFeedback": "No hay comentarios disponibles",
           "viewFeedback": "Ver comentarios"
-        }
+        },
+        "connectedBrands": "Connected Brands",
+        "requests": "Requests",
+        "brandOffers": "Brand Offers",
+        "deliverables": "Deliverables",
+        "packageFeedback": "Package Feedback",
+        "loadingBrands": "Loading connected brands...",
+        "loadBrandsFailed": "Failed to load connected brands.",
+        "noBrands": "No connected brands yet."
       },
       "settings": {
         "title": "Configuración",

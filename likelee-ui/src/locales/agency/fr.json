@@ -2088,7 +2088,14 @@
           "offers": "Offres",
           "contractHub": "Centre de contrats",
           "deliverables": "Livraisons",
-          "feedback": "Commentaires"
+          "feedback": "Commentaires",
+          "noRequests": "No pending requests",
+          "accept": "Accept",
+          "reject": "Reject",
+          "acceptSuccess": "Request accepted successfully",
+          "acceptFailed": "Failed to accept request",
+          "rejectSuccess": "Request rejected successfully",
+          "rejectFailed": "Failed to reject request"
         },
         "connections": {
           "title": "Marques connectées",
@@ -2100,16 +2107,7 @@
           "disconnectSuccess": "Marque déconnectée avec succès",
           "disconnectFailed": "Échec de la déconnexion de la marque"
         },
-        "requests": {
-          "title": "Demandes de connexion",
-          "noRequests": "Aucune demande en attente",
-          "accept": "Accepter",
-          "reject": "Rejeter",
-          "acceptSuccess": "Demande acceptée avec succès",
-          "acceptFailed": "Échec de l'acceptation de la demande",
-          "rejectSuccess": "Demande rejetée avec succès",
-          "rejectFailed": "Échec du rejet de la demande"
-        },
+        "requests": "Requests",
         "offers": {
           "title": "Offres",
           "noOffers": "Aucune offre trouvée",
@@ -2130,7 +2128,14 @@
           "title": "Commentaires client",
           "noFeedback": "Aucun commentaire disponible",
           "viewFeedback": "Voir les commentaires"
-        }
+        },
+        "connectedBrands": "Connected Brands",
+        "brandOffers": "Brand Offers",
+        "deliverables": "Deliverables",
+        "packageFeedback": "Package Feedback",
+        "loadingBrands": "Loading connected brands...",
+        "loadBrandsFailed": "Failed to load connected brands.",
+        "noBrands": "No connected brands yet."
       },
       "settings": {
         "title": "Paramètres",
@@ -2255,5 +2260,6 @@
         }
       }
     }
-  }
+  },
+  "marketingAgencySolutions": "Marketing Agency Solutions"
 }

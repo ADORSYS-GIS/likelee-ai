@@ -1,0 +1,33 @@
+Missing Translation Keys for FR
+Generated: 2026-04-27T13:34:06.081Z
+================================================================================
+
+
+[creator] - 24 missing keys:
+  - faces.featuredCreator.title
+  - faces.featuredCreator.royaltiesEarned
+  - faces.featuredCreator.royaltiesDescription
+  - faces.featuredCreator.usageRequests
+  - faces.featuredCreator.controlSettings
+  - faces.featuredCreator.allowCommercialUse
+  - faces.featuredCreator.allowFilmUse
+  - faces.featuredCreator.viewUsageReportButton
+  - faces.featuredCreator.updateSettingsButton
+  - faces.digitalTalentOwner.title
+  - faces.digitalTalentOwner.subtitle
+  - faces.digitalTalentOwner.mainContent
+  - faces.digitalTalentOwner.comparison.title
+  - faces.digitalTalentOwner.comparison.traditionalPath
+  - faces.digitalTalentOwner.comparison.traditionalPathDescription1
+  - faces.digitalTalentOwner.comparison.likeleeModel
+  - faces.digitalTalentOwner.comparison.likeleeModelDescription1
+  - faces.digitalTalentOwner.comparison.traditionalPathDescription2
+  - faces.digitalTalentOwner.comparison.likeleeModelDescription2
+  - faces.digitalTalentOwner.comparison.traditionalPathDescription3
+  - faces.digitalTalentOwner.comparison.likeleeModelDescription3
+  - faces.digitalTalentOwner.comparison.traditionalPathDescription4
+  - faces.digitalTalentOwner.comparison.likeleeModelDescription4
+  - faces.digitalTalentOwner.footer
+
+[auth] - 1 missing keys:
+  - faces.hero.signUpButton

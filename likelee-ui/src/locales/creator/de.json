@@ -90,7 +90,10 @@
         "standardMethod": "standard"
       }
     },
-    "settings": "Einstellungen",
+    "settings": {
+      "myRules": "My Rules",
+      "profileSettings": "Profile Settings"
+    },
     "settingsContent": {
       "myRules": "Meine Regeln",
       "profileSettings": "Profileinstellungen"
@@ -229,6 +232,20 @@
         "acceptNegotiationsDesc": "Marken erlauben, Gegenangebote zu Ihrem Grundpreis zu machen",
         "negotiationEnabled": "Verhandlung aktiviert!",
         "negotiationDisabled": "Verhandlung deaktiviert!"
+      },
+      "billing": {
+        "title": "Billing",
+        "subtitle": "Manage your subscription and payment methods",
+        "currentPlan": "Current Plan",
+        "freePlan": "Free Plan",
+        "proPlan": "Pro Plan",
+        "upgradeToPro": "Upgrade to Pro",
+        "manageSubscription": "Manage Subscription",
+        "billingHistory": "Billing History",
+        "noBillingHistory": "No billing history yet",
+        "paymentMethod": "Payment Method",
+        "addPaymentMethod": "Add Payment Method",
+        "updatePaymentMethod": "Update Payment Method"
       }
     },
     "profileSettings": "Profileinstellungen",
@@ -752,7 +769,11 @@
         "lululemon": "Lululemon",
         "fitnessSeries": "Fitness-Serie",
         "months": "{{count}} Monate"
-      }
+      },
+      "verifyBannerTitle": "Verify your account",
+      "verifyBannerDesc": "[NEEDS TRANSLATION] Complete identity verification to become visible to brands.",
+      "verifyBannerCta": "Verify now",
+      "verifyBannerPending": "Verification pending"
     },
     "nav": {
       "dashboard": "Übersicht",
@@ -905,7 +926,26 @@
       "success": "Erfolg!",
       "error": "Fehler",
       "warning": "Warnung",
-      "info": "Information"
+      "info": "Information",
+      "authRequiredTitle": "Sign in required",
+      "authRequiredPhotoDesc": "Please sign in to upload a profile photo.",
+      "voiceSuccessTitle": "Voice profile created",
+      "voiceSuccessDesc": "Your voice profile is ready.",
+      "voiceErrorTitle": "Voice error",
+      "voiceErrorDesc": "Failed to create voice profile: {{error}}",
+      "micErrorTitle": "Microphone error",
+      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micNoDataTitle": "No audio captured",
+      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "campaignApproved": "Campaign approved",
+      "campaignDeclined": "Campaign declined",
+      "campaignPaused": "Campaign paused",
+      "campaignRevoked": "Campaign revoked",
+      "licensePausedTitle": "License paused",
+      "licensePausedImmediate": "License is now paused.",
+      "licensePausedNextMonth": "License will pause next billing cycle.",
+      "licenseRevokedTitle": "License revoked",
+      "licenseRevokedDesc": "License revoked. Effective date: {{effectiveDate}}"
     },
     "uploadModal": {
       "requirementsTitle": "Anforderungscheckliste:",
@@ -995,6 +1035,103 @@
         "cancel": "Abbrechen",
         "saveChanges": "Änderungen speichern"
       }
+    },
+    "vibes": {
+      "Streetwear": "Streetwear",
+      "Glam": "Glam",
+      "Natural": "Natural",
+      "Classic": "Classic",
+      "Edgy": "Edgy",
+      "Athletic": "Athletic",
+      "Runway": "Runway",
+      "Editorial": "Editorial",
+      "Commercial": "Commercial",
+      "Casual": "Casual"
+    },
+    "jobs": {
+      "title": "Jobs",
+      "subtitle": "Review invitations and explore open roles.",
+      "jobInvites": "Job Invites",
+      "jobInvitesDescription": "Respond to direct job invitations from brands.",
+      "jobBoard": "Job Board",
+      "openJobBoard": "Open Job Board",
+      "loadingInvites": "Loading job invites...",
+      "noInvites": "No job invites yet.",
+      "acceptInvite": "Accept Invite",
+      "declineInvite": "Decline Invite",
+      "inviteAccepted": "Invite accepted",
+      "inviteDeclined": "Invite declined"
+    },
+    "brandConnections": {
+      "title": "Brand Connection",
+      "subtitle": "[NEEDS TRANSLATION] Manage connections, requests, and incoming campaign offers.",
+      "connections": "Connected Brands",
+      "connectionsDescription": "You are connected with brands below.",
+      "noConnectionsDescription": "You are not connected to any brands yet.",
+      "requests": "Requests",
+      "offers": "Brand Offers",
+      "deliverables": "Deliverables",
+      "sendDeliverable": "Send deliverable",
+      "uploadDeliverables": "Upload deliverables",
+      "uploadDeliverableDescription": "[NEEDS TRANSLATION] Upload a deliverable, choose the connected brand, and select the campaign offer.",
+      "uploadForAgencyRequest": "Upload deliverables for the agency request.",
+      "awaitingPayment": "[NEEDS TRANSLATION] Awaiting brand payment before deliverables can be uploaded.",
+      "noConnections": "No brand connections yet.",
+      "noPendingRequests": "No pending requests.",
+      "noOffers": "No offers yet.",
+      "viewDetails": "View Details",
+      "acceptRequest": "Accept",
+      "declineRequest": "Decline"
+    },
+    "agencyConnections": {
+      "title": "Agency Connection",
+      "subtitle": "[NEEDS TRANSLATION] Manage agency invitations and your connected agencies.",
+      "connections": "Connections",
+      "connectedAgencies": "Connected Agencies",
+      "connectedAgenciesDescription": "You can be connected to multiple agencies at once.",
+      "noConnectionsDescription": "You are not connected to any agencies yet.",
+      "assetRequests": "Asset Requests",
+      "disconnect": "Request disconnect",
+      "viewContract": "View Contract",
+      "noConnections": "No agency connections yet.",
+      "noAssetRequests": "No asset requests yet.",
+      "invitations": "Invitations",
+      "noPendingInvitations": "No pending invitations right now.",
+      "disconnectConfirm": "[NEEDS TRANSLATION] Are you sure you want to disconnect from this agency?",
+      "disconnectReason": "Reason for disconnecting (optional)",
+      "disconnected": "Successfully disconnected from agency",
+      "invitationAccepted": "[NEEDS TRANSLATION] You are now connected to this agency. You can edit your profile per agency in Talent Portal settings."
+    },
+    "talentPortal": {
+      "title": "Talent Portal",
+      "overview": "Overview",
+      "bookings": "Bookings",
+      "licenses": "Licenses",
+      "requests": "Requests",
+      "noBookings": "No bookings yet.",
+      "noLicenses": "No licenses yet.",
+      "noRequests": "No requests yet."
+    },
+    "payouts": {
+      "title": "Payouts",
+      "connectAccount": "Connect Account",
+      "accountConnected": "Account Connected",
+      "availableBalance": "Available Balance",
+      "pendingBalance": "Pending Balance",
+      "requestPayout": "Request Payout",
+      "payoutHistory": "Payout History",
+      "noHistory": "No payout history yet.",
+      "setupPayouts": "Setup Payouts",
+      "stripeConnect": "Connect with Stripe",
+      "paypalConnect": "Connect with PayPal",
+      "wiseConnect": "Connect with Wise",
+      "paymentPreferences": "Payment Preferences",
+      "taxDocumentation": "Tax Documentation",
+      "w9OnFile": "W-9 on file • Updated {{date}}",
+      "noW9OnFile": "No W-9 on file",
+      "download1099": "Download 1099 ({{year}})",
+      "cashOutEarnings": "Cash Out Earnings",
+      "requesting": "Requesting..."
     }
   },
   "creators": "Schöpfer",
@@ -1644,7 +1781,9 @@
         "willingToTravel": "Reisebereitschaft",
         "acceptOutsideLocalArea": "Buchungen außerhalb der Region akzeptieren",
         "minimumDayRate": "Mindesttagessatz",
-        "minimumRateDescription": "Dein minimal akzeptabler Satz"
+        "minimumRateDescription": "Dein minimal akzeptabler Satz",
+        "selectAgencyTitle": "Select an agency",
+        "selectAgencyDescription": "[NEEDS TRANSLATION] Please choose the agency for this book-out using the Agency filter dropdown."
       },
       "portfolio": {
         "title": "Portfolio",
@@ -2002,5 +2141,12 @@
     },
     "moreFeatures": "+ Mehr Funktionen",
     "backToDashboard": "Zurück zum Dashboard"
-  }
+  },
+  "sportsAgencyHowItWorksStep3Title": "Activate your Clone",
+  "sportsAgencyHowItWorksStep3Description": "[NEEDS TRANSLATION] Deploy your AI clone across platforms to engage with fans, create content, and secure brand deals.",
+  "sportsAgencyJoinWaitlist": "Join the Waitlist",
+  "howItWorksSportsStep1Title": "Roster Integration",
+  "howItWorksSportsStep2Title": "Brand Discovery & Request Submission",
+  "howItWorksSportsStep3Title": "Agency Review & Contract Execution",
+  "howItWorksSportsStep4Title": "Revenue Distribution"
 }

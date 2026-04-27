@@ -2089,7 +2089,14 @@
           "offers": "Angebote",
           "contractHub": "Vertragszentrum",
           "deliverables": "Lieferungen",
-          "feedback": "Feedback"
+          "feedback": "Feedback",
+          "noRequests": "No pending requests",
+          "accept": "Accept",
+          "reject": "Reject",
+          "acceptSuccess": "Request accepted successfully",
+          "acceptFailed": "Failed to accept request",
+          "rejectSuccess": "Request rejected successfully",
+          "rejectFailed": "Failed to reject request"
         },
         "connections": {
           "title": "Verbundene Marken",
@@ -2101,16 +2108,7 @@
           "disconnectSuccess": "Marke erfolgreich getrennt",
           "disconnectFailed": "Trennen der Marke fehlgeschlagen"
         },
-        "requests": {
-          "title": "Verbindungsanfragen",
-          "noRequests": "Keine ausstehenden Anfragen",
-          "accept": "Akzeptieren",
-          "reject": "Ablehnen",
-          "acceptSuccess": "Anfrage erfolgreich akzeptiert",
-          "acceptFailed": "Akzeptieren der Anfrage fehlgeschlagen",
-          "rejectSuccess": "Anfrage erfolgreich abgelehnt",
-          "rejectFailed": "Ablehnung der Anfrage fehlgeschlagen"
-        },
+        "requests": "Requests",
         "offers": {
           "title": "Angebote",
           "noOffers": "Keine Angebote gefunden",
@@ -2131,7 +2129,14 @@
           "title": "Kunden-Feedback",
           "noFeedback": "Kein Feedback verfügbar",
           "viewFeedback": "Feedback anzeigen"
-        }
+        },
+        "connectedBrands": "Connected Brands",
+        "brandOffers": "Brand Offers",
+        "deliverables": "Deliverables",
+        "packageFeedback": "Package Feedback",
+        "loadingBrands": "Loading connected brands...",
+        "loadBrandsFailed": "Failed to load connected brands.",
+        "noBrands": "No connected brands yet."
       },
       "settings": {
         "title": "Einstellungen",

@@ -661,7 +661,6 @@
         "rejectRequest": "Rechazar solicitud",
         "availabilityRates": "Disponibilidad y Tarifas",
         "pastCampaigns": "Campañas Pasadas",
-        "portfolio": "Portafolio",
         "noCampaignHistory": "Sin historial de campañas aún.",
         "licensingUnavailable": "Licencia no disponible",
         "licensingUnavailableDesc": "Este creador no está representado actualmente por una entrada de roster de agencia activa, por lo que las solicitudes de licencia no se pueden enviar desde el marketplace en este momento.",
@@ -812,7 +811,8 @@
         "contractFullySigned": "Contrato totalmente firmado por ambas partes",
         "paymentReleased": "Pago liberado del depósito en garantía",
         "contractCreatedAndSent": "Contrato creado y enviado a {{creatorName}}"
-      }
+      },
+      "noContractSubmissions": "No contract submissions yet"
     },
     "deliverables": {
       "title": "Entregables",
@@ -868,7 +868,7 @@
       "loading": "Cargando trabajos...",
       "error": "Error al cargar trabajos",
       "postJob": "Publicar Nuevo Trabajo",
-      "viewApplications": "Ver Solicitudes",
+      "viewApplications": "Ver solicitudes",
       "applications": "Solicitudes",
       "jobPostings": "Ofertas de trabajo",
       "postJobButton": "Publicar trabajo",
@@ -892,7 +892,6 @@
       "clearSearchButton": "Limpiar búsqueda",
       "viewDetails": "Ver detalles",
       "viewDetailsJobPosting": "Ver esta oferta de trabajo y sus solicitudes.",
-      "viewApplications": "Ver solicitudes",
       "closeJob": "Cerrar trabajo",
       "noRoleDescription": "Aún no se ha agregado descripción del rol.",
       "budget": "Presupuesto",
@@ -1606,5 +1605,26 @@
       "getStartedButton": "Comenzar",
       "bookDemoButton": "Reservar una Demo"
     }
+  },
+  "statuses": {
+    "draft": "Draft",
+    "sent": "Sent",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "new": "New",
+    "changesRequested": "Changes requested",
+    "contractSent": "Contract sent",
+    "contractFullySigned": "Contract fully signed",
+    "completed": "Completed",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "active": "Active",
+    "inactive": "Inactive",
+    "expired": "Expired",
+    "inProgress": "In progress",
+    "signed": "Signed",
+    "voided": "Voided",
+    "opened": "Opened"
   }
 }

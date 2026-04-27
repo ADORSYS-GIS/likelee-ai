@@ -13,11 +13,7 @@
       "engineActive": "Moteur IA Actif",
       "addCredits": "Ajouter des Crédits",
       "status": "Statut",
-      "configuration": {
-        "title": "Configuration",
-        "subtitle": "Ajustez les paramètres pour parfaire votre génération IA.",
-        "selectModel": "Sélectionner le Modèle IA"
-      }
+      "configuration": "Configuration"
     },
     "image": {
       "backToStudio": "Studio",
@@ -676,7 +672,6 @@
         "rejectRequest": "Rejeter la demande",
         "availabilityRates": "Disponibilité et Tarifs",
         "pastCampaigns": "Campagnes Passées",
-        "portfolio": "Portfolio",
         "noCampaignHistory": "Aucun historique de campagne pour le moment.",
         "licensingUnavailable": "Licence non disponible",
         "licensingUnavailableDesc": "Ce créateur n'est pas actuellement représenté par une entrée de roster d'agence active, donc les demandes de licence ne peuvent pas être envoyées depuis le marketplace pour le moment.",
@@ -826,7 +821,8 @@
         "contractFullySigned": "Contrat entièrement signé par les deux parties",
         "paymentReleased": "Paiement libéré depuis le séquestre",
         "contractCreatedAndSent": "Contrat créé et envoyé à {{creatorName}}"
-      }
+      },
+      "noContractSubmissions": "No contract submissions yet"
     },
     "deliverables": {
       "title": "Livrables",
@@ -899,9 +895,9 @@
       "cancel": "Annuler"
     },
     "postJobModal": {
-      "title": "Publier un Emploi pour Trouver des Talents",
+      "title": "Publier un emploi pour trouver des talents",
       "description": "Créez une offre d'emploi détaillée pour vous connecter avec des créateurs IA, des agences de marketing et des talents vérifiés pour votre prochaine campagne.",
-      "createJobPosting": "Créer une Offre d'Emploi"
+      "cta": "Créer une offre d'emploi"
     },
     "jobs": {
       "title": "Emplois",
@@ -910,7 +906,7 @@
       "loading": "Chargement des emplois...",
       "error": "Erreur lors du chargement des emplois",
       "postJob": "Publier un Nouvel Emploi",
-      "viewApplications": "Voir les Candidatures",
+      "viewApplications": "Voir les candidatures",
       "applications": "Candidatures",
       "jobPostings": "Offres d'emploi",
       "postJobButton": "Publier un emploi",
@@ -934,7 +930,6 @@
       "clearSearchButton": "Effacer la recherche",
       "viewDetails": "Voir les détails",
       "viewDetailsJobPosting": "Voir cette offre d'emploi et ses candidatures.",
-      "viewApplications": "Voir les candidatures",
       "closeJob": "Fermer l'emploi",
       "noRoleDescription": "Aucune description de rôle ajoutée pour le moment.",
       "budget": "Budget",
@@ -1041,11 +1036,6 @@
           "description": "Embauchez une agence partenaire Likelee pour gérer le projet pour vous."
         }
       }
-    },
-    "postJobModal": {
-      "title": "Publier un emploi pour trouver des talents",
-      "description": "Créez une offre d'emploi détaillée pour vous connecter avec des créateurs IA, des agences de marketing et des talents vérifiés pour votre prochaine campagne.",
-      "cta": "Créer une offre d'emploi"
     },
     "licensingRequests": {
       "title": "Demandes de Licence",
@@ -1296,6 +1286,85 @@
         "select": "Sélectionner",
         "sending": "Envoi...",
         "sendOffer": "Envoyer l'offre"
+      },
+      "brief": {
+        "step1Title": "Section 1: General Dialogue & Voice Direction",
+        "brandVoiceTone": "Brand Voice & Tone",
+        "scriptGuidelines": "Script Guidelines (For Video/Audio)",
+        "opening": "Opening (0-5s)",
+        "middle": "Middle (5-20s)",
+        "closing": "Closing (20-30s)",
+        "do": "✓ DO:",
+        "dont": "✗ DON'T:",
+        "step2Title": "Section 2: Visual Requirements & Style Guide",
+        "enterDeliverables": "Enter all required deliverables",
+        "totalExpectedDeliverables": "Total expected deliverables",
+        "totalExpectedDeliverablesHelp": "[NEEDS TRANSLATION] Required for tracking progress even when required-deliverables text is not detailed.",
+        "visualStyle": "Visual Style & Aesthetic",
+        "colorPalette": "Color Palette",
+        "setting": "Setting",
+        "framing": "Framing",
+        "editing": "Editing",
+        "chooseFiles": "Choose Files",
+        "imagesSelected_one": "{{count}} image selected",
+        "imagesSelected_other": "{{count}} images selected",
+        "pdfsSelected_one": "{{count}} PDF selected",
+        "pdfsSelected_other": "{{count}} PDFs selected",
+        "noFilesChosen": "No files chosen",
+        "styleReference": "Style Ref {{count}}",
+        "styleReferenceAlt": "Style Ref {{count}}",
+        "remove": "Remove",
+        "deliverableExpectations": "Deliverable Expectations & Brand Guidelines (PDFs)",
+        "pdfLabel": "PDF {{count}}: {{name}}",
+        "step3Title": "Section 3: Campaign Scope & Contract Details",
+        "campaignOverview": "Campaign Overview",
+        "objective": "Objective",
+        "targetAudience": "Target Audience",
+        "campaignDuration": "Campaign Duration",
+        "launchDate": "Launch Date",
+        "paymentTimeline": "Payment & Timeline",
+        "collaboratorPayout": "Collaborator Payout (Net)",
+        "collaboratorPayoutHelp": "[NEEDS TRANSLATION] The exact amount the creator or agency will receive.",
+        "offerAmount": "Offer Amount (Gross + 2% Fee)",
+        "platformFeePrefix": "Includes 2% Likelee platform fee",
+        "submissionDeadline": "Submission Deadline",
+        "renewalTerms": "Renewal Terms",
+        "revisionPolicy": "Revision Policy",
+        "includedRevisions": "Included Revisions",
+        "majorChanges": "Major Changes",
+        "revisionTurnaround": "Turnaround for Revisions",
+        "approvalProcess": "Approval Process",
+        "watermarkProtection": "Watermark & Protection",
+        "legalTerms": "Legal Terms",
+        "uploading": "Uploading...",
+        "placeholders": {
+          "voice": "Friendly, authentic, approachable",
+          "tone": "[NEEDS TRANSLATION] Upbeat and energetic, but not over-the-top. Natural enthusiasm that feels genuine.",
+          "personality": "[NEEDS TRANSLATION] Think \"your stylish friend giving honest recommendations\" rather than polished influencer.",
+          "keyMessages": "[NEEDS TRANSLATION] • \"Spring collection drops next week - these pieces are incredible\"\n• \"Quality you can feel, style you can trust\"\n• \"Perfect for everyday wear or special occasions\"\n• Call to action: \"Shop now at urbanapparel.com\"",
+          "opening": "[NEEDS TRANSLATION] Hook viewer with energy - \"You guys! I just got early access to Urban Apparel's spring line...\"",
+          "middle": "[NEEDS TRANSLATION] Show product features, talk about quality, fit, versatility. Be specific about what you love.",
+          "closing": "[NEEDS TRANSLATION] Clear CTA - \"Link in bio to shop\" or \"Head to urbanapparel.com before it sells out\"",
+          "do": "[NEEDS TRANSLATION] • Be authentic and natural\n• Show product in real-life settings\n• Speak to camera directly\n• Mention brand name at least once",
+          "dont": "[NEEDS TRANSLATION] • Use competitor brands in frame\n• Over-script - keep it natural\n• Include controversial topics\n• Disparage other brands",
+          "requiredDeliverables": "[NEEDS TRANSLATION] Example:\n3x Instagram Reels (15-30 seconds each)\n1x Hero Image\n5x Story Frames\n\nTip: Include quantity in each line so expected total is tracked automatically.",
+          "totalExpectedDeliverables": "e.g. 6",
+          "colorPalette": "[NEEDS TRANSLATION] Warm earth tones, natural lighting, bright but not oversaturated",
+          "setting": "[NEEDS TRANSLATION] Indoor/outdoor lifestyle settings - coffee shop, park, urban backdrop, home",
+          "framing": "[NEEDS TRANSLATION] Mix of close-ups and full-body shots. Show product clearly.",
+          "editing": "[NEEDS TRANSLATION] Clean, minimal cuts. Trendy but not overly filtered. Authentic feel.",
+          "objective": "[NEEDS TRANSLATION] Drive awareness and sales for Spring 2025 collection launch",
+          "targetAudience": "Women 25-40, fashion-conscious, urban lifestyle",
+          "campaignDuration": "90",
+          "collaboratorPayout": "5000",
+          "renewalTerms": "[NEEDS TRANSLATION] Auto-renewal available at end of term. Brand must notify 14 days prior if not renewing.",
+          "includedRevisions": "[NEEDS TRANSLATION] 2 rounds of minor edits (color correction, text changes, music swaps)",
+          "majorChanges": "[NEEDS TRANSLATION] Require new brief and additional budget (e.g., re-shoot, complete re-edit)",
+          "revisionTurnaround": "24-48 hours depending on scope",
+          "approvalProcess": "[NEEDS TRANSLATION] 1 Creator submits deliverables to platform\n2 Brand has 48 hours to review and approve/request revisions\n3 Once approved, funds release from escrow to creator (3 business days)\n4 If no action taken, payment auto-releases after 48 hours",
+          "watermarkProtection": "[NEEDS TRANSLATION] All delivered assets include embedded Likelee watermark for license verification and usage tracking.\nDMCA Protection: Automatic takedown notices if assets used outside approved scope.",
+          "legalTerms": "[NEEDS TRANSLATION] • Creator retains copyright; Brand receives usage license as specified\n• SAG-AFTRA compliant terms and fair compensation standards\n• Creator has right to approve final usage before publishing\n• Brand cannot sublicense without creator consent\n• Usage limited to approved channels, territories, and duration"
+        }
       }
     },
     "yourCampaigns": "Vos campagnes",
@@ -1547,5 +1616,32 @@
       "getStartedButton": "Commencer",
       "bookDemoButton": "Réserver une Démo"
     }
+  },
+  "forBusinesses": "For Businesses",
+  "forBusinessesMessage": "[NEEDS TRANSLATION] Access verified creator likenesses with transparent licensing and fast turnaround",
+  "forBusinessesMessage1": "Launch campaigns with verified, consented creators",
+  "forBusinessesMessage2": "Get brand-safe content in under 48 hours",
+  "forBusinessesMessage3": "Smart contracts with watermarked assets",
+  "forBusinessesMessage4": "Transparent licensing and usage tracking",
+  "statuses": {
+    "draft": "Draft",
+    "sent": "Sent",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "new": "New",
+    "changesRequested": "Changes requested",
+    "contractSent": "Contract sent",
+    "contractFullySigned": "Contract fully signed",
+    "completed": "Completed",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "active": "Active",
+    "inactive": "Inactive",
+    "expired": "Expired",
+    "inProgress": "In progress",
+    "signed": "Signed",
+    "voided": "Voided",
+    "opened": "Opened"
   }
 }

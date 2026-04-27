@@ -350,7 +350,12 @@
       "generateAvatar": "Generar Avatar (Duix)",
       "generatedAvatar": "Avatar Generado",
       "photoFlagged": "Tu foto del lado {{side}} fue marcada y no se puede usar. Por favor, sube una foto diferente.",
-      "pending": "Pendiente"
+      "pending": "Pendiente",
+      "title": "Upload at least 3 photos",
+      "livePreview": "Live Camera Preview",
+      "currentPose": "Current Pose:",
+      "openCamera": "Open Camera",
+      "verificationPending": "[NEEDS TRANSLATION] Wait! We need to verify your identity before you can upload photos. This ensures your AI model is only trained on you."
     },
     "skipModal": {
       "title": "¿Omitir Verificación?",
@@ -374,7 +379,9 @@
       "continue": "Continuar",
       "saveAndVerify": "Guardar y Verificar",
       "startingVerification": "Iniciando...",
-      "verifyIdentity": "Verificar Identidad Ahora"
+      "verifyIdentity": "Verificar Identidad Ahora",
+      "livenessApproved": "Liveness Approved",
+      "preparing": "Preparing…"
     },
     "alreadyHaveAccount": "¿Ya tienes una cuenta?",
     "verification": {
@@ -410,7 +417,12 @@
         "verifyIdentity": "Verificar Identidad Ahora",
         "preparing": "Preparando...",
         "startLiveness": "Iniciar Liveness Check",
-        "livenessApproved": "Liveness Aprobado"
+        "livenessApproved": "Liveness Aprobado",
+        "skip": "Skip",
+        "verifyAndContinue": "Verify & Continue",
+        "checking": "Checking...",
+        "start": "Verify Identity Now",
+        "liveness": "Start Liveness Check"
       }
     },
     "liveness": {
@@ -423,7 +435,14 @@
       "subtitle": "Empecemos con lo básico.",
       "button": "Crear Cuenta",
       "prompt": "¿No tienes una cuenta?",
-      "link": "Registrarse"
+      "link": "Registrarse",
+      "needAccount": "Need an account?",
+      "signUp": "Sign up",
+      "tabs": {
+        "creator": "Creator",
+        "brand": "Brand",
+        "agency": "Agency"
+      }
     },
     "signIn": {
       "title": "Iniciar Sesión",
@@ -576,7 +595,8 @@
       "personalDetails": "Detalles Personales",
       "verification": "Verificación",
       "photos": "Fotos",
-      "finalize": "Finalizar"
+      "finalize": "Finalizar",
+      "representation": "Representation"
     },
     "stepTitles": {
       "step1": "Crea Tu Cuenta",
@@ -605,7 +625,8 @@
       "step1": {
         "athlete": "Crea tu cuenta para comenzar.",
         "model_actor": "Crea tu cuenta de Likelee",
-        "influencer": "Crea tu cuenta para comenzar."
+        "influencer": "Crea tu cuenta para comenzar.",
+        "creator": "Create your Likelee account"
       },
       "step2": {
         "athlete": "Cuéntanos sobre tu deporte",
@@ -613,7 +634,9 @@
         "influencer": "Tu contenido y audiencia"
       },
       "step3": {
-        "influencer": "Define tus términos de colaboración"
+        "influencer": "Define tus términos de colaboración",
+        "model_actor": "Help us tailor your opportunities",
+        "athlete": "Get ready to attract sponsorship and brand deals"
       }
     },
     "toasts": {
@@ -679,6 +702,33 @@
       "livenessFailedTitle": "Error de verificación de vida",
       "livenessFailedDesc": "Por favor, inténtelo de nuevo con buena iluminación y siga las instrucciones.",
       "kycErrorTitle": "Error de KYC"
+    },
+    "instagram": "Instagram (optional)",
+    "twitter": "Twitter/X (optional)",
+    "interests": "Interests / Brand Categories",
+    "bio": "Short Bio",
+    "bioPlaceholder": "Tell brands a bit about you...",
+    "visibility": "Profile Visibility",
+    "visibilityOptions": {
+      "public": "Public",
+      "publicDesc": "Visible to everyone",
+      "private": "Private",
+      "privateDesc": "Only discoverable to brands and AI creators"
+    },
+    "save": "Save & Continue to Verification",
+    "representation": {
+      "title": "Representation Status",
+      "options": {
+        "agency": "Agency",
+        "independent": "Independent"
+      }
+    },
+    "represented": "Represented by an Agent",
+    "agencyOwner": "I am an Agency Owner",
+    "agencyDetails": {
+      "name": "Agency Name",
+      "agentName": "Agent Name",
+      "agentEmail": "Agent Email"
     }
   },
   "forYou": {
@@ -1224,7 +1274,8 @@
       "genericError": "Algo salió mal. Por favor, inténtelo de nuevo o contacte al soporte.",
       "bucketNotFound": "Servicio de carga no disponible. Por favor, inténtelo más tarde.",
       "constraintViolation": "Datos inválidos. Por favor, verifique su entrada e inténtelo de nuevo."
-    }
+    },
+    "organization": "Organization"
   },
   "licensingSettingsPage": {
     "title": "Configuración de Licencias",
@@ -2008,5 +2059,175 @@
       "title": "La infraestructura detrás de la economía de la identidad",
       "description": "Likelee conecta creadores reales, talento de IA y estudios a través de licencias de imagen seguras y herramientas de colaboración transparentes. Cada campaña está verificada por humanos, respaldada por consentimiento y lista para el futuro de los medios."
     }
-  }
+  },
+  "aboutPageName": "About Likelee",
+  "aboutPageDescription": "[NEEDS TRANSLATION] In the age of AI, human identity should be an asset, not a liability. Likelee builds the infrastructure for creators to own, control, and profit from their digital likeness.",
+  "terms": {
+    "text": "By submitting, I agree to the",
+    "link": "Terms and Conditions",
+    "agree": "and confirm all information is accurate."
+  },
+  "actions": {
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit Profile"
+  },
+  "success": {
+    "title": "Profile reserved—welcome to the Likelee ecosystem",
+    "description": "[NEEDS TRANSLATION] We're onboarding talent in waves to keep demand and visibility balanced. Your profile is saved; we'll notify you when it's time to complete verification and go live.",
+    "dashboardButton": "Go to Dashboard"
+  },
+  "warning": {
+    "limitedBatches": "[NEEDS TRANSLATION] We're launching in limited batches to make sure every Creator gets visibility and campaign opportunities. Reserve your profile to join the first creator cohort."
+  },
+  "skipModal": {
+    "title": "Skip Verification?",
+    "description": "[NEEDS TRANSLATION] Your profile will be saved, but you won't be visible to brands until you verify your identity.",
+    "note": "[NEEDS TRANSLATION] Note: You can return to your dashboard at any time to complete verification.",
+    "actions": {
+      "back": "Go Back",
+      "confirm": "Skip & Finish"
+    }
+  },
+  "dashboard": {
+    "totalMonthlyRevenue": "Total Monthly Revenue",
+    "revenueInfo": "Current recurring monthly income",
+    "activeCampaigns": "Active Campaigns",
+    "activeCampaignsInfo": "Generating revenue right now",
+    "pendingApprovals": "Pending Approvals",
+    "pendingApprovalsInfo": "Campaigns waiting for your review",
+    "annualRunRate": "Annual Run Rate",
+    "annualRunRateInfo": "Projected yearly earnings",
+    "quickActions": "Quick Actions",
+    "priority": "PRIORITY",
+    "completeProfile": "Complete Your Profile",
+    "completeProfileInfo": "[NEEDS TRANSLATION] You're missing X sections. Complete them to get verified.",
+    "uploadVoiceTone": "Upload Voice Tone",
+    "uploadVoiceToneInfo": "Add voice samples to enable audio campaigns",
+    "recentActivity": "Recent Activity",
+    "previewExamples": {
+      "title": "Preview Examples:",
+      "message": "[NEEDS TRANSLATION] These are example campaigns to show you what your dashboard will look like."
+    },
+    "active": "ACTIVE",
+    "noCampaigns": "No Active Campaigns",
+    "noCampaignsInfo": "Complete your profile to start getting offers!",
+    "profileStatus": "Profile Status",
+    "completeToGetDiscovered": "Complete to get discovered",
+    "referenceImages": "Reference Images",
+    "voiceRecordings": "Voice Recordings",
+    "missing": "MISSING"
+  },
+  "content": {
+    "title": "Content",
+    "subtitle": "Track content created with your likeness",
+    "welcome": {
+      "title": "Welcome to your Content page!",
+      "message": "[NEEDS TRANSLATION] This is an example of what brand content and detections will look like. You don't have any content yet — but when brands create content with your likeness, it will appear here!"
+    },
+    "tabs": {
+      "brandContent": "Brand Content",
+      "detections": "Detections"
+    },
+    "brandContent": {
+      "info": "[NEEDS TRANSLATION] This feed shows all authorized content that brands have published using your likeness.",
+      "views": "Views",
+      "engagement": "Engagement",
+      "published": "Published {{date}}",
+      "noContent": "No brand content found."
+    },
+    "detections": {
+      "info": "[NEEDS TRANSLATION] Likeness Protection Active. We continuously scan the web for unauthorized use of your likeness. Review detected content below.",
+      "needsReview": "Needs Review",
+      "takedownRequested": "Takedown Requested",
+      "resolved": "Resolved",
+      "detected": "Detected",
+      "matchConfidence": "Match Confidence",
+      "viewOriginal": "View Original Content",
+      "requestTakedown": "Request Takedown",
+      "dismiss": "Dismiss (It's Authorized)",
+      "takedownSent": "[NEEDS TRANSLATION] Takedown request sent. Platforms typically respond within 24-72 hours.",
+      "contentRemoved": "[NEEDS TRANSLATION] Content has been removed or verified as authorized.",
+      "noDetections": "No detections found.",
+      "howItWorks": {
+        "title": "How This Works:",
+        "text": "[NEEDS TRANSLATION] Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."
+      },
+      "uploaded": "UPLOADED",
+      "missing": "MISSING",
+      "bestFor": "Best For:",
+      "view": "View",
+      "replace": "Replace"
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/mo",
+        "cancel": "Cancel",
+        "save": "Save Rates",
+        "saving": "Saving...",
+        "contentTitle": "Customize Content Type Rates",
+        "industryTitle": "Customize Industry Rates",
+        "contentDesc": "[NEEDS TRANSLATION] Set specific monthly rates for different content types. If left blank, your base rate ({rate}) will apply.",
+        "industryDesc": "[NEEDS TRANSLATION] Set specific monthly rates for different industries. If left blank, your base rate ({rate}) will apply.",
+        "noContentTitle": "No content types selected.",
+        "noContentMsg": "[NEEDS TRANSLATION] Please go back to \"My Rules\" and select the content types you re open to first.",
+        "noIndustryTitle": "No industries selected.",
+        "noIndustryMsg": "[NEEDS TRANSLATION] Please go back to \"My Rules\" and select the industries you work with first.",
+        "contentHeader": "Content Types",
+        "industryHeader": "Industries"
+      }
+    },
+    "toasts": {
+      "profileSaved": "Profile saved successfully!",
+      "profileSaveFailed": "Failed to save profile",
+      "profilePhotoUpdated": "Profile photo updated!",
+      "authRequiredTitle": "Sign in required",
+      "authRequiredPhotoDesc": "Please sign in to upload a profile photo.",
+      "ratesSaved": "Rates saved successfully!",
+      "ratesSaveFailed": "Failed to save rates",
+      "contentSaved": "Content preferences saved!",
+      "industrySaved": "Industry preferences saved!",
+      "saveFailed": "Failed to save",
+      "restrictionsSaved": "Restrictions saved successfully!",
+      "restrictionsSaveFailed": "Failed to save restrictions",
+      "negotiationEnabled": "Negotiation enabled!",
+      "negotiationDisabled": "Negotiation disabled!",
+      "imageUploaded": "Image uploaded successfully!",
+      "imageUploadFailed": "Failed to upload image",
+      "imageDeleted": "Image deleted successfully!",
+      "imageDeleteFailed": "Failed to delete image",
+      "voiceUploaded": "Voice sample uploaded successfully!",
+      "voiceUploadFailed": "Failed to upload voice sample",
+      "voiceDeleted": "Voice sample deleted successfully!",
+      "voiceDeleteFailed": "Failed to delete voice sample",
+      "voiceSuccessTitle": "Voice profile created",
+      "voiceSuccessDesc": "Your voice profile is ready.",
+      "voiceErrorTitle": "Voice error",
+      "voiceErrorDesc": "Failed to create voice profile: {{error}}",
+      "micErrorTitle": "Microphone error",
+      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micNoDataTitle": "No audio captured",
+      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "avatarGenerating": "Generating avatar...",
+      "avatarGenerated": "Avatar generated successfully!",
+      "avatarGenerationFailed": "Failed to generate avatar",
+      "pleaseWait": "Please wait...",
+      "processing": "Processing...",
+      "success": "Success!",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Information"
+    }
+  },
+  "voiceScripts": {
+    "happy": "[NEEDS TRANSLATION] I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
+    "emotional": "[NEEDS TRANSLATION] There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
+    "excited": "[NEEDS TRANSLATION] Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
+    "mellow": "[NEEDS TRANSLATION] Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
+    "relaxed": "[NEEDS TRANSLATION] Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
+    "angry": "[NEEDS TRANSLATION] I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here."
+  },
+  "credits": "Credits",
+  "credits_lower": "credits",
+  "history": "History"
 }

@@ -200,6 +200,19 @@
         "likenessProtectionOnly": "Protection de l'image uniquement",
         "variesByTalent": "Varie selon le talent"
       }
+    },
+    "agencyInfo": "Agency Info",
+    "agencyEmail": "Agency Email",
+    "agentName": "Primary Agent Name",
+    "agentTitle": "Agent Title",
+    "sportsAgency": {
+      "title": "Sports Agency Details",
+      "subtitle": "Tell us about your athlete roster",
+      "athleteCount": "Number of Athletes Represented",
+      "licenseAthletesQuestion": "Do you currently license your athletes' likeness?",
+      "openToAiQuestion": "[NEEDS TRANSLATION] Are your athletes open to AI recreation or only likeness protection?",
+      "campaignTypesQuestion": "[NEEDS TRANSLATION] What types of campaigns or collaborations do you pursue most?",
+      "bulkOnboardQuestion": "[NEEDS TRANSLATION] Do you want to bulk-onboard your roster to Likelee?"
     }
   },
   "identityVerification": "Vérification d'identité",
@@ -357,5 +370,41 @@
       "verifyLabel": "Vérifier le code",
       "continueButton": "Continuer"
     }
+  },
+  "creatorSignup": {
+    "options": {
+      "contentTypes": {
+        "aiGeneratedFilms": "AI-generated films",
+        "aiDrivenCommercials": "AI-driven commercials",
+        "aiArtInstallations": "AI art installations",
+        "virtualRealityExperiences": "Virtual-reality experiences",
+        "interactiveMedia": "Interactive media",
+        "digitalFashion": "Digital fashion",
+        "musicVideos": "Music videos",
+        "other": "Other"
+      },
+      "aiTools": {
+        "adobeFirefly": "Adobe Firefly",
+        "dallE4": "DALL·E 4",
+        "googleVeo": "Google Veo",
+        "hailouMinimax": "Hailou Minimax",
+        "inVideoAi": "InVideo AI",
+        "klingAi": "Kling AI",
+        "lumaDreamMachine": "Luma Dream Machine",
+        "metaMovieGen": "Meta Movie Gen",
+        "midjourney": "Midjourney",
+        "openAiSora": "OpenAI Sora",
+        "pikaLabs": "Pika Labs",
+        "runwayGen4": "Runway Gen-4",
+        "stableDiffusionXl": "Stable Diffusion XL",
+        "stableVideoDiffusion": "Stable Video Diffusion",
+        "synthesia": "Synthesia",
+        "vidu": "Vidu",
+        "other": "Other"
+      }
+    }
+  },
+  "faces": {
+    "hero": {}
   }
 }

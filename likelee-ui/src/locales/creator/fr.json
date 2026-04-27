@@ -127,25 +127,15 @@
     "earningsDashboard": "Tableau de Bord des Gains",
     "earnings": {
       "title": "Tableau de Bord des Gains",
-      "byIndustry": "Gains par Industrie",
-      "byCampaign": "Gains par Campagne",
-      "bankConnection": {
-        "title": "Connectez votre compte bancaire",
-        "subtitle": "Liez votre compte bancaire pour recevoir vos gains directement.",
-        "securityTitle": "Sécurité bancaire",
-        "securityMessage": "Vos informations sont cryptées et protégées",
-        "privateTitle": "Privé et sécurisé",
-        "privateMessage": "Nous ne stockons jamais vos identifiants bancaires",
-        "button": "Connecter le compte bancaire",
-        "comingSoon": "Connexion bancaire bientôt disponible. Nous intégrons un traitement de paiement sécurisé.",
-        "back": "Retour"
-      },
       "subtitle": "Suivez vos revenus et paiements",
-      "readyTitle": "Votre tableau de bord des revenus est prêt",
-      "readyMessage": "Une fois vos licences actives, vous verrez vos revenus en temps réel ici. Actuellement, vous n'avez aucun contrat actif.",
+      "announcement": {
+        "title": "Nouveau : Retrait flexible !",
+        "message": "Vous pouvez maintenant retirer vos gains via Stripe Connect. PayPal et Wise arrivent bientôt !"
+      },
       "actions": {
-        "cashOut": "Retrait",
-        "downloadTax": "Télécharger le résumé fiscal (1099)"
+        "cashOut": "Retirer",
+        "loading": "Traitement...",
+        "downloadTax": "Télécharger les documents fiscaux (PDF)"
       },
       "metrics": {
         "totalEarnedYTD": "Total gagné (YTD)",
@@ -196,9 +186,14 @@
           "status": "Statut"
         },
         "standardMethod": "standard"
-      }
+      },
+      "readyTitle": "Prêt à retirer ?",
+      "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer."
     },
-    "settings": "Paramètres",
+    "settings": {
+      "myRules": "My Rules",
+      "profileSettings": "Profile Settings"
+    },
     "settingsContent": {
       "myRules": "Mes Règles",
       "profileSettings": "Paramètres du Profil"
@@ -723,6 +718,20 @@
         "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base",
         "negotiationEnabled": "Négociation activée !",
         "negotiationDisabled": "Négociation désactivée !"
+      },
+      "billing": {
+        "title": "Billing",
+        "subtitle": "Manage your subscription and payment methods",
+        "currentPlan": "Current Plan",
+        "freePlan": "Free Plan",
+        "proPlan": "Pro Plan",
+        "upgradeToPro": "Upgrade to Pro",
+        "manageSubscription": "Manage Subscription",
+        "billingHistory": "Billing History",
+        "noBillingHistory": "No billing history yet",
+        "paymentMethod": "Payment Method",
+        "addPaymentMethod": "Add Payment Method",
+        "updatePaymentMethod": "Update Payment Method"
       }
     },
     "voice": {
@@ -839,7 +848,20 @@
         "loadingDescription": "Récupération de vos campagnes et licences actives.",
         "noneTitle": "Aucune campagne active pour le moment.",
         "noneDescription": "Les nouvelles campagnes apparaîtront ici lorsqu'elles commenceront."
-      }
+      },
+      "autoRenew": "Auto-Renew",
+      "statusValues": {
+        "active": "Active",
+        "expiring_soon": "Expiring Soon"
+      },
+      "revoke": "Revoke",
+      "rateLabel": "Rate:",
+      "activeUntilLabel": "Active Until:",
+      "statusLabel": "Status:",
+      "thisMonthLabel": "This Month:",
+      "impressionsLabel": "Impressions/Week:",
+      "pause": "Pause",
+      "viewDetails": "View Details"
     },
     "rules": {
       "modals": {
@@ -888,7 +910,26 @@
       "success": "Succès !",
       "error": "Erreur",
       "warning": "Avertissement",
-      "info": "Information"
+      "info": "Information",
+      "authRequiredTitle": "Sign in required",
+      "authRequiredPhotoDesc": "Please sign in to upload a profile photo.",
+      "voiceSuccessTitle": "Voice profile created",
+      "voiceSuccessDesc": "Your voice profile is ready.",
+      "voiceErrorTitle": "Voice error",
+      "voiceErrorDesc": "Failed to create voice profile: {{error}}",
+      "micErrorTitle": "Microphone error",
+      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micNoDataTitle": "No audio captured",
+      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "campaignApproved": "Campaign approved",
+      "campaignDeclined": "Campaign declined",
+      "campaignPaused": "Campaign paused",
+      "campaignRevoked": "Campaign revoked",
+      "licensePausedTitle": "License paused",
+      "licensePausedImmediate": "License is now paused.",
+      "licensePausedNextMonth": "License will pause next billing cycle.",
+      "licenseRevokedTitle": "License revoked",
+      "licenseRevokedDesc": "License revoked. Effective date: {{effectiveDate}}"
     },
     "uploadModal": {
       "requirementsTitle": "Liste de contrôle des exigences :",
@@ -1018,7 +1059,11 @@
         "lululemon": "Lululemon",
         "fitnessSeries": "Série Fitness",
         "months": "{{count}} mois"
-      }
+      },
+      "verifyBannerTitle": "Verify your account",
+      "verifyBannerDesc": "[NEEDS TRANSLATION] Complete identity verification to become visible to brands.",
+      "verifyBannerCta": "Verify now",
+      "verifyBannerPending": "Verification pending"
     },
     "vibes": {
       "Streetwear": "Streetwear",
@@ -1117,70 +1162,84 @@
       "cashOutEarnings": "Retirer les revenus",
       "requesting": "Demande en cours..."
     },
-    "earnings": {
-      "title": "Tableau de Bord des Gains",
-      "subtitle": "Suivez vos revenus et paiements",
-      "announcement": {
-        "title": "Nouveau : Retrait flexible !",
-        "message": "Vous pouvez maintenant retirer vos gains via Stripe Connect. PayPal et Wise arrivent bientôt !"
+    "profileSettings": "Profile Settings",
+    "myRules": "My Rules",
+    "imageSections": {
+      "headshot_neutral": {
+        "title": "Headshots - Neutral Expression",
+        "description": "[NEEDS TRANSLATION] Face front-facing, neutral expression (not smiling or frowning). Good lighting on face. Professional clothing or plain background. 1080x1080 minimum.",
+        "bestFor": "Brands need a clean face reference"
       },
-      "actions": {
-        "cashOut": "Retirer",
-        "loading": "Traitement...",
-        "downloadTax": "Télécharger les documents fiscaux (PDF)"
+      "headshot_smiling": {
+        "title": "Headshots - Smiling",
+        "description": "[NEEDS TRANSLATION] Face front-facing, natural smile (genuine, not forced). Good lighting. Professional setting. 1080x1080 minimum.",
+        "bestFor": "Brands want to show you happy/approachable"
       },
-      "metrics": {
-        "totalEarnedYTD": "Total gagné (YTD)",
-        "willUpdate": "Se mettra à jour dès l'activation de votre première licence",
-        "cashoutBalanceStripe": "Solde de retrait (Stripe)",
-        "availableInConnectedStripe": "Disponible sur votre compte Stripe connecté.",
-        "heldPendingTransfer": "Retenu (virement en attente)",
-        "connectedBankAccountEndingIn": "Compte bancaire connecté se terminant par",
-        "thisMonthRecurring": "Récurrent ce mois-ci",
-        "waitingForCampaigns": "En attente de campagnes actives",
-        "projectedNextMonth": "Projeté mois prochain",
-        "willCalculate": "Calculera selon les licences actives",
-        "nextPayment": "Prochain paiement",
-        "toBeDetermined": "À déterminer",
-        "noActiveContracts": "Pas de contrats actifs"
+      "fullbody_casual": {
+        "title": "Full Body - Casual Outfit",
+        "description": "[NEEDS TRANSLATION] Full body shot in casual everyday clothing. Natural pose.",
+        "bestFor": "Everyday casual look"
       },
-      "charts": {
-        "revenueTrend": "Tendance des revenus (6 derniers mois)",
-        "revenuePlaceholder": "Votre tendance de revenus apparaîtra ici",
-        "activePlaceholder": "Une fois que vous aurez des campagnes actives",
-        "industryBreakdown": "Revenus par industrie",
-        "industryPlaceholder": "Votre répartition par industrie apparaîtra ici"
+      "fullbody_formal": {
+        "title": "Full Body - Formal/Professional",
+        "description": "Full body shot in professional or formal attire.",
+        "bestFor": "Professional or business contexts"
       },
-      "comparison": {
-        "title": "Voici à quoi pourraient ressembler vos revenus",
-        "subtitle": "Comparez le modèle récurrent de Likelee au modèle traditionnel unique",
-        "traditionalModel": "Modèle traditionnel :",
-        "traditionalDesc": "Paiement unique par campagne",
-        "likeleeModel": "Modèle Likelee :",
-        "likeleeAmount": "2 500 $ + / mois",
-        "likeleeDesc": "Par licence active • Revenu récurrent"
+      "side_profile": {
+        "title": "Side Profile",
+        "description": "Clean side view of your face and upper body.",
+        "bestFor": "Brands need your side angle"
       },
-      "campaigns": {
-        "title": "Revenus par campagne",
-        "placeholderTitle": "Vos campagnes apparaîtront ici",
-        "placeholderMessage": "Une fois que vous aurez des licences actives générant des revenus",
-        "campaignFallback": "Campagne",
-        "thisMonth": "ce mois-ci"
+      "three_quarter": {
+        "title": "3/4 Angle",
+        "description": "[NEEDS TRANSLATION] Face turned at a 45-degree angle, natural expression.",
+        "bestFor": "Natural conversational angle"
       },
-      "history": {
-        "title": "Historique des paiements",
-        "placeholderTitle": "Votre historique de paiements apparaîtra ici",
-        "placeholderMessage": "Une fois que vous recevrez votre premier virement",
-        "columns": {
-          "date": "Date",
-          "amount": "Montant",
-          "method": "Méthode",
-          "status": "Statut"
-        },
-        "standardMethod": "standard"
+      "hair_down": {
+        "title": "Hair Down - Loose/Wavy",
+        "description": "Hair worn down in your natural style.",
+        "bestFor": "Casual, relaxed look"
       },
-      "readyTitle": "Prêt à retirer ?",
-      "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer."
+      "hair_up": {
+        "title": "Hair Up - Ponytail/Bun",
+        "description": "Hair pulled up/back, clean look.",
+        "bestFor": "Professional or active look"
+      },
+      "hair_styling": {
+        "title": "Hair Styling - Braids/Specific Style",
+        "description": "If you have a signature hairstyle.",
+        "bestFor": "If you have a signature style"
+      },
+      "upper_body": {
+        "title": "Upper Body Close-Up",
+        "description": "[NEEDS TRANSLATION] Shoulders and up, detailed facial features visible.",
+        "bestFor": "Close-up shots, detailed facial features"
+      },
+      "outdoors": {
+        "title": "In Environment - Outdoors",
+        "description": "You in an outdoor setting (park, street, nature).",
+        "bestFor": "Contextual, lifestyle content"
+      },
+      "indoors": {
+        "title": "In Environment - Indoors",
+        "description": "You in an indoor setting (home, office, cafe).",
+        "bestFor": "Indoor/office/home contexts"
+      },
+      "makeup_variation": {
+        "title": "Different Makeup Style",
+        "description": "[NEEDS TRANSLATION] If you vary your makeup style, show different looks.",
+        "bestFor": "If you vary makeup, brands should know"
+      },
+      "seasonal": {
+        "title": "Seasonal/Outfit Variation",
+        "description": "Different seasonal styles or outfit variations.",
+        "bestFor": "Seasonal campaigns, different looks"
+      },
+      "signature": {
+        "title": "Your Choice - Signature Moment",
+        "description": "[NEEDS TRANSLATION] A photo that really represents YOU and how people recognize you.",
+        "bestFor": "A photo that really represents YOU"
+      }
     }
   },
   "talentPortal": {
@@ -1451,7 +1510,9 @@
         "willingToTravel": "Prêt à voyager",
         "acceptOutsideLocalArea": "Accepter les réservations hors zone locale",
         "minimumDayRate": "Tarif journalier minimum",
-        "minimumRateDescription": "Votre tarif minimum acceptable"
+        "minimumRateDescription": "Votre tarif minimum acceptable",
+        "selectAgencyTitle": "Select an agency",
+        "selectAgencyDescription": "[NEEDS TRANSLATION] Please choose the agency for this book-out using the Agency filter dropdown."
       },
       "portfolio": {
         "title": "Portfolio",
@@ -2006,5 +2067,31 @@
     },
     "moreFeatures": "+ Plus de fonctionnalités",
     "backToDashboard": "Retour au tableau de bord"
+  },
+  "talentAgencyLabel": "Talent / Modeling Agency",
+  "talentAgencySub": "Talent representation",
+  "forCreators": "For Creators",
+  "forCreatorsMessage": "[NEEDS TRANSLATION] License your digital likeness, set your rates, and earn royalties automatically",
+  "forAiArtists": "For AI Artists",
+  "forAiArtistsMessage": "[NEEDS TRANSLATION] Build your portfolio and connect with studios for campaigns and projects",
+  "forCreatorsAndAthletes": "👤 For Creators & Athletes",
+  "forCreatorsAndAthletesMessage1": "[NEEDS TRANSLATION] License your digital likeness and earn passive income",
+  "forCreatorsAndAthletesMessage2": "Set your own rates and approval parameters",
+  "forCreatorsAndAthletesMessage3": "Track every usage with automated royalty payments",
+  "forCreatorsAndAthletesMessage4": "Full control over who uses your image and where",
+  "forAiArtistsAndFilmmakers": "🎨 For AI Artists & Filmmakers",
+  "forAiArtistsAndFilmmakersMessage1": "[NEEDS TRANSLATION] Build professional portfolio showcasing AI creative work",
+  "forAiArtistsAndFilmmakersMessage2": "Connect directly with brands and studios",
+  "forAiArtistsAndFilmmakersMessage3": "Access exclusive AI filmmaking opportunities",
+  "forAiArtistsAndFilmmakersMessage4": "Browse curated job board for AI creative roles",
+  "howItWorksSportsStep1Title": "Roster Integration",
+  "howItWorksSportsStep2Title": "Brand Discovery & Request Submission",
+  "howItWorksSportsStep3Title": "Agency Review & Contract Execution",
+  "howItWorksSportsStep4Title": "Revenue Distribution",
+  "faces": {
+    "featuredCreator": {},
+    "digitalTalentOwner": {
+      "comparison": {}
+    }
   }
 }
