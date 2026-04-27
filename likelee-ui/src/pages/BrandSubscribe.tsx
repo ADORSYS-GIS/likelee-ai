@@ -1,6 +1,7 @@
 import React from "react";
 import { ArrowRight, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -565,6 +566,7 @@ function ComparisonPlanCell({
 export default function BrandSubscribe() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { initialized, authenticated, profile, refreshProfile } = useAuth();
   const [searchParams] = useSearchParams();
 
@@ -1141,14 +1143,19 @@ export default function BrandSubscribe() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#8797B4]">
-                  Current subscription
+                  {t("brandPricingStudioAddon.currentSubscription", {
+                    defaultValue: "Current subscription",
+                  })}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <span className="font-serif text-3xl font-bold text-[#17315E]">
                     {planLabel}
                   </span>
                   <Badge className="border border-[#D7E6ED] bg-[#F6F8FB] text-[#4B638E] hover:bg-[#F6F8FB]">
-                    Base: {baseStatusLabel}
+                    {t("brandPricingStudioAddon.base", {
+                      defaultValue: "Base",
+                    })}
+                    : {baseStatusLabel}
                   </Badge>
                   <Badge className="border border-[#D7E6ED] bg-[#F6F8FB] text-[#4B638E] hover:bg-[#F6F8FB]">
                     AI Studio: {studioStatusLabel}
@@ -1156,12 +1163,28 @@ export default function BrandSubscribe() {
                 </div>
               </div>
               <div className="text-sm text-[#6E7E9F]">
-                {trialEndsAt && <p>Free trial ends on {trialEndsAt}.</p>}
+                {trialEndsAt && (
+                  <p>
+                    {t("brandPricingStudioAddon.trialEndsOn", {
+                      date: trialEndsAt,
+                      defaultValue: "Free trial ends on {{date}}.",
+                    })}
+                  </p>
+                )}
                 {!trialEndsAt && currentPeriodEnd && (
-                  <p>Base plan renews on {currentPeriodEnd}.</p>
+                  <p>
+                    {t("brandPricingStudioAddon.baseRenewsOn", {
+                      date: currentPeriodEnd,
+                      defaultValue: "Base plan renews on {{date}}.",
+                    })}
+                  </p>
                 )}
                 {hasStudioAddon && planTier !== "enterprise" && (
-                  <p>AI Studio access is active (lifetime).</p>
+                  <p>
+                    {t("brandPricingStudioAddon.studioActiveLifetime", {
+                      defaultValue: "AI Studio access is active (lifetime).",
+                    })}
+                  </p>
                 )}
               </div>
             </div>
@@ -1171,8 +1194,10 @@ export default function BrandSubscribe() {
         {hasBaseSubscription && (
           <Alert className="mx-auto mt-6 max-w-5xl border border-amber-200 bg-amber-50 text-amber-900">
             <AlertDescription>
-              Your base plan is already active. AI Studio remains a separate
-              line item, but base-plan changes are not self-serve yet.
+              {t("brandPricingStudioAddon.basePlanNotice", {
+                defaultValue:
+                  "Your base plan is already active. AI Studio remains a separate line item, but base-plan changes are not self-serve yet.",
+              })}
             </AlertDescription>
           </Alert>
         )}
@@ -1193,35 +1218,43 @@ export default function BrandSubscribe() {
                   </span>
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#F2994A]">
-                      AI Studio add-on
+                      {t("brandPricingStudioAddon.eyebrow", {
+                        defaultValue: "AI Studio add-on",
+                      })}
                     </p>
                     <h3 className="font-serif text-3xl font-bold text-[#17315E]">
-                      Separate from the base plan
+                      {t("brandPricingStudioAddon.headline", {
+                        defaultValue: "Separate from the base plan",
+                      })}
                     </h3>
                   </div>
                 </div>
                 <p className="mt-4 text-sm text-[#6E7E9F] sm:text-base">
-                  Unlock AI Studio with a single one-time payment of{" "}
-                  <span className="font-semibold text-[#17315E]">
-                    ${BRAND_STUDIO_ADDON_PRICE}
-                  </span>
-                  . Your brand gets permanent access to{" "}
-                  <span className="font-semibold text-[#17315E]">/studio</span>{" "}
-                  and{" "}
-                  <span className="font-semibold text-[#17315E]">
-                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial
-                    credits
-                  </span>{" "}
-                  credited to your Studio wallet. Enterprise includes Studio
-                  access automatically.
+                  {t("brandPricingStudioAddon.description", {
+                    price: BRAND_STUDIO_ADDON_PRICE,
+                    credits: BRAND_STUDIO_ADDON_CREDITS.toLocaleString(),
+                    defaultValue:
+                      "Unlock AI Studio with a single one-time payment of ${{price}}. Your brand gets permanent access to /studio and {{credits}} initial credits credited to your Studio wallet. Enterprise includes Studio access automatically.",
+                  })}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {[
-                    `${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial Studio credits`,
-                    "Studio Pro wallet plan",
-                    "One-time payment",
-                    "Permanent /studio access",
-                    "Included with Enterprise",
+                    t("brandPricingStudioAddon.badges.initialCredits", {
+                      credits: BRAND_STUDIO_ADDON_CREDITS.toLocaleString(),
+                      defaultValue: "{{credits}} initial Studio credits",
+                    }),
+                    t("brandPricingStudioAddon.badges.walletPlan", {
+                      defaultValue: "Studio Pro wallet plan",
+                    }),
+                    t("brandPricingStudioAddon.badges.oneTimePayment", {
+                      defaultValue: "One-time payment",
+                    }),
+                    t("brandPricingStudioAddon.badges.permanentAccess", {
+                      defaultValue: "Permanent /studio access",
+                    }),
+                    t("brandPricingStudioAddon.badges.includedEnterprise", {
+                      defaultValue: "Included with Enterprise",
+                    }),
                   ].map((item) => (
                     <Badge
                       key={item}
@@ -1239,7 +1272,11 @@ export default function BrandSubscribe() {
                     <div className="font-serif text-4xl font-bold text-[#17315E]">
                       ${BRAND_STUDIO_ADDON_PRICE}
                     </div>
-                    <p className="mt-1 text-sm text-[#8D7459]">one-time</p>
+                    <p className="mt-1 text-sm text-[#8D7459]">
+                      {t("brandPricingStudioAddon.oneTime", {
+                        defaultValue: "one-time",
+                      })}
+                    </p>
                   </div>
                   <Badge className="border border-[#F4DCC5] bg-white text-[#9A6A37] hover:bg-white">
                     {studioStatusLabel}
@@ -1254,16 +1291,24 @@ export default function BrandSubscribe() {
                   {checkingOutAddon ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Redirecting
+                      {t("brandPricingStudioAddon.redirecting", {
+                        defaultValue: "Redirecting",
+                      })}
                     </>
                   ) : authenticated &&
                     isBrandAccount &&
                     (hasStudioAddon || planTier === "enterprise") ? (
-                    "Open Studio"
+                    t("brandPricingStudioAddon.openStudio", {
+                      defaultValue: "Open Studio",
+                    })
                   ) : authenticated && isBrandAccount ? (
-                    "Activate Studio"
+                    t("brandPricingStudioAddon.activateStudio", {
+                      defaultValue: "Activate Studio",
+                    })
                   ) : (
-                    "Get Studio Add-On"
+                    t("brandPricingStudioAddon.getStudioAddon", {
+                      defaultValue: "Get Studio Add-On",
+                    })
                   )}
                 </Button>
               </div>

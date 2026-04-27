@@ -4853,15 +4853,41 @@ export default function BrandDashboard() {
   };
   const formatHubDate = (value: unknown) => {
     const raw = String(value || "").trim();
-    if (!raw) return "N/A";
+    if (!raw) {
+      return t("campaigns.campaignDetails.notAvailable", {
+        defaultValue: "N/A",
+      });
+    }
     const dt = new Date(raw);
-    if (Number.isNaN(dt.getTime())) return raw;
-    return dt.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    if (Number.isNaN(dt.getTime())) {
+      return t("campaigns.campaignDetails.invalidDate", {
+        defaultValue: "Invalid Date",
+      });
+    }
+    return dt.toLocaleDateString();
   };
+  const formatHubDateTime = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) {
+      return t("campaigns.campaignDetails.notAvailable", {
+        defaultValue: "N/A",
+      });
+    }
+    const dt = new Date(raw);
+    if (Number.isNaN(dt.getTime())) {
+      return t("campaigns.campaignDetails.invalidDate", {
+        defaultValue: "Invalid Date",
+      });
+    }
+    return dt.toLocaleString();
+  };
+  const formatCampaignProgressStatus = (statusRaw: unknown) =>
+    t(
+      `campaigns.campaignDetails.status.${String(statusRaw || "in_progress").toLowerCase()}`,
+      {
+        defaultValue: String(statusRaw || "in_progress").replace(/_/g, " "),
+      },
+    );
   const contractStatusBadgeClass = (statusRaw: unknown) => {
     const status = String(statusRaw || "").toLowerCase();
     if (status === "signed") {
@@ -6343,11 +6369,13 @@ export default function BrandDashboard() {
               onClick={() => setSelectedCampaign(null)}
               className="border-2 border-gray-300"
             >
-              ← Back to Campaigns
+              {t("campaigns.campaignDetails.backToCampaigns")}
             </Button>
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>Campaign not found.</AlertDescription>
+              <AlertDescription>
+                {t("campaigns.campaignDetails.campaignNotFound")}
+              </AlertDescription>
             </Alert>
           </div>
         );
@@ -6399,13 +6427,16 @@ export default function BrandDashboard() {
                 onClick={() => setShowBriefDetails(false)}
                 className="border-2 border-gray-300"
               >
-                ← Back to Project
+                {t("campaigns.campaignDetails.backToProject")}
               </Button>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">
-                  {campaign.name} - Brief & Contract
+                  {campaign.name} -{" "}
+                  {t("campaigns.campaignDetails.briefAndContract")}
                 </h1>
-                <p className="text-gray-600">Detailed scope and requirements</p>
+                <p className="text-gray-600">
+                  {t("campaigns.campaignDetails.detailedScope")}
+                </p>
               </div>
             </div>
 
@@ -6731,7 +6762,9 @@ export default function BrandDashboard() {
                 className="border-2 border-gray-300 h-12"
                 onClick={() => setShowBriefDetails(false)}
               >
-                Close
+                {t("campaigns.campaignDetails.close", {
+                  defaultValue: "Close",
+                })}
               </Button>
             </div>
           </div>
@@ -6794,13 +6827,16 @@ export default function BrandDashboard() {
               onClick={() => setSelectedCampaign(null)}
               className="border-2 border-gray-300"
             >
-              ← Back to Campaigns
+              {t("campaigns.campaignDetails.backToCampaigns")}
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
                 {campaign.name}
               </h1>
-              <p className="text-gray-600">Created {campaign.last_update}</p>
+              <p className="text-gray-600">
+                {t("campaigns.campaignDetails.created")}{" "}
+                {formatHubDateTime(campaign.last_update)}
+              </p>
             </div>
           </div>
 
@@ -6819,7 +6855,7 @@ export default function BrandDashboard() {
                           : "bg-gray-100 text-gray-700 border border-gray-300"
                   }
                 >
-                  {campaign.status.replace("_", " ")}
+                  {formatCampaignProgressStatus(campaign.status)}
                 </Badge>
                 {campaign.completed_at && (
                   <Badge className="bg-green-100 text-green-700 border border-green-300">
@@ -6829,9 +6865,11 @@ export default function BrandDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">Due Date</p>
+                  <p className="text-sm text-gray-600">
+                    {t("campaigns.campaignDetails.dueDate")}
+                  </p>
                   <p className="font-bold text-gray-900">
-                    {new Date(campaign.due_date).toLocaleDateString()}
+                    {formatHubDate(campaign.due_date)}
                   </p>
                 </div>
               </div>
