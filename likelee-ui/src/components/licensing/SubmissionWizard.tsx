@@ -140,6 +140,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   isRenewalPrefill = false,
   brandRequestContext,
 }) => {
+  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralLower = isSportsAgency ? "athletes" : "talents";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
@@ -334,7 +335,6 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   ]);
 
   const replacePlaceholders = (text: string, data: any) => {
-    const { t } = useTranslation();
     return text.replace(/{(\w+)}/g, (match, key) => {
       // Handle special formatting if needed
       if (key === "license_fee") return `$${data[key]}`;
@@ -590,12 +590,36 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   </span>
                 </div>
                 <DialogTitle className="text-2xl font-bold text-slate-900">
-                  {step === 1 ? "Deal Specifics" : "Content Review"}
+                  {step === 1
+                    ? t(
+                        "agencyDashboard.licenseTemplates.wizard.dealSpecifics",
+                        {
+                          defaultValue: "Deal Specifics",
+                        },
+                      )
+                    : t(
+                        "agencyDashboard.licenseTemplates.wizard.contentReview",
+                        {
+                          defaultValue: "Content Review",
+                        },
+                      )}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium">
                   {step === 1
-                    ? "Enter the core details of this licensing deal"
-                    : "Review and personalize the contract content"}
+                    ? t(
+                        "agencyDashboard.licenseTemplates.wizard.dealSpecificsSubtitle",
+                        {
+                          defaultValue:
+                            "Enter the core details of this licensing deal",
+                        },
+                      )
+                    : t(
+                        "agencyDashboard.licenseTemplates.wizard.contentReviewSubtitle",
+                        {
+                          defaultValue:
+                            "Review and personalize the contract content",
+                        },
+                      )}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -604,7 +628,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   onClick={onClose}
                   className="rounded-xl font-bold text-slate-500 px-6 h-10"
                 >
-                  Cancel
+                  {t("agencyDashboard.catalogs.actions.cancel", {
+                    defaultValue: "Cancel",
+                  })}
                 </Button>
                 {step > 1 && (
                   <Button
@@ -612,7 +638,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     onClick={() => setStep(step - 1)}
                     className="rounded-xl font-bold border-slate-200 h-10"
                   >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                    <ArrowLeft className="w-4 h-4 mr-2" />{" "}
+                    {t("agencyDashboard.navigation.back", {
+                      defaultValue: "Back",
+                    })}
                   </Button>
                 )}
                 <Button
@@ -621,10 +650,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   className="bg-indigo-500 hover:bg-indigo-500 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
                 >
                   {isSyncing
-                    ? "Preparing..."
+                    ? t("agencyDashboard.licenseTemplates.wizard.preparing", {
+                        defaultValue: "Preparing...",
+                      })
                     : step === 3
-                      ? "Finalize"
-                      : "Next Step"}
+                      ? t("agencyDashboard.licenseTemplates.wizard.finalize", {
+                          defaultValue: "Finalize",
+                        })
+                      : t("agencyDashboard.licenseTemplates.wizard.nextStep", {
+                          defaultValue: "Next Step",
+                        })}
                   {!isSyncing && step < 3 && (
                     <ArrowRight className="w-4 h-4 ml-2" />
                   )}

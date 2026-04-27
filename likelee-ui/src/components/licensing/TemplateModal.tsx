@@ -28,6 +28,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslation } from "react-i18next";
 
 interface TemplateModalProps {
   isOpen: boolean;
@@ -92,6 +93,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   hideContract,
   readOnly = false,
 }) => {
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -186,15 +188,30 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               <div>
                 <DialogTitle className="text-2xl font-bold text-slate-900 mb-1">
                   {readOnly
-                    ? "License Template Details"
+                    ? t("agencyDashboard.licenseTemplates.modal.detailsTitle", {
+                        defaultValue: "License Template Details",
+                      })
                     : initialData
-                      ? "Edit License Template"
-                      : "New Contract Template"}
+                      ? t("agencyDashboard.licenseTemplates.modal.editTitle", {
+                          defaultValue: "Edit License Template",
+                        })
+                      : t("agencyDashboard.licenseTemplates.modal.newTitle", {
+                          defaultValue: "New Contract Template",
+                        })}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium tracking-tight">
                   {readOnly
-                    ? "View your standardized agency terms and details"
-                    : "Standardize your agency terms with dynamic placeholders"}
+                    ? t(
+                        "agencyDashboard.licenseTemplates.modal.detailsSubtitle",
+                        {
+                          defaultValue:
+                            "View your standardized agency terms and details",
+                        },
+                      )
+                    : t("agencyDashboard.licenseTemplates.modal.editSubtitle", {
+                        defaultValue:
+                          "Standardize your agency terms with dynamic placeholders",
+                      })}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -204,7 +221,13 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   onClick={onClose}
                   className="text-slate-500 font-bold hover:bg-slate-50 rounded-xl px-6 h-10"
                 >
-                  {readOnly ? "Close" : "Cancel"}
+                  {readOnly
+                    ? t("agencyDashboard.catalogs.actions.close", {
+                        defaultValue: "Close",
+                      })
+                    : t("agencyDashboard.catalogs.actions.cancel", {
+                        defaultValue: "Cancel",
+                      })}
                 </Button>
                 {!readOnly && (
                   <Button
@@ -213,10 +236,18 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
                   >
                     {isSubmitting
-                      ? "Saving..."
+                      ? t("agencyDashboard.licenseTemplates.modal.saving", {
+                          defaultValue: "Saving...",
+                        })
                       : initialData
-                        ? "Update Template"
-                        : "Create Template"}
+                        ? t(
+                            "agencyDashboard.licenseTemplates.modal.updateTemplate",
+                            { defaultValue: "Update Template" },
+                          )
+                        : t(
+                            "agencyDashboard.licenseTemplates.modal.createTemplate",
+                            { defaultValue: "Create Template" },
+                          )}
                   </Button>
                 )}
               </div>

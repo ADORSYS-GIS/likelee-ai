@@ -199,8 +199,32 @@ export const LicenseSubmissionsTab = ({
             {t("agencyDashboard.licenseSubmissions.status.expired")}
           </Badge>
         );
+      case "agency_pending":
+        return (
+          <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-2 py-0.5">
+            <Clock className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.agencyPending", {
+              defaultValue: "Agency pending",
+            })}
+          </Badge>
+        );
+      case "client_pending":
+        return (
+          <Badge className="bg-purple-100 text-purple-800 border-purple-200 text-xs px-2 py-0.5">
+            <Clock className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.clientPending", {
+              defaultValue: "Client pending",
+            })}
+          </Badge>
+        );
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return (
+          <Badge variant="outline">
+            {t(`agencyDashboard.licenseSubmissions.status.${status}`, {
+              defaultValue: status,
+            })}
+          </Badge>
+        );
     }
   };
 
@@ -318,9 +342,21 @@ export const LicenseSubmissionsTab = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Client</TableHead>
-                  <TableHead>Template</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Sent Date</TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.template", {
+                      defaultValue: "Template",
+                    })}
+                  </TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.status", {
+                      defaultValue: "Status",
+                    })}
+                  </TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.sentDate", {
+                      defaultValue: "Sent Date",
+                    })}
+                  </TableHead>
                   <TableHead>
                     {t(
                       "agencyDashboard.licenseSubmissions.actions.viewDocument",
@@ -401,7 +437,12 @@ export const LicenseSubmissionsTab = ({
                                   variant="outline"
                                   size="sm"
                                   className="h-8 px-3 text-xs font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
-                                  title="Open Agency Signing Link"
+                                  title={t(
+                                    "agencyDashboard.licenseSubmissions.actions.openAgencySigningLink",
+                                    {
+                                      defaultValue: "Open agency signing link",
+                                    },
+                                  )}
                                   onClick={() =>
                                     window.open(
                                       getAgencySigningUrl(sub)!,
@@ -409,7 +450,10 @@ export const LicenseSubmissionsTab = ({
                                     )
                                   }
                                 >
-                                  Sign here
+                                  {t(
+                                    "agencyDashboard.licenseSubmissions.actions.signHere",
+                                    { defaultValue: "Sign here" },
+                                  )}
                                 </Button>
                               ) : (
                                 sub.status !== "completed" &&
@@ -439,7 +483,10 @@ export const LicenseSubmissionsTab = ({
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
-                                  title="Download"
+                                  title={t(
+                                    "agencyDashboard.licenseSubmissions.actions.download",
+                                    { defaultValue: "Download" },
+                                  )}
                                   onClick={() =>
                                     window.open(
                                       sub.signed_document_url,
@@ -470,7 +517,10 @@ export const LicenseSubmissionsTab = ({
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                title="More actions"
+                                title={t(
+                                  "agencyDashboard.licenseSubmissions.actions.moreActions",
+                                  { defaultValue: "More actions" },
+                                )}
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -490,7 +540,10 @@ export const LicenseSubmissionsTab = ({
                                     }
                                   >
                                     <Link2 className="mr-2 h-4 w-4 text-red-600" />
-                                    Open Agency Link
+                                    {t(
+                                      "agencyDashboard.licenseSubmissions.actions.openAgencyLink",
+                                      { defaultValue: "Open agency link" },
+                                    )}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
@@ -581,7 +634,10 @@ export const LicenseSubmissionsTab = ({
                                       }
                                     >
                                       <Download className="mr-2 h-4 w-4 text-green-600" />
-                                      Download PDF
+                                      {t(
+                                        "agencyDashboard.licenseSubmissions.actions.downloadPdf",
+                                        { defaultValue: "Download PDF" },
+                                      )}
                                     </DropdownMenuItem>
                                   )}
                                   <DropdownMenuItem
