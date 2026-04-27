@@ -8,6 +8,8 @@ import { useAuth } from "@/auth/AuthProvider";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   Accordion,
   AccordionContent,
@@ -30,7 +32,8 @@ import {
 
 const toolCards = [
   {
-    title: "Generate AI Video",
+    titleKey: "studio.landing.tools.video",
+    titleFallback: "Generate AI Video",
     icon: Film,
     path: createPageUrl("StudioVideo"),
     badge: null,
@@ -38,7 +41,8 @@ const toolCards = [
     bgColor: "bg-orange-500",
   },
   {
-    title: "Generate AI Image",
+    titleKey: "studio.landing.tools.image",
+    titleFallback: "Generate AI Image",
     icon: Image,
     path: createPageUrl("StudioImage"),
     badge: null,
@@ -46,7 +50,8 @@ const toolCards = [
     bgColor: "bg-cyan-500",
   },
   {
-    title: "Generate AI Shorts",
+    titleKey: "studio.landing.tools.shorts",
+    titleFallback: "Generate AI Shorts",
     icon: Clapperboard,
     path: createPageUrl("StudioVideo"),
     badge: "Beta",
@@ -54,7 +59,8 @@ const toolCards = [
     bgColor: "bg-amber-500",
   },
   {
-    title: "Generate AI Effects",
+    titleKey: "studio.landing.tools.effects",
+    titleFallback: "Generate AI Effects",
     icon: Sparkles,
     path: createPageUrl("StudioImage"),
     badge: "New",
@@ -137,6 +143,7 @@ const exampleProjects = [
 ];
 
 export default function Studio() {
+  const { t } = useTranslation();
   const [hoveredTool, setHoveredTool] = useState(null);
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -396,25 +403,31 @@ export default function Studio() {
                 onClick={() => navigate(createPageUrl("Studio"))}
                 className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors"
               >
-                Home
+                {t("studio.landing.nav.home", { defaultValue: "Home" })}
               </button>
 
               {/* Video AI Dropdown */}
               <div className="dropdown-parent">
                 <button className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors flex items-center gap-1">
-                  Video AI
+                  {t("studio.landing.nav.videoAi", {
+                    defaultValue: "Video AI",
+                  })}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute top-full left-0 mt-0 w-64 bg-[#1A1A1F] border border-white/10 rounded-lg shadow-2xl p-4">
                   <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">
-                    Generate
+                    {t("studio.landing.nav.generate", {
+                      defaultValue: "Generate",
+                    })}
                   </h4>
                   <div className="space-y-1">
                     <button
                       onClick={() => navigate(createPageUrl("StudioVideo"))}
                       className="block w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors"
                     >
-                      AI Video Generator
+                      {t("studio.landing.nav.aiVideoGenerator", {
+                        defaultValue: "AI Video Generator",
+                      })}
                     </button>
                     <button
                       onClick={() => navigate(createPageUrl("StudioVideo"))}
@@ -498,7 +511,9 @@ export default function Studio() {
               {/* Image AI Dropdown */}
               <div className="dropdown-parent">
                 <button className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors flex items-center gap-1">
-                  Image AI
+                  {t("studio.landing.nav.imageAi", {
+                    defaultValue: "Image AI",
+                  })}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute top-full left-0 mt-0 w-[600px] bg-[#1A1A1F] border border-white/10 rounded-lg shadow-2xl p-6">
@@ -603,7 +618,7 @@ export default function Studio() {
               {/* Effects Dropdown */}
               <div className="dropdown-parent">
                 <button className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors flex items-center gap-1">
-                  Effects
+                  {t("studio.landing.nav.effects", { defaultValue: "Effects" })}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute top-full left-0 mt-0 w-56 bg-[#1A1A1F] border border-white/10 rounded-lg shadow-2xl p-4">
@@ -639,7 +654,9 @@ export default function Studio() {
               {/* AI Tools Dropdown */}
               <div className="dropdown-parent">
                 <button className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors flex items-center gap-1">
-                  AI Tools
+                  {t("studio.landing.nav.aiTools", {
+                    defaultValue: "AI Tools",
+                  })}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute top-full right-0 mt-0 w-[650px] bg-[#1A1A1F] border border-white/10 rounded-lg shadow-2xl p-6">
@@ -730,18 +747,23 @@ export default function Studio() {
                 onClick={() => scrollToSection("pricing")}
                 className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors"
               >
-                Pricing
+                {t("studio.landing.nav.pricing", { defaultValue: "Pricing" })}
               </button>
             </nav>
 
             {/* Right Side */}
             <div className="flex items-center gap-4">
+              <div className="hidden lg:block">
+                <LanguageSwitcher />
+              </div>
               <button
                 onClick={() => navigate(getDashboardRoute())}
                 className="hidden lg:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors bg-white/5 rounded-lg border border-white/10 hover:border-white/20"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to likelee.ai
+                {t("studio.landing.nav.backToLikelee", {
+                  defaultValue: "Back to likelee.ai",
+                })}
               </button>
 
               {/* Mobile Menu Button */}
@@ -762,6 +784,9 @@ export default function Studio() {
           {mobileMenuOpen && (
             <div className="lg:hidden mt-4 pb-4 border-t border-white/10 pt-4">
               <div className="space-y-2">
+                <div className="px-4 pb-2">
+                  <LanguageSwitcher />
+                </div>
                 <button
                   onClick={() => {
                     navigate(createPageUrl("Studio"));
@@ -769,7 +794,7 @@ export default function Studio() {
                   }}
                   className="block w-full text-left px-4 py-2 text-white hover:bg-white/5 rounded transition-colors"
                 >
-                  Home
+                  {t("studio.landing.nav.home", { defaultValue: "Home" })}
                 </button>
 
                 <Accordion type="single" collapsible className="w-full">
@@ -1131,7 +1156,7 @@ export default function Studio() {
                   }}
                   className="block w-full text-left px-4 py-2 text-white hover:bg-white/5 rounded transition-colors"
                 >
-                  Pricing
+                  {t("studio.landing.nav.pricing", { defaultValue: "Pricing" })}
                 </button>
 
                 <button
@@ -1142,7 +1167,9 @@ export default function Studio() {
                   className="flex items-center gap-2 w-full text-left px-4 py-2 text-gray-400 hover:bg-white/5 rounded transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to likelee.ai
+                  {t("studio.landing.nav.backToLikelee", {
+                    defaultValue: "Back to likelee.ai",
+                  })}
                 </button>
               </div>
             </div>
@@ -1176,13 +1203,19 @@ export default function Studio() {
           {/* Title */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
-              What would you like to
+              {t("studio.landing.hero.titlePrefix", {
+                defaultValue: "What would you like to",
+              })}
               <span className="block bg-gradient-to-r from-[#32C8D1] via-[#F18B6A] to-[#F7B750] bg-clip-text text-transparent">
-                create today?
+                {t("studio.landing.hero.titleAccent", {
+                  defaultValue: "create today?",
+                })}
               </span>
             </h1>
             <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
-              Choose your creative tool and start generating
+              {t("studio.landing.hero.subtitle", {
+                defaultValue: "Choose your creative tool and start generating",
+              })}
             </p>
           </div>
 
@@ -1223,15 +1256,21 @@ export default function Studio() {
 
                       {/* Title */}
                       <h3 className="text-lg font-bold text-white mb-2">
-                        {tool.title}
+                        {t(tool.titleKey, { defaultValue: tool.titleFallback })}
                       </h3>
                       <p className="text-sm text-gray-400 mb-4">
-                        Start creating with AI
+                        {t("studio.landing.tools.cardSubtitle", {
+                          defaultValue: "Start creating with AI",
+                        })}
                       </p>
 
                       {/* Arrow */}
                       <div className="flex items-center text-sm text-gray-400 group-hover:text-white transition-colors">
-                        <span className="mr-2">Get started</span>
+                        <span className="mr-2">
+                          {t("studio.landing.tools.getStarted", {
+                            defaultValue: "Get started",
+                          })}
+                        </span>
                         <ArrowRight
                           className={`w-4 h-4 transition-all ${hoveredTool === index ? "translate-x-2" : ""}`}
                         />
@@ -1247,18 +1286,30 @@ export default function Studio() {
           <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-[#32C8D1] mb-1">8+</div>
-              <div className="text-xs text-gray-400">AI Models</div>
+              <div className="text-xs text-gray-400">
+                {t("studio.landing.stats.aiModels", {
+                  defaultValue: "AI Models",
+                })}
+              </div>
             </div>
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-[#F18B6A] mb-1">5</div>
-              <div className="text-xs text-gray-400">Creative Tools</div>
+              <div className="text-xs text-gray-400">
+                {t("studio.landing.stats.creativeTools", {
+                  defaultValue: "Creative Tools",
+                })}
+              </div>
             </div>
             <div
               className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-center cursor-pointer hover:bg-white/10 transition-colors"
               onClick={() => navigate(createPageUrl("StudioTemplates"))}
             >
               <div className="text-2xl font-bold text-[#F7B750] mb-1">300+</div>
-              <div className="text-xs text-gray-400">Templates</div>
+              <div className="text-xs text-gray-400">
+                {t("studio.landing.stats.templates", {
+                  defaultValue: "Templates",
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -1269,10 +1320,15 @@ export default function Studio() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Choose a model
+              {t("studio.landing.models.title", {
+                defaultValue: "Choose a model",
+              })}
             </h2>
             <p className="text-xl text-gray-400">
-              Pick from the latest AI models supported by Likelee Studio.
+              {t("studio.landing.models.subtitle", {
+                defaultValue:
+                  "Pick from the latest AI models supported by Likelee Studio.",
+              })}
             </p>
           </div>
 
@@ -1280,7 +1336,9 @@ export default function Studio() {
             {/* Video Models */}
             <div>
               <h3 className="text-xl font-bold mb-6 text-[#F18B6A]">
-                Video Models
+                {t("studio.landing.models.videoModels", {
+                  defaultValue: "Video Models",
+                })}
               </h3>
               <div className="space-y-3">
                 {videoModels.map((model, index) => (
@@ -1300,7 +1358,9 @@ export default function Studio() {
                       variant="ghost"
                       className="text-gray-400 hover:text-white"
                     >
-                      Select
+                      {t("studio.landing.models.select", {
+                        defaultValue: "Select",
+                      })}
                     </Button>
                   </Card>
                 ))}
@@ -1310,7 +1370,9 @@ export default function Studio() {
             {/* Image Models */}
             <div>
               <h3 className="text-xl font-bold mb-6 text-[#32C8D1]">
-                Image Models
+                {t("studio.landing.models.imageModels", {
+                  defaultValue: "Image Models",
+                })}
               </h3>
               <div className="space-y-3">
                 {imageModels.map((model, index) => (
@@ -1330,7 +1392,9 @@ export default function Studio() {
                       variant="ghost"
                       className="text-gray-400 hover:text-white"
                     >
-                      Select
+                      {t("studio.landing.models.select", {
+                        defaultValue: "Select",
+                      })}
                     </Button>
                   </Card>
                 ))}
@@ -1437,7 +1501,9 @@ export default function Studio() {
                 {checkingOut ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  "Subscribe Now"
+                  t("studio.landing.pricing.subscribeNow", {
+                    defaultValue: "Subscribe Now",
+                  })
                 )}
               </Button>
             </Card>
@@ -1539,7 +1605,9 @@ export default function Studio() {
                 {checkingOut ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  "Subscribe Now"
+                  t("studio.landing.pricing.subscribeNow", {
+                    defaultValue: "Subscribe Now",
+                  })
                 )}
               </Button>
             </Card>
@@ -1650,7 +1718,9 @@ export default function Studio() {
       <section className="px-6 py-20">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
-            Frequently Asked Questions
+            {t("studio.landing.faq.title", {
+              defaultValue: "Frequently Asked Questions",
+            })}
           </h2>
 
           <Accordion type="single" collapsible className="space-y-4">
@@ -1659,11 +1729,15 @@ export default function Studio() {
               className="border-2 border-white/10 rounded-lg bg-white/5 px-6"
             >
               <AccordionTrigger className="text-lg font-semibold text-white hover:no-underline py-4">
-                What can I make with Likelee Studio?
+                {t("studio.landing.faq.q1", {
+                  defaultValue: "What can I make with Likelee Studio?",
+                })}
               </AccordionTrigger>
               <AccordionContent className="text-base text-gray-300 leading-relaxed pb-4">
-                AI-generated videos, images, avatars, and creative effects — all
-                in one place.
+                {t("studio.landing.faq.a1", {
+                  defaultValue:
+                    "AI-generated videos, images, avatars, and creative effects — all in one place.",
+                })}
               </AccordionContent>
             </AccordionItem>
 
@@ -1672,10 +1746,14 @@ export default function Studio() {
               className="border-2 border-white/10 rounded-lg bg-white/5 px-6"
             >
               <AccordionTrigger className="text-lg font-semibold text-white hover:no-underline py-4">
-                Do I need to code?
+                {t("studio.landing.faq.q2", {
+                  defaultValue: "Do I need to code?",
+                })}
               </AccordionTrigger>
               <AccordionContent className="text-base text-gray-300 leading-relaxed pb-4">
-                Nope. Just upload or describe what you want.
+                {t("studio.landing.faq.a2", {
+                  defaultValue: "Nope. Just upload or describe what you want.",
+                })}
               </AccordionContent>
             </AccordionItem>
 
@@ -1684,11 +1762,15 @@ export default function Studio() {
               className="border-2 border-white/10 rounded-lg bg-white/5 px-6"
             >
               <AccordionTrigger className="text-lg font-semibold text-white hover:no-underline py-4">
-                Is this unlimited?
+                {t("studio.landing.faq.q3", {
+                  defaultValue: "Is this unlimited?",
+                })}
               </AccordionTrigger>
               <AccordionContent className="text-base text-gray-300 leading-relaxed pb-4">
-                Each plan has a fair-use limit to ensure performance. The Agency
-                Plan includes unlimited generations.
+                {t("studio.landing.faq.a3", {
+                  defaultValue:
+                    "Each plan has a fair-use limit to ensure performance. The Agency Plan includes unlimited generations.",
+                })}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
