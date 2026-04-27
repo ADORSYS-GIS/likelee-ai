@@ -755,12 +755,12 @@
       "searchPlaceholder": "Search agencies by name, specialization, or location...",
       "noAgenciesFound": "No agencies found matching your search.",
       "sendInvite": "Send Invite",
-      "cancel": "Cancel"
-    },
+      "cancel": "Cancel",
       "title": "Post a Job to Find Talent",
       "description": "Create a detailed job posting to connect with AI creators, marketing agencies, and verified talent for your next campaign.",
       "createJobPosting": "Create Job Posting"
     },
+    "jobs": {
       "title": "Jobs",
       "subtitle": "Post and manage job opportunities",
       "noJobs": "No jobs posted yet",
