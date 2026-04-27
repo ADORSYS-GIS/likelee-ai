@@ -1546,7 +1546,13 @@ export function MarketplaceSection({
                               </div>
                             ) : (
                               <p className="text-sm text-gray-500">
-                                No open-work preferences shared yet.
+                                {t(
+                                  `${translationPrefix}.details.noOpenWorkPreferences`,
+                                  {
+                                    defaultValue:
+                                      "No open-work preferences shared yet.",
+                                  },
+                                )}
                               </p>
                             )}
                           </div>
@@ -1585,10 +1591,14 @@ export function MarketplaceSection({
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900">
-                              Licensing rate
+                              {t(`${translationPrefix}.details.licensingRate`, {
+                                defaultValue: "Licensing rate",
+                              })}
                             </h4>
                             <p className="text-xs text-gray-500 mt-1">
-                              Base rate from public profile
+                              {t(`${translationPrefix}.details.baseRate`, {
+                                defaultValue: "Base rate from public profile",
+                              })}
                             </p>
                             <p className="text-xs text-emerald-700 mt-2 font-medium">
                               {openToNegotiations
@@ -1739,16 +1749,32 @@ export function MarketplaceSection({
                             <div className="flex items-start justify-between gap-3">
                               <div>
                                 <h4 className="text-sm font-bold text-gray-900">
-                                  Marketplace contract
+                                  {t(
+                                    `${translationPrefix}.details.marketplaceContract`,
+                                    {
+                                      defaultValue: "Marketplace contract",
+                                    },
+                                  )}
                                 </h4>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Contract terms for this agency-creator
-                                  connection.
+                                  {t(
+                                    `${translationPrefix}.details.contractTermsDescription`,
+                                    {
+                                      defaultValue:
+                                        "Contract terms for this agency-creator connection.",
+                                    },
+                                  )}
                                 </p>
                               </div>
                               {pendingDisconnect ? (
                                 <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
-                                  Creator requested disconnect
+                                  {t(
+                                    `${translationPrefix}.details.creatorRequestedDisconnect`,
+                                    {
+                                      defaultValue:
+                                        "Creator requested disconnect",
+                                    },
+                                  )}
                                 </Badge>
                               ) : null}
                             </div>
@@ -1757,7 +1783,12 @@ export function MarketplaceSection({
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <Percent className="w-3 h-3" />
-                                  Commission
+                                  {t(
+                                    `${translationPrefix}.details.commission`,
+                                    {
+                                      defaultValue: "Commission",
+                                    },
+                                  )}
                                 </div>
                                 <p className="font-semibold text-gray-900 mt-1">
                                   {Number(
@@ -1767,7 +1798,11 @@ export function MarketplaceSection({
                                 </p>
                               </div>
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                                <div className="text-gray-500">Status</div>
+                                <div className="text-gray-500">
+                                  {t(`${translationPrefix}.details.status`, {
+                                    defaultValue: "Status",
+                                  })}
+                                </div>
                                 <p className="font-semibold text-gray-900 mt-1 capitalize">
                                   {String(
                                     marketplaceContract?.status || "unknown",

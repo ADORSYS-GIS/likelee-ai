@@ -368,7 +368,11 @@ const AnalyticsDashboardView = ({
                         {analytics.overview.active_campaigns}
                       </h3>
                       <p className="text-xs font-bold text-indigo-600 flex items-center gap-1.5 mt-2">
-                        <TrendingUp className="w-3.5 h-3.5" /> +12% growth
+                        <TrendingUp className="w-3.5 h-3.5" />{" "}
+                        {t("agencyDashboard.analytics.labels.growthPercent", {
+                          defaultValue: "+{{value}}% growth",
+                          value: 12,
+                        })}
                       </p>
                     </div>
                     <div className="w-16 h-16 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
@@ -389,7 +393,11 @@ const AnalyticsDashboardView = ({
                         {analytics.ai_usage.total_usages_30d}
                       </h3>
                       <p className="text-xs font-bold text-purple-600 flex items-center gap-1.5 mt-2">
-                        <TrendingUp className="w-3.5 h-3.5" /> +18% vs last
+                        <TrendingUp className="w-3.5 h-3.5" />{" "}
+                        {t("agencyDashboard.analytics.labels.vsLastPeriod", {
+                          defaultValue: "+{{value}}% vs last period",
+                          value: 18,
+                        })}
                         period
                       </p>
                     </div>
@@ -502,6 +510,14 @@ const AnalyticsDashboardView = ({
                     axisLine={false}
                     tickLine={false}
                     tick={{ fontSize: 12, fontWeight: "bold", fill: "#94a3b8" }}
+                    tickFormatter={(value) =>
+                      t(
+                        `agencyDashboard.analytics.months.${String(value).toLowerCase()}`,
+                        {
+                          defaultValue: String(value),
+                        },
+                      )
+                    }
                     dy={10}
                   />
                   <YAxis
@@ -689,17 +705,23 @@ const AnalyticsDashboardView = ({
                       );
                       const pieData = [
                         {
-                          name: "Complete",
+                          name: t("agencyDashboard.analytics.labels.complete", {
+                            defaultValue: "Complete",
+                          }),
                           value: completePct,
                           color: "#10b981",
                         },
                         {
-                          name: "Missing",
+                          name: t("agencyDashboard.analytics.labels.missing", {
+                            defaultValue: "Missing",
+                          }),
                           value: missingPct,
                           color: "#f59e0b",
                         },
                         {
-                          name: "Expiring",
+                          name: t("agencyDashboard.analytics.labels.expiring", {
+                            defaultValue: "Expiring",
+                          }),
                           value: expiringPct,
                           color: "#facc15",
                         },
@@ -741,17 +763,23 @@ const AnalyticsDashboardView = ({
                 <div className="w-full mt-8 flex flex-col gap-3 text-right">
                   {[
                     {
-                      name: "Complete",
+                      name: t("agencyDashboard.analytics.labels.complete", {
+                        defaultValue: "Complete",
+                      }),
                       value: analytics.consent_status.complete,
                       color: "text-green-600",
                     },
                     {
-                      name: "Missing",
+                      name: t("agencyDashboard.analytics.labels.missing", {
+                        defaultValue: "Missing",
+                      }),
                       value: analytics.consent_status.missing,
                       color: "text-amber-600",
                     },
                     {
-                      name: "Expiring",
+                      name: t("agencyDashboard.analytics.labels.expiring", {
+                        defaultValue: "Expiring",
+                      }),
                       value: analytics.consent_status.expiring,
                       color: "text-yellow-500",
                     },
@@ -858,14 +886,21 @@ const AnalyticsDashboardView = ({
                       fill="#10b981"
                       radius={[4, 4, 0, 0]}
                       barSize={32}
-                      name="earnings"
+                      name={t(
+                        "agencyDashboard.analytics.labels.earningsLower",
+                        {
+                          defaultValue: "earnings",
+                        },
+                      )}
                     />
                     <Bar
                       dataKey="projected"
                       fill="#3b82f6"
                       radius={[4, 4, 0, 0]}
                       barSize={32}
-                      name="projected"
+                      name={t("agencyDashboard.analytics.labels.projected", {
+                        defaultValue: "projected",
+                      })}
                     />
                   </BarChart>
                 </ResponsiveContainer>

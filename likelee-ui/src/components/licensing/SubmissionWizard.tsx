@@ -705,11 +705,21 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div>
                         <p className="text-sm font-bold text-emerald-900">
-                          Renewal Prefill
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.renewalPrefill",
+                            {
+                              defaultValue: "Renewal Prefill",
+                            },
+                          )}
                         </p>
                         <p className="text-sm text-emerald-800">
-                          This renewal was prefilled from the previous license
-                          request. Adjust anything you need before sending.
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.renewalPrefillDesc",
+                            {
+                              defaultValue:
+                                "This renewal was prefilled from the previous license request. Adjust anything you need before sending.",
+                            },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -722,17 +732,31 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <FileText className="w-5 h-5 text-indigo-600" />
                       </div>
                       <h3 className="font-bold text-slate-900">
-                        Identification
+                        {t(
+                          "agencyDashboard.licenseTemplates.wizard.identification",
+                          {
+                            defaultValue: "Identification",
+                          },
+                        )}
                       </h3>
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Brand Name *
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.brandName",
+                            {
+                              defaultValue: "Brand Name",
+                            },
+                          )}{" "}
+                          *
                         </Label>
                         <Input
                           {...register("client_name", { required: true })}
-                          placeholder="e.g. Nike, Spotify"
+                          placeholder={t(
+                            "agencyDashboard.licenseTemplates.wizard.brandNamePlaceholder",
+                            { defaultValue: "e.g. Nike, Spotify" },
+                          )}
                           className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                         />
                       </div>
@@ -939,7 +963,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       <div className="space-y-2">
                         <div className="flex items-start justify-between ml-1 gap-2">
                           <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
-                            Client Email*
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.clientEmail",
+                              {
+                                defaultValue: "Client Email",
+                              },
+                            )}
+                            *
                           </Label>
                           {brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
@@ -947,7 +977,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 htmlFor="allow-brand-change-wizard"
                                 className="text-xs text-gray-500 cursor-pointer"
                               >
-                                Send to connected brands
+                                {t(
+                                  "agencyDashboard.licenseTemplates.wizard.sendToConnectedBrands",
+                                  { defaultValue: "Send to connected brands" },
+                                )}
                               </Label>
                               <Switch
                                 id="allow-brand-change-wizard"
@@ -979,7 +1012,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               }}
                             >
                               <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all">
-                                <SelectValue placeholder="Select brand" />
+                                <SelectValue
+                                  placeholder={t(
+                                    "agencyDashboard.licenseTemplates.wizard.selectBrand",
+                                    { defaultValue: "Select brand" },
+                                  )}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 {brandRequestContext &&
@@ -992,7 +1030,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                       value={brandRequestContext.brand_id}
                                     >
                                       {brandRequestContext.brand_name ||
-                                        "Selected Brand"}
+                                        t(
+                                          "agencyDashboard.licenseTemplates.wizard.selectedBrand",
+                                          { defaultValue: "Selected Brand" },
+                                        )}
                                     </SelectItem>
                                   )}
                                 {brandOptions.map((brand) => (
@@ -1003,8 +1044,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-gray-500 ml-1">
-                              Select from your connected brands. Toggle off to
-                              enter email manually.
+                              {t(
+                                "agencyDashboard.licenseTemplates.wizard.connectedBrandsHelp",
+                                {
+                                  defaultValue:
+                                    "Select from your connected brands. Toggle off to enter email manually.",
+                                },
+                              )}
                             </p>
                           </>
                         ) : (
@@ -1012,12 +1058,21 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             <Input
                               type="email"
                               {...register("client_email", { required: true })}
-                              placeholder="client@example.com"
+                              placeholder={t(
+                                "agencyDashboard.licenseTemplates.wizard.clientEmailPlaceholder",
+                                { defaultValue: "client@example.com" },
+                              )}
                               className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                             />
                             {brandOptions.length > 0 && (
                               <p className="text-xs text-gray-500 ml-1">
-                                Toggle on to select from connected brands.
+                                {t(
+                                  "agencyDashboard.licenseTemplates.wizard.toggleConnectedBrands",
+                                  {
+                                    defaultValue:
+                                      "Toggle on to select from connected brands.",
+                                  },
+                                )}
                               </p>
                             )}
                           </>
@@ -1026,7 +1081,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-bold text-slate-800">
-                            Agency signs first (on platform)
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.agencySignsFirst",
+                              {
+                                defaultValue:
+                                  "Agency signs first (on platform)",
+                              },
+                            )}
                           </Label>
                           <Switch
                             checked={requiresAgencySignature}
@@ -1034,13 +1095,23 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           />
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
-                          Client receives the contract only after agency
-                          signature.
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.agencySignsFirstDesc",
+                            {
+                              defaultValue:
+                                "Client receives the contract only after agency signature.",
+                            },
+                          )}
                         </p>
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Start Date
+                          {t(
+                            "agencyDashboard.licenseTemplates.wizard.startDate",
+                            {
+                              defaultValue: "Start Date",
+                            },
+                          )}
                         </Label>
                         <Input
                           type="date"
@@ -1056,13 +1127,25 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       <div className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center">
                         <Layout className="w-5 h-5 text-amber-600" />
                       </div>
-                      <h3 className="font-bold text-slate-900">Commercials</h3>
+                      <h3 className="font-bold text-slate-900">
+                        {t(
+                          "agencyDashboard.licenseTemplates.wizard.commercials",
+                          {
+                            defaultValue: "Commercials",
+                          },
+                        )}
+                      </h3>
                     </div>
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label className="text-sm font-bold text-slate-800 ml-1">
-                            Duration (days)
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.durationDays",
+                              {
+                                defaultValue: "Duration (days)",
+                              },
+                            )}
                           </Label>
                           <Input
                             type="number"
@@ -1074,7 +1157,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         </div>
                         <div className="space-y-2">
                           <Label className="text-sm font-bold text-slate-800 ml-1">
-                            Territory
+                            {t(
+                              "agencyDashboard.licenseTemplates.wizard.territory",
+                              {
+                                defaultValue: "Territory",
+                              },
+                            )}
                           </Label>
                           <Input
                             {...register("territory")}
