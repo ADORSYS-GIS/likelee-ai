@@ -1826,7 +1826,10 @@
     "contractPartiallySigned": "Contrat Partiellement Signé",
     "contractSent": "Contrat Envoyé",
     "proCreatorsUnlimited": "Les créateurs Pro ont une sélection illimitée de catégories.",
-    "backToBrandOffers": "← Retour aux offres de marque"
+    "backToBrandOffers": "← Retour aux offres de marque",
+    "companyNamePlaceholder": "Nom de votre entreprise",
+    "websitePlaceholder": "https://votreentreprise.com",
+    "phonePlaceholder": "+33 1 23 45 67 89"
   },
   "jobsPage": {
     "title": "Trouver des Emplois",

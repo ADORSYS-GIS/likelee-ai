@@ -1822,7 +1822,10 @@
     "contractPartiallySigned": "Vertrag teilweise unterzeichnet",
     "contractSent": "Vertrag gesendet",
     "proCreatorsUnlimited": "Pro-Ersteller haben unbegrenzte Kategorieauswahl.",
-    "backToBrandOffers": "← Zurück zu Markenangeboten"
+    "backToBrandOffers": "← Zurück zu Markenangeboten",
+    "companyNamePlaceholder": "Ihr Unternehmensname",
+    "websitePlaceholder": "https://ihrunternehmen.com",
+    "phonePlaceholder": "+49 123 4567890"
   },
   "jobsPage": {
     "title": "Jobs finden",

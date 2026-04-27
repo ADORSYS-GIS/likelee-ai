@@ -1865,7 +1865,10 @@
     "contractPartiallySigned": "Contract Partially Signed",
     "contractSent": "Contract Sent",
     "proCreatorsUnlimited": "Pro creators have unlimited category selection.",
-    "backToBrandOffers": "← Back to Brand Offers"
+    "backToBrandOffers": "← Back to Brand Offers",
+    "companyNamePlaceholder": "Your Company Name",
+    "websitePlaceholder": "https://yourcompany.com",
+    "phonePlaceholder": "+1 (555) 123-4567"
   },
   "jobsPage": {
     "title": "Find Jobs",

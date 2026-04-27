@@ -1820,7 +1820,10 @@
     "contractPartiallySigned": "Contrato parcialmente firmado",
     "contractSent": "Contrato enviado",
     "proCreatorsUnlimited": "Los creadores Pro tienen selección ilimitada de categorías.",
-    "backToBrandOffers": "← Volver a ofertas de marca"
+    "backToBrandOffers": "← Volver a ofertas de marca",
+    "companyNamePlaceholder": "Nombre de su Empresa",
+    "websitePlaceholder": "https://suempresa.com",
+    "phonePlaceholder": "+1 (555) 123-4567"
   },
   "jobsPage": {
     "title": "Encontrar trabajos",
