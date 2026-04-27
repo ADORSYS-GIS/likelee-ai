@@ -8355,13 +8355,20 @@ export default function BrandDashboard() {
             onClick={() => setSelectedContract(null)}
             className="border-2 border-gray-300"
           >
-            ← Back to Contract Hub
+            ←{" "}
+            {t("campaigns.contractHub.backToHub", {
+              defaultValue: "Back to Contract Hub",
+            })}
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               {contract.project_name}
             </h1>
-            <p className="text-gray-600">Contract Details</p>
+            <p className="text-gray-600">
+              {t("campaigns.contractHub.contractDetails", {
+                defaultValue: "Contract Details",
+              })}
+            </p>
           </div>
         </div>
 
@@ -8369,51 +8376,81 @@ export default function BrandDashboard() {
         <div className="flex gap-3">
           <Button variant="outline" className="border-2 border-gray-300">
             <Download className="w-4 h-4 mr-2" />
-            Download PDF
+            {t("campaigns.contractHub.actions.downloadPdf", {
+              defaultValue: "Download PDF",
+            })}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Download className="w-4 h-4 mr-2" />
-            Download Word
+            {t("campaigns.contractHub.actions.downloadWord", {
+              defaultValue: "Download Word",
+            })}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Send className="w-4 h-4 mr-2" />
-            Email
+            {t("campaigns.contractHub.actions.email", {
+              defaultValue: "Email",
+            })}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Copy className="w-4 h-4 mr-2" />
-            Print
+            {t("campaigns.contractHub.actions.print", {
+              defaultValue: "Print",
+            })}
           </Button>
         </div>
 
         {/* Project Overview */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-6">
-            Project Overview
+            {t("campaigns.contractHub.projectOverview", {
+              defaultValue: "Project Overview",
+            })}
           </h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3 text-sm">
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Project:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.project", {
+                    defaultValue: "Project",
+                  })}
+                  :
+                </span>
                 <span className="font-semibold text-gray-900">
                   {contract.project_name}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Creator:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.creator", {
+                    defaultValue: "Creator",
+                  })}
+                  :
+                </span>
                 <span className="font-semibold text-gray-900">
                   {contract.creator_name} ({contract.creator_handle})
                 </span>
               </div>
               {contract.agency && (
                 <div className="flex justify-between py-2 border-b border-gray-200">
-                  <span className="text-gray-600">Agency:</span>
+                  <span className="text-gray-600">
+                    {t("campaigns.contractHub.fields.agency", {
+                      defaultValue: "Agency",
+                    })}
+                    :
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {contract.agency}
                   </span>
                 </div>
               )}
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Status:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.status", {
+                    defaultValue: "Status",
+                  })}
+                  :
+                </span>
                 <Badge
                   className={
                     contract.status === "signed"
@@ -8422,8 +8459,8 @@ export default function BrandDashboard() {
                   }
                 >
                   {contract.status === "signed"
-                    ? "✓ Fully Signed"
-                    : "⏳ Pending Signature"}
+                    ? `✓ ${t("statuses.contractFullySigned", { defaultValue: "Contract fully signed" })}`
+                    : `⏳ ${t("campaigns.contractHub.tabs.pendingSignature", { defaultValue: "Pending Signature" })}`}
                 </Badge>
               </div>
             </div>
@@ -9053,24 +9090,33 @@ export default function BrandDashboard() {
       if (s === "completed")
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            ✓ Fully Signed
+            ✓{" "}
+            {t("statuses.contractFullySigned", {
+              defaultValue: "Contract fully signed",
+            })}
           </span>
         );
       if (s === "sent" || s === "awaiting_signatures")
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            ⏳ Awaiting Signature
+            ⏳{" "}
+            {t("campaigns.contractHub.status.awaiting_signatures", {
+              defaultValue: "Awaiting Signatures",
+            })}
           </span>
         );
       if (s === "draft")
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
-            Draft
+            {t("statuses.draft", { defaultValue: "Draft" })}
           </span>
         );
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
-          {c?.docuseal_status || "Unknown"}
+          {c?.docuseal_status ||
+            t("common.unknown", {
+              defaultValue: "Unknown",
+            })}
         </span>
       );
     };
@@ -9079,9 +9125,16 @@ export default function BrandDashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Contract Hub</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {t("campaigns.contractHub.title", {
+                defaultValue: "Contract Hub",
+              })}
+            </h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              All your verified licensing agreements in one place
+              {t("campaigns.contractHub.subtitle", {
+                defaultValue:
+                  "All your verified licensing agreements in one place",
+              })}
             </p>
           </div>
         </div>
@@ -9091,7 +9144,9 @@ export default function BrandDashboard() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search by creator, agency, or title…"
+              placeholder={t("campaigns.contractHub.searchPlaceholder", {
+                defaultValue: "Search by creator, agency, or title…",
+              })}
               value={contractSearch}
               onChange={(e) => setContractSearch(e.target.value)}
               className="pl-9 h-9 text-sm border-gray-200"
@@ -9102,8 +9157,16 @@ export default function BrandDashboard() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="newest">
+                {t("campaigns.contractHub.sort.newestFirst", {
+                  defaultValue: "Newest first",
+                })}
+              </SelectItem>
+              <SelectItem value="oldest">
+                {t("campaigns.contractHub.sort.oldestFirst", {
+                  defaultValue: "Oldest first",
+                })}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -9111,13 +9174,27 @@ export default function BrandDashboard() {
         {/* Sub-tabs */}
         <div className="flex gap-1 border-b border-gray-200">
           {[
-            { key: "active", label: "Active", count: activeContracts.length },
+            {
+              key: "active",
+              label: t("campaigns.contractHub.tabs.active", {
+                defaultValue: "Active",
+              }),
+              count: activeContracts.length,
+            },
             {
               key: "pending",
-              label: "Pending Signature",
+              label: t("campaigns.contractHub.tabs.pendingSignature", {
+                defaultValue: "Pending Signature",
+              }),
               count: pendingContracts.length,
             },
-            { key: "all", label: "All Contracts", count: allContracts.length },
+            {
+              key: "all",
+              label: t("campaigns.contractHub.tabs.allContracts", {
+                defaultValue: "All Contracts",
+              }),
+              count: allContracts.length,
+            },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -9142,7 +9219,11 @@ export default function BrandDashboard() {
         {loadingBrandOfferItems ? (
           <div className="flex items-center justify-center py-16 gap-3 text-gray-400">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="text-sm">Loading contracts…</span>
+            <span className="text-sm">
+              {t("campaigns.contractHub.loading", {
+                defaultValue: "Loading contracts...",
+              })}
+            </span>
           </div>
         ) : contractsSorted.length === 0 ? (
           <div className="py-16 text-center">
@@ -9150,31 +9231,41 @@ export default function BrandDashboard() {
               <>
                 <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-base font-semibold text-gray-700">
-                  No results
+                  {t("common.noResults", { defaultValue: "No results" })}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  No contracts match &ldquo;{contractSearch}&rdquo;
+                  {t("campaigns.contractHub.noResults", {
+                    defaultValue: `No contracts match “${contractSearch}”`,
+                  })}
                 </p>
               </>
             ) : contractHubTab === "pending" ? (
               <>
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
                 <p className="text-base font-semibold text-gray-700">
-                  All contracts signed
+                  {t("campaigns.contractHub.empty.pendingTitle", {
+                    defaultValue: "All contracts signed",
+                  })}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  No pending signatures at this time.
+                  {t("campaigns.contractHub.empty.pendingSubtitle", {
+                    defaultValue: "No pending signatures at this time.",
+                  })}
                 </p>
               </>
             ) : (
               <>
                 <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-base font-semibold text-gray-700">
-                  No contracts yet
+                  {t("campaigns.contractHub.empty.title", {
+                    defaultValue: "No contracts yet",
+                  })}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  Contracts will appear here once campaigns are created and
-                  sent.
+                  {t("campaigns.contractHub.empty.subtitle", {
+                    defaultValue:
+                      "Contracts will appear here once campaigns are created and sent.",
+                  })}
                 </p>
               </>
             )}
@@ -9205,8 +9296,12 @@ export default function BrandDashboard() {
                         {contract.target_name && (
                           <span>
                             {contract.target_type === "agency"
-                              ? "Agency"
-                              : "Creator"}
+                              ? t("campaigns.contractHub.targetType.agency", {
+                                  defaultValue: "Agency",
+                                })
+                              : t("campaigns.contractHub.targetType.creator", {
+                                  defaultValue: "Creator",
+                                })}
                             :{" "}
                             <span className="font-medium text-gray-700">
                               {contract.target_name}
@@ -9214,13 +9309,19 @@ export default function BrandDashboard() {
                           </span>
                         )}
                         <span>
-                          Sent:{" "}
+                          {t("campaigns.contractHub.meta.sent", {
+                            defaultValue: "Sent",
+                          })}
+                          :{" "}
                           <span className="font-medium text-gray-700">
                             {sentAt}
                           </span>
                         </span>
                         <span>
-                          Budget:{" "}
+                          {t("campaigns.contractHub.meta.budget", {
+                            defaultValue: "Budget",
+                          })}
+                          :{" "}
                           <span className="font-medium text-gray-700">
                             {budget}
                           </span>
@@ -9236,7 +9337,9 @@ export default function BrandDashboard() {
                           className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
                         >
                           <Download className="w-3 h-3" />
-                          Download
+                          {t("campaigns.contractHub.actions.download", {
+                            defaultValue: "Download",
+                          })}
                         </a>
                       )}
                     </div>
@@ -9280,18 +9383,24 @@ export default function BrandDashboard() {
       if (end < today)
         return (
           <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
-            Expired
+            {t("dashboard.usageRightsPage.badges.expired", {
+              defaultValue: "Expired",
+            })}
           </span>
         );
       if (end <= in15)
         return (
           <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            Expiring soon
+            {t("dashboard.usageRightsPage.badges.expiringSoon", {
+              defaultValue: "Expiring soon",
+            })}
           </span>
         );
       return (
         <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Active
+          {t("dashboard.usageRightsPage.badges.active", {
+            defaultValue: "Active",
+          })}
         </span>
       );
     };
@@ -9491,7 +9600,9 @@ export default function BrandDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  Active Licenses
+                  {t("dashboard.usageRightsPage.stats.activeLicenses", {
+                    defaultValue: "Active Licenses",
+                  })}
                 </p>
                 <p className="text-3xl font-black text-gray-900">
                   {approvedLicenses.length}
@@ -9499,7 +9610,9 @@ export default function BrandDashboard() {
               </div>
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  Expiring (15d)
+                  {t("dashboard.usageRightsPage.stats.expiring15d", {
+                    defaultValue: "Expiring (15d)",
+                  })}
                 </p>
                 <p
                   className={`text-3xl font-black ${expiringLicensesReal.length > 0 ? "text-amber-600" : "text-gray-900"}`}
@@ -9508,7 +9621,9 @@ export default function BrandDashboard() {
                 </p>
                 {expiringLicensesReal.length > 0 && (
                   <p className="text-xs text-amber-600 font-semibold mt-0.5">
-                    Renew soon
+                    {t("dashboard.usageRightsPage.stats.renewSoon", {
+                      defaultValue: "Renew soon",
+                    })}
                   </p>
                 )}
               </div>
@@ -9519,25 +9634,50 @@ export default function BrandDashboard() {
               <div className="px-5 py-4 border-b border-gray-100">
                 <h3 className="text-sm font-bold text-gray-900">
                   {usageRightsTab === "expiring"
-                    ? "Expiring Licenses"
-                    : "Active Licenses"}
+                    ? t(
+                        "dashboard.usageRightsPage.licenseTable.titleExpiring",
+                        {
+                          defaultValue: "Expiring Licenses",
+                        },
+                      )
+                    : t("dashboard.usageRightsPage.licenseTable.titleActive", {
+                        defaultValue: "Active Licenses",
+                      })}
                 </h3>
               </div>
               {loadingBrandLicensingRequests ? (
                 <div className="flex items-center justify-center py-12 gap-3 text-gray-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Loading licenses…</span>
+                  <span className="text-sm">
+                    {t("dashboard.usageRightsPage.licenseTable.loading", {
+                      defaultValue: "Loading licenses...",
+                    })}
+                  </span>
                 </div>
               ) : displayLicenses.length === 0 ? (
                 <div className="py-14 text-center">
                   <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-sm font-semibold text-gray-600">
                     {usageRightsTab === "expiring"
-                      ? "No licenses expiring in the next 15 days"
-                      : "No active licenses yet"}
+                      ? t(
+                          "dashboard.usageRightsPage.licenseTable.emptyExpiringTitle",
+                          {
+                            defaultValue:
+                              "No licenses expiring in the next 15 days",
+                          },
+                        )
+                      : t(
+                          "dashboard.usageRightsPage.licenseTable.emptyActiveTitle",
+                          {
+                            defaultValue: "No active licenses yet",
+                          },
+                        )}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Licenses appear here once licensing requests are approved.
+                    {t("dashboard.usageRightsPage.licenseTable.emptySubtitle", {
+                      defaultValue:
+                        "Licenses appear here once licensing requests are approved.",
+                    })}
                   </p>
                 </div>
               ) : (
@@ -9545,22 +9685,48 @@ export default function BrandDashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/60">
-                        {[
-                          "Creator / Talent",
-                          "Campaign",
-                          "Territory",
-                          "Usage Scope",
-                          "Duration",
-                          "Expires",
-                          "Status",
-                        ].map((h) => (
-                          <th
-                            key={h}
-                            className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide"
-                          >
-                            {h}
-                          </th>
-                        ))}
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.creatorTalent",
+                            { defaultValue: "Creator / Talent" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.campaign",
+                            { defaultValue: "Campaign" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.territory",
+                            { defaultValue: "Territory" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.usageScope",
+                            { defaultValue: "Usage Scope" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.duration",
+                            { defaultValue: "Duration" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.expires",
+                            { defaultValue: "Expires" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.status",
+                            { defaultValue: "Status" },
+                          )}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
