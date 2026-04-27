@@ -55,7 +55,21 @@
       "status": "Status",
       "ui": {
         "readyToCreate": "Ready to Create",
-        "readyToCreateHint": "Configure parameters and click \"Generate Video\" to start."
+        "readyToCreateHint": "Configure parameters and click \"Generate Video\" to start.",
+        "download": "Download",
+        "emptyState": "No generations yet. Start by creating a video.",
+        "addMedia": "Add Media",
+        "addMediaSubtitle": "Upload or select legacy assets",
+        "orientation": "Orientation",
+        "duration": "Duration",
+        "generateAudio": "Generate Audio",
+        "generateAudioHint": "Model-generated synchronized sound",
+        "outputQuality": "Output Quality",
+        "estimatedCost": "Estimated Cost",
+        "estimatedCostValue": "{{count}} Credits",
+        "generating": "Generating...",
+        "generateVideo": "Generate Video",
+        "previewOutput": "Preview Output"
       }
     },
     "image": {
@@ -69,7 +83,23 @@
         "visualPrompt": "Visual Prompt",
         "visualPromptPlaceholder": "Surreal landscape with floating islands...",
         "canvasSize": "Canvas Size",
-        "batchCount": "Batch Count"
+        "batchCount": "Batch Count",
+        "fineTuneParameters": "Fine-tune Parameters",
+        "evolving": "Evolving...",
+        "evolvingShort": "Evolving",
+        "synthesize": "Synthesize ({{count}})",
+        "notice": "Notice",
+        "noticeText": "Higher guidance scales follow prompts strictly but may reduce overall realism.",
+        "recentArtifacts": "Recent Artifacts",
+        "expand": "Expand",
+        "mysteriousGeneration": "Mysterious generation...",
+        "ready": "Ready",
+        "pleaseWait": "Please wait...",
+        "emptyState": "No images yet. Create your first one!",
+        "creditExhaustionTitle": "Credit Exhaustion",
+        "creditExhaustionBody": "Your creative fuel is low. To continue synthesizing high-fidelity imagery, please replenish your balance.",
+        "maybeLater": "Maybe Later",
+        "topUpNow": "Top Up Now"
       }
     },
     "landing": {
@@ -113,7 +143,48 @@
       "pricing": {
         "title": "Simple Monthly Plans",
         "subtitle": "Get unlimited access to AI image and video generation.",
+        "perMonth": "/ month",
+        "litePlan": {
+          "title": "Lite Plan",
+          "credits": "60 credits",
+          "description": "For individuals who want to explore Likelee Studio.",
+          "note": "Perfect for creators just starting with AI image and video generation.",
+          "features": {
+            "videosPerMonth": "12 videos / month",
+            "imagesPerMonth": "60 images / month",
+            "parallelTasks": "2 parallel tasks",
+            "multiModelSupport": "All-in-one multi-model support",
+            "textToVideo": "Text to video",
+            "imageToVideo": "Image to video",
+            "multiToVideo": "Text/Image/Video to video",
+            "consistentCharacter": "Consistent character video",
+            "animationGenerator": "AI animation generator",
+            "multiToImage": "Text/Image/Chat to image",
+            "templatesEffects": "300+ templates & effects"
+          }
+        },
+        "proPlan": {
+          "title": "Pro Plan — Flexible Credits",
+          "creditsPerMonth": "{{credits}} credits per month",
+          "description": "Use credits for any generation type (image, video, avatar, or animation).",
+          "chooseCredits": "Choose your monthly credits:",
+          "monthlyTotal": "Monthly total:",
+          "forCredits": "for {{credits}} credits",
+          "bullets": {
+            "renewMonthly": "Credits renew monthly and can be used across all AI tools",
+            "rollover": "Unused credits roll over for 30 days",
+            "cancelAnytime": "Cancel anytime"
+          }
+        },
         "subscribeNow": "Subscribe Now"
+      },
+      "supportedFeatures": {
+        "title": "Supported Features",
+        "columns": {
+          "feature": "Feature",
+          "lite": "Lite",
+          "pro": "Pro"
+        }
       },
       "examples": {
         "title": "What people are making",
@@ -974,6 +1045,7 @@
     "deliverables": {
       "title": "Deliverables",
       "subtitle": "Review and approve project deliverables",
+      "approvalNotice": "Approving any 1 deliverable triggers escrow payout (once) and unlocks downloads for that deliverable. Approvals are final and can’t be undone.",
       "tabs": {
         "pending": "Pending Review",
         "approved": "Approved",

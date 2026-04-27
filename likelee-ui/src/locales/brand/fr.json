@@ -16,7 +16,21 @@
       "configuration": "Configuration",
       "ui": {
         "readyToCreate": "Prêt à créer",
-        "readyToCreateHint": "Configurez les paramètres puis cliquez sur \"Générer une vidéo\" pour démarrer."
+        "readyToCreateHint": "Configurez les paramètres puis cliquez sur \"Générer une vidéo\" pour démarrer.",
+        "download": "Télécharger",
+        "emptyState": "Aucune génération pour l’instant. Commencez par créer une vidéo.",
+        "addMedia": "Ajouter un média",
+        "addMediaSubtitle": "Téléverser ou sélectionner des assets existants",
+        "orientation": "Orientation",
+        "duration": "Durée",
+        "generateAudio": "Générer l’audio",
+        "generateAudioHint": "Son synchronisé généré par le modèle",
+        "outputQuality": "Qualité de sortie",
+        "estimatedCost": "Coût estimé",
+        "estimatedCostValue": "{{count}} crédits",
+        "generating": "Génération…",
+        "generateVideo": "Générer une vidéo",
+        "previewOutput": "Aperçu"
       }
     },
     "image": {
@@ -30,7 +44,23 @@
         "visualPrompt": "Prompt visuel",
         "visualPromptPlaceholder": "Paysage surréaliste avec des îles flottantes...",
         "canvasSize": "Taille de la toile",
-        "batchCount": "Quantité"
+        "batchCount": "Quantité",
+        "fineTuneParameters": "Ajuster les paramètres",
+        "evolving": "En cours...",
+        "evolvingShort": "En cours",
+        "synthesize": "Synthétiser ({{count}})",
+        "notice": "Note",
+        "noticeText": "Un guidage élevé suit plus strictement les prompts, mais peut réduire le réalisme global.",
+        "recentArtifacts": "Créations récentes",
+        "expand": "Agrandir",
+        "mysteriousGeneration": "Génération mystérieuse...",
+        "ready": "Prêt",
+        "pleaseWait": "Veuillez patienter...",
+        "emptyState": "Aucune image pour l’instant. Créez la première !",
+        "creditExhaustionTitle": "Crédits insuffisants",
+        "creditExhaustionBody": "Vos crédits sont faibles. Pour continuer à générer des images haute fidélité, veuillez recharger votre solde.",
+        "maybeLater": "Plus tard",
+        "topUpNow": "Recharger maintenant"
       }
     },
     "landing": {
@@ -74,7 +104,48 @@
       "pricing": {
         "title": "Offres mensuelles simples",
         "subtitle": "Accédez à la génération d’images et de vidéos IA.",
+        "perMonth": "/ mois",
+        "litePlan": {
+          "title": "Offre Lite",
+          "credits": "60 crédits",
+          "description": "Pour les personnes qui souhaitent explorer Likelee Studio.",
+          "note": "Parfait pour débuter avec la génération d’images et de vidéos IA.",
+          "features": {
+            "videosPerMonth": "12 vidéos / mois",
+            "imagesPerMonth": "60 images / mois",
+            "parallelTasks": "2 tâches en parallèle",
+            "multiModelSupport": "Support multi-modèles tout-en-un",
+            "textToVideo": "Texte vers vidéo",
+            "imageToVideo": "Image vers vidéo",
+            "multiToVideo": "Texte/Image/Vidéo vers vidéo",
+            "consistentCharacter": "Vidéo de personnage cohérent",
+            "animationGenerator": "Générateur d’animation IA",
+            "multiToImage": "Texte/Image/Chat vers image",
+            "templatesEffects": "300+ modèles & effets"
+          }
+        },
+        "proPlan": {
+          "title": "Offre Pro — Crédits flexibles",
+          "creditsPerMonth": "{{credits}} crédits par mois",
+          "description": "Utilisez vos crédits pour n’importe quel type de génération (image, vidéo, avatar ou animation).",
+          "chooseCredits": "Choisissez vos crédits mensuels :",
+          "monthlyTotal": "Total mensuel :",
+          "forCredits": "pour {{credits}} crédits",
+          "bullets": {
+            "renewMonthly": "Les crédits se renouvellent chaque mois et s’utilisent sur tous les outils IA",
+            "rollover": "Les crédits inutilisés sont reportés pendant 30 jours",
+            "cancelAnytime": "Annulez à tout moment"
+          }
+        },
         "subscribeNow": "S’abonner"
+      },
+      "supportedFeatures": {
+        "title": "Fonctionnalités prises en charge",
+        "columns": {
+          "feature": "Fonctionnalité",
+          "lite": "Lite",
+          "pro": "Pro"
+        }
       },
       "examples": {
         "title": "Ce que les utilisateurs créent",
@@ -984,6 +1055,7 @@
     "deliverables": {
       "title": "Livrables",
       "subtitle": "Examinez et approuvez les livrables du projet",
+      "approvalNotice": "L’approbation d’un livrable déclenche le paiement du séquestre (une fois) et déverrouille le téléchargement pour ce livrable. Les approbations sont définitives et ne peuvent pas être annulées.",
       "tabs": {
         "pending": "Révision en Attente",
         "approved": "Approuvé",

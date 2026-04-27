@@ -856,6 +856,7 @@
     "deliverables": {
       "title": "Deliverables",
       "subtitle": "Prüfen und genehmigen Sie die Deliverables Ihres Projekts",
+      "approvalNotice": "Die Genehmigung eines Deliverables löst die Auszahlung aus dem Treuhandkonto (einmalig) aus und schaltet Downloads für dieses Deliverable frei. Genehmigungen sind endgültig und können nicht rückgängig gemacht werden.",
       "tabs": {
         "pending": "Überprüfung ausstehend",
         "approved": "Genehmigt",
@@ -1214,7 +1215,21 @@
       "status": "Status",
       "ui": {
         "readyToCreate": "Bereit zum Erstellen",
-        "readyToCreateHint": "Parameter einstellen und auf \"Video generieren\" klicken, um zu starten."
+        "readyToCreateHint": "Parameter einstellen und auf \"Video generieren\" klicken, um zu starten.",
+        "download": "Herunterladen",
+        "emptyState": "Noch keine Generierungen. Starte, indem du ein Video erstellst.",
+        "addMedia": "Medien hinzufügen",
+        "addMediaSubtitle": "Hochladen oder vorhandene Assets auswählen",
+        "orientation": "Ausrichtung",
+        "duration": "Dauer",
+        "generateAudio": "Audio generieren",
+        "generateAudioHint": "Modell-generierter, synchroner Ton",
+        "outputQuality": "Ausgabequalität",
+        "estimatedCost": "Geschätzte Kosten",
+        "estimatedCostValue": "{{count}} Credits",
+        "generating": "Wird generiert...",
+        "generateVideo": "Video generieren",
+        "previewOutput": "Vorschau"
       }
     },
     "image": {
@@ -1228,7 +1243,23 @@
         "visualPrompt": "Visueller Prompt",
         "visualPromptPlaceholder": "Surreale Landschaft mit schwebenden Inseln...",
         "canvasSize": "Leinwandgröße",
-        "batchCount": "Anzahl"
+        "batchCount": "Anzahl",
+        "fineTuneParameters": "Parameter feinabstimmen",
+        "evolving": "Wird erstellt...",
+        "evolvingShort": "Wird erstellt",
+        "synthesize": "Synthese ({{count}})",
+        "notice": "Hinweis",
+        "noticeText": "Höhere Guidance-Werte folgen dem Prompt strikter, können aber den Realismus reduzieren.",
+        "recentArtifacts": "Neueste Ergebnisse",
+        "expand": "Vergrößern",
+        "mysteriousGeneration": "Mysteriöse Generation...",
+        "ready": "Bereit",
+        "pleaseWait": "Bitte warten...",
+        "emptyState": "Noch keine Bilder. Erstelle dein erstes!",
+        "creditExhaustionTitle": "Keine Credits",
+        "creditExhaustionBody": "Dein Guthaben ist niedrig. Um weiter zu generieren, lade bitte Credits nach.",
+        "maybeLater": "Vielleicht später",
+        "topUpNow": "Jetzt aufladen"
       }
     },
     "landing": {
@@ -1272,7 +1303,48 @@
       "pricing": {
         "title": "Einfache Monatspläne",
         "subtitle": "Unbegrenzter Zugriff auf KI-Bild- und Videogenerierung.",
+        "perMonth": "/ Monat",
+        "litePlan": {
+          "title": "Lite-Plan",
+          "credits": "60 Credits",
+          "description": "Für Einzelpersonen, die Likelee Studio erkunden möchten.",
+          "note": "Perfekt für den Einstieg in KI-Bild- und Videogenerierung.",
+          "features": {
+            "videosPerMonth": "12 Videos / Monat",
+            "imagesPerMonth": "60 Bilder / Monat",
+            "parallelTasks": "2 parallele Aufgaben",
+            "multiModelSupport": "Multi‑Modell‑Support (alles in einem)",
+            "textToVideo": "Text zu Video",
+            "imageToVideo": "Bild zu Video",
+            "multiToVideo": "Text/Bild/Video zu Video",
+            "consistentCharacter": "Konsistenter Charakter (Video)",
+            "animationGenerator": "KI-Animationsgenerator",
+            "multiToImage": "Text/Bild/Chat zu Bild",
+            "templatesEffects": "300+ Vorlagen & Effekte"
+          }
+        },
+        "proPlan": {
+          "title": "Pro-Plan — Flexible Credits",
+          "creditsPerMonth": "{{credits}} Credits pro Monat",
+          "description": "Nutze Credits für jeden Generierungstyp (Bild, Video, Avatar oder Animation).",
+          "chooseCredits": "Wähle deine monatlichen Credits:",
+          "monthlyTotal": "Monatssumme:",
+          "forCredits": "für {{credits}} Credits",
+          "bullets": {
+            "renewMonthly": "Credits werden monatlich erneuert und funktionieren in allen KI-Tools",
+            "rollover": "Ungenutzte Credits werden 30 Tage übertragen",
+            "cancelAnytime": "Jederzeit kündbar"
+          }
+        },
         "subscribeNow": "Jetzt abonnieren"
+      },
+      "supportedFeatures": {
+        "title": "Unterstützte Funktionen",
+        "columns": {
+          "feature": "Funktion",
+          "lite": "Lite",
+          "pro": "Pro"
+        }
       },
       "examples": {
         "title": "Was andere erstellen",

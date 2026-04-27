@@ -55,7 +55,21 @@
       "status": "Estado",
       "ui": {
         "readyToCreate": "Listo para crear",
-        "readyToCreateHint": "Configura los parámetros y haz clic en \"Generar video\" para comenzar."
+        "readyToCreateHint": "Configura los parámetros y haz clic en \"Generar video\" para comenzar.",
+        "download": "Descargar",
+        "emptyState": "Aún no hay generaciones. Empieza creando un video.",
+        "addMedia": "Agregar medio",
+        "addMediaSubtitle": "Sube o selecciona recursos existentes",
+        "orientation": "Orientación",
+        "duration": "Duración",
+        "generateAudio": "Generar audio",
+        "generateAudioHint": "Sonido sincronizado generado por el modelo",
+        "outputQuality": "Calidad de salida",
+        "estimatedCost": "Costo estimado",
+        "estimatedCostValue": "{{count}} créditos",
+        "generating": "Generando...",
+        "generateVideo": "Generar video",
+        "previewOutput": "Vista previa"
       }
     },
     "image": {
@@ -69,7 +83,23 @@
         "visualPrompt": "Prompt visual",
         "visualPromptPlaceholder": "Paisaje surrealista con islas flotantes...",
         "canvasSize": "Tamaño del lienzo",
-        "batchCount": "Cantidad"
+        "batchCount": "Cantidad",
+        "fineTuneParameters": "Ajustar parámetros",
+        "evolving": "Evolucionando...",
+        "evolvingShort": "Evolucionando",
+        "synthesize": "Sintetizar ({{count}})",
+        "notice": "Aviso",
+        "noticeText": "Un mayor nivel de guidance sigue el prompt estrictamente, pero puede reducir el realismo.",
+        "recentArtifacts": "Creaciones recientes",
+        "expand": "Ampliar",
+        "mysteriousGeneration": "Generación misteriosa...",
+        "ready": "Listo",
+        "pleaseWait": "Espera...",
+        "emptyState": "Aún no hay imágenes. ¡Crea la primera!",
+        "creditExhaustionTitle": "Sin créditos",
+        "creditExhaustionBody": "Te quedan pocos créditos. Para seguir generando, recarga tu saldo.",
+        "maybeLater": "Más tarde",
+        "topUpNow": "Recargar ahora"
       }
     },
     "landing": {
@@ -113,7 +143,48 @@
       "pricing": {
         "title": "Planes mensuales simples",
         "subtitle": "Accede a la generación de imágenes y videos con IA.",
+        "perMonth": "/ mes",
+        "litePlan": {
+          "title": "Plan Lite",
+          "credits": "60 créditos",
+          "description": "Para quienes quieren explorar Likelee Studio.",
+          "note": "Ideal para empezar con generación de imágenes y videos con IA.",
+          "features": {
+            "videosPerMonth": "12 videos / mes",
+            "imagesPerMonth": "60 imágenes / mes",
+            "parallelTasks": "2 tareas en paralelo",
+            "multiModelSupport": "Soporte multi‑modelo todo en uno",
+            "textToVideo": "Texto a video",
+            "imageToVideo": "Imagen a video",
+            "multiToVideo": "Texto/Imagen/Video a video",
+            "consistentCharacter": "Video de personaje consistente",
+            "animationGenerator": "Generador de animación IA",
+            "multiToImage": "Texto/Imagen/Chat a imagen",
+            "templatesEffects": "300+ plantillas y efectos"
+          }
+        },
+        "proPlan": {
+          "title": "Plan Pro — Créditos flexibles",
+          "creditsPerMonth": "{{credits}} créditos por mes",
+          "description": "Usa créditos para cualquier tipo de generación (imagen, video, avatar o animación).",
+          "chooseCredits": "Elige tus créditos mensuales:",
+          "monthlyTotal": "Total mensual:",
+          "forCredits": "por {{credits}} créditos",
+          "bullets": {
+            "renewMonthly": "Los créditos se renuevan mensualmente y se pueden usar en todas las herramientas",
+            "rollover": "Los créditos no usados se transfieren por 30 días",
+            "cancelAnytime": "Cancela en cualquier momento"
+          }
+        },
         "subscribeNow": "Suscribirse ahora"
+      },
+      "supportedFeatures": {
+        "title": "Funciones compatibles",
+        "columns": {
+          "feature": "Función",
+          "lite": "Lite",
+          "pro": "Pro"
+        }
       },
       "examples": {
         "title": "Lo que la gente está creando",
@@ -974,6 +1045,7 @@
     "deliverables": {
       "title": "Entregables",
       "subtitle": "Revisa y aprueba entregables del proyecto",
+      "approvalNotice": "Aprobar 1 entregable activa el pago en depósito (una vez) y habilita las descargas para ese entregable. Las aprobaciones son finales y no se pueden deshacer.",
       "tabs": {
         "pending": "Revisión Pendiente",
         "approved": "Aprobado",
