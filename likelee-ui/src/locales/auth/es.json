@@ -1,4 +1,15 @@
 {
+  "common": {
+    "error": "Error",
+    "organization": "Organización",
+    "passwordRequired": "Contraseña *",
+    "confirmPasswordRequired": "Confirmar contraseña *",
+    "companyNamePlaceholder": "ej., Corporación Acme",
+    "websitePlaceholder": "https://ejemplo.com",
+    "phonePlaceholder": "+34 600 000 000",
+    "continue": "Continuar",
+    "saving": "Guardando..."
+  },
   "identityVerification": "Verificación de identidad",
   "identityVerificationMessage": "Grabas un video guiado de 60 segundos. Verificamos tu identidad con tu identificación gubernamental y confirmamos el movimiento facial (verificación de vida). Esto detiene a los impostores antes de que entren en el sistema.",
   "verificationFirst": "Verificación primero",

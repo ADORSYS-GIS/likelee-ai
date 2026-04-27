@@ -1,4 +1,15 @@
 {
+  "common": {
+    "error": "Error",
+    "organization": "Organization",
+    "passwordRequired": "Password *",
+    "confirmPasswordRequired": "Confirm Password *",
+    "companyNamePlaceholder": "e.g., Acme Corporation",
+    "websitePlaceholder": "https://example.com",
+    "phonePlaceholder": "+1 (555) 000-0000",
+    "continue": "Continue",
+    "saving": "Saving..."
+  },
   "identityVerification": "Identity Verification",
   "identityVerificationMessage": "You record a 60-second guided video. We verify your identity against your government ID and confirm facial motion (liveness check). This stops imposters before they enter the system.",
   "verificationFirst": "Verification First",

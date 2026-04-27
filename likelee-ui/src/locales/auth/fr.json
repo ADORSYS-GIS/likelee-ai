@@ -1,4 +1,15 @@
 {
+  "common": {
+    "error": "Erreur",
+    "organization": "Organisation",
+    "passwordRequired": "Mot de passe *",
+    "confirmPasswordRequired": "Confirmer le mot de passe *",
+    "companyNamePlaceholder": "ex., Société Acme",
+    "websitePlaceholder": "https://exemple.com",
+    "phonePlaceholder": "+33 6 00 00 00 00",
+    "continue": "Continuer",
+    "saving": "Enregistrement..."
+  },
   "organizationSignup": {
     "selectAndContinue": "Sélectionner et continuer",
     "selectAll": "Tout sélectionner",

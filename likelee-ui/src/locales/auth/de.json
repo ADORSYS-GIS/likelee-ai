@@ -1,4 +1,15 @@
 {
+  "common": {
+    "error": "Fehler",
+    "organization": "Organisation",
+    "passwordRequired": "Passwort *",
+    "confirmPasswordRequired": "Passwort bestätigen *",
+    "companyNamePlaceholder": "common.companyNamePlaceholder",
+    "websitePlaceholder": "common.websitePlaceholder",
+    "phonePlaceholder": "common.phonePlaceholder",
+    "continue": "Weiter",
+    "saving": "Speichern..."
+  },
   "identityVerification": "Identitätsprüfung",
   "identityVerificationMessage": "Sie nehmen ein 60-sekündiges geführtes Video auf. Wir überprüfen Ihre Identität mit Ihrem amtlichen Ausweis und bestätigen die Gesichtsbewegung (Lebendigkeitsprüfung). Dies stoppt Betrüger, bevor sie ins System gelangen.",
   "verificationFirst": "Überprüfung zuerst",
