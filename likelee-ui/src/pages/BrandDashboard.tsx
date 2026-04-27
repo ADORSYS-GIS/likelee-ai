@@ -7339,8 +7339,8 @@ export default function BrandDashboard() {
                                 "No role description added yet."}
                             </p>
                           </div>
-                          <div className="flex flex-col items-start lg:items-end gap-3">
-                            <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
+                          <div className="flex flex-col items-start lg:items-end gap-2">
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-500">
                               {job.budget ? (
                                 <span>
                                   Budget {job.budget} {job.currency || "USD"}
@@ -7355,11 +7355,11 @@ export default function BrandDashboard() {
                             </div>
                           </div>
                         </div>
-                        <div className="pt-3 border-t border-slate-200 flex flex-wrap justify-end gap-2">
+                        <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-2">
                           {job.status === "open" && (
                             <Button
                               variant="outline"
-                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50 flex-1 sm:flex-none"
                               disabled={!canManageJobs}
                               title={
                                 !canManageJobs
@@ -7376,7 +7376,7 @@ export default function BrandDashboard() {
 
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md"
+                            className="border-2 rounded-md flex-1 sm:flex-none"
                             onClick={() =>
                               setSelectedJobForApplications({
                                 ...job,
@@ -7388,7 +7388,7 @@ export default function BrandDashboard() {
                           </Button>
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md"
+                            className="border-2 rounded-md flex-1 sm:flex-none"
                             onClick={async () => {
                               setSelectedJobForApplications(job);
                               setLoadingJobApplications(true);
@@ -12458,8 +12458,8 @@ export default function BrandDashboard() {
                                 "No role description added yet."}
                             </p>
                           </div>
-                          <div className="flex flex-col items-start gap-3 lg:items-end lg:ml-auto">
-                            <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
+                          <div className="flex flex-col items-start gap-2 lg:items-end lg:ml-auto">
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-500">
                               {job.budget ? (
                                 <span>
                                   Budget {job.budget} {job.currency || "USD"}
@@ -12474,11 +12474,11 @@ export default function BrandDashboard() {
                             </div>
                           </div>
                         </div>
-                        <div className="pt-3 border-t border-slate-200 flex flex-wrap justify-end gap-2">
+                        <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-2">
                           {job.status === "open" && (
                             <Button
                               variant="outline"
-                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50 flex-1 sm:flex-none"
                               disabled={!canManageJobs}
                               title={
                                 !canManageJobs
@@ -12495,7 +12495,7 @@ export default function BrandDashboard() {
 
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md"
+                            className="border-2 rounded-md flex-1 sm:flex-none"
                             onClick={() =>
                               setSelectedJobForApplications({
                                 ...job,
@@ -12507,7 +12507,7 @@ export default function BrandDashboard() {
                           </Button>
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md"
+                            className="border-2 rounded-md flex-1 sm:flex-none"
                             onClick={async () => {
                               setSelectedJobForApplications(job);
                               setLoadingJobApplications(true);
