@@ -32,7 +32,13 @@ export const ActiveLicenseDetailsSheet: React.FC<
   ActiveLicenseDetailsSheetProps
 > = ({ license, open, onClose, onRenew, isSportsAgency = false }) => {
   const { t } = useTranslation();
-  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularTitle = isSportsAgency
+    ? t("agencyDashboard.activeLicenses.details.athlete", {
+        defaultValue: "Athlete",
+      })
+    : t("agencyDashboard.activeLicenses.details.talent", {
+        defaultValue: "Talent",
+      });
   if (!license) return null;
 
   const formatCurrency = (val: number) => {
@@ -220,10 +226,10 @@ export const ActiveLicenseDetailsSheet: React.FC<
                       : ""
                   }
                 >
-                  {license.days_left !== undefined
+                  {license.days_left !== undefined && license.days_left !== null
                     ? `${license.days_left} ${t("agencyDashboard.activeLicenses.details.days", { defaultValue: "days" })}`
-                    : t("agencyDashboard.activeLicenses.details.na", {
-                        defaultValue: "N/A",
+                    : t("agencyDashboard.activeLicenses.details.nullDays", {
+                        defaultValue: "null days",
                       })}
                 </span>
               </div>
