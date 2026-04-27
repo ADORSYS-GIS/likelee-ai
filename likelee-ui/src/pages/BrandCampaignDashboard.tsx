@@ -3743,10 +3743,12 @@ export default function BrandCampaignDashboard({
                     <Card className="p-6 border-2 border-gray-300 hover:border-[#F7B750] cursor-pointer transition-all rounded-none">
                       <Building2 className="w-8 h-8 text-[#F7B750] mb-3" />
                       <h4 className="font-bold text-gray-900 mb-2">
-                        Browse Marketplace
+                        {t("campaignsDashboard.inviteAgency.marketplaceTitle")}
                       </h4>
                       <p className="text-sm text-gray-600 mb-4">
-                        Select from Likelee partner agencies
+                        {t(
+                          "campaignsDashboard.inviteAgency.marketplaceDescription",
+                        )}
                       </p>
                       <Button
                         onClick={() => {
@@ -3758,7 +3760,7 @@ export default function BrandCampaignDashboard({
                         className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
                       >
                         <Search className="w-4 h-4 mr-2" />
-                        View Agencies
+                        {t("campaignsDashboard.inviteAgency.marketplaceCta")}
                       </Button>
                     </Card>
                   </div>
@@ -3921,7 +3923,7 @@ export default function BrandCampaignDashboard({
             <Card className="w-full max-w-3xl bg-white p-8 rounded-none">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  AI Studio Add-On
+                  {t("campaignsDashboard.aiStudioModal.title")}
                 </h2>
                 <Button
                   variant="ghost"
@@ -3938,12 +3940,10 @@ export default function BrandCampaignDashboard({
                   <Zap className="w-10 h-10 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                  Generate Content In-House
+                  {t("campaignsDashboard.aiStudioModal.headline")}
                 </h3>
                 <p className="text-gray-600 max-w-2xl mx-auto">
-                  Unlock the full Likelee Studio to create AI-generated videos,
-                  images, and voiceovers without waiting for agency cycles.
-                  Perfect for brands scaling fast.
+                  {t("campaignsDashboard.aiStudioModal.description")}
                 </p>
               </div>
 
@@ -3951,40 +3951,52 @@ export default function BrandCampaignDashboard({
                 <Card className="p-6 border-2 border-gray-200 rounded-none">
                   <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
                   <h4 className="font-bold text-gray-900 mb-2">
-                    Direct Content Creation
+                    {t(
+                      "campaignsDashboard.aiStudioModal.features.directCreationTitle",
+                    )}
                   </h4>
                   <p className="text-sm text-gray-600">
-                    Generate videos and images instantly without agency delays
+                    {t(
+                      "campaignsDashboard.aiStudioModal.features.directCreationDescription",
+                    )}
                   </p>
                 </Card>
 
                 <Card className="p-6 border-2 border-gray-200 rounded-none">
                   <Users className="w-8 h-8 text-orange-600 mb-3" />
                   <h4 className="font-bold text-gray-900 mb-2">
-                    Team Collaboration
+                    {t(
+                      "campaignsDashboard.aiStudioModal.features.teamCollaborationTitle",
+                    )}
                   </h4>
                   <p className="text-sm text-gray-600">
-                    Share studio access with your in-house creative team
+                    {t(
+                      "campaignsDashboard.aiStudioModal.features.teamCollaborationDescription",
+                    )}
                   </p>
                 </Card>
 
                 <Card className="p-6 border-2 border-gray-200 rounded-none">
                   <Sparkles className="w-8 h-8 text-purple-600 mb-3" />
                   <h4 className="font-bold text-gray-900 mb-2">
-                    AI-Powered Tools
+                    {t("campaignsDashboard.aiStudioModal.features.toolsTitle")}
                   </h4>
                   <p className="text-sm text-gray-600">
-                    Access Runway, Sora, ElevenLabs, and more via one platform
+                    {t(
+                      "campaignsDashboard.aiStudioModal.features.toolsDescription",
+                    )}
                   </p>
                 </Card>
 
                 <Card className="p-6 border-2 border-gray-200 rounded-none">
                   <Shield className="w-8 h-8 text-blue-600 mb-3" />
                   <h4 className="font-bold text-gray-900 mb-2">
-                    Rights Management
+                    {t("campaignsDashboard.aiStudioModal.features.rightsTitle")}
                   </h4>
                   <p className="text-sm text-gray-600">
-                    Automatic tracking and compliance for all generated content
+                    {t(
+                      "campaignsDashboard.aiStudioModal.features.rightsDescription",
+                    )}
                   </p>
                 </Card>
               </div>
@@ -3993,23 +4005,25 @@ export default function BrandCampaignDashboard({
                 <div className="flex items-start justify-between">
                   <div>
                     <h4 className="text-2xl font-bold text-gray-900 mb-2">
-                      $299/month
+                      {t("campaignsDashboard.aiStudioModal.pricingTitle")}
                     </h4>
                     <p className="text-gray-700 mb-4">
-                      Added as a separate billing line item from your base plan
+                      {t("campaignsDashboard.aiStudioModal.pricingDescription")}
                     </p>
                     <ul className="space-y-2 text-sm text-gray-700">
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-orange-600" />
-                        Unlock brand access to Likelee Studio tools
+                        {t("campaignsDashboard.aiStudioModal.bullets.access")}
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-orange-600" />
-                        Purchased separately from the base plan free trial
+                        {t("campaignsDashboard.aiStudioModal.bullets.separate")}
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-orange-600" />
-                        Included automatically with Enterprise
+                        {t(
+                          "campaignsDashboard.aiStudioModal.bullets.enterprise",
+                        )}
                       </li>
                     </ul>
                   </div>
@@ -4018,16 +4032,14 @@ export default function BrandCampaignDashboard({
                     onClick={() => navigate("/brandpricing?focus=studio")}
                   >
                     {brandPlanTier === "pro"
-                      ? "Enable Add-On"
-                      : "Upgrade to Pro"}
+                      ? t("campaignsDashboard.aiStudioModal.enableAddon")
+                      : t("campaignsDashboard.aiStudioModal.upgradeToPro")}
                   </Button>
                 </div>
               </Card>
 
               <p className="text-sm text-gray-600 text-center">
-                💡 <strong>Note:</strong> You can still work with agencies and
-                creators even with Studio access. This add-on simply gives you
-                the flexibility to create in-house when needed.
+                {t("campaignsDashboard.aiStudioModal.note")}
               </p>
             </Card>
           </div>
