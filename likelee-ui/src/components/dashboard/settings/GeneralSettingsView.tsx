@@ -261,40 +261,47 @@ type TeamAuditLogRecord = {
   created_at: string;
 };
 
-const TEAM_ROLE_OPTIONS: Array<{
+const getTeamRoleOptions = (
+  t: (key: string) => string,
+): Array<{
   value: Exclude<TeamRoleValue, "owner">;
   label: string;
   description: string;
-}> = [
+}> => [
   {
     value: "admin",
-    label: "Admin",
-    description: "Full team management, billing, campaigns, and approvals.",
+    label: t("agencyDashboard.settings.team.roles.admin.label"),
+    description: t("agencyDashboard.settings.team.roles.admin.description"),
   },
   {
     value: "project_manager",
-    label: "Project Manager",
-    description: "Campaign creation and deliverable approvals without billing.",
+    label: t("agencyDashboard.settings.team.roles.projectManager.label"),
+    description: t(
+      "agencyDashboard.settings.team.roles.projectManager.description",
+    ),
   },
   {
     value: "reviewer",
-    label: "Reviewer",
-    description: "Read-only access to deliverables with team visibility.",
+    label: t("agencyDashboard.settings.team.roles.reviewer.label"),
+    description: t("agencyDashboard.settings.team.roles.reviewer.description"),
   },
 ];
 
-const formatTeamRoleLabel = (role?: string) => {
+const formatTeamRoleLabel = (
+  role: string | undefined,
+  t: (key: string) => string,
+) => {
   switch (role) {
     case "owner":
-      return "Owner";
+      return t("agencyDashboard.settings.team.roles.owner");
     case "admin":
-      return "Admin";
+      return t("agencyDashboard.settings.team.roles.admin.label");
     case "project_manager":
-      return "Project Manager";
+      return t("agencyDashboard.settings.team.roles.projectManager.label");
     case "reviewer":
-      return "Reviewer";
+      return t("agencyDashboard.settings.team.roles.reviewer.label");
     default:
-      return role || "Unknown";
+      return role || t("agencyDashboard.settings.team.roles.unknown");
   }
 };
 
@@ -318,26 +325,29 @@ const InviteTeamMemberModal = ({
   submitting: boolean;
 }) => {
   const { t } = useTranslation();
+  const teamRoleOptions = getTeamRoleOptions(t);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Invite Team Member
+            {t("agencyDashboard.settings.team.modals.inviteTitle")}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-500 font-medium">
-            Send an email invitation to join your agency team
+            {t("agencyDashboard.settings.team.modals.inviteDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-900">
-              Email Address
+              {t("agencyDashboard.settings.team.modals.emailAddress")}
             </Label>
             <Input
               value={email}
               onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="colleague@example.com"
+              placeholder={t(
+                "agencyDashboard.settings.team.modals.emailPlaceholder",
+              )}
               className="h-11 bg-gray-50 border-gray-200 rounded-xl"
             />
           </div>
@@ -357,7 +367,7 @@ const InviteTeamMemberModal = ({
                 />
               </SelectTrigger>
               <SelectContent>
-                {TEAM_ROLE_OPTIONS.map((option) => (
+                {teamRoleOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label} - {option.description}
                   </SelectItem>
@@ -381,7 +391,7 @@ const InviteTeamMemberModal = ({
             className="font-bold"
             disabled={submitting}
           >
-            Cancel
+            {t("agencyDashboard.catalogs.actions.cancel")}
           </Button>
           <Button
             onClick={onSubmit}
@@ -393,7 +403,9 @@ const InviteTeamMemberModal = ({
             ) : (
               <Mail className="w-4 h-4" />
             )}
-            {submitting ? "Sending..." : "Send Invitation"}
+            {submitting
+              ? t("agencyDashboard.settings.team.modals.sending")
+              : t("agencyDashboard.settings.team.modals.sendInvitation")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -419,6 +431,7 @@ const EditPermissionsModal = ({
   submitting: boolean;
 }) => {
   const { t } = useTranslation();
+  const teamRoleOptions = getTeamRoleOptions(t);
   if (!member) return null;
 
   return (
@@ -426,10 +439,13 @@ const EditPermissionsModal = ({
       <DialogContent className="max-w-md rounded-2xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Update Team Role
+            {t("agencyDashboard.settings.team.modals.updateRoleTitle")}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-500 font-medium">
-            {member.email} is currently {formatTeamRoleLabel(member.role)}.
+            {t("agencyDashboard.settings.team.modals.currentRole", {
+              email: member.email,
+              role: formatTeamRoleLabel(member.role, t),
+            })}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
@@ -449,7 +465,7 @@ const EditPermissionsModal = ({
                 />
               </SelectTrigger>
               <SelectContent>
-                {TEAM_ROLE_OPTIONS.map((option) => (
+                {teamRoleOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label} - {option.description}
                   </SelectItem>
@@ -458,8 +474,7 @@ const EditPermissionsModal = ({
             </Select>
           </div>
           <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium text-amber-800">
-            This change takes effect immediately for the member’s active
-            session.
+            {t("agencyDashboard.settings.team.modals.roleChangeWarning")}
           </div>
         </div>
         <DialogFooter className="p-6 border-t border-gray-100 gap-2 sm:gap-0">
@@ -469,14 +484,16 @@ const EditPermissionsModal = ({
             className="font-bold"
             disabled={submitting}
           >
-            Cancel
+            {t("agencyDashboard.catalogs.actions.cancel")}
           </Button>
           <Button
             onClick={onSubmit}
             disabled={submitting}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl"
           >
-            {submitting ? "Saving..." : "Confirm Role Change"}
+            {submitting
+              ? t("agencyDashboard.settings.team.modals.saving")
+              : t("agencyDashboard.settings.team.modals.confirmRoleChange")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -493,30 +510,52 @@ const ActivityLogModal = ({
   onOpenChange: (open: boolean) => void;
   logs: TeamAuditLogRecord[];
 }) => {
+  const { t } = useTranslation();
   const decorateActivity = (log: TeamAuditLogRecord) => {
     switch (log.action) {
       case "team_invite_created":
         return {
-          label: "Invitation created",
-          details: `${log.target_email || "A member"} invited as ${formatTeamRoleLabel(log.new_role || "")}`,
+          label: t("agencyDashboard.settings.team.activity.invitationCreated"),
+          details: t(
+            "agencyDashboard.settings.team.activity.invitationCreatedDetails",
+            {
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+              role: formatTeamRoleLabel(log.new_role || "", t),
+            },
+          ),
           icon: Mail,
           color: "text-indigo-600 bg-indigo-50",
         };
       case "member_role_updated":
         return {
-          label: "Role updated",
-          details: `${log.target_email || "A member"} changed from ${formatTeamRoleLabel(
-            log.old_role || "",
-          )} to ${formatTeamRoleLabel(log.new_role || "")}`,
+          label: t("agencyDashboard.settings.team.activity.roleUpdated"),
+          details: t(
+            "agencyDashboard.settings.team.activity.roleUpdatedDetails",
+            {
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+              oldRole: formatTeamRoleLabel(log.old_role || "", t),
+              newRole: formatTeamRoleLabel(log.new_role || "", t),
+            },
+          ),
           icon: Shield,
           color: "text-amber-600 bg-amber-50",
         };
       case "team_invite_accepted":
         return {
-          label: "Invitation accepted",
-          details: `${log.target_email || "A member"} joined the team as ${formatTeamRoleLabel(
-            log.new_role || "",
-          )}`,
+          label: t("agencyDashboard.settings.team.activity.invitationAccepted"),
+          details: t(
+            "agencyDashboard.settings.team.activity.invitationAcceptedDetails",
+            {
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+              role: formatTeamRoleLabel(log.new_role || "", t),
+            },
+          ),
           icon: BadgeCheck,
           color: "text-green-600 bg-green-50",
         };
@@ -849,10 +888,14 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
       setShowPermissionsModal(false);
       setSelectedMember(null);
       toast({
-        title: "Role updated",
-        description: `${selectedMember.email} is now ${formatTeamRoleLabel(
-          pendingRoleValue,
-        )}.`,
+        title: t("agencyDashboard.settings.team.activity.roleUpdated"),
+        description: t(
+          "agencyDashboard.settings.team.toasts.roleUpdatedDescription",
+          {
+            email: selectedMember.email,
+            role: formatTeamRoleLabel(pendingRoleValue, t),
+          },
+        ),
       });
       await fetchTeamContext();
       await fetchTeamAuditLogs();
@@ -3157,15 +3200,22 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                                 </div>
                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                   <Badge className="bg-white text-gray-700 border-gray-200">
-                                    {formatTeamRoleLabel(member.role)}
+                                    {formatTeamRoleLabel(member.role, t)}
                                   </Badge>
-                                  <span>Status: {member.status}</span>
+                                  <span>
+                                    {t(
+                                      "agencyDashboard.settings.team.memberStatus",
+                                    )}
+                                    : {member.status}
+                                  </span>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 {member.role === "owner" ? (
                                   <Badge className="bg-amber-50 text-amber-700 border-amber-200">
-                                    Owner
+                                    {t(
+                                      "agencyDashboard.settings.team.roles.owner",
+                                    )}
                                   </Badge>
                                 ) : (
                                   <>
@@ -3176,7 +3226,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                                       onClick={() => openRoleEditor(member)}
                                     >
                                       <Edit2 className="w-4 h-4 mr-2" />
-                                      Edit Role
+                                      {t(
+                                        "agencyDashboard.settings.team.actions.editRole",
+                                      )}
                                     </Button>
                                     {canRemove && (
                                       <Button
@@ -3210,10 +3262,14 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                         </div>
                         <div>
                           <h4 className="text-lg font-bold text-gray-900 tracking-tight">
-                            Pending Invitations
+                            {t(
+                              "agencyDashboard.settings.team.pendingInvitations.title",
+                            )}
                           </h4>
                           <p className="text-sm text-gray-500 font-medium mt-1">
-                            Outstanding invites waiting to be accepted.
+                            {t(
+                              "agencyDashboard.settings.team.pendingInvitations.description",
+                            )}
                           </p>
                         </div>
                       </div>
@@ -3223,7 +3279,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                             (invite) => invite.status === "pending",
                           ).length
                         }{" "}
-                        Pending
+                        {t(
+                          "agencyDashboard.settings.team.pendingInvitations.pending",
+                        )}
                       </Badge>
                     </div>
 
@@ -3232,7 +3290,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                         (invite) => invite.status === "pending",
                       ).length === 0 ? (
                         <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
-                          No pending invitations.
+                          {t(
+                            "agencyDashboard.settings.team.pendingInvitations.empty",
+                          )}
                         </div>
                       ) : (
                         (teamContext?.invites || [])
@@ -3248,10 +3308,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                                 </div>
                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                   <Badge className="bg-white text-gray-700 border-gray-200">
-                                    {formatTeamRoleLabel(invite.role)}
+                                    {formatTeamRoleLabel(invite.role, t)}
                                   </Badge>
                                   <span>
-                                    Expires{" "}
+                                    {t(
+                                      "agencyDashboard.settings.team.pendingInvitations.expires",
+                                    )}{" "}
                                     {new Date(
                                       invite.expires_at,
                                     ).toLocaleString()}
@@ -3259,7 +3321,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                                 </div>
                               </div>
                               <Badge className="bg-amber-50 text-amber-700 border-amber-200">
-                                Pending
+                                {t(
+                                  "agencyDashboard.settings.team.pendingInvitations.pending",
+                                )}
                               </Badge>
                             </div>
                           ))

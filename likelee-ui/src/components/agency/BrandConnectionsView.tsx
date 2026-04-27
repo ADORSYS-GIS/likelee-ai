@@ -630,16 +630,21 @@ const BrandConnectionsView = () => {
         }),
       ]);
       toast({
-        title: action === "accept" ? "Request accepted" : "Request declined",
+        title:
+          action === "accept"
+            ? t("agencyDashboard.brandConnections.toasts.requestAccepted")
+            : t("agencyDashboard.brandConnections.toasts.requestDeclined"),
         description:
           action === "accept"
-            ? "Request approved successfully."
-            : "Request declined.",
+            ? t("agencyDashboard.brandConnections.toasts.requestApproved")
+            : t("agencyDashboard.brandConnections.toasts.requestDeclinedDesc"),
       });
     } catch {
       toast({
-        title: "Action failed",
-        description: "Please try again in a moment.",
+        title: t("agencyDashboard.brandConnections.toasts.actionFailed"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.pleaseTryAgain",
+        ),
         variant: "destructive" as any,
       });
     } finally {
@@ -656,9 +661,10 @@ const BrandConnectionsView = () => {
     if (assignSubmitting) return;
     if (assignmentLockedForOffer) {
       toast({
-        title: "Assignments locked",
-        description:
-          "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+        title: t("agencyDashboard.brandConnections.toasts.assignmentsLocked"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.assignmentsLockedDesc",
+        ),
         variant: "destructive",
       });
       return;
@@ -743,10 +749,10 @@ const BrandConnectionsView = () => {
     if (!offerId || !assignmentId) return;
     if (assignmentLockedForSelectedOffer) {
       toast({
-        title: "Assignments locked",
+        title: t("agencyDashboard.brandConnections.toasts.assignmentsLocked"),
         description: selectedOfferContractSigned
-          ? "Contract is already signed and you can’t change assigned talents."
-          : "You can’t unassign talent after the contract is sent.",
+          ? t("agencyDashboard.brandConnections.toasts.contractAlreadySigned")
+          : t("agencyDashboard.brandConnections.toasts.cantUnassignAfterSent"),
         variant: "destructive",
       });
       return;
@@ -844,13 +850,17 @@ const BrandConnectionsView = () => {
         }),
       ]);
       toast({
-        title: "Disconnected",
-        description: "This brand connection has been disconnected.",
+        title: t("agencyDashboard.brandConnections.toasts.disconnected"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.disconnectedDesc",
+        ),
       });
     } catch {
       toast({
-        title: "Disconnect failed",
-        description: "Please try again in a moment.",
+        title: t("agencyDashboard.brandConnections.toasts.disconnectFailed"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.pleaseTryAgain",
+        ),
         variant: "destructive" as any,
       });
     } finally {
@@ -883,8 +893,10 @@ const BrandConnectionsView = () => {
       });
     } catch (e: any) {
       toast({
-        title: "Action failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.brandConnections.toasts.actionFailed"),
+        description:
+          e?.message ||
+          t("agencyDashboard.brandConnections.toasts.pleaseTryAgainShort"),
         variant: "destructive" as any,
       });
     } finally {
@@ -1228,7 +1240,9 @@ const BrandConnectionsView = () => {
     return (
       <div className="flex flex-col items-center justify-center p-12 min-h-[400px]">
         <Loader2 className="h-10 w-10 text-gray-400 animate-spin mb-4" />
-        <p className="text-gray-500 font-medium">Verifying access...</p>
+        <p className="text-gray-500 font-medium">
+          {t("agencyDashboard.brandConnections.ui.verifyingAccess")}
+        </p>
       </div>
     );
   }
@@ -1238,21 +1252,21 @@ const BrandConnectionsView = () => {
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Brand Connections
+            {t("agencyDashboard.brandConnections.title")}
           </h2>
-          <p className="text-gray-600">Access Restricted</p>
+          <p className="text-gray-600">
+            {t("agencyDashboard.brandConnections.ui.accessRestricted")}
+          </p>
         </div>
         <Card className="p-12 flex flex-col items-center justify-center text-center border-dashed border-2">
           <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4">
             <Lock className="h-8 w-8" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">
-            Permission Required
+            {t("agencyDashboard.brandConnections.ui.permissionRequired")}
           </h3>
           <p className="text-gray-600 max-w-sm">
-            You do not have the required permissions to view brand connections.
-            Please contact your agency administrator if you believe this is an
-            error.
+            {t("agencyDashboard.brandConnections.ui.permissionDescription")}
           </p>
         </Card>
       </div>
@@ -1265,17 +1279,21 @@ const BrandConnectionsView = () => {
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
-            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="font-bold text-amber-800">
+              {t("agencyDashboard.brandConnections.ui.viewOnlyTitle")}
+            </p>
             <p className="text-sm text-amber-700">
-              Your role allows viewing brand connections but not managing them.
+              {t("agencyDashboard.brandConnections.ui.viewOnlyDescription")}
             </p>
           </div>
         </div>
       )}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Brand Connections</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {t("agencyDashboard.brandConnections.title")}
+        </h2>
         <p className="text-gray-600">
-          Manage active connections and invitations.
+          {t("agencyDashboard.brandConnections.ui.subtitle")}
         </p>
       </div>
 
@@ -1389,7 +1407,10 @@ const BrandConnectionsView = () => {
                           {companyName}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {email || "No email provided"}
+                          {email ||
+                            t(
+                              "agencyDashboard.brandConnections.ui.noEmailProvided",
+                            )}
                         </p>
                       </div>
                       <div className="text-right flex items-center gap-3">
@@ -1404,7 +1425,9 @@ const BrandConnectionsView = () => {
                                     !brandId || isBusy || !canDisconnectBrands
                                   }
                                   onClick={() => disconnectBrand(brandId)}
-                                  aria-label="Disconnect from brand"
+                                  aria-label={t(
+                                    "agencyDashboard.brandConnections.ui.disconnectFromBrand",
+                                  )}
                                   className="disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <Link2Off className="h-4 w-4" />
@@ -1413,17 +1436,21 @@ const BrandConnectionsView = () => {
                             </TooltipTrigger>
                             {!canDisconnectBrands && (
                               <TooltipContent>
-                                <p>Your role cannot disconnect brands</p>
+                                {t(
+                                  "agencyDashboard.brandConnections.ui.noDisconnectPermission",
+                                )}
                               </TooltipContent>
                             )}
                           </Tooltip>
                         </TooltipProvider>
                         <div>
                           <Badge className="bg-green-100 text-green-700 border border-green-300">
-                            Connected
+                            {t("agencyDashboard.brandConnections.ui.connected")}
                           </Badge>
                           <p className="text-xs text-gray-500 mt-1">
-                            Since {connectedAt}
+                            {t("agencyDashboard.brandConnections.ui.since", {
+                              date: connectedAt,
+                            })}
                           </p>
                         </div>
                       </div>
@@ -1437,18 +1464,24 @@ const BrandConnectionsView = () => {
 
       {activeTab === "requests" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
-          <h3 className="text-lg font-bold text-gray-900 mb-3">Requests</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-3">
+            {t("agencyDashboard.brandConnections.requests")}
+          </h3>
           {requestsQuery.isLoading && (
-            <p className="text-sm text-gray-500">Loading requests...</p>
+            <p className="text-sm text-gray-500">
+              {t("agencyDashboard.brandConnections.ui.loadingRequests")}
+            </p>
           )}
           {!requestsQuery.isLoading && requestsQuery.error && (
-            <p className="text-sm text-red-600">Failed to load requests.</p>
+            <p className="text-sm text-red-600">
+              {t("agencyDashboard.brandConnections.ui.failedToLoadRequests")}
+            </p>
           )}
           {!requestsQuery.isLoading &&
             !requestsQuery.error &&
             requests.length === 0 && (
               <p className="text-sm text-gray-500">
-                No pending requests right now.
+                {t("agencyDashboard.brandConnections.ui.noPendingRequests")}
               </p>
             )}
           {!requestsQuery.isLoading &&
@@ -1459,7 +1492,9 @@ const BrandConnectionsView = () => {
                   const requestId = String(req?.id || "");
                   const isBusy = busyIds.has(requestId);
                   const companyName = String(
-                    req?.brands?.company_name || req?.brand_name || "Brand",
+                    req?.brands?.company_name ||
+                      req?.brand_name ||
+                      t("agencyDashboard.brandConnections.ui.brandFallback"),
                   );
                   const email = String(req?.brands?.email || "").trim();
                   const message = String(req?.message || "").trim();
@@ -1481,12 +1516,15 @@ const BrandConnectionsView = () => {
                             {companyName}
                           </h4>
                           <p className="text-sm text-gray-600">
-                            {email || "No email provided"}
+                            {email ||
+                              t(
+                                "agencyDashboard.brandConnections.ui.noEmailProvided",
+                              )}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className="bg-amber-100 text-amber-700 border border-amber-300">
-                            Pending
+                            {t("agencyDashboard.brandConnections.ui.pending")}
                           </Badge>
                           <Badge
                             variant="outline"
@@ -1497,7 +1535,9 @@ const BrandConnectionsView = () => {
                         </div>
                       </div>
                       <p className="text-xs text-gray-500 mb-2">
-                        Requested on: {createdAt}
+                        {t("agencyDashboard.brandConnections.ui.requestedOn", {
+                          date: createdAt,
+                        })}
                       </p>
                       {message && (
                         <p className="text-sm text-gray-800 mb-4 italic">
@@ -1516,13 +1556,21 @@ const BrandConnectionsView = () => {
                                   disabled={isBusy || !canManageConnections}
                                   className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {isBusy ? "Working..." : "Accept"}
+                                  {isBusy
+                                    ? t(
+                                        "agencyDashboard.brandConnections.ui.working",
+                                      )
+                                    : t(
+                                        "agencyDashboard.brandConnections.ui.accept",
+                                      )}
                                 </Button>
                               </span>
                             </TooltipTrigger>
                             {!canManageConnections && (
                               <TooltipContent>
-                                <p>Your role cannot accept requests</p>
+                                {t(
+                                  "agencyDashboard.brandConnections.ui.noAcceptRequestPermission",
+                                )}
                               </TooltipContent>
                             )}
                           </Tooltip>
@@ -1539,13 +1587,17 @@ const BrandConnectionsView = () => {
                                   disabled={isBusy || !canManageConnections}
                                   className="border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  Decline
+                                  {t(
+                                    "agencyDashboard.brandConnections.ui.decline",
+                                  )}
                                 </Button>
                               </span>
                             </TooltipTrigger>
                             {!canManageConnections && (
                               <TooltipContent>
-                                <p>Your role cannot decline requests</p>
+                                {t(
+                                  "agencyDashboard.brandConnections.ui.noDeclineRequestPermission",
+                                )}
                               </TooltipContent>
                             )}
                           </Tooltip>
@@ -1571,20 +1623,24 @@ const BrandConnectionsView = () => {
                       className="flex items-center gap-2 hover:text-indigo-600 transition-colors"
                     >
                       <ArrowLeft className="h-5 w-5" />
-                      Brand Offers
+                      {t("agencyDashboard.brandConnections.brandOffers")}
                     </button>
                   ) : (
-                    "Brand Offers"
+                    t("agencyDashboard.brandConnections.brandOffers")
                   )}
                 </h3>
               </div>
 
               {offersQuery.isLoading && (
-                <p className="text-sm text-gray-500">Loading offers...</p>
+                <p className="text-sm text-gray-500">
+                  {t("agencyDashboard.brandConnections.ui.loadingOffers")}
+                </p>
               )}
 
               {!offersQuery.isLoading && offers.length === 0 && (
-                <p className="text-sm text-gray-500">No campaign offers yet.</p>
+                <p className="text-sm text-gray-500">
+                  {t("agencyDashboard.brandConnections.ui.noOffers")}
+                </p>
               )}
 
               {selectedOfferId ? (
@@ -1595,9 +1651,13 @@ const BrandConnectionsView = () => {
                   if (!offer) {
                     return (
                       <div className="p-8 text-center">
-                        <p className="text-gray-500 mb-4">Offer not found</p>
+                        <p className="text-gray-500 mb-4">
+                          {t(
+                            "agencyDashboard.brandConnections.ui.offerNotFound",
+                          )}
+                        </p>
                         <Button onClick={() => setSelectedOfferId("")}>
-                          Back to list
+                          {t("agencyDashboard.brandConnections.ui.backToList")}
                         </Button>
                       </div>
                     );
@@ -1685,7 +1745,7 @@ const BrandConnectionsView = () => {
                                   </TooltipTrigger>
                                   {!canManageConnections && (
                                     <TooltipContent>
-                                      <p>Your role cannot accept offers</p>
+                                      Your role cannot accept offers
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -1714,7 +1774,7 @@ const BrandConnectionsView = () => {
                                   </TooltipTrigger>
                                   {!canManageConnections && (
                                     <TooltipContent>
-                                      <p>Your role cannot decline offers</p>
+                                      Your role cannot decline offers
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -2073,7 +2133,7 @@ const BrandConnectionsView = () => {
                                     </TooltipTrigger>
                                     {!canManageConnections && (
                                       <TooltipContent>
-                                        <p>Your role cannot accept offers</p>
+                                        Your role cannot accept offers
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
@@ -2101,7 +2161,7 @@ const BrandConnectionsView = () => {
                                     </TooltipTrigger>
                                     {!canManageConnections && (
                                       <TooltipContent>
-                                        <p>Your role cannot decline offers</p>
+                                        Your role cannot decline offers
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
@@ -2428,22 +2488,26 @@ const BrandConnectionsView = () => {
                             value="submissions"
                             className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
                           >
-                            Submissions
+                            {t(
+                              "agencyDashboard.brandConnections.contractHub.submissions",
+                            )}
                           </TabsTrigger>
                           <TabsTrigger
                             value="upload"
                             className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
                           >
-                            New Contract
+                            {t(
+                              "agencyDashboard.brandConnections.contractHub.newContract",
+                            )}
                           </TabsTrigger>
                         </TabsList>
                       </div>
                       {!hasAssignedTalent && (
                         <div className="mb-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                           <span className="text-amber-700 text-sm font-semibold">
-                            Assign at least 1 talent before preparing/sending a
-                            contract. This is required for correct payouts when
-                            the brand pays.
+                            {t(
+                              "agencyDashboard.brandConnections.contractHub.assignTalentBeforeContract",
+                            )}
                           </span>
                         </div>
                       )}
@@ -2452,21 +2516,23 @@ const BrandConnectionsView = () => {
                           <AlertCircle className="h-4 w-4 text-blue-600" />
                           <AlertDescription className="text-blue-900 text-sm font-medium flex items-start justify-between gap-3">
                             <span>
-                              Before sending contracts, connect your agency
-                              Stripe account and complete onboarding. Brands
-                              can’t pay until payouts are set up, and
-                              commissions/talent earnings can’t be transferred
-                              unless transfers are enabled.
+                              {t(
+                                "agencyDashboard.brandConnections.contractHub.connectStripeBeforeSending",
+                              )}
                             </span>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="border-blue-200 text-blue-700 hover:bg-blue-100"
+                              className="ml-auto shrink-0 bg-white border-blue-200 text-blue-600 hover:bg-blue-50 font-bold text-xs"
                               onClick={() =>
-                                navigate("/AgencyDashboard?tab=payouts")
+                                navigate(
+                                  "/AgencyDashboard?tab=accounting&subTab=Connect Bank",
+                                )
                               }
                             >
-                              Go to Payouts
+                              {t(
+                                "agencyDashboard.brandConnections.contractHub.setupPayouts",
+                              )}
                             </Button>
                           </AlertDescription>
                         </Alert>
@@ -2486,7 +2552,9 @@ const BrandConnectionsView = () => {
                               <FileText className="w-8 h-8 text-gray-300" />
                             </div>
                             <p className="text-gray-500 font-medium mb-4">
-                              No contracts found for this offer.
+                              {t(
+                                "agencyDashboard.brandConnections.contractHub.noContractsForOffer",
+                              )}
                             </p>
                             <Button
                               variant="outline"
@@ -2495,7 +2563,9 @@ const BrandConnectionsView = () => {
                               disabled={!hasAssignedTalent}
                             >
                               <Plus className="w-4 h-4 mr-2" />
-                              Create First Contract
+                              {t(
+                                "agencyDashboard.brandConnections.contractHub.createFirstContract",
+                              )}
                             </Button>
                           </div>
                         ) : (
@@ -2897,10 +2967,14 @@ const BrandConnectionsView = () => {
                             <div className="space-y-4">
                               <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
                               <p className="text-gray-900 font-bold">
-                                Uploading PDF...
+                                {t(
+                                  "agencyDashboard.brandConnections.contractHub.uploadingPdf",
+                                )}
                               </p>
                               <p className="text-xs text-gray-500">
-                                Creating your DocuSeal template draft
+                                {t(
+                                  "agencyDashboard.brandConnections.contractHub.creatingTemplate",
+                                )}
                               </p>
                             </div>
                           ) : (
@@ -2909,16 +2983,20 @@ const BrandConnectionsView = () => {
                                 <Plus className="w-10 h-10 text-blue-500" />
                               </div>
                               <h4 className="text-xl font-bold text-gray-900 mb-2">
-                                Upload Contract PDF
+                                {t(
+                                  "agencyDashboard.brandConnections.contractHub.uploadContractPdf",
+                                )}
                               </h4>
                               <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm leading-relaxed">
-                                Upload a PDF contract to create a new signature
-                                request. You can place fields in the builder
-                                afterwards.
+                                {t(
+                                  "agencyDashboard.brandConnections.contractHub.uploadPdfDescription",
+                                )}
                               </p>
                               {!hasAssignedTalent && (
                                 <p className="text-sm text-amber-700 font-semibold mb-6">
-                                  Assign at least 1 talent to this offer first.
+                                  {t(
+                                    "agencyDashboard.brandConnections.contractHub.assignTalentFirst",
+                                  )}
                                 </p>
                               )}
                               <div className="flex items-center justify-center gap-4">

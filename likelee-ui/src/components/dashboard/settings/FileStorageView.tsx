@@ -1392,13 +1392,16 @@ const FileStorageView = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete file?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.settings.fileStorage.deleteFile.title")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove{" "}
+              {t("agencyDashboard.settings.fileStorage.deleteFile.description")}{" "}
               <span className="font-semibold text-gray-900">
                 {fileToDelete?.file_name || "this file"}
               </span>
-              . This action cannot be undone.
+              .{" "}
+              {t("agencyDashboard.settings.fileStorage.deleteFile.cannotUndo")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1408,10 +1411,10 @@ const FileStorageView = () => {
                 setFileToDelete(null);
               }}
             >
-              Cancel
+              {t("agencyDashboard.catalogs.actions.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete}>
-              Delete file
+              {t("agencyDashboard.settings.fileStorage.deleteFile.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1422,14 +1425,20 @@ const FileStorageView = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete folder?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.settings.fileStorage.deleteFolder.title")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove{" "}
+              {t(
+                "agencyDashboard.settings.fileStorage.deleteFolder.description",
+              )}{" "}
               <span className="font-semibold text-gray-900">
                 {folderToDelete?.name || "this folder"}
               </span>
-              . All files inside will be permanently deleted. This action cannot
-              be undone.
+              .{" "}
+              {t(
+                "agencyDashboard.settings.fileStorage.deleteFolder.descriptionSuffix",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1439,10 +1448,10 @@ const FileStorageView = () => {
                 setFolderToDelete(null);
               }}
             >
-              Cancel
+              {t("agencyDashboard.catalogs.actions.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteFolder}>
-              Delete folder
+              {t("agencyDashboard.settings.fileStorage.deleteFolder.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1451,7 +1460,7 @@ const FileStorageView = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Folder className="w-8 h-8 text-indigo-600" />
-            File Storage
+            {t("agencyDashboard.settings.fileStorage.title")}
           </h1>
           <p className="text-gray-600 font-medium">
             Organize and manage your agency files
@@ -1484,14 +1493,16 @@ const FileStorageView = () => {
           <div className="flex items-center gap-2">
             <HardDrive className="w-5 h-5 text-indigo-600" />
             <span className="text-base font-bold text-gray-900">
-              Storage Usage
+              {t("agencyDashboard.settings.fileStorage.storageUsage")}
             </span>
           </div>
           <span className="text-sm font-bold text-gray-900">
             <span className="text-indigo-600">
               {bytesToHuman(usage?.used_bytes || 0)}
             </span>{" "}
-            of {bytesToHuman(usage?.limit_bytes || 0)} used
+            {t("agencyDashboard.settings.fileStorage.ofUsed", {
+              total: bytesToHuman(usage?.limit_bytes || 0),
+            })}
           </span>
         </div>
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
@@ -1505,14 +1516,16 @@ const FileStorageView = () => {
             {bytesToHuman(
               Math.max(0, (usage?.limit_bytes || 0) - (usage?.used_bytes || 0)),
             )}{" "}
-            remaining
+            {t("agencyDashboard.settings.fileStorage.remaining")}
           </p>
           <Button
             variant="link"
             className="text-indigo-600 font-bold p-0 h-auto"
             asChild
           >
-            <a href="/agencysubscribe">Billing & Subscription</a>
+            <a href="/agencysubscribe">
+              {t("agencyDashboard.settings.fileStorage.billingSubscription")}
+            </a>
           </Button>
         </div>
       </Card>
@@ -1530,7 +1543,9 @@ const FileStorageView = () => {
           <div className="relative flex-1 w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
-              placeholder="Search files by name..."
+              placeholder={t(
+                "agencyDashboard.settings.fileStorage.searchPlaceholder",
+              )}
               className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1545,7 +1560,7 @@ const FileStorageView = () => {
                 onClick={() => setViewMode("grid")}
               >
                 <Grid className="w-4 h-4 mr-2" />
-                Grid
+                {t("agencyDashboard.settings.fileStorage.view.grid")}
               </Button>
               <Button
                 variant={viewMode === "list" ? "secondary" : "ghost"}
@@ -1554,7 +1569,7 @@ const FileStorageView = () => {
                 onClick={() => setViewMode("list")}
               >
                 <List className="w-4 h-4 mr-2" />
-                List
+                {t("agencyDashboard.settings.fileStorage.view.list")}
               </Button>
             </div>
           </div>
@@ -1570,7 +1585,7 @@ const FileStorageView = () => {
                 className="h-9 px-3 rounded-xl font-bold"
                 onClick={() => setActiveFolderId(null)}
               >
-                Back
+                {t("agencyDashboard.settings.fileStorage.actions.back")}
               </Button>
               <h3 className="text-lg font-bold text-gray-900 truncate">
                 {activeFolderName}
@@ -1580,13 +1595,15 @@ const FileStorageView = () => {
         ) : (
           <>
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900">Folders</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                {t("agencyDashboard.settings.fileStorage.folders")}
+              </h3>
               <Button
                 variant="ghost"
                 className="font-bold text-gray-600"
                 onClick={() => setActiveFolderId(null)}
               >
-                All
+                {t("agencyDashboard.settings.fileStorage.actions.all")}
               </Button>
             </div>
             <div className="flex justify-end">
@@ -1596,7 +1613,7 @@ const FileStorageView = () => {
                 className="h-9 px-3 rounded-xl border-gray-200 font-bold flex items-center gap-2 text-xs sm:text-sm"
               >
                 <FolderPlus className="w-4 h-4" />
-                New Folder
+                {t("agencyDashboard.settings.fileStorage.actions.newFolder")}
               </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-3 rounded-3xl bg-indigo-50/40 border border-indigo-100/60">
@@ -1613,10 +1630,12 @@ const FileStorageView = () => {
                   </div>
                   <div>
                     <h4 className="text-base font-bold text-gray-900 mb-1">
-                      New folder
+                      {t(
+                        "agencyDashboard.settings.fileStorage.actions.newFolder",
+                      )}
                     </h4>
                     <div className="text-xs text-gray-500 font-medium">
-                      Click to create
+                      {t("agencyDashboard.settings.fileStorage.clickToCreate")}
                     </div>
                   </div>
                 </Card>
@@ -1646,10 +1665,12 @@ const FileStorageView = () => {
                 disabled={!hasMoreFolders || isLoadingMoreFolders}
               >
                 {isLoadingMoreFolders
-                  ? "Loading..."
+                  ? t("agencyDashboard.settings.fileStorage.loading")
                   : hasMoreFolders
-                    ? "Load more folders"
-                    : "No more folders"}
+                    ? t(
+                        "agencyDashboard.settings.fileStorage.actions.loadMoreFolders",
+                      )
+                    : t("agencyDashboard.settings.fileStorage.noMoreFolders")}
               </Button>
             </div>
           </>
@@ -1659,13 +1680,17 @@ const FileStorageView = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-bold text-gray-900">
-            {activeFolderId ? "" : "Files"}
+            {activeFolderId
+              ? ""
+              : t("agencyDashboard.settings.fileStorage.files")}
           </h3>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500 font-medium">
               {activeFolderId
                 ? filteredFiles.length
-                : `${filteredFiles.length} files`}
+                : t("agencyDashboard.settings.fileStorage.fileCount", {
+                    count: filteredFiles.length,
+                  })}
             </span>
             <Button
               onClick={onPickFiles}
@@ -1673,14 +1698,18 @@ const FileStorageView = () => {
               className="h-9 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 text-xs sm:text-sm"
             >
               <Upload className="w-4 h-4" />
-              {isUploading ? "Uploading..." : "Upload Files"}
+              {isUploading
+                ? t("agencyDashboard.settings.fileStorage.uploading")
+                : t("agencyDashboard.settings.fileStorage.actions.uploadFiles")}
             </Button>
           </div>
         </div>
 
         {isLoading ? (
           <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-            <p className="text-sm font-bold text-gray-700">Loading...</p>
+            <p className="text-sm font-bold text-gray-700">
+              {t("agencyDashboard.settings.fileStorage.loading")}
+            </p>
           </Card>
         ) : viewMode === "list" ? (
           <div className="space-y-3">
@@ -1697,7 +1726,11 @@ const FileStorageView = () => {
                       <Plus className="w-5 h-5 text-indigo-600" />
                     </div>
                     <div className="font-bold text-gray-900">
-                      {isUploading ? "Uploading..." : "Upload"}
+                      {isUploading
+                        ? t("agencyDashboard.settings.fileStorage.uploading")
+                        : t(
+                            "agencyDashboard.settings.fileStorage.actions.upload",
+                          )}
                     </div>
                   </div>
                   <Upload className="w-4 h-4 text-gray-400" />
@@ -1727,14 +1760,14 @@ const FileStorageView = () => {
                     className="h-9 px-3 rounded-xl font-bold"
                     onClick={() => onDownloadFile(f.id)}
                   >
-                    Download
+                    {t("agencyDashboard.settings.fileStorage.actions.download")}
                   </Button>
                   <Button
                     variant="outline"
                     className="h-9 px-3 rounded-xl font-bold text-red-600 border-red-200"
                     onClick={() => openDeleteDialog(f)}
                   >
-                    Delete
+                    {t("agencyDashboard.settings.fileStorage.actions.delete")}
                   </Button>
                 </div>
               </div>
@@ -1756,17 +1789,27 @@ const FileStorageView = () => {
                         <Plus className="w-5 h-5 text-indigo-600" />
                       </div>
                       <span className="text-[11px] font-black uppercase text-gray-400">
-                        {isUploading ? "Uploading" : "Upload"}
+                        {isUploading
+                          ? t(
+                              "agencyDashboard.settings.fileStorage.uploadingShort",
+                            )
+                          : t(
+                              "agencyDashboard.settings.fileStorage.actions.upload",
+                            )}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-gray-900 truncate">
-                        Add file
+                        {t(
+                          "agencyDashboard.settings.fileStorage.actions.addFile",
+                        )}
                       </p>
                       <p className="text-xs text-gray-500 font-medium mt-1">
-                        Click to upload
+                        {t(
+                          "agencyDashboard.settings.fileStorage.clickToUpload",
+                        )}
                       </p>
                     </div>
                     <Upload className="w-4 h-4 text-gray-400" />
@@ -1825,13 +1868,19 @@ const FileStorageView = () => {
                         className="font-bold text-gray-700 cursor-pointer"
                         onClick={() => onDownloadFile(f.id)}
                       >
-                        <Download className="w-4 h-4 mr-2" /> Download
+                        <Download className="w-4 h-4 mr-2" />{" "}
+                        {t(
+                          "agencyDashboard.settings.fileStorage.actions.download",
+                        )}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="font-bold text-red-600 cursor-pointer"
                         onClick={() => openDeleteDialog(f)}
                       >
-                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                        <Trash2 className="w-4 h-4 mr-2" />{" "}
+                        {t(
+                          "agencyDashboard.settings.fileStorage.actions.delete",
+                        )}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1849,10 +1898,12 @@ const FileStorageView = () => {
             disabled={!hasMoreFiles || isLoadingMoreFiles || isLoading}
           >
             {isLoadingMoreFiles
-              ? "Loading..."
+              ? t("agencyDashboard.settings.fileStorage.loading")
               : hasMoreFiles
-                ? "Load more files"
-                : "No more files"}
+                ? t(
+                    "agencyDashboard.settings.fileStorage.actions.loadMoreFiles",
+                  )
+                : t("agencyDashboard.settings.fileStorage.noMoreFiles")}
           </Button>
         </div>
       </div>

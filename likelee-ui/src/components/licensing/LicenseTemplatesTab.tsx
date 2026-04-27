@@ -55,16 +55,6 @@ import {
 } from "@/api/licenseTemplates";
 import { RenewalLaunchContext } from "@/types/licensing";
 
-const CATEGORIES = [
-  "All Categories",
-  "Social Media",
-  "E-commerce",
-  "Advertising",
-  "Editorial",
-  "Film & TV",
-  "Custom",
-];
-
 interface LicenseTemplatesTabProps {
   renewalLaunchContext?: RenewalLaunchContext | null;
   onRenewalLaunchHandled?: () => void;
@@ -88,11 +78,20 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   isSportsAgency = false,
 }) => {
   const { t } = useTranslation();
+  const categories = [
+    t("agencyDashboard.licenseTemplates.categories.all"),
+    t("agencyDashboard.licenseTemplates.categories.socialMedia"),
+    t("agencyDashboard.licenseTemplates.categories.ecommerce"),
+    t("agencyDashboard.licenseTemplates.categories.advertising"),
+    t("agencyDashboard.licenseTemplates.categories.editorial"),
+    t("agencyDashboard.licenseTemplates.categories.filmTv"),
+    t("agencyDashboard.licenseTemplates.categories.custom"),
+  ];
   const [topTab, setTopTab] = useState<
     "requests" | "templates" | "submissions"
   >("templates");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Categories");
+  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hideContractInModal, setHideContractInModal] = useState(false);
   const [editingTemplate, setEditingTemplate] =
@@ -410,7 +409,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === "All Categories" || t.category === selectedCategory;
+      selectedCategory === categories[0] || t.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -499,7 +498,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               </p>
             ) : filteredTemplates.length === 0 ? (
               <p className="text-muted-foreground col-span-3 text-center py-20">
-                {searchTerm || selectedCategory !== "All Categories"
+                {searchTerm || selectedCategory !== categories[0]
                   ? t("agencyDashboard.licenseTemplates.noTemplatesMatch")
                   : t("agencyDashboard.licenseTemplates.noTemplatesYet")}
               </p>

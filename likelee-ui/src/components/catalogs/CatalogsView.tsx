@@ -227,7 +227,7 @@ export function CatalogsView({
                         )}
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        Created{" "}
+                        {t("agencyDashboard.catalogs.meta.created")}{" "}
                         {new Date(catalog.created_at).toLocaleDateString(
                           "en-US",
                           {
@@ -240,7 +240,7 @@ export function CatalogsView({
                           <>
                             {" • "}
                             <span className="text-orange-500 font-medium">
-                              Expires{" "}
+                              {t("agencyDashboard.catalogs.meta.expires")}{" "}
                               {new Date(
                                 catalog.expires_at,
                               ).toLocaleDateString()}

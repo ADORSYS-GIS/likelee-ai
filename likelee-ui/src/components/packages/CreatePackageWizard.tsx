@@ -800,15 +800,10 @@ export function CreatePackageWizard({
                   <div className="space-y-8 max-w-2xl mx-auto w-full">
                     <div className="space-y-3">
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                        {t(
-                          "agencyDashboard.createPackage.basicInfo.titleLabel",
-                        )}{" "}
-                        *
+                        Package Title *
                       </Label>
                       <Input
-                        placeholder={t(
-                          "agencyDashboard.createPackage.basicInfo.titlePlaceholder",
-                        )}
+                        placeholder="e.g. Summer Campaign 2026"
                         value={formData.title}
                         onChange={(e) =>
                           setFormData({ ...formData, title: e.target.value })
@@ -818,14 +813,10 @@ export function CreatePackageWizard({
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                        {t(
-                          "agencyDashboard.createPackage.basicInfo.descriptionLabel",
-                        )}
+                        Introduction Note
                       </Label>
                       <Textarea
-                        placeholder={t(
-                          "agencyDashboard.createPackage.basicInfo.descriptionPlaceholder",
-                        )}
+                        placeholder="Share the vision for this selection..."
                         value={formData.description}
                         onChange={(e) =>
                           setFormData({
@@ -838,15 +829,11 @@ export function CreatePackageWizard({
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                        {t(
-                          "agencyDashboard.createPackage.basicInfo.coverImage",
-                        )}
+                        Cover Image
                       </Label>
                       <div className="flex gap-3">
                         <Input
-                          placeholder={t(
-                            "agencyDashboard.createPackage.basicInfo.imageUrlPlaceholder",
-                          )}
+                          placeholder="https://images.unsplash.com/..."
                           value={formData.cover_image_url}
                           onChange={(e) =>
                             setFormData({
@@ -990,14 +977,10 @@ export function CreatePackageWizard({
                       </div>
                       <div className="space-y-3">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                          {t(
-                            "agencyDashboard.createPackage.send.customFooterMessage",
-                          )}
+                          Custom Footer Message
                         </Label>
                         <Textarea
-                          placeholder={t(
-                            "agencyDashboard.createPackage.send.personalNotePlaceholder",
-                          )}
+                          placeholder="A personal note for the client..."
                           value={formData.custom_message}
                           onChange={(e) =>
                             setFormData({
@@ -1184,12 +1167,8 @@ export function CreatePackageWizard({
                           },
                           {
                             id: "password_protected",
-                            label: t(
-                              "agencyDashboard.createPackage.customize.accessControl",
-                            ),
-                            desc: t(
-                              "agencyDashboard.createPackage.customize.accessControlDesc",
-                            ),
+                            label: "Access Control",
+                            desc: "Secure this package with a private password",
                           },
                         ].map((s) => (
                           <div
@@ -1225,16 +1204,12 @@ export function CreatePackageWizard({
                           className="space-y-3"
                         >
                           <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                            {t(
-                              "agencyDashboard.createPackage.send.gatewayPassword",
-                            )}
+                            Gateway Password
                           </Label>
                           <div className="relative">
                             <Input
                               type={showPassword ? "text" : "password"}
-                              placeholder={t(
-                                "agencyDashboard.createPackage.send.passwordPlaceholder",
-                              )}
+                              placeholder="Create a secure password..."
                               value={formData.password}
                               onChange={(e) =>
                                 setFormData({
@@ -1328,10 +1303,7 @@ export function CreatePackageWizard({
                               onChange={(e) =>
                                 updateConsentItem(idx, e.target.value)
                               }
-                              placeholder={t(
-                                "agencyDashboard.createPackage.consents.consentPointPlaceholder",
-                                { idx: idx + 1 },
-                              )}
+                              placeholder={`Consent point ${idx + 1}`}
                               className="h-10 bg-white border-gray-200"
                             />
                             <Button
@@ -1559,11 +1531,8 @@ export function CreatePackageWizard({
                               {formData.title || "Untitled Selection"}
                             </h5>
                             <p className="text-sm text-gray-500 font-medium mt-1 line-clamp-2">
-                              {formData.description
-                                ? formData.description
-                                : t(
-                                    "agencyDashboard.createPackage.basicInfo.noIntroductionNote",
-                                  )}
+                              {formData.description ||
+                                "No introduction note provided."}
                             </p>
                           </div>
 
@@ -1607,43 +1576,28 @@ export function CreatePackageWizard({
                               {[
                                 {
                                   enabled: formData.allow_favorites,
-                                  key: "favorites",
-                                  label: t(
-                                    "agencyDashboard.createPackage.customize.favorites",
-                                  ),
+                                  label: "Favorites",
                                   icon: Heart,
                                 },
                                 {
                                   enabled: formData.allow_comments,
-                                  key: "notes",
-                                  label: t(
-                                    "agencyDashboard.createPackage.customize.notes",
-                                  ),
+                                  label: "Notes",
                                   icon: MessageSquare,
                                 },
                                 {
                                   enabled: formData.allow_callbacks,
-                                  key: "callbacks",
-                                  label: t(
-                                    "agencyDashboard.createPackage.customize.callbacks",
-                                  ),
+                                  label: "Callbacks",
                                   icon: CheckCircle2,
                                 },
                                 {
                                   enabled: formData.password_protected,
-                                  key: "locked",
-                                  label: t(
-                                    "agencyDashboard.createPackage.customize.locked",
-                                  ),
+                                  label: "Locked",
                                   icon: Globe,
                                 },
                                 {
                                   enabled:
                                     (formData.consent_items || []).length > 0,
-                                  key: "consent",
-                                  label: t(
-                                    "agencyDashboard.createPackage.customize.consent",
-                                  ),
+                                  label: "Consent",
                                   icon: ShieldCheck,
                                 },
                               ].map((opt, i) => (
@@ -1653,14 +1607,10 @@ export function CreatePackageWizard({
                                 >
                                   <opt.icon className="w-3 h-3" />
                                   <span className="text-[10px] font-black uppercase tracking-tight">
-                                    {opt.key === "locked" && opt.enabled
+                                    {opt.label === "Locked" && opt.enabled
                                       ? formData.password.trim()
-                                        ? t(
-                                            "agencyDashboard.createPackage.customize.lockedSet",
-                                          )
-                                        : t(
-                                            "agencyDashboard.createPackage.customize.lockedEmpty",
-                                          )
+                                        ? "Locked (Set)"
+                                        : "Locked (Empty!)"
                                       : opt.label}
                                   </span>
                                 </div>
