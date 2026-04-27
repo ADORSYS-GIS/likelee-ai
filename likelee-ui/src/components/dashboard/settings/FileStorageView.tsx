@@ -1463,7 +1463,7 @@ const FileStorageView = () => {
             {t("agencyDashboard.settings.fileStorage.title")}
           </h1>
           <p className="text-gray-600 font-medium">
-            Organize and manage your agency files
+            {t("agencyDashboard.settings.fileStorage.subtitle")}
           </p>
         </div>
         <Button
@@ -1484,7 +1484,7 @@ const FileStorageView = () => {
               d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
             />
           </svg>
-          Go to Studio
+          {t("agencyDashboard.settings.fileStorage.goToStudio")}
         </Button>
       </div>
 
@@ -1596,7 +1596,7 @@ const FileStorageView = () => {
           <>
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-gray-900">
-                {t("agencyDashboard.settings.fileStorage.folders")}
+                {t("agencyDashboard.settings.fileStorage.folders.title")}
               </h3>
               <Button
                 variant="ghost"
@@ -1682,7 +1682,7 @@ const FileStorageView = () => {
           <h3 className="text-lg font-bold text-gray-900">
             {activeFolderId
               ? ""
-              : t("agencyDashboard.settings.fileStorage.files")}
+              : t("agencyDashboard.settings.fileStorage.files.title")}
           </h3>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500 font-medium">

@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "react-i18next";
 
 interface TemplateCardProps {
   template: any;
@@ -32,6 +33,7 @@ export function TemplateCard({
   onDelete,
   isSportsAgency = false,
 }: TemplateCardProps) {
+  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const talentCount = template.items?.length || 0;
   const coverImage = template.cover_image_url;
@@ -87,7 +89,11 @@ export function TemplateCard({
                   variant="secondary"
                   className="bg-white/70 text-slate-700 border-white/60 font-bold text-xs mt-1 shadow-sm"
                 >
-                  {`${talentCount} ${entitySingularTitle}${talentCount !== 1 ? "s" : ""}`}
+                  {t("agencyDashboard.packages.card.talentCount", {
+                    defaultValue: `${talentCount} ${entitySingularTitle}${talentCount !== 1 ? "s" : ""}`,
+                    count: talentCount,
+                    entity: entitySingularTitle,
+                  })}
                 </Badge>
               </div>
             </div>
@@ -113,7 +119,10 @@ export function TemplateCard({
                     }}
                     className="font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center"
                   >
-                    <Pencil className="w-4 h-4 mr-2" /> Edit
+                    <Pencil className="w-4 h-4 mr-2" />{" "}
+                    {t("agencyDashboard.catalogs.actions.edit", {
+                      defaultValue: "Edit",
+                    })}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={(e) => {
@@ -122,7 +131,10 @@ export function TemplateCard({
                     }}
                     className="font-bold text-xs uppercase tracking-wider text-red-600 cursor-pointer flex items-center"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
+                    <Trash2 className="w-4 h-4 mr-2" />{" "}
+                    {t("agencyDashboard.catalogs.actions.delete", {
+                      defaultValue: "Delete",
+                    })}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -138,7 +150,9 @@ export function TemplateCard({
             }}
           >
             <Send className="w-4 h-4 mr-2" />
-            Send to Client
+            {t("agencyDashboard.packages.actions.sendToClient", {
+              defaultValue: "Send to Client",
+            })}
           </Button>
         </div>
       </Card>
