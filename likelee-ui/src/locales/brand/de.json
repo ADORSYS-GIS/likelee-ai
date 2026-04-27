@@ -1606,5 +1606,43 @@
     "licensingRequired": "Lizenzierung erforderlich",
     "noDescription": "Keine Beschreibung vorhanden",
     "backToEdit": "Zurück zur Bearbeitung"
+  },
+  "licensingRequest": {
+    "title": "Lizenz anfordern",
+    "subtitle": "Senden Sie eine Lizenzanfrage für {{name}}.",
+    "subtitleGeneric": "Senden Sie eine Lizenzanfrage.",
+    "licenseFee": "Lizenzgebühr",
+    "licenseFeePlaceholder": "z.B. 5000",
+    "duration": "Dauer (Tage)",
+    "startDate": "Startdatum",
+    "endDate": "Enddatum",
+    "territory": "Gebiet",
+    "territoryPlaceholder": "z.B. USA, Kanada",
+    "usageScope": "Nutzungsumfang",
+    "usageScopePlaceholder": "z.B. Social Media, TV",
+    "exclusivity": "Exklusivität",
+    "modificationsAllowed": "Änderungen erlaubt",
+    "additionalNotes": "Zusätzliche Hinweise",
+    "additionalNotesPlaceholder": "Weitere Details...",
+    "cancel": "Abbrechen",
+    "submit": "Anfrage senden",
+    "submitting": "Wird gesendet..."
+  },
+  "statuses": {
+    "draft": "Entwurf",
+    "sent": "Gesendet",
+    "accepted": "Akzeptiert",
+    "declined": "Abgelehnt",
+    "new": "Neu",
+    "changesRequested": "Änderungen angefordert",
+    "contractSent": "Vertrag gesendet",
+    "contractFullySigned": "Vertrag vollständig unterzeichnet",
+    "completed": "Abgeschlossen",
+    "pending": "Ausstehend",
+    "approved": "Genehmigt",
+    "rejected": "Abgelehnt",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "expired": "Abgelaufen"
   }
 }
