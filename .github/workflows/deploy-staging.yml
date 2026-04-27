@@ -45,8 +45,8 @@ jobs:
           tags: |
             ghcr.io/${{ env.REPO_LOWER }}/likelee-server:staging-${{ env.IMAGE_TAG }}
             ghcr.io/${{ env.REPO_LOWER }}/likelee-server:staging-latest
-          cache-from: type=registry,ref: ghcr.io/${{ env.REPO_LOWER }}/likelee-server:buildcache
-          cache-to: type=registry,ref: ghcr.io/${{ env.REPO_LOWER }}/likelee-server:buildcache,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}/likelee-server:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}/likelee-server:buildcache,mode=max
 
       - name: Build and push likelee-ui
         uses: docker/build-push-action@v6
@@ -57,8 +57,8 @@ jobs:
           tags: |
             ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:staging-${{ env.IMAGE_TAG }}
             ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:staging-latest
-          cache-from: type=registry,ref: ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:buildcache
-          cache-to: type=registry,ref: ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:buildcache,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:buildcache,mode=max
           build-args: |
             VITE_SUPABASE_URL=${{ secrets.STAGING_VITE_SUPABASE_URL }}
             VITE_SUPABASE_ANON_KEY=${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}
