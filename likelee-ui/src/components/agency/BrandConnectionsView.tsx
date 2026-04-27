@@ -2579,10 +2579,16 @@ const BrandConnectionsView = () => {
                               <section className="space-y-4">
                                 <div className="flex items-center justify-between">
                                   <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-                                    Contract Templates
+                                    {t(
+                                      "agencyDashboard.brandConnections.contractHub.contractTemplates",
+                                      { defaultValue: "Contract Templates" },
+                                    )}
                                   </h5>
                                   <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                                    Ready to Prepare
+                                    {t(
+                                      "agencyDashboard.brandConnections.contractHub.readyToPrepare",
+                                      { defaultValue: "Ready to Prepare" },
+                                    )}
                                   </span>
                                 </div>
                                 <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
@@ -2590,10 +2596,16 @@ const BrandConnectionsView = () => {
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Title
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.titleColumn",
+                                            { defaultValue: "Title" },
+                                          )}
                                         </th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
-                                          Actions
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.actionsColumn",
+                                            { defaultValue: "Actions" },
+                                          )}
                                         </th>
                                       </tr>
                                     </thead>
@@ -2628,11 +2640,24 @@ const BrandConnectionsView = () => {
                                                     <p className="text-sm font-bold text-gray-900">
                                                       {String(
                                                         c?.title ||
-                                                          "Contract Draft",
+                                                          t(
+                                                            "agencyDashboard.brandConnections.contractHub.contractDraft",
+                                                            {
+                                                              defaultValue:
+                                                                "Contract Draft",
+                                                            },
+                                                          ),
                                                       )}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400 mt-0.5">
-                                                      Template ID:{" "}
+                                                      {t(
+                                                        "agencyDashboard.brandConnections.contractHub.templateId",
+                                                        {
+                                                          defaultValue:
+                                                            "Template ID",
+                                                        },
+                                                      )}
+                                                      :{" "}
                                                       {String(
                                                         c?.docuseal_template_id ||
                                                           "N/A",
@@ -2659,7 +2684,12 @@ const BrandConnectionsView = () => {
                                                     }
                                                   >
                                                     <Wand2 className="w-4 h-4 mr-2" />
-                                                    Prepare
+                                                    {t(
+                                                      "agencyDashboard.brandConnections.contractHub.prepare",
+                                                      {
+                                                        defaultValue: "Prepare",
+                                                      },
+                                                    )}
                                                   </Button>
                                                   <Button
                                                     size="sm"
@@ -2678,7 +2708,13 @@ const BrandConnectionsView = () => {
                                                     ) : (
                                                       <>
                                                         <Send className="w-4 h-4 mr-2" />
-                                                        Send
+                                                        {t(
+                                                          "agencyDashboard.brandConnections.contractHub.send",
+                                                          {
+                                                            defaultValue:
+                                                              "Send",
+                                                          },
+                                                        )}
                                                       </>
                                                     )}
                                                   </Button>
@@ -2716,10 +2752,16 @@ const BrandConnectionsView = () => {
                               <section className="space-y-4">
                                 <div className="flex items-center justify-between">
                                   <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-                                    Sent Submissions
+                                    {t(
+                                      "agencyDashboard.brandConnections.contractHub.sentSubmissions",
+                                      { defaultValue: "Sent Submissions" },
+                                    )}
                                   </h5>
                                   <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-medium">
-                                    Active Submissions
+                                    {t(
+                                      "agencyDashboard.brandConnections.contractHub.activeSubmissions",
+                                      { defaultValue: "Active Submissions" },
+                                    )}
                                   </span>
                                 </div>
                                 <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
@@ -2727,13 +2769,22 @@ const BrandConnectionsView = () => {
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Title
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.titleColumn",
+                                            { defaultValue: "Title" },
+                                          )}
                                         </th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Status
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.statusColumn",
+                                            { defaultValue: "Status" },
+                                          )}
                                         </th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
-                                          Actions
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.actionsColumn",
+                                            { defaultValue: "Actions" },
+                                          )}
                                         </th>
                                       </tr>
                                     </thead>
@@ -2768,11 +2819,21 @@ const BrandConnectionsView = () => {
                                                     <p className="text-sm font-bold text-gray-900">
                                                       {String(
                                                         c?.title ||
-                                                          "Contract Submission",
+                                                          t(
+                                                            "agencyDashboard.brandConnections.contractHub.contractSubmission",
+                                                            {
+                                                              defaultValue:
+                                                                "Contract Submission",
+                                                            },
+                                                          ),
                                                       )}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400 mt-0.5">
-                                                      ID: {cId.slice(0, 8)}...
+                                                      {t(
+                                                        "agencyDashboard.brandConnections.contractHub.id",
+                                                        { defaultValue: "ID" },
+                                                      )}
+                                                      : {cId.slice(0, 8)}...
                                                     </p>
                                                   </div>
                                                 </div>
@@ -2794,7 +2855,16 @@ const BrandConnectionsView = () => {
                                                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                                   }`}
                                                 >
-                                                  {statusLabel}
+                                                  {t(
+                                                    `statuses.${statusLabel}`,
+                                                    {
+                                                      defaultValue:
+                                                        statusLabel.replace(
+                                                          /_/g,
+                                                          " ",
+                                                        ),
+                                                    },
+                                                  )}
                                                 </Badge>
                                               </td>
                                               <td className="px-6 py-4 text-right">

@@ -477,7 +477,12 @@ const AnalyticsDashboardView = ({
           <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
             <div className="flex justify-between items-center mb-6 sm:mb-10">
               <h3 className="text-lg font-black text-gray-900 uppercase tracking-[0.15em]">
-                Monthly Performance Trends
+                {t(
+                  "agencyDashboard.analytics.labels.monthlyPerformanceTrends",
+                  {
+                    defaultValue: "Monthly Performance Trends",
+                  },
+                )}
               </h3>
               <TrendingUp className="w-5 h-5 text-indigo-600" />
             </div>
@@ -527,7 +532,9 @@ const AnalyticsDashboardView = ({
                   <Line
                     type="monotone"
                     dataKey="earnings"
-                    name="Earnings ($)"
+                    name={t("agencyDashboard.analytics.labels.earnings", {
+                      defaultValue: "Earnings ($)",
+                    })}
                     stroke="#10b981"
                     strokeWidth={3}
                     dot={{
@@ -541,7 +548,15 @@ const AnalyticsDashboardView = ({
                   <Line
                     type="monotone"
                     dataKey="campaigns"
-                    name={agencyMode === "AI" ? "Licenses" : "Campaigns"}
+                    name={
+                      agencyMode === "AI"
+                        ? t("agencyDashboard.analytics.labels.licenses", {
+                            defaultValue: "Licenses",
+                          })
+                        : t("agencyDashboard.analytics.labels.campaigns", {
+                            defaultValue: "Campaigns",
+                          })
+                    }
                     stroke="#6366f1"
                     strokeWidth={3}
                     dot={{
@@ -556,7 +571,9 @@ const AnalyticsDashboardView = ({
                     <Line
                       type="monotone"
                       dataKey="usages"
-                      name="AI Usages"
+                      name={t("agencyDashboard.analytics.labels.aiUsages", {
+                        defaultValue: "AI Usages",
+                      })}
                       stroke="#a855f7"
                       strokeWidth={3}
                       dot={{
@@ -866,7 +883,17 @@ const AnalyticsDashboardView = ({
                   textColor: "text-green-600",
                 },
                 {
-                  label: `Most Active (${agencyMode === "AI" ? "Licenses" : "Campaigns"})`,
+                  label: t("agencyDashboard.analytics.labels.mostActive", {
+                    defaultValue: "Most Active ({{metric}})",
+                    metric:
+                      agencyMode === "AI"
+                        ? t("agencyDashboard.analytics.labels.licenses", {
+                            defaultValue: "Licenses",
+                          })
+                        : t("agencyDashboard.analytics.labels.campaigns", {
+                            defaultValue: "Campaigns",
+                          }),
+                  }),
                   data: rosterInsights.most_active,
                   borderColor: "border-indigo-500",
                   textColor: "text-blue-600",
@@ -928,7 +955,12 @@ const AnalyticsDashboardView = ({
             <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden mb-8">
               <div className="p-4 sm:p-8 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">
-                  Talent Performance Metrics
+                  {t(
+                    "agencyDashboard.analytics.labels.talentPerformanceMetrics",
+                    {
+                      defaultValue: "Talent Performance Metrics",
+                    },
+                  )}
                 </h3>
               </div>
               <div className="overflow-x-auto">
@@ -936,11 +968,23 @@ const AnalyticsDashboardView = ({
                   <thead>
                     <tr className="bg-gray-50/80">
                       {[
-                        "Talent",
-                        "30D Earnings",
-                        agencyMode === "AI" ? "Licenses" : "Campaigns",
+                        t("agencyDashboard.analytics.labels.talent", {
+                          defaultValue: "Talent",
+                        }),
+                        t("agencyDashboard.analytics.labels.earnings30d", {
+                          defaultValue: "30D Earnings",
+                        }),
+                        agencyMode === "AI"
+                          ? t("agencyDashboard.analytics.labels.licenses", {
+                              defaultValue: "Licenses",
+                            })
+                          : t("agencyDashboard.analytics.labels.campaigns", {
+                              defaultValue: "Campaigns",
+                            }),
                         t("agencyDashboard.analytics.rosterInsights.avgValue"),
-                        "Status",
+                        t("agencyDashboard.analytics.labels.status", {
+                          defaultValue: "Status",
+                        }),
                       ].map((h) => (
                         <th
                           key={h}
@@ -988,7 +1032,10 @@ const AnalyticsDashboardView = ({
                           <Badge
                             className={`font-bold text-[10px] py-0.5 ${talent.status === "Active" ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-100 text-gray-500 border-gray-200"}`}
                           >
-                            {talent.status}
+                            {t(
+                              `agencyDashboard.analytics.labels.${String(talent.status || "").toLowerCase()}`,
+                              { defaultValue: talent.status },
+                            )}
                           </Badge>
                         </td>
                       </tr>
@@ -1062,7 +1109,12 @@ const AnalyticsDashboardView = ({
               </Card>
               <Card className="p-4 sm:p-10 bg-white border border-gray-900 shadow-sm">
                 <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
-                  Geographic Distribution
+                  {t(
+                    "agencyDashboard.analytics.labels.geographicDistribution",
+                    {
+                      defaultValue: "Geographic Distribution",
+                    },
+                  )}
                 </h3>
                 <div className="h-[350px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1118,7 +1170,9 @@ const AnalyticsDashboardView = ({
             <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
               <div className="p-4 sm:p-8 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Top Clients Performance
+                  {t("agencyDashboard.analytics.labels.topClientsPerformance", {
+                    defaultValue: "Top Clients Performance",
+                  })}
                 </h3>
               </div>
               <div className="overflow-x-auto">
@@ -1129,7 +1183,9 @@ const AnalyticsDashboardView = ({
                         Client
                       </th>
                       <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest text-right">
-                        Action
+                        {t("agencyDashboard.analytics.labels.action", {
+                          defaultValue: "Action",
+                        })}
                       </th>
                     </tr>
                   </thead>
@@ -1147,7 +1203,19 @@ const AnalyticsDashboardView = ({
                               </span>
                               <span className="text-[10px] text-gray-500 font-bold">
                                 {client.campaigns}{" "}
-                                {agencyMode === "AI" ? "licenses" : "campaigns"}
+                                {agencyMode === "AI"
+                                  ? t(
+                                      "agencyDashboard.analytics.labels.licensesLower",
+                                      {
+                                        defaultValue: "licenses",
+                                      },
+                                    )
+                                  : t(
+                                      "agencyDashboard.analytics.labels.campaignsLower",
+                                      {
+                                        defaultValue: "campaigns",
+                                      },
+                                    )}
                               </span>
                             </div>
                           </td>
@@ -1157,7 +1225,13 @@ const AnalyticsDashboardView = ({
                                 ${client.budget.toLocaleString()}
                               </span>
                               <span className="text-[10px] text-gray-400 font-bold">
-                                {client.percentage.toFixed(1)}% of total
+                                {t(
+                                  "agencyDashboard.analytics.labels.percentOfTotal",
+                                  {
+                                    defaultValue: "{{value}}% of total",
+                                    value: client.percentage.toFixed(1),
+                                  },
+                                )}
                               </span>
                             </div>
                           </td>
@@ -1174,7 +1248,9 @@ const AnalyticsDashboardView = ({
             >
               <Card className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
                 <p className="text-sm font-bold text-gray-500 mb-2">
-                  Repeat Client Rate
+                  {t("agencyDashboard.analytics.labels.repeatClientRate", {
+                    defaultValue: "Repeat Client Rate",
+                  })}
                 </p>
                 <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
                   {clientsAnalytics.repeat_client_rate.toFixed(0)}%
@@ -1201,13 +1277,17 @@ const AnalyticsDashboardView = ({
               )}
               <Card className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
                 <p className="text-sm font-bold text-gray-500 mb-2">
-                  Client Acquisition
+                  {t("agencyDashboard.analytics.labels.clientAcquisition", {
+                    defaultValue: "Client Acquisition",
+                  })}
                 </p>
                 <h3 className="text-4xl font-bold text-green-600 tracking-tighter">
                   {clientsAnalytics.client_acquisition}
                 </h3>
                 <p className="text-xs text-green-600/70 mt-2 font-bold">
-                  New clients in the last 30 days
+                  {t("agencyDashboard.analytics.labels.newClientsLast30d", {
+                    defaultValue: "New clients in the last 30 days",
+                  })}
                 </p>
               </Card>
             </div>
@@ -1308,7 +1388,11 @@ const AnalyticsDashboardView = ({
                       "agencyDashboard.analytics.compliance.verificationRate",
                     ),
                     value: `${verificationPct}%`,
-                    sub: `${verifiedCount} of ${totalTalents} verified`,
+                    sub: t("agencyDashboard.analytics.labels.verifiedOfTotal", {
+                      defaultValue: "{{count}} of {{total}} verified",
+                      count: verifiedCount,
+                      total: totalTalents,
+                    }),
                     pct: verificationPct,
                     barColor: "bg-gray-900",
                   },
@@ -1318,7 +1402,11 @@ const AnalyticsDashboardView = ({
                       "agencyDashboard.analytics.compliance.activeConsents",
                     ),
                     value: `${activePct}%`,
-                    sub: `${activeCount} of ${totalTalents} complete`,
+                    sub: t("agencyDashboard.analytics.labels.completeOfTotal", {
+                      defaultValue: "{{count}} of {{total}} complete",
+                      count: activeCount,
+                      total: totalTalents,
+                    }),
                     pct: activePct,
                     barColor: "bg-gray-400",
                   },
@@ -1328,7 +1416,9 @@ const AnalyticsDashboardView = ({
                       "agencyDashboard.analytics.compliance.expiringSoon",
                     ),
                     value: String(expiringSoonLicensesCount),
-                    sub: "Next 10 days",
+                    sub: t("agencyDashboard.analytics.labels.next10Days", {
+                      defaultValue: "Next 10 days",
+                    }),
                     pct: null,
                     barColor: "",
                   },
@@ -1369,16 +1459,29 @@ const AnalyticsDashboardView = ({
 
               <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
-                  License Expiry Pipeline
+                  {t("agencyDashboard.analytics.labels.licenseExpiryPipeline", {
+                    defaultValue: "License Expiry Pipeline",
+                  })}
                 </h3>
                 <div className="space-y-3">
                   {effectiveExpired.length === 0 ? (
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
                       <p className="text-sm font-bold text-gray-900">
-                        No expired licenses
+                        {t(
+                          "agencyDashboard.analytics.labels.noExpiredLicenses",
+                          {
+                            defaultValue: "No expired licenses",
+                          },
+                        )}
                       </p>
                       <p className="text-xs font-medium text-gray-500 mt-1">
-                        Expired contracts will appear here for renewal.
+                        {t(
+                          "agencyDashboard.analytics.labels.expiredContractsRenewalHint",
+                          {
+                            defaultValue:
+                              "Expired contracts will appear here for renewal.",
+                          },
+                        )}
                       </p>
                     </div>
                   ) : (
@@ -1409,7 +1512,10 @@ const AnalyticsDashboardView = ({
                                 )}
                             </p>
                             <p className="text-xs font-bold text-gray-500 truncate">
-                              Expired on {formatLicenseDate(license.end_date)}
+                              {t("agencyDashboard.analytics.labels.expiredOn", {
+                                defaultValue: "Expired on {{date}}",
+                                date: formatLicenseDate(license.end_date),
+                              })}
                             </p>
                           </div>
                         </div>
@@ -1432,29 +1538,48 @@ const AnalyticsDashboardView = ({
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 xl:gap-12">
                   <div>
                     <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest mb-10">
-                      Compliance Summary
+                      {t("agencyDashboard.analytics.labels.complianceSummary", {
+                        defaultValue: "Compliance Summary",
+                      })}
                     </h3>
                     <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
-                      Consent Status Distribution
+                      {t(
+                        "agencyDashboard.analytics.labels.consentStatusDistribution",
+                        {
+                          defaultValue: "Consent Status Distribution",
+                        },
+                      )}
                     </p>
                     <div className="space-y-8">
                       {[
                         {
-                          label: "Complete",
+                          label: t(
+                            "agencyDashboard.analytics.labels.complete",
+                            {
+                              defaultValue: "Complete",
+                            },
+                          ),
                           count: activeCount,
                           pct: completePct,
                           labelColor: "text-green-600",
                           barClass: "bg-gray-900",
                         },
                         {
-                          label: "Expiring",
+                          label: t(
+                            "agencyDashboard.analytics.labels.expiring",
+                            {
+                              defaultValue: "Expiring",
+                            },
+                          ),
                           count: consentExpiringCount,
                           pct: expiringPct,
                           labelColor: "text-orange-600",
                           barClass: "bg-[#FB923C]/30",
                         },
                         {
-                          label: "Missing",
+                          label: t("agencyDashboard.analytics.labels.missing", {
+                            defaultValue: "Missing",
+                          }),
                           count: missingCount,
                           pct: missingPct,
                           labelColor: "text-red-600",
@@ -1482,7 +1607,9 @@ const AnalyticsDashboardView = ({
                   <div className="space-y-10 relative">
                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[2px] rounded-xl">
                       <div className="bg-black/80 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
-                        Coming Soon
+                        {t("agencyDashboard.analytics.labels.comingSoon", {
+                          defaultValue: "Coming Soon",
+                        })}
                       </div>
                     </div>
                     <div className="opacity-50 pointer-events-none select-none filter blur-[2px]">
