@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.13.2",
-    "@aws-amplify/ui-react-liveness": "^3.5.0",
-    "@base44/sdk": "^0.8.25",
+    "@aws-amplify/ui-react-liveness": "^3.3.9",
+    "@base44/sdk": "^0.7.4",
     "@docuseal/react": "^1.0.70",
     "@hookform/resolvers": "^4.1.2",
     "@radix-ui/react-accordion": "^1.2.3",
@@ -53,7 +53,7 @@
     "@types/leaflet": "^1.9.12",
     "@types/leaflet.markercluster": "^1.5.6",
     "@types/qrcode": "^1.5.6",
-    "aws-amplify": "^6.16.0",
+    "aws-amplify": "^5.3.33",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
@@ -147,7 +147,7 @@
     "ts-node": "^10.9.2",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.14.0",
-    "uuid": "^13.0.0",
+    "uuid": "^14.0.0",
     "vite": "^6.4.2",
     "vitest": "^4.1.4"
   }
