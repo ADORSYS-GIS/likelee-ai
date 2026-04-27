@@ -19,6 +19,7 @@ import {
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 export const CampaignModal = ({
   open,
@@ -97,6 +98,7 @@ export const CampaignModal = ({
   });
 
   const handleSubmit = (e: React.FormEvent) => {
+  const { t } = useTranslation();
     e.preventDefault();
     if (!formData.name) {
       toast({

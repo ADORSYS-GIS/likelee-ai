@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, Trash2, Users } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type BrandSettingsTeamProps = {
   brand: any;

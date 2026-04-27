@@ -64,6 +64,7 @@ export const BookingDetailsModal = ({
     description: string,
     showOkOnly: boolean = false,
   ) => {
+  const { t } = useTranslation();
     const { dismiss } = toast({
       title,
       description,

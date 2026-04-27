@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectContent,
@@ -283,6 +284,7 @@ const consentStatusData = [
 ];
 
 export default function SportsAgencyDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("roster");
   const [searchQuery, setSearchQuery] = useState("");

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslation } from "react-i18next";
 import {
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
@@ -36,6 +37,7 @@ export const LicensingRequestsTab = ({
 }: {
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();

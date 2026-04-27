@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 // -----------------------------------------------------------------------
 // DobInput – segmented MM / DD / YYYY input with scroll-wheel year picker
@@ -77,6 +78,7 @@ export function DobInput({
   variant = "rounded",
   className = "",
 }: DobInputProps) {
+  const { t } = useTranslation();
   const { mm: initMm, dd: initDd, yyyy: initYyyy } = parseIso(value);
   const [mm, setMm] = useState(initMm);
   const [dd, setDd] = useState(initDd);

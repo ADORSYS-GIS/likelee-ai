@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
+import { useTranslation } from "react-i18next";
 import {
   Search,
   Filter,
@@ -53,6 +54,7 @@ const sortOptions = [
 ];
 
 export default function JobBoardContent() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");

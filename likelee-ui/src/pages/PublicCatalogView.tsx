@@ -26,6 +26,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { catalogApi } from "@/api/catalogs";
+import { useTranslation } from "react-i18next";
 
 /* ─── Types ─── */
 type View = "talents" | "talent-detail" | "category";
@@ -66,6 +67,7 @@ async function downloadFile(url: string, filename?: string) {
 
 /* ─── Main Component ─── */
 export default function PublicCatalogView() {
+  const { t } = useTranslation();
   const { token } = useParams<{ token: string }>();
   const [view, setView] = useState<View>("talents");
   const [selectedItem, setSelectedItem] = useState<any>(null);

@@ -40,8 +40,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "react-i18next";
 
 export function PublicPackageView() {
+  const { t } = useTranslation();
   const { token } = useParams<{ token: string }>();
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const selectedTalent = selectedItem

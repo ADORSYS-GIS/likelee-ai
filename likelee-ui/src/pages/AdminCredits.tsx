@@ -13,8 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Shield, Coins, Plus, Minus, Users, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function AdminCredits() {
+  const { t } = useTranslation();
   const [searchEmail, setSearchEmail] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [creditAmount, setCreditAmount] = useState("");

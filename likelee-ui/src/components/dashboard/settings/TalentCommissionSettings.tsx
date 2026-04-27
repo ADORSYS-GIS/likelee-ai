@@ -22,6 +22,7 @@ import { base44 } from "@/api/base44Client";
 import { clampAndSnapCommissionPct } from "@/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const TIER_CONFIG: Record<string, any> = {
   Premium: {
@@ -129,6 +130,7 @@ export const TalentCommissionSettings: React.FC<{
   }, [allTalents, searchTerm]);
 
   const handleRateChange = (talentId: string, value: string) => {
+  const { t } = useTranslation();
     setDraftRates((prev) => ({ ...prev, [talentId]: value }));
   };
 

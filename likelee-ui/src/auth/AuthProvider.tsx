@@ -18,6 +18,7 @@ import type {
   MFAEnrollParams,
 } from "@supabase/supabase-js";
 import { readAuthIntent } from "./onboarding";
+import { useTranslation } from "react-i18next";
 
 export type MFAResult = {
   requiresMFA: boolean;
@@ -87,6 +88,7 @@ export interface Profile {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);

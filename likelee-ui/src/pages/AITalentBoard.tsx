@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useTranslation } from "react-i18next";
 
 const categoryOptions = [
   "AI Video",
@@ -51,6 +52,7 @@ const sortOptions = [
 ];
 
 export default function AITalentBoard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("us");

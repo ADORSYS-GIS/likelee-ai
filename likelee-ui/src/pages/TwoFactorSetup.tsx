@@ -22,6 +22,7 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import QRCode from "qrcode";
 import { getDashboardPath } from "@/auth/onboarding";
+import { useTranslation } from "react-i18next";
 
 type Step = "intro" | "enroll" | "verify" | "success" | "manage" | "challenge";
 const MFA_PENDING_STORAGE_KEY = "likelee_mfa_pending_next";
@@ -34,6 +35,7 @@ interface FactorInfo {
 }
 
 export default function TwoFactorSetup() {
+  const { t } = useTranslation();
   const { mfa, authenticated, initialized, profile, refreshProfile } =
     useAuth();
   const navigate = useNavigate();

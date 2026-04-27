@@ -14,6 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   X,
   ArrowRight,
@@ -75,6 +76,7 @@ const mockCreators = [
 ];
 
 export default function CampaignBuilder({ onClose, onSubmit }) {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(1);
   const [generatingObjective, setGeneratingObjective] = useState(false);
   const { toast } = useToast();

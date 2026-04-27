@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 import {
   Film,
   ArrowLeft,
@@ -124,6 +125,7 @@ const capabilityColors: Record<string, { bg: string; color: string }> = {
 };
 
 export default function StudioVideoOptions() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [hoveredModel, setHoveredModel] = useState<string | null>(null);

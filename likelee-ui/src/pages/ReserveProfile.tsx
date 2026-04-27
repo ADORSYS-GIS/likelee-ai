@@ -272,6 +272,7 @@ function getUserFriendlyError(error: any, t: any): string {
 }
 
 export default function ReserveProfile() {
+  const { t } = useTranslation();
   const urlParams = new URLSearchParams(window.location.search);
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";

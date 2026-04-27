@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/use-toast";
 import * as crmApi from "@/api/crm";
 import { parseBackendError } from "@/utils/errorParser";
 import { Client } from "@/types/crm";
+import { useTranslation } from "react-i18next";
 
 const INDUSTRY_OPTIONS = [
   "Fashion",
@@ -100,6 +101,7 @@ const EditClientModal = ({
   });
 
   const toggleTag = (tag: string) => {
+  const { t } = useTranslation();
     const currentTags = formData.tags
       ? formData.tags
           .split(",")

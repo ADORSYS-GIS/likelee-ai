@@ -138,6 +138,7 @@ import TeamInviteLanding from "./TeamInviteLanding";
 import TwoFactorSetup from "./TwoFactorSetup";
 import LicensingSettings from "./LicensingSettings";
 import Unauthorized from "./Unauthorized";
+import { useTranslation } from "react-i18next";
 
 const PAGES = {
   BrandsStudios: BrandsStudios,
@@ -727,6 +728,7 @@ function AppRoutes() {
 }
 
 export default function Pages() {
+  const { t } = useTranslation();
   return (
     <Router>
       <AppRoutes />

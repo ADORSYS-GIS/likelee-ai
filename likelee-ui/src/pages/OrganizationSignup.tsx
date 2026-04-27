@@ -214,6 +214,7 @@ const getIndustries = (t: any) => [
 ];
 
 export default function OrganizationSignup() {
+  const { t } = useTranslation();
   const { t, i18n } = useTranslation();
   const { user, profile, refreshProfile, initialized, login, authenticated } =
     useAuth();

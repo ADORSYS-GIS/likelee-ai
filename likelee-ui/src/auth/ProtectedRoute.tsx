@@ -8,6 +8,7 @@ import {
   getBrandPricingPath,
 } from "./onboarding";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
+import { useTranslation } from "react-i18next";
 
 const LoadingSpinner = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -34,6 +35,7 @@ export default function ProtectedRoute({
   allowedRoles?: string[];
   requiredPermissions?: string[];
 }) {
+  const { t } = useTranslation();
   const { initialized, authenticated, profile, refreshProfile } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();

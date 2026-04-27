@@ -21,8 +21,10 @@ import {
   Move,
 } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { useTranslation } from "react-i18next";
 
 export default function VideoEditor({ clips, onAddClip, type = "video" }) {
+  const { t } = useTranslation();
   const [timeline, setTimeline] = useState(clips || []);
   const [selectedClip, setSelectedClip] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);

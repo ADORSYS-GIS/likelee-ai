@@ -50,6 +50,7 @@ import {
   voidInvoice,
 } from "@/api/functions";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from "react-i18next";
 
 type LineItemState = {
   id: string;
@@ -74,6 +75,7 @@ type AttachmentState = {
 };
 
 export const GenerateInvoiceViewApi = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const invoiceIdFromQuery = searchParams.get("invoiceId") || undefined;

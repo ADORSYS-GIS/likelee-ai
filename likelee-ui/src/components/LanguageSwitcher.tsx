@@ -20,6 +20,7 @@ const LanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
 
   const changeLanguage = (lng: string) => {
+  const { t } = useTranslation();
     i18n.changeLanguage(lng);
   };
 

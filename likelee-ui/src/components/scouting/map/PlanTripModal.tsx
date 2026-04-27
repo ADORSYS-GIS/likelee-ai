@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/popover";
 import { searchLocations } from "./geocoding";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface PlanTripModalProps {
   isOpen: boolean;
@@ -71,6 +72,7 @@ export const PlanTripModal = ({
   onPlan,
   initialData,
 }: PlanTripModalProps) => {
+  const { t } = useTranslation();
   const [scouts, setScouts] = useState<string[]>(
     initialData?.scout_names ||
       initialData?.scout_ids || ["Sarah Johnson", "Michael Lee"],

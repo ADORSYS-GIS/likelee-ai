@@ -88,6 +88,7 @@ export const TalentAvailabilityTab = ({
     });
 
   const fmtDate = (v?: string) => {
+  const { t } = useTranslation();
     if (!v) return "";
     const d = new Date(v);
     if (isNaN(d.getTime())) return v; // show raw if not ISO parseable

@@ -55,6 +55,7 @@ import {
   uploadBrandStorageFile,
 } from "@/api/functions";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 type StorageUsage = { used_bytes: number; limit_bytes: number };
 type StorageFolder = {
@@ -112,6 +113,7 @@ const isoToShortDate = (iso: string) => {
 };
 
 export default function BrandFileStorageView() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);

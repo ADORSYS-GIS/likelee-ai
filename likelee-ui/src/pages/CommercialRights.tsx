@@ -5,8 +5,10 @@ import { CheckCircle2, Shield, Zap, FileCheck, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
+import { useTranslation } from "react-i18next";
 
 export default function CommercialRights() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const benefits = [

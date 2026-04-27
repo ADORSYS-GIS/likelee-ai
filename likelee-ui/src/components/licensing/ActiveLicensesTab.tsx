@@ -24,8 +24,10 @@ import {
   XCircle,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useTranslation } from "react-i18next";
 
 export const ActiveLicensesTab = () => {
+  const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLicense, setSelectedLicense] = useState<ActiveLicense | null>(

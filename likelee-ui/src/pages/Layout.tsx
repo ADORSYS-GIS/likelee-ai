@@ -8,6 +8,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
 
 export default function Layout({ children, currentPageName }) {
+  const { t } = useTranslation();
   const { t, i18n } = useTranslation();
   const { authenticated, logout, profile } = useAuth();
 

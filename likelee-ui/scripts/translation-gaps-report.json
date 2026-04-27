@@ -62,9 +62,7 @@
       "missing": {
         "de": [],
         "es": [],
-        "fr": [
-          "faces.hero.signUpButton"
-        ]
+        "fr": ["faces.hero.signUpButton"]
       }
     }
   },

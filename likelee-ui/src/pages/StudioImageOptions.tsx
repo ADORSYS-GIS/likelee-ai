@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useTranslation } from "react-i18next";
 import {
   Image as ImageIcon,
   ArrowLeft,
@@ -37,6 +38,7 @@ const imageOptions = [
 ];
 
 export default function StudioImageOptions() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const modelId = searchParams.get("model");

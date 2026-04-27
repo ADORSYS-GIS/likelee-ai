@@ -60,6 +60,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { DocusealForm } from "@docuseal/react";
+import { useTranslation } from "react-i18next";
 
 interface SubmissionWizardProps {
   isOpen: boolean;
@@ -333,6 +334,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   ]);
 
   const replacePlaceholders = (text: string, data: any) => {
+  const { t } = useTranslation();
     return text.replace(/{(\w+)}/g, (match, key) => {
       // Handle special formatting if needed
       if (key === "license_fee") return `$${data[key]}`;

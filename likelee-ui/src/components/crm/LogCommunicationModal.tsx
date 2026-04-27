@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { parseBackendError } from "@/utils/errorParser";
 import * as crmApi from "@/api/crm";
+import { useTranslation } from "react-i18next";
 
 const LogCommunicationModal = ({
   clientId,

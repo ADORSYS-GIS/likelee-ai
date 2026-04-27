@@ -12,8 +12,10 @@ import {
   Play,
 } from "lucide-react";
 import { listPresets, type StudioStylePreset } from "@/api/studio";
+import { useTranslation } from "react-i18next";
 
 export default function StudioTemplates() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);

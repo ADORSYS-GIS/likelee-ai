@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Download, FileDown, X } from "lucide-react";
 import { generateBriefPDF } from "@/services/BriefPDFService";
+import { useTranslation } from "react-i18next";
 
 export function CampaignBriefView({
   brief,
@@ -12,6 +13,7 @@ export function CampaignBriefView({
   brandName?: string;
   campaignName?: string;
 }) {
+  const { t } = useTranslation();
   const briefValue = (key: string, fallback = "Not specified") => {
     const value = brief?.[key];
     if (value === null || value === undefined) return fallback;

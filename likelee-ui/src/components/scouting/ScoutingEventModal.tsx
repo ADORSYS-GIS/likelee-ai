@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -197,6 +198,7 @@ export const ScoutingEventModal = ({
   eventToEdit,
   onSaved,
 }: Props) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);

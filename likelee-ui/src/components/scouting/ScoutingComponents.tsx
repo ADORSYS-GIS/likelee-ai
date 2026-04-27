@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect } from "@/types/scouting";
+import { useTranslation } from "react-i18next";
 
 export const AddProspectModal = ({
   open,
@@ -53,6 +54,7 @@ export const AddProspectModal = ({
   });
 
   const handleInputChange = (field: keyof ScoutingProspect, value: any) => {
+  const { t } = useTranslation();
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ActiveLicense } from "@/api/activeLicenses";
+import { useTranslation } from "react-i18next";
 import {
   Calendar,
   DollarSign,
@@ -34,6 +35,7 @@ export const ActiveLicenseDetailsSheet: React.FC<
   if (!license) return null;
 
   const formatCurrency = (val: number) => {
+  const { t } = useTranslation();
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",

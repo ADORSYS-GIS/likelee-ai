@@ -3,8 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function TestFalAPI() {
+  const { t } = useTranslation();
   const [testing, setTesting] = useState(false);
   const [results, setResults] = useState([]);
 

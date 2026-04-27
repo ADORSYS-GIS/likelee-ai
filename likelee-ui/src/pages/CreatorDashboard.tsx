@@ -536,6 +536,7 @@ function parseErrorMessage(err: any, t: any): string {
 }
 
 export default function CreatorDashboard() {
+  const { t } = useTranslation();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();

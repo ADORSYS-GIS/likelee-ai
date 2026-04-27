@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Wallet as WalletIcon, CheckCircle2, Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type Row = {
   face_id: string;
@@ -13,6 +14,7 @@ type Row = {
 };
 
 export default function RoyaltyWallet({ faceName }: { faceName?: string }) {
+  const { t } = useTranslation();
   const { data, isLoading, error } = useQuery<Row[]>({
     queryKey: ["v_face_payouts"],
     queryFn: async () => {

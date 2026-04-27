@@ -9,6 +9,7 @@ import {
 import { listTransactions, type StudioTransaction } from "@/api/studio";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   open: boolean;
@@ -37,6 +38,7 @@ export default function WalletTransactionsDialog({
   open,
   onOpenChange,
 }: Props) {
+  const { t } = useTranslation();
   const { data, isLoading, error } = useQuery({
     queryKey: ["studio", "transactions"],
     queryFn: () => listTransactions(),

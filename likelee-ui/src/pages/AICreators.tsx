@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { useTranslation } from "react-i18next";
 
 const creators = [
   {
@@ -80,6 +81,7 @@ const creators = [
 ];
 
 export default function AICreators() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [showEarnings, setShowEarnings] = useState(false);
 

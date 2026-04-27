@@ -48,8 +48,10 @@ import {
   FilePenLine,
 } from "lucide-react";
 import { ScoutingTemplate, ScoutingOffer } from "@/types/scouting";
+import { useTranslation } from "react-i18next";
 
 export default function ScoutingOffers() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
