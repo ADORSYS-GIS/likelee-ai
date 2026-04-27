@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { base44 } from "@/api/base44Client";
 import {
   StudioAssetPicker,
@@ -249,6 +250,7 @@ const promptSuggestions = [
 ];
 
 const StudioVideo = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -714,7 +716,7 @@ const StudioVideo = () => {
                   fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                 }}
               >
-                StudioVideo
+                {t("studio.video.title", { defaultValue: "StudioVideo" })}
               </h1>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div
@@ -734,7 +736,7 @@ const StudioVideo = () => {
                     letterSpacing: "0.05em",
                   }}
                 >
-                  AI Engine Active
+                  {t("studio.video.engineActive", { defaultValue: "AI Engine Active" })}
                 </span>
               </div>
             </div>
@@ -761,7 +763,7 @@ const StudioVideo = () => {
               <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
                 {credits}
               </span>
-              <span style={{ fontSize: 11, color: "#94A3B8" }}>Credits</span>
+              <span style={{ fontSize: 11, color: "#94A3B8" }}>{t("common.credits", { defaultValue: "Credits" })}</span>
             </button>
 
             <button
@@ -779,7 +781,7 @@ const StudioVideo = () => {
                 transition: "all 0.2s",
               }}
             >
-              + Add Credits
+              + {t("studio.video.addCredits", { defaultValue: "Add Credits" })}
             </button>
           </div>
         </div>
@@ -836,10 +838,10 @@ const StudioVideo = () => {
                   fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                 }}
               >
-                Configuration
+                {t("studio.video.configuration.title", { defaultValue: "Configuration" })}
               </h2>
               <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.5 }}>
-                Tweak parameters to perfect your AI generation.
+                {t("studio.video.configuration.subtitle", { defaultValue: "Tweak parameters to perfect your AI generation." })}
               </p>
             </div>
 
@@ -857,7 +859,7 @@ const StudioVideo = () => {
                     letterSpacing: "0.05em",
                   }}
                 >
-                  Select AI Model
+                  {t("studio.video.configuration.selectModel", { defaultValue: "Select AI Model" })}
                 </label>
                 <Select
                   value={selectedModel}
@@ -889,7 +891,7 @@ const StudioVideo = () => {
                           {selectedModelData?.name}
                         </div>
                         <div style={{ fontSize: 11, color: "#94A3B8" }}>
-                          {selectedModelData?.cost} credits
+                          {selectedModelData?.cost} {t("common.credits_lower", { defaultValue: "credits" })}
                         </div>
                       </div>
                     </div>

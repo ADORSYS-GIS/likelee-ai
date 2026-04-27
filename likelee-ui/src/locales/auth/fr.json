@@ -247,6 +247,16 @@
       "rejected": "Rejeté"
     }
   },
+  "unauthorized": {
+    "title": "Accès Refusé",
+    "description": "Oups ! Vous n'avez pas les permissions requises pour voir cette page. Cette zone est réservée uniquement aux {role}.",
+    "roles": {
+      "brandsAndAgencies": "Marques et Agences",
+      "authorizedUsers": "utilisateurs autorisés"
+    },
+    "goBack": "Retour",
+    "contactSupport": "Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le support ou vérifier les paramètres de votre compte."
+  },
   "forgotPasswordPage": {
     "title": "Réinitialisez votre mot de passe",
     "instructions": "Entrez votre adresse e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe.",

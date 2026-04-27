@@ -306,6 +306,16 @@
       "rejected": "Rejected"
     }
   },
+  "unauthorized": {
+    "title": "Access Denied",
+    "description": "Oops! You don't have the required permissions to view this page. This area is restricted to {role} only.",
+    "roles": {
+      "brandsAndAgencies": "Brands and Agencies",
+      "authorizedUsers": "authorized users"
+    },
+    "goBack": "Go Back",
+    "contactSupport": "If you believe this is a mistake, please contact support or check your account settings."
+  },
   "forgotPasswordPage": {
     "title": "Reset your password",
     "instructions": "Enter your email address and we will send you a link to reset your password.",

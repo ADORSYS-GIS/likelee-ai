@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 type TeamRoleValue = "owner" | "admin" | "project_manager" | "reviewer";
 
@@ -174,6 +175,7 @@ export function TeamManagementCard({
   seatLimit?: number | null;
   seatLimitReached?: boolean;
 }) {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -202,6 +204,34 @@ export function TeamManagementCard({
   const [deletingMember, setDeletingMember] = React.useState(false);
 
   const seatLimitBlocked = seatLimit === 0 || seatLimitReached === true;
+
+  const formatRoleLabel = React.useCallback(
+    (role?: string) => {
+      switch (role) {
+        case "owner":
+          return t("dashboard.teamManagement.roles.owner", {
+            defaultValue: "Owner",
+          });
+        case "admin":
+          return t("dashboard.teamManagement.roles.admin", {
+            defaultValue: "Admin",
+          });
+        case "project_manager":
+          return t("dashboard.teamManagement.roles.projectManager", {
+            defaultValue: "Project Manager",
+          });
+        case "reviewer":
+          return t("dashboard.teamManagement.roles.reviewer", {
+            defaultValue: "Reviewer",
+          });
+        default:
+          return role || t("dashboard.teamManagement.roles.unknown", {
+            defaultValue: "Unknown",
+          });
+      }
+    },
+    [t],
+  );
 
   const inviteRoleOption = React.useMemo(
     () => TEAM_ROLE_OPTIONS.find((option) => option.value === inviteRole),
@@ -529,7 +559,9 @@ export function TeamManagementCard({
               onClick={() => setShowActivityModal(true)}
             >
               <History className="w-4 h-4 mr-2" />
-              Activity
+              {t("dashboard.teamManagement.activity", {
+                defaultValue: "Activity",
+              })}
             </Button>
             <Button
               className={accentClassName}
@@ -538,8 +570,12 @@ export function TeamManagementCard({
             >
               <Plus className="w-4 h-4 mr-2" />
               {seatLimitBlocked
-                ? "Upgrade to Add Members"
-                : "Invite Team Member"}
+                ? t("dashboard.teamManagement.upgradeToAddMembers", {
+                    defaultValue: "Upgrade to Add Members",
+                  })
+                : t("dashboard.teamManagement.inviteTeamMember", {
+                    defaultValue: "Invite Team Member",
+                  })}
             </Button>
           </div>
         </div>
@@ -547,7 +583,9 @@ export function TeamManagementCard({
         {loading ? (
           <div className="mt-6 flex items-center gap-2 text-sm text-gray-500">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Loading team members...
+            {t("dashboard.teamManagement.loadingMembers", {
+              defaultValue: "Loading team members...",
+            })}
           </div>
         ) : (
           <div className="mt-6 space-y-6">
@@ -560,7 +598,9 @@ export function TeamManagementCard({
                       : "text-sm font-bold text-gray-900 uppercase tracking-wide"
                   }
                 >
-                  Active Members
+                  {t("dashboard.teamManagement.activeMembers", {
+                    defaultValue: "Active Members",
+                  })}
                 </h4>
                 <Badge
                   variant="secondary"
@@ -570,7 +610,10 @@ export function TeamManagementCard({
                       : ""
                   }
                 >
-                  {(context?.members || []).length} Members
+                  {t("dashboard.teamManagement.membersCount", {
+                    defaultValue: "{{count}} Members",
+                    count: (context?.members || []).length,
+                  })}
                 </Badge>
               </div>
               <div className="space-y-3">
@@ -626,7 +669,9 @@ export function TeamManagementCard({
                                 : "text-sm text-gray-600"
                             }
                           >
-                            Added{" "}
+                            {t("dashboard.teamManagement.added", {
+                              defaultValue: "Added",
+                            })}{" "}
                             {member.created_at
                               ? new Date(member.created_at).toLocaleDateString()
                               : "recently"}
@@ -641,7 +686,7 @@ export function TeamManagementCard({
                               : "bg-blue-100 text-blue-700 border border-blue-300"
                           }
                         >
-                          {formatTeamRoleLabel(member.role)}
+                          {formatRoleLabel(member.role)}
                         </Badge>
                         {canEditRole ? (
                           <Button
@@ -683,7 +728,9 @@ export function TeamManagementCard({
                         : "rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500"
                     }
                   >
-                    No team members found yet.
+                    {t("dashboard.teamManagement.noMembers", {
+                      defaultValue: "No team members found yet.",
+                    })}
                   </div>
                 ) : null}
               </div>
@@ -698,7 +745,9 @@ export function TeamManagementCard({
                       : "text-sm font-bold text-gray-900 uppercase tracking-wide"
                   }
                 >
-                  Pending Invites
+                  {t("dashboard.teamManagement.pendingInvites", {
+                    defaultValue: "Pending Invites",
+                  })}
                 </h4>
                 <Badge
                   variant="secondary"
@@ -713,7 +762,9 @@ export function TeamManagementCard({
                       (invite) => invite.status === "pending",
                     ).length
                   }{" "}
-                  Pending
+                  {t("dashboard.teamManagement.pending", {
+                    defaultValue: "Pending",
+                  })}
                 </Badge>
               </div>
               <div className="space-y-3">
@@ -745,7 +796,10 @@ export function TeamManagementCard({
                               : "text-sm text-gray-600"
                           }
                         >
-                          {formatTeamRoleLabel(invite.role)} · Expires{" "}
+                          {formatRoleLabel(invite.role)} ·{" "}
+                          {t("dashboard.teamManagement.expires", {
+                            defaultValue: "Expires",
+                          })}{" "}
                           {new Date(invite.expires_at).toLocaleString()}
                         </p>
                       </div>
@@ -756,7 +810,9 @@ export function TeamManagementCard({
                             : "bg-amber-100 text-amber-700 border border-amber-300"
                         }
                       >
-                        Pending
+                        {t("dashboard.teamManagement.pending", {
+                          defaultValue: "Pending",
+                        })}
                       </Badge>
                     </div>
                   ))}
@@ -770,7 +826,9 @@ export function TeamManagementCard({
                         : "rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500"
                     }
                   >
-                    No pending invites.
+                    {t("dashboard.teamManagement.noPendingInvites", {
+                      defaultValue: "No pending invites.",
+                    })}
                   </div>
                 ) : null}
               </div>
@@ -795,7 +853,9 @@ export function TeamManagementCard({
                   : "text-xl font-bold text-gray-900"
               }
             >
-              Invite Team Member
+              {t("dashboard.teamManagement.inviteTeamMember", {
+                defaultValue: "Invite Team Member",
+              })}
             </DialogTitle>
             <DialogDescription
               className={
@@ -805,8 +865,13 @@ export function TeamManagementCard({
               }
             >
               {organizationType === "brand"
-                ? "Add a new collaborator to your brand"
-                : "Send an email invitation to join your team"}
+                ? t("dashboard.teamManagement.inviteBrandDescription", {
+                    defaultValue: "Add a new collaborator to your brand",
+                  })
+                : t("dashboard.teamManagement.inviteDescription", {
+                    defaultValue:
+                      "Send an email invitation to join your team",
+                  })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
@@ -818,12 +883,16 @@ export function TeamManagementCard({
                     : "text-sm font-bold text-gray-900"
                 }
               >
-                Email Address
+                {t("dashboard.teamManagement.emailAddress", {
+                  defaultValue: "Email Address",
+                })}
               </Label>
               <Input
                 value={inviteEmail}
                 onChange={(event) => setInviteEmail(event.target.value)}
-                placeholder="colleague@example.com"
+                placeholder={t("dashboard.teamManagement.emailPlaceholder", {
+                  defaultValue: "colleague@example.com",
+                })}
                 className={
                   organizationType === "brand"
                     ? "rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 text-sm font-bold"
@@ -839,7 +908,9 @@ export function TeamManagementCard({
                     : "text-sm font-bold text-gray-900"
                 }
               >
-                User Role
+                {t("dashboard.teamManagement.userRole", {
+                  defaultValue: "User Role",
+                })}
               </Label>
               <Select
                 value={inviteRole}
@@ -854,7 +925,11 @@ export function TeamManagementCard({
                       : "h-11 bg-gray-50 border-gray-200 rounded-xl"
                   }
                 >
-                  <SelectValue placeholder="Select role" />
+                  <SelectValue
+                    placeholder={t("dashboard.teamManagement.selectRole", {
+                      defaultValue: "Select role",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {TEAM_ROLE_OPTIONS.map((option) => (
@@ -882,7 +957,9 @@ export function TeamManagementCard({
                         : "text-xs font-bold text-gray-700 uppercase tracking-wide"
                     }
                   >
-                    Access Rights
+                    {t("dashboard.teamManagement.accessRights", {
+                      defaultValue: "Access Rights",
+                    })}
                   </div>
                   <Badge
                     variant="secondary"
@@ -927,9 +1004,15 @@ export function TeamManagementCard({
                     : "text-xs text-indigo-700 font-medium leading-relaxed"
                 }
               >
-                <span className="font-bold">Note:</span> The invited user will
-                receive an email with instructions to set up their account and
-                access the dashboard with the assigned role.
+                <span className="font-bold">
+                  {t("dashboard.teamManagement.note", {
+                    defaultValue: "Note:",
+                  })}
+                </span>{" "}
+                {t("dashboard.teamManagement.inviteNote", {
+                  defaultValue:
+                    "The invited user will receive an email with instructions to set up their account and access the dashboard with the assigned role.",
+                })}
               </p>
             </div>
           </div>
@@ -944,7 +1027,9 @@ export function TeamManagementCard({
               }
               disabled={submittingInvite}
             >
-              Cancel
+              {t("campaignsDashboard.builder.actions.cancel", {
+                defaultValue: "Cancel",
+              })}
             </Button>
             <Button
               onClick={handleInvite}
@@ -960,7 +1045,13 @@ export function TeamManagementCard({
               ) : (
                 <Mail className="w-4 h-4" />
               )}
-              {submittingInvite ? "Sending..." : "Send Invitation"}
+              {submittingInvite
+                ? t("dashboard.teamManagement.sending", {
+                    defaultValue: "Sending...",
+                  })
+                : t("dashboard.teamManagement.sendInvitation", {
+                    defaultValue: "Send Invitation",
+                  })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -973,14 +1064,22 @@ export function TeamManagementCard({
               Update Team Role
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-500 font-medium">
-              {selectedMember?.email || "Member"} is currently{" "}
-              {formatTeamRoleLabel(selectedMember?.role)}.
+              {selectedMember?.email ||
+                t("dashboard.teamManagement.member", {
+                  defaultValue: "Member",
+                })}{" "}
+              {t("dashboard.teamManagement.isCurrently", {
+                defaultValue: "is currently",
+              })}{" "}
+              {formatRoleLabel(selectedMember?.role)}.
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-900">
-                New Role
+                {t("dashboard.teamManagement.newRole", {
+                  defaultValue: "New Role",
+                })}
               </Label>
               <Select
                 value={pendingRoleValue}
@@ -989,7 +1088,11 @@ export function TeamManagementCard({
                 }
               >
                 <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
-                  <SelectValue placeholder="Select role" />
+                  <SelectValue
+                    placeholder={t("dashboard.teamManagement.selectRole", {
+                      defaultValue: "Select role",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {TEAM_ROLE_OPTIONS.map((option) => (
@@ -1005,7 +1108,9 @@ export function TeamManagementCard({
               <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                    Access Rights
+                    {t("dashboard.teamManagement.accessRights", {
+                      defaultValue: "Access Rights",
+                    })}
                   </div>
                   <Badge variant="secondary">
                     {pendingRoleOption.permissions.length}
@@ -1024,8 +1129,10 @@ export function TeamManagementCard({
               </div>
             ) : null}
             <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium text-amber-800">
-              This change takes effect immediately for the member's active
-              session.
+              {t("dashboard.teamManagement.roleChangeImmediate", {
+                defaultValue:
+                  "This change takes effect immediately for the member's active session.",
+              })}
             </div>
           </div>
           <DialogFooter className="p-6 border-t border-gray-100 gap-2 sm:gap-0">
@@ -1035,14 +1142,22 @@ export function TeamManagementCard({
               className="font-bold"
               disabled={updatingRole}
             >
-              Cancel
+              {t("campaignsDashboard.builder.actions.cancel", {
+                defaultValue: "Cancel",
+              })}
             </Button>
             <Button
               onClick={handleRoleUpdate}
               disabled={updatingRole}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl"
             >
-              {updatingRole ? "Saving..." : "Confirm Role Change"}
+              {updatingRole
+                ? t("campaignsDashboard.builder.actions.saving", {
+                    defaultValue: "Saving...",
+                  })
+                : t("dashboard.teamManagement.confirmRoleChange", {
+                    defaultValue: "Confirm Role Change",
+                  })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1051,15 +1166,23 @@ export function TeamManagementCard({
       <Dialog open={showActivityModal} onOpenChange={setShowActivityModal}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Team Activity</DialogTitle>
+            <DialogTitle>
+              {t("dashboard.teamManagement.teamActivity", {
+                defaultValue: "Team Activity",
+              })}
+            </DialogTitle>
             <DialogDescription>
-              Recent invite, role, and membership events.
+              {t("dashboard.teamManagement.activityDescription", {
+                defaultValue: "Recent invite, role, and membership events.",
+              })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             {logs.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
-                No activity recorded yet.
+                {t("dashboard.teamManagement.noActivity", {
+                  defaultValue: "No activity recorded yet.",
+                })}
               </div>
             ) : (
               logs.map((log) => {
