@@ -54,7 +54,7 @@ export const AddProspectModal = ({
   });
 
   const handleInputChange = (field: keyof ScoutingProspect, value: any) => {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

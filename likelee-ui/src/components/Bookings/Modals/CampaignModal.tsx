@@ -98,7 +98,7 @@ export const CampaignModal = ({
   });
 
   const handleSubmit = (e: React.FormEvent) => {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
     e.preventDefault();
     if (!formData.name) {
       toast({

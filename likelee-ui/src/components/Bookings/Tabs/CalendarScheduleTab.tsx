@@ -121,7 +121,7 @@ export const CalendarScheduleTab = ({
   const handlePrevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
   const handleMonthChange = (monthNameLower: string) => {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
     const months = [
       "january",
       "february",

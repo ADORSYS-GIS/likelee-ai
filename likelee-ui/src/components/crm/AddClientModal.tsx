@@ -91,7 +91,7 @@ const AddClientModal = ({
   });
 
   const toggleTag = (tag: string) => {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
     const currentTags = formData.tags
       ? formData.tags
           .split(",")

@@ -35,7 +35,7 @@ export const ActiveLicenseDetailsSheet: React.FC<
   if (!license) return null;
 
   const formatCurrency = (val: number) => {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
