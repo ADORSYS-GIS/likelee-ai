@@ -1115,6 +1115,10 @@
       }
     },
     "packages": {
+      "card": {
+        "talentCount": "{{count}} {{entity}}",
+        "talentCount_other": "{{count}} {{entity}}e"
+      },
       "stats": {
         "totalPackages": "Pakete gesamt",
         "activeShares": "Aktive Freigaben",
@@ -1129,7 +1133,10 @@
         "createNew": "Neu erstellen",
         "template": "Vorlage",
         "package": "Paket",
-        "packagePlural": "Pakete"
+        "packagePlural": "Pakete",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "sendToClient": "An Kunden senden"
       },
       "offerBanner": {
         "title": "Für Angebot senden",
@@ -1288,6 +1295,20 @@
     },
     "payouts": {
       "title": "Provisions- und Auszahlungsverwaltung",
+      "connectBank": {
+        "title": "Verbinden Sie Ihr Bankkonto",
+        "subtitle": "Verknüpfen Sie Ihr Bankkonto, um Direktzahlungen von Kunden zu erhalten und",
+        "changeAccount": "Konto ändern",
+        "connectBankAccount": "Bankkonto verbinden",
+        "connectStripe": "Mit Stripe verbinden",
+        "whyTitle": "Warum Ihr Bankkonto verbinden?",
+        "whyItem1": "Rechnungszahlungen direkt auf Ihr Konto erhalten",
+        "whyItem2": "Talent-Provisionsauszahlungen automatisieren",
+        "whyItem3": "Cashflow verfolgen und Zahlungen abstimmen",
+        "whyItem4": "Bankniveau-Sicherheit mit 256-Bit-Verschlüsselung",
+        "poweredByStripe": "Bereitgestellt von Stripe Connect",
+        "whatYouNeed": "Was Sie benötigen:"
+      },
       "actions": {
         "exportReport": "Bericht exportieren"
       },
@@ -1311,6 +1332,58 @@
         "toEntityThisYear": "Dieses Jahr an {{entitySingular}} ausgezahlt",
         "agencyCommissionYTD": "Agenturprovision YTD",
         "avgCommissionRate": "{{rate}}% durchschnittliche Provision"
+      },
+      "commissionStructure": {
+        "title": "{{entitySingular}} Provisionsregeln",
+        "description": "Von der Agentur verwaltete {{entitySingularLower}} können hier einstellungsbasierte Überschreibungen verwenden. Marketplace-verbundene {{entitySingularLower}} folgen dem aktiven unterzeichneten Vertragssatz und sind auf diesem Bildschirm schreibgeschützt."
+      },
+      "payoutPreferences": {
+        "scheduleSettings": "Auszahlungsplan-Einstellungen",
+        "frequency": "Auszahlungshäufigkeit",
+        "selectFrequency": "Häufigkeit auswählen",
+        "weekly": "Wöchentlich",
+        "biWeekly": "Zweiwöchentlich",
+        "monthly": "Monatlich",
+        "frequencyDescription": "Wie oft {{entitySingularLower}} ihren Anteil erhalten",
+        "minThreshold": "Mindestauszahlungsschwelle",
+        "minThresholdDescription": "Nicht auszahlen, wenn der Saldo unter diesem Betrag liegt",
+        "method": "Auszahlungsmethode",
+        "stripeConnected": "Stripe-verbundenes Konto",
+        "autoDeduct": "Agenturprovision automatisch abziehen und Nettobetrag an Talent senden",
+        "active": "Aktiv",
+        "howItWorks": "So funktioniert es:",
+        "upcomingSchedule": "Bevorstehender Auszahlungsplan",
+        "scheduledPayout": "Geplante Auszahlung",
+        "scheduled": "geplant",
+        "noUpcoming": "Keine bevorstehenden Auszahlungen",
+        "noUpcomingDescription": "Auszahlungen werden hier angezeigt, sobald sie geplant sind"
+      },
+      "commissionBreakdown": {
+        "title": "Aktuelle Lizenzgeschäftsaufschlüsselungen",
+        "description": "Sehen Sie, wie Provisionen für aktuelle Lizenzgeschäfte aufgeteilt wurden",
+        "noDeals": "Keine aktuellen Geschäfte gefunden",
+        "dealDate": "Geschäftsdatum",
+        "client": "Kunde",
+        "talent": "{{entitySingular}}",
+        "totalDeal": "Gesamtgeschäft",
+        "agencyCommission": "Agenturprovision",
+        "talentPayout": "{{entitySingular}} Auszahlung",
+        "status": "Status"
+      },
+      "paymentHistory": {
+        "topEarningTitle": "Top-Verdiener {{entitySingular}} (Letzte 30 Tage)",
+        "campaigns": "{{count}} Kampagnen",
+        "talentLabel": "{{entitySingular}}:",
+        "agencyLabel": "Agentur:",
+        "noPayments": "Keine erfolgreichen Zahlungen in den letzten 30 Tagen gefunden."
+      },
+      "royalties": {
+        "accruedThisMonth": "Diesen Monat aufgelaufen",
+        "liveEarningsPool": "Live-Einnahmen-Pool",
+        "pendingApproval": "Ausstehende Freigabe",
+        "awaitingPayoutProcessing": "Warten auf Auszahlungsverarbeitung",
+        "ytdPaidToEntity": "YTD an {{entitySingular}} ausgezahlt",
+        "totalNetPayouts": "Gesamte Nettoauszahlungen 2024"
       }
     },
     "subscribe": {
@@ -1676,7 +1749,9 @@
         "resendPaymentLink": "Zahlungslink erneut senden",
         "sending": "Senden...",
         "restore": "Wiederherstellen",
+        "recoverToActive": "Als aktiv wiederherstellen",
         "approve": "Genehmigen",
+        "acceptWriteContract": "Akzeptieren und Vertrag erstellen",
         "counterOffer": "Gegenangebot",
         "decline": "Ablehnen"
       },
@@ -2110,6 +2185,10 @@
       },
       "createPackage": {
         "title": "Neues Talent-Paket erstellen",
+        "editTitle": "{{entity}}-Paket bearbeiten",
+        "subtitle": "Erstellen Sie ein starkes Portfolio-Paket, um Ihr {{entity}} Kunden zu präsentieren",
+        "fromTemplatePrefix": "Neues Paket aus Vorlage erstellen",
+        "fromTemplateSuffix": "",
         "steps": {
           "basic": "Basisinformationen",
           "talent": "Talente auswählen",
@@ -2141,6 +2220,7 @@
         },
         "customize": {
           "title": "Anpassen",
+          "brandingApplied": "Branding angewendet",
           "primaryColor": "Primärfarbe",
           "secondaryColor": "Sekundärfarbe",
           "customMessage": "Benutzerdefinierte Nachricht",
@@ -2235,7 +2315,9 @@
         "rejectSuccess": "Lieferung erfolgreich abgelehnt",
         "rejectFailed": "Ablehnung der Lieferung fehlgeschlagen",
         "submitSuccess": "Lieferung erfolgreich eingereicht",
-        "submitFailed": "Einreichung der Lieferung fehlgeschlagen"
+        "submitFailed": "Einreichung der Lieferung fehlgeschlagen",
+        "requestAsset": "Asset anfordern",
+        "confirmDelete": "Dies entfernt die Lieferung dauerhaft. Fortfahren?"
       },
       "brandConnections": {
         "title": "Markenverbindungen",
@@ -2280,6 +2362,9 @@
           "assignmentsLockedDesc": "Zuweisungen sind nach dem Senden des Vertrags gesperrt.",
           "contractAlreadySigned": "Dieser Vertrag wurde bereits unterschrieben.",
           "cantUnassignAfterSent": "Sie können zugewiesene Talente nach dem Senden des Vertrags nicht mehr ändern.",
+          "talentUnassigned": "Talentzuweisung entfernt",
+          "talentRemovedFromOffer": "Das Talent wurde aus diesem Angebot entfernt.",
+          "assignmentFailed": "Zuweisung fehlgeschlagen",
           "disconnected": "Getrennt",
           "disconnectedDesc": "Marke erfolgreich getrennt.",
           "disconnectFailed": "Trennen der Marke fehlgeschlagen"
@@ -2337,7 +2422,8 @@
           "uploadContractPdf": "Vertrags-PDF hochladen",
           "uploadPdfDescription": "Laden Sie ein PDF hoch, um eine wiederverwendbare Vertragsvorlage für dieses Angebot zu erstellen.",
           "assignTalentFirst": "Zuerst Talente zuweisen",
-          "assignTalentFirstDescription": "Weisen Sie diesem Angebot mindestens ein Talent zu, bevor Sie einen Vertrag erstellen."
+          "assignTalentFirstDescription": "Weisen Sie diesem Angebot mindestens ein Talent zu, bevor Sie einen Vertrag erstellen.",
+          "assignTalent": "Talent zuweisen"
         },
         "feedback": {
           "title": "Kunden-Feedback",
@@ -2376,6 +2462,22 @@
           "saveSuccess": "Profil erfolgreich gespeichert",
           "saveFailed": "Speichern des Profils fehlgeschlagen",
           "currentPlan": "Aktueller Plan"
+        },
+        "agencyInformation": {
+          "title": "Agenturinformationen",
+          "verified": "Verifiziert",
+          "agencyName": "Agenturname",
+          "legalEntityName": "Rechtsträger",
+          "address": "Adresse",
+          "city": "Stadt",
+          "stateProvince": "Bundesland/Provinz",
+          "zipPostalCode": "PLZ",
+          "country": "Land",
+          "timeZone": "Zeitzone",
+          "phone": "Telefon",
+          "email": "E-Mail",
+          "website": "Website",
+          "taxIdEin": "Steuernummer / EIN"
         },
         "subTabs": {
           "profile": "Profil",

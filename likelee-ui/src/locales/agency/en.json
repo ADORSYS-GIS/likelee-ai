@@ -685,6 +685,10 @@
       }
     },
     "packages": {
+      "card": {
+        "talentCount": "{{count}} {{entity}}",
+        "talentCount_other": "{{count}} {{entity}}s"
+      },
       "stats": {
         "totalPackages": "Total Packages",
         "activeShares": "Active Shares",
@@ -699,7 +703,10 @@
         "createNew": "Create New",
         "template": "Template",
         "package": "Package",
-        "packagePlural": "Packages"
+        "packagePlural": "Packages",
+        "edit": "Edit",
+        "delete": "Delete",
+        "sendToClient": "Send to Client"
       },
       "offerBanner": {
         "title": "Sending for offer",
@@ -895,6 +902,58 @@
         "toEntityThisYear": "To {{entitySingular}} This year",
         "agencyCommissionYTD": "Agency Commission YTD",
         "avgCommissionRate": "{{rate}}% avg commission rate"
+      },
+      "commissionStructure": {
+        "title": "{{entitySingular}} Commission Rules",
+        "description": "Agency-managed {{entitySingularLower}} can use settings-based overrides here. Marketplace-connected {{entitySingularLower}} follow the active signed contract rate and are read-only on this screen."
+      },
+      "payoutPreferences": {
+        "scheduleSettings": "Payout Schedule Settings",
+        "frequency": "Payout Frequency",
+        "selectFrequency": "Select Frequency",
+        "weekly": "Weekly",
+        "biWeekly": "Bi-Weekly",
+        "monthly": "Monthly",
+        "frequencyDescription": "How often {{entitySingularLower}} receive their share",
+        "minThreshold": "Minimum Payout Threshold",
+        "minThresholdDescription": "Don't pay if balance is under this amount",
+        "method": "Payout Method",
+        "stripeConnected": "Stripe Connected Account",
+        "autoDeduct": "Auto-deduct agency commission and send net to talent",
+        "active": "Active",
+        "howItWorks": "How it works:",
+        "upcomingSchedule": "Upcoming Payout Schedule",
+        "scheduledPayout": "Scheduled payout",
+        "scheduled": "scheduled",
+        "noUpcoming": "No upcoming payouts",
+        "noUpcomingDescription": "Payouts will appear here once scheduled"
+      },
+      "commissionBreakdown": {
+        "title": "Recent License Deal Breakdowns",
+        "description": "View how commissions were split for recent licensing deals",
+        "noDeals": "No recent deals found",
+        "dealDate": "Deal Date",
+        "client": "Client",
+        "talent": "{{entitySingular}}",
+        "totalDeal": "Total Deal",
+        "agencyCommission": "Agency Commission",
+        "talentPayout": "{{entitySingular}} Payout",
+        "status": "Status"
+      },
+      "paymentHistory": {
+        "topEarningTitle": "Top Earning {{entitySingular}} (Last 30 Days)",
+        "campaigns": "{{count}} campaigns",
+        "talentLabel": "{{entitySingular}}:",
+        "agencyLabel": "Agency:",
+        "noPayments": "No successful payments found in the last 30 days."
+      },
+      "royalties": {
+        "accruedThisMonth": "Accrued This Month",
+        "liveEarningsPool": "Live Earnings Pool",
+        "pendingApproval": "Pending Approval",
+        "awaitingPayoutProcessing": "Awaiting Payout Processing",
+        "ytdPaidToEntity": "YTD Paid to {{entitySingular}}",
+        "totalNetPayouts": "Total Net Payouts 2024"
       }
     },
     "subscribe": {
@@ -1765,6 +1824,10 @@
       },
       "createPackage": {
         "title": "Create a New Talent Package",
+        "editTitle": "Edit {{entity}} Package",
+        "subtitle": "Build a beautiful portfolio package to showcase your {{entity}} to clients",
+        "fromTemplatePrefix": "Creating new package from",
+        "fromTemplateSuffix": "template",
         "steps": {
           "basic": "Basic Info",
           "talent": "Select Talents",
@@ -1796,6 +1859,7 @@
         },
         "customize": {
           "title": "Customize",
+          "brandingApplied": "Branding applied",
           "primaryColor": "Primary Color",
           "secondaryColor": "Secondary Color",
           "customMessage": "Custom Message",
@@ -1890,7 +1954,9 @@
         "rejectSuccess": "Deliverable rejected successfully",
         "rejectFailed": "Failed to reject deliverable",
         "submitSuccess": "Deliverable submitted successfully",
-        "submitFailed": "Failed to submit deliverable"
+        "submitFailed": "Failed to submit deliverable",
+        "requestAsset": "Request Asset",
+        "confirmDelete": "This will permanently remove the deliverable. Continue?"
       },
       "brandConnections": {
         "title": "Brand Connections",
@@ -1943,6 +2009,9 @@
           "assignmentsLockedDesc": "Assignments are locked after the contract is sent.",
           "contractAlreadySigned": "This contract has already been signed.",
           "cantUnassignAfterSent": "You can’t change assigned talents after the contract is sent.",
+          "talentUnassigned": "Talent unassigned",
+          "talentRemovedFromOffer": "Talent was removed from this offer.",
+          "assignmentFailed": "Assignment failed",
           "disconnected": "Disconnected",
           "disconnectedDesc": "Brand disconnected successfully.",
           "disconnectFailed": "Failed to disconnect brand"
@@ -1984,7 +2053,8 @@
           "uploadContractPdf": "Upload contract PDF",
           "uploadPdfDescription": "Upload a PDF to create a reusable contract template for this offer.",
           "assignTalentFirst": "Assign talent first",
-          "assignTalentFirstDescription": "Assign at least one talent to this offer before creating a contract."
+          "assignTalentFirstDescription": "Assign at least one talent to this offer before creating a contract.",
+          "assignTalent": "Assign Talent"
         },
         "feedback": {
           "title": "Client Feedback",
@@ -2016,6 +2086,22 @@
           "saveSuccess": "Profile saved successfully",
           "saveFailed": "Failed to save profile",
           "currentPlan": "Current Plan"
+        },
+        "agencyInformation": {
+          "title": "Agency Information",
+          "verified": "Verified",
+          "agencyName": "Agency Name",
+          "legalEntityName": "Legal Entity Name",
+          "address": "Address",
+          "city": "City",
+          "stateProvince": "State/Province",
+          "zipPostalCode": "ZIP/Postal Code",
+          "country": "Country",
+          "timeZone": "Time Zone",
+          "phone": "Phone",
+          "email": "Email",
+          "website": "Website",
+          "taxIdEin": "Tax ID / EIN"
         },
         "subTabs": {
           "profile": "Profile",

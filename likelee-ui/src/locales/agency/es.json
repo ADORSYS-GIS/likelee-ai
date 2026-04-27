@@ -1164,6 +1164,10 @@
       }
     },
     "packages": {
+      "card": {
+        "talentCount": "{{count}} {{entity}}",
+        "talentCount_other": "{{count}} {{entity}}s"
+      },
       "stats": {
         "totalPackages": "Paquetes totales",
         "activeShares": "Enlaces activos",
@@ -1178,7 +1182,10 @@
         "createNew": "Crear nuevo",
         "template": "Plantilla",
         "package": "Paquete",
-        "packagePlural": "Paquetes"
+        "packagePlural": "Paquetes",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "sendToClient": "Enviar al cliente"
       },
       "offerBanner": {
         "title": "Envío para oferta",
@@ -2228,6 +2235,10 @@
       },
       "createPackage": {
         "title": "Crear un nuevo paquete de talentos",
+        "editTitle": "Editar paquete de {{entity}}",
+        "subtitle": "Crea un portafolio atractivo para mostrar tu {{entity}} a clientes",
+        "fromTemplatePrefix": "Creando un nuevo paquete desde la plantilla",
+        "fromTemplateSuffix": "",
         "steps": {
           "basic": "Información básica",
           "talent": "Seleccionar talentos",
@@ -2259,6 +2270,7 @@
         },
         "customize": {
           "title": "Personalizar",
+          "brandingApplied": "Marca aplicada",
           "primaryColor": "Color primario",
           "secondaryColor": "Color secundario",
           "customMessage": "Mensaje personalizado",

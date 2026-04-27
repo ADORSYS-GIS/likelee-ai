@@ -1114,6 +1114,10 @@
       }
     },
     "packages": {
+      "card": {
+        "talentCount": "{{count}} {{entity}}",
+        "talentCount_other": "{{count}} {{entity}}s"
+      },
       "stats": {
         "totalPackages": "Packages totaux",
         "activeShares": "Partages actifs",
@@ -1128,7 +1132,10 @@
         "createNew": "Créer nouveau",
         "template": "Template",
         "package": "Package",
-        "packagePlural": "Packages"
+        "packagePlural": "Packages",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "sendToClient": "Envoyer au client"
       },
       "offerBanner": {
         "title": "Envoi pour une offre",
@@ -1287,6 +1294,20 @@
     },
     "payouts": {
       "title": "Gestion des commissions et paiements",
+      "connectBank": {
+        "title": "Connectez votre compte bancaire",
+        "subtitle": "Liez votre compte bancaire pour recevoir des paiements directs des clients et",
+        "changeAccount": "Changer de compte",
+        "connectBankAccount": "Connecter un compte bancaire",
+        "connectStripe": "Se connecter avec Stripe",
+        "whyTitle": "Pourquoi connecter votre banque ?",
+        "whyItem1": "Recevez les paiements de factures directement sur votre compte",
+        "whyItem2": "Automatisez les paiements de commissions aux talents",
+        "whyItem3": "Suivez la trésorerie et rapprochez les paiements",
+        "whyItem4": "Sécurité bancaire avec chiffrement 256 bits",
+        "poweredByStripe": "Propulsé par Stripe Connect",
+        "whatYouNeed": "Ce dont vous aurez besoin :"
+      },
       "actions": {
         "exportReport": "Exporter le rapport"
       },
@@ -1310,6 +1331,58 @@
         "toEntityThisYear": "Versé au/à la {{entitySingular}} cette année",
         "agencyCommissionYTD": "Commission agence YTD",
         "avgCommissionRate": "{{rate}}% de commission moyenne"
+      },
+      "commissionStructure": {
+        "title": "Règles de commission {{entitySingular}}",
+        "description": "Les {{entitySingularLower}} gérés par l'agence peuvent utiliser des remplacements basés sur les paramètres ici. Les {{entitySingularLower}} connectés au marketplace suivent le taux de contrat signé actif et sont en lecture seule sur cet écran."
+      },
+      "payoutPreferences": {
+        "scheduleSettings": "Paramètres du calendrier de paiement",
+        "frequency": "Fréquence de paiement",
+        "selectFrequency": "Sélectionner la fréquence",
+        "weekly": "Hebdomadaire",
+        "biWeekly": "Bihebdomadaire",
+        "monthly": "Mensuel",
+        "frequencyDescription": "À quelle fréquence les {{entitySingularLower}} reçoivent leur part",
+        "minThreshold": "Seuil minimum de paiement",
+        "minThresholdDescription": "Ne pas payer si le solde est inférieur à ce montant",
+        "method": "Méthode de paiement",
+        "stripeConnected": "Compte Stripe connecté",
+        "autoDeduct": "Déduire automatiquement la commission de l'agence et envoyer le net au talent",
+        "active": "Actif",
+        "howItWorks": "Comment ça marche:",
+        "upcomingSchedule": "Calendrier de paiement à venir",
+        "scheduledPayout": "Paiement programmé",
+        "scheduled": "programmé",
+        "noUpcoming": "Aucun paiement à venir",
+        "noUpcomingDescription": "Les paiements apparaîtront ici une fois programmés"
+      },
+      "commissionBreakdown": {
+        "title": "Répartitions récentes des transactions de licence",
+        "description": "Voir comment les commissions ont été réparties pour les transactions de licence récentes",
+        "noDeals": "Aucune transaction récente trouvée",
+        "dealDate": "Date de la transaction",
+        "client": "Client",
+        "talent": "{{entitySingular}}",
+        "totalDeal": "Transaction totale",
+        "agencyCommission": "Commission agence",
+        "talentPayout": "Paiement {{entitySingular}}",
+        "status": "Statut"
+      },
+      "paymentHistory": {
+        "topEarningTitle": "{{entitySingular}} les mieux rémunérés (30 derniers jours)",
+        "campaigns": "{{count}} campagnes",
+        "talentLabel": "{{entitySingular}}:",
+        "agencyLabel": "Agence:",
+        "noPayments": "Aucun paiement réussi trouvé au cours des 30 derniers jours."
+      },
+      "royalties": {
+        "accruedThisMonth": "Cumulé ce mois-ci",
+        "liveEarningsPool": "Pool de gains en direct",
+        "pendingApproval": "En attente d'approbation",
+        "awaitingPayoutProcessing": "En attente de traitement du paiement",
+        "ytdPaidToEntity": "YTD payé à {{entitySingular}}",
+        "totalNetPayouts": "Total des paiements nets 2024"
       }
     },
     "subscribe": {
@@ -1675,7 +1748,9 @@
         "resendPaymentLink": "Renvoyer le lien de paiement",
         "sending": "Envoi...",
         "restore": "Restaurer",
+        "recoverToActive": "Rétablir en actif",
         "approve": "Approuver",
+        "acceptWriteContract": "Accepter et rédiger le contrat",
         "counterOffer": "Contre-offre",
         "decline": "Refuser"
       },
@@ -2109,6 +2184,10 @@
       },
       "createPackage": {
         "title": "Créer un nouveau package de talents",
+        "editTitle": "Modifier le package {{entity}}",
+        "subtitle": "Créez un beau portfolio pour présenter votre {{entity}} aux clients",
+        "fromTemplatePrefix": "Création d’un nouveau package depuis le modèle",
+        "fromTemplateSuffix": "",
         "steps": {
           "basic": "Informations de base",
           "talent": "Sélectionner les talents",
@@ -2140,6 +2219,7 @@
         },
         "customize": {
           "title": "Personnaliser",
+          "brandingApplied": "Branding appliqué",
           "primaryColor": "Couleur primaire",
           "secondaryColor": "Couleur secondaire",
           "customMessage": "Message personnalisé",
@@ -2234,7 +2314,9 @@
         "rejectSuccess": "Livraison rejetée avec succès",
         "rejectFailed": "Échec du rejet de la livraison",
         "submitSuccess": "Livraison soumise avec succès",
-        "submitFailed": "Échec de la soumission de la livraison"
+        "submitFailed": "Échec de la soumission de la livraison",
+        "requestAsset": "Demander un asset",
+        "confirmDelete": "Cette action supprimera définitivement la livraison. Continuer ?"
       },
       "brandConnections": {
         "title": "Connexions de marque",
@@ -2279,6 +2361,9 @@
           "assignmentsLockedDesc": "Les affectations sont verrouillées après l’envoi du contrat.",
           "contractAlreadySigned": "Ce contrat a déjà été signé.",
           "cantUnassignAfterSent": "Vous ne pouvez pas modifier les talents affectés après l’envoi du contrat.",
+          "talentUnassigned": "Talent désassigné",
+          "talentRemovedFromOffer": "Le talent a été retiré de cette offre.",
+          "assignmentFailed": "Échec de l’affectation",
           "disconnected": "Déconnecté",
           "disconnectedDesc": "Marque déconnectée avec succès.",
           "disconnectFailed": "Échec de la déconnexion de la marque"
@@ -2336,7 +2421,8 @@
           "uploadContractPdf": "Téléverser le PDF du contrat",
           "uploadPdfDescription": "Téléversez un PDF pour créer un modèle de contrat réutilisable pour cette offre.",
           "assignTalentFirst": "Assigner un talent d’abord",
-          "assignTalentFirstDescription": "Assignez au moins un talent à cette offre avant de créer un contrat."
+          "assignTalentFirstDescription": "Assignez au moins un talent à cette offre avant de créer un contrat.",
+          "assignTalent": "Assigner un talent"
         },
         "feedback": {
           "title": "Commentaires client",
@@ -2375,6 +2461,22 @@
           "saveSuccess": "Profil enregistré avec succès",
           "saveFailed": "Échec de l'enregistrement du profil",
           "currentPlan": "Plan actuel"
+        },
+        "agencyInformation": {
+          "title": "Informations de l'agence",
+          "verified": "Vérifié",
+          "agencyName": "Nom de l'agence",
+          "legalEntityName": "Nom de l'entité légale",
+          "address": "Adresse",
+          "city": "Ville",
+          "stateProvince": "État/Province",
+          "zipPostalCode": "Code postal",
+          "country": "Pays",
+          "timeZone": "Fuseau horaire",
+          "phone": "Téléphone",
+          "email": "Email",
+          "website": "Site web",
+          "taxIdEin": "Numéro fiscal / EIN"
         },
         "subTabs": {
           "profile": "Profil",
