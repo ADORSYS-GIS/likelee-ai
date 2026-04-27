@@ -26,3 +26,7 @@ dist-ssr
 .env
 .env.prod
 .env.local
+
+# Translation script outputs
+scripts/missing-keys-*.txt
+scripts/translation-gaps-report.json
