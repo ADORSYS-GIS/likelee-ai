@@ -128,7 +128,10 @@ const imageSizes = [
   { value: "landscape_16_9", label: "Landscape 16:9" },
 ];
 
+import { useTranslation } from "react-i18next";
+
 export default function StudioImage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -324,7 +327,7 @@ export default function StudioImage() {
               className="text-gray-400 hover:text-white hover:bg-white/5 transition-all"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Studio
+              {t("studio.image.backToStudio", { defaultValue: "Studio" })}
             </Button>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#32C8D1] to-[#6366F1] flex items-center justify-center shadow-[0_0_20px_rgba(50,200,209,0.3)]">
@@ -335,10 +338,10 @@ export default function StudioImage() {
                   className="text-xl font-bold tracking-tight text-white"
                   style={{ textShadow: "0 0 20px rgba(50,200,209,0.3)" }}
                 >
-                  AI Image Generator
+                  {t("studio.image.title", { defaultValue: "AI Image Generator" })}
                 </h1>
                 <p className="text-[10px] text-[#32C8D1] font-bold uppercase tracking-widest opacity-80">
-                  Premium Studio
+                  {t("studio.image.subtitle", { defaultValue: "Premium Studio" })}
                 </p>
               </div>
             </div>
@@ -349,7 +352,7 @@ export default function StudioImage() {
               <span className="text-sm font-bold tracking-tight">
                 {wallet?.balance?.toLocaleString() || 0}
                 <span className="ml-1 text-[10px] text-gray-500 uppercase">
-                  credits
+                  {t("common.credits_lower", { defaultValue: "credits" })}
                 </span>
               </span>
             </div>
@@ -359,13 +362,13 @@ export default function StudioImage() {
               onClick={() => setShowTransactions(true)}
               className="text-gray-400 hover:text-white hover:bg-white/5"
             >
-              History
+              {t("common.history", { defaultValue: "History" })}
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("StudioSubscribe"))}
               className="bg-white text-black hover:bg-gray-200 font-bold px-6 rounded-full transition-all hover:scale-105 active:scale-95 shadow-[0_4px_15px_rgba(255,255,255,0.2)]"
             >
-              Top Up
+              {t("studio.image.topUp", { defaultValue: "Top Up" })}
             </Button>
           </div>
         </div>
