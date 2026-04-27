@@ -272,7 +272,7 @@ function getUserFriendlyError(error: any, t: any): string {
 }
 
 export default function ReserveProfile() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const urlParams = new URLSearchParams(window.location.search);
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
   const initialMode = (urlParams.get("mode") as "signup" | "login") || "login";
@@ -282,7 +282,6 @@ export default function ReserveProfile() {
   const { login, refreshProfile, user, authenticated, profile, initialized } =
     useAuth();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
 
   // Check if user arrived via OAuth
   const isOAuthSignup =

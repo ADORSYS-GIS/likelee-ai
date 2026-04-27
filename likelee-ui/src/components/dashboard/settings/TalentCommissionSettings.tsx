@@ -130,7 +130,7 @@ export const TalentCommissionSettings: React.FC<{
   }, [allTalents, searchTerm]);
 
   const handleRateChange = (talentId: string, value: string) => {
-  const { t } = useTranslation();
+    const { t } = useTranslation();
     setDraftRates((prev) => ({ ...prev, [talentId]: value }));
   };
 
