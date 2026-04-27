@@ -4588,7 +4588,7 @@ export default function BrandDashboard() {
                         </h3>
                         {String(pkg?.status || "") === "sent" && (
                           <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
-                            New
+                            {t("campaigns.inbox.new")}
                           </Badge>
                         )}
                       </div>
@@ -7571,13 +7571,29 @@ export default function BrandDashboard() {
                                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
                                 }`}
                               >
-                                {job.status || "open"}
+                                {t(
+                                  `campaigns.jobs.${String(
+                                    job.status || "open",
+                                  ).toLowerCase()}`,
+                                  {
+                                    defaultValue: String(job.status || "open"),
+                                  },
+                                )}
                               </Badge>
                               <Badge
                                 variant="outline"
                                 className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50"
                               >
-                                {(job.call_type || "call").replace("_", " ")}
+                                {t(
+                                  `campaigns.jobs.${String(
+                                    job.call_type || "call",
+                                  ).toLowerCase()}`,
+                                  {
+                                    defaultValue: String(
+                                      job.call_type || "call",
+                                    ).replace(/_/g, " "),
+                                  },
+                                )}
                               </Badge>
                               {job.category ? (
                                 <Badge
@@ -7590,21 +7606,26 @@ export default function BrandDashboard() {
                             </div>
                             <p className="text-sm text-gray-600 line-clamp-2">
                               {job.about_role ||
-                                "No role description added yet."}
+                                t("campaigns.jobs.noRoleDescription")}
                             </p>
                           </div>
                           <div className="flex flex-col items-start lg:items-end gap-3">
                             <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
                               {job.budget ? (
                                 <span>
-                                  Budget {job.budget} {job.currency || "USD"}
+                                  {t("campaigns.jobs.budget")} {job.budget}{" "}
+                                  {job.currency || "USD"}
                                 </span>
                               ) : null}
                               {job.start_date ? (
-                                <span>Start {job.start_date}</span>
+                                <span>
+                                  {t("campaigns.jobs.start")} {job.start_date}
+                                </span>
                               ) : null}
                               {job.end_date ? (
-                                <span>End {job.end_date}</span>
+                                <span>
+                                  {t("campaigns.jobs.end")} {job.end_date}
+                                </span>
                               ) : null}
                             </div>
                           </div>
@@ -7624,7 +7645,7 @@ export default function BrandDashboard() {
                                 updateJobStatus(String(job.id), "closed")
                               }
                             >
-                              Close Job
+                              {t("campaigns.jobs.closeJob")}
                             </Button>
                           )}
 
@@ -7638,7 +7659,7 @@ export default function BrandDashboard() {
                               })
                             }
                           >
-                            View Details
+                            {t("campaigns.jobs.viewDetails")}
                           </Button>
                           <Button
                             variant="outline"
@@ -7662,7 +7683,7 @@ export default function BrandDashboard() {
                               }
                             }}
                           >
-                            View Applications
+                            {t("campaigns.jobs.viewApplications")}
                           </Button>
                         </div>
                       </div>
@@ -8818,7 +8839,9 @@ export default function BrandDashboard() {
                       {new Date(contract.signed_date).toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-700">
-                      Contract fully signed by both parties
+                      {t("campaigns.contractHub.audit.contractFullySigned", {
+                        defaultValue: "Contract fully signed by both parties",
+                      })}
                     </p>
                     <p className="text-xs text-gray-500">
                       DocuSign Envelope: {contract.docusign_envelope_id}
@@ -8831,7 +8854,9 @@ export default function BrandDashboard() {
                       {new Date(contract.payment_release_date).toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-700">
-                      Payment released from escrow
+                      {t("campaigns.contractHub.audit.paymentReleased", {
+                        defaultValue: "Payment released from escrow",
+                      })}
                     </p>
                     <p className="text-xs text-gray-500">
                       Stripe Transaction: {contract.stripe_payout_id}
@@ -8843,7 +8868,11 @@ export default function BrandDashboard() {
                     {new Date(contract.created_date).toLocaleString()}
                   </p>
                   <p className="text-sm text-gray-700">
-                    Contract created and sent to {contract.creator_name}
+                    {t("campaigns.contractHub.audit.contractCreatedAndSent", {
+                      creatorName: contract.creator_name,
+                      defaultValue:
+                        "Contract created and sent to {{creatorName}}",
+                    })}
                   </p>
                   <p className="text-xs text-gray-500">
                     Created by: {brand?.name || "Brand"}
@@ -10716,7 +10745,7 @@ export default function BrandDashboard() {
                       "this talent",
                     defaultValue: `Send a licensing request for ${selectedLicenseCreator.display_name || selectedLicenseCreator.full_name || "this talent"}.`,
                   })
-                : t("dashboard.licensingRequest.subtitle_generic", {
+                : t("dashboard.licensingRequest.subtitleGeneric", {
                     defaultValue: "Send a licensing request.",
                   })}
             </DialogDescription>
@@ -10767,9 +10796,12 @@ export default function BrandDashboard() {
                 <Input
                   type="number"
                   min={0}
-                  placeholder={t("dashboard.licensingRequest.licenseFee", {
-                    defaultValue: "License Fee",
-                  })}
+                  placeholder={t(
+                    "dashboard.licensingRequest.licenseFeePlaceholder",
+                    {
+                      defaultValue: "e.g. 5000",
+                    },
+                  )}
                   value={licenseRequestForm.license_fee}
                   onChange={(e) =>
                     setLicenseRequestForm((prev) => ({
@@ -10803,12 +10835,36 @@ export default function BrandDashboard() {
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Social Media">Social Media</SelectItem>
-                    <SelectItem value="E-commerce">E-commerce</SelectItem>
-                    <SelectItem value="Advertising">Advertising</SelectItem>
-                    <SelectItem value="Editorial">Editorial</SelectItem>
-                    <SelectItem value="Film & TV">Film & TV</SelectItem>
-                    <SelectItem value="Custom">Custom</SelectItem>
+                    <SelectItem value="Social Media">
+                      {t("dashboard.licensingRequest.categories.socialMedia", {
+                        defaultValue: "Social Media",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="E-commerce">
+                      {t("dashboard.licensingRequest.categories.ecommerce", {
+                        defaultValue: "E-commerce",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Advertising">
+                      {t("dashboard.licensingRequest.categories.advertising", {
+                        defaultValue: "Advertising",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Editorial">
+                      {t("dashboard.licensingRequest.categories.editorial", {
+                        defaultValue: "Editorial",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Film & TV">
+                      {t("dashboard.licensingRequest.categories.filmTv", {
+                        defaultValue: "Film & TV",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Custom">
+                      {t("dashboard.licensingRequest.categories.custom", {
+                        defaultValue: "Custom",
+                      })}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -10819,9 +10875,12 @@ export default function BrandDashboard() {
                   })}
                 </Label>
                 <Input
-                  placeholder={t("dashboard.licensingRequest.territory", {
-                    defaultValue: "Territory",
-                  })}
+                  placeholder={t(
+                    "dashboard.licensingRequest.territoryPlaceholder",
+                    {
+                      defaultValue: "Global",
+                    },
+                  )}
                   value={licenseRequestForm.territory}
                   onChange={(e) =>
                     setLicenseRequestForm((prev) => ({
@@ -10855,12 +10914,29 @@ export default function BrandDashboard() {
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Non-exclusive">Non-exclusive</SelectItem>
+                    <SelectItem value="Non-exclusive">
+                      {t(
+                        "dashboard.licensingRequest.exclusivityOptions.nonExclusive",
+                        {
+                          defaultValue: "Non-exclusive",
+                        },
+                      )}
+                    </SelectItem>
                     <SelectItem value="Category exclusive">
-                      Category exclusive
+                      {t(
+                        "dashboard.licensingRequest.exclusivityOptions.categoryExclusive",
+                        {
+                          defaultValue: "Category exclusive",
+                        },
+                      )}
                     </SelectItem>
                     <SelectItem value="Full exclusivity">
-                      Full exclusivity
+                      {t(
+                        "dashboard.licensingRequest.exclusivityOptions.fullExclusivity",
+                        {
+                          defaultValue: "Full exclusivity",
+                        },
+                      )}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -10872,7 +10948,12 @@ export default function BrandDashboard() {
                   })}
                 </Label>
                 <Input
-                  placeholder="e.g. Light edits allowed"
+                  placeholder={t(
+                    "dashboard.licensingRequest.modificationsPlaceholder",
+                    {
+                      defaultValue: "e.g. Light edits allowed",
+                    },
+                  )}
                   value={licenseRequestForm.modifications_allowed}
                   onChange={(e) =>
                     setLicenseRequestForm((prev) => ({
@@ -13083,15 +13164,28 @@ export default function BrandDashboard() {
                                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
                                 }`}
                               >
-                                {job.status || "open"}
+                                {t(
+                                  `campaigns.jobs.${String(
+                                    job.status || "open",
+                                  ).toLowerCase()}`,
+                                  {
+                                    defaultValue: String(job.status || "open"),
+                                  },
+                                )}
                               </Badge>
                               <Badge
                                 variant="outline"
                                 className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50"
                               >
-                                {String(job.call_type || "call").replace(
-                                  "_",
-                                  " ",
+                                {t(
+                                  `campaigns.jobs.${String(
+                                    job.call_type || "call",
+                                  ).toLowerCase()}`,
+                                  {
+                                    defaultValue: String(
+                                      job.call_type || "call",
+                                    ).replace(/_/g, " "),
+                                  },
                                 )}
                               </Badge>
                               {job.category ? (
@@ -13105,21 +13199,26 @@ export default function BrandDashboard() {
                             </div>
                             <p className="text-sm text-gray-600 line-clamp-2">
                               {job.about_role ||
-                                "No role description added yet."}
+                                t("campaigns.jobs.noRoleDescription")}
                             </p>
                           </div>
                           <div className="flex flex-col items-start gap-3 lg:items-end lg:ml-auto">
                             <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
                               {job.budget ? (
                                 <span>
-                                  Budget {job.budget} {job.currency || "USD"}
+                                  {t("campaigns.jobs.budget")} {job.budget}{" "}
+                                  {job.currency || "USD"}
                                 </span>
                               ) : null}
                               {job.start_date ? (
-                                <span>Start {job.start_date}</span>
+                                <span>
+                                  {t("campaigns.jobs.start")} {job.start_date}
+                                </span>
                               ) : null}
                               {job.end_date ? (
-                                <span>End {job.end_date}</span>
+                                <span>
+                                  {t("campaigns.jobs.end")} {job.end_date}
+                                </span>
                               ) : null}
                             </div>
                           </div>
@@ -13139,7 +13238,7 @@ export default function BrandDashboard() {
                                 updateJobStatus(String(job.id), "closed")
                               }
                             >
-                              Close Job
+                              {t("campaigns.jobs.closeJob")}
                             </Button>
                           )}
 
@@ -13153,7 +13252,7 @@ export default function BrandDashboard() {
                               })
                             }
                           >
-                            View Details
+                            {t("campaigns.jobs.viewDetails")}
                           </Button>
                           <Button
                             variant="outline"
@@ -13177,7 +13276,7 @@ export default function BrandDashboard() {
                               }
                             }}
                           >
-                            View Applications
+                            {t("campaigns.jobs.viewApplications")}
                           </Button>
                         </div>
                       </div>
