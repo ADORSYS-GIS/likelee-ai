@@ -136,8 +136,8 @@ jobs:
             # Load variables from .env if present (no TLS management here)
             if [ -f .env ]; then set -a; . ./.env; set +a; fi
             PROJECT_NAME="likelee-staging"
-            # Always run gateway in HTTP-only mode behind ALB
-            cp -f nginx.http.conf nginx.conf || true
+            # Use staging-specific nginx config
+            cp -f nginx.staging.conf nginx.conf || true
             HAS_CERT=0
 
             # Optional GHCR login if credentials provided
@@ -153,6 +153,8 @@ jobs:
             export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
             export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
             export IMAGE_TAG="staging-${{ env.IMAGE_TAG }}"
+            export COMPOSE_PROJECT_NAME="likelee-staging"
+            export COMPOSE_EXTRA_FILES="docker-compose.staging.yml"
             # Defensive cleanup: remove any existing containers with fixed names to avoid name conflicts
             docker rm -f likelee-staging-server likelee-staging-ui likelee-staging-gateway >/dev/null 2>&1 || true
             chmod +x scripts/update-images.sh scripts/rollback.sh || true
