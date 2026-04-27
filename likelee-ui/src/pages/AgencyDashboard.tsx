@@ -147,7 +147,9 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useChat";
+import i18n from "@/i18n";
 // ----------- LAZY TAB COMPONENTS -----------
+const t = i18n.t.bind(i18n);
 const CommunicationHub = lazy(() =>
   import("@/components/chat/CommunicationHub").then((m) => ({
     default: m.CommunicationHub,
@@ -534,10 +536,15 @@ const ConnectBankView = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Connect Your Bank Account
+            {t("agencyDashboard.payouts.connectBank.title", {
+              defaultValue: "Connect Your Bank Account",
+            })}
           </h2>
           <p className="text-gray-600 font-medium">
-            Link your bank account to receive direct payments from clients and
+            {t("agencyDashboard.payouts.connectBank.subtitle", {
+              defaultValue:
+                "Link your bank account to receive direct payments from clients and",
+            })}{" "}
             {`manage payouts to ${entityPluralLower}`}
           </p>
         </div>
@@ -549,7 +556,13 @@ const ConnectBankView = ({
           aria-disabled={loading || actionsLocked}
         >
           <CreditCard className="w-4 h-4" />
-          {connected ? "Change account" : "Connect Bank Account"}
+          {connected
+            ? t("agencyDashboard.payouts.connectBank.changeAccount", {
+                defaultValue: "Change account",
+              })
+            : t("agencyDashboard.payouts.connectBank.connectBankAccount", {
+                defaultValue: "Connect Bank Account",
+              })}
         </Button>
       </div>
 
@@ -577,10 +590,15 @@ const ConnectBankView = ({
               <CreditCard className="w-8 h-8 text-green-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900">
-              Connect Your Bank Account
+              {t("agencyDashboard.payouts.connectBank.title", {
+                defaultValue: "Connect Your Bank Account",
+              })}
             </h3>
             <p className="text-sm text-gray-600 font-medium mt-1">
-              Link your bank account to receive direct payments from clients and
+              {t("agencyDashboard.payouts.connectBank.subtitle", {
+                defaultValue:
+                  "Link your bank account to receive direct payments from clients and",
+              })}{" "}
               {`manage payouts to ${entityPluralLower}`}
             </p>
           </div>
@@ -780,19 +798,30 @@ const ConnectBankView = ({
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle2 className="w-4 h-4 text-blue-600" />
               <p className="text-sm font-bold text-gray-900">
-                Why Connect Your Bank?
+                {t("agencyDashboard.payouts.connectBank.whyTitle", {
+                  defaultValue: "Why Connect Your Bank?",
+                })}
               </p>
             </div>
             <div className="space-y-2">
               {[
-                "Receive invoice payments directly to your account",
-                "Automate talent commission payouts",
-                "Track cash flow and reconcile payments",
-                "Bank-level security with 256-bit encryption",
-              ].map((t) => (
-                <div key={t} className="flex items-start gap-2">
+                t("agencyDashboard.payouts.connectBank.whyItem1", {
+                  defaultValue:
+                    "Receive invoice payments directly to your account",
+                }),
+                t("agencyDashboard.payouts.connectBank.whyItem2", {
+                  defaultValue: "Automate talent commission payouts",
+                }),
+                t("agencyDashboard.payouts.connectBank.whyItem3", {
+                  defaultValue: "Track cash flow and reconcile payments",
+                }),
+                t("agencyDashboard.payouts.connectBank.whyItem4", {
+                  defaultValue: "Bank-level security with 256-bit encryption",
+                }),
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                  <p className="text-xs text-gray-700 font-medium">{t}</p>
+                  <p className="text-xs text-gray-700 font-medium">{item}</p>
                 </div>
               ))}
             </div>
@@ -805,12 +834,20 @@ const ConnectBankView = ({
             aria-disabled={loading || actionsLocked}
           >
             <Link className="w-4 h-4" />
-            {connected ? "Change account" : "Connect with Stripe"}
+            {connected
+              ? t("agencyDashboard.payouts.connectBank.changeAccount", {
+                  defaultValue: "Change account",
+                })
+              : t("agencyDashboard.payouts.connectBank.connectStripe", {
+                  defaultValue: "Connect with Stripe",
+                })}
           </Button>
 
           <div className="text-center mt-4">
             <p className="text-xs text-gray-500 font-medium">
-              Powered by Stripe Connect
+              {t("agencyDashboard.payouts.connectBank.poweredByStripe", {
+                defaultValue: "Powered by Stripe Connect",
+              })}
             </p>
             <p className="text-[10px] text-gray-400 font-medium">
               Bank-level security • SOC 2 certified • PCI DSS compliant
@@ -819,7 +856,9 @@ const ConnectBankView = ({
 
           <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-6">
             <p className="text-xs font-bold text-gray-700 mb-2">
-              What you'll need:
+              {t("agencyDashboard.payouts.connectBank.whatYouNeed", {
+                defaultValue: "What you'll need:",
+              })}
             </p>
             <div className="text-xs text-gray-600 font-medium space-y-1">
               <div>
@@ -19594,15 +19633,40 @@ export default function AgencyDashboard() {
     if (pendingBrandConnectionCount > 0) {
       const parts = [];
       const { numRequests, numOffers, numFeedback } = brandCounts;
-      if (numRequests > 0) parts.push(`${numRequests} request(s)`);
-      if (numOffers > 0) parts.push(`${numOffers} offer(s)`);
-      if (numFeedback > 0) parts.push(`${numFeedback} feedback(s)`);
+      if (numRequests > 0)
+        parts.push(
+          t("agencyDashboard.header.notifications.summary.requests", {
+            count: numRequests,
+            defaultValue: "{{count}} request(s)",
+          }),
+        );
+      if (numOffers > 0)
+        parts.push(
+          t("agencyDashboard.header.notifications.summary.offers", {
+            count: numOffers,
+            defaultValue: "{{count}} offer(s)",
+          }),
+        );
+      if (numFeedback > 0)
+        parts.push(
+          t("agencyDashboard.header.notifications.summary.feedback", {
+            count: numFeedback,
+            defaultValue: "{{count}} feedback(s)",
+          }),
+        );
 
       alerts.push({
         id: `brand_conn_${pendingBrandConnectionCount}`,
-        title: "Brand Connections",
-        message: `Pending: ${parts.join(", ")}.`,
-        time: "Action required",
+        title: t("agencyDashboard.navigation.brandConnections", {
+          defaultValue: "Brand Connections",
+        }),
+        message: t("agencyDashboard.header.notifications.summary.pending", {
+          defaultValue: "Pending: {{parts}}.",
+          parts: parts.join(", "),
+        }),
+        time: t("agencyDashboard.header.notifications.summary.actionRequired", {
+          defaultValue: "Action required",
+        }),
         color: "indigo",
         isSummary: true,
       });
@@ -19610,9 +19674,19 @@ export default function AgencyDashboard() {
     if (pendingLicensingRequestsCount > 0) {
       alerts.push({
         id: `license_req_${pendingLicensingRequestsCount}`,
-        title: "Licensing Requests",
-        message: `You have ${pendingLicensingRequestsCount} pending licensing request(s).`,
-        time: "Action required",
+        title: t("agencyDashboard.navigation.licensing", {
+          defaultValue: "Licensing Requests",
+        }),
+        message: t(
+          "agencyDashboard.header.notifications.summary.pendingLicensing",
+          {
+            defaultValue: "You have {{count}} pending licensing request(s).",
+            count: pendingLicensingRequestsCount,
+          },
+        ),
+        time: t("agencyDashboard.header.notifications.summary.actionRequired", {
+          defaultValue: "Action required",
+        }),
         color: "indigo",
         isSummary: true,
       });
@@ -19620,19 +19694,32 @@ export default function AgencyDashboard() {
     if (pendingJobInvitesCount > 0) {
       alerts.push({
         id: `job_invites_${pendingJobInvitesCount}`,
-        title: "Job Invites",
-        message: `You have ${pendingJobInvitesCount} pending job invite(s).`,
-        time: "New message",
+        title: t("agencyDashboard.navigation.subItems.jobInvites", {
+          defaultValue: "Job Invites",
+        }),
+        message: t("agencyDashboard.header.notifications.summary.pendingJobs", {
+          defaultValue: "You have {{count}} pending job invite(s).",
+          count: pendingJobInvitesCount,
+        }),
+        time: t("agencyDashboard.header.notifications.summary.newMessage", {
+          defaultValue: "New message",
+        }),
         color: "blue",
         isSummary: true,
       });
     }
     alerts.push({
       id: "welcome",
-      title: "System Alert",
-      message:
-        "Your verification was successfully processed. Welcome to Likelee!",
-      time: "Just now",
+      title: t("agencyDashboard.header.notifications.systemAlert", {
+        defaultValue: "System Alert",
+      }),
+      message: t("agencyDashboard.header.notifications.systemAlertMessage", {
+        defaultValue:
+          "Your verification was successfully processed. Welcome to Likelee!",
+      }),
+      time: t("agencyDashboard.header.notifications.justNow", {
+        defaultValue: "Just now",
+      }),
       color: "blue",
     });
     return alerts;
@@ -19835,7 +19922,7 @@ export default function AgencyDashboard() {
           },
           {
             id: "jobs",
-            label: "Jobs",
+            label: t("agencyDashboard.tabs.jobs", { defaultValue: "Jobs" }),
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
             badge:
@@ -19847,7 +19934,7 @@ export default function AgencyDashboard() {
           },
           {
             id: "roster",
-            label: "Roster",
+            label: t("agencyDashboard.tabs.roster", { defaultValue: "Roster" }),
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
             disabled: agencySubscriptionLocked,
@@ -19855,7 +19942,9 @@ export default function AgencyDashboard() {
           },
           {
             id: "messages",
-            label: "Messages",
+            label: t("agencyDashboard.tabs.messages", {
+              defaultValue: "Messages",
+            }),
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
             disabled: agencySubscriptionLocked || !hasProAccess,
@@ -19865,7 +19954,9 @@ export default function AgencyDashboard() {
           },
           {
             id: "licensing",
-            label: "Licensing",
+            label: t("agencyDashboard.tabs.licensing", {
+              defaultValue: "Licensing",
+            }),
             icon: FileText,
             subItems: [
               "Licensing Requests",
@@ -19971,7 +20062,7 @@ export default function AgencyDashboard() {
           },
           {
             id: "jobs",
-            label: "Jobs",
+            label: t("agencyDashboard.tabs.jobs", { defaultValue: "Jobs" }),
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
             badge:
@@ -19983,7 +20074,7 @@ export default function AgencyDashboard() {
           },
           {
             id: "roster",
-            label: "Roster",
+            label: t("agencyDashboard.tabs.roster", { defaultValue: "Roster" }),
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
             disabled: agencySubscriptionLocked,
@@ -19991,7 +20082,9 @@ export default function AgencyDashboard() {
           },
           {
             id: "messages",
-            label: "Messages",
+            label: t("agencyDashboard.tabs.messages", {
+              defaultValue: "Messages",
+            }),
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
             disabled: agencySubscriptionLocked || !hasProAccess,
@@ -20001,7 +20094,9 @@ export default function AgencyDashboard() {
           },
           {
             id: "scouting",
-            label: "Scouting",
+            label: t("agencyDashboard.tabs.scouting", {
+              defaultValue: "Scouting",
+            }),
             icon: Target,
             disabled: agencySubscriptionLocked,
             disabledReason: "Choose a plan",
@@ -20809,13 +20904,22 @@ export default function AgencyDashboard() {
                 <div className="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
                   <div className="p-4 border-b border-gray-100 pb-0">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-gray-900">Notifications</h3>
+                      <h3 className="font-bold text-gray-900">
+                        {t("agencyDashboard.header.notifications.title", {
+                          defaultValue: "Notifications",
+                        })}
+                      </h3>
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllAsRead}
                           className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                         >
-                          Mark all as read
+                          {t(
+                            "agencyDashboard.header.notifications.markAllRead",
+                            {
+                              defaultValue: "Mark all as read",
+                            },
+                          )}
                         </button>
                       )}
                     </div>
@@ -20824,13 +20928,18 @@ export default function AgencyDashboard() {
                         onClick={() => setActiveNotificationTab("all")}
                         className={`pb-3 text-sm font-semibold border-b-2 ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                       >
-                        All
+                        {t("agencyDashboard.header.notifications.all", {
+                          defaultValue: "All",
+                        })}
                       </button>
                       <button
                         onClick={() => setActiveNotificationTab("unread")}
                         className={`pb-3 text-sm font-medium border-b-2 ${activeNotificationTab === "unread" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                       >
-                        Unread ({unreadCount})
+                        {t("agencyDashboard.header.notifications.unread", {
+                          defaultValue: "Unread ({{count}})",
+                          count: unreadCount,
+                        })}
                       </button>
                     </div>
                   </div>
@@ -20839,8 +20948,15 @@ export default function AgencyDashboard() {
                       <div className="p-6 flex flex-col items-center justify-center text-center">
                         <p className="text-sm font-medium text-gray-500">
                           {activeNotificationTab === "all"
-                            ? "No notifications found."
-                            : "You're all caught up!"}
+                            ? t("agencyDashboard.header.notifications.none", {
+                                defaultValue: "No notifications found.",
+                              })
+                            : t(
+                                "agencyDashboard.header.notifications.caughtUp",
+                                {
+                                  defaultValue: "You're all caught up!",
+                                },
+                              )}
                         </p>
                       </div>
                     ) : (
@@ -20883,15 +20999,25 @@ export default function AgencyDashboard() {
                     <button
                       onClick={() => {
                         toast({
-                          title: "View all notifications",
-                          description:
-                            "Navigating to full notifications page...",
+                          title: t(
+                            "agencyDashboard.header.notifications.viewAll",
+                            { defaultValue: "View all notifications" },
+                          ),
+                          description: t(
+                            "agencyDashboard.header.notifications.viewAllDesc",
+                            {
+                              defaultValue:
+                                "Navigating to full notifications page...",
+                            },
+                          ),
                         });
                         setShowNotifications(false);
                       }}
                       className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
                     >
-                      View all notifications
+                      {t("agencyDashboard.header.notifications.viewAll", {
+                        defaultValue: "View all notifications",
+                      })}
                     </button>
                   </div>
                 </div>
@@ -20964,10 +21090,17 @@ export default function AgencyDashboard() {
                       <Building2 className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Organization Settings
+                          {t(
+                            "agencyDashboard.header.profile.organizationSettings",
+                            {
+                              defaultValue: "Organization Settings",
+                            },
+                          )}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Manage company profile
+                          {t("agencyDashboard.header.profile.manageCompany", {
+                            defaultValue: "Manage company profile",
+                          })}
                         </p>
                       </div>
                     </button>
@@ -20975,8 +21108,18 @@ export default function AgencyDashboard() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
                         toast({
-                          title: "Team & Permissions",
-                          description: "Coming soon",
+                          title: t(
+                            "agencyDashboard.header.profile.teamPermissions",
+                            {
+                              defaultValue: "Team & Permissions",
+                            },
+                          ),
+                          description: t(
+                            "agencyDashboard.analytics.labels.comingSoon",
+                            {
+                              defaultValue: "Coming Soon",
+                            },
+                          ),
                           duration: 2000,
                         });
                         setShowProfileMenu(false);
@@ -20985,9 +21128,16 @@ export default function AgencyDashboard() {
                       <Users className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Team & Permissions
+                          {t("agencyDashboard.header.profile.teamPermissions", {
+                            defaultValue: "Team & Permissions",
+                          })}
                         </p>
-                        <p className="text-xs text-gray-500">10 active users</p>
+                        <p className="text-xs text-gray-500">
+                          {t("agencyDashboard.header.profile.activeUsers", {
+                            defaultValue: "{{count}} active users",
+                            count: 10,
+                          })}
+                        </p>
                       </div>
                     </button>
                     <button
@@ -21000,7 +21150,12 @@ export default function AgencyDashboard() {
                       <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Billing & Subscription
+                          {t(
+                            "agencyDashboard.header.profile.billingSubscription",
+                            {
+                              defaultValue: "Billing & Subscription",
+                            },
+                          )}
                         </p>
                         <p className="text-xs text-gray-500">
                           {agencyDisplayPlanLabel}
@@ -21018,10 +21173,14 @@ export default function AgencyDashboard() {
                       <FileText className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Legal & Compliance
+                          {t("agencyDashboard.header.profile.legalCompliance", {
+                            defaultValue: "Legal & Compliance",
+                          })}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Contracts, terms, privacy
+                          {t("agencyDashboard.header.profile.legalSubtitle", {
+                            defaultValue: "Contracts, terms, privacy",
+                          })}
                         </p>
                       </div>
                     </button>
@@ -21036,7 +21195,9 @@ export default function AgencyDashboard() {
                       <LinkIcon className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Integrations
+                          {t("agencyDashboard.header.profile.integrations", {
+                            defaultValue: "Integrations",
+                          })}
                         </p>
                         <p className="text-xs text-gray-500">
                           Stripe, ElevenLabs connected
