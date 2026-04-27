@@ -2119,7 +2119,7 @@ export default function BrandCampaignDashboard({
           </div>
         )}
         {/* Metrics Overview */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
@@ -2157,7 +2157,7 @@ export default function BrandCampaignDashboard({
         )}
 
         {/* Collaboration CTAs + Post Job */}
-        <div className="grid md:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card
             className="p-6 bg-white border-2 border-[#F7B750] hover:shadow-xl transition-all cursor-pointer rounded-none"
             onClick={handleInviteAgencyEntry}
@@ -2387,7 +2387,7 @@ export default function BrandCampaignDashboard({
                   </Button>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <p className="text-sm text-gray-600 mb-2">Progress</p>
                     <Progress
@@ -2432,10 +2432,10 @@ export default function BrandCampaignDashboard({
       {/* New Campaign Modal */}
       {showNewCampaignModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
-          <div className="min-h-screen flex items-center justify-center p-6">
-            <Card className="w-full max-w-6xl bg-white p-8 border-2 border-black rounded-none">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
+          <div className="min-h-screen flex items-start sm:items-center justify-center p-0 sm:p-6">
+            <Card className="w-full max-w-6xl bg-white sm:p-8 p-4 border-0 sm:border-2 border-black rounded-none min-h-screen sm:min-h-0">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                   Create New Campaign
                 </h2>
                 <Button
@@ -2448,68 +2448,73 @@ export default function BrandCampaignDashboard({
                 </Button>
               </div>
 
-              <div className="mb-6">
-                <div className="flex items-center gap-4">
+              {/* Stepper — scrollable on mobile */}
+              <div className="mb-4 sm:mb-6 overflow-x-auto pb-2">
+                <div className="flex items-center gap-1.5 sm:gap-4 min-w-max">
                   <div
-                    className={`flex items-center gap-2 ${newCampaignStep >= 1 ? "text-black" : "text-gray-400"}`}
+                    className={`flex items-center gap-1 sm:gap-2 ${newCampaignStep >= 1 ? "text-black" : "text-gray-400"}`}
                   >
                     <div
-                      className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 1 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                      className={`w-7 h-7 sm:w-8 sm:h-8 border-2 rounded-none flex items-center justify-center text-xs sm:text-sm shrink-0 ${newCampaignStep >= 1 ? "border-black bg-black text-white" : "border-gray-300"}`}
                     >
                       1
                     </div>
-                    <span className="text-sm font-medium">Campaign Info</span>
+                    <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                      Campaign Info
+                    </span>
                   </div>
-                  <div className="flex-1 h-px bg-gray-300" />
+                  <div className="w-4 sm:flex-1 h-px bg-gray-300 shrink-0" />
                   <div
-                    className={`flex items-center gap-2 ${newCampaignStep >= 2 ? "text-black" : "text-gray-400"}`}
+                    className={`flex items-center gap-1 sm:gap-2 ${newCampaignStep >= 2 ? "text-black" : "text-gray-400"}`}
                   >
                     <div
-                      className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 2 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                      className={`w-7 h-7 sm:w-8 sm:h-8 border-2 rounded-none flex items-center justify-center text-xs sm:text-sm shrink-0 ${newCampaignStep >= 2 ? "border-black bg-black text-white" : "border-gray-300"}`}
                     >
                       2
                     </div>
-                    <span className="text-sm font-medium">Campaign Brief</span>
+                    <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                      Campaign Brief
+                    </span>
                   </div>
-                  <div className="flex-1 h-px bg-gray-300" />
+                  <div className="w-4 sm:flex-1 h-px bg-gray-300 shrink-0" />
                   <div
-                    className={`flex items-center gap-2 ${newCampaignStep >= 3 ? "text-black" : "text-gray-400"}`}
+                    className={`flex items-center gap-1 sm:gap-2 ${newCampaignStep >= 3 ? "text-black" : "text-gray-400"}`}
                   >
                     <div
-                      className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 3 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                      className={`w-7 h-7 sm:w-8 sm:h-8 border-2 rounded-none flex items-center justify-center text-xs sm:text-sm shrink-0 ${newCampaignStep >= 3 ? "border-black bg-black text-white" : "border-gray-300"}`}
                     >
                       3
                     </div>
-                    <span className="text-sm font-medium">
-                      {campaignForm.collaborator_type === "creator"
-                        ? "Collaborators"
-                        : "Collaborators"}
+                    <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                      Collaborators
                     </span>
                   </div>
-                  <div className="flex-1 h-px bg-gray-300" />
+                  <div className="w-4 sm:flex-1 h-px bg-gray-300 shrink-0" />
                   <div
-                    className={`flex items-center gap-2 ${newCampaignStep >= 4 ? "text-black" : "text-gray-400"}`}
+                    className={`flex items-center gap-1 sm:gap-2 ${newCampaignStep >= 4 ? "text-black" : "text-gray-400"}`}
                   >
                     <div
-                      className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 4 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                      className={`w-7 h-7 sm:w-8 sm:h-8 border-2 rounded-none flex items-center justify-center text-xs sm:text-sm shrink-0 ${newCampaignStep >= 4 ? "border-black bg-black text-white" : "border-gray-300"}`}
                     >
                       4
                     </div>
-                    <span className="text-sm font-medium">Offer Summary</span>
+                    <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                      Offer Summary
+                    </span>
                   </div>
                   {campaignForm.collaborator_type === "creator" && (
                     <>
-                      <div className="flex-1 h-px bg-gray-300" />
+                      <div className="w-4 sm:flex-1 h-px bg-gray-300 shrink-0" />
                       <div
-                        className={`flex items-center gap-2 ${newCampaignStep >= 5 ? "text-black" : "text-gray-400"}`}
+                        className={`flex items-center gap-1 sm:gap-2 ${newCampaignStep >= 5 ? "text-black" : "text-gray-400"}`}
                       >
                         <div
-                          className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 5 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                          className={`w-7 h-7 sm:w-8 sm:h-8 border-2 rounded-none flex items-center justify-center text-xs sm:text-sm shrink-0 ${newCampaignStep >= 5 ? "border-black bg-black text-white" : "border-gray-300"}`}
                         >
                           5
                         </div>
-                        <span className="text-sm font-medium">
-                          Contract Upload
+                        <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
+                          Contract
                         </span>
                       </div>
                     </>
@@ -2541,7 +2546,7 @@ export default function BrandCampaignDashboard({
               )}
 
               {newCampaignStep === 1 && (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] sm:max-h-none pr-1">
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-2">
                       Campaign Name *
@@ -3783,7 +3788,7 @@ export default function BrandCampaignDashboard({
                 </p>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <Card className="p-6 border-2 border-gray-200 rounded-none">
                   <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
                   <h4 className="font-bold text-gray-900 mb-2">
@@ -3910,7 +3915,7 @@ export default function BrandCampaignDashboard({
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <Card className="p-4 border-2 border-gray-200 rounded-none">
                   <p className="text-sm text-gray-600 mb-1">Budget</p>
                   <p className="text-xl font-bold text-gray-900">
