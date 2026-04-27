@@ -26,6 +26,29 @@
       "topUp": "Recharger"
     }
   },
+  "brandPricingStudioAddon": {
+    "currentSubscription": "Abonnement actuel",
+    "base": "Base",
+    "trialEndsOn": "L'essai gratuit se termine le {{date}}.",
+    "baseRenewsOn": "Le forfait de base se renouvelle le {{date}}.",
+    "studioActiveLifetime": "L'accès à AI Studio est actif (à vie).",
+    "basePlanNotice": "Votre forfait de base est déjà actif. AI Studio reste une ligne distincte, mais les changements de forfait de base ne sont pas encore en libre-service.",
+    "eyebrow": "Module AI Studio",
+    "headline": "Séparé du forfait de base",
+    "description": "Débloquez AI Studio avec un paiement unique de ${{price}}. Votre marque obtient un accès permanent à /studio ainsi que {{credits}} crédits initiaux crédités dans votre portefeuille Studio. L'offre Enterprise inclut automatiquement l'accès au Studio.",
+    "badges": {
+      "initialCredits": "{{credits}} crédits Studio initiaux",
+      "walletPlan": "Forfait portefeuille Studio Pro",
+      "oneTimePayment": "Paiement unique",
+      "permanentAccess": "Accès permanent à /studio",
+      "includedEnterprise": "Inclus avec Enterprise"
+    },
+    "oneTime": "paiement unique",
+    "redirecting": "Redirection",
+    "openStudio": "Ouvrir le Studio",
+    "activateStudio": "Activer Studio",
+    "getStudioAddon": "Obtenir le module Studio"
+  },
   "brands": "Marques",
   "forBrands": "Pour les marques",
   "theProblemWeSolve": "Le problème que nous résolvons",
@@ -748,6 +771,7 @@
       "noRequestsDescription": "Les agences peuvent vous envoyer des demandes directes de licence pour des campagnes spécifiques",
       "loading": "Chargement de la boîte de réception...",
       "error": "Erreur lors du chargement de la boîte de réception",
+      "new": "Nouveau",
       "confirmSelectionTitle": "Confirmer la sélection",
       "confirmSelectionDescription": "Vous êtes sur le point de finaliser votre sélection de talents pour {{title}}."
     },
@@ -797,6 +821,11 @@
         "declined": "Refusé",
         "pending": "En attente",
         "awaiting_signatures": "En attente de signatures"
+      },
+      "audit": {
+        "contractFullySigned": "Contrat entièrement signé par les deux parties",
+        "paymentReleased": "Paiement libéré depuis le séquestre",
+        "contractCreatedAndSent": "Contrat créé et envoyé à {{creatorName}}"
       }
     },
     "deliverables": {
@@ -826,7 +855,10 @@
       },
       "tags": {
         "new": "Nouveau",
+        "submitted": "Soumis",
         "approved": "Approuvé",
+        "accepted": "Approuvé",
+        "brand_approved": "Approuvé",
         "changes_requested": "Modifications demandées"
       }
     },
@@ -901,6 +933,7 @@
       "tryDifferentKeywords": "Essayez des mots-clés différents ou ajustez vos filtres.",
       "clearSearchButton": "Effacer la recherche",
       "viewDetails": "Voir les détails",
+      "viewDetailsJobPosting": "Voir cette offre d'emploi et ses candidatures.",
       "viewApplications": "Voir les candidatures",
       "closeJob": "Fermer l'emploi",
       "noRoleDescription": "Aucune description de rôle ajoutée pour le moment.",
@@ -956,15 +989,32 @@
     "licensingRequest": {
       "title": "Demander une Licence",
       "subtitle": "Envoyez une demande de licence pour {{talentName}}.",
+      "subtitleGeneric": "Envoyez une demande de licence.",
       "startDate": "Date de Début",
       "duration": "Durée (Jours)",
       "licenseFee": "Frais de Licence",
+      "licenseFeePlaceholder": "ex. 5000",
       "category": "Catégorie",
       "selectCategory": "Sélectionner une catégorie",
+      "categories": {
+        "socialMedia": "Réseaux sociaux",
+        "ecommerce": "E-commerce",
+        "advertising": "Publicité",
+        "editorial": "Éditorial",
+        "filmTv": "Film et TV",
+        "custom": "Personnalisé"
+      },
       "territory": "Territoire",
+      "territoryPlaceholder": "Mondial",
       "exclusivity": "Exclusivité",
       "selectExclusivity": "Sélectionner l'exclusivité",
+      "exclusivityOptions": {
+        "nonExclusive": "Non exclusive",
+        "categoryExclusive": "Exclusive à la catégorie",
+        "fullExclusivity": "Exclusivité totale"
+      },
       "modificationsAllowed": "Modifications Autorisées",
+      "modificationsPlaceholder": "ex. Retouches légères autorisées",
       "description": "Description",
       "descriptionPlaceholder": "Ajoutez une brève description pour cette demande de licence",
       "additionalCustomTerms": "Conditions Personnalisées Supplémentaires",
@@ -1282,6 +1332,166 @@
     "searchPlaceholder": "Rechercher par projet, créateur ou nom de fichier...",
     "emptyState": "Aucun asset disponible pour le moment. Les assets apparaîtront ici une fois les campagnes terminées.",
     "collections": "Collections"
+  },
+  "postJobPage": {
+    "backToDashboard": "Retour au tableau de bord",
+    "title": "Publier un emploi",
+    "subtitle": "Trouvez le talent idéal pour votre campagne",
+    "stepCounter": "Étape {{current}} sur {{total}}",
+    "percentComplete": "{{percent}} % terminé",
+    "steps": {
+      "basicInformation": "Informations de base",
+      "projectOverview": "Aperçu du projet",
+      "talentRequirements": "Exigences du talent",
+      "likenessLicensing": "Utilisation de l'image et licence",
+      "budgetCompensation": "Budget et rémunération",
+      "collaborationPreferences": "Préférences de collaboration",
+      "previewPublish": "Aperçu et publication"
+    },
+    "fields": {
+      "jobTitle": "Titre du poste / de la campagne *",
+      "companyName": "Nom de l'entreprise",
+      "contactEmail": "E-mail de contact *",
+      "category": "Catégorie *",
+      "callType": "Type d'appel *",
+      "workTypes": "Type de travail (sélectionnez tout ce qui s'applique)",
+      "jobStatus": "Statut de l'emploi",
+      "location": "Lieu",
+      "jobType": "Type d'emploi *",
+      "aboutRole": "À propos du rôle *",
+      "goalsKpis": "Objectifs et KPI",
+      "deliverables": "Livrables",
+      "expectedStartDate": "Date de début prévue",
+      "expectedEndDate": "Date de fin prévue",
+      "preferredTalentType": "Type de talent préféré",
+      "region": "Région",
+      "language": "Langue",
+      "skillsNeeded": "Compétences requises",
+      "needsLicensing": "Cet emploi nécessite une licence de visage ou de voix",
+      "usageType": "Type d'utilisation *",
+      "licenseDuration": "Durée de la licence *",
+      "territories": "Territoires *",
+      "exclusiveUse": "Utilisation exclusive de l'image pour cette campagne",
+      "royaltyOption": "Inclure un paiement basé sur des royalties (%)",
+      "budget": "Budget *",
+      "paymentType": "Type de paiement *",
+      "currency": "Devise",
+      "workWithAgency": "Travailler avec une agence marketing ?",
+      "inviteCreator": "Inviter un créateur IA ou un talent ?",
+      "attachBrandAssets": "Joindre les assets de marque",
+      "confidential": "Marquer comme privé (visible uniquement par les collaborateurs invités)"
+    },
+    "placeholders": {
+      "jobTitle": "ex. Campagne de lancement produit IA",
+      "contactEmail": "contact@entreprise.com",
+      "selectCategory": "Sélectionner une catégorie",
+      "selectCallType": "Sélectionner un type d'appel",
+      "customWorkType": "ex. Animation d'événement virtuel",
+      "selectLocation": "Sélectionner un lieu",
+      "selectJobType": "Sélectionner un type d'emploi",
+      "aboutRole": "Que crée-t-on, pour qui, et dans quel style ?",
+      "goalsKpis": "Saisissez vos objectifs et KPI (un par ligne)...",
+      "deliverables": "ex. 3 courtes vidéos, 5 visuels, 1 clip voice-over",
+      "region": "ex. Amérique du Nord, Monde",
+      "language": "ex. Français, Anglais",
+      "selectUsageType": "Sélectionner un type d'utilisation",
+      "selectDuration": "Sélectionner une durée",
+      "selectTerritories": "Sélectionner des territoires",
+      "budget": "2000",
+      "selectPaymentType": "Sélectionner un type de paiement",
+      "searchAgencies": "Rechercher des agences...",
+      "searchCreators": "Rechercher des créateurs..."
+    },
+    "actions": {
+      "add": "Ajouter",
+      "cancel": "Annuler",
+      "back": "Retour",
+      "saving": "Enregistrement...",
+      "saveDraft": "Enregistrer comme brouillon",
+      "publishing": "Publication...",
+      "publishMarketplace": "Publier sur la marketplace"
+    },
+    "next": {
+      "projectOverview": "Suivant : aperçu du projet",
+      "talentRequirements": "Suivant : exigences du talent",
+      "licensingDetails": "Suivant : détails de la licence",
+      "budget": "Suivant : budget",
+      "collaboration": "Suivant : collaboration",
+      "previewPublish": "Suivant : aperçu et publication"
+    },
+    "location": {
+      "remote": "À distance",
+      "hybrid": "Hybride",
+      "onSite": "Sur site",
+      "help": "La plupart des emplois sont automatiquement marqués comme à distance"
+    },
+    "jobType": {
+      "contract": "Contrat",
+      "perProject": "Par projet",
+      "partTime": "Temps partiel",
+      "fullTime": "Temps plein"
+    },
+    "usageType": {
+      "commercial": "Commercial",
+      "film": "Film",
+      "advertising": "Publicité",
+      "socialMedia": "Réseaux sociaux",
+      "musicVideo": "Clip musical",
+      "other": "Autre"
+    },
+    "licenseDuration": {
+      "days30": "30 jours",
+      "months3": "3 mois",
+      "months6": "6 mois",
+      "year1": "1 an",
+      "perpetual": "Perpétuelle"
+    },
+    "territories": {
+      "global": "Monde",
+      "us": "États-Unis",
+      "eu": "Union européenne",
+      "asia": "Asie",
+      "latam": "Amérique latine"
+    },
+    "paymentType": {
+      "fixed": "Prix fixe",
+      "perDeliverable": "Par livrable",
+      "hourly": "Taux horaire",
+      "royaltyBase": "Royalties + base"
+    },
+    "customWorkType": {
+      "other": "Autre (personnalisé)",
+      "add": "Ajouter un type de travail personnalisé",
+      "listLabel": "Types de travail personnalisés :"
+    },
+    "talentSections": {
+      "aiTalentDefault": "Talent IA (par défaut)",
+      "humanTalentOther": "Talent humain et autres"
+    },
+    "autoFilledProfile": "Rempli automatiquement depuis votre profil",
+    "budgetHelp": "Saisissez le budget fixe total ou le paiement de base pour ce projet.",
+    "licensing": {
+      "help": "Les modèles d'accords juridiques et les calculs de royalties seront intégrés automatiquement selon vos choix."
+    },
+    "paymentMethodRequiredTitle": "Moyen de paiement requis :",
+    "paymentMethodRequiredDesc": "Vous devrez ajouter des informations de paiement avant que cet emploi soit publié.",
+    "workWithAgencyHelp": "Connectez-vous avec des agences vérifiées depuis la marketplace",
+    "searchInviteAgencies": "Rechercher et inviter des agences connectées :",
+    "loadingConnectedAgencies": "Chargement des agences connectées...",
+    "noConnectedAgencies": "Aucune agence connectée trouvée.",
+    "inviteCreatorHelp": "Parcourez les meilleurs créateurs et talents IA",
+    "searchInviteCreators": "Rechercher et inviter des créateurs connectés :",
+    "loadingConnectedCreators": "Chargement des créateurs connectés...",
+    "noConnectedCreators": "Aucun créateur connecté trouvé.",
+    "brandAssetsUploadTitle": "Téléchargez des logos, media kits ou contenus de référence",
+    "brandAssetsUploadHelp": "PDF, JPG, PNG, MP4 jusqu'à 100 Mo",
+    "brandAsset": "Asset de marque",
+    "fileUploaded": "Fichier téléchargé",
+    "removeAsset": "Supprimer l'asset",
+    "lookingFor": "Recherche :",
+    "licensingRequired": "Licence requise",
+    "noDescription": "Aucune description fournie",
+    "backToEdit": "Retour à l'édition"
   },
   "brandCompanyPage": {
     "hero": {

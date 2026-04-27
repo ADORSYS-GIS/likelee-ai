@@ -61,6 +61,29 @@
       "topUp": "Top Up"
     }
   },
+  "brandPricingStudioAddon": {
+    "currentSubscription": "Current subscription",
+    "base": "Base",
+    "trialEndsOn": "Free trial ends on {{date}}.",
+    "baseRenewsOn": "Base plan renews on {{date}}.",
+    "studioActiveLifetime": "AI Studio access is active (lifetime).",
+    "basePlanNotice": "Your base plan is already active. AI Studio remains a separate line item, but base-plan changes are not self-serve yet.",
+    "eyebrow": "AI Studio add-on",
+    "headline": "Separate from the base plan",
+    "description": "Unlock AI Studio with a single one-time payment of ${{price}}. Your brand gets permanent access to /studio and {{credits}} initial credits credited to your Studio wallet. Enterprise includes Studio access automatically.",
+    "badges": {
+      "initialCredits": "{{credits}} initial Studio credits",
+      "walletPlan": "Studio Pro wallet plan",
+      "oneTimePayment": "One-time payment",
+      "permanentAccess": "Permanent /studio access",
+      "includedEnterprise": "Included with Enterprise"
+    },
+    "oneTime": "one-time",
+    "redirecting": "Redirecting",
+    "openStudio": "Open Studio",
+    "activateStudio": "Activate Studio",
+    "getStudioAddon": "Get Studio Add-On"
+  },
   "dashboard": {
     "navigation": {
       "dashboard": "Dashboard",
@@ -733,6 +756,7 @@
       "noRequestsDescription": "Agencies can send you direct licensing requests for specific campaigns",
       "loading": "Loading inbox...",
       "error": "Failed to load inbox",
+      "new": "New",
       "confirmSelectionTitle": "Confirm Selection",
       "confirmSelectionDescription": "You are about to finalize your talent selection for {{title}}."
     },
@@ -783,6 +807,11 @@
         "declined": "Declined",
         "pending": "Pending",
         "awaiting_signatures": "Awaiting Signatures"
+      },
+      "audit": {
+        "contractFullySigned": "Contract fully signed by both parties",
+        "paymentReleased": "Payment released from escrow",
+        "contractCreatedAndSent": "Contract created and sent to {{creatorName}}"
       }
     },
     "deliverables": {
@@ -799,6 +828,14 @@
       "approve": "Approve",
       "reject": "Reject",
       "requestChanges": "Request Changes",
+      "tags": {
+        "new": "New",
+        "submitted": "Submitted",
+        "approved": "Approved",
+        "accepted": "Approved",
+        "brand_approved": "Approved",
+        "changes_requested": "Changes requested"
+      },
       "badges": {
         "reviewed": "reviewed",
         "approved": "approved",
@@ -854,6 +891,7 @@
       "tryDifferentKeywords": "Try different keywords or adjust your filters.",
       "clearSearchButton": "Clear search",
       "viewDetails": "View Details",
+      "viewDetailsJobPosting": "View this job posting and its applications.",
       "viewApplications": "View Applications",
       "closeJob": "Close Job",
       "noRoleDescription": "No role description added yet.",
@@ -909,15 +947,32 @@
     "licensingRequest": {
       "title": "Request License",
       "subtitle": "Send a licensing request for {{talentName}}.",
+      "subtitleGeneric": "Send a licensing request.",
       "startDate": "Start Date",
       "duration": "Duration (Days)",
       "licenseFee": "License Fee",
+      "licenseFeePlaceholder": "e.g. 5000",
       "category": "Category",
       "selectCategory": "Select category",
+      "categories": {
+        "socialMedia": "Social Media",
+        "ecommerce": "E-commerce",
+        "advertising": "Advertising",
+        "editorial": "Editorial",
+        "filmTv": "Film & TV",
+        "custom": "Custom"
+      },
       "territory": "Territory",
+      "territoryPlaceholder": "Global",
       "exclusivity": "Exclusivity",
       "selectExclusivity": "Select exclusivity",
+      "exclusivityOptions": {
+        "nonExclusive": "Non-exclusive",
+        "categoryExclusive": "Category exclusive",
+        "fullExclusivity": "Full exclusivity"
+      },
       "modificationsAllowed": "Modifications Allowed",
+      "modificationsPlaceholder": "e.g. Light edits allowed",
       "description": "Description",
       "descriptionPlaceholder": "Add a short description for this license request",
       "additionalCustomTerms": "Additional Custom Terms",

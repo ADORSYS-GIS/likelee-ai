@@ -61,6 +61,29 @@
       "topUp": "Recargar"
     }
   },
+  "brandPricingStudioAddon": {
+    "currentSubscription": "Suscripción actual",
+    "base": "Base",
+    "trialEndsOn": "La prueba gratuita termina el {{date}}.",
+    "baseRenewsOn": "El plan base se renueva el {{date}}.",
+    "studioActiveLifetime": "El acceso a AI Studio está activo (de por vida).",
+    "basePlanNotice": "Tu plan base ya está activo. AI Studio sigue siendo una línea separada, pero los cambios del plan base aún no son de autoservicio.",
+    "eyebrow": "Complemento AI Studio",
+    "headline": "Separado del plan base",
+    "description": "Desbloquea AI Studio con un único pago de ${{price}}. Tu marca obtiene acceso permanente a /studio y {{credits}} créditos iniciales acreditados a tu billetera Studio. Enterprise incluye el acceso a Studio automáticamente.",
+    "badges": {
+      "initialCredits": "{{credits}} créditos iniciales de Studio",
+      "walletPlan": "Plan de billetera Studio Pro",
+      "oneTimePayment": "Pago único",
+      "permanentAccess": "Acceso permanente a /studio",
+      "includedEnterprise": "Incluido con Enterprise"
+    },
+    "oneTime": "único",
+    "redirecting": "Redirigiendo",
+    "openStudio": "Abrir Studio",
+    "activateStudio": "Activar Studio",
+    "getStudioAddon": "Obtener complemento Studio"
+  },
   "dashboard": {
     "navigation": {
       "dashboard": "Panel de Control",
@@ -733,6 +756,7 @@
       "noRequestsDescription": "Las agencias pueden enviarte solicitudes directas de licencia para campañas específicas",
       "loading": "Cargando bandeja de entrada...",
       "error": "Error al cargar la bandeja de entrada",
+      "new": "Nuevo",
       "confirmSelectionTitle": "Confirmar selección",
       "confirmSelectionDescription": "Estás a punto de finalizar tu selección de talento para {{title}}."
     },
@@ -783,6 +807,11 @@
         "declined": "Rechazado",
         "pending": "Pendiente",
         "awaiting_signatures": "Pendiente de firmas"
+      },
+      "audit": {
+        "contractFullySigned": "Contrato totalmente firmado por ambas partes",
+        "paymentReleased": "Pago liberado del depósito en garantía",
+        "contractCreatedAndSent": "Contrato creado y enviado a {{creatorName}}"
       }
     },
     "deliverables": {
@@ -799,6 +828,14 @@
       "approve": "Aprobar",
       "reject": "Rechazar",
       "requestChanges": "Solicitar Cambios",
+      "tags": {
+        "new": "Nuevo",
+        "submitted": "Enviado",
+        "approved": "Aprobado",
+        "accepted": "Aprobado",
+        "brand_approved": "Aprobado",
+        "changes_requested": "Cambios solicitados"
+      },
       "badges": {
         "reviewed": "revisado",
         "approved": "aprobado",
@@ -854,6 +891,7 @@
       "tryDifferentKeywords": "Prueba con palabras clave diferentes o ajusta tus filtros.",
       "clearSearchButton": "Limpiar búsqueda",
       "viewDetails": "Ver detalles",
+      "viewDetailsJobPosting": "Ver esta oferta de trabajo y sus solicitudes.",
       "viewApplications": "Ver solicitudes",
       "closeJob": "Cerrar trabajo",
       "noRoleDescription": "Aún no se ha agregado descripción del rol.",
@@ -909,15 +947,32 @@
     "licensingRequest": {
       "title": "Solicitar Licencia",
       "subtitle": "Envía una solicitud de licencia para {{talentName}}.",
+      "subtitleGeneric": "Envía una solicitud de licencia.",
       "startDate": "Fecha de Inicio",
       "duration": "Duración (Días)",
       "licenseFee": "Tarifa de Licencia",
+      "licenseFeePlaceholder": "p. ej. 5000",
       "category": "Categoría",
       "selectCategory": "Seleccionar categoría",
+      "categories": {
+        "socialMedia": "Redes sociales",
+        "ecommerce": "Comercio electrónico",
+        "advertising": "Publicidad",
+        "editorial": "Editorial",
+        "filmTv": "Cine y TV",
+        "custom": "Personalizado"
+      },
       "territory": "Territorio",
+      "territoryPlaceholder": "Global",
       "exclusivity": "Exclusividad",
       "selectExclusivity": "Seleccionar exclusividad",
+      "exclusivityOptions": {
+        "nonExclusive": "No exclusiva",
+        "categoryExclusive": "Exclusiva por categoría",
+        "fullExclusivity": "Exclusividad total"
+      },
       "modificationsAllowed": "Modificaciones Permitidas",
+      "modificationsPlaceholder": "p. ej. Se permiten retoques ligeros",
       "description": "Descripción",
       "descriptionPlaceholder": "Añade una breve descripción para esta solicitud de licencia",
       "additionalCustomTerms": "Términos Personalizados Adicionales",

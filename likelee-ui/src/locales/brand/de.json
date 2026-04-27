@@ -12,6 +12,29 @@
   "brandsRequestYouApproveMessage": "Studios und Marken durchsuchen Ihr Profil, reichen ihr Briefing ein und warten auf Ihre Genehmigung. Ablehnen oder akzeptieren mit einem Klick.",
   "studiosAndBrandsProfile": "Studios & Marken",
   "studiosAndBrandsProfileMessage": "Greifen Sie auf verifizierte, freigegebene Avatare für Anzeigen, Spiele und Kampagnen zu – ohne monatelange rechtliche Verhandlungen oder Zustimmungsrisiko.",
+  "brandPricingStudioAddon": {
+    "currentSubscription": "Aktuelles Abonnement",
+    "base": "Basis",
+    "trialEndsOn": "Die kostenlose Testphase endet am {{date}}.",
+    "baseRenewsOn": "Der Basisplan verlängert sich am {{date}}.",
+    "studioActiveLifetime": "Der Zugriff auf AI Studio ist aktiv (lebenslang).",
+    "basePlanNotice": "Ihr Basisplan ist bereits aktiv. AI Studio bleibt ein separater Posten, aber Änderungen am Basisplan sind noch nicht im Self-Service verfügbar.",
+    "eyebrow": "AI-Studio-Add-on",
+    "headline": "Getrennt vom Basisplan",
+    "description": "Schalten Sie AI Studio mit einer einmaligen Zahlung von ${{price}} frei. Ihre Marke erhält dauerhaften Zugriff auf /studio sowie {{credits}} Startguthaben in Ihrer Studio-Wallet. Enterprise beinhaltet den Studio-Zugang automatisch.",
+    "badges": {
+      "initialCredits": "{{credits}} anfängliche Studio-Credits",
+      "walletPlan": "Studio-Pro-Wallet-Plan",
+      "oneTimePayment": "Einmalige Zahlung",
+      "permanentAccess": "Dauerhafter /studio-Zugang",
+      "includedEnterprise": "In Enterprise enthalten"
+    },
+    "oneTime": "einmalig",
+    "redirecting": "Weiterleitung",
+    "openStudio": "Studio öffnen",
+    "activateStudio": "Studio aktivieren",
+    "getStudioAddon": "Studio-Add-on holen"
+  },
   "dashboard": {
     "navigation": {
       "dashboard": "Dashboard",
@@ -684,6 +707,7 @@
       "noRequestsDescription": "Agenturen können Ihnen direkte Lizenzierungsanfragen für bestimmte Kampagnen senden",
       "loading": "Posteingang wird geladen...",
       "error": "Fehler beim Laden des Posteingangs",
+      "new": "Neu",
       "confirmSelectionTitle": "Auswahl bestätigen",
       "confirmSelectionDescription": "Sie sind dabei, Ihre Talentauswahl für {{title}} abzuschließen."
     },
@@ -734,6 +758,11 @@
         "declined": "Abgelehnt",
         "pending": "Ausstehend",
         "awaiting_signatures": "Wartet auf Unterschriften"
+      },
+      "audit": {
+        "contractFullySigned": "Vertrag von beiden Parteien vollständig unterzeichnet",
+        "paymentReleased": "Zahlung aus dem Treuhandkonto freigegeben",
+        "contractCreatedAndSent": "Vertrag erstellt und an {{creatorName}} gesendet"
       }
     },
     "deliverables": {
@@ -750,6 +779,14 @@
       "approve": "Genehmigen",
       "reject": "Ablehnen",
       "requestChanges": "Änderungen anfordern",
+      "tags": {
+        "new": "Neu",
+        "submitted": "Eingereicht",
+        "approved": "Genehmigt",
+        "accepted": "Genehmigt",
+        "brand_approved": "Genehmigt",
+        "changes_requested": "Änderungen angefordert"
+      },
       "badges": {
         "reviewed": "überprüft",
         "approved": "genehmigt",
@@ -805,6 +842,7 @@
       "tryDifferentKeywords": "Versuchen Sie andere Suchbegriffe oder passen Sie Ihre Filter an.",
       "clearSearchButton": "Suche löschen",
       "viewDetails": "Details anzeigen",
+      "viewDetailsJobPosting": "Diese Stellenausschreibung und ihre Bewerbungen anzeigen.",
       "viewApplications": "Bewerbungen anzeigen",
       "closeJob": "Job schließen",
       "noRoleDescription": "Noch keine Rollenbeschreibung hinzugefügt.",
@@ -860,15 +898,32 @@
     "licensingRequest": {
       "title": "Lizenz anfordern",
       "subtitle": "Senden Sie eine Lizenzierungsanfrage für {{talentName}}.",
+      "subtitleGeneric": "Senden Sie eine Lizenzierungsanfrage.",
       "startDate": "Startdatum",
       "duration": "Dauer (Tage)",
       "licenseFee": "Lizenzgebühr",
+      "licenseFeePlaceholder": "z. B. 5000",
       "category": "Kategorie",
       "selectCategory": "Kategorie auswählen",
+      "categories": {
+        "socialMedia": "Social Media",
+        "ecommerce": "E-Commerce",
+        "advertising": "Werbung",
+        "editorial": "Redaktionell",
+        "filmTv": "Film & TV",
+        "custom": "Benutzerdefiniert"
+      },
       "territory": "Gebiet",
+      "territoryPlaceholder": "Global",
       "exclusivity": "Exklusivität",
       "selectExclusivity": "Exklusivität auswählen",
+      "exclusivityOptions": {
+        "nonExclusive": "Nicht exklusiv",
+        "categoryExclusive": "Kategorie-exklusiv",
+        "fullExclusivity": "Volle Exklusivität"
+      },
       "modificationsAllowed": "Änderungen zulässig",
+      "modificationsPlaceholder": "z. B. Leichte Bearbeitungen erlaubt",
       "description": "Beschreibung",
       "descriptionPlaceholder": "Fügen Sie eine kurze Beschreibung für diese Lizenzierungsanfrage hinzu",
       "additionalCustomTerms": "Zusätzliche benutzerdefinierte Bedingungen",
