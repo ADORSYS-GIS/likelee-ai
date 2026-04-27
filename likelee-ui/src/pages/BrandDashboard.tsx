@@ -9437,6 +9437,11 @@ export default function BrandDashboard() {
                 <div className="col-span-3 text-center py-12">
                   <p className="text-gray-500">
                     {t("dashboard.usageRightsPage.expiring.empty")}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Metrics */}
             <div className="grid grid-cols-2 gap-4">
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
