@@ -2191,5 +2191,8 @@
       "title": "The Infrastructure Behind the Identity Economy",
       "description": "Likelee connects real creators, AI talent, and studios through secure likeness licensing and transparent collaboration tools. Every campaign is human-verified, consent-backed, and ready for the future of media."
     }
-  }
+  },
+  "credits": "Credits",
+  "credits_lower": "credits",
+  "history": "History"
 }

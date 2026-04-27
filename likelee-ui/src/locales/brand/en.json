@@ -1552,6 +1552,27 @@
     "noDescription": "No description provided",
     "backToEdit": "Back to Edit"
   },
+  "statuses": {
+    "draft": "Draft",
+    "sent": "Sent",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "new": "New",
+    "changesRequested": "Changes requested",
+    "contractSent": "Contract sent",
+    "contractFullySigned": "Contract fully signed",
+    "completed": "Completed",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "active": "Active",
+    "inactive": "Inactive",
+    "expired": "Expired",
+    "inProgress": "In progress",
+    "signed": "Signed",
+    "voided": "Voided",
+    "opened": "Opened"
+  },
   "brandCompanyPage": {
     "hero": {
       "title": "License Talent Likenesses for AI Content.",
@@ -1605,6 +1626,11 @@
       "title": "Join Our Pilot Program",
       "getStartedButton": "Get Started",
       "bookDemoButton": "Book a Demo"
+    }
+  },
+  "campaigns": {
+    "contractHub": {
+      "noContractSubmissions": "No contract submissions yet"
     }
   }
 }
