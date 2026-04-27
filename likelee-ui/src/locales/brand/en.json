@@ -378,6 +378,47 @@
         "bookDemo": "Book a Demo"
       }
     },
+    "teamManagement": {
+      "activity": "Activity",
+      "upgradeToAddMembers": "Upgrade to Add Members",
+      "inviteTeamMember": "Invite Team Member",
+      "loadingMembers": "Loading team members...",
+      "activeMembers": "Active Members",
+      "membersCount_one": "{{count}} Member",
+      "membersCount_other": "{{count}} Members",
+      "added": "Added",
+      "noMembers": "No team members found yet.",
+      "pendingInvites": "Pending Invites",
+      "pending": "Pending",
+      "expires": "Expires",
+      "noPendingInvites": "No pending invites.",
+      "inviteBrandDescription": "Add a new collaborator to your brand",
+      "inviteDescription": "Send an email invitation to join your team",
+      "emailAddress": "Email Address",
+      "emailPlaceholder": "colleague@example.com",
+      "userRole": "User Role",
+      "selectRole": "Select role",
+      "accessRights": "Access Rights",
+      "note": "Note",
+      "inviteNote": "Invited teammates will receive an email to join your workspace.",
+      "sending": "Sending...",
+      "sendInvitation": "Send Invitation",
+      "member": "Member",
+      "isCurrently": "is currently",
+      "newRole": "New Role",
+      "roleChangeImmediate": "Role changes take effect immediately.",
+      "confirmRoleChange": "Confirm Role Change",
+      "teamActivity": "Team Activity",
+      "activityDescription": "Recent changes to team members and invitations.",
+      "noActivity": "No recent activity.",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "projectManager": "Project Manager",
+        "reviewer": "Reviewer",
+        "unknown": "Unknown"
+      }
+    },
     "toasts": {
       "campaignIdMissing": "Campaign ID missing",
       "campaignIdMissingDesc": "This offer is not linked to a campaign yet. Please create a campaign first.",
@@ -721,7 +762,28 @@
       "loading": "Loading contracts...",
       "noActiveContracts": "No active contracts",
       "contractsAttentionHere": "Contracts requiring your attention will appear here.",
-      "error": "Failed to load contracts"
+      "error": "Failed to load contracts",
+      "table": {
+        "campaignName": "Campaign Name",
+        "template": "Template",
+        "status": "Status",
+        "sentDate": "Sent Date",
+        "actions": "Actions"
+      },
+      "actions": {
+        "resend": "Resend",
+        "archive": "Archive",
+        "download": "Download"
+      },
+      "status": {
+        "sent": "Sent",
+        "opened": "Opened",
+        "completed": "Completed",
+        "signed": "Signed",
+        "declined": "Declined",
+        "pending": "Pending",
+        "awaiting_signatures": "Awaiting Signatures"
+      }
     },
     "deliverables": {
       "title": "Deliverables",
@@ -755,7 +817,9 @@
       "searchPlaceholder": "Search agencies by name, specialization, or location...",
       "noAgenciesFound": "No agencies found matching your search.",
       "sendInvite": "Send Invite",
-      "cancel": "Cancel",
+      "cancel": "Cancel"
+    },
+    "postJobModal": {
       "title": "Post a Job to Find Talent",
       "description": "Create a detailed job posting to connect with AI creators, marketing agencies, and verified talent for your next campaign.",
       "createJobPosting": "Create Job Posting"
@@ -796,7 +860,41 @@
       "budget": "Budget",
       "start": "Start",
       "end": "End",
-      "viewJobDetails": "View Job Details"
+      "viewJobDetails": "View Job Details",
+      "details": {
+        "aboutRole": "About the role",
+        "location": "Location",
+        "jobType": "Job type",
+        "timeline": "Timeline",
+        "goals": "Goals",
+        "deliverables": "Deliverables",
+        "talentRequirements": "Talent Requirements",
+        "region": "Region",
+        "language": "Language",
+        "licensingRequired": "Licensing required",
+        "licensingDetails": "Licensing Details",
+        "usage": "Usage",
+        "duration": "Duration",
+        "territories": "Territories",
+        "exclusivity": "Exclusivity",
+        "royaltyOption": "Royalty option",
+        "budgetCompensation": "Budget & Compensation",
+        "paymentType": "Payment type",
+        "collaborationPreferences": "Collaboration Preferences",
+        "workWithAgency": "Work with agency",
+        "inviteCreator": "Invite creator",
+        "agencies": "Agencies",
+        "creators": "Creators",
+        "brandAssets": "Brand Assets",
+        "yes": "Yes",
+        "no": "No",
+        "notSpecified": "Not specified"
+      },
+      "status": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "declined": "Declined"
+      }
     },
     "assetLibrary": {
       "title": "Asset Library",
@@ -825,6 +923,7 @@
       "additionalCustomTerms": "Additional Custom Terms",
       "customTermsPlaceholder": "Add any custom licensing terms...",
       "cancel": "Cancel",
+      "creating": "Creating...",
       "createRequest": "Create licensing request"
     },
     "licensingRequests": {
@@ -967,6 +1066,56 @@
       "collaboratorsCount_other": "{{count}} collaborators",
       "deliverablesApproved": "{{approved}} / {{total}} deliverables approved",
       "noCollaboratorsYet": "No collaborators yet."
+    },
+    "inviteAgency": {
+      "title": "Invite Agency",
+      "chooseMethod": "Choose how you'd like to connect",
+      "emailTitle": "Invite by email",
+      "emailSoon": "Email invitations for agencies are coming soon.",
+      "emailPlaceholder": "agency@example.com",
+      "marketplaceTitle": "Browse Marketplace",
+      "marketplaceDescription": "Select from Likelee partner agencies",
+      "marketplaceCta": "View Agencies"
+    },
+    "postJobModal": {
+      "openFullForm": "Open Full Form",
+      "title": "Post a Job to Find Talent",
+      "description": "Create a detailed job posting to connect with AI creators, marketing agencies, and verified talent for your next campaign.",
+      "cta": "Create Job Posting"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Completion Status",
+      "markedDoneOn": "Marked done on"
+    },
+    "markDone": {
+      "title": "Mark campaign as done?",
+      "description": "This will close the campaign and mark the collaboration complete.",
+      "confirm": "Mark as Done"
+    },
+    "aiStudioModal": {
+      "title": "AI Studio Add-On",
+      "headline": "Generate Content In-House",
+      "description": "Unlock the full Likelee Studio to create AI-generated videos, images, and voiceovers without waiting for agency cycles. Perfect for brands scaling fast.",
+      "features": {
+        "directCreationTitle": "Direct Content Creation",
+        "directCreationDescription": "Generate videos and images instantly without agency delays",
+        "teamCollaborationTitle": "Team Collaboration",
+        "teamCollaborationDescription": "Share studio access with your in-house creative team",
+        "toolsTitle": "AI-Powered Tools",
+        "toolsDescription": "Access Runway, Sora, ElevenLabs, and more via one platform",
+        "rightsTitle": "Rights Management",
+        "rightsDescription": "Automatic tracking and compliance for all generated content"
+      },
+      "pricingTitle": "$299/month",
+      "pricingDescription": "Added as a separate billing line item from your base plan",
+      "bullets": {
+        "access": "Unlock brand access to Likelee Studio tools",
+        "separate": "Purchased separately from the base plan free trial",
+        "enterprise": "Included automatically with Enterprise"
+      },
+      "enableAddon": "Enable Add-On",
+      "upgradeToPro": "Upgrade to Pro",
+      "note": "You can still work with agencies and creators even with Studio access. This add-on simply gives you the flexibility to create in-house when needed."
     },
     "builder": {
       "title": "Create New Campaign",
@@ -1172,10 +1321,18 @@
     "actions": {
       "batchDownload": "Batch Download",
       "filter": "Filter",
+      "refresh": "Refresh",
       "grid": "Grid",
       "list": "List",
       "createCollection": "Create Collection"
     },
+    "filters": {
+      "all": "All",
+      "studio": "Studio"
+    },
+    "loading": "Loading assets...",
+    "collectionsCount_one": "{{count}} asset",
+    "collectionsCount_other": "{{count}} assets",
     "searchPlaceholder": "Search by project, creator, or filename...",
     "emptyState": "No assets available yet. Assets will appear here once campaigns are completed.",
     "collections": "Collections"

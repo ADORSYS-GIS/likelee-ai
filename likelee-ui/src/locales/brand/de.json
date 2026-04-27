@@ -329,6 +329,47 @@
         "bookDemo": "Demo buchen"
       }
     },
+    "teamManagement": {
+      "activity": "Aktivität",
+      "upgradeToAddMembers": "Upgrade zum Hinzufügen von Mitgliedern",
+      "inviteTeamMember": "Teammitglied einladen",
+      "loadingMembers": "Teammitglieder werden geladen...",
+      "activeMembers": "Aktive Mitglieder",
+      "membersCount_one": "{{count}} Mitglied",
+      "membersCount_other": "{{count}} Mitglieder",
+      "added": "Hinzugefügt",
+      "noMembers": "Noch keine Teammitglieder vorhanden.",
+      "pendingInvites": "Ausstehende Einladungen",
+      "pending": "Ausstehend",
+      "expires": "Läuft ab",
+      "noPendingInvites": "Keine ausstehenden Einladungen.",
+      "inviteBrandDescription": "Fügen Sie Ihrer Marke einen neuen Mitarbeiter hinzu",
+      "inviteDescription": "Senden Sie eine E-Mail-Einladung, um Ihrem Team beizutreten",
+      "emailAddress": "E-Mail-Adresse",
+      "emailPlaceholder": "kollege@beispiel.de",
+      "userRole": "Benutzerrolle",
+      "selectRole": "Rolle auswählen",
+      "accessRights": "Zugriffsrechte",
+      "note": "Hinweis",
+      "inviteNote": "Eingeladene Teammitglieder erhalten eine E-Mail, um Ihrem Workspace beizutreten.",
+      "sending": "Wird gesendet...",
+      "sendInvitation": "Einladung senden",
+      "member": "Mitglied",
+      "isCurrently": "ist derzeit",
+      "newRole": "Neue Rolle",
+      "roleChangeImmediate": "Rollenänderungen werden sofort wirksam.",
+      "confirmRoleChange": "Rollenänderung bestätigen",
+      "teamActivity": "Teamaktivität",
+      "activityDescription": "Letzte Änderungen an Teammitgliedern und Einladungen.",
+      "noActivity": "Keine aktuelle Aktivität.",
+      "roles": {
+        "owner": "Inhaber",
+        "admin": "Admin",
+        "projectManager": "Projektmanager",
+        "reviewer": "Prüfer",
+        "unknown": "Unbekannt"
+      }
+    },
     "toasts": {
       "campaignIdMissing": "Kampagnen-ID fehlt",
       "campaignIdMissingDesc": "Dieses Angebot ist noch nicht mit einer Kampagne verknüpft. Bitte erstellen Sie zuerst eine Kampagne.",
@@ -672,7 +713,28 @@
       "loading": "Verträge werden geladen...",
       "noActiveContracts": "Keine aktiven Verträge",
       "contractsAttentionHere": "Verträge, die Ihre Aufmerksamkeit benötigen, werden hier angezeigt.",
-      "error": "Fehler beim Laden von Verträgen"
+      "error": "Fehler beim Laden von Verträgen",
+      "table": {
+        "campaignName": "Kampagnenname",
+        "template": "Vorlage",
+        "status": "Status",
+        "sentDate": "Sendedatum",
+        "actions": "Aktionen"
+      },
+      "actions": {
+        "resend": "Erneut senden",
+        "archive": "Archivieren",
+        "download": "Herunterladen"
+      },
+      "status": {
+        "sent": "Gesendet",
+        "opened": "Geöffnet",
+        "completed": "Abgeschlossen",
+        "signed": "Unterzeichnet",
+        "declined": "Abgelehnt",
+        "pending": "Ausstehend",
+        "awaiting_signatures": "Wartet auf Unterschriften"
+      }
     },
     "deliverables": {
       "title": "Deliverables",
@@ -705,11 +767,13 @@
       "description": "Verbinden Sie sich mit einer Marketing-Agentur, um Ihre Kampagnen mit verifizierten Creators zu verwalten und durchzuführen.",
       "searchPlaceholder": "Agenturen nach Name, Spezialisierung oder Standort suchen...",
       "noAgenciesFound": "Keine Agenturen gefunden, die Ihrer Suche entsprechen.",
-      "sendInvite": "Einladung Senden",
-      "cancel": "Abbrechen",
-      "title": "Job Veröffentlichen um Talente zu Finden",
+      "sendInvite": "Einladung senden",
+      "cancel": "Abbrechen"
+    },
+    "postJobModal": {
+      "title": "Job veröffentlichen, um Talente zu finden",
       "description": "Erstellen Sie eine detaillierte Stellenausschreibung, um sich mit KI-Creators, Marketing-Agenturen und verifizierten Talenten für Ihre nächste Kampagne zu verbinden.",
-      "createJobPosting": "Stellenausschreibung Erstellen"
+      "createJobPosting": "Stellenausschreibung erstellen"
     },
     "jobs": {
       "title": "Jobs",
@@ -747,7 +811,41 @@
       "budget": "Budget",
       "start": "Start",
       "end": "Ende",
-      "viewJobDetails": "Job-Details Anzeigen"
+      "viewJobDetails": "Job-Details anzeigen",
+      "details": {
+        "aboutRole": "Über die Rolle",
+        "location": "Standort",
+        "jobType": "Jobtyp",
+        "timeline": "Zeitrahmen",
+        "goals": "Ziele",
+        "deliverables": "Deliverables",
+        "talentRequirements": "Talent-Anforderungen",
+        "region": "Region",
+        "language": "Sprache",
+        "licensingRequired": "Lizenzierung erforderlich",
+        "licensingDetails": "Lizenzdetails",
+        "usage": "Nutzung",
+        "duration": "Dauer",
+        "territories": "Gebiete",
+        "exclusivity": "Exklusivität",
+        "royaltyOption": "Royalty-Option",
+        "budgetCompensation": "Budget & Vergütung",
+        "paymentType": "Zahlungsart",
+        "collaborationPreferences": "Zusammenarbeitspräferenzen",
+        "workWithAgency": "Mit Agentur arbeiten",
+        "inviteCreator": "Creator einladen",
+        "agencies": "Agenturen",
+        "creators": "Creators",
+        "brandAssets": "Marken-Assets",
+        "yes": "Ja",
+        "no": "Nein",
+        "notSpecified": "Nicht angegeben"
+      },
+      "status": {
+        "pending": "Ausstehend",
+        "accepted": "Akzeptiert",
+        "declined": "Abgelehnt"
+      }
     },
     "assetLibrary": {
       "title": "Asset-Bibliothek",
@@ -776,6 +874,7 @@
       "additionalCustomTerms": "Zusätzliche benutzerdefinierte Bedingungen",
       "customTermsPlaceholder": "Fügen Sie benutzerdefinierte Lizenzierungsbedingungen hinzu...",
       "cancel": "Abbrechen",
+      "creating": "Wird erstellt...",
       "createRequest": "Lizenzierungsanfrage erstellen"
     },
     "licensingRequests": {
@@ -1023,6 +1122,56 @@
       "deliverablesApproved": "{{approved}} / {{total}} Deliverables genehmigt",
       "noCollaboratorsYet": "Noch keine Mitarbeiter."
     },
+    "inviteAgency": {
+      "title": "Agentur einladen",
+      "chooseMethod": "Wählen Sie, wie Sie sich verbinden möchten",
+      "emailTitle": "Per E-Mail einladen",
+      "emailSoon": "E-Mail-Einladungen für Agenturen sind bald verfügbar.",
+      "emailPlaceholder": "agentur@beispiel.de",
+      "marketplaceTitle": "Marktplatz durchsuchen",
+      "marketplaceDescription": "Wählen Sie aus Likelee-Partneragenturen",
+      "marketplaceCta": "Agenturen anzeigen"
+    },
+    "postJobModal": {
+      "openFullForm": "Vollständiges Formular öffnen",
+      "title": "Job veröffentlichen, um Talente zu finden",
+      "description": "Erstellen Sie eine detaillierte Stellenausschreibung, um sich mit KI-Creators, Marketing-Agenturen und verifizierten Talenten für Ihre nächste Kampagne zu verbinden.",
+      "cta": "Stellenausschreibung erstellen"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Abschlussstatus",
+      "markedDoneOn": "Als erledigt markiert am"
+    },
+    "markDone": {
+      "title": "Kampagne als erledigt markieren?",
+      "description": "Dadurch wird die Kampagne geschlossen und die Zusammenarbeit als abgeschlossen markiert.",
+      "confirm": "Als erledigt markieren"
+    },
+    "aiStudioModal": {
+      "title": "KI-Studio Add-On",
+      "headline": "Inhalte intern erstellen",
+      "description": "Schalten Sie das vollständige Likelee Studio frei, um KI-generierte Videos, Bilder und Voiceovers zu erstellen, ohne auf Agenturzyklen zu warten. Perfekt für schnell skalierende Marken.",
+      "features": {
+        "directCreationTitle": "Direkte Inhaltserstellung",
+        "directCreationDescription": "Erstellen Sie Videos und Bilder sofort ohne Verzögerungen durch Agenturen",
+        "teamCollaborationTitle": "Team-Zusammenarbeit",
+        "teamCollaborationDescription": "Teilen Sie den Studio-Zugang mit Ihrem internen Kreativteam",
+        "toolsTitle": "KI-gestützte Tools",
+        "toolsDescription": "Greifen Sie über eine Plattform auf Runway, Sora, ElevenLabs und mehr zu",
+        "rightsTitle": "Rechtemanagement",
+        "rightsDescription": "Automatisches Tracking und Compliance für alle generierten Inhalte"
+      },
+      "pricingTitle": "299 $/Monat",
+      "pricingDescription": "Wird als separate Rechnungsposition zusätzlich zu Ihrem Basisplan berechnet",
+      "bullets": {
+        "access": "Schaltet den Marken-Zugang zu Likelee-Studio-Tools frei",
+        "separate": "Wird separat von der kostenlosen Testphase des Basisplans gekauft",
+        "enterprise": "Bei Enterprise automatisch enthalten"
+      },
+      "enableAddon": "Add-On aktivieren",
+      "upgradeToPro": "Auf Pro upgraden",
+      "note": "Sie können auch mit Studio-Zugang weiterhin mit Agenturen und Creators arbeiten. Dieses Add-On gibt Ihnen einfach die Flexibilität, Inhalte bei Bedarf intern zu erstellen."
+    },
     "yourCampaigns": "Meine Kampagnen",
     "viewDetails": "Details anzeigen",
     "closeJob": "Job schließen",
@@ -1227,10 +1376,18 @@
     "actions": {
       "batchDownload": "Batch-Download",
       "filter": "Filter",
+      "refresh": "Aktualisieren",
       "grid": "Raster",
       "list": "Liste",
       "createCollection": "Sammlung erstellen"
     },
+    "filters": {
+      "all": "Alle",
+      "studio": "Studio"
+    },
+    "loading": "Assets werden geladen...",
+    "collectionsCount_one": "{{count}} Asset",
+    "collectionsCount_other": "{{count}} Assets",
     "searchPlaceholder": "Nach Projekt, Creator oder Dateiname suchen...",
     "emptyState": "Noch keine Assets verfügbar. Assets erscheinen hier, sobald Kampagnen abgeschlossen sind.",
     "collections": "Sammlungen"

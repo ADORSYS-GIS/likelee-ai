@@ -378,6 +378,47 @@
         "bookDemo": "Reservar una demo"
       }
     },
+    "teamManagement": {
+      "activity": "Actividad",
+      "upgradeToAddMembers": "Mejorar para agregar miembros",
+      "inviteTeamMember": "Invitar a un miembro del equipo",
+      "loadingMembers": "Cargando miembros del equipo...",
+      "activeMembers": "Miembros activos",
+      "membersCount_one": "{{count}} miembro",
+      "membersCount_other": "{{count}} miembros",
+      "added": "Añadido",
+      "noMembers": "Aún no hay miembros del equipo.",
+      "pendingInvites": "Invitaciones pendientes",
+      "pending": "Pendiente",
+      "expires": "Expira",
+      "noPendingInvites": "No hay invitaciones pendientes.",
+      "inviteBrandDescription": "Agrega un nuevo colaborador a tu marca",
+      "inviteDescription": "Envía una invitación por correo para unirse a tu equipo",
+      "emailAddress": "Correo electrónico",
+      "emailPlaceholder": "colega@ejemplo.com",
+      "userRole": "Rol del usuario",
+      "selectRole": "Seleccionar rol",
+      "accessRights": "Derechos de acceso",
+      "note": "Nota",
+      "inviteNote": "Los compañeros invitados recibirán un correo para unirse a tu espacio de trabajo.",
+      "sending": "Enviando...",
+      "sendInvitation": "Enviar invitación",
+      "member": "Miembro",
+      "isCurrently": "es actualmente",
+      "newRole": "Nuevo rol",
+      "roleChangeImmediate": "Los cambios de rol surten efecto inmediatamente.",
+      "confirmRoleChange": "Confirmar cambio de rol",
+      "teamActivity": "Actividad del equipo",
+      "activityDescription": "Cambios recientes en miembros e invitaciones.",
+      "noActivity": "No hay actividad reciente.",
+      "roles": {
+        "owner": "Propietario",
+        "admin": "Administrador",
+        "projectManager": "Gerente de proyecto",
+        "reviewer": "Revisor",
+        "unknown": "Desconocido"
+      }
+    },
     "toasts": {
       "campaignIdMissing": "Falta ID de campaña",
       "campaignIdMissingDesc": "Esta oferta aún no está vinculada a una campaña. Por favor, crea una campaña primero.",
@@ -721,7 +762,28 @@
       "loading": "Cargando contratos...",
       "noActiveContracts": "No hay contratos activos",
       "contractsAttentionHere": "Los contratos que requieren tu atención aparecerán aquí.",
-      "error": "Error al cargar contratos"
+      "error": "Error al cargar contratos",
+      "table": {
+        "campaignName": "Nombre de la campaña",
+        "template": "Plantilla",
+        "status": "Estado",
+        "sentDate": "Fecha de envío",
+        "actions": "Acciones"
+      },
+      "actions": {
+        "resend": "Reenviar",
+        "archive": "Archivar",
+        "download": "Descargar"
+      },
+      "status": {
+        "sent": "Enviado",
+        "opened": "Abierto",
+        "completed": "Completado",
+        "signed": "Firmado",
+        "declined": "Rechazado",
+        "pending": "Pendiente",
+        "awaiting_signatures": "Pendiente de firmas"
+      }
     },
     "deliverables": {
       "title": "Entregables",
@@ -755,7 +817,9 @@
       "searchPlaceholder": "Buscar agencias por nombre, especialización o ubicación...",
       "noAgenciesFound": "No se encontraron agencias que coincidan con tu búsqueda.",
       "sendInvite": "Enviar Invitación",
-      "cancel": "Cancelar",
+      "cancel": "Cancelar"
+    },
+    "postJobModal": {
       "title": "Publicar un Trabajo para Encontrar Talento",
       "description": "Crea una publicación de trabajo detallada para conectar con creadores de IA, agencias de marketing y talento verificado para tu próxima campaña.",
       "createJobPosting": "Crear Publicación de Trabajo"
@@ -796,7 +860,41 @@
       "budget": "Presupuesto",
       "start": "Inicio",
       "end": "Fin",
-      "viewJobDetails": "Ver Detalles del Trabajo"
+      "viewJobDetails": "Ver Detalles del Trabajo",
+      "details": {
+        "aboutRole": "Sobre el rol",
+        "location": "Ubicación",
+        "jobType": "Tipo de trabajo",
+        "timeline": "Cronograma",
+        "goals": "Objetivos",
+        "deliverables": "Entregables",
+        "talentRequirements": "Requisitos del talento",
+        "region": "Región",
+        "language": "Idioma",
+        "licensingRequired": "Licencia requerida",
+        "licensingDetails": "Detalles de licencia",
+        "usage": "Uso",
+        "duration": "Duración",
+        "territories": "Territorios",
+        "exclusivity": "Exclusividad",
+        "royaltyOption": "Opción de regalías",
+        "budgetCompensation": "Presupuesto y compensación",
+        "paymentType": "Tipo de pago",
+        "collaborationPreferences": "Preferencias de colaboración",
+        "workWithAgency": "Trabajar con agencia",
+        "inviteCreator": "Invitar creador",
+        "agencies": "Agencias",
+        "creators": "Creadores",
+        "brandAssets": "Activos de marca",
+        "yes": "Sí",
+        "no": "No",
+        "notSpecified": "No especificado"
+      },
+      "status": {
+        "pending": "Pendiente",
+        "accepted": "Aceptado",
+        "declined": "Rechazado"
+      }
     },
     "assetLibrary": {
       "title": "Biblioteca de Activos",
@@ -825,6 +923,7 @@
       "additionalCustomTerms": "Términos Personalizados Adicionales",
       "customTermsPlaceholder": "Añade términos de licencia personalizados...",
       "cancel": "Cancelar",
+      "creating": "Creando...",
       "createRequest": "Crear solicitud de licencia"
     },
     "licensingRequests": {
@@ -967,6 +1066,56 @@
       "collaboratorsCount_other": "{{count}} colaboradores",
       "deliverablesApproved": "{{approved}} / {{total}} entregables aprobados",
       "noCollaboratorsYet": "Aún no hay colaboradores."
+    },
+    "inviteAgency": {
+      "title": "Invitar agencia",
+      "chooseMethod": "Elige cómo quieres conectar",
+      "emailTitle": "Invitar por correo",
+      "emailSoon": "Las invitaciones por correo para agencias llegarán pronto.",
+      "emailPlaceholder": "agencia@ejemplo.com",
+      "marketplaceTitle": "Explorar marketplace",
+      "marketplaceDescription": "Selecciona entre las agencias asociadas de Likelee",
+      "marketplaceCta": "Ver agencias"
+    },
+    "postJobModal": {
+      "openFullForm": "Abrir formulario completo",
+      "title": "Publicar un trabajo para encontrar talento",
+      "description": "Crea una oferta detallada para conectar con creadores de IA, agencias de marketing y talento verificado para tu próxima campaña.",
+      "cta": "Crear oferta de trabajo"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Estado de finalización",
+      "markedDoneOn": "Marcado como terminado el"
+    },
+    "markDone": {
+      "title": "¿Marcar campaña como terminada?",
+      "description": "Esto cerrará la campaña y marcará la colaboración como completada.",
+      "confirm": "Marcar como terminada"
+    },
+    "aiStudioModal": {
+      "title": "Complemento AI Studio",
+      "headline": "Genera contenido internamente",
+      "description": "Desbloquea todo Likelee Studio para crear videos, imágenes y voces en off generados por IA sin esperar los ciclos de la agencia. Perfecto para marcas que escalan rápido.",
+      "features": {
+        "directCreationTitle": "Creación directa de contenido",
+        "directCreationDescription": "Genera videos e imágenes al instante sin retrasos de agencia",
+        "teamCollaborationTitle": "Colaboración en equipo",
+        "teamCollaborationDescription": "Comparte el acceso al estudio con tu equipo creativo interno",
+        "toolsTitle": "Herramientas impulsadas por IA",
+        "toolsDescription": "Accede a Runway, Sora, ElevenLabs y más desde una sola plataforma",
+        "rightsTitle": "Gestión de derechos",
+        "rightsDescription": "Seguimiento automático y cumplimiento para todo el contenido generado"
+      },
+      "pricingTitle": "$299/mes",
+      "pricingDescription": "Se añade como una línea de facturación separada de tu plan base",
+      "bullets": {
+        "access": "Desbloquea el acceso de la marca a las herramientas de Likelee Studio",
+        "separate": "Se compra por separado de la prueba gratuita del plan base",
+        "enterprise": "Incluido automáticamente con Enterprise"
+      },
+      "enableAddon": "Activar complemento",
+      "upgradeToPro": "Mejorar a Pro",
+      "note": "Aún puedes trabajar con agencias y creadores incluso con acceso a Studio. Este complemento simplemente te da la flexibilidad de crear internamente cuando lo necesites."
     },
     "yourCampaigns": "Mis Campañas",
     "viewDetails": "Ver Detalles",
@@ -1172,10 +1321,18 @@
     "actions": {
       "batchDownload": "Descarga por Lotes",
       "filter": "Filtrar",
+      "refresh": "Actualizar",
       "grid": "Cuadrícula",
       "list": "Lista",
       "createCollection": "Crear colección"
     },
+    "filters": {
+      "all": "Todos",
+      "studio": "Studio"
+    },
+    "loading": "Cargando activos...",
+    "collectionsCount_one": "{{count}} activo",
+    "collectionsCount_other": "{{count}} activos",
     "searchPlaceholder": "Buscar por proyecto, creador o nombre de archivo...",
     "emptyState": "Todavía no hay activos disponibles. Los activos aparecerán aquí una vez que las campañas se completen.",
     "collections": "Colecciones"

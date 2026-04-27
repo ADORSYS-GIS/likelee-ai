@@ -393,6 +393,47 @@
         "bookDemo": "Réserver une démo"
       }
     },
+    "teamManagement": {
+      "activity": "Activité",
+      "upgradeToAddMembers": "Passer à une offre supérieure pour ajouter des membres",
+      "inviteTeamMember": "Inviter un membre de l'équipe",
+      "loadingMembers": "Chargement des membres de l'équipe...",
+      "activeMembers": "Membres actifs",
+      "membersCount_one": "{{count}} membre",
+      "membersCount_other": "{{count}} membres",
+      "added": "Ajouté",
+      "noMembers": "Aucun membre d'équipe pour le moment.",
+      "pendingInvites": "Invitations en attente",
+      "pending": "En attente",
+      "expires": "Expire",
+      "noPendingInvites": "Aucune invitation en attente.",
+      "inviteBrandDescription": "Ajoutez un nouveau collaborateur à votre marque",
+      "inviteDescription": "Envoyez une invitation par e-mail pour rejoindre votre équipe",
+      "emailAddress": "Adresse e-mail",
+      "emailPlaceholder": "collegue@exemple.fr",
+      "userRole": "Rôle de l'utilisateur",
+      "selectRole": "Sélectionner un rôle",
+      "accessRights": "Droits d'accès",
+      "note": "Remarque",
+      "inviteNote": "Les coéquipiers invités recevront un e-mail pour rejoindre votre espace de travail.",
+      "sending": "Envoi en cours...",
+      "sendInvitation": "Envoyer l'invitation",
+      "member": "Membre",
+      "isCurrently": "est actuellement",
+      "newRole": "Nouveau rôle",
+      "roleChangeImmediate": "Les changements de rôle prennent effet immédiatement.",
+      "confirmRoleChange": "Confirmer le changement de rôle",
+      "teamActivity": "Activité de l'équipe",
+      "activityDescription": "Modifications récentes des membres et des invitations.",
+      "noActivity": "Aucune activité récente.",
+      "roles": {
+        "owner": "Propriétaire",
+        "admin": "Admin",
+        "projectManager": "Chef de projet",
+        "reviewer": "Réviseur",
+        "unknown": "Inconnu"
+      }
+    },
     "toasts": {
       "campaignIdMissing": "ID de campagne manquant",
       "campaignIdMissingDesc": "Cette offre n'est pas encore liée à une campagne. Veuillez d'abord créer une campagne.",
@@ -711,6 +752,9 @@
       "confirmSelectionDescription": "Vous êtes sur le point de finaliser votre sélection de talents pour {{title}}."
     },
     "contractHub": {
+      "title": "Hub des contrats",
+      "subtitle": "Gérez et suivez tous les contrats",
+      "campaignContractsStatus": "Contrats de campagne et statut de signature.",
       "redirecting": "Redirection...",
       "payOffer": "Payer l'offre",
       "viewOnlyRequiresRole": "Lecture seule : le paiement nécessite le rôle d'administrateur ou de chef de projet",
@@ -728,7 +772,32 @@
         "completed": "Terminé"
       },
       "noOfferContracts": "Aucune soumission de contrat pour le moment.",
-      "updatedLabel": "Mis à jour"
+      "updatedLabel": "Mis à jour",
+      "paymentRequiredBanner": "Contrat signé. Paiement requis avant le début des livrables.",
+      "paymentError": "Erreur de paiement",
+      "talentAssignmentRequired": "Attribution de talent requise",
+      "talentAssignmentRequiredDescription": "L'agence doit attribuer au moins 1 talent à cette offre avant que vous puissiez payer. Veuillez contacter l'agence et réessayer.",
+      "table": {
+        "campaignName": "Nom de la campagne",
+        "template": "Modèle",
+        "status": "Statut",
+        "sentDate": "Date d'envoi",
+        "actions": "Actions"
+      },
+      "actions": {
+        "resend": "Renvoyer",
+        "archive": "Archiver",
+        "download": "Télécharger"
+      },
+      "status": {
+        "sent": "Envoyé",
+        "opened": "Ouvert",
+        "completed": "Terminé",
+        "signed": "Signé",
+        "declined": "Refusé",
+        "pending": "En attente",
+        "awaiting_signatures": "En attente de signatures"
+      }
     },
     "deliverables": {
       "title": "Livrables",
@@ -838,7 +907,41 @@
       "budget": "Budget",
       "start": "Début",
       "end": "Fin",
-      "viewJobDetails": "Voir les Détails de l'Emploi"
+      "viewJobDetails": "Voir les détails de l'emploi",
+      "details": {
+        "aboutRole": "À propos du rôle",
+        "location": "Lieu",
+        "jobType": "Type d'emploi",
+        "timeline": "Calendrier",
+        "goals": "Objectifs",
+        "deliverables": "Livrables",
+        "talentRequirements": "Exigences pour le talent",
+        "region": "Région",
+        "language": "Langue",
+        "licensingRequired": "Licence requise",
+        "licensingDetails": "Détails de la licence",
+        "usage": "Usage",
+        "duration": "Durée",
+        "territories": "Territoires",
+        "exclusivity": "Exclusivité",
+        "royaltyOption": "Option de redevance",
+        "budgetCompensation": "Budget et rémunération",
+        "paymentType": "Type de paiement",
+        "collaborationPreferences": "Préférences de collaboration",
+        "workWithAgency": "Travailler avec une agence",
+        "inviteCreator": "Inviter un créateur",
+        "agencies": "Agences",
+        "creators": "Créateurs",
+        "brandAssets": "Actifs de marque",
+        "yes": "Oui",
+        "no": "Non",
+        "notSpecified": "Non spécifié"
+      },
+      "status": {
+        "pending": "En attente",
+        "accepted": "Accepté",
+        "declined": "Refusé"
+      }
     },
     "assetLibrary": {
       "title": "Bibliothèque d'Actifs",
@@ -867,6 +970,7 @@
       "additionalCustomTerms": "Conditions Personnalisées Supplémentaires",
       "customTermsPlaceholder": "Ajoutez des conditions de licence personnalisées...",
       "cancel": "Annuler",
+      "creating": "Création en cours...",
       "createRequest": "Créer une demande de licence"
     },
     "hireModal": {
@@ -920,7 +1024,264 @@
         "negotiating": "En négociation",
         "pending": "En attente"
       }
+    },
+    "analytics": {
+      "title": "Analytique et rapports",
+      "subtitle": "Mesurez le ROI et suivez les indicateurs d'efficacité",
+      "totalProjectsYtd": "Projets totaux (YTD)",
+      "avgTurnaround": "Délai moyen",
+      "totalSpendYtd": "Dépenses totales (YTD)",
+      "avgCostPerProject": "Coût moyen / projet",
+      "talentPerformance": "Performance des talents",
+      "exportReport": "Exporter le rapport",
+      "talent": "Talent",
+      "projects": "Projets",
+      "successRate": "Taux de réussite",
+      "totalCost": "Coût total",
+      "loadingTalentPerformance": "Chargement de la performance des talents...",
+      "noTalentPerformance": "Aucune donnée de performance pour le moment.",
+      "topPerformer": "Meilleure performance",
+      "spendByMonth": "Dépenses par mois",
+      "budgetForecast": "Prévision budgétaire",
+      "ytdSpend": "Dépenses YTD",
+      "monthlyAvg": "Moyenne mensuelle",
+      "projectedEoy": "Projection fin d'année"
     }
+  },
+  "campaignsDashboard": {
+    "quickActions": {
+      "collaborateWithAgency": "Collaborer avec une agence",
+      "addAICreator": "Ajouter un créateur IA",
+      "inviteCompanySeat": "Inviter un siège d'entreprise",
+      "aiStudioAddon": "Module AI Studio",
+      "postJob": "Publier un emploi",
+      "comingSoon": "Bientôt disponible"
+    },
+    "stats": {
+      "campaignsLaunched": "Campagnes lancées",
+      "totalSpend30d": "Dépenses totales (30 j)",
+      "activeCollaborators": "Collaborateurs actifs"
+    },
+    "backToDashboard": "Retour au tableau de bord",
+    "newCampaign": "Nouvelle campagne",
+    "status": {
+      "completed": "Terminé",
+      "incomplete": "Incomplet"
+    },
+    "plan": {
+      "basicBriefOnly": "Les forfaits Basic peuvent enregistrer les détails et briefs de campagne, mais la sélection des collaborateurs et l'envoi des offres commencent avec Pro.",
+      "slotsUsed": "Vous avez utilisé {{used}} sur {{total}} créneaux de campagnes actifs avec votre forfait actuel.",
+      "slotsUsedBuilder": "Vous avez déjà utilisé {{used}} sur {{total}} créneaux de campagnes actifs. Marquez une campagne comme terminée ou passez à une offre supérieure avant d'en lancer une autre."
+    },
+    "overview": {
+      "collaborateWithAgencyDesc": "Invitez une agence marketing à gérer vos campagnes",
+      "addAICreatorDesc": "Travaillez directement avec des créateurs IA vérifiés",
+      "inviteCompanySeatDesc": "Ajoutez un créateur IA interne à votre équipe",
+      "aiStudioAddonDesc": "Générez du contenu en interne sans attendre",
+      "postJobDesc": "Trouvez des talents sur la marketplace",
+      "upgradePlan": "Passer à une offre supérieure",
+      "unlockAddon": "Débloquer le module",
+      "noActiveCampaigns": "Aucune campagne active pour le moment.",
+      "noPendingCampaigns": "Aucune campagne en attente d'approbation.",
+      "noExpiredCampaigns": "Aucune campagne expirée pour le moment.",
+      "start": "Début",
+      "progress": "Progression",
+      "collaborators": "Collaborateurs",
+      "collaboratorsCount_one": "{{count}} collaborateur",
+      "collaboratorsCount_other": "{{count}} collaborateurs",
+      "deliverablesApproved": "{{approved}} / {{total}} livrables approuvés",
+      "noCollaboratorsYet": "Aucun collaborateur pour le moment."
+    },
+    "inviteAgency": {
+      "title": "Inviter une agence",
+      "chooseMethod": "Choisissez votre mode de connexion",
+      "emailTitle": "Inviter par e-mail",
+      "emailSoon": "Les invitations d'agence par e-mail arrivent bientôt.",
+      "emailPlaceholder": "agence@exemple.fr",
+      "marketplaceTitle": "Parcourir la marketplace",
+      "marketplaceDescription": "Sélectionnez parmi les agences partenaires Likelee",
+      "marketplaceCta": "Voir les agences"
+    },
+    "postJobModal": {
+      "openFullForm": "Ouvrir le formulaire complet",
+      "title": "Publier un emploi pour trouver des talents",
+      "description": "Créez une offre d'emploi détaillée pour vous connecter avec des créateurs IA, des agences de marketing et des talents vérifiés pour votre prochaine campagne.",
+      "cta": "Créer une offre d'emploi"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Statut d'achèvement",
+      "markedDoneOn": "Marqué comme terminé le"
+    },
+    "markDone": {
+      "title": "Marquer la campagne comme terminée ?",
+      "description": "Cela fermera la campagne et marquera la collaboration comme terminée.",
+      "confirm": "Marquer comme terminé"
+    },
+    "aiStudioModal": {
+      "title": "Module AI Studio",
+      "headline": "Générez du contenu en interne",
+      "description": "Débloquez l'ensemble du Likelee Studio pour créer des vidéos, images et voix off générées par IA sans attendre les cycles d'agence. Parfait pour les marques qui accélèrent rapidement.",
+      "features": {
+        "directCreationTitle": "Création directe de contenu",
+        "directCreationDescription": "Générez instantanément des vidéos et des images sans délais d'agence",
+        "teamCollaborationTitle": "Collaboration d'équipe",
+        "teamCollaborationDescription": "Partagez l'accès au studio avec votre équipe créative interne",
+        "toolsTitle": "Outils alimentés par l'IA",
+        "toolsDescription": "Accédez à Runway, Sora, ElevenLabs et plus encore via une seule plateforme",
+        "rightsTitle": "Gestion des droits",
+        "rightsDescription": "Suivi automatique et conformité pour tout le contenu généré"
+      },
+      "pricingTitle": "299 $/mois",
+      "pricingDescription": "Ajouté comme ligne de facturation séparée de votre forfait de base",
+      "bullets": {
+        "access": "Débloque l'accès de la marque aux outils Likelee Studio",
+        "separate": "Acheté séparément de l'essai gratuit du forfait de base",
+        "enterprise": "Inclus automatiquement avec Enterprise"
+      },
+      "enableAddon": "Activer le module",
+      "upgradeToPro": "Passer à Pro",
+      "note": "Vous pouvez toujours travailler avec des agences et des créateurs même avec l'accès Studio. Ce module vous donne simplement la flexibilité de créer en interne quand nécessaire."
+    },
+    "builder": {
+      "title": "Créer une nouvelle campagne",
+      "steps": {
+        "campaignInfo": "Infos campagne",
+        "campaignBrief": "Brief de campagne",
+        "collaborators": "Collaborateurs",
+        "offerSummary": "Résumé de l'offre",
+        "contractUpload": "Téléversement du contrat"
+      },
+      "planLimit": "Votre forfait actuel inclut uniquement les étapes 1 à 2 de cet assistant. Passez à Pro pour débloquer la sélection de collaborateurs, la recherche de talents et l'envoi d'offres.",
+      "fields": {
+        "campaignName": "Nom de la campagne *",
+        "campaignObjective": "Objectif de campagne *",
+        "category": "Catégorie *",
+        "description": "Description *",
+        "budgetMin": "Budget min (USD) *",
+        "budgetMax": "Budget max (USD) *",
+        "startDate": "Date de début *",
+        "usageScope": "Périmètre d'utilisation",
+        "durationDays": "Durée (jours)",
+        "territory": "Territoire",
+        "exclusivity": "Exclusivité",
+        "customTerms": "Conditions personnalisées",
+        "selectCollaboratorType": "Sélectionner le type de collaborateur",
+        "selectAgency": "Sélectionner une agence",
+        "selectCreators": "Sélectionner des créateurs",
+        "uploadContractPdf": "Téléverser le contrat PDF"
+      },
+      "placeholders": {
+        "campaignName": "ex. Lancement collection printemps",
+        "selectObjective": "Sélectionner un objectif",
+        "selectCategory": "Sélectionner une catégorie",
+        "description": "Décrivez les objectifs de campagne et le contexte de licence...",
+        "usageScope": "ex. Paid social + site web",
+        "territory": "Global / États-Unis uniquement / UE",
+        "selectExclusivity": "Sélectionner l'exclusivité",
+        "customTerms": "Conditions juridiques / commerciales supplémentaires...",
+        "searchConnectedAgencies": "Rechercher des agences connectées...",
+        "searchConnectedCreators": "Rechercher des créateurs connectés..."
+      },
+      "objectives": {
+        "awareness": "Notoriété de marque",
+        "productLaunch": "Lancement produit",
+        "ugc": "Campagne UGC",
+        "regionalPromo": "Promotion régionale",
+        "seasonal": "Campagne saisonnière"
+      },
+      "exclusivity": {
+        "nonExclusive": "Non exclusive",
+        "categoryExclusive": "Exclusivité de catégorie",
+        "fullExclusivity": "Exclusivité totale"
+      },
+      "copy": {
+        "talents": "talents",
+        "creators": "créateurs"
+      },
+      "step3Intro": "Sélectionnez votre type de collaborateur puis choisissez les {{role}} connectés.",
+      "collaborators": {
+        "marketingAgency": "Agence marketing",
+        "marketingAgencyDesc": "Sélectionnez des talents d'une agence connectée",
+        "aiCreator": "Créateur IA",
+        "aiCreatorDesc": "Travaillez directement avec des créateurs connectés",
+        "agencyFallback": "Agence",
+        "creatorFallback": "Créateur"
+      },
+      "loadingExistingCollaborators": "Chargement des collaborateurs existants...",
+      "loadingConnectedAgencies": "Chargement des agences connectées...",
+      "loadingCreators": "Chargement des créateurs...",
+      "noConnectedAgencies": "Aucune agence connectée trouvée.",
+      "noConnectedCreators": "Aucun créateur connecté trouvé.",
+      "alreadyInCampaign": "Déjà dans cette campagne",
+      "collaboratorAlreadyAdded": "Collaborateur déjà ajouté",
+      "agencyAlreadyInCampaign": "Cette agence fait déjà partie de la campagne.",
+      "creatorAlreadyInCampaign": "Ce créateur fait déjà partie de la campagne.",
+      "summary": {
+        "selectedAgency": "Résumé de l'agence sélectionnée. Envoyez cette offre pour continuer.",
+        "selectedCreators": "Résumé des créateurs sélectionnés. Continuez vers le téléversement du contrat.",
+        "campaignName": "Nom de la campagne",
+        "untitledCampaign": "Campagne sans titre",
+        "agencyNames": "Nom(s) de l'agence : ",
+        "creatorNames": "Nom(s) des créateurs : ",
+        "budgetRange": "Fourchette de budget",
+        "duration": "Durée",
+        "durationDaysValue": "{{count}} jours",
+        "financialSummary": "Résumé financier",
+        "collaboratorPayoutNet": "Paiement collaborateur (net)",
+        "platformFee": "Frais de plateforme Likelee (2 %)",
+        "totalBrandSpend": "Dépense totale de la marque (brut)",
+        "selectedAgencyLabel": "Agence sélectionnée",
+        "selectedCreatorsLabel": "Créateurs sélectionnés ({{count}})",
+        "uploaded": "Téléversé : {{name}}",
+        "templateIdReady": "ID du modèle : {{id}}. L'éditeur s'ouvre automatiquement après le téléversement.",
+        "choosePdf": "Choisissez un PDF pour créer un modèle DocuSeal et ouvrir l'éditeur."
+      },
+      "contractUploadHelp": "Téléversez votre contrat PDF. L'éditeur DocuSeal s'ouvrira immédiatement afin que vous puissiez ajouter les champs des parties et les blocs de signature, puis l'envoyer avec chaque offre créateur.",
+      "actions": {
+        "cancel": "Annuler",
+        "saving": "Enregistrement...",
+        "back": "Retour",
+        "next": "Suivant",
+        "selected": "Sélectionné",
+        "select": "Sélectionner",
+        "sending": "Envoi...",
+        "sendOffer": "Envoyer l'offre"
+      }
+    },
+    "yourCampaigns": "Vos campagnes",
+    "viewDetails": "Voir les détails",
+    "closeJob": "Fermer l'emploi",
+    "noResultsFound": "Aucun résultat trouvé",
+    "tryDifferentKeywords": "Essayez des mots-clés différents ou ajustez vos filtres.",
+    "clearSearchButton": "Effacer la recherche"
+  },
+  "assetLibrary": {
+    "title": "Bibliothèque d'actifs",
+    "subtitle": "Téléchargez, gérez et organisez tous vos assets créatifs",
+    "stats": {
+      "totalAssets": "Assets totaux",
+      "videos": "Vidéos",
+      "images": "Images",
+      "totalSize": "Taille totale"
+    },
+    "actions": {
+      "batchDownload": "Téléchargement groupé",
+      "filter": "Filtrer",
+      "refresh": "Actualiser",
+      "grid": "Grille",
+      "list": "Liste",
+      "createCollection": "Créer une collection"
+    },
+    "filters": {
+      "all": "Tous",
+      "studio": "Studio"
+    },
+    "loading": "Chargement des assets...",
+    "collectionsCount_one": "{{count}} asset",
+    "collectionsCount_other": "{{count}} assets",
+    "searchPlaceholder": "Rechercher par projet, créateur ou nom de fichier...",
+    "emptyState": "Aucun asset disponible pour le moment. Les assets apparaîtront ici une fois les campagnes terminées.",
+    "collections": "Collections"
   },
   "brandCompanyPage": {
     "hero": {
