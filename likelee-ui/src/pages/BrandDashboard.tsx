@@ -7732,9 +7732,6 @@ export default function BrandDashboard() {
           <p className="text-gray-600">{t("assetLibrary.subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-2 border-gray-300">
-            <Download className="w-4 h-4 mr-2" />
-            {t("assetLibrary.actions.batchDownload")}
           <Button
             variant="outline"
             className="border-2 border-gray-300"
@@ -7746,7 +7743,7 @@ export default function BrandDashboard() {
             ) : (
               <Download className="w-4 h-4 mr-2" />
             )}
-            Batch Download
+            {t("assetLibrary.actions.batchDownload")}
             {selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
           </Button>
           <Button
