@@ -2157,24 +2157,28 @@ export default function BrandCampaignDashboard({
         )}
 
         {/* Collaboration CTAs + Post Job */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Card
-            className="p-6 bg-white border-2 border-[#F7B750] hover:shadow-xl transition-all cursor-pointer rounded-none"
+            className="p-4 sm:p-6 bg-white border-2 border-[#F7B750] hover:shadow-xl transition-all cursor-pointer rounded-none"
             onClick={handleInviteAgencyEntry}
           >
-            <div className="w-12 h-12 bg-[#F7B750] rounded-none flex items-center justify-center mb-4">
-              <Building2 className="w-6 h-6 text-white" />
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#F7B750] rounded-none flex items-center justify-center sm:mb-4 shrink-0">
+                <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="flex-1 sm:flex-none">
+                <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
+                  Collaborate with Agency
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
+                  Invite a marketing agency to manage your campaigns
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Collaborate with Agency
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Invite a marketing agency to manage your campaigns
-            </p>
-            <Button className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none">
+            <Button className="w-full mt-3 sm:mt-0 bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               {canUseCampaignCollaboration ? (
                 <>
-                  <Mail className="w-4 h-4 mr-2" />
+                  <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Invite Agency
                 </>
               ) : (
@@ -2183,38 +2187,46 @@ export default function BrandCampaignDashboard({
             </Button>
           </Card>
 
-          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
-            <div className="w-12 h-12 bg-[#FAD54C] rounded-none flex items-center justify-center mb-4">
-              <Sparkles className="w-6 h-6 text-white" />
+          <Card className="p-4 sm:p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#FAD54C] rounded-none flex items-center justify-center sm:mb-4 shrink-0">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="flex-1 sm:flex-none">
+                <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
+                  Add AI Creator
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
+                  Work directly with verified AI creators
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Add AI Creator
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Work directly with verified AI creators
-            </p>
             <Button
               disabled
-              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed"
+              className="w-full mt-3 sm:mt-0 bg-[#FAD54C] text-white rounded-none cursor-not-allowed text-xs sm:text-sm h-8 sm:h-10"
             >
               Coming Soon
             </Button>
           </Card>
 
           <Card
-            className="p-6 bg-white border-2 border-amber-600/60 rounded-none cursor-pointer"
+            className="p-4 sm:p-6 bg-white border-2 border-amber-600/60 rounded-none cursor-pointer"
             onClick={handleCompanySeatEntry}
           >
-            <div className="w-12 h-12 bg-amber-600 rounded-none flex items-center justify-center mb-4">
-              <Users className="w-6 h-6 text-white" />
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-600 rounded-none flex items-center justify-center sm:mb-4 shrink-0">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="flex-1 sm:flex-none">
+                <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
+                  Invite Company Seat
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
+                  Add in-house AI creator to your team
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Invite Company Seat
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Add in-house AI creator to your team
-            </p>
-            <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none">
+            <Button className="w-full mt-3 sm:mt-0 bg-amber-600 hover:bg-amber-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               {(brandSeatLimit ?? 0) === 0
                 ? "Upgrade Plan"
                 : brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit
@@ -2224,7 +2236,7 @@ export default function BrandCampaignDashboard({
           </Card>
 
           <Card
-            className="p-6 bg-white border-2 border-orange-600 hover:shadow-xl transition-all cursor-pointer rounded-none"
+            className="p-4 sm:p-6 bg-white border-2 border-orange-600 hover:shadow-xl transition-all cursor-pointer rounded-none"
             onClick={() => {
               if (hasStudioAddon) {
                 navigate(createPageUrl("Studio"));
@@ -2233,27 +2245,31 @@ export default function BrandCampaignDashboard({
               setShowStudioUpgradeModal(true);
             }}
           >
-            <div className="w-12 h-12 bg-orange-600 rounded-none flex items-center justify-center mb-4 relative">
-              {!hasStudioAddon && (
-                <Lock className="w-4 h-4 text-white absolute top-1 right-1" />
-              )}
-              <Zap className="w-6 h-6 text-white" />
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-600 rounded-none flex items-center justify-center sm:mb-4 shrink-0 relative">
+                {!hasStudioAddon && (
+                  <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-white absolute top-1 right-1" />
+                )}
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="flex-1 sm:flex-none">
+                <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
+                  AI Studio Add-On
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
+                  Generate content in-house without waiting
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              AI Studio Add-On
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Generate content in-house without waiting
-            </p>
-            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none">
+            <Button className="w-full mt-3 sm:mt-0 bg-orange-600 hover:bg-orange-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               {hasStudioAddon ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   Open Studio
                 </>
               ) : (
                 <>
-                  <Lock className="w-4 h-4 mr-2" />
+                  <Lock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   {brandPlanTier === "pro" ? "Unlock Addon" : "Upgrade Plan"}
                 </>
               )}
@@ -2261,18 +2277,24 @@ export default function BrandCampaignDashboard({
           </Card>
 
           <Card
-            className="p-6 bg-white border-2 border-blue-600 hover:shadow-xl transition-all cursor-pointer rounded-none"
+            className="p-4 sm:p-6 bg-white border-2 border-blue-600 hover:shadow-xl transition-all cursor-pointer rounded-none"
             onClick={() => setShowPostJobModal(true)}
           >
-            <div className="w-12 h-12 bg-blue-600 rounded-none flex items-center justify-center mb-4">
-              <Briefcase className="w-6 h-6 text-white" />
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-none flex items-center justify-center sm:mb-4 shrink-0">
+                <Briefcase className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="flex-1 sm:flex-none">
+                <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
+                  Post a Job
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
+                  Find talent on the marketplace
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Post a Job</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Find talent on the marketplace
-            </p>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none">
-              <Plus className="w-4 h-4 mr-2" />
+            <Button className="w-full mt-3 sm:mt-0 bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Post Job
             </Button>
           </Card>
@@ -2280,13 +2302,15 @@ export default function BrandCampaignDashboard({
 
         {/* Campaign Cards */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Your Campaigns</h2>
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Your Campaigns
+            </h2>
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={() => setCampaignListTab("active")}
-                className={`border-2 rounded-none ${
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 ${
                   campaignListTab === "active"
                     ? "border-black bg-black text-white"
                     : "border-gray-300"
@@ -2297,18 +2321,18 @@ export default function BrandCampaignDashboard({
               <Button
                 variant="outline"
                 onClick={() => setCampaignListTab("pending_approval")}
-                className={`border-2 rounded-none ${
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 ${
                   campaignListTab === "pending_approval"
                     ? "border-black bg-black text-white"
                     : "border-gray-300"
                 }`}
               >
-                Pending Approval
+                Pending
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignListTab("completed")}
-                className={`border-2 rounded-none ${
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 ${
                   campaignListTab === "completed"
                     ? "border-black bg-black text-white"
                     : "border-gray-300"
@@ -2346,14 +2370,14 @@ export default function BrandCampaignDashboard({
             return filteredCampaigns.map((campaign) => (
               <Card
                 key={campaign.id}
-                className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none"
+                className="p-4 sm:p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <div className="min-w-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 truncate">
                       {campaign.name}
                     </h3>
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Badge
                         className={
                           campaign.status === "active"
@@ -2365,15 +2389,13 @@ export default function BrandCampaignDashboard({
                       >
                         {formatCampaignStatusLabel(campaign)}
                       </Badge>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-xs sm:text-sm text-gray-600">
                         {campaign.objective}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-600">
                       <span>Budget: ${campaign.budget.toLocaleString()}</span>
-                      <span>•</span>
                       <span>Start: {campaign.start_date}</span>
-                      <span>•</span>
                       <span>
                         {campaign.collaborators.length} collaborator(s)
                       </span>
@@ -2381,7 +2403,7 @@ export default function BrandCampaignDashboard({
                   </div>
                   <Button
                     onClick={() => void openCampaignDetails(campaign)}
-                    className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+                    className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none shrink-0 text-xs sm:text-sm h-8 sm:h-10"
                   >
                     View Details
                   </Button>
@@ -3758,10 +3780,10 @@ export default function BrandCampaignDashboard({
       {/* Studio Upgrade Modal */}
       {showStudioUpgradeModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
-          <div className="min-h-screen flex items-center justify-center p-6">
-            <Card className="w-full max-w-3xl bg-white p-8 rounded-none">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
+          <div className="min-h-screen flex items-start sm:items-center justify-center p-0 sm:p-6">
+            <Card className="w-full max-w-3xl bg-white p-4 sm:p-8 rounded-none min-h-screen sm:min-h-0">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-2xl font-bold text-gray-900">
                   AI Studio Add-On
                 </h2>
                 <Button
@@ -3774,88 +3796,94 @@ export default function BrandCampaignDashboard({
                 </Button>
               </div>
 
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-none flex items-center justify-center mx-auto mb-4">
-                  <Zap className="w-10 h-10 text-white" />
+              {/* Hero — horizontal on mobile */}
+              <div className="flex flex-col sm:text-center mb-5 sm:mb-8">
+                <div className="flex items-center gap-4 sm:flex-col sm:items-center sm:gap-0">
+                  <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-none flex items-center justify-center sm:mx-auto sm:mb-4 shrink-0">
+                    <Zap className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-2xl font-bold text-gray-900 sm:mb-3">
+                      Generate Content In-House
+                    </h3>
+                    <p className="text-sm text-gray-600 sm:max-w-2xl sm:mx-auto">
+                      Unlock Likelee Studio to create AI-generated videos,
+                      images, and voiceovers without waiting for agency cycles.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                  Generate Content In-House
-                </h3>
-                <p className="text-gray-600 max-w-2xl mx-auto">
-                  Unlock the full Likelee Studio to create AI-generated videos,
-                  images, and voiceovers without waiting for agency cycles.
-                  Perfect for brands scaling fast.
-                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                <Card className="p-6 border-2 border-gray-200 rounded-none">
-                  <CheckCircle2 className="w-8 h-8 text-green-600 mb-3" />
-                  <h4 className="font-bold text-gray-900 mb-2">
+              {/* Feature cards — 2x2 grid always */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-6 mb-4 sm:mb-8">
+                <Card className="p-3 sm:p-6 border-2 border-gray-200 rounded-none">
+                  <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mb-2 sm:mb-3" />
+                  <h4 className="font-bold text-gray-900 mb-1 sm:mb-2 text-xs sm:text-base">
                     Direct Content Creation
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600 hidden sm:block">
                     Generate videos and images instantly without agency delays
                   </p>
                 </Card>
 
-                <Card className="p-6 border-2 border-gray-200 rounded-none">
-                  <Users className="w-8 h-8 text-orange-600 mb-3" />
-                  <h4 className="font-bold text-gray-900 mb-2">
+                <Card className="p-3 sm:p-6 border-2 border-gray-200 rounded-none">
+                  <Users className="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 mb-2 sm:mb-3" />
+                  <h4 className="font-bold text-gray-900 mb-1 sm:mb-2 text-xs sm:text-base">
                     Team Collaboration
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600 hidden sm:block">
                     Share studio access with your in-house creative team
                   </p>
                 </Card>
 
-                <Card className="p-6 border-2 border-gray-200 rounded-none">
-                  <Sparkles className="w-8 h-8 text-purple-600 mb-3" />
-                  <h4 className="font-bold text-gray-900 mb-2">
+                <Card className="p-3 sm:p-6 border-2 border-gray-200 rounded-none">
+                  <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mb-2 sm:mb-3" />
+                  <h4 className="font-bold text-gray-900 mb-1 sm:mb-2 text-xs sm:text-base">
                     AI-Powered Tools
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600 hidden sm:block">
                     Access Runway, Sora, ElevenLabs, and more via one platform
                   </p>
                 </Card>
 
-                <Card className="p-6 border-2 border-gray-200 rounded-none">
-                  <Shield className="w-8 h-8 text-blue-600 mb-3" />
-                  <h4 className="font-bold text-gray-900 mb-2">
+                <Card className="p-3 sm:p-6 border-2 border-gray-200 rounded-none">
+                  <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mb-2 sm:mb-3" />
+                  <h4 className="font-bold text-gray-900 mb-1 sm:mb-2 text-xs sm:text-base">
                     Rights Management
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs text-gray-600 hidden sm:block">
                     Automatic tracking and compliance for all generated content
                   </p>
                 </Card>
               </div>
 
-              <Card className="p-6 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-600 rounded-none mb-8">
-                <div className="flex items-start justify-between">
+              {/* Pricing card */}
+              <Card className="p-4 sm:p-6 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-600 rounded-none mb-4 sm:mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div>
-                    <h4 className="text-2xl font-bold text-gray-900 mb-2">
+                    <h4 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
                       $299/month
                     </h4>
-                    <p className="text-gray-700 mb-4">
+                    <p className="text-sm text-gray-700 mb-3">
                       Added as a separate billing line item from your base plan
                     </p>
-                    <ul className="space-y-2 text-sm text-gray-700">
+                    <ul className="space-y-1.5 text-xs sm:text-sm text-gray-700">
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-orange-600" />
+                        <CheckCircle2 className="w-4 h-4 text-orange-600 shrink-0" />
                         Unlock brand access to Likelee Studio tools
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-orange-600" />
+                        <CheckCircle2 className="w-4 h-4 text-orange-600 shrink-0" />
                         Purchased separately from the base plan free trial
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-orange-600" />
+                        <CheckCircle2 className="w-4 h-4 text-orange-600 shrink-0" />
                         Included automatically with Enterprise
                       </li>
                     </ul>
                   </div>
                   <Button
-                    className="bg-orange-600 hover:bg-orange-700 text-white rounded-none"
+                    className="bg-orange-600 hover:bg-orange-700 text-white rounded-none shrink-0 w-full sm:w-auto"
                     onClick={() => navigate("/brandpricing?focus=studio")}
                   >
                     {brandPlanTier === "pro"
@@ -3865,7 +3893,7 @@ export default function BrandCampaignDashboard({
                 </div>
               </Card>
 
-              <p className="text-sm text-gray-600 text-center">
+              <p className="text-xs sm:text-sm text-gray-600 text-center">
                 💡 <strong>Note:</strong> You can still work with agencies and
                 creators even with Studio access. This add-on simply gives you
                 the flexibility to create in-house when needed.
