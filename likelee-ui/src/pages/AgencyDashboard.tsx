@@ -8557,6 +8557,7 @@ const InvoiceManagementView = ({
   activeSubTab: string;
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
   const statementsTabLabel = isSportsAgency
     ? "Athlete Statements"
     : "Talent Statements";

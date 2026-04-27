@@ -476,10 +476,14 @@ export function AgencyDeliverablesView() {
 
   const deliverableStatusLabel = (statusRaw: unknown) => {
     const status = String(statusRaw || "submitted").toLowerCase();
-    if (status === "draft") return "Draft";
-    if (status === "brand_review") return "Sent to Brand";
-    if (status === "brand_approved") return "Brand Approved";
-    if (status === "submitted") return "New";
+    if (status === "draft")
+      return t("statuses.draft", { defaultValue: "Draft" });
+    if (status === "brand_review")
+      return t("statuses.sentToBrand", { defaultValue: "Sent to Brand" });
+    if (status === "brand_approved")
+      return t("statuses.brandApproved", { defaultValue: "Brand Approved" });
+    if (status === "submitted")
+      return t("statuses.new", { defaultValue: "New" });
     return status.replace(/_/g, " ");
   };
 
@@ -488,10 +492,15 @@ export function AgencyDeliverablesView() {
       .toLowerCase()
       .trim();
     if (!status) return "";
-    if (status === "contract_fully_signed") return "Contract Signed";
-    if (status === "contract_sent") return "Contract Sent";
-    if (status === "sent") return "Sent";
-    if (status === "accepted") return "Accepted";
+    if (status === "contract_fully_signed")
+      return t("statuses.contractFullySigned", {
+        defaultValue: "Contract Fully Signed",
+      });
+    if (status === "contract_sent")
+      return t("statuses.contractSent", { defaultValue: "Contract Sent" });
+    if (status === "sent") return t("statuses.sent", { defaultValue: "Sent" });
+    if (status === "accepted")
+      return t("statuses.accepted", { defaultValue: "Accepted" });
     if (status === "open") return "Open";
     return status.replace(/_/g, " ");
   };
