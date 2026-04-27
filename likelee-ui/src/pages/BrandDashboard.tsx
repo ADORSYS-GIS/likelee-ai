@@ -9440,7 +9440,7 @@ export default function BrandDashboard() {
                   </p>
                 </div>
               </div>
-            </div>
+            </Card>
 
             {/* Metrics */}
             <div className="grid grid-cols-2 gap-4">
