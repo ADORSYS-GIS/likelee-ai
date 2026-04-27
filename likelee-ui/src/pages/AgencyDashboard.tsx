@@ -20112,8 +20112,10 @@ export default function AgencyDashboard() {
     const keyMap: Record<string, string> = {
       Dashboard: "agencyDashboard.navigation.dashboard",
       Jobs: "agencyDashboard.navigation.jobs",
+      Job: "agencyDashboard.navigation.jobs",
       Marketplace: "agencyDashboard.navigation.marketplace",
       Messages: "agencyDashboard.navigation.messages",
+      Message: "agencyDashboard.navigation.messages",
       Roster: "agencyDashboard.navigation.roster",
       Scouting: "agencyDashboard.navigation.scouting",
       Bookings: "agencyDashboard.navigation.bookings",
@@ -20264,7 +20266,10 @@ export default function AgencyDashboard() {
                 </h2>
                 {agencyKycStatus === "approved" && (
                   <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
-                    <ShieldCheck className="w-3 h-3" /> Verified
+                    <ShieldCheck className="w-3 h-3" />{" "}
+                    {t("agencyDashboard.labels.verified", {
+                      defaultValue: "Verified",
+                    })}
                   </Badge>
                 )}
               </div>

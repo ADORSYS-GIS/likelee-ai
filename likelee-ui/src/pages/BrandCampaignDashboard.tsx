@@ -4163,9 +4163,10 @@ export default function BrandCampaignDashboard({
                 <Alert className="border-2 border-gray-200 rounded-none">
                   <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
                     <Lock className="w-4 h-4" />
-                    Approving any 1 deliverable triggers escrow payout (once)
-                    and unlocks downloads for that deliverable. Approvals are
-                    final and can’t be undone.
+                    {t("campaigns.deliverables.approvalNotice", {
+                      defaultValue:
+                        "Approving any 1 deliverable triggers escrow payout (once) and unlocks downloads for that deliverable. Approvals are final and can’t be undone.",
+                    })}
                   </AlertDescription>
                 </Alert>
                 {loadingSelectedCampaignDetails && (
