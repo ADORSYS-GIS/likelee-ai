@@ -199,6 +199,15 @@ export const LicenseSubmissionsTab = ({
             {t("agencyDashboard.licenseSubmissions.status.expired")}
           </Badge>
         );
+      case "archived":
+        return (
+          <Badge className="bg-slate-100 text-slate-800 border-slate-200 text-xs px-2 py-0.5">
+            <Archive className="w-3 h-3 mr-1" />{" "}
+            {t("agencyDashboard.licenseSubmissions.status.archived", {
+              defaultValue: "Archived",
+            })}
+          </Badge>
+        );
       case "agency_pending":
         return (
           <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-xs px-2 py-0.5">
@@ -341,7 +350,11 @@ export const LicenseSubmissionsTab = ({
             <Table className="min-w-[860px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Client</TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.client", {
+                      defaultValue: "Client",
+                    })}
+                  </TableHead>
                   <TableHead>
                     {t("agencyDashboard.licenseSubmissions.table.template", {
                       defaultValue: "Template",
@@ -604,7 +617,10 @@ export const LicenseSubmissionsTab = ({
                                   onClick={() => recoverMutation.mutate(sub.id)}
                                 >
                                   <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
-                                  Recover to Active
+                                  {t(
+                                    "agencyDashboard.licensingRequests.buttons.recoverToActive",
+                                    { defaultValue: "Recover to Active" },
+                                  )}
                                 </DropdownMenuItem>
                               ) : (
                                 <>

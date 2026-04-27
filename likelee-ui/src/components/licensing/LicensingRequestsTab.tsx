@@ -348,7 +348,10 @@ export const LicensingRequestsTab = ({
                     className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Recover to Active
+                    {t(
+                      "agencyDashboard.licensingRequests.buttons.recoverToActive",
+                      { defaultValue: "Recover to Active" },
+                    )}
                   </Button>
                 </div>
               ) : (
