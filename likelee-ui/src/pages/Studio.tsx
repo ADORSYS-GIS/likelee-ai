@@ -1403,8 +1403,10 @@ export default function Studio() {
           </div>
 
           <p className="text-center text-gray-400">
-            We constantly add new models. Your subscription includes access to
-            all.
+            {t("studio.landing.models.footnote", {
+              defaultValue:
+                "We constantly add new models. Your subscription includes access to all.",
+            })}
           </p>
         </div>
       </section>
@@ -1414,10 +1416,15 @@ export default function Studio() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 font-display">
-              Simple Monthly Plans
+              {t("studio.landing.pricing.title", {
+                defaultValue: "Simple Monthly Plans",
+              })}
             </h2>
             <p className="text-xl text-gray-400">
-              Get unlimited access to AI image and video generation.
+              {t("studio.landing.pricing.subtitle", {
+                defaultValue:
+                  "Get unlimited access to AI image and video generation.",
+              })}
             </p>
           </div>
 
@@ -1664,10 +1671,14 @@ export default function Studio() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What people are making
+              {t("studio.landing.examples.title", {
+                defaultValue: "What people are making",
+              })}
             </h2>
             <p className="text-xl text-gray-400">
-              Created using Likelee Studio tools and models.
+              {t("studio.landing.examples.subtitle", {
+                defaultValue: "Created using Likelee Studio tools and models.",
+              })}
             </p>
           </div>
 
