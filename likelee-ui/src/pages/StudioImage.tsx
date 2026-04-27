@@ -338,10 +338,14 @@ export default function StudioImage() {
                   className="text-xl font-bold tracking-tight text-white"
                   style={{ textShadow: "0 0 20px rgba(50,200,209,0.3)" }}
                 >
-                  {t("studio.image.title", { defaultValue: "AI Image Generator" })}
+                  {t("studio.image.title", {
+                    defaultValue: "AI Image Generator",
+                  })}
                 </h1>
                 <p className="text-[10px] text-[#32C8D1] font-bold uppercase tracking-widest opacity-80">
-                  {t("studio.image.subtitle", { defaultValue: "Premium Studio" })}
+                  {t("studio.image.subtitle", {
+                    defaultValue: "Premium Studio",
+                  })}
                 </p>
               </div>
             </div>
