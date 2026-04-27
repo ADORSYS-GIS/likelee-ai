@@ -353,7 +353,13 @@ const ActiveLicensesView = ({
                         {t("agencyDashboard.activeLicenses.noLicenses")}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
-                        Try adjusting your filters or search terms
+                        {t(
+                          "agencyDashboard.activeLicenses.tryAdjustingFilters",
+                          {
+                            defaultValue:
+                              "Try adjusting your filters or search terms",
+                          },
+                        )}
                       </p>
                     </div>
                   </td>
@@ -492,7 +498,15 @@ const ActiveLicensesView = ({
                             </TooltipTrigger>
                             {!canManageLicenses && (
                               <TooltipContent>
-                                <p>Your role cannot renew licenses</p>
+                                <p>
+                                  {t(
+                                    "agencyDashboard.activeLicenses.noRenewPermission",
+                                    {
+                                      defaultValue:
+                                        "Your role cannot renew licenses",
+                                    },
+                                  )}
+                                </p>
                               </TooltipContent>
                             )}
                           </Tooltip>

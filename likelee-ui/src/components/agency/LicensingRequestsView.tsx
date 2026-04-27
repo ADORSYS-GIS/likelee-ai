@@ -460,7 +460,14 @@ const LicensingRequestsView = ({
                   <span
                     className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
                   >
-                    {group.status}
+                    {t(
+                      `agencyDashboard.licensingRequests.status.${String(group.status || "").toLowerCase()}`,
+                      {
+                        defaultValue: String(group.status || "")
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (m) => m.toUpperCase()),
+                      },
+                    )}
                   </span>
                 </div>
 
@@ -591,6 +598,7 @@ const LicensingRequestsView = ({
                       <RefreshCw className="w-4 h-4" />
                       {t(
                         "agencyDashboard.licensingRequests.buttons.recoverToActive",
+                        { defaultValue: "Recover to Active" },
                       )}
                     </Button>
                   </div>
@@ -666,7 +674,14 @@ const LicensingRequestsView = ({
                   <span
                     className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(req.status)}`}
                   >
-                    {req.status}
+                    {t(
+                      `agencyDashboard.licensingRequests.status.${String(req.status || "").toLowerCase()}`,
+                      {
+                        defaultValue: String(req.status || "")
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (m) => m.toUpperCase()),
+                      },
+                    )}
                   </span>
                 </div>
 
