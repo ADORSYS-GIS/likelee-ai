@@ -109,134 +109,6 @@
         "recently": "Kürzlich"
       }
     },
-    "marketplace": {
-      "perMonth": "/Monat",
-      "pastCampaigns": "Vergangene Kampagnen",
-      "negotiationPreferencesNotSpecified": "Verhandlungspräferenzen nicht angegeben",
-      "baseRateFromProfile": "Basistarif aus öffentlichem Profil",
-      "licensingRate": "Lizenzierungstarif",
-      "industries": "Branchen",
-      "openToWork": "Offen für Arbeit",
-      "noProfileSummary": "Noch keine Profilzusammenfassung verfügbar.",
-      "followersNA": "Follower N/V",
-      "availabilityRates": "Verfügbarkeit & Tarife",
-      "willingToTravel": "Reisebereit",
-      "notSpecified": "Nicht angegeben",
-      "connectionStatus": "Verbindungsstatus",
-      "none": "keine",
-      "noRatesPublished": "Noch keine Tarife veröffentlicht.",
-      "openToNegotiations": "Offen für Verhandlungen",
-      "portfolio": "Portfolio",
-      "noPortfolioItems": "Noch keine Portfolio-Elemente.",
-      "noCampaignHistory": "Noch keine Kampagnenhistorie.",
-      "confirmed": "Bestätigt",
-      "verified": "Verifiziert",
-      "commission": "Provision",
-      "marketplaceContract": "Marktplatz-Vertrag",
-      "contractTerms": "Vertragsbedingungen für diese Agentur-Creator-Verbindung.",
-      "status": "Status",
-      "activeStatus": "aktiv",
-      "endDate": "Enddatum",
-      "startDate": "Startdatum",
-      "viewSignedContract": "Unterzeichneten Vertrag ansehen",
-      "automaticallyConnected": "Automatisch verbunden (Von Ihnen erstellt)",
-      "openPortfolioLink": "Portfolio-Link öffnen",
-      "noUploadedPortfolio": "Noch keine Portfolio-Medien hochgeladen.",
-      "creator": "Creator"
-    },
-    "jobs": {
-      "irlMode": "IRL-Modus",
-      "aiMode": "KI-Modus"
-    },
-    "addTalent": {
-      "genders": {
-        "female": "Weiblich",
-        "male": "Männlich",
-        "nonBinary": "Nicht-binär",
-        "genderFluid": "Geschlechtsfluid",
-        "preferNotToSay": "Keine Angabe"
-      },
-      "ethnicities": {
-        "asian": "Asiatisch",
-        "blackAfrican": "Schwarz / Afroamerikanisch",
-        "hispanicLatino": "Hispanisch / Latino",
-        "middleEasternNorthAfrican": "Naher Osten / Nordafrika",
-        "nativeAmericanIndigenous": "Amerikanischer Ureinwohner / Indigen",
-        "pacificIslander": "Pazifikinsulaner",
-        "whiteCaucasian": "Weiß / Kaukasisch",
-        "mixedMultiracial": "Gemischt / Multirassisch",
-        "preferNotToSay": "Keine Angabe"
-      },
-      "categories": {
-        "actor": "Schauspieler",
-        "creator": "Creator",
-        "voice": "Stimme",
-        "athlete": "Athlet",
-        "model": "Model"
-      },
-      "fields": {
-        "select": "Auswählen",
-        "hips": "Hüfte",
-        "measurements": "Maße (Zoll)",
-        "bust": "Brust",
-        "waist": "Taille",
-        "dancer": "Tänzer",
-        "athlete": "Athlet",
-        "bilingualSpanish": "Zweisprachig Spanisch",
-        "username": "@benutzername",
-        "imageOrVideoFile": "Bild- oder Videodatei"
-      },
-      "compCard": {
-        "generator": "Comp Card Generator",
-        "autoGenerate": "Automatische Erstellung professioneller Comp Cards aus Talentprofilen",
-        "height": "Größe",
-        "eyes": "Augen",
-        "hair": "Haare"
-      },
-      "aiUsage": {
-        "image": "Bild",
-        "voice": "Stimme",
-        "video": "Video"
-      },
-      "placeholders": {
-        "fullLegalName": "Vollständiger rechtlicher Name",
-        "optional": "Optional",
-        "losAngeles": "Los Angeles",
-        "ca": "CA",
-        "usa": "USA",
-        "ucla": "z.B. UCLA",
-        "footballBasketball": "z.B. Fußball, Basketball",
-        "briefBio": "Kurze Biografie oder interne Notizen über diesen {{entityLower}}...",
-        "licensingRate": "z.B. 750",
-        "allowBrands": "Marken erlauben, benutzerdefinierte Tarife für diesen {{entityLower}} vorzuschlagen.",
-        "heightFeet": "5",
-        "heightInches": "7",
-        "dancerAthlete": "z.B. Tänzer, Athlet, Zweisprachig Spanisch",
-        "imageOrVideoFile": "Bild- oder Videodatei",
-        "mp3WavAudio": "MP3, WAV oder anderes Audioformat",
-        "username": "@benutzername",
-        "phone": "+1 (555) 123-4567"
-      },
-      "buttons": {
-        "setAsProfile": "Als Profil festlegen",
-        "profile": "Profil"
-      },
-      "uploading": "Wird hochgeladen...",
-      "toast": {
-        "invalidDateOfBirth": "Ungültiges Geburtsdatum",
-        "mustBeAtLeast18": "{{entityTitle}} muss mindestens 18 Jahre alt sein.",
-        "uploadFailed": "Upload fehlgeschlagen",
-        "couldNotUploadPhotos": "Fotos konnten nicht hochgeladen werden. {{entityTitle}} wird ohne Fotos erstellt.",
-        "heroUploadFailed": "Hero-Medien-Upload fehlgeschlagen",
-        "heroUploadFailedDesc": "Hero-Medien konnten nicht hochgeladen werden. {{msg}}",
-        "voiceUploadFailed": "Sprachprobe-Upload fehlgeschlagen",
-        "voiceUploadFailedDesc": "Sprachprobe konnte nicht hochgeladen werden. {{msg}}",
-        "success": "Erfolg!",
-        "addedSuccessfully": "{{entityTitle}} erfolgreich hinzugefügt",
-        "error": "Fehler",
-        "failedToCreate": "{{entityLower}} konnte nicht erstellt werden"
-      }
-    },
     "roster": {
       "entities": {
         "talent": "Talent",
@@ -1362,64 +1234,6 @@
         "toEntityThisYear": "Dieses Jahr an {{entitySingular}} ausgezahlt",
         "agencyCommissionYTD": "Agenturprovision YTD",
         "avgCommissionRate": "{{rate}}% durchschnittliche Provision"
-      },
-      "commissionStructure": {
-        "title": "{{entitySingular}}-Provisionsregeln",
-        "description": "Agenturgemanagte {{entitySingularLower}} können hier Einstellungs-basierte Überschreibungen verwenden. Marketplace-verbundene {{entitySingularLower}} folgen dem aktiven unterzeichneten Vertragssatz und sind auf diesem Bildschirm schreibgeschützt."
-      },
-      "royalties": {
-        "accruedThisMonth": "Diesen Monat aufgelaufen",
-        "liveEarningsPool": "Live-Einnahmen-Pool",
-        "pendingApproval": "Ausstehende Freigabe",
-        "awaitingPayoutProcessing": "Warten auf Auszahlungsverarbeitung",
-        "ytdPaidToEntity": "YTD an {{entitySingular}} ausgezahlt",
-        "totalNetPayouts": "Gesamtnettoauszahlungen 2024"
-      },
-      "paymentHistory": {
-        "topEarningTitle": "Top-verdienende {{entitySingular}} (letzte 30 Tage)",
-        "campaigns": "{{count}} Kampagnen",
-        "talentLabel": "{{entitySingular}}:",
-        "agencyLabel": "Agentur:",
-        "noPayments": "Keine erfolgreichen Zahlungen in den letzten 30 Tagen gefunden."
-      },
-      "payoutPreferences": {
-        "scheduleSettings": "Auszahlungsplan-Einstellungen",
-        "frequency": "Auszahlungshäufigkeit",
-        "selectFrequency": "Häufigkeit auswählen",
-        "weekly": "Wöchentlich",
-        "biWeekly": "Zweiwöchentlich",
-        "monthly": "Monatlich",
-        "frequencyDescription": "Wie oft {{entitySingularLower}} Auszahlungen erhält",
-        "minThreshold": "Mindestauszahlungsschwelle",
-        "minThresholdDescription": "Nicht zahlen, wenn der Saldo unter diesem Betrag liegt",
-        "method": "Auszahlungsmethode",
-        "stripeConnected": "Stripe-verbundenes Konto",
-        "autoDeduct": "Provision automatisch abziehen, Netto an Talent überweisen",
-        "active": "Aktiv",
-        "howItWorks": "So funktioniert es:",
-        "upcomingSchedule": "Bevorstehender Auszahlungsplan",
-        "scheduledPayout": "Geplante Auszahlung",
-        "scheduled": "geplant",
-        "noUpcoming": "Keine bevorstehenden Auszahlungen",
-        "noUpcomingDescription": "Ihre nächste Auszahlung erscheint hier, wenn sie geplant ist."
-      },
-      "commissionBreakdown": {
-        "title": "Aktuelle Lizenzvertragsaufschlüsselungen",
-        "description": "Volle Transparenz darüber, wie jeder Lizenzvertrag zwischen Talent und Agentur aufgeteilt wird.",
-        "totalVolume": "Gesamtvolumen (letzte 30 Tage)",
-        "talentTotalShare": "Gesamtanteil des Talents",
-        "agencyTotalRevenue": "Gesamteinnahmen der Agentur",
-        "exportReport": "Bericht exportieren",
-        "totalGross": "Gesamtbrutto",
-        "talentEarnings": "Talentverdienst",
-        "agencyCommission": "Agenturprovision",
-        "talentPool": "TALENT-POOL",
-        "agencyFee": "AGENTURGEBÜHR",
-        "noDeals": "Keine Lizenzverträge gefunden",
-        "noDealsDescription": "Aktuelle Lizenztransaktionen generieren automatisch detaillierte Aufschlüsselungen hier.",
-        "transparencyTitle": "Provisionstransparenz",
-        "transparencyDescription": "Diese Aufschlüsselung ist für Talente in ihrem Zahlungsverlauf sichtbar. Volle Transparenz sorgt für genaue Buchhaltung und schafft langfristiges Vertrauen.",
-        "configure": "Konfigurieren"
       }
     },
     "subscribe": {
@@ -1787,35 +1601,7 @@
         "restore": "Wiederherstellen",
         "approve": "Genehmigen",
         "counterOffer": "Gegenangebot",
-        "decline": "Ablehnen",
-        "recoverToActive": "Zu Aktiv wiederherstellen",
-        "acceptWriteContract": "Akzeptieren & Vertrag schreiben"
-      },
-      "brandRequests": {
-        "unknownBrand": "Unbekannte Marke",
-        "noDescription": "Keine Beschreibung angegeben",
-        "licenseFee": "Lizenzgebühr",
-        "territory": "Gebiet",
-        "exclusivity": "Exklusivität",
-        "duration": "Dauer",
-        "timeline": "Zeitplan",
-        "modificationsAllowed": "Änderungen erlaubt",
-        "customTerms": "Benutzerdefinierte Bedingungen",
-        "contractPhase": "Vertragsphase",
-        "declined": "Abgelehnt",
-        "days": "Tage",
-        "from": "Von"
-      },
-      "detailsModal": {
-        "title": "Lizenzanfrage-Details",
-        "description": "Zusätzlicher Kampagnenkontext für die Vertragsvorbereitung.",
-        "campaign": "Kampagne",
-        "category": "Kategorie",
-        "exclusivity": "Exklusivität",
-        "offerAmount": "Angebotsbetrag",
-        "description": "Beschreibung",
-        "customTerms": "Benutzerdefinierte Bedingungen",
-        "modificationsAllowed": "Änderungen erlaubt"
+        "decline": "Ablehnen"
       }
     },
     "activeLicenses": {
@@ -2118,10 +1904,6 @@
     "analytics": {
       "title": "Analytics-Dashboard",
       "exportReport": "Bericht exportieren",
-      "loading": "Lade Analytics...",
-      "error": "Fehler beim Laden der Analytics-Daten",
-      "toastError": "Analytics-Fehler",
-      "placeholderText": "Dieser Abschnitt ist derzeit in Entwicklung. Schauen Sie bald wieder für Updates vorbei.",
       "tabs": {
         "overview": "Übersicht",
         "rosterInsights": "Roster-Einblicke",
@@ -2141,52 +1923,18 @@
         "consentBreakdown": "Einwilligungsübersicht",
         "noConsentData": "Keine Einwilligungsdaten",
         "withConsent": "Mit Einwilligung",
-        "withoutConsent": "Ohne Einwilligung",
-        "growth": "Wachstum",
-        "totalValue": "Gesamtwert",
-        "avgValue": "Durchschnittswert",
-        "topScope": "Hauptbereich",
-        "campaignStatusBreakdown": "Kampagnenstatus-Übersicht",
-        "monthlyPerformanceTrends": "Monatliche Leistungstrends",
-        "earnings": "Einnahmen ($)",
-        "licenses": "Lizenzen",
-        "campaigns": "Kampagnen",
-        "image": "Bild",
-        "video": "Video",
-        "voice": "Stimme",
-        "complete": "Vollständig",
-        "missing": "Fehlend",
-        "expiring": "Ablaufend",
-        "of": "von"
+        "withoutConsent": "Ohne Einwilligung"
       },
       "rosterInsights": {
         "title": "Roster-Einblicke",
         "topPerformer": "Top-Performer (Einnahmen)",
         "highestFollowers": "Meiste Follower",
         "avgValue": "Durchschnittswert",
-        "noData": "Keine Roster-Einblicke verfügbar.",
-        "talent": "Talent",
-        "30dEarnings": "30T Einnahmen",
-        "status": "Status",
-        "talentPerformanceMetrics": "Talent-Leistungsmetriken",
-        "mostActive": "Am aktivsten"
+        "noData": "Keine Roster-Einblicke verfügbar."
       },
       "clientsCampaigns": {
         "title": "Kunden & Kampagnen",
-        "noData": "Keine Kunden- oder Kampagnendaten verfügbar.",
-        "geographicDistribution": "Geografische Verteilung",
-        "topClientsPerformance": "Top-Kunden-Performance",
-        "client": "Kunde",
-        "action": "Aktion",
-        "licenses": "Lizenzen",
-        "campaigns": "Kampagnen",
-        "repeatClientRate": "Wiederkehrende Kundenrate",
-        "avgCampaignDuration": "Durchschnittliche Kampagnendauer",
-        "fromBookingToCompletion": "Von Buchung bis Abschluss",
-        "clientAcquisition": "Kundenakquise",
-        "newClientsLast30Days": "Neue Kunden in den letzten 30 Tagen",
-        "days": "Tage",
-        "total": "gesamt"
+        "noData": "Keine Kunden- oder Kampagnendaten verfügbar."
       },
       "compliance": {
         "title": "Compliance",
@@ -2195,21 +1943,7 @@
         "expiringSoon": "Läuft bald ab",
         "assignedTalent": "Zugewiesenes Talent",
         "renewLicense": "Lizenz erneuern",
-        "noData": "Keine Compliance-Daten verfügbar.",
-        "verified": "verifiziert",
-        "complete": "vollständig",
-        "next10Days": "Nächste 10 Tage",
-        "licenseExpiryPipeline": "Lizenzablauf-Pipeline",
-        "noExpiredLicenses": "Keine abgelaufenen Lizenzen",
-        "expiredContractsAppear": "Abgelaufene Verträge erscheinen hier zur Erneuerung.",
-        "expiredOn": "Abgelaufen am",
-        "complianceSummary": "Compliance-Zusammenfassung",
-        "consentStatusDistribution": "Einwilligungsstatus-Verteilung",
-        "likenessProtection": "Bildnisschutz",
-        "authorizedUses": "Autorisierte Nutzungen (30T)",
-        "unauthorizedAlerts": "Nicht autorisierte Warnungen",
-        "disputesResolved": "Streitigkeiten gelöst",
-        "comingSoon": "Kommt bald"
+        "noData": "Keine Compliance-Daten verfügbar."
       },
       "loading": "Lade Analytics...",
       "error": "Fehler beim Laden der Analytics-Daten",

@@ -2,6 +2,7 @@ import React from "react";
 import { ArrowRight, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -800,6 +801,11 @@ export default function BrandSubscribe() {
 
   return (
     <div className="min-h-screen bg-[#F5F6F8] text-[#1C2B47]">
+      {/* Language Switcher - Fixed Top Right */}
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+
       {isRequired && (
         <div className="bg-gradient-to-r from-[#18B1AE] via-[#16A8A5] to-[#14A3A0] text-white py-4 px-4 relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiLz48L2c+PC9zdmc+')] opacity-10"></div>

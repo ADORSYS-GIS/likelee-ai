@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { base44 } from "@/api/base44Client";
 import {
   StudioAssetPicker,
@@ -748,6 +749,7 @@ const StudioVideo = () => {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <LanguageSwitcher />
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <button
               onClick={() => setShowTransactions(true)}

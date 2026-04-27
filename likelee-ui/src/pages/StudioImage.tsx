@@ -129,6 +129,7 @@ const imageSizes = [
 ];
 
 import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function StudioImage() {
   const { t } = useTranslation();
@@ -351,6 +352,7 @@ export default function StudioImage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <div className="flex items-center gap-3 px-4 py-2 bg-white/[0.03] rounded-full border border-white/10 backdrop-blur-md shadow-inner">
               <Coins className="w-4 h-4 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
               <span className="text-sm font-bold tracking-tight">

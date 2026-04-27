@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,7 @@ import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
 
 export default function BrandsStudios() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -48,6 +51,11 @@ export default function BrandsStudios() {
 
   return (
     <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 min-h-screen">
+      {/* Language Switcher - Fixed Top Right */}
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+
       <style>{`
         @keyframes flipOut {
           0% {
