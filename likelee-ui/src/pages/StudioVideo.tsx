@@ -1753,7 +1753,9 @@ const StudioVideo = () => {
                             marginBottom: 8,
                           }}
                         >
-                          Ready to Create
+                          {t("studio.video.ui.readyToCreate", {
+                            defaultValue: "Ready to Create",
+                          })}
                         </h4>
                         <p
                           style={{
@@ -1763,8 +1765,10 @@ const StudioVideo = () => {
                             margin: "0 auto",
                           }}
                         >
-                          Configure parameters and click "Generate Video" to
-                          start.
+                          {t("studio.video.ui.readyToCreateHint", {
+                            defaultValue:
+                              'Configure parameters and click "Generate Video" to start.',
+                          })}
                         </p>
                       </div>
                     );
