@@ -82,10 +82,10 @@ jobs:
           key: ${{ secrets.STAGING_EC2_SSH_KEY }}
           script: |
             set -euo pipefail
+            # Run the remote script with a single-quoted heredoc to avoid any quoting/expansion issues.
             sudo -n bash -lc 'bash -s' <<'REMOTE_SCRIPT'
             set -euo pipefail
             echo "Running STAGING deployment as root (user: $(whoami), home: $HOME)"
-
             DEPLOY_DIR="${{ env.REMOTE_DIR }}"
             TMP_PULL="/tmp/likelee-staging-pull"
 
