@@ -6,9 +6,11 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use base64::Engine;
-use jsonwebtoken::decode;
+use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::collections::HashMap;
+use tokio::sync::RwLock;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
@@ -17,6 +19,124 @@ pub struct Claims {
     pub exp: usize,
     pub user_metadata: Option<serde_json::Value>,
     pub app_metadata: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Jwk {
+    kty: String,
+    kid: String,
+    alg: String,
+    n: Option<String>,
+    e: Option<String>,
+    crv: Option<String>,
+    x: Option<String>,
+    y: Option<String>,
+    k: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct JwksResponse {
+    keys: Vec<Jwk>,
+}
+
+pub struct JwksCache {
+    keys: RwLock<HashMap<String, DecodingKey>>,
+}
+
+impl JwksCache {
+    pub fn new() -> Self {
+        Self {
+            keys: RwLock::new(HashMap::new()),
+        }
+    }
+
+    pub async fn get_key(&self, kid: &str) -> Option<DecodingKey> {
+        self.keys.read().await.get(kid).cloned()
+    }
+
+    pub async fn refresh(&self, state: &AppState) {
+        let url = format!(
+            "{}/auth/v1/.well-known/jwks.json",
+            supabase_auth_base_url(state)
+        );
+        let client = reqwest::Client::new();
+        let resp = match client
+            .get(&url)
+            .header("apikey", &state.supabase_service_key)
+            .send()
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                tracing::error!("Failed to fetch JWKS: {}", e);
+                return;
+            }
+        };
+        let text = match resp.text().await {
+            Ok(t) => t,
+            Err(e) => {
+                tracing::error!("Failed to read JWKS response: {}", e);
+                return;
+            }
+        };
+        tracing::info!("JWKS response: {}", text);
+        let jwks: JwksResponse = match serde_json::from_str(&text) {
+            Ok(j) => j,
+            Err(e) => {
+                tracing::error!("Failed to parse JWKS: {} - response: {}", e, text);
+                return;
+            }
+        };
+        let mut keys = HashMap::new();
+        for jwk in jwks.keys {
+            let key = match jwk.kty.as_str() {
+                "RSA" => {
+                    if let (Some(n), Some(e)) = (&jwk.n, &jwk.e) {
+                        DecodingKey::from_rsa_components(n, e).ok()
+                    } else {
+                        None
+                    }
+                }
+                "EC" => {
+                    if let (Some(x), Some(y), Some(crv)) = (&jwk.x, &jwk.y, &jwk.crv) {
+                        match crv.as_str() {
+                            "P-256" => DecodingKey::from_ec_components(x, y).ok(),
+                            _ => None,
+                        }
+                    } else {
+                        None
+                    }
+                }
+                "oct" => {
+                    if let Some(k) = &jwk.k {
+                        let k_bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD
+                            .decode(k)
+                            .unwrap_or_default();
+                        if !k_bytes.is_empty() {
+                            Some(DecodingKey::from_secret(&k_bytes))
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            };
+            if let Some(key) = key {
+                keys.insert(jwk.kid, key);
+            }
+        }
+        let mut cache = self.keys.write().await;
+        *cache = keys;
+        tracing::info!("JWKS refreshed: {} keys loaded", cache.len());
+    }
+}
+
+impl Default for JwksCache {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -166,47 +286,127 @@ where
             ));
         };
 
-        // 2. Verify JWT - support both ES256 (Supabase default) and HS256 (legacy)
-        // Supabase ES256 JWT secret is base64-encoded DER public key
+        // 2. Verify JWT - use JWKS for Supabase JWT Signing Keys, fall back to legacy secret
         let token_data = {
-            // Try ES256 with DER (base64-decoded raw bytes)
-            if let Ok(der_bytes) = base64::engine::general_purpose::STANDARD
-                .decode(app_state.supabase_jwt_secret.as_str())
-            {
-                let key = jsonwebtoken::DecodingKey::from_ec_der(&der_bytes);
-                let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::ES256);
-                validation.set_audience(&["authenticated"]);
-                match decode::<Claims>(&token, &key, &validation) {
-                    Ok(data) => data,
-                    Err(es256_err) => {
-                        // Try HS256 as fallback
-                        let key = jsonwebtoken::DecodingKey::from_secret(
-                            app_state.supabase_jwt_secret.as_bytes(),
-                        );
-                        let mut validation = jsonwebtoken::Validation::default();
+            // Decode header to check for kid (JWT Signing Key)
+            let header = decode_header(&token).map_err(|e| {
+                (
+                    StatusCode::UNAUTHORIZED,
+                    format!("Invalid token header: {}", e),
+                )
+            })?;
+
+            if let Some(kid) = header.kid {
+                // New-style token with JWT Signing Key - use JWKS
+                if let Some(key) = app_state.jwks_cache.get_key(&kid).await {
+                    let mut validation = Validation::new(header.alg);
+                    validation.set_audience(&["authenticated"]);
+                    match decode::<Claims>(&token, &key, &validation) {
+                        Ok(data) => data,
+                        Err(e) => {
+                            return Err((
+                                StatusCode::UNAUTHORIZED,
+                                format!("Invalid token (JWKS kid={}): {}", kid, e),
+                            ));
+                        }
+                    }
+                } else {
+                    // Key not in cache, try refreshing JWKS
+                    app_state.jwks_cache.refresh(&app_state).await;
+                    if let Some(key) = app_state.jwks_cache.get_key(&kid).await {
+                        let mut validation = Validation::new(header.alg);
                         validation.set_audience(&["authenticated"]);
                         match decode::<Claims>(&token, &key, &validation) {
                             Ok(data) => data,
-                            Err(_hs256_err) => {
+                            Err(e) => {
                                 return Err((
                                     StatusCode::UNAUTHORIZED,
-                                    format!("Invalid token: ES256={}, HS256 failed", es256_err),
+                                    format!("Invalid token (JWKS kid={}): {}", kid, e),
                                 ));
+                            }
+                        }
+                    } else {
+                        tracing::warn!("JWKS kid {} not found, falling back to JWT_SECRET", kid);
+                        if let Ok(der_bytes) = base64::engine::general_purpose::STANDARD
+                            .decode(app_state.supabase_jwt_secret.as_str())
+                        {
+                            let key = DecodingKey::from_ec_der(&der_bytes);
+                            let mut validation = Validation::new(Algorithm::ES256);
+                            validation.set_audience(&["authenticated"]);
+                            match decode::<Claims>(&token, &key, &validation) {
+                                Ok(data) => data,
+                                Err(es256_err) => {
+                                    let key = DecodingKey::from_secret(
+                                        app_state.supabase_jwt_secret.as_bytes(),
+                                    );
+                                    let mut validation = Validation::new(Algorithm::HS256);
+                                    validation.set_audience(&["authenticated"]);
+                                    match decode::<Claims>(&token, &key, &validation) {
+                                        Ok(data) => data,
+                                        Err(_) => {
+                                            return Err((
+                                                StatusCode::UNAUTHORIZED,
+                                                format!("Unknown JWKS key id: {} and JWT_SECRET fallback failed: {}", kid, es256_err),
+                                            ));
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            let key =
+                                DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
+                            let mut validation = Validation::new(Algorithm::HS256);
+                            validation.set_audience(&["authenticated"]);
+                            match decode::<Claims>(&token, &key, &validation) {
+                                Ok(data) => data,
+                                Err(e) => {
+                                    return Err((
+                                        StatusCode::UNAUTHORIZED,
+                                        format!("Unknown JWKS key id: {} and JWT_SECRET fallback failed: {}", kid, e),
+                                    ));
+                                }
                             }
                         }
                     }
                 }
             } else {
-                // Not valid base64, try HS256 directly
-                let key = jsonwebtoken::DecodingKey::from_secret(
-                    app_state.supabase_jwt_secret.as_bytes(),
-                );
-                let mut validation = jsonwebtoken::Validation::default();
-                validation.set_audience(&["authenticated"]);
-                match decode::<Claims>(&token, &key, &validation) {
-                    Ok(data) => data,
-                    Err(e) => {
-                        return Err((StatusCode::UNAUTHORIZED, format!("Invalid token: {}", e)));
+                // Legacy token without kid - try legacy secret
+                if let Ok(der_bytes) = base64::engine::general_purpose::STANDARD
+                    .decode(app_state.supabase_jwt_secret.as_str())
+                {
+                    let key = DecodingKey::from_ec_der(&der_bytes);
+                    let mut validation = Validation::new(Algorithm::ES256);
+                    validation.set_audience(&["authenticated"]);
+                    match decode::<Claims>(&token, &key, &validation) {
+                        Ok(data) => data,
+                        Err(es256_err) => {
+                            let key =
+                                DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
+                            let mut validation = Validation::default();
+                            validation.set_audience(&["authenticated"]);
+                            match decode::<Claims>(&token, &key, &validation) {
+                                Ok(data) => data,
+                                Err(_) => {
+                                    return Err((
+                                        StatusCode::UNAUTHORIZED,
+                                        format!("Invalid token (legacy): {}", es256_err),
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    let key = DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
+                    let mut validation = Validation::default();
+                    validation.set_audience(&["authenticated"]);
+                    match decode::<Claims>(&token, &key, &validation) {
+                        Ok(data) => data,
+                        Err(e) => {
+                            return Err((
+                                StatusCode::UNAUTHORIZED,
+                                format!("Invalid token (legacy): {}", e),
+                            ));
+                        }
                     }
                 }
             }

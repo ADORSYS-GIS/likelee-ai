@@ -432,4 +432,7 @@ pub struct AppState {
 
     // Brand trial configuration
     pub brand_trial_days: u32,
+
+    // JWKS cache for JWT Signing Keys (Supabase)
+    pub jwks_cache: std::sync::Arc<crate::auth::JwksCache>,
 }
