@@ -6012,7 +6012,12 @@ export default function BrandDashboard() {
         objective:
           String(offer?.brand_campaigns?.objective || "").trim() ||
           "Campaign offer",
-        budget: 0,
+        budget: (() => {
+          const budgetText = String(brandCampaigns?.budget_range || "");
+          const match = budgetText.match(/(\d[\d,]*)\s*-\s*(\d[\d,]*)/);
+          if (match) return Number(String(match[2]).replace(/[^\d]/g, "")) || 0;
+          return 0;
+        })(),
         creators: [collaboratorLabel],
         creatorAvatars: [
           String(offer?.target_avatar_url || "").trim() || "/favicon.svg",
@@ -6026,6 +6031,7 @@ export default function BrandDashboard() {
         exclusivity: String(brandCampaigns?.exclusivity || "").trim(),
         budget_range: String(brandCampaigns?.budget_range || "").trim(),
         start_date: String(brandCampaigns?.start_date || "").trim(),
+        due_date: endDate ? endDate.toISOString().slice(0, 10) : null,
         custom_terms: String(brandCampaigns?.custom_terms || "").trim(),
         assets_delivered: 0,
         last_update: offer?.updated_at
@@ -6113,7 +6119,9 @@ export default function BrandDashboard() {
         completed_at: completedAt,
         objective: representative?.objective || "Campaign offer",
         budget: Number(representative?.budget || 0),
-        due_date: representative?.due_date,
+        budget_range: String(representative?.budget_range || ""),
+        start_date: String(representative?.start_date || ""),
+        due_date: representative?.due_date || null,
         assets_delivered: Number(representative?.assets_delivered || 0),
         last_update: representative?.last_update,
       };
@@ -6866,7 +6874,33 @@ export default function BrandDashboard() {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Budget:</span>
                       <span className="font-bold text-gray-900">
-                        ${Number(campaign.budget || 0).toLocaleString()}
+                        {(() => {
+                          const parts = String(
+                            campaign.budget_range || "",
+                          ).match(/(\d[\d,]*)\s*-\s*(\d[\d,]*)/);
+                          if (parts) {
+                            const min = Number(
+                              parts[1].replace(/[^\d]/g, ""),
+                            ).toLocaleString();
+                            const max = Number(
+                              parts[2].replace(/[^\d]/g, ""),
+                            ).toLocaleString();
+                            return `$${min} – $${max}`;
+                          }
+                          return campaign.budget > 0
+                            ? `$${Number(campaign.budget).toLocaleString()}`
+                            : "—";
+                        })()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Start Date:</span>
+                      <span className="font-medium text-gray-900">
+                        {campaign.start_date && campaign.start_date !== "N/A"
+                          ? new Date(
+                              `${campaign.start_date}T00:00:00`,
+                            ).toLocaleDateString()
+                          : "—"}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -6877,18 +6911,6 @@ export default function BrandDashboard() {
                               String(campaign.due_date),
                             ).toLocaleDateString()
                           : "—"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Assets:</span>
-                      <span className="font-medium text-gray-900">
-                        {Number(campaign.assets_delivered || 0)} delivered
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Last Update:</span>
-                      <span className="font-medium text-gray-900">
-                        {campaign.last_update || "—"}
                       </span>
                     </div>
                   </div>
