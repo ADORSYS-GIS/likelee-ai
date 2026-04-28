@@ -206,10 +206,7 @@ where
                 match decode::<Claims>(&token, &key, &validation) {
                     Ok(data) => data,
                     Err(e) => {
-                        return Err((
-                            StatusCode::UNAUTHORIZED,
-                            format!("Invalid token: {}", e),
-                        ));
+                        return Err((StatusCode::UNAUTHORIZED, format!("Invalid token: {}", e)));
                     }
                 }
             }
