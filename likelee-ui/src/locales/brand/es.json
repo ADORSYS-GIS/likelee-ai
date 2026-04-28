@@ -575,16 +575,7 @@
       },
       "team": {
         "title": "Gestión del equipo",
-        "description": "Gestiona miembros, roles e invitaciones para la organización de tu marca.",
-        "inviteModal": {
-          "title": "Inviter un membre de l'équipe",
-          "description": "Envoyez une invitation par e-mail pour rejoindre votre équipe d'agence",
-          "emailAddress": "Adresse e-mail",
-          "userRole": "Rôle de l'utilisateur",
-          "selectRole": "Sélectionner un rôle",
-          "note": "L'utilisateur invité recevra un e-mail avec des instructions pour configurer son compte et accéder au tableau de bord avec le rôle assigné.",
-          "sendInvitation": "Envoyer l'invitation"
-        }
+        "description": "Gestiona miembros, roles e invitaciones para la organización de tu marca."
       },
       "integrations": {
         "title": "Amplía tu flujo de trabajo",
@@ -1097,8 +1088,7 @@
     "postJobModal": {
       "title": "Publicar un Trabajo para Encontrar Talento",
       "description": "Crea una publicación de trabajo detallada para conectar con creadores de IA, agencias de marketing y talento verificado para tu próxima campaña.",
-      "createJobPosting": "Crear Publicación de Trabajo",
-      "cta": "Créer une offre d'emploi"
+      "createJobPosting": "Crear Publicación de Trabajo"
     },
     "jobs": {
       "title": "Trabajos",
@@ -1314,53 +1304,6 @@
       "requestChanges": "Solicitar cambios",
       "new": "Nuevo",
       "download": "Descargar"
-    },
-    "contractUpdateRequestModal": {
-      "title": "Demander une mise à jour du contrat",
-      "description": "Sélectionnez comment procéder pour la demande de mise à jour du contrat.",
-      "options": {
-        "self": {
-          "title": "Je ferai les modifications",
-          "description": "Mettez à jour les conditions du contrat vous-même. Modifiez le territoire, la durée, le budget ou les livrables."
-        },
-        "agency": {
-          "title": "Envoyer à l'agence partenaire",
-          "description": "Transmettez cette demande de mise à jour à votre agence partenaire. Elle s'occupera des révisions et communiquera avec le talent."
-        }
-      },
-      "note": "Les mises à jour de contrat nécessitent l'approbation du talent. Ils ont 48 heures pour accepter ou refuser les changements proposés."
-    },
-    "contractBuilder": {
-      "title": "Générateur de contrat - {{talentName}}",
-      "description": "Créez un nouveau contrat pour ce projet.",
-      "step": "Étape {{current}} sur {{total}}",
-      "projectInfo": {
-        "title": "Informations sur le projet",
-        "name": "Nom du projet",
-        "deliverables": "Livrables",
-        "budget": "Budget (USD)",
-        "startingRate": "Tarif de départ : ${{price}}/projet",
-        "continue": "Continuer vers les conditions"
-      }
-    },
-    "hireModal": {
-      "title": "Embaucher {{talentName}}",
-      "subtitle": "Définissez les conditions du contrat avant d'embaucher ce créateur.",
-      "intro": "Avant d'embaucher {{talentName}}, définissons les conditions du contrat.",
-      "options": {
-        "self": {
-          "title": "Je vais créer le projet et les conditions",
-          "description": "Définissez vous-même les livrables, le budget et les conditions du contrat à l'aide de notre assistant guidé."
-        },
-        "agency": {
-          "title": "Mon agence s'en chargera",
-          "description": "Envoyez ceci à votre agence partenaire. Elle s'occupera de créer le projet et les conditions."
-        },
-        "browse": {
-          "title": "Parcourir les agences partenaires Likelee",
-          "description": "Embauchez une agence partenaire Likelee pour gérer le projet pour vous."
-        }
-      }
     }
   },
   "campaignsDashboard": {
@@ -1912,34 +1855,5 @@
     "signed": "Signed",
     "voided": "Voided",
     "opened": "Opened"
-  },
-  "common": {
-    "note": "Note",
-    "cancel": "Annuler",
-    "sending": "Envoi...",
-    "credits": "Crédits",
-    "credits_lower": "crédits",
-    "history": "Historique"
-  },
-  "licensingRequest": {
-    "title": "Lizenz anfordern",
-    "subtitle": "Senden Sie eine Lizenzanfrage für {{name}}.",
-    "subtitleGeneric": "Senden Sie eine Lizenzanfrage.",
-    "licenseFee": "Lizenzgebühr",
-    "licenseFeePlaceholder": "z.B. 5000",
-    "duration": "Dauer (Tage)",
-    "startDate": "Startdatum",
-    "endDate": "Enddatum",
-    "territory": "Gebiet",
-    "territoryPlaceholder": "z.B. USA, Kanada",
-    "usageScope": "Nutzungsumfang",
-    "usageScopePlaceholder": "z.B. Social Media, TV",
-    "exclusivity": "Exklusivität",
-    "modificationsAllowed": "Änderungen erlaubt",
-    "additionalNotes": "Zusätzliche Hinweise",
-    "additionalNotesPlaceholder": "Weitere Details...",
-    "cancel": "Abbrechen",
-    "submit": "Anfrage senden",
-    "submitting": "Wird gesendet..."
   }
 }

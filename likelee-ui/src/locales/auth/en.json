@@ -85,8 +85,7 @@
       "andTerms": "and Terms of Service",
       "mustAgreeTitle": "Agreement Required",
       "mustAgree": "You must agree to the terms to complete your registration.",
-      "completeRegistration": "Complete Registration",
-      "download": "Descargar"
+      "completeRegistration": "Complete Registration"
     },
     "industries": {
       "fashion": "Fashion",
@@ -417,8 +416,5 @@
       "verifyLabel": "Verify code",
       "continueButton": "Continue"
     }
-  },
-  "faces": {
-    "hero": {}
   }
 }

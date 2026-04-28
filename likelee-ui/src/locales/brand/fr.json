@@ -1050,8 +1050,7 @@
         "paymentReleased": "Paiement libéré depuis le séquestre",
         "contractCreatedAndSent": "Contrat créé et envoyé à {{creatorName}}"
       },
-      "noContractSubmissions": "Aucune soumission de contrat pour le moment.",
-      "loadingOffers": "Loading offers..."
+      "noContractSubmissions": "Aucune soumission de contrat pour le moment."
     },
     "deliverables": {
       "title": "Livrables",
@@ -1127,8 +1126,7 @@
     "postJobModal": {
       "title": "Publier un emploi pour trouver des talents",
       "description": "Créez une offre d'emploi détaillée pour vous connecter avec des créateurs IA, des agences de marketing et des talents vérifiés pour votre prochaine campagne.",
-      "cta": "Créer une offre d'emploi",
-      "createJobPosting": "Create Job Posting"
+      "cta": "Créer une offre d'emploi"
     },
     "jobs": {
       "title": "Emplois",
@@ -1317,52 +1315,6 @@
       "ytdSpend": "Dépenses YTD",
       "monthlyAvg": "Moyenne mensuelle",
       "projectedEoy": "Projection fin d'année"
-    },
-    "campaignDetails": {
-      "backToCampaigns": "← Back to Campaigns",
-      "campaignNotFound": "Campaign not found.",
-      "backToProject": "← Back to Project",
-      "briefAndContract": "Brief & Contract",
-      "detailedScope": "Detailed scope and requirements",
-      "created": "Created",
-      "dueDate": "Due Date",
-      "timeline": "Timeline",
-      "budget": "Budget",
-      "start": "Start",
-      "due": "Due",
-      "briefAndScope": "Brief & Scope",
-      "viewFullDetails": "View Full Details →",
-      "deliverables": "Deliverables",
-      "totalBudget": "Total Budget",
-      "creatorPayment": "Creator Payment",
-      "submissionDeadline": "Submission Deadline",
-      "renewalTerms": "Renewal Terms",
-      "campaign": "Campaign",
-      "progress": "Progress",
-      "completion": "Completion",
-      "deliverablesApproved": "deliverables approved",
-      "loadingCampaigns": "Loading campaigns...",
-      "noActiveCampaigns": "No active campaigns available.",
-      "campaignAssetSubmission": "Campaign Asset Submission",
-      "campaignOffer": "Campaign offer",
-      "agency": "Agency",
-      "creator": "Creator",
-      "collaborator": "Collaborator",
-      "creatorAgency": "Creator • Agency",
-      "creatorCreator": "Creator • Creator",
-      "approvingDeliverableTriggers": "Approving any 1 deliverable triggers escrow payout (once).",
-      "approvalsAreFinal": "After you approve a deliverable, Downloading will be enabled. Approvals are final and can't be undone.",
-      "loadingDeliverables": "Loading deliverables...",
-      "noContentSubmitted": "No content has been submitted yet.",
-      "premiumVideo": "Premium Video",
-      "locked": "Locked",
-      "deliverable": "Deliverable",
-      "noCaption": "No caption",
-      "approved": "Approved",
-      "approve": "Approve",
-      "requestChanges": "Request changes",
-      "new": "New",
-      "download": "Download"
     }
   },
   "campaignsDashboard": {
@@ -1920,26 +1872,5 @@
     "signed": "Signed",
     "voided": "Voided",
     "opened": "Opened"
-  },
-  "licensingRequest": {
-    "title": "Lizenz anfordern",
-    "subtitle": "Senden Sie eine Lizenzanfrage für {{name}}.",
-    "subtitleGeneric": "Senden Sie eine Lizenzanfrage.",
-    "licenseFee": "Lizenzgebühr",
-    "licenseFeePlaceholder": "z.B. 5000",
-    "duration": "Dauer (Tage)",
-    "startDate": "Startdatum",
-    "endDate": "Enddatum",
-    "territory": "Gebiet",
-    "territoryPlaceholder": "z.B. USA, Kanada",
-    "usageScope": "Nutzungsumfang",
-    "usageScopePlaceholder": "z.B. Social Media, TV",
-    "exclusivity": "Exklusivität",
-    "modificationsAllowed": "Änderungen erlaubt",
-    "additionalNotes": "Zusätzliche Hinweise",
-    "additionalNotesPlaceholder": "Weitere Details...",
-    "cancel": "Abbrechen",
-    "submit": "Anfrage senden",
-    "submitting": "Wird gesendet..."
   }
 }

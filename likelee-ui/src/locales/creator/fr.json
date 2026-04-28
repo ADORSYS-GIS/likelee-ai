@@ -188,20 +188,7 @@
         "standardMethod": "standard"
       },
       "readyTitle": "Prêt à retirer ?",
-      "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer.",
-      "byIndustry": "Ganancias por Industria",
-      "byCampaign": "Ganancias por Campaña",
-      "bankConnection": {
-        "title": "Conecte su cuenta bancaria",
-        "subtitle": "Vincule su cuenta bancaria para recibir sus ganancias directamente.",
-        "securityTitle": "Seguridad bancaria",
-        "securityMessage": "Su información está encriptada y protegida",
-        "privateTitle": "Privado y seguro",
-        "privateMessage": "Nunca almacenamos sus credenciales bancarias",
-        "button": "Conectar cuenta bancaria",
-        "comingSoon": "Conexión bancaria próximamente. Estamos integrando procesamiento de pagos seguro.",
-        "back": "Volver"
-      }
+      "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer."
     },
     "settings": {
       "myRules": "My Rules",
@@ -2106,64 +2093,5 @@
     "digitalTalentOwner": {
       "comparison": {}
     }
-  },
-  "faces.featuredCreator.title": "Featured Creator",
-  "faces.featuredCreator.royaltiesEarned": "Royalties Earned",
-  "faces.featuredCreator.royaltiesDescription": "From licensing to 5 brands",
-  "faces.featuredCreator.usageRequests": "Usage Requests",
-  "faces.featuredCreator.controlSettings": "Control Settings",
-  "faces.featuredCreator.allowCommercialUse": "Allow Commercial Use",
-  "faces.featuredCreator.allowFilmUse": "Allow Film Use",
-  "faces.featuredCreator.viewUsageReportButton": "View Usage Report",
-  "faces.featuredCreator.updateSettingsButton": "Update Settings",
-  "faces.digitalTalentOwner.title": "From Creator → Digital Talent Owner",
-  "faces.digitalTalentOwner.subtitle": "You've already built your image — now make it work for you.",
-  "faces.digitalTalentOwner.mainContent": "Licensing your likeness isn't selling out; it's scaling up. While you're filming your next project, your digital twin can be earning in ten more.",
-  "faces.digitalTalentOwner.comparison.title": "Traditional Model vs. Likelee Likeness Model",
-  "faces.digitalTalentOwner.comparison.traditionalPath": "Traditional Path",
-  "faces.digitalTalentOwner.comparison.traditionalPathDescription1": "You perform or shoot manually",
-  "faces.digitalTalentOwner.comparison.likeleeModel": "Likelee Model",
-  "faces.digitalTalentOwner.comparison.likeleeModelDescription1": "You scale automatically",
-  "faces.digitalTalentOwner.comparison.traditionalPathDescription2": "You get paid once per project",
-  "faces.digitalTalentOwner.comparison.likeleeModelDescription2": "You earn monthly retainers as long as brands use your likeness",
-  "faces.digitalTalentOwner.comparison.traditionalPathDescription3": "You often lose IP",
-  "faces.digitalTalentOwner.comparison.likeleeModelDescription3": "You retain IP",
-  "faces.digitalTalentOwner.comparison.traditionalPathDescription4": "You can't reuse or repurpose",
-  "faces.digitalTalentOwner.comparison.likeleeModelDescription4": "You approve each reuse",
-  "faces.digitalTalentOwner.footer": "You're not a gig worker. You're an owner.",
-  "sportsAgencySolutions": "Soluciones para Agencias Deportivas",
-  "sportsAgencySolutionsDescription": "Convierte a tus atletas en generadores de ingresos durante todo el año con licencias NIL que crecen mientras las contrataciones disminuyen.",
-  "vibes": {
-    "Streetwear": "Streetwear",
-    "Glam": "Glamuroso",
-    "Natural": "Natural",
-    "Classic": "Clásico",
-    "Edgy": "Atrevido",
-    "Athletic": "Atlético",
-    "Runway": "Pasarela",
-    "Editorial": "Editorial",
-    "Commercial": "Comercial",
-    "Casual": "Casual"
-  },
-  "payouts": {
-    "title": "Pagos",
-    "connectAccount": "Conectar cuenta",
-    "accountConnected": "Cuenta conectada",
-    "availableBalance": "Saldo disponible",
-    "pendingBalance": "Saldo pendiente",
-    "requestPayout": "Solicitar pago",
-    "payoutHistory": "Historial de pagos",
-    "noHistory": "Aún no hay historial de pagos.",
-    "setupPayouts": "Configurar pagos",
-    "stripeConnect": "Conectar con Stripe",
-    "paypalConnect": "Conectar con PayPal",
-    "wiseConnect": "Conectar con Wise",
-    "paymentPreferences": "Preferencias de pago",
-    "taxDocumentation": "Documentación fiscal",
-    "w9OnFile": "W-9 en archivo • Actualizado {{date}}",
-    "noW9OnFile": "No hay W-9 en archivo",
-    "download1099": "Descargar 1099 ({{year}})",
-    "cashOutEarnings": "Retirar ganancias",
-    "requesting": "Solicitando..."
   }
 }

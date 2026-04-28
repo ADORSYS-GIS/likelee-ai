@@ -96,8 +96,7 @@
         "title": "Recurring Monthly Licensing",
         "description": "Brand uses your talent's likeness on their website indefinitely and pays",
         "highlight": "$400 every month",
-        "suffix": "while those photos remain live.",
-        "baseRateDescription": "Tarif de base pour l'utilisation de l'image"
+        "suffix": "while those photos remain live."
       },
       "fixed": {
         "title": "Fixed-Term Licensing",
@@ -201,20 +200,7 @@
       "turnaround": "Turnaround",
       "from": "From",
       "preview": "Preview",
-      "profile": "Profile",
-      "exampleBio": "Creador de UGC e influencer especializado en belleza, estilo de vida y reseñas de productos. Apasionado por la narración auténtica.",
-      "namePlaceholder": "[Insertar nombre de usuario]",
-      "locationPlaceholder": "Scottsdale, Arizona",
-      "handlesPlaceholder": "@lilycreates",
-      "portfolioItems": {
-        "targetRetail": "Target Retail",
-        "holidayCampaign": "Campaña Navideña",
-        "spotifyPremium": "Spotify Premium",
-        "audioCampaign": "Campaña de Audio",
-        "lululemon": "Lululemon",
-        "fitnessSeries": "Serie de Fitness",
-        "months": "{{count}} meses"
-      }
+      "profile": "Profile"
     },
     "profileSettings": "Profile Settings",
     "myRules": "My Rules",
@@ -749,19 +735,6 @@
           "status": "Status"
         },
         "standardMethod": "standard"
-      },
-      "byIndustry": "Ganancias por Industria",
-      "byCampaign": "Ganancias por Campaña",
-      "bankConnection": {
-        "title": "Conecte su cuenta bancaria",
-        "subtitle": "Vincule su cuenta bancaria para recibir sus ganancias directamente.",
-        "securityTitle": "Seguridad bancaria",
-        "securityMessage": "Su información está encriptada y protegida",
-        "privateTitle": "Privado y seguro",
-        "privateMessage": "Nunca almacenamos sus credenciales bancarias",
-        "button": "Conectar cuenta bancaria",
-        "comingSoon": "Conexión bancaria próximamente. Estamos integrando procesamiento de pagos seguro.",
-        "back": "Volver"
       }
     },
     "voice": {
@@ -813,14 +786,6 @@
       "tips": {
         "title": "Voice Training Tips:",
         "message": "Speak clearly, avoid background noise, record in a quiet room, and maintain consistent volume throughout the recording."
-      },
-      "voiceScripts": {
-        "happy": "Je suis absolument ravi d'être ici aujourd'hui ! La vie est pleine de merveilleuses surprises et d'opportunités passionnantes. Chaque matin apporte un nouveau départ et de nouvelles possibilités. J'adore me connecter avec les gens et partager des énergies positives. Le monde est un endroit incroyable quand on le regarde avec optimisme. Célébrons les petites victoires et chérissons chaque moment de joie. Le bonheur est contagieux, alors propageons-le !",
-        "emotional": "Il y a des moments dans la vie qui touchent nos cœurs profondément. Parfois, nous nous sentons dépassés par la beauté de la connexion humaine. Ces expériences façonnent qui nous sommes et nous rappellent ce qui compte vraiment. J'ai appris que la vulnérabilité n'est pas une faiblesse, mais du courage. Chaque personne que nous rencontrons porte sa propre histoire, ses propres luttes et ses propres triomphes. Honorons ces moments et laissons de la place à une émotion authentique.",
-        "excited": "Oh mon Dieu, c'est incroyable ! Je peux à peine contenir mon enthousiasme en ce moment ! Il y a tellement d'énergie et de potentiel dans cet instant. Je vibre d'anticipation pour ce qui va suivre. Pouvez-vous ressentir cette électricité dans l'air ? Ça va être absolument génial ! Je suis prêt à foncer et à faire bouger les choses. L'avenir est brillant et je suis là pour ça !",
-        "mellow": "Parfois, il est agréable de simplement ralentir et de prendre les choses avec calme. Il n'y a pas d'urgence, pas de pression. Juste une présence calme et stable dans l'instant. La vie n'a pas toujours besoin d'être intense ou dramatique. Ces moments de tranquillité ont leur propre beauté et leur propre but. Respirons simplement et apprécions le calme. Tout se déroule en son temps, et c'est parfaitement normal.",
-        "relaxed": "Salut, je me détends juste un peu aujourd'hui. Pas de stress, pas d'inquiétude. Tout coule naturellement et en douceur. Je suis dans un très bon état d'esprit en ce moment, je profite simplement de l'instant présent. La vie semble équilibrée et confortable. Il y a quelque chose de paisible à ne pas trop réfléchir. Simplement être ici, être présent et laisser les choses se passer naturellement. Tout va bien.",
-        "angry": "Je ne peux pas croire que cela arrive. C'est complètement inacceptable et franchement, j'en ai assez. Il y a des limites à ce que n'importe qui devrait supporter. Cette situation doit changer, et elle doit changer maintenant. Je suis fatigué des excuses et des promesses en l'air. Les actions parlent plus fort que les mots, et je suis prêt à exiger ce qui est juste. Ça s'arrête ici."
       }
     },
     "dashboard": {
@@ -1066,27 +1031,7 @@
       "licensePausedNextMonth": "License will pause next billing cycle.",
       "licenseRevokedTitle": "License revoked",
       "licenseRevokedDesc": "License revoked. Effective date: {{effectiveDate}}",
-      "error": "Error",
-      "profileSaveFailed": "Error al guardar el perfil",
-      "ratesSaved": "¡Tarifas guardadas con éxito!",
-      "ratesSaveFailed": "Error al guardar las tarifas",
-      "restrictionsSaveFailed": "Error al guardar las restricciones",
-      "imageUploaded": "¡Imagen cargada con éxito!",
-      "imageUploadFailed": "Error al cargar la imagen",
-      "imageDeleted": "¡Imagen eliminada con éxito!",
-      "imageDeleteFailed": "Error al eliminar la imagen",
-      "voiceUploaded": "¡Muestra de voz cargada con éxito!",
-      "voiceUploadFailed": "Error al cargar la muestra de voz",
-      "voiceDeleted": "¡Muestra de voz eliminada con éxito!",
-      "voiceDeleteFailed": "Error al eliminar la muestra de voz",
-      "avatarGenerating": "Generando avatar...",
-      "avatarGenerated": "¡Avatar generado con éxito!",
-      "avatarGenerationFailed": "Error al generar el avatar",
-      "pleaseWait": "Por favor espere...",
-      "processing": "Procesando...",
-      "success": "¡Éxito!",
-      "warning": "Advertencia",
-      "info": "Información"
+      "error": "Error"
     },
     "uploadModal": {
       "requirementsTitle": "Requirements Checklist:",
@@ -1273,28 +1218,6 @@
       "download1099": "Download 1099 ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
       "requesting": "Requesting..."
-    },
-    "settingsContent": {
-      "myRules": "Mis Reglas",
-      "profileSettings": "Configuración del Perfil"
-    },
-    "rules": {
-      "modals": {
-        "perWeek": "/sem",
-        "cancel": "Cancelar",
-        "save": "Guardar Tarifas",
-        "saving": "Guardando...",
-        "contentTitle": "Personalizar tarifas de tipo de contenido",
-        "industryTitle": "Personalizar tarifas de industria",
-        "contentDesc": "Establezca tarifas semanales específicas para diferentes tipos de contenido. Si se deja en blanco, se aplicará su tarifa base ({rate}).",
-        "industryDesc": "Establezca tarifas semanales específicas para diferentes industrias. Si se deja en blanco, se aplicará su tarifa base ({rate}).",
-        "noContentTitle": "No se seleccionaron tipos de contenido.",
-        "noContentMsg": "Por favor regrese a \"Mis Reglas\" y seleccione primero los tipos de contenido a los que está abierto.",
-        "noIndustryTitle": "No se seleccionaron industrias.",
-        "noIndustryMsg": "Por favor regrese a \"Mis Reglas\" y seleccione primero las industrias con las que trabaja.",
-        "contentHeader": "Tipos de Contenido",
-        "industryHeader": "Industrias"
-      }
     }
   },
   "talentPortal": {
@@ -2122,48 +2045,5 @@
     },
     "moreFeatures": "+ More features",
     "backToDashboard": "Back to Dashboard"
-  },
-  "sportsAgencyCTA": "Prêt à débloquer votre potentiel numérique ?",
-  "sportsAgencyCTADescription": "Rejoignez la liste d'attente et soyez le premier à découvrir l'avenir du branding des athlètes.",
-  "faces": {
-    "featuredCreator": {},
-    "digitalTalentOwner": {
-      "comparison": {}
-    }
-  },
-  "sportsAgencySolutions": "Soluciones para Agencias Deportivas",
-  "sportsAgencySolutionsDescription": "Convierte a tus atletas en generadores de ingresos durante todo el año con licencias NIL que crecen mientras las contrataciones disminuyen.",
-  "vibes": {
-    "Streetwear": "Streetwear",
-    "Glam": "Glamuroso",
-    "Natural": "Natural",
-    "Classic": "Clásico",
-    "Edgy": "Atrevido",
-    "Athletic": "Atlético",
-    "Runway": "Pasarela",
-    "Editorial": "Editorial",
-    "Commercial": "Comercial",
-    "Casual": "Casual"
-  },
-  "payouts": {
-    "title": "Pagos",
-    "connectAccount": "Conectar cuenta",
-    "accountConnected": "Cuenta conectada",
-    "availableBalance": "Saldo disponible",
-    "pendingBalance": "Saldo pendiente",
-    "requestPayout": "Solicitar pago",
-    "payoutHistory": "Historial de pagos",
-    "noHistory": "Aún no hay historial de pagos.",
-    "setupPayouts": "Configurar pagos",
-    "stripeConnect": "Conectar con Stripe",
-    "paypalConnect": "Conectar con PayPal",
-    "wiseConnect": "Conectar con Wise",
-    "paymentPreferences": "Preferencias de pago",
-    "taxDocumentation": "Documentación fiscal",
-    "w9OnFile": "W-9 en archivo • Actualizado {{date}}",
-    "noW9OnFile": "No hay W-9 en archivo",
-    "download1099": "Descargar 1099 ({{year}})",
-    "cashOutEarnings": "Retirar ganancias",
-    "requesting": "Solicitando..."
   }
 }

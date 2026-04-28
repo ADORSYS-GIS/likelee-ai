@@ -427,25 +427,8 @@
         "noMoreFiles": "Plus de fichiers",
         "fileCount": "{{count}} fichier",
         "fileCount_other": "{{count}} fichiers",
-        "folders": {
-          "title": "Dossiers"
-        },
-        "files": {
-          "title": "Fichiers"
-        },
-        "uploadingShort": "Subiendo",
-        "deleteFile": {
-          "title": "Eliminar archivo",
-          "description": "¿Seguro que quieres eliminar este archivo?",
-          "cannotUndo": "Esta acción no se puede deshacer.",
-          "confirm": "Eliminar archivo"
-        },
-        "deleteFolder": {
-          "title": "Eliminar carpeta",
-          "description": "¿Seguro que quieres eliminar la carpeta",
-          "descriptionSuffix": "y todo su contenido?",
-          "confirm": "Eliminar carpeta"
-        }
+        "folders": { "title": "Dossiers" },
+        "files": { "title": "Fichiers" }
       },
       "subTabs": {
         "profile": "Profil",
@@ -1165,38 +1148,6 @@
           "selectRequired": "Sélectionner : {{fields}}",
           "calendlyOneToOne": "La réservation Calendly prend en charge un talent à la fois"
         }
-      },
-      "campaignModal": {
-        "titleCreate": "Create New Campaign",
-        "titleEdit": "Edit Campaign",
-        "fields": {
-          "name": "Campaign Name *",
-          "status": "Status",
-          "duration": "Duration (days)",
-          "startDate": "Start Date"
-        },
-        "placeholders": {
-          "name": "e.g. Summer Shoot 2024",
-          "startDate": "mm/dd/yyyy"
-        },
-        "statuses": {
-          "created": "Created",
-          "ongoing": "Ongoing",
-          "completed": "Completed"
-        },
-        "actions": {
-          "cancel": "Cancel",
-          "saving": "Saving...",
-          "save": "Save Campaign"
-        },
-        "errors": {
-          "missingName": "Please fill in the campaign name"
-        },
-        "toasts": {
-          "created": "Campaign created",
-          "updated": "Campaign updated",
-          "error": "Error saving campaign"
-        }
       }
     },
     "performanceTiers": {
@@ -1480,119 +1431,6 @@
         "errorTitle": "Erreur",
         "clientDeleted": "Client supprimé avec succès",
         "deleteFailed": "Impossible de supprimer le client"
-      },
-      "card": {
-        "viewProfile": "Ver perfil",
-        "sendPackage": "Enviar paquete",
-        "mailAppTitle": "No hay aplicación de correo configurada",
-        "mailAppDescription": "Configura Thunderbird como tu aplicación de correo predeterminada para abrir el correo.",
-        "noEmailTitle": "No hay correo registrado",
-        "noEmailDescription": "Agrega un correo de contacto para enviar un email.",
-        "openEmailErrorTitle": "No se pudo abrir el correo",
-        "openEmailErrorDescription": "No se encontró un correo de contacto para este cliente."
-      },
-      "modal": {
-        "addClient": {
-          "title": "Agregar nuevo cliente",
-          "fields": {
-            "companyName": "Nombre de la empresa *",
-            "industry": "Industria",
-            "website": "Sitio web",
-            "pipelineStage": "Etapa del pipeline",
-            "tags": "Etiquetas",
-            "nextFollowUp": "Fecha de próximo seguimiento",
-            "notes": "Notas"
-          },
-          "placeholders": {
-            "companyName": "Empresa S.A.",
-            "selectIndustry": "Seleccionar industria",
-            "website": "empresa.com",
-            "selectStage": "Seleccionar etapa",
-            "notes": "Agrega notas sobre este cliente..."
-          },
-          "actions": {
-            "adding": "Agregando..."
-          },
-          "errors": {
-            "companyRequired": "El nombre de la empresa es obligatorio"
-          },
-          "toasts": {
-            "created": "Cliente agregado correctamente",
-            "failed": "No se pudo agregar el cliente"
-          }
-        },
-        "profile": {
-          "tabs": {
-            "overview": "Resumen",
-            "contacts": "Contactos",
-            "communications": "Comunicaciones",
-            "bookings": "Reservas",
-            "filesNotes": "Archivos y notas"
-          },
-          "sections": {
-            "companyInformation": "Información de la empresa",
-            "clientPreferences": "Preferencias del cliente",
-            "clientMetrics": "Métricas del cliente",
-            "contactList": "Lista de contactos",
-            "communicationHistory": "Historial de comunicaciones",
-            "bookingsHistory": "Historial de reservas",
-            "notes": "Notas",
-            "filesDocuments": "Archivos y documentos"
-          },
-          "fields": {
-            "industry": "Industria",
-            "website": "Sitio web",
-            "nextFollowUp": "Próximo seguimiento",
-            "tags": "Etiquetas",
-            "preferredTalentTypes": "Tipos de talento preferidos",
-            "budgetRange": "Rango de presupuesto",
-            "bookingLeadTime": "Anticipación de reserva"
-          },
-          "metrics": {
-            "totalBookings": "Reservas totales",
-            "packagesSent": "Paquetes enviados"
-          },
-          "actions": {
-            "addContact": "Agregar contacto",
-            "logCommunication": "Registrar comunicación",
-            "saveNotes": "Guardar notas",
-            "uploadFile": "Subir archivo",
-            "viewFile": "Ver",
-            "editClient": "Editar cliente",
-            "close": "Cerrar"
-          },
-          "states": {
-            "loadingContacts": "Cargando contactos...",
-            "noContacts": "Aún no se han agregado contactos",
-            "loadingHistory": "Cargando historial...",
-            "noCommunications": "Aún no hay comunicaciones registradas",
-            "loadingBookings": "Cargando reservas...",
-            "noBookings": "No se encontraron reservas para este cliente",
-            "loadingDocuments": "Cargando documentos...",
-            "noFiles": "Aún no se han subido archivos"
-          },
-          "placeholders": {
-            "notes": "Ingresa notas del cliente, preferencias o detalles internos..."
-          },
-          "common": {
-            "primary": "Principal",
-            "noRole": "Sin rol especificado",
-            "unknownTalent": "Talento desconocido",
-            "noLocation": "Sin ubicación",
-            "added": "Agregado",
-            "never": "Nunca"
-          },
-          "errors": {
-            "noEmailTitle": "No hay correo registrado",
-            "noEmailDescription": "Agrega un correo de contacto para enviar un email."
-          },
-          "toasts": {
-            "notesSavedTitle": "Notas guardadas",
-            "notesSavedDescription": "Las notas del cliente se actualizaron correctamente.",
-            "fileUploadedTitle": "Archivo subido",
-            "fileUploadedDescription": "El documento se ha subido correctamente."
-          }
-        }
       }
     },
     "packages": {
@@ -2379,10 +2217,7 @@
         "sent": "Envoyé",
         "opened": "Ouvert",
         "declined": "Refusé",
-        "expired": "Expiré",
-        "agencyPending": "Agency pending",
-        "clientPending": "Client pending",
-        "archived": "Archived"
+        "expired": "Expiré"
       },
       "reason": "Raison :",
       "toast": {
@@ -2409,22 +2244,10 @@
         "recover": "Récupérer",
         "copyClientLink": "Copier le lien client",
         "copyAgencyLink": "Copier le lien agence",
-        "viewDocument": "Voir le document",
-        "signHere": "Sign here",
-        "download": "Download",
-        "downloadPdf": "Download PDF",
-        "moreActions": "More actions",
-        "openAgencySigningLink": "Open agency signing link",
-        "openAgencyLink": "Open agency link"
+        "viewDocument": "Voir le document"
       },
       "noSubmissions": "Aucune soumission trouvée",
-      "searchPlaceholder": "Rechercher des soumissions...",
-      "table": {
-        "client": "Client",
-        "template": "Template",
-        "status": "Status",
-        "sentDate": "Sent Date"
-      }
+      "searchPlaceholder": "Rechercher des soumissions..."
     },
     "licenseTemplates": {
       "title": "Modèles de licence",
@@ -2483,59 +2306,7 @@
       "noTemplatesMatch": "Aucun modèle ne correspond à vos critères.",
       "noTemplatesYet": "Aucun modèle pour le moment. Créez le vôtre pour commencer !",
       "notSet": "Non défini",
-      "brandContext": "Toute soumission de contrat créée sera envoyée à {{brand}}.",
-      "modal": {
-        "newTitle": "New Contract Template",
-        "editTitle": "Edit License Template",
-        "detailsTitle": "License Template Details",
-        "detailsSubtitle": "View your standardized agency terms and details",
-        "editSubtitle": "Standardize your agency terms with dynamic placeholders",
-        "saving": "Saving...",
-        "updateTemplate": "Update Template",
-        "createTemplate": "Create Template"
-      },
-      "wizard": {
-        "dealSpecifics": "Deal Specifics",
-        "contentReview": "Content Review",
-        "dealSpecificsSubtitle": "Enter the core details of this licensing deal",
-        "contentReviewSubtitle": "Review and personalize the contract content",
-        "preparing": "Preparing...",
-        "finalize": "Finalize",
-        "nextStep": "Next Step",
-        "renewalPrefill": "Relleno previo de renovación",
-        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
-        "identification": "Identificación",
-        "brandName": "Nombre de marca",
-        "brandNamePlaceholder": "p. ej. Nike, Spotify",
-        "clientEmail": "Correo del cliente",
-        "sendToConnectedBrands": "Enviar a marcas conectadas",
-        "selectBrand": "Seleccionar marca",
-        "selectedBrand": "Marca seleccionada",
-        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
-        "clientEmailPlaceholder": "cliente@ejemplo.com",
-        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
-        "agencySignsFirst": "La agencia firma primero (en plataforma)",
-        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
-        "startDate": "Fecha de inicio",
-        "commercials": "Condiciones comerciales",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio"
-      },
-      "form": {
-        "templateIdentity": "Identidad de plantilla",
-        "templateName": "Nombre de plantilla",
-        "templateNamePlaceholder": "p. ej. Estándar de redes sociales",
-        "category": "Categoría",
-        "description": "Descripción",
-        "descriptionPlaceholder": "Descripción de la plantilla...",
-        "usageScope": "Alcance de uso",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio",
-        "exclusivity": "Exclusividad",
-        "categoryExclusive": "Exclusivo por categoría",
-        "licenseFee": "Tarifa de licencia ($)",
-        "modificationsAllowed": "Modificaciones permitidas"
-      }
+      "brandContext": "Toute soumission de contrat créée sera envoyée à {{brand}}."
     },
     "addTalent": {
       "title": "Ajouter un nouveau {{entityTitle}}",
@@ -3651,9 +3422,7 @@
               "label": "Réviseur",
               "description": "Peut examiner le contenu et suivre l’activité"
             },
-            "unknown": "Rôle inconnu",
-            "manager": "Manager",
-            "member": "Member"
+            "unknown": "Rôle inconnu"
           },
           "inviteSuccess": "Membre invité avec succès",
           "inviteFailed": "Échec de l'invitation du membre",
@@ -3766,41 +3535,6 @@
           "saving": "Enregistrement...",
           "save": "Enregistrer"
         }
-      }
-    },
-    "header": {
-      "notifications": {
-        "title": "Notifications",
-        "markAllRead": "Mark all as read",
-        "all": "All",
-        "unread": "Unread ({{count}})",
-        "none": "No notifications found.",
-        "caughtUp": "You're all caught up!",
-        "viewAll": "View all notifications",
-        "viewAllDesc": "Navigating to full notifications page...",
-        "systemAlert": "System Alert",
-        "systemAlertMessage": "Your verification was successfully processed. Welcome to Likelee!",
-        "justNow": "Just now",
-        "summary": {
-          "requests": "{{count}} request(s)",
-          "offers": "{{count}} offer(s)",
-          "feedback": "{{count}} feedback(s)",
-          "pending": "Pending: {{parts}}.",
-          "actionRequired": "Action required",
-          "pendingLicensing": "You have {{count}} pending licensing request(s).",
-          "pendingJobs": "You have {{count}} pending job invite(s).",
-          "newMessage": "New message"
-        }
-      },
-      "profile": {
-        "organizationSettings": "Organization Settings",
-        "manageCompany": "Manage company profile",
-        "teamPermissions": "Team & Permissions",
-        "activeUsers": "{{count}} active users",
-        "billingSubscription": "Billing & Subscription",
-        "legalCompliance": "Legal & Compliance",
-        "legalSubtitle": "Contracts, terms, privacy",
-        "integrations": "Integrations"
       }
     }
   },

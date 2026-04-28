@@ -433,10 +433,7 @@
           "upload": "Subir",
           "addFile": "Agregar archivo",
           "download": "Descargar",
-          "delete": "Eliminar",
-          "rename": "Umbenennen",
-          "share": "Teilen",
-          "preview": "Vorschau"
+          "delete": "Eliminar"
         },
         "folders": "Carpetas",
         "files": "Archivos",
@@ -1024,38 +1021,6 @@
             "created": "Creada",
             "ongoing": "En curso",
             "completed": "Completada"
-          }
-        },
-        "campaignModal": {
-          "titleCreate": "Neue Kampagne erstellen",
-          "titleEdit": "Kampagne bearbeiten",
-          "fields": {
-            "name": "Kampagnenname *",
-            "status": "Status",
-            "duration": "Dauer (Tage)",
-            "startDate": "Startdatum"
-          },
-          "placeholders": {
-            "name": "z. B. Summer Shoot 2024",
-            "startDate": "tt.mm.jjjj"
-          },
-          "statuses": {
-            "created": "Erstellt",
-            "ongoing": "Laufend",
-            "completed": "Abgeschlossen"
-          },
-          "actions": {
-            "cancel": "Abbrechen",
-            "saving": "Wird gespeichert...",
-            "save": "Kampagne speichern"
-          },
-          "errors": {
-            "missingName": "Bitte geben Sie den Kampagnennamen ein"
-          },
-          "toasts": {
-            "created": "Kampagne erstellt",
-            "updated": "Kampagne aktualisiert",
-            "error": "Fehler beim Speichern der Kampagne"
           }
         }
       },
@@ -1826,88 +1791,6 @@
         "toEntityThisYear": "Pagado al/a la {{entitySingular}} este año",
         "agencyCommissionYTD": "Comisión de agencia YTD",
         "avgCommissionRate": "{{rate}}% de comisión promedio"
-      },
-      "commissionStructure": {
-        "title": "{{entitySingular}} Commission Rules",
-        "description": "Agency-managed {{entitySingularLower}} can use settings-based overrides here. Marketplace-connected {{entitySingularLower}} follow the active signed contract rate and are read-only on this screen.",
-        "loadingRoster": "Loading roster data...",
-        "loadFailed": "Failed to load roster data",
-        "tryAgain": "Try Again",
-        "connectionRequired": "Connection Required",
-        "connectionRequiredDescription": "Only talents with an active creator account are listed here. To manage commissions for pending or uninvited roster members, please ensure they have accepted their invitation to the talent portal. Marketplace-connected creator accounts are shown as contract controlled once their signed agreement becomes active.",
-        "searchTalentByName": "Search {{entity}} by name...",
-        "contractLocked": "Contract Locked",
-        "customOverride": "Custom Override",
-        "tierDefault": "Tier Default",
-        "currentTier": "Current Tier",
-        "settingsRate": "Settings Rate (%)",
-        "contractControlled": "Contract Controlled",
-        "marketplaceConnected": "Marketplace Connected",
-        "agencyManaged": "Agency Managed",
-        "locked": "Locked",
-        "discardChange": "Discard change",
-        "resetToTierDefault": "Reset to tier default",
-        "noResultsFound": "No results found",
-        "noEntityFound": "No {{entity}} found",
-        "commissionModel": "Commission Model",
-        "modelDescriptionPrefix": "Commission rates represent the",
-        "modelDescriptionBody": ". Agency-managed {{entity}} accounts can be adjusted here with settings overrides, while marketplace-connected {{entity}} accounts follow the active signed contract rate and stay locked on this screen.",
-        "discardAll": "Discard All",
-        "saving": "Saving...",
-        "saveChanges": "Save Changes"
-      },
-      "payoutPreferences": {
-        "scheduleSettings": "Payout Schedule Settings",
-        "frequency": "Payout Frequency",
-        "selectFrequency": "Select Frequency",
-        "weekly": "Weekly",
-        "biWeekly": "Bi-Weekly",
-        "monthly": "Monthly",
-        "frequencyDescription": "How often {{entitySingularLower}} receive their share",
-        "minThreshold": "Minimum Payout Threshold",
-        "minThresholdDescription": "Don't pay if balance is under this amount",
-        "method": "Payout Method",
-        "stripeConnected": "Stripe Connected Account",
-        "autoDeduct": "Auto-deduct agency commission and send net to talent",
-        "active": "Active",
-        "howItWorks": "How it works:",
-        "upcomingSchedule": "Upcoming Payout Schedule",
-        "scheduledPayout": "Scheduled payout",
-        "scheduled": "scheduled",
-        "nextPayoutDateNotReached": "Next payout date not reached",
-        "howItWorksStep1": "1. Brand pays license fee to agency Stripe account",
-        "howItWorksStep2": "2. Agency commission (14%) auto-deducted",
-        "howItWorksStep3": "3. Net amount transferred to talent's connected account",
-        "howItWorksStep4": "4. Automatic payout on schedule (monthly)",
-        "noUpcoming": "No upcoming payouts",
-        "noUpcomingDescription": "Payouts will appear here once scheduled"
-      },
-      "commissionBreakdown": {
-        "title": "Recent License Deal Breakdowns",
-        "description": "View how commissions were split for recent licensing deals",
-        "noDeals": "No recent deals found",
-        "dealDate": "Deal Date",
-        "client": "Client",
-        "talent": "{{entitySingular}}",
-        "totalDeal": "Total Deal",
-        "agencyCommission": "Agency Commission",
-        "talentPayout": "{{entitySingular}} Payout",
-        "status": "Status"
-      },
-      "paymentHistory": {
-        "topEarningTitle": "Top Earning {{entitySingular}} (Last 30 Days)",
-        "campaigns": "{{count}} campaigns",
-        "talentLabel": "{{entitySingular}}:",
-        "agencyLabel": "Agency:",
-        "noPayments": "No successful payments found in the last 30 days."
-      },
-      "royalties": {
-        "accruedThisMonth": "Accrued This Month",
-        "liveEarningsPool": "Live Earnings Pool",
-        "pendingApproval": "Pending Approval",
-        "awaitingPayoutProcessing": "Awaiting Payout Processing",
-        "ytdPaidToEntity": "YTD Paid to {{entitySingular}}",
-        "totalNetPayouts": "Total Net Payouts 2024"
       }
     },
     "subscribe": {
@@ -2998,9 +2881,7 @@
           "rejectFailed": "Error al rechazar la solicitud",
           "noRequests": "No hay solicitudes pendientes",
           "accept": "Aceptar",
-          "reject": "Rechazar",
-          "deliverables": "Lieferungen",
-          "feedback": "Feedback"
+          "reject": "Rechazar"
         },
         "offers": {
           "title": "Ofertas",
@@ -3354,10 +3235,7 @@
           "cantUnassignAfterSent": "No puedes cambiar el talento asignado después de enviar el contrato.",
           "disconnected": "Desconectado",
           "disconnectedDesc": "Marca desconectada exitosamente.",
-          "disconnectFailed": "Error al desconectar la marca",
-          "talentUnassigned": "Talent unassigned",
-          "talentRemovedFromOffer": "Talent was removed from this offer.",
-          "assignmentFailed": "Assignment failed"
+          "disconnectFailed": "Error al desconectar la marca"
         },
         "connectedBrands": "Marcas conectadas",
         "requests": "Solicitudes",
@@ -3371,22 +3249,7 @@
         "packageFeedback": "Comentarios del paquete",
         "loadingBrands": "Cargando marcas conectadas…",
         "loadBrandsFailed": "Error al cargar las marcas conectadas.",
-        "noBrands": "Aún no hay marcas conectadas.",
-        "connections": {
-          "title": "Verbundene Marken",
-          "noConnections": "Keine verbundenen Marken",
-          "loadingBrands": "Verbundene Marken werden geladen...",
-          "loadBrandsFailed": "Laden der verbundenen Marken fehlgeschlagen.",
-          "noBrands": "Noch keine verbundenen Marken.",
-          "disconnect": "Trennen",
-          "disconnectSuccess": "Marke erfolgreich getrennt",
-          "disconnectFailed": "Trennen der Marke fehlgeschlagen"
-        },
-        "packageFeedbackData": {
-          "title": "Paket-Feedback",
-          "empty": "Noch kein Paket-Feedback verfügbar.",
-          "loading": "Paket-Feedback wird geladen…"
-        }
+        "noBrands": "Aún no hay marcas conectadas."
       },
       "settings": {
         "title": "Configuración",
@@ -3596,9 +3459,7 @@
               "label": "Revisor",
               "description": "Puede revisar contenido y seguir la actividad"
             },
-            "unknown": "Rol desconocido",
-            "manager": "Manager",
-            "member": "Member"
+            "unknown": "Rol desconocido"
           },
           "inviteSuccess": "Miembro invitado exitosamente",
           "inviteFailed": "Error al invitar miembro",
@@ -3710,95 +3571,8 @@
         "common": {
           "saving": "Guardando...",
           "save": "Guardar"
-        },
-        "taxAndCurrency": {
-          "title": "Tax & Currency Settings",
-          "defaultCurrency": "Default Currency",
-          "selectCurrency": "Select currency",
-          "currencies": {
-            "usd": "USD - US Dollar",
-            "eur": "EUR - Euro",
-            "gbp": "GBP - British Pound"
-          },
-          "dateFormat": "Date Format",
-          "selectFormat": "Select format",
-          "invoiceSettings": "Invoice Settings",
-          "defaultPaymentTerms": "Default Payment Terms",
-          "selectTerms": "Select terms",
-          "paymentTerms": {
-            "due": "Due on Receipt",
-            "net15": "Net 15",
-            "net30": "Net 30",
-            "net60": "Net 60"
-          },
-          "defaultRate": "Standard-Steuersatz (%)",
-          "defaultRateHint": "Wird auf Rechnungen angewendet (z. B. Umsatzsteuer, VAT)",
-          "taxDisplayName": "Anzeigename der Steuer",
-          "includeTaxInPrices": "Steuer in angezeigten Preisen enthalten",
-          "paymentTermsLabel": "Zahlungsbedingungen",
-          "lateFee": "Mahngebühr (%)",
-          "lateFeeHint": "Monatliche Zinsen auf überfällige Rechnungen",
-          "invoicePrefix": "Rechnungspräfix",
-          "invoicePrefixExample": "Beispiel: INV-00001, INV-00002",
-          "save": "Steuer- und Währungseinstellungen speichern"
         }
-      },
-      "labels": {
-        "growthPercent": "+{{value}}% growth",
-        "vsLastPeriod": "+{{value}}% vs last period",
-        "monthlyPerformanceTrends": "Monthly Performance Trends",
-        "earnings": "Earnings ($)",
-        "earningsLower": "earnings",
-        "licenses": "Licenses",
-        "campaigns": "Campaigns",
-        "aiUsages": "AI Usages",
-        "complete": "Complete",
-        "missing": "Missing",
-        "expiring": "Expiring",
-        "projected": "projected",
-        "inactive": "inactive",
-        "active": "active",
-        "talent": "Talent",
-        "talentPerformanceMetrics": "Talent Performance Metrics",
-        "engagement": "engagement",
-        "mostActive": "Most Active ({{metric}})",
-        "clientAcquisition": "Client Acquisition",
-        "newClients": "New clients in the last 30 days",
-        "repeatClientRate": "Repeat Client Rate",
-        "action": "Action",
-        "ofTotal": "{{value}}% of total",
-        "percentOfTotal": "{{value}}% of total",
-        "topClientsPerformance": "Top Clients Performance",
-        "geographicDistribution": "Geographic Distribution",
-        "complianceSummary": "Compliance Summary",
-        "consentStatusDistribution": "Consent Status Distribution",
-        "comingSoon": "Coming Soon",
-        "licenseExpiryPipeline": "License Expiry Pipeline",
-        "expiredOn": "Expired on {{date}}",
-        "nextDays": "Next {{count}} days",
-        "next10Days": "Next 10 days",
-        "verified": "{{count}} of {{total}} verified",
-        "verifiedOfTotal": "{{count}} of {{total}} verified",
-        "completeOfTotal": "{{count}} of {{total}} complete",
-        "licensesLower": "licenses",
-        "campaignsLower": "campaigns",
-        "30dEarnings": "30D Earnings"
-      },
-      "months": {
-        "jan": "Jan",
-        "feb": "Feb",
-        "mar": "Mar",
-        "apr": "Apr",
-        "may": "May",
-        "jun": "Jun",
-        "jul": "Jul",
-        "aug": "Aug",
-        "sep": "Sep",
-        "oct": "Oct",
-        "nov": "Nov",
-        "dec": "Dec"
-      },
-      "irlComingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon."
+      }
     }
   }
 }

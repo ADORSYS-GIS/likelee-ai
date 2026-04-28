@@ -577,74 +577,14 @@
       "addProspectForm": {
         "fields": {
           "email": "email",
-          "instagramHandleLower": "Instagram handle",
-          "name": "Nombre *",
-          "instagramHandle": "Usuario de Instagram",
-          "discoverySource": "Fuente de descubrimiento",
-          "discoveryDate": "Fecha de descubrimiento",
-          "discoveryLocation": "Ubicación del descubrimiento",
-          "referredBy": "Referido por",
-          "status": "Estado",
-          "assignedAgent": "Agente asignado",
-          "internalNotes": "Notas internas"
+          "instagramHandleLower": "Instagram handle"
         },
         "placeholders": {
           "email": "email@example.com",
-          "phone": "+1 (555) 123-4567",
-          "fullName": "Nombre completo",
-          "selectSource": "Selecciona una fuente",
-          "discoveryLocation": "Nueva York, NY",
-          "selectStatus": "Selecciona un estado",
-          "assignedAgent": "Nombre del agente",
-          "internalNotes": "Agrega notas sobre este prospecto..."
+          "phone": "+1 (555) 123-4567"
         },
         "errors": {
-          "duplicateDescription": "This prospect ({{name}}) is already in your pipeline with the same {{field}}.",
-          "missingInfoTitle": "Falta información",
-          "missingName": "Por favor ingresa un nombre para el prospecto.",
-          "missingAgency": "No se pudo identificar tu agencia. Asegúrate de haber iniciado sesión como miembro de una agencia.",
-          "duplicateTitle": "El prospecto ya existe"
-        },
-        "title": "Agregar nuevo prospecto",
-        "subtitle": "Haz seguimiento del talento antes de incorporarlo a tu roster",
-        "sections": {
-          "basicInformation": "Información básica",
-          "categories": "Categorías",
-          "discoveryDetails": "Detalles del descubrimiento",
-          "statusAssignment": "Estado y asignación",
-          "starRating": "Calificación por estrellas",
-          "socialMedia": "Redes sociales (opcional)"
-        },
-        "toasts": {
-          "successTitle": "Éxito",
-          "created": "Prospecto agregado correctamente",
-          "errorTitle": "Error",
-          "failed": "No se pudo agregar el prospecto"
-        }
-      },
-      "title": "Centro de scouting",
-      "subtitle": "Descubre, rastrea y gestiona prospectos de {{entityPluralLower}}",
-      "addProspect": "Agregar prospecto",
-      "createEvent": "Crear evento",
-      "planScoutingTrip": "Planificar viaje de scouting",
-      "trips": {
-        "title": "Viajes de scouting",
-        "subtitle": "Gestiona y haz seguimiento de tus misiones de scouting en campo",
-        "metrics": {
-          "approached": "Abordados",
-          "submitted": "Enviados",
-          "addedToPipeline": "Añadidos al pipeline",
-          "conversionRate": "Tasa de conversión",
-          "totalCost": "Costo total"
-        },
-        "actions": {
-          "planNewTrip": "Planificar nuevo viaje",
-          "planFirstTrip": "Planifica tu primer viaje"
-        },
-        "states": {
-          "loading": "Cargando tus viajes de scouting...",
-          "emptyTitle": "Aún no hay viajes planificados",
-          "emptyDescription": "Comienza planificando tu primera misión de scouting para descubrir nuevo talento."
+          "duplicateDescription": "This prospect ({{name}}) is already in your pipeline with the same {{field}}."
         }
       }
     },
@@ -768,300 +708,7 @@
             "exportingAs": "Exporting {{count}} bookings as {{format}}...",
             "scheduledWeeklyReports": "Scheduled weekly reports via email!",
             "ok": "OK"
-          },
-          "comingSoonTitle": "Función de analítica próximamente",
-          "comingSoonDescription": "Ve analíticas detalladas e informes de tus reservas"
-        },
-        "bookingRequests": {
-          "title": "Solicitudes de reserva",
-          "subtitle": "Revisa y gestiona las solicitudes de reserva entrantes",
-          "comingSoonTitle": "Función de solicitudes de reserva próximamente",
-          "comingSoonDescription": "Gestiona las solicitudes de reserva entrantes de los clientes"
-        },
-        "notifications": {
-          "title": "Centro de notificaciones",
-          "subtitle": "Gestiona notificaciones de reservas y registros de entrega",
-          "comingSoonTitle": "Función de notificaciones próximamente",
-          "comingSoonDescription": "Configura recordatorios y notificaciones automáticas para reservas",
-          "subTabs": {
-            "notificationLogs": "Registros de notificaciones",
-            "settings": "Configuración",
-            "preferences": "Preferencias de {{entitySingular}}",
-            "testNotifications": "Probar notificaciones"
-          },
-          "stats": {
-            "emailsSent": "Correos enviados",
-            "smsSent": "SMS enviados",
-            "pushSent": "Push enviados",
-            "failed": "Fallidos",
-            "comingSoon": "Próximamente"
-          },
-          "logs": {
-            "recentNotifications": "Notificaciones recientes",
-            "filter": "Filtrar",
-            "loading": "Cargando…",
-            "noLogs": "Aún no hay registros de notificaciones.",
-            "bookingCreated": "Reserva creada",
-            "to": "Para:",
-            "sent": "Enviado",
-            "failed": "Fallido"
-          },
-          "settings": {
-            "title": "Configuración de notificaciones de eventos",
-            "subtitle": "Configura qué canales usar para cada tipo de evento",
-            "bookingCreatedConfirmed": "Reserva creada/confirmada",
-            "bookingUpdated": "Reserva actualizada",
-            "bookingCancelled": "Reserva cancelada",
-            "automaticReminders": "Recordatorios automáticos",
-            "24HoursBefore": "24 horas antes de la reserva",
-            "48HoursBefore": "48 horas antes de la reserva",
-            "1WeekBefore": "1 semana antes de la reserva",
-            "email": "Correo electrónico",
-            "sms": "SMS",
-            "push": "Push",
-            "comingSoon": "Próximamente"
-          },
-          "preferences": {
-            "title": "Preferencias de notificación por {{entitySingular}}",
-            "subtitle": "Anula los valores predeterminados de la agencia para {{entityLower}} específicos",
-            "searchPlaceholder": "Buscar {{entityLower}} por nombre...",
-            "loadingRoster": "Cargando roster...",
-            "noAthletes": "No se encontraron atletas en el roster.",
-            "email": "Correo electrónico",
-            "sms": "SMS",
-            "push": "Push",
-            "comingSoon": "Próximamente"
-          },
-          "test": {
-            "title": "Probar entrega de notificaciones",
-            "subtitle": "Envía una notificación de prueba para verificar la entrega y el formato",
-            "notificationType": "Tipo de notificación",
-            "selectNotificationType": "Selecciona el tipo de notificación",
-            "emailWithIcs": "Correo electrónico (con archivo .ics adjunto)",
-            "sms": "SMS",
-            "pushNotification": "Notificación push",
-            "selectEntity": "Seleccionar {{entitySingular}}",
-            "chooseEntityToNotify": "Elige {{entityLower}} para notificar",
-            "testPrefix": "Las notificaciones de prueba se enviarán con el prefijo \"[TEST]\" y no contarán para la facturación.",
-            "sendTestNotification": "Enviar notificación de prueba",
-            "notificationSent": "Notificación enviada",
-            "testNotificationSent": "¡Notificación de prueba {{type}} enviada a {{name}}!",
-            "previewTemplates": "Vista previa de plantillas",
-            "subject": "Asunto:",
-            "bodyPreview": "Vista previa del cuerpo:",
-            "messagePreview": "Vista previa del mensaje (máx. 160 caracteres):",
-            "characterCount": "Recuento de caracteres: {{count}}/160",
-            "notificationPreview": "Vista previa de notificación:",
-            "now": "ahora",
-            "likeleeAgency": "Agencia Likelee",
-            "newBooking": "[TEST] Nueva reserva",
-            "calendarAttached": "Invitación de calendario (.ics) adjunta"
-          },
-          "toasts": {
-            "failedToLoad": "Error al cargar notificaciones",
-            "tryAgain": "Por favor, inténtalo de nuevo.",
-            "failedToUpdate": "Error al actualizar la configuración",
-            "failedToUpdatePreference": "Error al actualizar la preferencia"
           }
-        },
-        "campaignModal": {
-          "titleCreate": "Neue Kampagne erstellen",
-          "titleEdit": "Kampagne bearbeiten",
-          "fields": {
-            "name": "Kampagnenname *",
-            "status": "Status",
-            "duration": "Dauer (Tage)",
-            "startDate": "Startdatum"
-          },
-          "placeholders": {
-            "name": "z. B. Summer Shoot 2024",
-            "startDate": "tt.mm.jjjj"
-          },
-          "statuses": {
-            "created": "Erstellt",
-            "ongoing": "Laufend",
-            "completed": "Abgeschlossen"
-          },
-          "actions": {
-            "cancel": "Abbrechen",
-            "saving": "Wird gespeichert...",
-            "save": "Kampagne speichern"
-          },
-          "errors": {
-            "missingName": "Bitte geben Sie den Kampagnennamen ein"
-          },
-          "toasts": {
-            "created": "Kampagne erstellt",
-            "updated": "Kampagne aktualisiert",
-            "error": "Fehler beim Speichern der Kampagne"
-          }
-        },
-        "campaigns": {
-          "title": "Campañas",
-          "subtitle": "Gestiona y organiza tus campañas de reservas",
-          "comingSoonTitle": "Función de campañas próximamente",
-          "comingSoonDescription": "Crea y gestiona campañas de reservas",
-          "createCampaign": "Crear campaña",
-          "campaignName": "Nombre de la campaña",
-          "status": "Estado",
-          "duration": "Duración",
-          "startDate": "Fecha de inicio",
-          "bookings": "Reservas",
-          "actions": "Acciones",
-          "loadingCampaigns": "Cargando campañas...",
-          "noCampaigns": "No se encontraron campañas. Crea tu primera campaña para comenzar.",
-          "days": "{{count}} días",
-          "booking": "{{count}} Reserva",
-          "booking_other": "{{count}} Reservas",
-          "deleteCampaign": "Eliminar campaña",
-          "checkingLinkedBookings": "Verificando reservas vinculadas...",
-          "hasOngoingBookings": "Esta campaña tiene reservas en curso. Eliminarla también eliminará esas reservas. ¿Quieres continuar?",
-          "confirmDelete": "¿Estás seguro de que quieres eliminar esta campaña?",
-          "cancel": "Cancelar",
-          "yes": "Sí",
-          "campaignDeleted": "Campaña eliminada",
-          "errorDeleting": "Error al eliminar la campaña",
-          "statuses": {
-            "created": "Creada",
-            "ongoing": "En curso",
-            "completed": "Completada"
-          }
-        }
-      },
-      "newBooking": {
-        "title": "Nueva reserva",
-        "subtitle": "Crea una nueva reserva para tu talento",
-        "editTitle": "Editar reserva",
-        "editSubtitle": "Actualiza los detalles de esta reserva",
-        "scheduleBooking": "Programa una reserva para tu {{entityLower}}",
-        "bookingType": "Tipo de reserva *",
-        "selectType": "Seleccionar tipo",
-        "casting": "Casting",
-        "option": "Opción",
-        "confirmed": "Confirmado",
-        "testShoot": "Sesión de prueba",
-        "fitting": "Prueba de vestuario",
-        "rehearsal": "Ensayo",
-        "preview": "Vista previa",
-        "filesUploaded": "Archivos subidos",
-        "talent": "{{entitySingular}} *",
-        "bookMultiple": "Reservar múltiples {{entityLower}}",
-        "searchTalentPlaceholder": "Buscar {{entityLower}} por nombre...",
-        "loadingTalent": "Cargando {{entityLower}}...",
-        "available": "disponible",
-        "connected": "Conectado",
-        "internalTalent": "Talento interno",
-        "noTalentFound": "No se encontró {{entityLower}}",
-        "noTalentMatching": "No se encontró {{entityLower}} que coincida con \"{{search}}\"",
-        "selected": "Seleccionado:",
-        "client": "Cliente *",
-        "newClient": "Nuevo cliente",
-        "companyName": "Nombre de la empresa *",
-        "industry": "Industria",
-        "industryPlaceholder": "ej. Moda, Retail, Medios",
-        "contactName": "Nombre del contacto *",
-        "email": "Correo electrónico",
-        "phone": "Teléfono",
-        "paymentTerms": "Términos de pago",
-        "net15": "Neto 15",
-        "net30": "Neto 30",
-        "net60": "Neto 60",
-        "da": "Da",
-        "uponCompletion": "Al completar",
-        "saveClientAndUse": "Guardar cliente y usar",
-        "cancel": "Cancelar",
-        "searchClientPlaceholder": "Buscar cliente por nombre...",
-        "noClientsMatching": "No se encontraron clientes que coincidan con \"{{search}}\"",
-        "addNewClient": "Agregar nuevo cliente",
-        "campaign": "Campaña",
-        "campaignRequired": "Campaña *",
-        "searchCampaignsPlaceholder": "Buscar campañas...",
-        "createNewCampaign": "Crear nueva campaña",
-        "campaignLabel": "Campaña:",
-        "date": "Fecha *",
-        "allDayBooking": "Reserva de todo el día",
-        "callTime": "Hora de llamada",
-        "wrapTime": "Hora de finalización",
-        "location": "Ubicación",
-        "enterAddress": "Ingresar dirección...",
-        "locationNotes": "Notas de ubicación",
-        "locationNotesPlaceholder": "ej., Estudio B, 3er piso",
-        "rateFee": "Tarifa/Honorario",
-        "currency": "Moneda",
-        "rateType": "Tipo de tarifa",
-        "dayRate": "Tarifa diaria",
-        "hourly": "Por hora",
-        "flatFee": "Tarifa fija",
-        "tbd": "Por determinar",
-        "agencyCommission": "Comisión de la agencia (20%)",
-        "usageTerms": "Términos de uso",
-        "selectUsageTerms": "Seleccionar términos de uso",
-        "socialMediaOnly": "Solo redes sociales",
-        "print": "Impreso",
-        "digital": "Digital",
-        "broadcast": "Transmisión",
-        "ecommerce": "Comercio electrónico",
-        "unlimited": "Ilimitado",
-        "usageDuration": "Duración del uso",
-        "selectDuration": "Seleccionar duración",
-        "1month": "1 mes",
-        "6months": "6 meses",
-        "1year": "1 año",
-        "perpetuity": "A perpetuidad",
-        "exclusiveRights": "Derechos exclusivos",
-        "attachedFiles": "Archivos adjuntos (Hojas de llamada, contratos, referencias)",
-        "browse": "Examinar...",
-        "noFilesSelected": "No se seleccionaron archivos.",
-        "filesSelected": "{{count}} archivo(s) seleccionado(s)",
-        "specialInstructions": "Instrucciones especiales / Notas",
-        "notesPlaceholder": "Notas internas, instrucciones especiales...",
-        "notifications": "Notificaciones",
-        "emailTalent": "Enviar correo a {{entityLower}}",
-        "emailDescription": "Enviar la confirmación de reserva por correo electrónico.",
-        "inAppNotification": "Notificación en la aplicación",
-        "inAppDescription": "Siempre activa para reservas en la plataforma.",
-        "calendarInvite": "Enviar invitación de calendario y recordatorios",
-        "calendarDescription": "Abre Calendly después de guardar la reserva.",
-        "calendlySetupRequired": "Configura Calendly en Configuración de agencia > Integraciones antes de habilitar invitaciones de calendario y recordatorios.",
-        "calendlyNotReady": "Calendly aún no está listo. Ve a Configuración de agencia > Integraciones, habilita Calendly y guarda el enlace de programación público antes de activar esto.",
-        "checkingCalendly": "Verificando configuración de integración de Calendly...",
-        "calendlyOneToOne": "Las notificaciones por correo electrónico y en la aplicación se envían primero. Calendly se abre al final y solo admite reservas uno a uno.",
-        "updateBooking": "Actualizar reserva",
-        "saveAs": "Guardar como {{type}}",
-        "saveContinueCalendly": "Guardar y continuar a Calendly",
-        "saving": "Guardando...",
-        "previewBooking": "Vista previa de reserva",
-        "toasts": {
-          "fixRequiredFields": "Corregir campos obligatorios",
-          "campaignRequired": "Campaña requerida",
-          "campaignRequiredDescription": "Por favor selecciona una campaña antes de crear una reserva.",
-          "calendlyLinkRequired": "Enlace de Calendly requerido",
-          "calendlyLinkDescription": "Guarda el enlace de programación público de Calendly en Configuración de agencia > Integraciones antes de usar la reserva de calendario.",
-          "savingBooking": "Guardando reserva",
-          "savingDescription": "Se están procesando las notificaciones por correo electrónico y en la aplicación. Calendly se abrirá a continuación.",
-          "bookingCreated": "Reserva creada",
-          "bookingCreatedDescription": "{{type}} programado para {{talents}} el {{date}}.",
-          "continueInCalendly": "Continuar en Calendly",
-          "continueDescription": "La reserva se guardó. Completa la invitación de calendario y los recordatorios en Calendly.",
-          "talentUnavailable": "{{entitySingular}} no disponible",
-          "talentUnavailableDescription": "Este {{entityLower}} está reservado durante la fecha seleccionada. Por favor elige otra fecha u otro {{entityLower}}.",
-          "failedToCreate": "Error al crear la reserva",
-          "failedToCreateClient": "Error al crear el cliente",
-          "tryAgain": "Por favor, inténtalo de nuevo.",
-          "meetingScheduled": "Reunión programada",
-          "meetingScheduledDescription": "La reserva de Calendly está completa y la ventana de programación se ha cerrado.",
-          "setUpCalendlyFirst": "Configura Calendly primero",
-          "setUpCalendlyDescription": "Ve a Configuración de agencia > Integraciones y completa la configuración de Calendly antes de habilitar invitaciones de calendario y recordatorios."
-        },
-        "errors": {
-          "dateFormat": "La fecha debe estar en formato AAAA-MM-DD",
-          "validDate": "Por favor selecciona una fecha válida",
-          "pastDate": "La fecha de reserva no puede estar en el pasado",
-          "validCallTime": "Por favor selecciona una hora de llamada válida",
-          "futureCallTime": "La hora de llamada debe ser en el futuro para reservas programadas hoy",
-          "wrapAfterCall": "La hora de finalización debe ser después de la hora de llamada",
-          "selectRequired": "Seleccionar: {{fields}}",
-          "calendlyOneToOne": "La reserva de Calendly admite un talento a la vez"
         }
       }
     },
@@ -1346,119 +993,6 @@
         "errorTitle": "Error",
         "clientDeleted": "Client deleted successfully",
         "deleteFailed": "Failed to delete client"
-      },
-      "card": {
-        "viewProfile": "Ver perfil",
-        "sendPackage": "Enviar paquete",
-        "mailAppTitle": "No hay aplicación de correo configurada",
-        "mailAppDescription": "Configura Thunderbird como tu aplicación de correo predeterminada para abrir el correo.",
-        "noEmailTitle": "No hay correo registrado",
-        "noEmailDescription": "Agrega un correo de contacto para enviar un email.",
-        "openEmailErrorTitle": "No se pudo abrir el correo",
-        "openEmailErrorDescription": "No se encontró un correo de contacto para este cliente."
-      },
-      "modal": {
-        "addClient": {
-          "title": "Agregar nuevo cliente",
-          "fields": {
-            "companyName": "Nombre de la empresa *",
-            "industry": "Industria",
-            "website": "Sitio web",
-            "pipelineStage": "Etapa del pipeline",
-            "tags": "Etiquetas",
-            "nextFollowUp": "Fecha de próximo seguimiento",
-            "notes": "Notas"
-          },
-          "placeholders": {
-            "companyName": "Empresa S.A.",
-            "selectIndustry": "Seleccionar industria",
-            "website": "empresa.com",
-            "selectStage": "Seleccionar etapa",
-            "notes": "Agrega notas sobre este cliente..."
-          },
-          "actions": {
-            "adding": "Agregando..."
-          },
-          "errors": {
-            "companyRequired": "El nombre de la empresa es obligatorio"
-          },
-          "toasts": {
-            "created": "Cliente agregado correctamente",
-            "failed": "No se pudo agregar el cliente"
-          }
-        },
-        "profile": {
-          "tabs": {
-            "overview": "Resumen",
-            "contacts": "Contactos",
-            "communications": "Comunicaciones",
-            "bookings": "Reservas",
-            "filesNotes": "Archivos y notas"
-          },
-          "sections": {
-            "companyInformation": "Información de la empresa",
-            "clientPreferences": "Preferencias del cliente",
-            "clientMetrics": "Métricas del cliente",
-            "contactList": "Lista de contactos",
-            "communicationHistory": "Historial de comunicaciones",
-            "bookingsHistory": "Historial de reservas",
-            "notes": "Notas",
-            "filesDocuments": "Archivos y documentos"
-          },
-          "fields": {
-            "industry": "Industria",
-            "website": "Sitio web",
-            "nextFollowUp": "Próximo seguimiento",
-            "tags": "Etiquetas",
-            "preferredTalentTypes": "Tipos de talento preferidos",
-            "budgetRange": "Rango de presupuesto",
-            "bookingLeadTime": "Anticipación de reserva"
-          },
-          "metrics": {
-            "totalBookings": "Reservas totales",
-            "packagesSent": "Paquetes enviados"
-          },
-          "actions": {
-            "addContact": "Agregar contacto",
-            "logCommunication": "Registrar comunicación",
-            "saveNotes": "Guardar notas",
-            "uploadFile": "Subir archivo",
-            "viewFile": "Ver",
-            "editClient": "Editar cliente",
-            "close": "Cerrar"
-          },
-          "states": {
-            "loadingContacts": "Cargando contactos...",
-            "noContacts": "Aún no se han agregado contactos",
-            "loadingHistory": "Cargando historial...",
-            "noCommunications": "Aún no hay comunicaciones registradas",
-            "loadingBookings": "Cargando reservas...",
-            "noBookings": "No se encontraron reservas para este cliente",
-            "loadingDocuments": "Cargando documentos...",
-            "noFiles": "Aún no se han subido archivos"
-          },
-          "placeholders": {
-            "notes": "Ingresa notas del cliente, preferencias o detalles internos..."
-          },
-          "common": {
-            "primary": "Principal",
-            "noRole": "Sin rol especificado",
-            "unknownTalent": "Talento desconocido",
-            "noLocation": "Sin ubicación",
-            "added": "Agregado",
-            "never": "Nunca"
-          },
-          "errors": {
-            "noEmailTitle": "No hay correo registrado",
-            "noEmailDescription": "Agrega un correo de contacto para enviar un email."
-          },
-          "toasts": {
-            "notesSavedTitle": "Notas guardadas",
-            "notesSavedDescription": "Las notas del cliente se actualizaron correctamente.",
-            "fileUploadedTitle": "Archivo subido",
-            "fileUploadedDescription": "El documento se ha subido correctamente."
-          }
-        }
       }
     },
     "packages": {
@@ -2349,25 +1883,7 @@
         "contentReviewSubtitle": "Review and personalize the contract content",
         "preparing": "Preparing...",
         "finalize": "Finalize",
-        "nextStep": "Next Step",
-        "renewalPrefill": "Relleno previo de renovación",
-        "renewalPrefillDesc": "Esta renovación se rellenó automáticamente desde la solicitud de licencia anterior. Ajusta lo que necesites antes de enviar.",
-        "identification": "Identificación",
-        "brandName": "Nombre de marca",
-        "brandNamePlaceholder": "p. ej. Nike, Spotify",
-        "clientEmail": "Correo del cliente",
-        "sendToConnectedBrands": "Enviar a marcas conectadas",
-        "selectBrand": "Seleccionar marca",
-        "selectedBrand": "Marca seleccionada",
-        "connectedBrandsHelp": "Selecciona entre tus marcas conectadas. Desactiva para escribir el correo manualmente.",
-        "clientEmailPlaceholder": "cliente@ejemplo.com",
-        "toggleConnectedBrands": "Activa para seleccionar entre marcas conectadas.",
-        "agencySignsFirst": "La agencia firma primero (en plataforma)",
-        "agencySignsFirstDesc": "El cliente recibe el contrato solo después de la firma de la agencia.",
-        "startDate": "Fecha de inicio",
-        "commercials": "Condiciones comerciales",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio"
+        "nextStep": "Next Step"
       },
       "deleteModal": {
         "title": "Delete Template",
@@ -2386,22 +1902,7 @@
       "noTemplatesMatch": "No templates match your criteria.",
       "noTemplatesYet": "No templates yet. Create your first one to get started!",
       "notSet": "Not set",
-      "brandContext": "Any contract submission created will be sent to {{brand}}.",
-      "form": {
-        "templateIdentity": "Identidad de plantilla",
-        "templateName": "Nombre de plantilla",
-        "templateNamePlaceholder": "p. ej. Estándar de redes sociales",
-        "category": "Categoría",
-        "description": "Descripción",
-        "descriptionPlaceholder": "Descripción de la plantilla...",
-        "usageScope": "Alcance de uso",
-        "durationDays": "Duración (días)",
-        "territory": "Territorio",
-        "exclusivity": "Exclusividad",
-        "categoryExclusive": "Exclusivo por categoría",
-        "licenseFee": "Tarifa de licencia ($)",
-        "modificationsAllowed": "Modificaciones permitidas"
-      }
+      "brandContext": "Any contract submission created will be sent to {{brand}}."
     },
     "addTalent": {
       "title": "Add New {{entityTitle}}",
@@ -2976,12 +2477,7 @@
           "acceptSuccess": "Request accepted successfully",
           "acceptFailed": "Failed to accept request",
           "rejectSuccess": "Request rejected successfully",
-          "rejectFailed": "Failed to reject request",
-          "requests": "Solicitudes",
-          "offers": "Ofertas",
-          "contractHub": "Centro de contratos",
-          "deliverables": "Lieferungen",
-          "feedback": "Feedback"
+          "rejectFailed": "Failed to reject request"
         },
         "offers": {
           "title": "Offers",
@@ -3011,16 +2507,12 @@
           "uploadPdfDescription": "Upload a PDF to create a reusable contract template for this offer.",
           "assignTalentFirst": "Assign talent first",
           "assignTalentFirstDescription": "Assign at least one talent to this offer before creating a contract.",
-          "assignTalent": "Assign Talent",
-          "emptyState": "No hay contratos disponibles.",
-          "loading": "Cargando contratos…"
+          "assignTalent": "Assign Talent"
         },
         "feedback": {
           "title": "Client Feedback",
           "noFeedback": "No feedback available",
-          "viewFeedback": "View Feedback",
-          "empty": "Aún no hay comentarios del paquete.",
-          "loading": "Cargando comentarios del paquete…"
+          "viewFeedback": "View Feedback"
         },
         "accounting": {
           "invoiceGenerationView": {
@@ -3291,26 +2783,6 @@
               "unpaid": "Unpaid"
             }
           }
-        },
-        "connections": {
-          "title": "Verbundene Marken",
-          "noConnections": "Keine verbundenen Marken",
-          "loadingBrands": "Verbundene Marken werden geladen...",
-          "loadBrandsFailed": "Laden der verbundenen Marken fehlgeschlagen.",
-          "noBrands": "Noch keine verbundenen Marken.",
-          "disconnect": "Trennen",
-          "disconnectSuccess": "Marke erfolgreich getrennt",
-          "disconnectFailed": "Trennen der Marke fehlgeschlagen"
-        },
-        "packageFeedbackData": {
-          "title": "Paket-Feedback",
-          "empty": "Noch kein Paket-Feedback verfügbar.",
-          "loading": "Paket-Feedback wird geladen…"
-        },
-        "brandOffersData": {
-          "title": "Ofertas de marca",
-          "empty": "No se encontraron ofertas de marca.",
-          "loading": "Cargando ofertas de marca…"
         }
       },
       "settings": {
@@ -3381,13 +2853,7 @@
         },
         "commissions": {
           "title": "Default Commission Rate",
-          "subtitle": "Set the default commission rate for new talent",
-          "defaultCommissionRate": "Tasa de comisión predeterminada",
-          "agencyCommission": "Comisión de la agencia (%)",
-          "appliedUnlessOverridden": "Se aplica a todas las reservas salvo anulación",
-          "rulesTitle": "Reglas de comisión de {{entitySingular}}",
-          "rulesDescription": "Los {{entityPlural}} gestionados por la agencia pueden usar aquí anulaciones basadas en la configuración. Los {{entityPlural}} conectados al marketplace siguen la tasa del contrato firmado activo y son de solo lectura en esta pantalla.",
-          "save": "Guardar configuración de comisión"
+          "subtitle": "Set the default commission rate for new talent"
         },
         "taxAndCurrency": {
           "title": "Tax & Currency Settings",
@@ -3408,17 +2874,7 @@
             "net15": "Net 15",
             "net30": "Net 30",
             "net60": "Net 60"
-          },
-          "defaultRate": "Standard-Steuersatz (%)",
-          "defaultRateHint": "Wird auf Rechnungen angewendet (z. B. Umsatzsteuer, VAT)",
-          "taxDisplayName": "Anzeigename der Steuer",
-          "includeTaxInPrices": "Steuer in angezeigten Preisen enthalten",
-          "paymentTermsLabel": "Zahlungsbedingungen",
-          "lateFee": "Mahngebühr (%)",
-          "lateFeeHint": "Monatliche Zinsen auf überfällige Rechnungen",
-          "invoicePrefix": "Rechnungspräfix",
-          "invoicePrefixExample": "Beispiel: INV-00001, INV-00002",
-          "save": "Steuer- und Währungseinstellungen speichern"
+          }
         },
         "subTabs": {
           "profile": "Profile",
@@ -3518,45 +2974,12 @@
           "roles": {
             "admin": "Admin",
             "manager": "Manager",
-            "member": "Member",
-            "owner": "Propietario",
-            "projectManager": {
-              "label": "Gerente de proyecto",
-              "description": "Puede gestionar proyectos, reservas y comunicaciones"
-            },
-            "reviewer": {
-              "label": "Revisor",
-              "description": "Puede revisar contenido y seguir la actividad"
-            },
-            "unknown": "Rol desconocido"
+            "member": "Member"
           },
           "inviteSuccess": "Member invited successfully",
           "inviteFailed": "Failed to invite member",
           "removeSuccess": "Member removed successfully",
-          "removeFailed": "Failed to remove member",
-          "subtitle": "Gestiona miembros del equipo, roles y permisos",
-          "inviteUser": "Invitar usuario",
-          "activeMembers": "Miembros activos del equipo",
-          "loadingMembers": "Cargando miembros del equipo...",
-          "emptyMembers": "Aún no hay miembros activos.",
-          "memberCount": "{{count}} miembros",
-          "memberStatus": "Estado",
-          "active": "Activo",
-          "inactive": "Inactivo",
-          "pendingInvitations": {
-            "title": "Invitaciones pendientes",
-            "description": "Invitaciones enviadas a compañeros que aún no se han unido.",
-            "pending": "pendiente",
-            "empty": "No hay invitaciones pendientes.",
-            "expires": "Expira"
-          },
-          "actions": {
-            "inviteUser": "Invitar usuario",
-            "editRole": "Editar rol"
-          },
-          "activity": {
-            "title": "Actividad"
-          }
+          "removeFailed": "Failed to remove member"
         },
         "integrations": {
           "title": "Integrations",
@@ -3567,16 +2990,7 @@
           "connectSuccess": "Integration connected successfully",
           "connectFailed": "Failed to connect integration",
           "disconnectSuccess": "Integration disconnected successfully",
-          "disconnectFailed": "Failed to disconnect integration",
-          "subtitle": "Conecta tu agencia con otras herramientas",
-          "addIntegration": "Agregar integración",
-          "connectBankAccount": "Conectar cuenta bancaria",
-          "connectBankHint": "Vincula tu banco para recibir pagos de clientes y gestionar retiros.",
-          "connected": "Conectado",
-          "notConnected": "No conectado",
-          "changeAccount": "Cambiar cuenta",
-          "disabled": "Deshabilitado",
-          "locked": "Bloqueado"
+          "disconnectFailed": "Failed to disconnect integration"
         },
         "billing": {
           "title": "Billing",
@@ -3594,183 +3008,8 @@
           "sms": "SMS Notifications",
           "preferences": "Notification Preferences",
           "saveSuccess": "Preferences saved successfully",
-          "saveFailed": "Failed to save preferences",
-          "subtitle": "Elige cómo quieres que se te notifique sobre eventos importantes",
-          "channels": {
-            "email": "Correo",
-            "sms": "SMS",
-            "push": "Push",
-            "comingSoon": "Próximamente"
-          },
-          "recipients": {
-            "title": "Destinatarios de notificaciones",
-            "primaryEmail": "Correo principal de notificación",
-            "smsNumber": "Número de SMS de notificación",
-            "additional": "Destinatarios adicionales (separados por comas)"
-          },
-          "save": "Guardar configuración de notificaciones",
-          "events": {
-            "bookingCreated": {
-              "title": "Reserva creada",
-              "desc": "Cuando se crea una nueva reserva"
-            },
-            "bookingConfirmed": {
-              "title": "Reserva confirmada",
-              "desc": "Cuando el estado de una reserva cambia a confirmada"
-            },
-            "paymentReceived": {
-              "title": "Pago recibido",
-              "desc": "Cuando se recibe un pago de un cliente"
-            },
-            "invoiceSent": {
-              "title": "Factura enviada",
-              "desc": "Cuando se envía una factura a un cliente"
-            },
-            "entityBookOut": {
-              "title": "{{entitySingular}} no disponible",
-              "desc": "Cuando {{entitySingularLower}} se marca como no disponible"
-            },
-            "licenseExpiring": {
-              "title": "Licencia próxima a vencer",
-              "desc": "Cuando una licencia de {{entitySingularLower}} está a punto de vencer"
-            }
-          }
-        },
-        "common": {
-          "saving": "Guardando...",
-          "save": "Guardar"
+          "saveFailed": "Failed to save preferences"
         }
-      }
-    },
-    "settings": {
-      "title": "Configuración",
-      "profile": {
-        "subtitle": "Gestiona el perfil y la configuración de tu agencia",
-        "currentPlan": "Plan actual"
-      },
-      "fileStorage": {
-        "title": "Almacenamiento de archivos",
-        "subtitle": "Organiza y gestiona los archivos de tu agencia",
-        "goToStudio": "Ir a Studio",
-        "storageUsage": "Uso de almacenamiento",
-        "ofUsed": "de {{total}} usados",
-        "remaining": "restantes",
-        "billingSubscription": "Facturación y suscripción",
-        "searchPlaceholder": "Buscar archivos y carpetas",
-        "view": {
-          "grid": "Cuadrícula",
-          "list": "Lista"
-        },
-        "actions": {
-          "back": "Atrás",
-          "all": "Todos",
-          "newFolder": "Nueva carpeta",
-          "loadMoreFolders": "Cargar más carpetas",
-          "loadMoreFiles": "Cargar más archivos",
-          "uploadFiles": "Subir archivos",
-          "upload": "Subir",
-          "addFile": "Agregar archivo",
-          "rename": "Umbenennen",
-          "delete": "Eliminar",
-          "download": "Descargar",
-          "share": "Teilen",
-          "preview": "Vorschau"
-        },
-        "clickToCreate": "Haz clic para crear",
-        "clickToUpload": "Haz clic para subir",
-        "loading": "Cargando…",
-        "uploading": "Subiendo…",
-        "noMoreFolders": "No hay más carpetas",
-        "noMoreFiles": "No hay más archivos",
-        "fileCount": "{{count}} archivo",
-        "fileCount_other": "{{count}} archivos",
-        "folders": "Carpetas",
-        "files": "Archivos",
-        "uploadingShort": "Subiendo",
-        "deleteFile": {
-          "title": "Eliminar archivo",
-          "description": "¿Seguro que quieres eliminar este archivo?",
-          "cannotUndo": "Esta acción no se puede deshacer.",
-          "confirm": "Eliminar archivo"
-        },
-        "deleteFolder": {
-          "title": "Eliminar carpeta",
-          "description": "¿Seguro que quieres eliminar la carpeta",
-          "descriptionSuffix": "y todo su contenido?",
-          "confirm": "Eliminar carpeta"
-        }
-      },
-      "subTabs": {
-        "profile": "Perfil",
-        "commissions": "Comisiones",
-        "emailTemplates": "Plantillas de correo",
-        "notifications": "Notificaciones",
-        "taxAndCurrency": "Impuestos y moneda",
-        "team": "Equipo",
-        "fileStorage": "Almacenamiento de archivos",
-        "integrations": "Integraciones"
-      },
-      "team": {
-        "userRole": "Rol del usuario",
-        "newRole": "Nuevo rol",
-        "selectRole": "Seleccionar rol",
-        "note": "Nota",
-        "inviteNote": "Los miembros del equipo recibirán una invitación por correo para unirse al panel de tu agencia.",
-        "active": "Activo"
-      }
-    },
-    "createPackage": {
-      "steps": {
-        "basic": "Información básica",
-        "talent": "Talento",
-        "custom": "Personalizar",
-        "consent": "Consentimiento",
-        "send": "Enviar"
-      },
-      "basicInfo": {
-        "titleLabel": "Título",
-        "titlePlaceholder": "Título del paquete",
-        "descriptionLabel": "Descripción",
-        "descriptionPlaceholder": "Descripción del paquete",
-        "coverImage": "Imagen de portada",
-        "imageUrlPlaceholder": "URL de imagen o subir",
-        "noIntroductionNote": "No se proporcionó nota de introducción",
-        "uploadUnavailable": "Subida no disponible",
-        "uploadUnavailableDesc": "Cliente de Supabase no inicializado",
-        "invalidFile": "Archivo inválido",
-        "invalidFileDesc": "Por favor selecciona un archivo de imagen",
-        "coverUploaded": "Imagen de portada subida",
-        "coverUploadFailed": "Error al subir la portada"
-      },
-      "validation": {
-        "required": "Requerido",
-        "titleRequired": "Por favor ingresa un título para el paquete",
-        "empty": "Paquete vacío",
-        "selectTalent": "Por favor selecciona al menos un talento",
-        "selectAthlete": "Por favor selecciona al menos un atleta",
-        "addConsent": "Por favor añade al menos un elemento de consentimiento"
-      },
-      "consents": {
-        "title": "Consentimiento requerido"
-      },
-      "send": {
-        "clientNameRequired": "Por favor ingresa el nombre del cliente",
-        "deliveryEmailRequired": "Por favor ingresa el correo de entrega",
-        "clientEmail": "Correo del cliente",
-        "invalidEmail": "Por favor ingresa una dirección de correo válida",
-        "password": "Contraseña",
-        "failed": "Falló",
-        "notLinkedToOffer": "Paquete no vinculado a una oferta",
-        "required": "Requerido",
-        "selectConnectedBrand": "Por favor selecciona una marca conectada",
-        "customFooterMessage": "Mensaje de Pie de Página Personalizado",
-        "personalNotePlaceholder": "Agregue una nota personal para el cliente..."
-      },
-      "upload": {
-        "invalidFile": "Archivo inválido",
-        "invalidFileDesc": "Por favor seleccione un archivo de imagen",
-        "imageUploaded": "Imagen subida",
-        "uploadFailed": "Carga fallida"
       }
     }
   }

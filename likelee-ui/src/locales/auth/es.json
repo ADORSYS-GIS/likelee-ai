@@ -404,21 +404,5 @@
         "other": "Other"
       }
     }
-  },
-  "creatorSignupOptions.main.title": "What type of creator are you?",
-  "creatorSignupOptions.main.subtitle": "Choose the option that best describes you to get started with the right profile setup.",
-  "creatorSignupOptions.influencer.title": "Influencer / UGC Creator",
-  "creatorSignupOptions.influencer.description": "You create content, have an audience, or collaborate with brands.",
-  "creatorSignupOptions.model_actor.title": "Independent Model or Actor",
-  "creatorSignupOptions.model_actor.description": "You do castings, campaigns, or studio shoots — and want verified likeness protection + licensing opportunities.",
-  "creatorSignupOptions.athlete.title": "Athlete (NIL & Pro)",
-  "creatorSignupOptions.athlete.description": "You're a college or pro athlete managing your own name, image, and likeness dealings.",
-  "creatorSignupOptions.selectButton": "Select",
-  "creatorSignupOptions.authModal.title": "Get started",
-  "creatorSignupOptions.authModal.selected": "Selected:",
-  "creatorSignupOptions.authModal.signUpAs": "Sign up as",
-  "creatorSignupOptions.authModal.alreadyHaveAccount": "I already have an account",
-  "faces": {
-    "hero": {}
   }
 }

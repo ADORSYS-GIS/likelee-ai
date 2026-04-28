@@ -615,14 +615,6 @@
         "mellow": "Suave",
         "relaxed": "Relajado",
         "angry": "Enojado"
-      },
-      "voiceScripts": {
-        "happy": "Je suis absolument ravi d'être ici aujourd'hui ! La vie est pleine de merveilleuses surprises et d'opportunités passionnantes. Chaque matin apporte un nouveau départ et de nouvelles possibilités. J'adore me connecter avec les gens et partager des énergies positives. Le monde est un endroit incroyable quand on le regarde avec optimisme. Célébrons les petites victoires et chérissons chaque moment de joie. Le bonheur est contagieux, alors propageons-le !",
-        "emotional": "Il y a des moments dans la vie qui touchent nos cœurs profondément. Parfois, nous nous sentons dépassés par la beauté de la connexion humaine. Ces expériences façonnent qui nous sommes et nous rappellent ce qui compte vraiment. J'ai appris que la vulnérabilité n'est pas une faiblesse, mais du courage. Chaque personne que nous rencontrons porte sa propre histoire, ses propres luttes et ses propres triomphes. Honorons ces moments et laissons de la place à une émotion authentique.",
-        "excited": "Oh mon Dieu, c'est incroyable ! Je peux à peine contenir mon enthousiasme en ce moment ! Il y a tellement d'énergie et de potentiel dans cet instant. Je vibre d'anticipation pour ce qui va suivre. Pouvez-vous ressentir cette électricité dans l'air ? Ça va être absolument génial ! Je suis prêt à foncer et à faire bouger les choses. L'avenir est brillant et je suis là pour ça !",
-        "mellow": "Parfois, il est agréable de simplement ralentir et de prendre les choses avec calme. Il n'y a pas d'urgence, pas de pression. Juste une présence calme et stable dans l'instant. La vie n'a pas toujours besoin d'être intense ou dramatique. Ces moments de tranquillité ont leur propre beauté et leur propre but. Respirons simplement et apprécions le calme. Tout se déroule en son temps, et c'est parfaitement normal.",
-        "relaxed": "Salut, je me détends juste un peu aujourd'hui. Pas de stress, pas d'inquiétude. Tout coule naturellement et en douceur. Je suis dans un très bon état d'esprit en ce moment, je profite simplement de l'instant présent. La vie semble équilibrée et confortable. Il y a quelque chose de paisible à ne pas trop réfléchir. Simplement être ici, être présent et laisser les choses se passer naturellement. Tout va bien.",
-        "angry": "Je ne peux pas croire que cela arrive. C'est complètement inacceptable et franchement, j'en ai assez. Il y a des limites à ce que n'importe qui devrait supporter. Cette situation doit changer, et elle doit changer maintenant. Je suis fatigué des excuses et des promesses en l'air. Les actions parlent plus fort que les mots, et je suis prêt à exiger ce qui est juste. Ça s'arrête ici."
       }
     },
     "dashboard": {
@@ -1226,8 +1218,7 @@
         "title": "Licencias Mensuales Recurrentes",
         "description": "La marca usa la imagen de tu talento en su sitio web indefinidamente y paga",
         "highlight": "$400 cada mes",
-        "suffix": "mientras esas fotos permanezcan en línea.",
-        "baseRateDescription": "Tarif de base pour l'utilisation de l'image"
+        "suffix": "mientras esas fotos permanezcan en línea."
       },
       "fixed": {
         "title": "Licencias a Plazo Fijo",
@@ -2157,13 +2148,5 @@
   "howItWorksSportsStep1Title": "Roster Integration",
   "howItWorksSportsStep2Title": "Brand Discovery & Request Submission",
   "howItWorksSportsStep3Title": "Agency Review & Contract Execution",
-  "howItWorksSportsStep4Title": "Revenue Distribution",
-  "sportsAgencyCTA": "Prêt à débloquer votre potentiel numérique ?",
-  "sportsAgencyCTADescription": "Rejoignez la liste d'attente et soyez le premier à découvrir l'avenir du branding des athlètes.",
-  "faces": {
-    "featuredCreator": {},
-    "digitalTalentOwner": {
-      "comparison": {}
-    }
-  }
+  "howItWorksSportsStep4Title": "Revenue Distribution"
 }
