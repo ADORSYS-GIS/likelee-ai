@@ -322,10 +322,48 @@ where
                             }
                         }
                     } else {
-                        return Err((
-                            StatusCode::UNAUTHORIZED,
-                            format!("Unknown JWKS key id: {}", kid),
-                        ));
+                        tracing::warn!("JWKS kid {} not found, falling back to JWT_SECRET", kid);
+                        if let Ok(der_bytes) = base64::engine::general_purpose::STANDARD
+                            .decode(app_state.supabase_jwt_secret.as_str())
+                        {
+                            let key = DecodingKey::from_ec_der(&der_bytes);
+                            let mut validation = Validation::new(Algorithm::ES256);
+                            validation.set_audience(&["authenticated"]);
+                            match decode::<Claims>(&token, &key, &validation) {
+                                Ok(data) => data,
+                                Err(es256_err) => {
+                                    let key = DecodingKey::from_secret(
+                                        app_state.supabase_jwt_secret.as_bytes(),
+                                    );
+                                    let mut validation = Validation::new(Algorithm::HS256);
+                                    validation.set_audience(&["authenticated"]);
+                                    match decode::<Claims>(&token, &key, &validation) {
+                                        Ok(data) => data,
+                                        Err(_) => {
+                                            return Err((
+                                                StatusCode::UNAUTHORIZED,
+                                                format!("Unknown JWKS key id: {} and JWT_SECRET fallback failed: {}", kid, es256_err),
+                                            ));
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            let key = DecodingKey::from_secret(
+                                app_state.supabase_jwt_secret.as_bytes(),
+                            );
+                            let mut validation = Validation::new(Algorithm::HS256);
+                            validation.set_audience(&["authenticated"]);
+                            match decode::<Claims>(&token, &key, &validation) {
+                                Ok(data) => data,
+                                Err(e) => {
+                                    return Err((
+                                        StatusCode::UNAUTHORIZED,
+                                        format!("Unknown JWKS key id: {} and JWT_SECRET fallback failed: {}", kid, e),
+                                    ));
+                                }
+                            }
+                        }
                     }
                 }
             } else {
