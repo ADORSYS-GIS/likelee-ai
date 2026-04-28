@@ -1979,6 +1979,7 @@
       },
       "deliverables": {
         "title": "Deliverables",
+        "subtitle": "Assign talents, request assets, and review deliverables for brand offers.",
         "noDeliverables": "No deliverables found",
         "loading": "Loading deliverables...",
         "upload": "Upload",
@@ -2009,7 +2010,49 @@
         "submitSuccess": "Deliverable submitted successfully",
         "submitFailed": "Failed to submit deliverable",
         "requestAsset": "Request Asset",
-        "confirmDelete": "This will permanently remove the deliverable. Continue?"
+        "confirmDelete": "This will permanently remove the deliverable. Continue?",
+        "assignTalent": {
+          "title": "Assign Talent",
+          "subtitle": "Select one or more talents from your roster to assign to this offer.",
+          "filterPlaceholder": "Filter by name or email...",
+          "loadingTalents": "Loading talents…",
+          "fetchingRoster": "Fetching your agency roster.",
+          "confirmSelection": "Confirm Selection",
+          "assigned": "assigned",
+          "inviteRequired": "invite required",
+          "changeBeforeContract": "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
+          "contractSent": "This offer's contract has already been sent. Talent assignments are locked.",
+          "confirmAssignment": "Confirm assignment"
+        },
+        "unassignTalent": {
+          "title": "Unassign talent?",
+          "description": "Remove {talentName} from this offer. You can change assigned talents before the contract is sent. After you send the contract, assignments are locked.",
+          "cancel": "Cancel",
+          "unassigning": "Unassigning...",
+          "unassign": "Unassign"
+        },
+        "requestAssetModal": {
+          "title": "Request Asset",
+          "subtitle": "Send a clear brief and optional PDF to guide the talent.",
+          "titleLabel": "Title",
+          "titlePlaceholder": "Short title (e.g., Product shots for May)",
+          "detailsLabel": "Details",
+          "detailsPlaceholder": "Describe exactly what you need, delivery format, and deadline.",
+          "briefPdfLabel": "Brief PDF (optional)",
+          "chooseFile": "Choose File",
+          "noFileSelected": "No file selected",
+          "sendRequest": "Send Request",
+          "selectedTalent": "Selected talent"
+        },
+        "uploadDeliverableModal": {
+          "title": "Upload Deliverable",
+          "subtitle": "Add a caption and upload one or more files.",
+          "captionPlaceholder": "Caption",
+          "chooseFiles": "Choose Files",
+          "noFilesSelected": "No files selected",
+          "filesSelected": "{count} file(s) selected",
+          "upload": "Upload"
+        }
       },
       "brandConnections": {
         "title": "Brand Connections",

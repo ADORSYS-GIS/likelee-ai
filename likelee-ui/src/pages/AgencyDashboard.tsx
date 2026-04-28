@@ -8639,6 +8639,13 @@ const InvoiceManagementView = ({
   isSportsAgency?: boolean;
 }) => {
   const { t } = useTranslation();
+  const tPayout = (path: string, options?: Record<string, any>) => {
+    const fallback = t(`agencyDashboard.analytics.payouts.${path}`, options);
+    return t(`agencyDashboard.payouts.${path}`, {
+      ...(options || {}),
+      defaultValue: fallback,
+    });
+  };
   const statementsTabLabel = isSportsAgency
     ? "Athlete Statements"
     : "Talent Statements";
@@ -14137,9 +14144,7 @@ const ProtectionUsageView = () => {
                   : "border-transparent text-gray-500 hover:text-gray-900"
               }`}
             >
-              {t(`agencyDashboard.payouts.tabs.${tab}`, {
-                defaultValue: tab,
-              })}
+              {tab}
             </button>
           ))}
         </div>
@@ -16919,6 +16924,13 @@ const RoyaltiesPayoutsView = ({
   isSportsAgency?: boolean;
 }) => {
   const { t } = useTranslation();
+  const tPayout = (path: string, options?: Record<string, any>) => {
+    const fallback = t(`agencyDashboard.analytics.payouts.${path}`, options);
+    return t(`agencyDashboard.payouts.${path}`, {
+      ...(options || {}),
+      defaultValue: fallback,
+    });
+  };
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [activeTab, setActiveTab] = useState<
@@ -16938,6 +16950,12 @@ const RoyaltiesPayoutsView = ({
     "commissionBreakdown",
     "paymentHistory",
   ];
+  const payoutTabDefaults: Record<(typeof subTabs)[number], string> = {
+    commissionStructure: "Commission Structure",
+    payoutPreferences: "Payout Preferences",
+    commissionBreakdown: "Commission Breakdown",
+    paymentHistory: "Payment History",
+  };
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -17160,7 +17178,9 @@ const RoyaltiesPayoutsView = ({
                   : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
               }`}
             >
-              {tab}
+              {tPayout(`tabs.${tab}`, {
+                defaultValue: payoutTabDefaults[tab],
+              })}
             </button>
           ))}
         </div>

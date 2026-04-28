@@ -1463,7 +1463,7 @@ const BrandConnectionsView = () => {
       {activeTab === "requests" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-bold text-gray-900 mb-3">
-            {t("agencyDashboard.brandConnections.requests")}
+            {tBrand("requests")}
           </h3>
           {requestsQuery.isLoading && (
             <p className="text-sm text-gray-500">
@@ -1621,10 +1621,10 @@ const BrandConnectionsView = () => {
                       className="flex items-center gap-2 hover:text-indigo-600 transition-colors"
                     >
                       <ArrowLeft className="h-5 w-5" />
-                      {t("agencyDashboard.brandConnections.brandOffers")}
+                      {tBrand("brandOffers")}
                     </button>
                   ) : (
-                    t("agencyDashboard.brandConnections.brandOffers")
+                    tBrand("brandOffers")
                   )}
                 </h3>
               </div>

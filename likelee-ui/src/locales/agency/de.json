@@ -2379,6 +2379,7 @@
       },
       "deliverables": {
         "title": "Lieferungen",
+        "subtitle": "Weisen Sie Talente zu, fordern Sie Assets an und überprüfen Sie Lieferungen für Markenangebote.",
         "noDeliverables": "Keine Lieferungen gefunden",
         "loading": "Lieferungen werden geladen...",
         "upload": "Hochladen",
@@ -2409,7 +2410,49 @@
         "submitSuccess": "Lieferung erfolgreich eingereicht",
         "submitFailed": "Einreichung der Lieferung fehlgeschlagen",
         "requestAsset": "Asset anfordern",
-        "confirmDelete": "Dies entfernt die Lieferung dauerhaft. Fortfahren?"
+        "confirmDelete": "Dies entfernt die Lieferung dauerhaft. Fortfahren?",
+        "assignTalent": {
+          "title": "Talent zuweisen",
+          "subtitle": "Wählen Sie ein oder mehrere Talente aus Ihrer Liste aus, um sie diesem Angebot zuzuweisen.",
+          "filterPlaceholder": "Nach Name oder E-Mail filtern...",
+          "loadingTalents": "Talente werden geladen…",
+          "fetchingRoster": "Ihre Agenturliste wird abgerufen.",
+          "confirmSelection": "Auswahl bestätigen",
+          "assigned": "zugewiesen",
+          "inviteRequired": "Einladung erforderlich",
+          "changeBeforeContract": "Sie können zugewiesene Talente jederzeit ändern, bevor der Vertrag gesendet wird. Sobald Sie den Vertrag senden, sind die Zuweisungen gesperrt.",
+          "contractSent": "Der Vertrag für dieses Angebot wurde bereits gesendet. Talentzuweisungen sind gesperrt.",
+          "confirmAssignment": "Zuweisung bestätigen"
+        },
+        "unassignTalent": {
+          "title": "Talent entfernen?",
+          "description": "{talentName} von diesem Angebot entfernen. Sie können zugewiesene Talente ändern, bevor der Vertrag gesendet wird. Nach dem Senden des Vertrags sind die Zuweisungen gesperrt.",
+          "cancel": "Abbrechen",
+          "unassigning": "Wird entfernt...",
+          "unassign": "Entfernen"
+        },
+        "requestAssetModal": {
+          "title": "Asset anfordern",
+          "subtitle": "Senden Sie ein klares Briefing und optional ein PDF, um das Talent zu leiten.",
+          "titleLabel": "Titel",
+          "titlePlaceholder": "Kurzer Titel (z.B. Produktfotos für Mai)",
+          "detailsLabel": "Details",
+          "detailsPlaceholder": "Beschreiben Sie genau, was Sie benötigen, Lieferformat und Frist.",
+          "briefPdfLabel": "Briefing-PDF (optional)",
+          "chooseFile": "Datei auswählen",
+          "noFileSelected": "Keine Datei ausgewählt",
+          "sendRequest": "Anfrage senden",
+          "selectedTalent": "Ausgewähltes Talent"
+        },
+        "uploadDeliverableModal": {
+          "title": "Lieferung hochladen",
+          "subtitle": "Fügen Sie eine Beschriftung hinzu und laden Sie eine oder mehrere Dateien hoch.",
+          "captionPlaceholder": "Beschriftung",
+          "chooseFiles": "Dateien auswählen",
+          "noFilesSelected": "Keine Dateien ausgewählt",
+          "filesSelected": "{count} Datei(en) ausgewählt",
+          "upload": "Hochladen"
+        }
       },
       "brandConnections": {
         "title": "Markenverbindungen",

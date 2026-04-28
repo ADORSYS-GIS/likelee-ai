@@ -1203,11 +1203,15 @@ export function AgencyDeliverablesView() {
         <div className="relative z-10 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
-              Offer Deliverables
+              {t("agencyDashboard.deliverables.title", {
+                defaultValue: "Offer Deliverables",
+              })}
             </h2>
             <p className="mt-2 text-gray-400 text-sm">
-              Assign talents, request assets, and review deliverables for brand
-              offers.
+              {t("agencyDashboard.deliverables.subtitle", {
+                defaultValue:
+                  "Assign talents, request assets, and review deliverables for brand offers.",
+              })}
             </p>
           </div>
           <Button

@@ -2353,6 +2353,7 @@
       },
       "deliverables": {
         "title": "Entregables",
+        "subtitle": "Asigne talentos, solicite assets y revise entregables para ofertas de marca.",
         "noDeliverables": "No se encontraron entregables",
         "loading": "Cargando entregables...",
         "upload": "Subir",
@@ -2381,7 +2382,51 @@
         "rejectSuccess": "Entregable rechazado exitosamente",
         "rejectFailed": "Error al rechazar el entregable",
         "submitSuccess": "Entregable enviado exitosamente",
-        "submitFailed": "Error al enviar el entregable"
+        "submitFailed": "Error al enviar el entregable",
+        "requestAsset": "Solicitar asset",
+        "confirmDelete": "Esto eliminará permanentemente el entregable. ¿Continuar?",
+        "assignTalent": {
+          "title": "Asignar talento",
+          "subtitle": "Seleccione uno o más talentos de su lista para asignarlos a esta oferta.",
+          "filterPlaceholder": "Filtrar por nombre o correo...",
+          "loadingTalents": "Cargando talentos…",
+          "fetchingRoster": "Obteniendo su lista de agencia.",
+          "confirmSelection": "Confirmar selección",
+          "assigned": "asignado",
+          "inviteRequired": "invitación requerida",
+          "changeBeforeContract": "Puede cambiar los talentos asignados en cualquier momento antes de enviar el contrato. Una vez que envíe el contrato, las asignaciones quedan bloqueadas.",
+          "contractSent": "El contrato de esta oferta ya ha sido enviado. Las asignaciones de talentos están bloqueadas.",
+          "confirmAssignment": "Confirmar asignación"
+        },
+        "unassignTalent": {
+          "title": "¿Desasignar talento?",
+          "description": "Eliminar {talentName} de esta oferta. Puede cambiar los talentos asignados antes de enviar el contrato. Después de enviar el contrato, las asignaciones quedan bloqueadas.",
+          "cancel": "Cancelar",
+          "unassigning": "Desasignando...",
+          "unassign": "Desasignar"
+        },
+        "requestAssetModal": {
+          "title": "Solicitar asset",
+          "subtitle": "Envíe un brief claro y un PDF opcional para guiar al talento.",
+          "titleLabel": "Título",
+          "titlePlaceholder": "Título corto (ej: Fotos de producto para mayo)",
+          "detailsLabel": "Detalles",
+          "detailsPlaceholder": "Describa exactamente lo que necesita, formato de entrega y fecha límite.",
+          "briefPdfLabel": "Brief PDF (opcional)",
+          "chooseFile": "Elegir archivo",
+          "noFileSelected": "Ningún archivo seleccionado",
+          "sendRequest": "Enviar solicitud",
+          "selectedTalent": "Talento seleccionado"
+        },
+        "uploadDeliverableModal": {
+          "title": "Subir entregable",
+          "subtitle": "Agregue un título y suba uno o más archivos.",
+          "captionPlaceholder": "Título",
+          "chooseFiles": "Elegir archivos",
+          "noFilesSelected": "Ningún archivo seleccionado",
+          "filesSelected": "{count} archivo(s) seleccionado(s)",
+          "upload": "Subir"
+        }
       },
       "brandConnections": {
         "title": "Conexiones de marca",

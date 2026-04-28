@@ -2378,6 +2378,7 @@
       },
       "deliverables": {
         "title": "Livraison",
+        "subtitle": "Attribuez des talents, demandez des assets et examinez les livrables pour les offres de marque.",
         "noDeliverables": "Aucune livraison trouvée",
         "loading": "Chargement des livraisons...",
         "upload": "Télécharger",
@@ -2408,7 +2409,49 @@
         "submitSuccess": "Livraison soumise avec succès",
         "submitFailed": "Échec de la soumission de la livraison",
         "requestAsset": "Demander un asset",
-        "confirmDelete": "Cette action supprimera définitivement la livraison. Continuer ?"
+        "confirmDelete": "Cette action supprimera définitivement la livraison. Continuer ?",
+        "assignTalent": {
+          "title": "Attribuer un talent",
+          "subtitle": "Sélectionnez un ou plusieurs talents de votre liste pour les attribuer à cette offre.",
+          "filterPlaceholder": "Filtrer par nom ou email...",
+          "loadingTalents": "Chargement des talents…",
+          "fetchingRoster": "Récupération de votre liste d'agence.",
+          "confirmSelection": "Confirmer la sélection",
+          "assigned": "attribué",
+          "inviteRequired": "invitation requise",
+          "changeBeforeContract": "Vous pouvez modifier les talents attribués à tout moment avant l'envoi du contrat. Une fois le contrat envoyé, les attributions sont verrouillées.",
+          "contractSent": "Le contrat de cette offre a déjà été envoyé. Les attributions de talents sont verrouillées.",
+          "confirmAssignment": "Confirmer l'attribution"
+        },
+        "unassignTalent": {
+          "title": "Retirer le talent ?",
+          "description": "Retirer {talentName} de cette offre. Vous pouvez modifier les talents attribués avant l'envoi du contrat. Après l'envoi du contrat, les attributions sont verrouillées.",
+          "cancel": "Annuler",
+          "unassigning": "Retrait en cours...",
+          "unassign": "Retirer"
+        },
+        "requestAssetModal": {
+          "title": "Demander un asset",
+          "subtitle": "Envoyez un brief clair et un PDF optionnel pour guider le talent.",
+          "titleLabel": "Titre",
+          "titlePlaceholder": "Titre court (ex : Photos produits pour mai)",
+          "detailsLabel": "Détails",
+          "detailsPlaceholder": "Décrivez exactement ce dont vous avez besoin, le format de livraison et la date limite.",
+          "briefPdfLabel": "Brief PDF (optionnel)",
+          "chooseFile": "Choisir un fichier",
+          "noFileSelected": "Aucun fichier sélectionné",
+          "sendRequest": "Envoyer la demande",
+          "selectedTalent": "Talent sélectionné"
+        },
+        "uploadDeliverableModal": {
+          "title": "Télécharger un livrable",
+          "subtitle": "Ajoutez une légende et téléchargez un ou plusieurs fichiers.",
+          "captionPlaceholder": "Légende",
+          "chooseFiles": "Choisir des fichiers",
+          "noFilesSelected": "Aucun fichier sélectionné",
+          "filesSelected": "{count} fichier(s) sélectionné(s)",
+          "upload": "Télécharger"
+        }
       },
       "brandConnections": {
         "title": "Connexions de marque",
