@@ -351,7 +351,64 @@ export default function BrandCampaignDashboard({
 
       setNewCampaignStep(safeStep);
     } else {
+      // Full reset for a brand-new campaign — clear any state left from a previous session
+      setBrandCampaignId("");
+      setIsExistingCampaign(false);
+      setStep1FieldErrors({});
+      setStep2FieldErrors({});
+      setWizardErrorBanner(null);
       setNewCampaignStep(1);
+      setCampaignForm({
+        name: "",
+        objective: "",
+        brief_file: null,
+        category: "",
+        description: "",
+        usage_scope: "",
+        duration_days: "30",
+        territory: "Global",
+        exclusivity: "Non-exclusive",
+        budget_range: "",
+        start_date: "",
+        custom_terms: "",
+        collaborator_type: "",
+        collaborators: [],
+      });
+      setCampaignBrief({
+        voice: "",
+        tone: "",
+        personality: "",
+        key_messages: "",
+        script_opening: "",
+        script_middle: "",
+        script_closing: "",
+        dos: "",
+        donts: "",
+        required_deliverables: "",
+        total_expected_deliverables: "",
+        deliverables_reels: "",
+        deliverables_hero_image: "",
+        visual_color_palette: "",
+        visual_setting: "",
+        visual_framing: "",
+        visual_editing: "",
+        reference_images: [],
+        brand_assets: [],
+        overview_objective: "",
+        overview_target_audience: "",
+        overview_campaign_duration: "",
+        overview_launch_date: "",
+        budget_total: "",
+        budget_creator_payment: "",
+        budget_submission_deadline: "",
+        budget_renewal_terms: "",
+        revision_included: "",
+        revision_major_changes: "",
+        revision_turnaround: "",
+        approval_process: "",
+        watermark_protection: "",
+        legal_terms: "",
+      });
     }
 
     setShowNewCampaignModal(true);
@@ -1455,6 +1512,9 @@ export default function BrandCampaignDashboard({
     setNewCampaignStep(1);
     setBrandCampaignId("");
     setIsExistingCampaign(false);
+    setStep1FieldErrors({});
+    setStep2FieldErrors({});
+    setWizardErrorBanner(null);
     setExistingCampaignAgencyIds(new Set());
     setExistingCampaignCreatorIds(new Set());
     setLoadingExistingCollaborators(false);
