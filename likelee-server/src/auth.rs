@@ -31,6 +31,7 @@ struct Jwk {
     crv: Option<String>,
     x: Option<String>,
     y: Option<String>,
+    k: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -88,6 +89,20 @@ impl JwksCache {
                         match crv.as_str() {
                             "P-256" => DecodingKey::from_ec_components(x, y).ok(),
                             _ => None,
+                        }
+                    } else {
+                        None
+                    }
+                }
+                "oct" => {
+                    if let Some(k) = &jwk.k {
+                        let k_bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD
+                            .decode(k)
+                            .unwrap_or_default();
+                        if !k_bytes.is_empty() {
+                            Some(DecodingKey::from_secret(&k_bytes))
+                        } else {
+                            None
                         }
                     } else {
                         None
