@@ -12639,7 +12639,15 @@ export default function BrandDashboard() {
                       .filter((item: any) =>
                         selectedIds.includes(String(item.talent_id || item.id)),
                       )
-                      .map((item: any) => item.talent_name || "Unnamed Talent");
+                      .map(
+                        (item: any) =>
+                          item.talent_name ||
+                          item?.talent?.stage_name ||
+                          item?.talent?.full_legal_name ||
+                          item?.talent?.full_name ||
+                          item?.talent?.name ||
+                          "Unnamed Talent",
+                      );
 
                     if (selectedNames.length === 0)
                       return (
