@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/popover";
 import { searchLocations } from "./geocoding";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface PlanTripModalProps {
   isOpen: boolean;
@@ -71,6 +72,7 @@ export const PlanTripModal = ({
   onPlan,
   initialData,
 }: PlanTripModalProps) => {
+  const { t } = useTranslation();
   const [scouts, setScouts] = useState<string[]>(
     initialData?.scout_names ||
       initialData?.scout_ids || ["Sarah Johnson", "Michael Lee"],
@@ -280,10 +282,18 @@ export const PlanTripModal = ({
             </div>
             <div>
               <DialogTitle className="text-2xl font-black text-gray-900">
-                {initialData ? "Update Scouting Trip" : "Plan Scouting Trip"}
+                {initialData
+                  ? t("agencyDashboard.scouting.planTripModal.titleEdit", {
+                      defaultValue: "Update Scouting Trip",
+                    })
+                  : t("agencyDashboard.scouting.planTripModal.titleCreate", {
+                      defaultValue: "Plan Scouting Trip",
+                    })}
               </DialogTitle>
               <p className="text-sm text-gray-600 font-bold">
-                Configure your field mission details
+                {t("agencyDashboard.scouting.planTripModal.subtitle", {
+                  defaultValue: "Configure your field mission details",
+                })}
               </p>
             </div>
           </div>
@@ -793,7 +803,9 @@ export const PlanTripModal = ({
             onClick={onClose}
             className="rounded-xl h-10 px-8 font-black text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900 transition-all"
           >
-            Cancel
+            {t("agencyDashboard.scouting.planTripModal.actions.cancel", {
+              defaultValue: "Cancel",
+            })}
           </Button>
           <Button
             disabled={isSaving || isUploading}
@@ -861,10 +873,22 @@ export const PlanTripModal = ({
               <Plus className="w-5 h-5" />
             )}
             {isSaving
-              ? "Saving..."
+              ? t("agencyDashboard.scouting.planTripModal.actions.saving", {
+                  defaultValue: "Saving...",
+                })
               : initialData
-                ? "Update Trip"
-                : "Create Trip"}
+                ? t(
+                    "agencyDashboard.scouting.planTripModal.actions.updateTrip",
+                    {
+                      defaultValue: "Update Trip",
+                    },
+                  )
+                : t(
+                    "agencyDashboard.scouting.planTripModal.actions.createTrip",
+                    {
+                      defaultValue: "Create Trip",
+                    },
+                  )}
           </Button>
         </DialogFooter>
       </DialogContent>
