@@ -129,9 +129,12 @@ const ClientProfileModal = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency-clients"] });
       toast({
-        title: t("agencyDashboard.clientCRM.modal.profile.toasts.notesSavedTitle", {
-          defaultValue: "Notes Saved",
-        }),
+        title: t(
+          "agencyDashboard.clientCRM.modal.profile.toasts.notesSavedTitle",
+          {
+            defaultValue: "Notes Saved",
+          },
+        ),
         description: t(
           "agencyDashboard.clientCRM.modal.profile.toasts.notesSavedDescription",
           {
@@ -155,9 +158,12 @@ const ClientProfileModal = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["client-files", client.id] });
       toast({
-        title: t("agencyDashboard.clientCRM.modal.profile.toasts.fileUploadedTitle", {
-          defaultValue: "File Uploaded",
-        }),
+        title: t(
+          "agencyDashboard.clientCRM.modal.profile.toasts.fileUploadedTitle",
+          {
+            defaultValue: "File Uploaded",
+          },
+        ),
         description: t(
           "agencyDashboard.clientCRM.modal.profile.toasts.fileUploadedDescription",
           {
@@ -283,9 +289,12 @@ const ClientProfileModal = ({
                   value="communications"
                   className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
                 >
-                  {t("agencyDashboard.clientCRM.modal.profile.tabs.communications", {
-                    defaultValue: "Communications",
-                  })}
+                  {t(
+                    "agencyDashboard.clientCRM.modal.profile.tabs.communications",
+                    {
+                      defaultValue: "Communications",
+                    },
+                  )}
                 </TabsTrigger>
                 <TabsTrigger
                   value="bookings"
@@ -299,9 +308,12 @@ const ClientProfileModal = ({
                   value="files"
                   className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
                 >
-                  {t("agencyDashboard.clientCRM.modal.profile.tabs.filesNotes", {
-                    defaultValue: "Files & Notes",
-                  })}
+                  {t(
+                    "agencyDashboard.clientCRM.modal.profile.tabs.filesNotes",
+                    {
+                      defaultValue: "Files & Notes",
+                    },
+                  )}
                 </TabsTrigger>
               </TabsList>
 
@@ -312,17 +324,23 @@ const ClientProfileModal = ({
                       <div className="flex items-center gap-2 mb-4">
                         <Building2 className="w-5 h-5 text-gray-400" />
                         <h4 className="font-bold text-gray-900">
-                          {t("agencyDashboard.clientCRM.modal.profile.sections.companyInformation", {
-                            defaultValue: "Company Information",
-                          })}
+                          {t(
+                            "agencyDashboard.clientCRM.modal.profile.sections.companyInformation",
+                            {
+                              defaultValue: "Company Information",
+                            },
+                          )}
                         </h4>
                       </div>
                       <div className="space-y-4">
                         <div>
                           <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                            {t("agencyDashboard.clientCRM.modal.profile.fields.industry", {
-                              defaultValue: "Industry",
-                            })}
+                            {t(
+                              "agencyDashboard.clientCRM.modal.profile.fields.industry",
+                              {
+                                defaultValue: "Industry",
+                              },
+                            )}
                           </p>
                           <p className="text-sm font-bold text-gray-900">
                             {client.industry}
@@ -330,9 +348,12 @@ const ClientProfileModal = ({
                         </div>
                         <div>
                           <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                            {t("agencyDashboard.clientCRM.modal.profile.fields.website", {
-                              defaultValue: "Website",
-                            })}
+                            {t(
+                              "agencyDashboard.clientCRM.modal.profile.fields.website",
+                              {
+                                defaultValue: "Website",
+                              },
+                            )}
                           </p>
                           <p className="text-sm font-bold text-gray-900">
                             {client.website}
@@ -340,9 +361,12 @@ const ClientProfileModal = ({
                         </div>
                         <div>
                           <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                            {t("agencyDashboard.clientCRM.modal.profile.fields.nextFollowUp", {
-                              defaultValue: "Next Follow-up",
-                            })}
+                            {t(
+                              "agencyDashboard.clientCRM.modal.profile.fields.nextFollowUp",
+                              {
+                                defaultValue: "Next Follow-up",
+                              },
+                            )}
                           </p>
                           <p className="text-sm font-bold text-indigo-600">
                             {client.nextFollowUp}
@@ -350,9 +374,12 @@ const ClientProfileModal = ({
                         </div>
                         <div>
                           <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
-                            {t("agencyDashboard.clientCRM.modal.profile.fields.tags", {
-                              defaultValue: "Tags",
-                            })}
+                            {t(
+                              "agencyDashboard.clientCRM.modal.profile.fields.tags",
+                              {
+                                defaultValue: "Tags",
+                              },
+                            )}
                           </p>
                           <div className="flex gap-2">
                             {client.tags.map((tag) => (
@@ -373,17 +400,23 @@ const ClientProfileModal = ({
                       <div className="flex items-center gap-2 mb-4">
                         <TrendingUp className="w-5 h-5 text-gray-400" />
                         <h4 className="font-bold text-gray-900">
-                          {t("agencyDashboard.clientCRM.modal.profile.sections.clientPreferences", {
-                            defaultValue: "Client Preferences",
-                          })}
+                          {t(
+                            "agencyDashboard.clientCRM.modal.profile.sections.clientPreferences",
+                            {
+                              defaultValue: "Client Preferences",
+                            },
+                          )}
                         </h4>
                       </div>
                       <div className="space-y-4">
                         <div>
                           <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                            {t("agencyDashboard.clientCRM.modal.profile.fields.preferredTalentTypes", {
-                              defaultValue: "Preferred Talent Types",
-                            })}
+                            {t(
+                              "agencyDashboard.clientCRM.modal.profile.fields.preferredTalentTypes",
+                              {
+                                defaultValue: "Preferred Talent Types",
+                              },
+                            )}
                           </p>
                           <p className="text-sm font-bold text-gray-900">
                             {client.preferences?.talentTypes?.join(", ") || "—"}
@@ -391,9 +424,12 @@ const ClientProfileModal = ({
                         </div>
                         <div>
                           <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                            {t("agencyDashboard.clientCRM.modal.profile.fields.budgetRange", {
-                              defaultValue: "Budget Range",
-                            })}
+                            {t(
+                              "agencyDashboard.clientCRM.modal.profile.fields.budgetRange",
+                              {
+                                defaultValue: "Budget Range",
+                              },
+                            )}
                           </p>
                           <p className="text-sm font-bold text-gray-900">
                             {client.preferences?.budgetRange || "—"}
@@ -401,9 +437,12 @@ const ClientProfileModal = ({
                         </div>
                         <div>
                           <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
-                            {t("agencyDashboard.clientCRM.modal.profile.fields.bookingLeadTime", {
-                              defaultValue: "Booking Lead Time",
-                            })}
+                            {t(
+                              "agencyDashboard.clientCRM.modal.profile.fields.bookingLeadTime",
+                              {
+                                defaultValue: "Booking Lead Time",
+                              },
+                            )}
                           </p>
                           <p className="text-sm font-bold text-gray-900">
                             {client.preferences?.leadTime || "—"}
@@ -415,9 +454,12 @@ const ClientProfileModal = ({
 
                   <div className="space-y-4">
                     <h4 className="font-bold text-gray-900">
-                      {t("agencyDashboard.clientCRM.modal.profile.sections.clientMetrics", {
-                        defaultValue: "Client Metrics",
-                      })}
+                      {t(
+                        "agencyDashboard.clientCRM.modal.profile.sections.clientMetrics",
+                        {
+                          defaultValue: "Client Metrics",
+                        },
+                      )}
                     </h4>
                     <div className="grid grid-cols-4 gap-4">
                       <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
@@ -435,9 +477,12 @@ const ClientProfileModal = ({
                           {totalBookingsCount}
                         </span>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                          {t("agencyDashboard.clientCRM.modal.profile.metrics.totalBookings", {
-                            defaultValue: "Total Bookings",
-                          })}
+                          {t(
+                            "agencyDashboard.clientCRM.modal.profile.metrics.totalBookings",
+                            {
+                              defaultValue: "Total Bookings",
+                            },
+                          )}
                         </span>
                       </Card>
                       <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
@@ -445,9 +490,12 @@ const ClientProfileModal = ({
                           {client.metrics?.packagesSent || 0}
                         </span>
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                          {t("agencyDashboard.clientCRM.modal.profile.metrics.packagesSent", {
-                            defaultValue: "Packages Sent",
-                          })}
+                          {t(
+                            "agencyDashboard.clientCRM.modal.profile.metrics.packagesSent",
+                            {
+                              defaultValue: "Packages Sent",
+                            },
+                          )}
                         </span>
                       </Card>
                       <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
@@ -467,18 +515,24 @@ const ClientProfileModal = ({
                 <TabsContent value="contacts" className="space-y-6 mt-0">
                   <div className="flex justify-between items-center">
                     <h4 className="font-bold text-gray-900">
-                      {t("agencyDashboard.clientCRM.modal.profile.sections.contactList", {
-                        defaultValue: "Contact List",
-                      })}
+                      {t(
+                        "agencyDashboard.clientCRM.modal.profile.sections.contactList",
+                        {
+                          defaultValue: "Contact List",
+                        },
+                      )}
                     </h4>
                     <Button
                       onClick={() => setIsAddContactOpen(true)}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
                     >
                       <Plus className="w-4 h-4" />
-                      {t("agencyDashboard.clientCRM.modal.profile.actions.addContact", {
-                        defaultValue: "Add Contact",
-                      })}
+                      {t(
+                        "agencyDashboard.clientCRM.modal.profile.actions.addContact",
+                        {
+                          defaultValue: "Add Contact",
+                        },
+                      )}
                     </Button>
                   </div>
 
@@ -486,17 +540,23 @@ const ClientProfileModal = ({
                     {isLoadingContacts ? (
                       <div className="text-center py-12 text-gray-400 font-bold">
                         <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin" />
-                        {t("agencyDashboard.clientCRM.modal.profile.states.loadingContacts", {
-                          defaultValue: "Loading contacts...",
-                        })}
+                        {t(
+                          "agencyDashboard.clientCRM.modal.profile.states.loadingContacts",
+                          {
+                            defaultValue: "Loading contacts...",
+                          },
+                        )}
                       </div>
                     ) : contacts.length === 0 ? (
                       <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
                         <Users className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                         <p className="text-gray-400 font-bold">
-                          {t("agencyDashboard.clientCRM.modal.profile.states.noContacts", {
-                            defaultValue: "No contacts added yet",
-                          })}
+                          {t(
+                            "agencyDashboard.clientCRM.modal.profile.states.noContacts",
+                            {
+                              defaultValue: "No contacts added yet",
+                            },
+                          )}
                         </p>
                       </div>
                     ) : (
@@ -516,17 +576,23 @@ const ClientProfileModal = ({
                                 </h5>
                                 {contact.is_primary && (
                                   <Badge className="bg-indigo-100 text-indigo-700 border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                                    {t("agencyDashboard.clientCRM.modal.profile.common.primary", {
-                                      defaultValue: "Primary",
-                                    })}
+                                    {t(
+                                      "agencyDashboard.clientCRM.modal.profile.common.primary",
+                                      {
+                                        defaultValue: "Primary",
+                                      },
+                                    )}
                                   </Badge>
                                 )}
                               </div>
                               <p className="text-xs text-gray-500 font-bold">
                                 {contact.role ||
-                                  t("agencyDashboard.clientCRM.modal.profile.common.noRole", {
-                                    defaultValue: "No role specified",
-                                  })}
+                                  t(
+                                    "agencyDashboard.clientCRM.modal.profile.common.noRole",
+                                    {
+                                      defaultValue: "No role specified",
+                                    },
+                                  )}
                               </p>
                             </div>
                           </div>
@@ -553,18 +619,24 @@ const ClientProfileModal = ({
                 <TabsContent value="communications" className="space-y-6 mt-0">
                   <div className="flex justify-between items-center">
                     <h4 className="font-bold text-gray-900">
-                      {t("agencyDashboard.clientCRM.modal.profile.sections.communicationHistory", {
-                        defaultValue: "Communication History",
-                      })}
+                      {t(
+                        "agencyDashboard.clientCRM.modal.profile.sections.communicationHistory",
+                        {
+                          defaultValue: "Communication History",
+                        },
+                      )}
                     </h4>
                     <Button
                       onClick={() => setIsLogCommOpen(true)}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
                     >
                       <Plus className="w-4 h-4" />
-                      {t("agencyDashboard.clientCRM.modal.profile.actions.logCommunication", {
-                        defaultValue: "Log Communication",
-                      })}
+                      {t(
+                        "agencyDashboard.clientCRM.modal.profile.actions.logCommunication",
+                        {
+                          defaultValue: "Log Communication",
+                        },
+                      )}
                     </Button>
                   </div>
 
@@ -572,9 +644,12 @@ const ClientProfileModal = ({
                     {isLoadingComms ? (
                       <div className="text-center py-12 text-gray-400 font-bold">
                         <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin" />
-                        {t("agencyDashboard.clientCRM.modal.profile.states.loadingHistory", {
-                          defaultValue: "Loading history...",
-                        })}
+                        {t(
+                          "agencyDashboard.clientCRM.modal.profile.states.loadingHistory",
+                          {
+                            defaultValue: "Loading history...",
+                          },
+                        )}
                       </div>
                     ) : communications.length === 0 ? (
                       <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
@@ -653,9 +728,12 @@ const ClientProfileModal = ({
                 <TabsContent value="bookings" className="space-y-6 mt-0">
                   <div className="flex justify-between items-center">
                     <h4 className="font-bold text-gray-900">
-                      {t("agencyDashboard.clientCRM.modal.profile.sections.bookingsHistory", {
-                        defaultValue: "Bookings History",
-                      })}
+                      {t(
+                        "agencyDashboard.clientCRM.modal.profile.sections.bookingsHistory",
+                        {
+                          defaultValue: "Bookings History",
+                        },
+                      )}
                     </h4>
                   </div>
 
@@ -663,17 +741,23 @@ const ClientProfileModal = ({
                     {isLoadingBookings ? (
                       <div className="text-center py-12 text-gray-400 font-bold">
                         <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin" />
-                        {t("agencyDashboard.clientCRM.modal.profile.states.loadingBookings", {
-                          defaultValue: "Loading bookings...",
-                        })}
+                        {t(
+                          "agencyDashboard.clientCRM.modal.profile.states.loadingBookings",
+                          {
+                            defaultValue: "Loading bookings...",
+                          },
+                        )}
                       </div>
                     ) : bookings.length === 0 ? (
                       <div className="text-center py-16 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
                         <Calendar className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                         <p className="text-gray-400 font-bold">
-                          {t("agencyDashboard.clientCRM.modal.profile.states.noBookings", {
-                            defaultValue: "No bookings found for this client",
-                          })}
+                          {t(
+                            "agencyDashboard.clientCRM.modal.profile.states.noBookings",
+                            {
+                              defaultValue: "No bookings found for this client",
+                            },
+                          )}
                         </p>
                       </div>
                     ) : (
@@ -746,9 +830,12 @@ const ClientProfileModal = ({
                 <TabsContent value="files" className="space-y-6 mt-0">
                   <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-4">
                     <h4 className="font-bold text-gray-900">
-                      {t("agencyDashboard.clientCRM.modal.profile.sections.notes", {
-                        defaultValue: "Notes",
-                      })}
+                      {t(
+                        "agencyDashboard.clientCRM.modal.profile.sections.notes",
+                        {
+                          defaultValue: "Notes",
+                        },
+                      )}
                     </h4>
                     <Textarea
                       value={notes}
@@ -770,18 +857,24 @@ const ClientProfileModal = ({
                       {updateNotesMutation.isPending ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       ) : null}
-                      {t("agencyDashboard.clientCRM.modal.profile.actions.saveNotes", {
-                        defaultValue: "Save Notes",
-                      })}
+                      {t(
+                        "agencyDashboard.clientCRM.modal.profile.actions.saveNotes",
+                        {
+                          defaultValue: "Save Notes",
+                        },
+                      )}
                     </Button>
                   </Card>
 
                   <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
                     <div className="flex justify-between items-center">
                       <h4 className="font-bold text-gray-900">
-                        {t("agencyDashboard.clientCRM.modal.profile.sections.filesDocuments", {
-                          defaultValue: "Files & Documents",
-                        })}
+                        {t(
+                          "agencyDashboard.clientCRM.modal.profile.sections.filesDocuments",
+                          {
+                            defaultValue: "Files & Documents",
+                          },
+                        )}
                       </h4>
                       <input
                         type="file"
@@ -799,9 +892,12 @@ const ClientProfileModal = ({
                         ) : (
                           <Plus className="w-4 h-4" />
                         )}
-                        {t("agencyDashboard.clientCRM.modal.profile.actions.uploadFile", {
-                          defaultValue: "Upload File",
-                        })}
+                        {t(
+                          "agencyDashboard.clientCRM.modal.profile.actions.uploadFile",
+                          {
+                            defaultValue: "Upload File",
+                          },
+                        )}
                       </Button>
                     </div>
 
@@ -809,17 +905,23 @@ const ClientProfileModal = ({
                       {isLoadingFiles ? (
                         <div className="text-center py-12 text-gray-400 font-bold">
                           <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin" />
-                          {t("agencyDashboard.clientCRM.modal.profile.states.loadingDocuments", {
-                            defaultValue: "Loading documents...",
-                          })}
+                          {t(
+                            "agencyDashboard.clientCRM.modal.profile.states.loadingDocuments",
+                            {
+                              defaultValue: "Loading documents...",
+                            },
+                          )}
                         </div>
                       ) : files.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
                           <File className="w-12 h-12 text-gray-300 mb-3" />
                           <p className="text-gray-500 font-bold">
-                            {t("agencyDashboard.clientCRM.modal.profile.states.noFiles", {
-                              defaultValue: "No files uploaded yet",
-                            })}
+                            {t(
+                              "agencyDashboard.clientCRM.modal.profile.states.noFiles",
+                              {
+                                defaultValue: "No files uploaded yet",
+                              },
+                            )}
                           </p>
                         </div>
                       ) : (
@@ -837,9 +939,12 @@ const ClientProfileModal = ({
                                   {file.file_name}
                                 </h5>
                                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider">
-                                  {t("agencyDashboard.clientCRM.modal.profile.common.added", {
-                                    defaultValue: "Added",
-                                  })}{" "}
+                                  {t(
+                                    "agencyDashboard.clientCRM.modal.profile.common.added",
+                                    {
+                                      defaultValue: "Added",
+                                    },
+                                  )}{" "}
                                   {new Date(
                                     file.created_at,
                                   ).toLocaleDateString()}
@@ -858,9 +963,12 @@ const ClientProfileModal = ({
                               ) : (
                                 <Download className="w-4 h-4" />
                               )}
-                              {t("agencyDashboard.clientCRM.modal.profile.actions.viewFile", {
-                                defaultValue: "View",
-                              })}
+                              {t(
+                                "agencyDashboard.clientCRM.modal.profile.actions.viewFile",
+                                {
+                                  defaultValue: "View",
+                                },
+                              )}
                             </Button>
                           </Card>
                         ))
@@ -881,9 +989,12 @@ const ClientProfileModal = ({
                   className="h-11 px-6 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors"
                 >
                   <Edit className="w-4 h-4 mr-2" />
-                  {t("agencyDashboard.clientCRM.modal.profile.actions.editClient", {
-                    defaultValue: "Edit Client",
-                  })}
+                  {t(
+                    "agencyDashboard.clientCRM.modal.profile.actions.editClient",
+                    {
+                      defaultValue: "Edit Client",
+                    },
+                  )}
                 </Button>
                 <Button
                   variant="outline"

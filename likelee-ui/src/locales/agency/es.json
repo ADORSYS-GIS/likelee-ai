@@ -520,6 +520,90 @@
       "addProspect": "Agregar prospecto",
       "createEvent": "Crear evento",
       "planScoutingTrip": "Planificar viaje de scouting",
+      "trips": {
+        "title": "Viajes de scouting",
+        "subtitle": "Gestiona y haz seguimiento de tus misiones de scouting en campo",
+        "metrics": {
+          "approached": "Abordados",
+          "submitted": "Enviados",
+          "addedToPipeline": "Añadidos al pipeline",
+          "conversionRate": "Tasa de conversión",
+          "totalCost": "Costo total"
+        },
+        "actions": {
+          "planNewTrip": "Planificar nuevo viaje",
+          "planFirstTrip": "Planifica tu primer viaje"
+        },
+        "states": {
+          "loading": "Cargando tus viajes de scouting...",
+          "emptyTitle": "Aún no hay viajes planificados",
+          "emptyDescription": "Comienza planificando tu primera misión de scouting para descubrir nuevo talento."
+        }
+      },
+      "addProspectForm": {
+        "title": "Agregar nuevo prospecto",
+        "subtitle": "Haz seguimiento del talento antes de incorporarlo a tu roster",
+        "sections": {
+          "basicInformation": "Información básica",
+          "categories": "Categorías",
+          "discoveryDetails": "Detalles del descubrimiento",
+          "statusAssignment": "Estado y asignación",
+          "starRating": "Calificación por estrellas",
+          "socialMedia": "Redes sociales (opcional)"
+        },
+        "fields": {
+          "name": "Nombre *",
+          "instagramHandle": "Usuario de Instagram",
+          "discoverySource": "Fuente de descubrimiento",
+          "discoveryDate": "Fecha de descubrimiento",
+          "discoveryLocation": "Ubicación del descubrimiento",
+          "referredBy": "Referido por",
+          "status": "Estado",
+          "assignedAgent": "Agente asignado",
+          "internalNotes": "Notas internas"
+        },
+        "placeholders": {
+          "fullName": "Nombre completo",
+          "selectSource": "Selecciona una fuente",
+          "discoveryLocation": "Nueva York, NY",
+          "selectStatus": "Selecciona un estado",
+          "assignedAgent": "Nombre del agente",
+          "internalNotes": "Agrega notas sobre este prospecto..."
+        },
+        "errors": {
+          "missingInfoTitle": "Falta información",
+          "missingName": "Por favor ingresa un nombre para el prospecto.",
+          "missingAgency": "No se pudo identificar tu agencia. Asegúrate de haber iniciado sesión como miembro de una agencia.",
+          "duplicateTitle": "El prospecto ya existe"
+        },
+        "toasts": {
+          "successTitle": "Éxito",
+          "created": "Prospecto agregado correctamente",
+          "errorTitle": "Error",
+          "failed": "No se pudo agregar el prospecto"
+        }
+      },
+      "planTripModal": {
+        "titleCreate": "Planificar viaje de scouting",
+        "titleEdit": "Actualizar viaje de scouting",
+        "subtitle": "Configura los detalles de tu misión en campo",
+        "sections": {
+          "tripEssentials": "Aspectos esenciales del viaje"
+        },
+        "fields": {
+          "tripName": "Nombre del viaje *",
+          "destination": "Destino *",
+          "latitude": "Latitud",
+          "longitude": "Longitud"
+        },
+        "placeholders": {
+          "tripName": "p. ej., scouting navideño en SoHo NYC",
+          "searchLocation": "Buscar una ubicación...",
+          "searchLocationInput": "Buscar ubicación...",
+          "latitude": "p. ej., 34.0522",
+          "longitude": "p. ej., -118.2437"
+        }
+      },
       "tabs": {
         "prospectPipeline": "Pipeline de prospectos",
         "socialDiscovery": "Descubrimiento social",
@@ -545,7 +629,8 @@
           "startDate": "Fecha de inicio"
         },
         "placeholders": {
-          "name": "p. ej. Sesión de verano 2024"
+          "name": "p. ej. Sesión de verano 2024",
+          "startDate": "mm/dd/aaaa"
         },
         "statuses": {
           "created": "Creada",
@@ -672,19 +757,26 @@
           "analytics": {
             "thisMonth": "Este mes",
             "thisWeek": "Esta semana",
+            "thisMonthLower": "Este mes",
             "revenue": "Ingresos",
             "conversion": "Conversión",
             "totalBookings": "Total de reservas",
             "bookingsByType": "Reservas por tipo",
             "topBookedTalent": "Talento más reservado",
             "bookings": "reservas",
-            "noBookingsYet": "Aún no hay reservas"
+            "bookingsCount": "{{count}} reservas",
+            "noBookingsYet": "Aún no hay reservas",
+            "testShoot": "Sesión de prueba",
+            "fitting": "Prueba de vestuario",
+            "unknown": "Desconocido"
           },
           "manage": {
             "searchPlaceholder": "Buscar por talento, cliente, ubicación o notas...",
             "filters": "Filtros",
             "talent": "Talento",
             "client": "Cliente",
+            "company": "Empresa",
+            "companyName": "nombre",
             "bookingType": "Tipo de reserva",
             "status": "Estado",
             "dateRange": "Rango de fechas",

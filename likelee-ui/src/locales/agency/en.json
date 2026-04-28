@@ -401,6 +401,130 @@
         "placeholder": "Search by name, role, bio, or skills..."
       }
     },
+    "bookings": {
+      "campaignModal": {
+        "titleCreate": "Create New Campaign",
+        "titleEdit": "Edit Campaign",
+        "fields": {
+          "name": "Campaign Name *",
+          "status": "Status",
+          "duration": "Duration (days)",
+          "startDate": "Start Date"
+        },
+        "placeholders": {
+          "name": "e.g. Summer Shoot 2024",
+          "startDate": "mm/dd/yyyy"
+        },
+        "statuses": {
+          "created": "Created",
+          "ongoing": "Ongoing",
+          "completed": "Completed"
+        },
+        "actions": {
+          "cancel": "Cancel",
+          "saving": "Saving...",
+          "save": "Save Campaign"
+        },
+        "errors": {
+          "missingName": "Please fill in the campaign name"
+        },
+        "toasts": {
+          "created": "Campaign created",
+          "updated": "Campaign updated",
+          "error": "Error saving campaign"
+        }
+      },
+      "tabs": {
+        "managementAnalytics": {
+          "title": "Management & Analytics",
+          "subtitle": "Filter, search, and analyze your bookings",
+          "tabs": {
+            "analytics": "Analytics",
+            "manageBookings": "Manage Bookings",
+            "reportsExport": "Reports & Export"
+          },
+          "analytics": {
+            "thisMonth": "This Month",
+            "thisWeek": "This Week",
+            "thisMonthLower": "This month",
+            "revenue": "Revenue",
+            "conversion": "Conversion",
+            "totalBookings": "Total bookings",
+            "bookingsByType": "Bookings by Type",
+            "topBookedTalent": "Top Booked Talent",
+            "bookings": "bookings",
+            "bookingsCount": "{{count}} bookings",
+            "noBookingsYet": "No bookings yet",
+            "testShoot": "Test Shoot",
+            "fitting": "Fitting",
+            "unknown": "Unknown"
+          },
+          "manage": {
+            "searchPlaceholder": "Search by talent, client, location, or notes...",
+            "filters": "Filters",
+            "talent": "Talent",
+            "client": "Client",
+            "company": "Company",
+            "companyName": "name",
+            "bookingType": "Booking Type",
+            "status": "Status",
+            "dateRange": "Date Range",
+            "startDate": "Start Date",
+            "endDate": "End Date",
+            "rateRange": "Rate Range ($)",
+            "min": "Min",
+            "max": "Max",
+            "sortBy": "Sort by:",
+            "bookingDate": "Booking Date",
+            "talentName": "Talent Name",
+            "clientName": "Client Name",
+            "rateAmount": "Rate Amount",
+            "createdDate": "Created Date",
+            "results": "Results ({{count}})",
+            "noDate": "No date",
+            "pending": "Pending",
+            "noBookingsFound": "No bookings found matching your filters.",
+            "casting": "Casting",
+            "option": "Option",
+            "confirmed": "Confirmed",
+            "completed": "Completed",
+            "cancelled": "Cancelled",
+            "pendingConfirmation": "Pending Confirmation"
+          },
+          "reports": {
+            "exportBookings": "Export Bookings",
+            "exportDescription": "Export {{count}} filtered bookings to your preferred format",
+            "exportToCSV": "Export to CSV",
+            "exportToPDF": "Export to PDF",
+            "exportToExcel": "Export to Excel",
+            "includedColumns": "Included Columns:",
+            "talentName": "Talent Name",
+            "clientName": "Client Name",
+            "bookingDate": "Booking Date",
+            "callTime": "Call Time",
+            "wrapTime": "Wrap Time",
+            "location": "Location",
+            "rate": "Rate",
+            "type": "Type",
+            "status": "Status",
+            "notes": "Notes",
+            "createdDate": "Created Date",
+            "updatedDate": "Updated Date",
+            "scheduleAutomatedReports": "Schedule Automated Reports",
+            "scheduleDescription": "Receive booking reports automatically via email",
+            "reportFrequency": "Report Frequency",
+            "daily": "Daily (every morning at 8 AM)",
+            "weekly": "Weekly (every Monday at 8 AM)",
+            "monthly": "Monthly (1st of each month)",
+            "emailRecipients": "Email Recipients",
+            "scheduleWeeklyReports": "Schedule Weekly Reports",
+            "exportingAs": "Exporting {{count}} bookings as {{format}}...",
+            "scheduledWeeklyReports": "Scheduled weekly reports via email!",
+            "ok": "OK"
+          }
+        }
+      }
+    },
     "performanceTiers": {
       "title": "Performance Tiers",
       "subtitle": "Configure thresholds and review how your roster is performing.",

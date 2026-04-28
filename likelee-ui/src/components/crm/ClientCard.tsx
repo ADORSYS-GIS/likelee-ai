@@ -45,7 +45,8 @@ const ClientCard = ({
             defaultValue: "No mail app configured",
           }),
           description: t("agencyDashboard.clientCRM.card.mailAppDescription", {
-            defaultValue: "Set Thunderbird as your default mail app to open email.",
+            defaultValue:
+              "Set Thunderbird as your default mail app to open email.",
           }),
         });
       }
@@ -205,20 +206,29 @@ const ClientCard = ({
                   title: t("agencyDashboard.clientCRM.card.noEmailTitle", {
                     defaultValue: "No email on file",
                   }),
-                  description: t("agencyDashboard.clientCRM.card.noEmailDescription", {
-                    defaultValue: "Add a contact email to send an email.",
-                  }),
+                  description: t(
+                    "agencyDashboard.clientCRM.card.noEmailDescription",
+                    {
+                      defaultValue: "Add a contact email to send an email.",
+                    },
+                  ),
                 });
               } catch (error: any) {
                 toast({
-                  title: t("agencyDashboard.clientCRM.card.openEmailErrorTitle", {
-                    defaultValue: "Unable to open email",
-                  }),
+                  title: t(
+                    "agencyDashboard.clientCRM.card.openEmailErrorTitle",
+                    {
+                      defaultValue: "Unable to open email",
+                    },
+                  ),
                   description:
                     error?.message ||
-                    t("agencyDashboard.clientCRM.card.openEmailErrorDescription", {
-                      defaultValue: "No contact email found for this client.",
-                    }),
+                    t(
+                      "agencyDashboard.clientCRM.card.openEmailErrorDescription",
+                      {
+                        defaultValue: "No contact email found for this client.",
+                      },
+                    ),
                   variant: "destructive",
                 });
               }

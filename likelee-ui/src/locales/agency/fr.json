@@ -509,6 +509,90 @@
       "addProspect": "Ajouter un prospect",
       "createEvent": "Créer un événement",
       "planScoutingTrip": "Planifier un voyage de scouting",
+      "trips": {
+        "title": "Voyages de scouting",
+        "subtitle": "Gérez et suivez vos missions de scouting sur le terrain",
+        "metrics": {
+          "approached": "Approchés",
+          "submitted": "Soumis",
+          "addedToPipeline": "Ajoutés au pipeline",
+          "conversionRate": "Taux de conversion",
+          "totalCost": "Coût total"
+        },
+        "actions": {
+          "planNewTrip": "Planifier un nouveau voyage",
+          "planFirstTrip": "Planifiez votre premier voyage"
+        },
+        "states": {
+          "loading": "Chargement de vos voyages de scouting...",
+          "emptyTitle": "Aucun voyage planifié pour le moment",
+          "emptyDescription": "Commencez par planifier votre première mission de scouting pour découvrir de nouveaux talents."
+        }
+      },
+      "addProspectForm": {
+        "title": "Ajouter un nouveau prospect",
+        "subtitle": "Suivez les talents avant de les intégrer à votre roster",
+        "sections": {
+          "basicInformation": "Informations de base",
+          "categories": "Catégories",
+          "discoveryDetails": "Détails de découverte",
+          "statusAssignment": "Statut et attribution",
+          "starRating": "Note par étoiles",
+          "socialMedia": "Réseaux sociaux (optionnel)"
+        },
+        "fields": {
+          "name": "Nom *",
+          "instagramHandle": "Identifiant Instagram",
+          "discoverySource": "Source de découverte",
+          "discoveryDate": "Date de découverte",
+          "discoveryLocation": "Lieu de découverte",
+          "referredBy": "Recommandé par",
+          "status": "Statut",
+          "assignedAgent": "Agent attribué",
+          "internalNotes": "Notes internes"
+        },
+        "placeholders": {
+          "fullName": "Nom complet",
+          "selectSource": "Sélectionner une source",
+          "discoveryLocation": "New York, NY",
+          "selectStatus": "Sélectionner un statut",
+          "assignedAgent": "Nom de l’agent",
+          "internalNotes": "Ajouter des notes sur ce prospect..."
+        },
+        "errors": {
+          "missingInfoTitle": "Informations manquantes",
+          "missingName": "Veuillez saisir un nom pour le prospect.",
+          "missingAgency": "Impossible d’identifier votre agence. Veuillez vous assurer que vous êtes connecté en tant que membre d’une agence.",
+          "duplicateTitle": "Le prospect existe déjà"
+        },
+        "toasts": {
+          "successTitle": "Succès",
+          "created": "Prospect ajouté avec succès",
+          "errorTitle": "Erreur",
+          "failed": "Échec de l’ajout du prospect"
+        }
+      },
+      "planTripModal": {
+        "titleCreate": "Planifier un voyage de scouting",
+        "titleEdit": "Mettre à jour le voyage de scouting",
+        "subtitle": "Configurez les détails de votre mission terrain",
+        "sections": {
+          "tripEssentials": "Informations essentielles du voyage"
+        },
+        "fields": {
+          "tripName": "Nom du voyage *",
+          "destination": "Destination *",
+          "latitude": "Latitude",
+          "longitude": "Longitude"
+        },
+        "placeholders": {
+          "tripName": "ex. : scouting de vacances à SoHo NYC",
+          "searchLocation": "Rechercher un lieu...",
+          "searchLocationInput": "Rechercher un lieu...",
+          "latitude": "ex. : 34.0522",
+          "longitude": "ex. : -118.2437"
+        }
+      },
       "tabs": {
         "prospectPipeline": "Pipeline de prospects",
         "socialDiscovery": "Découverte sociale",
@@ -630,19 +714,26 @@
           "analytics": {
             "thisMonth": "Ce mois-ci",
             "thisWeek": "Cette semaine",
+            "thisMonthLower": "Ce mois-ci",
             "revenue": "Revenus",
             "conversion": "Conversion",
             "totalBookings": "Total des réservations",
             "bookingsByType": "Réservations par type",
             "topBookedTalent": "Talent le plus réservé",
             "bookings": "réservations",
-            "noBookingsYet": "Aucune réservation pour le moment"
+            "bookingsCount": "{{count}} réservations",
+            "noBookingsYet": "Aucune réservation pour le moment",
+            "testShoot": "Séance d'essai",
+            "fitting": "Essayage",
+            "unknown": "Inconnu"
           },
           "manage": {
             "searchPlaceholder": "Rechercher par talent, client, lieu ou notes...",
             "filters": "Filtres",
             "talent": "Talent",
             "client": "Client",
+            "company": "Entreprise",
+            "companyName": "nom",
             "bookingType": "Type de réservation",
             "status": "Statut",
             "dateRange": "Plage de dates",
@@ -698,6 +789,38 @@
             "exportingAs": "Export de {{count}} réservations en {{format}}...",
             "scheduledWeeklyReports": "Rapports hebdomadaires planifiés par e-mail !",
             "ok": "OK"
+          }
+        },
+        "campaignModal": {
+          "titleCreate": "Créer une nouvelle campagne",
+          "titleEdit": "Modifier la campagne",
+          "fields": {
+            "name": "Nom de la campagne *",
+            "status": "Statut",
+            "duration": "Durée (jours)",
+            "startDate": "Date de début"
+          },
+          "placeholders": {
+            "name": "ex. Summer Shoot 2024",
+            "startDate": "mm/jj/aaaa"
+          },
+          "statuses": {
+            "created": "Créée",
+            "ongoing": "En cours",
+            "completed": "Terminée"
+          },
+          "actions": {
+            "cancel": "Annuler",
+            "saving": "Enregistrement...",
+            "save": "Enregistrer la campagne"
+          },
+          "errors": {
+            "missingName": "Veuillez saisir le nom de la campagne"
+          },
+          "toasts": {
+            "created": "Campagne créée",
+            "updated": "Campagne mise à jour",
+            "error": "Erreur lors de l'enregistrement de la campagne"
           }
         },
         "campaigns": {

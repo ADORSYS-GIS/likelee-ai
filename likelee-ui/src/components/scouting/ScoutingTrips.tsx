@@ -24,6 +24,7 @@ import { TripAnalytics } from "./TripAnalytics";
 import { scoutingService } from "@/services/scoutingService";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 
 const PhotoLightbox = ({
   photos,
@@ -115,6 +116,7 @@ const TripCard = ({
   trip: ScoutingTrip;
   onEdit: (trip: ScoutingTrip) => void;
 }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -219,7 +221,9 @@ const TripCard = ({
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
-                Approached
+                {t("agencyDashboard.scouting.trips.metrics.approached", {
+                  defaultValue: "Approached",
+                })}
               </p>
               <p className="text-xl font-bold text-gray-900">
                 {trip.prospects_approached}
@@ -227,7 +231,9 @@ const TripCard = ({
             </div>
             <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
-                Submitted
+                {t("agencyDashboard.scouting.trips.metrics.submitted", {
+                  defaultValue: "Submitted",
+                })}
               </p>
               <p className="text-xl font-bold text-indigo-600">
                 {trip.prospects_agreed}
@@ -235,7 +241,9 @@ const TripCard = ({
             </div>
             <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
-                Added to Pipeline
+                {t("agencyDashboard.scouting.trips.metrics.addedToPipeline", {
+                  defaultValue: "Added to Pipeline",
+                })}
               </p>
               <p className="text-xl font-bold text-green-600">
                 {trip.prospects_added}
@@ -243,7 +251,9 @@ const TripCard = ({
             </div>
             <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
-                Conversion Rate
+                {t("agencyDashboard.scouting.trips.metrics.conversionRate", {
+                  defaultValue: "Conversion Rate",
+                })}
               </p>
               <p className="text-xl font-bold text-purple-600">
                 {trip.conversion_rate}%
@@ -251,7 +261,9 @@ const TripCard = ({
             </div>
             <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-100">
               <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wider mb-1">
-                Total Cost
+                {t("agencyDashboard.scouting.trips.metrics.totalCost", {
+                  defaultValue: "Total Cost",
+                })}
               </p>
               <p className="text-xl font-bold text-gray-900">
                 ${trip.total_cost?.toLocaleString()}
@@ -369,6 +381,7 @@ const TripCard = ({
 };
 
 export const ScoutingTrips = () => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<ScoutingTrip | null>(null);
   const [trips, setTrips] = useState<ScoutingTrip[]>([]);
@@ -412,9 +425,15 @@ export const ScoutingTrips = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Scouting Trips</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {t("agencyDashboard.scouting.trips.title", {
+              defaultValue: "Scouting Trips",
+            })}
+          </h2>
           <p className="text-sm text-gray-500 mt-1">
-            Manage and track your field scouting missions
+            {t("agencyDashboard.scouting.trips.subtitle", {
+              defaultValue: "Manage and track your field scouting missions",
+            })}
           </p>
         </div>
         <Button
@@ -425,7 +444,9 @@ export const ScoutingTrips = () => {
           className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 shadow-lg shadow-indigo-100 flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          Plan New Trip
+          {t("agencyDashboard.scouting.trips.actions.planNewTrip", {
+            defaultValue: "Plan New Trip",
+          })}
         </Button>
       </div>
 
@@ -433,7 +454,9 @@ export const ScoutingTrips = () => {
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
           <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
           <p className="text-gray-500 font-medium">
-            Loading your scouting trips...
+            {t("agencyDashboard.scouting.trips.states.loading", {
+              defaultValue: "Loading your scouting trips...",
+            })}
           </p>
         </div>
       ) : (
@@ -451,18 +474,24 @@ export const ScoutingTrips = () => {
                   <Calendar className="w-8 h-8 text-gray-300" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  No trips planned yet
+                  {t("agencyDashboard.scouting.trips.states.emptyTitle", {
+                    defaultValue: "No trips planned yet",
+                  })}
                 </h3>
                 <p className="text-gray-500 max-w-xs mx-auto mt-1">
-                  Start by planning your first scouting mission to discover new
-                  talent.
+                  {t("agencyDashboard.scouting.trips.states.emptyDescription", {
+                    defaultValue:
+                      "Start by planning your first scouting mission to discover new talent.",
+                  })}
                 </p>
                 <Button
                   onClick={() => setIsModalOpen(true)}
                   variant="outline"
                   className="mt-6 rounded-xl border-indigo-100 text-indigo-600 hover:bg-indigo-50"
                 >
-                  Plan Your First Trip
+                  {t("agencyDashboard.scouting.trips.actions.planFirstTrip", {
+                    defaultValue: "Plan Your First Trip",
+                  })}
                 </Button>
               </div>
             )}

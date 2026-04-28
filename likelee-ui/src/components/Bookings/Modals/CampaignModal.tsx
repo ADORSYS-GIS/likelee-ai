@@ -32,7 +32,7 @@ export const CampaignModal = ({
   initialData?: any;
   onSaveSuccess?: (campaign: any) => void;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [formData, setFormData] = useState({
     name: "",
     status: "created",
@@ -188,19 +188,28 @@ export const CampaignModal = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="created">
-                    {t("agencyDashboard.bookings.campaignModal.statuses.created", {
-                      defaultValue: "Created",
-                    })}
+                    {t(
+                      "agencyDashboard.bookings.campaignModal.statuses.created",
+                      {
+                        defaultValue: "Created",
+                      },
+                    )}
                   </SelectItem>
                   <SelectItem value="ongoing">
-                    {t("agencyDashboard.bookings.campaignModal.statuses.ongoing", {
-                      defaultValue: "Ongoing",
-                    })}
+                    {t(
+                      "agencyDashboard.bookings.campaignModal.statuses.ongoing",
+                      {
+                        defaultValue: "Ongoing",
+                      },
+                    )}
                   </SelectItem>
                   <SelectItem value="completed">
-                    {t("agencyDashboard.bookings.campaignModal.statuses.completed", {
-                      defaultValue: "Completed",
-                    })}
+                    {t(
+                      "agencyDashboard.bookings.campaignModal.statuses.completed",
+                      {
+                        defaultValue: "Completed",
+                      },
+                    )}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -224,14 +233,21 @@ export const CampaignModal = ({
           </div>
 
           <div className="space-y-2">
-              <Label htmlFor="start_date">
-                {t("agencyDashboard.bookings.campaignModal.fields.startDate", {
-                  defaultValue: "Start Date",
-                })}
-              </Label>
+            <Label htmlFor="start_date">
+              {t("agencyDashboard.bookings.campaignModal.fields.startDate", {
+                defaultValue: "Start Date",
+              })}
+            </Label>
             <Input
               id="start_date"
               type="date"
+              lang={i18n.language}
+              placeholder={t(
+                "agencyDashboard.bookings.campaignModal.placeholders.startDate",
+                {
+                  defaultValue: "mm/dd/yyyy",
+                },
+              )}
               value={formData.start_date}
               onChange={(e) =>
                 setFormData({ ...formData, start_date: e.target.value })

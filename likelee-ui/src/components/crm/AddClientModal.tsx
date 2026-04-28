@@ -71,9 +71,12 @@ const AddClientModal = ({
         title: t("agencyDashboard.clientCRM.toasts.successTitle", {
           defaultValue: "Success",
         }),
-        description: t("agencyDashboard.clientCRM.modal.addClient.toasts.created", {
-          defaultValue: "Client added successfully",
-        }),
+        description: t(
+          "agencyDashboard.clientCRM.modal.addClient.toasts.created",
+          {
+            defaultValue: "Client added successfully",
+          },
+        ),
       });
       onClose();
       setFormData({
@@ -127,9 +130,12 @@ const AddClientModal = ({
         title: t("agencyDashboard.clientCRM.toasts.errorTitle", {
           defaultValue: "Error",
         }),
-        description: t("agencyDashboard.clientCRM.modal.addClient.errors.companyRequired", {
-          defaultValue: "Company name is required",
-        }),
+        description: t(
+          "agencyDashboard.clientCRM.modal.addClient.errors.companyRequired",
+          {
+            defaultValue: "Company name is required",
+          },
+        ),
         variant: "destructive",
       });
       return;
@@ -162,9 +168,12 @@ const AddClientModal = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                {t("agencyDashboard.clientCRM.modal.addClient.fields.companyName", {
-                  defaultValue: "Company Name *",
-                })}
+                {t(
+                  "agencyDashboard.clientCRM.modal.addClient.fields.companyName",
+                  {
+                    defaultValue: "Company Name *",
+                  },
+                )}
               </Label>
               <Input
                 placeholder={t(
@@ -182,9 +191,12 @@ const AddClientModal = ({
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                {t("agencyDashboard.clientCRM.modal.addClient.fields.industry", {
-                  defaultValue: "Industry",
-                })}
+                {t(
+                  "agencyDashboard.clientCRM.modal.addClient.fields.industry",
+                  {
+                    defaultValue: "Industry",
+                  },
+                )}
               </Label>
               <Select
                 value={formData.industry}
@@ -236,9 +248,12 @@ const AddClientModal = ({
 
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-700">
-              {t("agencyDashboard.clientCRM.modal.addClient.fields.pipelineStage", {
-                defaultValue: "Pipeline Stage",
-              })}
+              {t(
+                "agencyDashboard.clientCRM.modal.addClient.fields.pipelineStage",
+                {
+                  defaultValue: "Pipeline Stage",
+                },
+              )}
             </Label>
             <Select
               value={formData.status}
@@ -305,9 +320,12 @@ const AddClientModal = ({
 
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-700">
-              {t("agencyDashboard.clientCRM.modal.addClient.fields.nextFollowUp", {
-                defaultValue: "Next Follow-up Date",
-              })}
+              {t(
+                "agencyDashboard.clientCRM.modal.addClient.fields.nextFollowUp",
+                {
+                  defaultValue: "Next Follow-up Date",
+                },
+              )}
             </Label>
             <Input
               type="date"
@@ -359,9 +377,12 @@ const AddClientModal = ({
               className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
             >
               {mutation.isPending
-                ? t("agencyDashboard.clientCRM.modal.addClient.actions.adding", {
-                    defaultValue: "Adding...",
-                  })
+                ? t(
+                    "agencyDashboard.clientCRM.modal.addClient.actions.adding",
+                    {
+                      defaultValue: "Adding...",
+                    },
+                  )
                 : t("agencyDashboard.clientCRM.actions.addClient", {
                     defaultValue: "Add Client",
                   })}

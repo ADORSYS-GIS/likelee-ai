@@ -282,10 +282,18 @@ export const PlanTripModal = ({
             </div>
             <div>
               <DialogTitle className="text-2xl font-black text-gray-900">
-                {initialData ? "Update Scouting Trip" : "Plan Scouting Trip"}
+                {initialData
+                  ? t("agencyDashboard.scouting.planTripModal.titleEdit", {
+                      defaultValue: "Update Scouting Trip",
+                    })
+                  : t("agencyDashboard.scouting.planTripModal.titleCreate", {
+                      defaultValue: "Plan Scouting Trip",
+                    })}
               </DialogTitle>
               <p className="text-sm text-gray-600 font-bold">
-                Configure your field mission details
+                {t("agencyDashboard.scouting.planTripModal.subtitle", {
+                  defaultValue: "Configure your field mission details",
+                })}
               </p>
             </div>
           </div>
@@ -297,7 +305,12 @@ export const PlanTripModal = ({
             <div className="flex items-center gap-2 text-indigo-700 mb-2">
               <Info className="w-4 h-4" />
               <h3 className="text-xs font-black uppercase tracking-[0.2em]">
-                Trip Essentials
+                {t(
+                  "agencyDashboard.scouting.planTripModal.sections.tripEssentials",
+                  {
+                    defaultValue: "Trip Essentials",
+                  },
+                )}
               </h3>
             </div>
 
@@ -307,11 +320,17 @@ export const PlanTripModal = ({
                   htmlFor="trip-name"
                   className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <Tag className="w-3 h-3" /> Trip Name *
+                  <Tag className="w-3 h-3" />{" "}
+                  {t("agencyDashboard.scouting.planTripModal.fields.tripName", {
+                    defaultValue: "Trip Name *",
+                  })}
                 </Label>
                 <Input
                   id="trip-name"
-                  placeholder="e.g., NYC SoHo Holiday Scouting"
+                  placeholder={t(
+                    "agencyDashboard.scouting.planTripModal.placeholders.tripName",
+                    { defaultValue: "e.g., NYC SoHo Holiday Scouting" },
+                  )}
                   className="rounded-xl border-gray-200 bg-gray-50/50 h-12 px-4 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900 shadow-inner"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -323,7 +342,13 @@ export const PlanTripModal = ({
                   htmlFor="destination"
                   className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <MapPin className="w-3 h-3" /> Destination *
+                  <MapPin className="w-3 h-3" />{" "}
+                  {t(
+                    "agencyDashboard.scouting.planTripModal.fields.destination",
+                    {
+                      defaultValue: "Destination *",
+                    },
+                  )}
                 </Label>
                 <Popover open={locationOpen} onOpenChange={setLocationOpen}>
                   <PopoverTrigger asChild>
@@ -333,14 +358,21 @@ export const PlanTripModal = ({
                       aria-expanded={locationOpen}
                       className="w-full justify-between rounded-xl border-gray-200 bg-gray-50/50 h-10 px-4 font-bold text-gray-900 hover:bg-white hover:border-indigo-300"
                     >
-                      {destination || "Search for a location..."}
+                      {destination ||
+                        t(
+                          "agencyDashboard.scouting.planTripModal.placeholders.searchLocation",
+                          { defaultValue: "Search for a location..." },
+                        )}
                       <MapPin className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[400px] p-0" align="start">
                     <Command>
                       <CommandInput
-                        placeholder="Search location..."
+                        placeholder={t(
+                          "agencyDashboard.scouting.planTripModal.placeholders.searchLocationInput",
+                          { defaultValue: "Search location..." },
+                        )}
                         value={locationSearch}
                         onValueChange={setLocationSearch}
                       />
@@ -375,11 +407,20 @@ export const PlanTripModal = ({
                     htmlFor="latitude"
                     className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                   >
-                    <MapPin className="w-3 h-3" /> Latitude
+                    <MapPin className="w-3 h-3" />{" "}
+                    {t(
+                      "agencyDashboard.scouting.planTripModal.fields.latitude",
+                      {
+                        defaultValue: "Latitude",
+                      },
+                    )}
                   </Label>
                   <Input
                     id="latitude"
-                    placeholder="e.g., 34.0522"
+                    placeholder={t(
+                      "agencyDashboard.scouting.planTripModal.placeholders.latitude",
+                      { defaultValue: "e.g., 34.0522" },
+                    )}
                     className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
                     value={lat}
                     onChange={(e) => setLat(e.target.value)}
@@ -390,11 +431,20 @@ export const PlanTripModal = ({
                     htmlFor="longitude"
                     className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                   >
-                    <MapPin className="w-3 h-3" /> Longitude
+                    <MapPin className="w-3 h-3" />{" "}
+                    {t(
+                      "agencyDashboard.scouting.planTripModal.fields.longitude",
+                      {
+                        defaultValue: "Longitude",
+                      },
+                    )}
                   </Label>
                   <Input
                     id="longitude"
-                    placeholder="e.g., -118.2437"
+                    placeholder={t(
+                      "agencyDashboard.scouting.planTripModal.placeholders.longitude",
+                      { defaultValue: "e.g., -118.2437" },
+                    )}
                     className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900"
                     value={lng}
                     onChange={(e) => setLng(e.target.value)}

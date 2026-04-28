@@ -43,6 +43,7 @@ export const AddProspectModal = ({
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }) => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<ScoutingProspect>>({
@@ -71,8 +72,18 @@ export const AddProspectModal = ({
   const handleSubmit = async () => {
     if (!formData.full_name) {
       toast({
-        title: "Missing Information",
-        description: "Please enter a name for the prospect.",
+        title: t(
+          "agencyDashboard.scouting.addProspectForm.errors.missingInfoTitle",
+          {
+            defaultValue: "Missing Information",
+          },
+        ),
+        description: t(
+          "agencyDashboard.scouting.addProspectForm.errors.missingName",
+          {
+            defaultValue: "Please enter a name for the prospect.",
+          },
+        ),
         variant: "destructive",
       });
       return;
@@ -84,9 +95,19 @@ export const AddProspectModal = ({
 
       if (!agencyId) {
         toast({
-          title: "Error",
-          description:
-            "Could not identify your agency. Please ensure you are logged in as an agency member.",
+          title: t(
+            "agencyDashboard.scouting.addProspectForm.toasts.errorTitle",
+            {
+              defaultValue: "Error",
+            },
+          ),
+          description: t(
+            "agencyDashboard.scouting.addProspectForm.errors.missingAgency",
+            {
+              defaultValue:
+                "Could not identify your agency. Please ensure you are logged in as an agency member.",
+            },
+          ),
           variant: "destructive",
         });
         return;
@@ -101,7 +122,12 @@ export const AddProspectModal = ({
 
       if (existing) {
         toast({
-          title: "Prospect Already Exists",
+          title: t(
+            "agencyDashboard.scouting.addProspectForm.errors.duplicateTitle",
+            {
+              defaultValue: "Prospect Already Exists",
+            },
+          ),
           description: `This prospect (${existing.full_name}) is already in your pipeline with the same ${existing.email === formData.email ? "email" : "Instagram handle"}.`,
           variant: "destructive",
         });
@@ -116,8 +142,18 @@ export const AddProspectModal = ({
       } as any);
 
       toast({
-        title: "Success",
-        description: "Prospect added successfully",
+        title: t(
+          "agencyDashboard.scouting.addProspectForm.toasts.successTitle",
+          {
+            defaultValue: "Success",
+          },
+        ),
+        description: t(
+          "agencyDashboard.scouting.addProspectForm.toasts.created",
+          {
+            defaultValue: "Prospect added successfully",
+          },
+        ),
       });
 
       onOpenChange(false);
@@ -125,8 +161,15 @@ export const AddProspectModal = ({
     } catch (error) {
       console.error(error);
       toast({
-        title: "Error",
-        description: "Failed to add prospect",
+        title: t("agencyDashboard.scouting.addProspectForm.toasts.errorTitle", {
+          defaultValue: "Error",
+        }),
+        description: t(
+          "agencyDashboard.scouting.addProspectForm.toasts.failed",
+          {
+            defaultValue: "Failed to add prospect",
+          },
+        ),
         variant: "destructive",
       });
     } finally {
@@ -139,21 +182,39 @@ export const AddProspectModal = ({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            Add New Prospect
+            {t("agencyDashboard.scouting.addProspectForm.title", {
+              defaultValue: "Add New Prospect",
+            })}
           </DialogTitle>
           <p className="text-sm text-gray-500">
-            Track talent before signing them to your roster
+            {t("agencyDashboard.scouting.addProspectForm.subtitle", {
+              defaultValue: "Track talent before signing them to your roster",
+            })}
           </p>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div>
-            <h3 className="font-bold text-gray-900 mb-4">Basic Information</h3>
+            <h3 className="font-bold text-gray-900 mb-4">
+              {t(
+                "agencyDashboard.scouting.addProspectForm.sections.basicInformation",
+                {
+                  defaultValue: "Basic Information",
+                },
+              )}
+            </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">
+                  {t("agencyDashboard.scouting.addProspectForm.fields.name", {
+                    defaultValue: "Name *",
+                  })}
+                </Label>
                 <Input
                   id="name"
-                  placeholder="Full name"
+                  placeholder={t(
+                    "agencyDashboard.scouting.addProspectForm.placeholders.fullName",
+                    { defaultValue: "Full name" },
+                  )}
                   value={formData.full_name || ""}
                   onChange={(e) =>
                     handleInputChange("full_name", e.target.value)
@@ -161,7 +222,11 @@ export const AddProspectModal = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">
+                  {t("agencyDashboard.settings.notifications.channels.email", {
+                    defaultValue: "Email",
+                  })}
+                </Label>
                 <Input
                   id="email"
                   placeholder="email@example.com"
@@ -170,7 +235,11 @@ export const AddProspectModal = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">
+                  {t("agencyDashboard.settings.agencyInformation.phone", {
+                    defaultValue: "Phone",
+                  })}
+                </Label>
                 <Input
                   id="phone"
                   placeholder="+1 (555) 123-4567"
@@ -179,7 +248,14 @@ export const AddProspectModal = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="instagram">Instagram Handle</Label>
+                <Label htmlFor="instagram">
+                  {t(
+                    "agencyDashboard.scouting.addProspectForm.fields.instagramHandle",
+                    {
+                      defaultValue: "Instagram Handle",
+                    },
+                  )}
+                </Label>
                 <Input
                   id="instagram"
                   placeholder="@username"
@@ -193,7 +269,14 @@ export const AddProspectModal = ({
           </div>
 
           <div>
-            <h3 className="font-bold text-gray-900 mb-4">Categories</h3>
+            <h3 className="font-bold text-gray-900 mb-4">
+              {t(
+                "agencyDashboard.scouting.addProspectForm.sections.categories",
+                {
+                  defaultValue: "Categories",
+                },
+              )}
+            </h3>
             <div className="flex flex-wrap gap-2">
               {[
                 "Model",
@@ -224,16 +307,35 @@ export const AddProspectModal = ({
           </div>
 
           <div>
-            <h3 className="font-bold text-gray-900 mb-4">Discovery Details</h3>
+            <h3 className="font-bold text-gray-900 mb-4">
+              {t(
+                "agencyDashboard.scouting.addProspectForm.sections.discoveryDetails",
+                {
+                  defaultValue: "Discovery Details",
+                },
+              )}
+            </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Discovery Source</Label>
+                <Label>
+                  {t(
+                    "agencyDashboard.scouting.addProspectForm.fields.discoverySource",
+                    {
+                      defaultValue: "Discovery Source",
+                    },
+                  )}
+                </Label>
                 <Select
                   value={formData.source}
                   onValueChange={(val) => handleInputChange("source", val)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select source" />
+                    <SelectValue
+                      placeholder={t(
+                        "agencyDashboard.scouting.addProspectForm.placeholders.selectSource",
+                        { defaultValue: "Select source" },
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="instagram">Instagram</SelectItem>
@@ -245,7 +347,14 @@ export const AddProspectModal = ({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Discovery Date</Label>
+                <Label>
+                  {t(
+                    "agencyDashboard.scouting.addProspectForm.fields.discoveryDate",
+                    {
+                      defaultValue: "Discovery Date",
+                    },
+                  )}
+                </Label>
                 <div className="relative">
                   <Input
                     type="date"
@@ -257,9 +366,19 @@ export const AddProspectModal = ({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Discovery Location</Label>
+                <Label>
+                  {t(
+                    "agencyDashboard.scouting.addProspectForm.fields.discoveryLocation",
+                    {
+                      defaultValue: "Discovery Location",
+                    },
+                  )}
+                </Label>
                 <Input
-                  placeholder="New York, NY"
+                  placeholder={t(
+                    "agencyDashboard.scouting.addProspectForm.placeholders.discoveryLocation",
+                    { defaultValue: "New York, NY" },
+                  )}
                   value={formData.discovery_location || ""}
                   onChange={(e) =>
                     handleInputChange("discovery_location", e.target.value)
@@ -267,7 +386,14 @@ export const AddProspectModal = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label>Referred By</Label>
+                <Label>
+                  {t(
+                    "agencyDashboard.scouting.addProspectForm.fields.referredBy",
+                    {
+                      defaultValue: "Referred By",
+                    },
+                  )}
+                </Label>
                 <Input
                   placeholder="Name of referrer"
                   value={formData.referred_by || ""}
@@ -281,17 +407,31 @@ export const AddProspectModal = ({
 
           <div>
             <h3 className="font-bold text-gray-900 mb-4">
-              Status & Assignment
+              {t(
+                "agencyDashboard.scouting.addProspectForm.sections.statusAssignment",
+                {
+                  defaultValue: "Status & Assignment",
+                },
+              )}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label>
+                  {t("agencyDashboard.scouting.addProspectForm.fields.status", {
+                    defaultValue: "Status",
+                  })}
+                </Label>
                 <Select
                   value={formData.status}
                   onValueChange={(val) => handleInputChange("status", val)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue
+                      placeholder={t(
+                        "agencyDashboard.scouting.addProspectForm.placeholders.selectStatus",
+                        { defaultValue: "Select status" },
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="new_lead">New Lead</SelectItem>
@@ -317,9 +457,19 @@ export const AddProspectModal = ({
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Assigned Agent</Label>
+                <Label>
+                  {t(
+                    "agencyDashboard.scouting.addProspectForm.fields.assignedAgent",
+                    {
+                      defaultValue: "Assigned Agent",
+                    },
+                  )}
+                </Label>
                 <Input
-                  placeholder="Agent name"
+                  placeholder={t(
+                    "agencyDashboard.scouting.addProspectForm.placeholders.assignedAgent",
+                    { defaultValue: "Agent name" },
+                  )}
                   value={formData.assigned_agent_name || ""}
                   onChange={(e) =>
                     handleInputChange("assigned_agent_name", e.target.value)
@@ -330,7 +480,14 @@ export const AddProspectModal = ({
           </div>
 
           <div>
-            <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
+            <h3 className="font-bold text-gray-900 mb-2">
+              {t(
+                "agencyDashboard.scouting.addProspectForm.sections.starRating",
+                {
+                  defaultValue: "Star Rating",
+                },
+              )}
+            </h3>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((i) => (
                 <button
@@ -356,9 +513,19 @@ export const AddProspectModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label>Internal Notes</Label>
+            <Label>
+              {t(
+                "agencyDashboard.scouting.addProspectForm.fields.internalNotes",
+                {
+                  defaultValue: "Internal Notes",
+                },
+              )}
+            </Label>
             <Textarea
-              placeholder="Add notes about this prospect..."
+              placeholder={t(
+                "agencyDashboard.scouting.addProspectForm.placeholders.internalNotes",
+                { defaultValue: "Add notes about this prospect..." },
+              )}
               className="h-32"
               value={formData.notes || ""}
               onChange={(e) => handleInputChange("notes", e.target.value)}
@@ -367,7 +534,12 @@ export const AddProspectModal = ({
 
           <div className="space-y-2">
             <h3 className="font-bold text-gray-900 mb-4">
-              Social Media (Optional)
+              {t(
+                "agencyDashboard.scouting.addProspectForm.sections.socialMedia",
+                {
+                  defaultValue: "Social Media (Optional)",
+                },
+              )}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
