@@ -97,7 +97,8 @@
       "recentActivity": {
         "rosterAdded": "{{name}} zum Roster hinzugefügt",
         "rosterAddition": "Roster-Ergänzung",
-        "talentFallback": "Ein Talent"
+        "talentFallback": "Ein Talent",
+        "newLicensingRequest": "Neue Lizenzanfrage"
       },
       "time": {
         "justNow": "gerade eben",
@@ -386,6 +387,42 @@
       "choosePlan": "Plan wählen",
       "requiresPro": "Erfordert Pro"
     },
+    "header": {
+      "notifications": {
+        "title": "Benachrichtigungen",
+        "markAllRead": "Alle als gelesen markieren",
+        "all": "Alle",
+        "unread": "Ungelesen ({{count}})",
+        "none": "Keine Benachrichtigungen gefunden.",
+        "caughtUp": "Sie sind auf dem neuesten Stand!",
+        "viewAll": "Alle Benachrichtigungen ansehen",
+        "viewAllDesc": "Weiterleitung zur vollständigen Benachrichtigungsseite...",
+        "systemAlert": "Systemhinweis",
+        "systemAlertMessage": "Ihre Verifizierung wurde erfolgreich verarbeitet. Willkommen bei Likelee!",
+        "justNow": "Gerade eben",
+        "summary": {
+          "requests": "{{count}} Anfrage(n)",
+          "offers": "{{count}} Angebot(e)",
+          "feedback": "{{count}} Feedback(s)",
+          "pending": "Ausstehend: {{parts}}.",
+          "actionRequired": "Aktion erforderlich",
+          "pendingLicensing": "Sie haben {{count}} ausstehende Lizenzanfrage(n).",
+          "pendingJobs": "Sie haben {{count}} ausstehende Job-Einladung(en).",
+          "newMessage": "Neue Nachricht"
+        }
+      },
+      "profile": {
+        "organizationSettings": "Organisationseinstellungen",
+        "manageCompany": "Unternehmensprofil verwalten",
+        "teamPermissions": "Team & Berechtigungen",
+        "activeUsers": "{{count}} aktive Nutzer",
+        "billingSubscription": "Abrechnung und Abonnement",
+        "legalCompliance": "Recht & Compliance",
+        "legalSubtitle": "Verträge, Bedingungen, Datenschutz",
+        "integrations": "Integrationen",
+        "integrationsSubtitle": "Stripe, ElevenLabs verbunden"
+      }
+    },
     "settings": {
       "title": "Einstellungen",
       "profile": {
@@ -530,6 +567,35 @@
           "emptyDescription": "Beginnen Sie mit der Planung Ihrer ersten Scouting-Mission, um neue Talente zu entdecken."
         }
       },
+      "submissions": {
+        "title": "Website-Einreichungen",
+        "subtitle": "Talentbewerbungen überprüfen",
+        "pendingReview": "18 ausstehend zur Prüfung",
+        "bulkActions": "Massenaktionen",
+        "emptyTitle": "Keine neuen Einreichungen",
+        "emptyDescription": "Bewerbungen von Ihrer Website erscheinen hier."
+      },
+      "openCalls": {
+        "title": "Offene Ausschreibungen & Events",
+        "subtitle": "Organisieren Sie offene Ausschreibungen und virtuelle Castings, um neue Talente zu finden",
+        "loading": "Events werden geladen...",
+        "emptyTitle": "Keine Events geplant",
+        "emptyDescription": "Erstellen Sie Ihre erste offene Ausschreibung oder Ihr erstes Scouting-Event",
+        "createFirstEvent": "Erstes Event erstellen",
+        "active": "Aktiv",
+        "noDescription": "Keine Beschreibung vorhanden.",
+        "delete": "Löschen",
+        "editDetails": "Details bearbeiten"
+      },
+      "analytics": {
+        "failedToLoad": "Analysedaten konnten nicht geladen werden.",
+        "totalProspects": "GESAMTE INTERESSENTEN",
+        "allTime": "Gesamtzeit",
+        "conversionRate": "KONVERSIONSRATE",
+        "prospectsToSigned": "Interessenten → Signiert",
+        "avgTimeToSign": "DURCHSCHN. ZEIT BIS SIGNATUR",
+        "fromDiscovery": "Ab Entdeckung"
+      },
       "addProspectForm": {
         "title": "Neuen Interessenten hinzufügen",
         "subtitle": "Verfolgen Sie Talente, bevor Sie sie in Ihr Roster aufnehmen",
@@ -636,9 +702,16 @@
         "actions": {
           "addScout": "Scout hinzufügen",
           "cancel": "Abbrechen",
+          "saving": "Wird gespeichert...",
           "createTrip": "Reise erstellen",
           "updateTrip": "Reise aktualisieren"
         }
+      },
+      "toasts": {
+        "eventDeleted": "Event gelöscht",
+        "eventDeletedDescription": "\"{{name}}\" wurde erfolgreich entfernt.",
+        "deleteFailed": "Löschen fehlgeschlagen",
+        "deleteFailedDescription": "Beim Löschen des Events ist ein Fehler aufgetreten."
       },
       "pipeline": {
         "title": "Interessenten-Pipeline",
@@ -1506,6 +1579,8 @@
       "title": "Asset-Kataloge",
       "subtitle": "Liefern Sie lizenzierte Assets und Sprachaufnahmen nach Zahlung an Kunden aus.",
       "builder": {
+        "modalTitle": "Asset-Katalog erstellen",
+        "modalDescription": "Bündeln Sie freigegebene Assets und Sprachaufnahmen für die Kundenauslieferung.",
         "title": "Neuen Katalog erstellen",
         "description": "Wählen Sie eine bezahlte Anfrage und bereiten Sie Assets sowie Sprachaufnahmen vor.",
         "steps": {
@@ -1522,12 +1597,18 @@
         },
         "placeholders": {
           "catalogTitle": "Katalogtitel eingeben",
-          "notes": "Optionale Notizen für diese Lieferung hinzufügen"
+          "catalogTitleDetailed": "z. B. Frühlingskampagne - Voice-Paket",
+          "notes": "Optionale Notizen für diese Lieferung hinzufügen",
+          "notesDetailed": "Interne Notizen zu diesem Katalog..."
         },
         "expirationHelp": "Legen Sie fest, wann der Kataloglink ablaufen soll.",
+        "expirationHelpDetailed": "Der öffentliche Link ist nach diesem Datum bzw. dieser Uhrzeit nicht mehr erreichbar.",
         "selectRequestDescription": "Wählen Sie die bezahlte Anfrage, die mit diesem Katalog verknüpft wird.",
+        "selectRequestDescriptionDetailed": "Wählen Sie eine unterzeichnete Lizenzanfrage aus, die mit diesem Katalog verknüpft werden soll. Bezahlte und unbezahlte Anfragen sind beide zulässig. Wir zeigen den Zahlungsstatus an, damit Sie entscheiden können, ob der Katalog bereits gesendet werden soll.",
         "selectRequestEligible": "Geeignete Anfrage",
+        "selectRequestEligibleDetailed": "Vertrag unterzeichnet und für die Katalogauslieferung geeignet.",
         "unpaidRequestHelp": "Unbezahlte Anfrage. Lieferung kann vorbereitet und nach Zahlung gesendet werden.",
+        "unpaidRequestHelpDetailed": "Unbezahlte Anfrage. Sie können den Katalog trotzdem erstellen, aber die Zahlung wurde noch nicht erfasst.",
         "loadingAssets": "Assets werden geladen…",
         "selectedCount": "{{count}} ausgewählt",
         "actions": {
@@ -1540,10 +1621,15 @@
         },
         "empty": {
           "noSignedRequests": "Keine bezahlten Anfragen gefunden.",
+          "noSignedRequestsDetailed": "Keine unterzeichneten Lizenzanfragen verfügbar. Sie können trotzdem einen Katalog ohne verknüpfte Anfrage erstellen.",
           "unnamedClient": "Unbenannter Kunde",
+          "noTalentsAssetsDetailed": "Keine Talente verknüpft. Gehen Sie zurück und wählen Sie eine Quellanfrage aus - oder überspringen Sie zum Sprachschritt.",
           "noTalentsAssets": "Keine Talente für Assets verfügbar.",
+          "noAssetsForTalentDetailed": "Für dieses Talent wurden keine Assets gefunden.",
           "noAssetsForTalent": "Noch keine Assets für dieses Talent.",
+          "noTalentsVoiceDetailed": "Keine Talente verknüpft. Gehen Sie zurück und wählen Sie eine Quellanfrage aus.",
           "noTalentsVoice": "Keine Talente für Sprachaufnahmen verfügbar.",
+          "noVoiceForTalentDetailed": "Dieses Talent hat noch keine Sprachaufnahmen hochgeladen.",
           "noVoiceForTalent": "Noch keine Aufnahmen für dieses Talent."
         },
         "defaults": {
@@ -2843,6 +2929,7 @@
         "assignTalent": {
           "title": "Talent zuweisen",
           "subtitle": "Wählen Sie ein oder mehrere Talente aus Ihrer Liste aus, um sie diesem Angebot zuzuweisen.",
+          "confirmDialogTitle": "Talentzuweisung bestätigen?",
           "filterPlaceholder": "Nach Name oder E-Mail filtern...",
           "loadingTalents": "Talente werden geladen…",
           "fetchingRoster": "Ihre Agenturliste wird abgerufen.",
@@ -2882,6 +2969,48 @@
           "noFilesSelected": "Keine Dateien ausgewählt",
           "filesSelected": "{count} Datei(en) ausgewählt",
           "upload": "Hochladen"
+        },
+        "viewOnly": {
+          "title": "Nur-Anzeige-Modus",
+          "description": "Ihre Rolle erlaubt das Anzeigen von Lieferungen, aber nicht deren Freigabe oder Verwaltung."
+        },
+        "noCaption": "Keine Beschriftung",
+        "feedbackLabels": {
+          "yourFeedback": "Ihr Feedback:",
+          "brandFeedback": "Feedback der Marke:"
+        },
+        "permissions": {
+          "cannotApprove": "Ihre Rolle kann Lieferungen nicht freigeben",
+          "cannotRevise": "Ihre Rolle kann keine Überarbeitungen anfordern",
+          "cannotReject": "Ihre Rolle kann Lieferungen nicht ablehnen"
+        },
+        "notSignedDialog": {
+          "title": "Angebot noch nicht unterzeichnet",
+          "description": "Das Angebot muss vollständig unterzeichnet sein, bevor Sie Lieferungen einreichen können. Nach der Unterzeichnung können Sie auch bei noch ausstehender Zahlung einreichen (mit Bestätigung)."
+        },
+        "unpaidSubmitDialog": {
+          "title": "Lieferungen vor der Zahlung einreichen?",
+          "description": "Die Marke hat dieses Angebot noch nicht bezahlt. Sie können die Lieferungen trotzdem jetzt einreichen, aber die Zahlung ist vor der Freigabe des Escrows erforderlich.",
+          "confirm": "Trotzdem einreichen"
+        },
+        "submittedToBrand": "An die Marke gesendet",
+        "reviewModal": {
+          "approveTitle": "Lieferung freigeben",
+          "rejectTitle": "Lieferung ablehnen",
+          "requestChangesTitle": "Änderungen anfordern",
+          "approveDescription": "Markieren Sie diese Lieferung nach Freigabe durch die Marke als genehmigt.",
+          "rejectDescription": "Lehnen Sie diese Lieferung ab und benachrichtigen Sie den Creator.",
+          "requestChangesDescription": "Fordern Sie Überarbeitungen vom Creator an.",
+          "optionalNoteLabel": "Optionale Notiz für den Creator.",
+          "feedbackLabel": "Feedback für den Creator",
+          "optionalNotePlaceholder": "Optionale Notiz für den Creator.",
+          "feedbackPlaceholder": "Was genau soll geändert werden?",
+          "approveAction": "Freigeben",
+          "rejectAction": "Ablehnen",
+          "sendFeedbackAction": "Feedback senden"
+        },
+        "deleteDialog": {
+          "title": "Lieferung löschen"
         }
       },
       "brandConnections": {
@@ -2971,6 +3100,14 @@
         },
         "contractHub": {
           "title": "Vertragszentrum",
+          "managementTag": "Agenturverwaltung",
+          "noActiveOffers": "Keine aktiven Kampagnenangebote zur Vertragsverwaltung vorhanden.",
+          "campaignOffers": "Kampagnenangebote",
+          "campaignOffer": "Kampagnenangebot",
+          "brandLabel": "Marke",
+          "unknownBrand": "Unbekannt",
+          "selectOfferTitle": "Angebot auswählen",
+          "selectOfferDescription": "Wählen Sie ein Angebot aus der Seitenleiste aus, um seine Verträge zu verwalten.",
           "noContracts": "Keine Verträge gefunden",
           "viewContract": "Vertrag anzeigen",
           "download": "Herunterladen",
@@ -2993,11 +3130,15 @@
           "assignTalent": "Talent zuweisen"
         },
         "feedback": {
-          "title": "Kunden-Feedback",
+          "title": "Paket-Feedback",
+          "viewActivity": "Aktivität anzeigen",
           "noFeedback": "Kein Feedback verfügbar",
           "viewFeedback": "Feedback anzeigen",
           "empty": "Noch kein Paket-Feedback verfügbar.",
           "loading": "Paket-Feedback wird geladen…"
+        },
+        "dialogs": {
+          "goToRosterInvite": "Zum Roster und zur Einladung"
         },
         "accounting": {
           "invoiceGenerationView": {

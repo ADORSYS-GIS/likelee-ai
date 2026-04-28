@@ -97,7 +97,8 @@
       "recentActivity": {
         "rosterAdded": "{{name}} added to roster",
         "rosterAddition": "Roster Addition",
-        "talentFallback": "A talent"
+        "talentFallback": "A talent",
+        "newLicensingRequest": "New Licensing Request"
       },
       "time": {
         "justNow": "just now",
@@ -1067,6 +1068,8 @@
       "title": "Asset Catalogs",
       "subtitle": "Deliver licensed assets and voice recordings to clients after payment.",
       "builder": {
+        "modalTitle": "Create Asset Catalog",
+        "modalDescription": "Bundle approved assets and voice recordings for client delivery.",
         "title": "Create New Catalog",
         "description": "Select a paid request and prepare assets and voice recordings for delivery.",
         "steps": {
@@ -1083,12 +1086,18 @@
         },
         "placeholders": {
           "catalogTitle": "Enter catalog title",
-          "notes": "Add optional notes for this delivery"
+          "catalogTitleDetailed": "e.g. Spring Campaign - Voice Pack",
+          "notes": "Add optional notes for this delivery",
+          "notesDetailed": "Internal notes about this catalog..."
         },
         "expirationHelp": "Set when this catalog link should expire.",
+        "expirationHelpDetailed": "Public link will become inaccessible after this date/time.",
         "selectRequestDescription": "Choose the paid request this catalog should be linked to.",
+        "selectRequestDescriptionDetailed": "Select a signed licensing request to link this catalog to. Paid and unpaid requests are both allowed. We will show the payment status so you can decide whether to send the catalog yet.",
         "selectRequestEligible": "Eligible request",
+        "selectRequestEligibleDetailed": "Contract signed and eligible for catalog delivery.",
         "unpaidRequestHelp": "Unpaid request. Delivery can be prepared but should be sent after payment.",
+        "unpaidRequestHelpDetailed": "Unpaid request. You can still create the catalog, but payment has not been recorded yet.",
         "loadingAssets": "Loading assets…",
         "selectedCount": "{{count}} selected",
         "actions": {
@@ -1101,10 +1110,15 @@
         },
         "empty": {
           "noSignedRequests": "No paid requests found.",
+          "noSignedRequestsDetailed": "No signed licensing requests available. You can still create a catalog without linking a request.",
           "unnamedClient": "Unnamed client",
+          "noTalentsAssetsDetailed": "No talents linked. Go back and select a source request - or skip to the Voice step.",
+          "noAssetsForTalentDetailed": "No assets found for this talent.",
           "noTalentsAssets": "No talents available for assets.",
           "noAssetsForTalent": "No assets for this talent yet.",
+          "noTalentsVoiceDetailed": "No talents linked. Go back and select a source request.",
           "noTalentsVoice": "No talents available for voice recordings.",
+          "noVoiceForTalentDetailed": "No voice recordings uploaded by this talent yet.",
           "noVoiceForTalent": "No recordings for this talent yet."
         },
         "defaults": {
@@ -2440,6 +2454,7 @@
         "assignTalent": {
           "title": "Assign Talent",
           "subtitle": "Select one or more talents from your roster to assign to this offer.",
+          "confirmDialogTitle": "Confirm talent assignment?",
           "filterPlaceholder": "Filter by name or email...",
           "loadingTalents": "Loading talents…",
           "fetchingRoster": "Fetching your agency roster.",
@@ -2479,6 +2494,48 @@
           "noFilesSelected": "No files selected",
           "filesSelected": "{count} file(s) selected",
           "upload": "Upload"
+        },
+        "viewOnly": {
+          "title": "View Only Mode",
+          "description": "Your role allows viewing deliverables but not approving or managing them."
+        },
+        "noCaption": "No caption",
+        "feedbackLabels": {
+          "yourFeedback": "Your Feedback:",
+          "brandFeedback": "Brand Feedback:"
+        },
+        "permissions": {
+          "cannotApprove": "Your role cannot approve deliverables",
+          "cannotRevise": "Your role cannot revise deliverables",
+          "cannotReject": "Your role cannot reject deliverables"
+        },
+        "notSignedDialog": {
+          "title": "Offer not signed yet",
+          "description": "The offer must be fully signed before you can submit deliverables. Once signed, you can submit even if payment is still pending (with confirmation)."
+        },
+        "unpaidSubmitDialog": {
+          "title": "Submit deliverables before payment?",
+          "description": "The brand has not paid for this offer yet. You can still submit deliverables now, but payment is required before escrow release.",
+          "confirm": "Submit anyway"
+        },
+        "submittedToBrand": "Submitted to brand",
+        "reviewModal": {
+          "approveTitle": "Approve Deliverable",
+          "rejectTitle": "Reject Deliverable",
+          "requestChangesTitle": "Request Changes",
+          "approveDescription": "Mark this deliverable as approved after brand sign-off.",
+          "rejectDescription": "Reject this deliverable and notify the creator.",
+          "requestChangesDescription": "Request revisions from the creator.",
+          "optionalNoteLabel": "Optional note for the creator.",
+          "feedbackLabel": "Feedback for creator",
+          "optionalNotePlaceholder": "Optional note for the creator.",
+          "feedbackPlaceholder": "What exactly should be changed?",
+          "approveAction": "Approve",
+          "rejectAction": "Reject",
+          "sendFeedbackAction": "Send Feedback"
+        },
+        "deleteDialog": {
+          "title": "Delete Deliverable"
         }
       },
       "brandConnections": {
@@ -2560,6 +2617,14 @@
         },
         "contractHub": {
           "title": "Contract Hub",
+          "managementTag": "Agency Management",
+          "noActiveOffers": "No active campaign offers to manage contracts for.",
+          "campaignOffers": "Campaign Offers",
+          "campaignOffer": "Campaign offer",
+          "brandLabel": "Brand",
+          "unknownBrand": "Unknown",
+          "selectOfferTitle": "Select an offer",
+          "selectOfferDescription": "Choose an offer from the sidebar to manage its contracts.",
           "noContracts": "No contracts found",
           "viewContract": "View Contract",
           "download": "Download",
@@ -2580,9 +2645,15 @@
           "assignTalent": "Assign Talent"
         },
         "feedback": {
-          "title": "Client Feedback",
+          "title": "Package Feedback",
+          "loading": "Loading package feedback...",
+          "empty": "No package feedback yet.",
+          "viewActivity": "View Activity",
           "noFeedback": "No feedback available",
           "viewFeedback": "View Feedback"
+        },
+        "dialogs": {
+          "goToRosterInvite": "Go to Roster & Invite"
         },
         "accounting": {
           "invoiceGenerationView": {

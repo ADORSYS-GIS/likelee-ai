@@ -97,7 +97,8 @@
       "recentActivity": {
         "rosterAdded": "{{name}} añadido al roster",
         "rosterAddition": "Adición al roster",
-        "talentFallback": "Un talento"
+        "talentFallback": "Un talento",
+        "newLicensingRequest": "Nueva solicitud de licencia"
       },
       "time": {
         "justNow": "ahora mismo",
@@ -1629,6 +1630,8 @@
       "title": "Catálogos de assets",
       "subtitle": "Entrega assets con licencia y grabaciones de voz a clientes después del pago.",
       "builder": {
+        "modalTitle": "Crear catálogo de assets",
+        "modalDescription": "Agrupa assets aprobados y grabaciones de voz para la entrega al cliente.",
         "title": "Crear nuevo catálogo",
         "description": "Selecciona una solicitud pagada y prepara assets y grabaciones de voz para la entrega.",
         "steps": {
@@ -1645,12 +1648,18 @@
         },
         "placeholders": {
           "catalogTitle": "Ingresa el título del catálogo",
-          "notes": "Agrega notas opcionales para esta entrega"
+          "catalogTitleDetailed": "p. ej. Campaña de primavera - Paquete de voz",
+          "notes": "Agrega notas opcionales para esta entrega",
+          "notesDetailed": "Notas internas sobre este catálogo..."
         },
         "expirationHelp": "Define cuándo debe expirar el enlace del catálogo.",
+        "expirationHelpDetailed": "El enlace público dejará de estar disponible después de esta fecha/hora.",
         "selectRequestDescription": "Elige la solicitud pagada que se vinculará a este catálogo.",
+        "selectRequestDescriptionDetailed": "Selecciona una solicitud de licencia firmada para vincular este catálogo. Se permiten solicitudes pagadas y no pagadas. Mostraremos el estado del pago para que puedas decidir si enviar ya el catálogo.",
         "selectRequestEligible": "Solicitud elegible",
+        "selectRequestEligibleDetailed": "Contrato firmado y apto para la entrega del catálogo.",
         "unpaidRequestHelp": "Solicitud no pagada. Puedes preparar la entrega y enviarla después del pago.",
+        "unpaidRequestHelpDetailed": "Solicitud impaga. Aun así puedes crear el catálogo, pero el pago todavía no se ha registrado.",
         "loadingAssets": "Cargando assets…",
         "selectedCount": "{{count}} seleccionado(s)",
         "actions": {
@@ -1663,10 +1672,15 @@
         },
         "empty": {
           "noSignedRequests": "No se encontraron solicitudes pagadas.",
+          "noSignedRequestsDetailed": "No hay solicitudes de licencia firmadas disponibles. Aun así puedes crear un catálogo sin vincular una solicitud.",
           "unnamedClient": "Cliente sin nombre",
+          "noTalentsAssetsDetailed": "No hay talentos vinculados. Vuelve atrás y selecciona una solicitud de origen, o salta al paso de Voz.",
           "noTalentsAssets": "No hay talentos disponibles para assets.",
+          "noAssetsForTalentDetailed": "No se encontraron assets para este talento.",
           "noAssetsForTalent": "Aún no hay assets para este talento.",
+          "noTalentsVoiceDetailed": "No hay talentos vinculados. Vuelve atrás y selecciona una solicitud de origen.",
           "noTalentsVoice": "No hay talentos disponibles para grabaciones de voz.",
+          "noVoiceForTalentDetailed": "Este talento aún no ha subido grabaciones de voz.",
           "noVoiceForTalent": "Aún no hay grabaciones para este talento."
         },
         "defaults": {
@@ -2584,7 +2598,8 @@
         "billingSubscription": "Facturación y suscripción",
         "legalCompliance": "Legal y cumplimiento",
         "legalSubtitle": "Contratos, términos, privacidad",
-        "integrations": "Integraciones"
+        "integrations": "Integraciones",
+        "integrationsSubtitle": "Stripe y ElevenLabs conectados"
       }
     },
     "compCard": {
@@ -2876,6 +2891,7 @@
         "assignTalent": {
           "title": "Asignar talento",
           "subtitle": "Seleccione uno o más talentos de su lista para asignarlos a esta oferta.",
+          "confirmDialogTitle": "¿Confirmar asignación de talento?",
           "filterPlaceholder": "Filtrar por nombre o correo...",
           "loadingTalents": "Cargando talentos…",
           "fetchingRoster": "Obteniendo su lista de agencia.",
@@ -2915,6 +2931,48 @@
           "noFilesSelected": "Ningún archivo seleccionado",
           "filesSelected": "{count} archivo(s) seleccionado(s)",
           "upload": "Subir"
+        },
+        "viewOnly": {
+          "title": "Modo solo lectura",
+          "description": "Tu rol permite ver los entregables, pero no aprobarlos ni gestionarlos."
+        },
+        "noCaption": "Sin título",
+        "feedbackLabels": {
+          "yourFeedback": "Tus comentarios:",
+          "brandFeedback": "Comentarios de la marca:"
+        },
+        "permissions": {
+          "cannotApprove": "Tu rol no puede aprobar entregables",
+          "cannotRevise": "Tu rol no puede solicitar revisiones",
+          "cannotReject": "Tu rol no puede rechazar entregables"
+        },
+        "notSignedDialog": {
+          "title": "La oferta aún no está firmada",
+          "description": "La oferta debe estar completamente firmada antes de que puedas enviar entregables. Una vez firmada, puedes enviarlos incluso si el pago sigue pendiente (con confirmación)."
+        },
+        "unpaidSubmitDialog": {
+          "title": "¿Enviar entregables antes del pago?",
+          "description": "La marca aún no ha pagado esta oferta. Aun así puedes enviar los entregables ahora, pero el pago es necesario antes de liberar el escrow.",
+          "confirm": "Enviar de todos modos"
+        },
+        "submittedToBrand": "Enviado a la marca",
+        "reviewModal": {
+          "approveTitle": "Aprobar entregable",
+          "rejectTitle": "Rechazar entregable",
+          "requestChangesTitle": "Solicitar cambios",
+          "approveDescription": "Marca este entregable como aprobado después de la aprobación de la marca.",
+          "rejectDescription": "Rechaza este entregable y notifica al creador.",
+          "requestChangesDescription": "Solicita revisiones al creador.",
+          "optionalNoteLabel": "Nota opcional para el creador.",
+          "feedbackLabel": "Comentarios para el creador",
+          "optionalNotePlaceholder": "Nota opcional para el creador.",
+          "feedbackPlaceholder": "¿Qué debe cambiarse exactamente?",
+          "approveAction": "Aprobar",
+          "rejectAction": "Rechazar",
+          "sendFeedbackAction": "Enviar comentarios"
+        },
+        "deleteDialog": {
+          "title": "Eliminar entregable"
         }
       },
       "brandConnections": {
@@ -2943,6 +3001,14 @@
         },
         "contractHub": {
           "title": "Centro de contratos",
+          "managementTag": "Gestión de agencia",
+          "noActiveOffers": "No hay ofertas de campaña activas para gestionar contratos.",
+          "campaignOffers": "Ofertas de campaña",
+          "campaignOffer": "Oferta de campaña",
+          "brandLabel": "Marca",
+          "unknownBrand": "Desconocida",
+          "selectOfferTitle": "Selecciona una oferta",
+          "selectOfferDescription": "Elige una oferta de la barra lateral para gestionar sus contratos.",
           "noContracts": "No se encontraron contratos",
           "viewContract": "Ver contrato",
           "download": "Descargar",
@@ -2965,11 +3031,15 @@
           "assignTalent": "Asignar talento"
         },
         "feedback": {
-          "title": "Comentarios del cliente",
+          "title": "Comentarios del paquete",
+          "viewActivity": "Ver actividad",
           "noFeedback": "No hay comentarios disponibles",
           "viewFeedback": "Ver comentarios",
           "empty": "Aún no hay comentarios del paquete.",
           "loading": "Cargando comentarios del paquete…"
+        },
+        "dialogs": {
+          "goToRosterInvite": "Ir al roster e invitar"
         },
         "accounting": {
           "invoiceGenerationView": {

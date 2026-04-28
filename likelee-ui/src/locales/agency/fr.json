@@ -96,7 +96,8 @@
       "recentActivity": {
         "rosterAdded": "{{name}} ajouté au roster",
         "rosterAddition": "Ajout au roster",
-        "talentFallback": "Un talent"
+        "talentFallback": "Un talent",
+        "newLicensingRequest": "Nouvelle demande de licence"
       },
       "time": {
         "justNow": "à l'instant",
@@ -384,6 +385,42 @@
       "signOut": "Se déconnecter",
       "choosePlan": "Choisir un plan",
       "requiresPro": "Nécessite Pro"
+    },
+    "header": {
+      "notifications": {
+        "title": "Notifications",
+        "markAllRead": "Tout marquer comme lu",
+        "all": "Toutes",
+        "unread": "Non lues ({{count}})",
+        "none": "Aucune notification trouvée.",
+        "caughtUp": "Vous êtes à jour !",
+        "viewAll": "Voir toutes les notifications",
+        "viewAllDesc": "Navigation vers la page complète des notifications...",
+        "systemAlert": "Alerte système",
+        "systemAlertMessage": "Votre vérification a été traitée avec succès. Bienvenue sur Likelee !",
+        "justNow": "À l'instant",
+        "summary": {
+          "requests": "{{count}} demande(s)",
+          "offers": "{{count}} offre(s)",
+          "feedback": "{{count}} retour(s)",
+          "pending": "En attente : {{parts}}.",
+          "actionRequired": "Action requise",
+          "pendingLicensing": "Vous avez {{count}} demande(s) de licence en attente.",
+          "pendingJobs": "Vous avez {{count}} invitation(s) de mission en attente.",
+          "newMessage": "Nouveau message"
+        }
+      },
+      "profile": {
+        "organizationSettings": "Paramètres de l'organisation",
+        "manageCompany": "Gérer le profil de l'entreprise",
+        "teamPermissions": "Équipe & autorisations",
+        "activeUsers": "{{count}} utilisateurs actifs",
+        "billingSubscription": "Facturation et abonnement",
+        "legalCompliance": "Juridique & conformité",
+        "legalSubtitle": "Contrats, conditions, confidentialité",
+        "integrations": "Intégrations",
+        "integrationsSubtitle": "Stripe, ElevenLabs connectés"
+      }
     },
     "settings": {
       "title": "Paramètres",
@@ -1505,6 +1542,8 @@
       "title": "Catalogues d'assets",
       "subtitle": "Livrez les assets sous licence et les enregistrements vocaux aux clients après paiement.",
       "builder": {
+        "modalTitle": "Créer un catalogue d'assets",
+        "modalDescription": "Regroupez les assets approuvés et les enregistrements vocaux pour la livraison au client.",
         "title": "Créer un nouveau catalogue",
         "description": "Sélectionnez une demande payée puis préparez les assets et enregistrements vocaux.",
         "steps": {
@@ -1521,12 +1560,18 @@
         },
         "placeholders": {
           "catalogTitle": "Saisissez le titre du catalogue",
-          "notes": "Ajoutez des notes optionnelles pour cette livraison"
+          "catalogTitleDetailed": "ex. Campagne de printemps - Pack voix",
+          "notes": "Ajoutez des notes optionnelles pour cette livraison",
+          "notesDetailed": "Notes internes à propos de ce catalogue..."
         },
         "expirationHelp": "Définissez la date d'expiration du lien du catalogue.",
+        "expirationHelpDetailed": "Le lien public deviendra inaccessible après cette date/heure.",
         "selectRequestDescription": "Choisissez la demande payée à lier à ce catalogue.",
+        "selectRequestDescriptionDetailed": "Sélectionnez une demande de licence signée à laquelle lier ce catalogue. Les demandes payées et impayées sont toutes deux autorisées. Nous afficherons le statut du paiement afin que vous puissiez décider s'il faut déjà envoyer le catalogue.",
         "selectRequestEligible": "Demande éligible",
+        "selectRequestEligibleDetailed": "Contrat signé et éligible à la livraison du catalogue.",
         "unpaidRequestHelp": "Demande impayée. Vous pouvez préparer la livraison puis l'envoyer après paiement.",
+        "unpaidRequestHelpDetailed": "Demande impayée. Vous pouvez quand même créer le catalogue, mais le paiement n'a pas encore été enregistré.",
         "loadingAssets": "Chargement des assets…",
         "selectedCount": "{{count}} sélectionné(s)",
         "actions": {
@@ -1539,10 +1584,15 @@
         },
         "empty": {
           "noSignedRequests": "Aucune demande payée trouvée.",
+          "noSignedRequestsDetailed": "Aucune demande de licence signée disponible. Vous pouvez quand même créer un catalogue sans lier de demande.",
           "unnamedClient": "Client sans nom",
+          "noTalentsAssetsDetailed": "Aucun talent lié. Revenez en arrière et sélectionnez une demande source - ou passez directement à l'étape Voix.",
           "noTalentsAssets": "Aucun talent disponible pour les assets.",
+          "noAssetsForTalentDetailed": "Aucun asset trouvé pour ce talent.",
           "noAssetsForTalent": "Aucun asset pour ce talent.",
+          "noTalentsVoiceDetailed": "Aucun talent lié. Revenez en arrière et sélectionnez une demande source.",
           "noTalentsVoice": "Aucun talent disponible pour les enregistrements vocaux.",
+          "noVoiceForTalentDetailed": "Aucun enregistrement vocal n'a encore été téléversé par ce talent.",
           "noVoiceForTalent": "Aucun enregistrement pour ce talent."
         },
         "defaults": {
@@ -2842,6 +2892,7 @@
         "assignTalent": {
           "title": "Attribuer un talent",
           "subtitle": "Sélectionnez un ou plusieurs talents de votre liste pour les attribuer à cette offre.",
+          "confirmDialogTitle": "Confirmer l'attribution du talent ?",
           "filterPlaceholder": "Filtrer par nom ou email...",
           "loadingTalents": "Chargement des talents…",
           "fetchingRoster": "Récupération de votre liste d'agence.",
@@ -2881,6 +2932,48 @@
           "noFilesSelected": "Aucun fichier sélectionné",
           "filesSelected": "{count} fichier(s) sélectionné(s)",
           "upload": "Télécharger"
+        },
+        "viewOnly": {
+          "title": "Mode consultation seule",
+          "description": "Votre rôle vous permet de consulter les livraisons, mais pas de les approuver ni de les gérer."
+        },
+        "noCaption": "Aucune légende",
+        "feedbackLabels": {
+          "yourFeedback": "Votre retour :",
+          "brandFeedback": "Retour de la marque :"
+        },
+        "permissions": {
+          "cannotApprove": "Votre rôle ne permet pas d'approuver les livraisons",
+          "cannotRevise": "Votre rôle ne permet pas de demander des révisions",
+          "cannotReject": "Votre rôle ne permet pas de rejeter les livraisons"
+        },
+        "notSignedDialog": {
+          "title": "Offre pas encore signée",
+          "description": "L'offre doit être entièrement signée avant que vous puissiez soumettre des livraisons. Une fois signée, vous pouvez soumettre même si le paiement est encore en attente (avec confirmation)."
+        },
+        "unpaidSubmitDialog": {
+          "title": "Soumettre les livraisons avant paiement ?",
+          "description": "La marque n'a pas encore payé cette offre. Vous pouvez tout de même soumettre les livraisons maintenant, mais le paiement est requis avant la libération du séquestre.",
+          "confirm": "Soumettre quand même"
+        },
+        "submittedToBrand": "Soumis à la marque",
+        "reviewModal": {
+          "approveTitle": "Approuver le livrable",
+          "rejectTitle": "Rejeter le livrable",
+          "requestChangesTitle": "Demander des modifications",
+          "approveDescription": "Marquez ce livrable comme approuvé après validation de la marque.",
+          "rejectDescription": "Rejetez ce livrable et avertissez le créateur.",
+          "requestChangesDescription": "Demandez des révisions au créateur.",
+          "optionalNoteLabel": "Note facultative pour le créateur.",
+          "feedbackLabel": "Retour pour le créateur",
+          "optionalNotePlaceholder": "Note facultative pour le créateur.",
+          "feedbackPlaceholder": "Qu'est-ce qui doit être modifié exactement ?",
+          "approveAction": "Approuver",
+          "rejectAction": "Rejeter",
+          "sendFeedbackAction": "Envoyer le retour"
+        },
+        "deleteDialog": {
+          "title": "Supprimer le livrable"
         }
       },
       "brandConnections": {
@@ -2970,6 +3063,14 @@
         },
         "contractHub": {
           "title": "Centre de contrats",
+          "managementTag": "Gestion d'agence",
+          "noActiveOffers": "Aucune offre de campagne active à gérer côté contrats.",
+          "campaignOffers": "Offres de campagne",
+          "campaignOffer": "Offre de campagne",
+          "brandLabel": "Marque",
+          "unknownBrand": "Inconnue",
+          "selectOfferTitle": "Sélectionnez une offre",
+          "selectOfferDescription": "Choisissez une offre dans la barre latérale pour gérer ses contrats.",
           "noContracts": "Aucun contrat trouvé",
           "viewContract": "Voir le contrat",
           "download": "Télécharger",
@@ -2992,11 +3093,15 @@
           "assignTalent": "Assigner un talent"
         },
         "feedback": {
-          "title": "Commentaires client",
+          "title": "Retour sur le package",
+          "viewActivity": "Voir l'activité",
           "noFeedback": "Aucun commentaire disponible",
           "viewFeedback": "Voir les commentaires",
           "empty": "Aucun commentaire sur le package pour le moment.",
           "loading": "Chargement des commentaires sur le package…"
+        },
+        "dialogs": {
+          "goToRosterInvite": "Aller au roster et inviter"
         },
         "accounting": {
           "invoiceGenerationView": {
