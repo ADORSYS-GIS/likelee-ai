@@ -20,6 +20,19 @@ if [ -f .env ]; then
   set -a; . ./.env; set +a
 fi
 
+# GHCR login if credentials are available
+if [ -n "${GHCR_USER:-}" ] && [ -n "${GHCR_TOKEN:-}" ]; then
+  echo "=== Logging into GHCR ==="
+  echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+elif [ -n "${STAGING_GHCR_USER:-}" ] && [ -n "${STAGING_GHCR_TOKEN:-}" ]; then
+  echo "=== Logging into GHCR ==="
+  echo "${STAGING_GHCR_TOKEN}" | docker login ghcr.io -u "${STAGING_GHCR_USER}" --password-stdin
+else
+  echo "WARN: No GHCR credentials found in .env (GHCR_USER/GHCR_TOKEN or STAGING_GHCR_USER/STAGING_GHCR_TOKEN)"
+  echo "Images may be private and require authentication."
+  echo "To login manually: echo YOUR_TOKEN | docker login ghcr.io -u YOUR_USERNAME --password-stdin"
+fi
+
 # Use staging nginx config
 cp -f nginx.staging.conf nginx.conf || true
 
