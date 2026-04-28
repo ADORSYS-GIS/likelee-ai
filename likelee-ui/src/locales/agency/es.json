@@ -535,6 +535,37 @@
       }
     },
     "bookings": {
+      "campaignModal": {
+        "titleCreate": "Crear nueva campaña",
+        "titleEdit": "Editar campaña",
+        "fields": {
+          "name": "Nombre de la campaña *",
+          "status": "Estado",
+          "duration": "Duración (días)",
+          "startDate": "Fecha de inicio"
+        },
+        "placeholders": {
+          "name": "p. ej. Sesión de verano 2024"
+        },
+        "statuses": {
+          "created": "Creada",
+          "ongoing": "En curso",
+          "completed": "Completada"
+        },
+        "actions": {
+          "cancel": "Cancelar",
+          "saving": "Guardando...",
+          "save": "Guardar campaña"
+        },
+        "errors": {
+          "missingName": "Por favor ingresa el nombre de la campaña"
+        },
+        "toasts": {
+          "created": "Campaña creada",
+          "updated": "Campaña actualizada",
+          "error": "Error al guardar la campaña"
+        }
+      },
       "tabs": {
         "bookingRequests": {
           "title": "Solicitudes de reserva",
@@ -1161,6 +1192,119 @@
         "errorTitle": "Error",
         "clientDeleted": "Cliente eliminado correctamente",
         "deleteFailed": "No se pudo eliminar el cliente"
+      },
+      "card": {
+        "viewProfile": "Ver perfil",
+        "sendPackage": "Enviar paquete",
+        "mailAppTitle": "No hay aplicación de correo configurada",
+        "mailAppDescription": "Configura Thunderbird como tu aplicación de correo predeterminada para abrir el correo.",
+        "noEmailTitle": "No hay correo registrado",
+        "noEmailDescription": "Agrega un correo de contacto para enviar un email.",
+        "openEmailErrorTitle": "No se pudo abrir el correo",
+        "openEmailErrorDescription": "No se encontró un correo de contacto para este cliente."
+      },
+      "modal": {
+        "addClient": {
+          "title": "Agregar nuevo cliente",
+          "fields": {
+            "companyName": "Nombre de la empresa *",
+            "industry": "Industria",
+            "website": "Sitio web",
+            "pipelineStage": "Etapa del pipeline",
+            "tags": "Etiquetas",
+            "nextFollowUp": "Fecha de próximo seguimiento",
+            "notes": "Notas"
+          },
+          "placeholders": {
+            "companyName": "Empresa S.A.",
+            "selectIndustry": "Seleccionar industria",
+            "website": "empresa.com",
+            "selectStage": "Seleccionar etapa",
+            "notes": "Agrega notas sobre este cliente..."
+          },
+          "actions": {
+            "adding": "Agregando..."
+          },
+          "errors": {
+            "companyRequired": "El nombre de la empresa es obligatorio"
+          },
+          "toasts": {
+            "created": "Cliente agregado correctamente",
+            "failed": "No se pudo agregar el cliente"
+          }
+        },
+        "profile": {
+          "tabs": {
+            "overview": "Resumen",
+            "contacts": "Contactos",
+            "communications": "Comunicaciones",
+            "bookings": "Reservas",
+            "filesNotes": "Archivos y notas"
+          },
+          "sections": {
+            "companyInformation": "Información de la empresa",
+            "clientPreferences": "Preferencias del cliente",
+            "clientMetrics": "Métricas del cliente",
+            "contactList": "Lista de contactos",
+            "communicationHistory": "Historial de comunicaciones",
+            "bookingsHistory": "Historial de reservas",
+            "notes": "Notas",
+            "filesDocuments": "Archivos y documentos"
+          },
+          "fields": {
+            "industry": "Industria",
+            "website": "Sitio web",
+            "nextFollowUp": "Próximo seguimiento",
+            "tags": "Etiquetas",
+            "preferredTalentTypes": "Tipos de talento preferidos",
+            "budgetRange": "Rango de presupuesto",
+            "bookingLeadTime": "Anticipación de reserva"
+          },
+          "metrics": {
+            "totalBookings": "Reservas totales",
+            "packagesSent": "Paquetes enviados"
+          },
+          "actions": {
+            "addContact": "Agregar contacto",
+            "logCommunication": "Registrar comunicación",
+            "saveNotes": "Guardar notas",
+            "uploadFile": "Subir archivo",
+            "viewFile": "Ver",
+            "editClient": "Editar cliente",
+            "close": "Cerrar"
+          },
+          "states": {
+            "loadingContacts": "Cargando contactos...",
+            "noContacts": "Aún no se han agregado contactos",
+            "loadingHistory": "Cargando historial...",
+            "noCommunications": "Aún no hay comunicaciones registradas",
+            "loadingBookings": "Cargando reservas...",
+            "noBookings": "No se encontraron reservas para este cliente",
+            "loadingDocuments": "Cargando documentos...",
+            "noFiles": "Aún no se han subido archivos"
+          },
+          "placeholders": {
+            "notes": "Ingresa notas del cliente, preferencias o detalles internos..."
+          },
+          "common": {
+            "primary": "Principal",
+            "noRole": "Sin rol especificado",
+            "unknownTalent": "Talento desconocido",
+            "noLocation": "Sin ubicación",
+            "added": "Agregado",
+            "never": "Nunca"
+          },
+          "errors": {
+            "noEmailTitle": "No hay correo registrado",
+            "noEmailDescription": "Agrega un correo de contacto para enviar un email."
+          },
+          "toasts": {
+            "notesSavedTitle": "Notas guardadas",
+            "notesSavedDescription": "Las notas del cliente se actualizaron correctamente.",
+            "fileUploadedTitle": "Archivo subido",
+            "fileUploadedDescription": "El documento se ha subido correctamente."
+          }
+        }
       }
     },
     "packages": {
@@ -2458,6 +2602,8 @@
           "viewContract": "Ver contrato",
           "download": "Descargar",
           "sign": "Firmar",
+          "emptyState": "No hay contratos disponibles.",
+          "loading": "Cargando contratos…",
           "submissions": "Envíos",
           "newContract": "Nuevo contrato",
           "assignTalentBeforeContract": "Asigna talento antes de crear un contrato.",
@@ -2470,12 +2616,15 @@
           "uploadContractPdf": "Subir PDF del contrato",
           "uploadPdfDescription": "Sube un PDF para crear una plantilla reutilizable de contrato para esta oferta.",
           "assignTalentFirst": "Asignar talento primero",
-          "assignTalentFirstDescription": "Asigna al menos un talento a esta oferta antes de crear un contrato."
+          "assignTalentFirstDescription": "Asigna al menos un talento a esta oferta antes de crear un contrato.",
+          "assignTalent": "Asignar talento"
         },
         "feedback": {
           "title": "Comentarios del cliente",
           "noFeedback": "No hay comentarios disponibles",
-          "viewFeedback": "Ver comentarios"
+          "viewFeedback": "Ver comentarios",
+          "empty": "Aún no hay comentarios del paquete.",
+          "loading": "Cargando comentarios del paquete…"
         },
         "ui": {
           "verifyingAccess": "Verificando acceso…",
@@ -2525,6 +2674,11 @@
         "connectedBrands": "Marcas conectadas",
         "requests": "Solicitudes",
         "brandOffers": "Ofertas de marca",
+        "brandOffersData": {
+          "title": "Ofertas de marca",
+          "empty": "No se encontraron ofertas de marca.",
+          "loading": "Cargando ofertas de marca…"
+        },
         "deliverables": "Entregables",
         "packageFeedback": "Comentarios del paquete",
         "loadingBrands": "Cargando marcas conectadas…",
@@ -2556,6 +2710,57 @@
           "saveFailed": "Error al guardar el perfil",
           "currentPlan": "Plan actual"
         },
+        "agencyInformation": {
+          "title": "Información de la agencia",
+          "verified": "Verificado",
+          "agencyName": "Nombre de la agencia",
+          "legalEntityName": "Nombre de la entidad legal",
+          "address": "Dirección",
+          "city": "Ciudad",
+          "stateProvince": "Estado/Provincia",
+          "zipPostalCode": "Código postal",
+          "country": "País",
+          "timeZone": "Zona horaria",
+          "phone": "Teléfono",
+          "email": "Correo",
+          "website": "Sitio web",
+          "taxIdEin": "ID fiscal / EIN",
+          "selectCountry": "Selecciona un país",
+          "selectTimezone": "Selecciona una zona horaria",
+          "countries": {
+            "us": "Estados Unidos",
+            "uk": "Reino Unido",
+            "ca": "Canadá",
+            "de": "Alemania"
+          },
+          "timezones": {
+            "est": "Hora del Este (EST)",
+            "cst": "Hora Central (CST)",
+            "pst": "Hora del Pacífico (PST)"
+          }
+        },
+        "branding": {
+          "title": "Marca",
+          "agencyLogo": "Logo de la agencia",
+          "uploadNewLogo": "Subir nuevo logo",
+          "uploading": "Subiendo...",
+          "emailSignature": "Firma de correo",
+          "emailSignaturePlaceholder": "Saludos cordiales,\\nNombre de la agencia\\nhttps://agencia.com/\\n+1 (212) 555-0123"
+        },
+        "saveProfile": {
+          "saving": "Guardando...",
+          "saveProfileSettings": "Guardar configuración del perfil"
+        },
+        "commissions": {
+          "title": "Tasa de comisión predeterminada",
+          "subtitle": "Define la tasa de comisión predeterminada para nuevos talentos",
+          "defaultCommissionRate": "Tasa de comisión predeterminada",
+          "agencyCommission": "Comisión de la agencia (%)",
+          "appliedUnlessOverridden": "Se aplica a todas las reservas salvo anulación",
+          "rulesTitle": "Reglas de comisión de {{entitySingular}}",
+          "rulesDescription": "Los {{entityPlural}} gestionados por la agencia pueden usar aquí anulaciones basadas en la configuración. Los {{entityPlural}} conectados al marketplace siguen la tasa del contrato firmado activo y son de solo lectura en esta pantalla.",
+          "save": "Guardar configuración de comisión"
+        },
         "subTabs": {
           "profile": "Perfil",
           "commissions": "Comisiones",
@@ -2568,19 +2773,57 @@
         },
         "fileStorage": {
           "title": "Almacenamiento de archivos",
+          "subtitle": "Organiza y gestiona los archivos de tu agencia",
+          "goToStudio": "Ir a Studio",
+          "storageUsage": "Uso de almacenamiento",
+          "ofUsed": "{{used}} de {{total}} usados",
+          "remaining": "restantes",
+          "billingSubscription": "Facturación y suscripción",
+          "searchPlaceholder": "Buscar archivos y carpetas",
           "search": "Buscar archivos y carpetas",
           "viewMode": {
             "grid": "Vista de cuadrícula",
             "list": "Vista de lista"
           },
+          "view": {
+            "grid": "Cuadrícula",
+            "list": "Lista"
+          },
           "actions": {
+            "back": "Atrás",
+            "all": "Todos",
             "newFolder": "Nueva carpeta",
+            "loadMoreFolders": "Cargar más carpetas",
+            "loadMoreFiles": "Cargar más archivos",
+            "uploadFiles": "Subir archivos",
             "upload": "Subir archivo",
+            "addFile": "Agregar archivo",
             "rename": "Renombrar",
             "delete": "Eliminar",
             "download": "Descargar",
             "share": "Compartir",
             "preview": "Vista previa"
+          },
+          "clickToCreate": "Haz clic para crear",
+          "clickToUpload": "Haz clic para subir",
+          "loading": "Cargando…",
+          "uploading": "Subiendo…",
+          "uploadingShort": "Subiendo",
+          "noMoreFolders": "No hay más carpetas",
+          "noMoreFiles": "No hay más archivos",
+          "fileCount": "{{count}} archivo",
+          "fileCount_other": "{{count}} archivos",
+          "deleteFile": {
+            "title": "Eliminar archivo",
+            "description": "¿Seguro que deseas eliminar este archivo?",
+            "cannotUndo": "Esta acción no se puede deshacer.",
+            "confirm": "Eliminar archivo"
+          },
+          "deleteFolder": {
+            "title": "Eliminar carpeta",
+            "description": "¿Seguro que deseas eliminar la carpeta",
+            "descriptionSuffix": "y todo su contenido?",
+            "confirm": "Eliminar carpeta"
           },
           "folders": {
             "title": "Carpetas",
@@ -2609,14 +2852,48 @@
           }
         },
         "team": {
-          "title": "Miembros del equipo",
+          "title": "Gestión del equipo",
+          "subtitle": "Gestiona miembros del equipo, roles y permisos",
           "invite": "Invitar miembro",
+          "inviteUser": "Invitar usuario",
           "remove": "Eliminar miembro",
           "editPermissions": "Editar permisos",
+          "activeMembers": "Miembros activos del equipo",
+          "loadingMembers": "Cargando miembros del equipo...",
+          "emptyMembers": "Aún no hay miembros activos.",
+          "memberCount": "{{count}} miembros",
+          "memberStatus": "Estado",
+          "active": "Activo",
+          "inactive": "Inactivo",
+          "pendingInvitations": {
+            "title": "Invitaciones pendientes",
+            "description": "Invitaciones enviadas a compañeros que aún no se han unido.",
+            "pending": "pendiente",
+            "empty": "No hay invitaciones pendientes.",
+            "expires": "Expira"
+          },
+          "actions": {
+            "inviteUser": "Invitar usuario",
+            "editRole": "Editar rol"
+          },
+          "activity": {
+            "title": "Actividad"
+          },
           "roles": {
-            "admin": "Administrador",
-            "manager": "Gerente",
-            "member": "Miembro"
+            "owner": "Propietario",
+            "admin": {
+              "label": "Administrador",
+              "description": "Acceso completo a la configuración de la agencia y gestión del equipo"
+            },
+            "projectManager": {
+              "label": "Gerente de proyecto",
+              "description": "Puede gestionar proyectos, reservas y comunicaciones"
+            },
+            "reviewer": {
+              "label": "Revisor",
+              "description": "Puede revisar contenido y seguir la actividad"
+            },
+            "unknown": "Rol desconocido"
           },
           "inviteSuccess": "Miembro invitado exitosamente",
           "inviteFailed": "Error al invitar miembro",
@@ -2625,10 +2902,43 @@
         },
         "integrations": {
           "title": "Integraciones",
-          "calendly": "Calendly",
+          "subtitle": "Conecta tu agencia con otras herramientas",
+          "addIntegration": "Agregar integración",
+          "connectBankAccount": "Conectar cuenta bancaria",
+          "connectBankHint": "Vincula tu banco para recibir pagos de clientes y gestionar retiros.",
+          "connected": "Conectado",
+          "notConnected": "No conectado",
+          "changeAccount": "Cambiar cuenta",
+          "calendly": {
+            "title": "Integración de Calendly",
+            "enabledHint": "Automatiza la programación de reuniones con tus clientes",
+            "lockedHint": "Disponible en Pro con el complemento IRL Booking",
+            "upgradeHint": "Activa el complemento IRL Booking para usar Calendly, scouting, CRM de clientes, reservas y flujos contables IRL.",
+            "getAddon": "Obtener complemento IRL Booking",
+            "buyAddon": "Comprar complemento IRL Booking",
+            "tokenLabel": "Token de acceso personal de Calendly",
+            "getToken": "Obtener token",
+            "tokenPlaceholder": "calendly_v2_...",
+            "publicLinkLabel": "Enlace público de programación de Calendly",
+            "whereToFind": "Dónde encontrarlo",
+            "publicLinkPlaceholder": "https://calendly.com/your-handle/your-event",
+            "publicLinkHelp": "Usa el enlace público del evento de Calendly que debe abrirse cuando una reserva se envíe mediante Calendly desde Likelee. En Calendly, abre tu página de programación, encuentra el tipo de evento y copia su enlace.",
+            "eventTypeLabel": "Tipo de evento de Calendly",
+            "eventTypeHint": "Selecciona el tipo de evento de Calendly que Likelee debe usar para invitaciones y recordatorios de reservas",
+            "selectEvent": "Seleccionar evento de Calendly",
+            "leaveUnset": "Dejar sin definir",
+            "durationMins": "{{mins}} min",
+            "eventTypeUriPlaceholder": "https://api.calendly.com/event_types/...",
+            "eventTypeUriHelp": "Pega el URI completo del tipo de evento de Calendly que Likelee debe usar para las reservas. Esto funciona incluso cuando el token no puede listar automáticamente los tipos de evento.",
+            "noActiveTypes": "No se encontraron tipos de evento activos de Calendly para esta cuenta",
+            "saveValidToken": "Guarda un token válido de Calendly para cargar tipos de evento",
+            "saveConfiguration": "Guardar configuración de Calendly"
+          },
           "stripe": "Stripe",
           "connect": "Conectar",
           "disconnect": "Desconectar",
+          "disabled": "Deshabilitado",
+          "locked": "Bloqueado",
           "connectSuccess": "Integración conectada exitosamente",
           "connectFailed": "Error al conectar integración",
           "disconnectSuccess": "Integración desconectada exitosamente",
@@ -2645,12 +2955,56 @@
         },
         "notifications": {
           "title": "Notificaciones",
+          "subtitle": "Elige cómo quieres que se te notifique sobre eventos importantes",
+          "channels": {
+            "email": "Correo",
+            "sms": "SMS",
+            "push": "Push",
+            "comingSoon": "Próximamente"
+          },
+          "recipients": {
+            "title": "Destinatarios de notificaciones",
+            "primaryEmail": "Correo principal de notificación",
+            "smsNumber": "Número de SMS de notificación",
+            "additional": "Destinatarios adicionales (separados por comas)"
+          },
+          "save": "Guardar configuración de notificaciones",
+          "events": {
+            "bookingCreated": {
+              "title": "Reserva creada",
+              "desc": "Cuando se crea una nueva reserva"
+            },
+            "bookingConfirmed": {
+              "title": "Reserva confirmada",
+              "desc": "Cuando el estado de una reserva cambia a confirmada"
+            },
+            "paymentReceived": {
+              "title": "Pago recibido",
+              "desc": "Cuando se recibe un pago de un cliente"
+            },
+            "invoiceSent": {
+              "title": "Factura enviada",
+              "desc": "Cuando se envía una factura a un cliente"
+            },
+            "entityBookOut": {
+              "title": "{{entitySingular}} no disponible",
+              "desc": "Cuando {{entitySingularLower}} se marca como no disponible"
+            },
+            "licenseExpiring": {
+              "title": "Licencia próxima a vencer",
+              "desc": "Cuando una licencia de {{entitySingularLower}} está a punto de vencer"
+            }
+          },
           "email": "Notificaciones por correo",
           "push": "Notificaciones push",
           "sms": "Notificaciones SMS",
           "preferences": "Preferencias de notificación",
           "saveSuccess": "Preferencias guardadas exitosamente",
           "saveFailed": "Error al guardar preferencias"
+        },
+        "common": {
+          "saving": "Guardando...",
+          "save": "Guardar"
         }
       }
     }

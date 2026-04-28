@@ -8,6 +8,7 @@ import { Client } from "@/types/crm";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import * as crmApi from "@/api/crm";
+import { useTranslation } from "react-i18next";
 
 const ClientCard = ({
   client,
@@ -18,6 +19,7 @@ const ClientCard = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const extractEmail = (value: unknown) => {
     const raw = String(value || "").trim();
@@ -39,9 +41,12 @@ const ClientCard = ({
     window.setTimeout(() => {
       if (document.hasFocus() && !document.hidden) {
         toast({
-          title: "No mail app configured",
-          description:
-            "Set Thunderbird as your default mail app to open email.",
+          title: t("agencyDashboard.clientCRM.card.mailAppTitle", {
+            defaultValue: "No mail app configured",
+          }),
+          description: t("agencyDashboard.clientCRM.card.mailAppDescription", {
+            defaultValue: "Set Thunderbird as your default mail app to open email.",
+          }),
         });
       }
     }, 800);
@@ -197,21 +202,32 @@ const ClientCard = ({
                   return;
                 }
                 toast({
-                  title: "No email on file",
-                  description: "Add a contact email to send an email.",
+                  title: t("agencyDashboard.clientCRM.card.noEmailTitle", {
+                    defaultValue: "No email on file",
+                  }),
+                  description: t("agencyDashboard.clientCRM.card.noEmailDescription", {
+                    defaultValue: "Add a contact email to send an email.",
+                  }),
                 });
               } catch (error: any) {
                 toast({
-                  title: "Unable to open email",
+                  title: t("agencyDashboard.clientCRM.card.openEmailErrorTitle", {
+                    defaultValue: "Unable to open email",
+                  }),
                   description:
-                    error?.message || "No contact email found for this client.",
+                    error?.message ||
+                    t("agencyDashboard.clientCRM.card.openEmailErrorDescription", {
+                      defaultValue: "No contact email found for this client.",
+                    }),
                   variant: "destructive",
                 });
               }
             }}
           >
             <Mail className="w-3.5 h-3.5 mr-2" />
-            Email
+            {t("agencyDashboard.settings.notifications.channels.email", {
+              defaultValue: "Email",
+            })}
           </Button>
           <Button
             variant="outline"
@@ -221,13 +237,17 @@ const ClientCard = ({
             }}
           >
             <Package className="w-3.5 h-3.5 mr-2" />
-            Send Package
+            {t("agencyDashboard.clientCRM.card.sendPackage", {
+              defaultValue: "Send Package",
+            })}
           </Button>
           <Button
             onClick={onViewProfile}
             className="h-9 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs w-full sm:w-auto"
           >
-            View Profile
+            {t("agencyDashboard.clientCRM.card.viewProfile", {
+              defaultValue: "View Profile",
+            })}
           </Button>
         </div>
       </div>
