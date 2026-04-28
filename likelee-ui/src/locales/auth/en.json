@@ -85,7 +85,8 @@
       "andTerms": "and Terms of Service",
       "mustAgreeTitle": "Agreement Required",
       "mustAgree": "You must agree to the terms to complete your registration.",
-      "completeRegistration": "Complete Registration"
+      "completeRegistration": "Complete Registration",
+      "download": "Download"
     },
     "industries": {
       "fashion": "Fashion",
