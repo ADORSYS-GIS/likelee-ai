@@ -1,0 +1,2169 @@
+{
+  "talentModelingAgency": "Agence de talents / mannequins",
+  "talentModelingAgencyMessage": "Représentez des acteurs, des mannequins et des influenceurs",
+  "sportsAgency": "Agence sportive",
+  "sportsAgencySub": "Représentation d'athlètes et NIL",
+  "sportsAgencyMessage": "Gérez des athlètes et des talents sportifs",
+  "transformTalentTitle": "Transformez votre façon de travailler avec les talents",
+  "transformTalentSubtitle": "De mois de vérification à quelques minutes de navigation.",
+  "premiumTalentTitle": "Talents premium sans maux de tête de production",
+  "premiumTalentSubtitle": "Évitez le jour du tournage et accédez à des mannequins vérifiés des meilleures agences. Le tout avec des résultats premium.",
+  "verifiedCreatorLicensingMarketplace": "Marché de licences de créateurs vérifiés",
+  "verifiedCreatorLicensingMarketplaceDescription": "Parcourez des créateurs pré-vérifiés déjà approuvés pour des campagnes commerciales alimentées par l'IA. Licenciez leur image pour la production de contenu d'IA. Pas de recherche. Pas de vérification. Tout est pré-approuvé. Votre sourcing passe de quelques semaines à quelques minutes.",
+  "sportsAgencyHowItWorksStep3Title": "Activez votre clone",
+  "sportsAgencyHowItWorksStep3Description": "Déployez votre clone IA sur toutes les plateformes pour interagir avec les fans, créer du contenu et conclure des accords avec des marques.",
+  "sportsAgencyCTA": "Prêt à débloquer votre potentiel numérique ?",
+  "sportsAgencyCTADescription": "Rejoignez la liste d'attente et soyez le premier à découvrir l'avenir du branding des athlètes.",
+  "sportsAgencyJoinWaitlist": "Rejoindre la liste d'attente",
+  "sportsAgencyNILPlatform": "Plateforme NIL pour agences de sport",
+  "sportsAgenciesAthleteReps": "Agences de sport, Représentants d'athlètes",
+  "turnAthletesYearRoundEarners": "Transformez vos athlètes en revenus toute l'année",
+  "nilLicensingGrows": "La licence NIL qui croît quand les réservations ralentissent",
+  "traditionalEndorsementsPayOnce": "Les avenants traditionnels paient une fois. La licence Likelee paie mensuellement, pour toujours. Vos athlètes gagnent des revenus récurrents de leur nom, image et ressemblance pendant que vous gérez les contrats en un seul endroit et percevez une commission sur chaque renouvellement.",
+  "endorsementDealsNotEnough": "Les contrats d'avenant ne suffisent plus",
+  "endorsementDealsNotEnoughDescription": "Vos athlètes recherchent un revenu stable au-delà des parrainages traditionnels. Les opportunités d'avenant sont imprévisibles et ponctuelles. Likelee crée des flux de revenus supplémentaires où les athlètes gagnent de l'argent de manière récurrente de la part des marques utilisant leur image pour le marketing, le contenu social et les campagnes numériques sans nécessiter de nouveaux contrats à chaque fois.",
+  "twoNILRevenueStreams": "Deux flux de revenus NIL",
+  "fixedTermNILLicensing": "Licence NIL à durée déterminée",
+  "fixedTermNILLicensingDescription1": "La marque licencie l'image de l'athlète pour une durée de campagne spécifique, par exemple 6 mois, paie <1>5 000 $ d'avance</1>, et peut renouveler l'accord à son expiration.",
+  "fixedTermNILLicensingDescription2": "Votre athlète gagne 5 000 $ par cycle de renouvellement. Sur trois ans, cela représente <1>15 000 $ pour la même image</1> contre un seul contrat d'avenant traditionnel de 5 000 $.",
+  "recurringMonthlyNIL": "NIL mensuel récurrent",
+  "recurringMonthlyNILDescription1": "La marque utilise l'image de l'athlète sur son site web ou dans son marketing continu et paie <1>1 000 $ chaque mois</1> tant que ces actifs restent actifs.",
+  "recurringMonthlyNILDescription2": "Votre athlète contrôle l'arrangement et peut révoquer l'accès quand il le souhaite. Sur trois ans, ce même athlète gagne <1>36 000 $ contre un paiement d'avenant unique de 5 000 $</1>.",
+  "theMathSports": "Le calcul",
+  "sportsDrinkEndorsement": "Avenant pour boisson de sport (1 an)",
+  "sportsDrinkEndorsementBefore": "5 000 $",
+  "sportsDrinkEndorsementAfter": "5 000 $ + renouvellements",
+  "recurringBrandPartnership": "Partenariat de marque récurrent (continu)",
+  "recurringBrandPartnershipBefore": "5 000 $",
+  "recurringBrandPartnershipAfter": "1 000 $/mois = 36 000 $/3 ans",
+  "apparelBrandNILLicensing": "Licence NIL de marque de vêtements (6 mois)",
+  "apparelBrandNILLicensingBefore": "3 000 $",
+  "apparelBrandNILLicensingAfter": "5 000 $ + renouvellements",
+  "sameAthleteMultipleStreams": "Même athlète. Plusieurs flux de revenus.",
+  "howItWorksSports": "Comment ça fonctionne",
+  "howItWorksSportsStep1": "Ajoutez vos athlètes à Likelee afin que les marques puissent découvrir leurs droits d'image vérifiés, examiner les parrainages passés et soumettre des demandes de licence directement.",
+  "howItWorksSportsStep2": "Les marques demandent des licences NIL en spécifiant l'utilisation prévue, la durée de la campagne, les territoires et la rémunération proposée via la plateforme.",
+  "howItWorksSportsStep3": "Vous examinez et approuvez les conditions, fixez le montant final de la rémunération, et la marque paie sur un compte séquestre afin que la transaction soit protégée.",
+  "howItWorksSportsStep4": "L'argent est débloqué après 48 heures sans litige directement sur le compte de votre agence, où vous décidez comment répartir les gains avec votre athlète.",
+  "diversifiedAthleteIncome": "Revenu d'athlète diversifié",
+  "diversifiedAthleteIncomeDescription1": "Les avenants traditionnels sont volatils et imprévisibles. La licence NIL crée un revenu mensuel stable qui se cumule avec le temps.",
+  "diversifiedAthleteIncomeDescription2": "La première année rapporte 60 000 $ d'athlètes sous licence. La deuxième année, vous êtes à 180 000 $. La troisième année dépasse les 360 000 $. Même effectif. Même équipe. Aucune charge de négociation supplémentaire.",
+  "athletesStayProtected": "Les athlètes restent parce qu'ils sont protégés",
+  "athletesStayProtectedDescription": "Le revenu NIL récurrent remplace l'incertitude des contrats d'avenant, de sorte que vos athlètes ne cherchent pas d'autre représentation ou ne se sentent pas financièrement vulnérables. Ils savent qu'ils gagnent de l'argent prévisible avec vous pendant que vous gérez légalement chaque accord de licence.",
+  "verifiedAthleteAccess": "Accès aux athlètes vérifiés",
+  "confirmedNILOwnership": "Propriété NIL confirmée (l'athlète contrôle son image)",
+  "talentAgency": {
+    "hero": {
+      "title": "Vos talents pourraient gagner 10 fois plus",
+      "subtitle": "Transformez les tournages ponctuels en revenus récurrents",
+      "description": "Les réservations traditionnelles paient 1 500 $ une fois et c'est fini. La licence Likelee paie mensuellement, pour toujours, et votre roster gagne de manière constante.",
+      "cta": "Réserver une démo"
+    },
+    "bookingsDropping": {
+      "title": "Les réservations chutent, les licences augmentent.",
+      "description": "Les marques déplacent leurs budgets vers les expériences d'IA, mais elles ont toujours besoin de vrais talents vérifiés pour des campagnes authentiques. Likelee crée des flux de revenus récurrents pour vos talents pendant que la fréquence des réservations fluctue. Vous gagnez une commission récurrente chaque mois où ils restent sous licence."
+    },
+    "twoWays": {
+      "title": "Deux façons de gagner",
+      "recurring": {
+        "title": "Licence mensuelle récurrente",
+        "baseRateDescription": "Tarif de base pour l'utilisation de l'image",
+        "description": "La marque utilise l'image de votre talent sur son site web indéfiniment et paie",
+        "highlight": "400 $ chaque mois",
+        "suffix": "tant que ces photos restent en ligne."
+      },
+      "fixed": {
+        "title": "Licence à durée déterminée",
+        "description": "La marque licencie le visage de votre talent pour une durée de campagne spécifique, comme 6 mois, paie",
+        "highlight": "2 500 $ d'avance",
+        "suffix": ", et renouvelle à la fin du terme.",
+        "example": "Votre talent gagne 2 500 $ par cycle de renouvellement. Sur trois ans, cela représente",
+        "exampleHighlight": "7 500 $ pour le même talent",
+        "exampleSuffix": "contre 1 500 $ avec une réservation traditionnelle."
+      }
+    },
+    "howItWorks": {
+      "title": "Comment ça fonctionne",
+      "step1": "Ajoutez vos talents à Likelee afin qu'ils puissent examiner les demandes de licence et voir leurs gains s'accumuler en temps réel.",
+      "step2": "Les marques découvrent et demandent des licences en soumettant leur utilisation proposée, le territoire, la durée et le montant du paiement directement via la plateforme.",
+      "step3": "Vous examinez et approuvez les conditions, fixez le montant final du paiement, et la marque paie sur un compte séquestre afin que la transaction soit protégée.",
+      "step4": "L'argent est débloqué après 48 heures sans litige directement sur le compte de votre agence, où vous décidez comment répartir les gains avec vos talents."
+    },
+    "whyAgenciesWin": {
+      "title": "Pourquoi les agences gagnent",
+      "revenue": {
+        "title": "Revenu récurrent évolutif",
+        "description": "La première année rapporte 50 000 $ grâce aux licences. La deuxième année, vous êtes à 150 000 $. La troisième année dépasse 300 000 $. Vous utilisez la même équipe, le même réservoir de talents, et effectuez zéro tournage supplémentaire pour atteindre cette croissance."
+      },
+      "retention": {
+        "title": "Les talents restent parce qu'ils se sentent en sécurité",
+        "description": "Le revenu de licence remplace la volatilité des cycles de réservation, de sorte que vos talents ne paniquent pas lorsque les réservations ralentissent ou ne partent pas vers des agences concurrentes. Ils savent qu'ils gagnent de l'argent prévisible avec vous."
+      },
+      "protection": {
+        "title": "Protection juridique intégrée",
+        "description": "Chaque licence est vérifiée et suivie avec des contrats intelligents qui précisent exactement ce que la marque peut faire, pendant combien de temps et dans quelles régions. Tout est aligné sur les normes SAG-AFTRA et la conformité RGPD afin que vous n'exposiez jamais vos talents juridiquement."
+      }
+    },
+    "cta": {
+      "title": "Adaptez-vous maintenant ou déclinez plus tard",
+      "description": "Les agences qui prospèrent en ce moment sont celles qui possèdent à la fois le pipeline de réservation traditionnel et le paysage émergent de l'IA simultanément. Likelee vous donne l'infrastructure pour construire et gérer les deux à grande échelle, transformant votre roster existant en un moteur de revenus récurrents.",
+      "bookDemo": "Réserver une démo",
+      "howItWorks": "Voir Comment Ça Fonctionne"
+    }
+  },
+  "creatorsAndAthletesProfile": "Créateurs et athlètes",
+  "creatorsAndAthletesProfileMessage": "Gagnez des revenus récurrents de leur apparence tout en gardant un contrôle total. Un seul tableau de bord pour toutes les approbations et tous les gains.",
+  "talentAgenciesAndUnionsProfile": "Agences de talents et syndicats",
+  "talentAgenciesAndUnionsProfileMessage": "Échelonnez les accords NIL et de répliques numériques sur des listes entières. Intégration en masse, suivi unifié de la conformité, paiements instantanés.",
+  "exploreAthleteMarketplace": "Explorer le marché des athlètes",
+  "licenseRealTalent": "Licenciez de vrais athlètes, influenceurs et avatars de créateurs avec Likelee.",
+  "faqVerifiedCreatorVsAiFilmmakerTitle": "Quelle est la différence entre un créateur vérifié et un cinéaste d'IA ?",
+  "faqVerifiedCreatorVsAiFilmmakerDescription": "Les créateurs vérifiés sont de vraies personnes qui ont licencié leur apparence (influenceurs, athlètes, acteurs, mannequins). Les cinéastes d'IA créent du contenu à l'aide d'outils d'IA (Sora, Runway, Pika, etc.). Les deux sont disponibles sur Likelee.",
+  "creators": "Créateurs",
+  "creatorDashboard": {
+    "myLikeness": "Mon Apparence",
+    "activeCampaigns": "Campagnes Actives",
+    "licensesAndContracts": "Licences et Contrats",
+    "earningsDashboard": "Tableau de Bord des Gains",
+    "earnings": {
+      "title": "Tableau de Bord des Gains",
+      "subtitle": "Suivez vos revenus et paiements",
+      "announcement": {
+        "title": "Nouveau : Retrait flexible !",
+        "message": "Vous pouvez maintenant retirer vos gains via Stripe Connect. PayPal et Wise arrivent bientôt !"
+      },
+      "actions": {
+        "cashOut": "Retirer",
+        "loading": "Traitement...",
+        "downloadTax": "Télécharger les documents fiscaux (PDF)"
+      },
+      "metrics": {
+        "totalEarnedYTD": "Total gagné (YTD)",
+        "willUpdate": "Se mettra à jour dès l'activation de votre première licence",
+        "cashoutBalanceStripe": "Solde de retrait (Stripe)",
+        "availableInConnectedStripe": "Disponible sur votre compte Stripe connecté.",
+        "heldPendingTransfer": "Retenu (virement en attente)",
+        "connectedBankAccountEndingIn": "Compte bancaire connecté se terminant par",
+        "thisMonthRecurring": "Récurrent ce mois-ci",
+        "waitingForCampaigns": "En attente de campagnes actives",
+        "projectedNextMonth": "Projeté mois prochain",
+        "willCalculate": "Calculera selon les licences actives",
+        "nextPayment": "Prochain paiement",
+        "toBeDetermined": "À déterminer",
+        "noActiveContracts": "Pas de contrats actifs"
+      },
+      "charts": {
+        "revenueTrend": "Tendance des revenus (6 derniers mois)",
+        "revenuePlaceholder": "Votre tendance de revenus apparaîtra ici",
+        "activePlaceholder": "Une fois que vous aurez des campagnes actives",
+        "industryBreakdown": "Revenus par industrie",
+        "industryPlaceholder": "Votre répartition par industrie apparaîtra ici"
+      },
+      "comparison": {
+        "title": "Voici à quoi pourraient ressembler vos revenus",
+        "subtitle": "Comparez le modèle récurrent de Likelee au modèle traditionnel unique",
+        "traditionalModel": "Modèle traditionnel :",
+        "traditionalDesc": "Paiement unique par campagne",
+        "likeleeModel": "Modèle Likelee :",
+        "likeleeAmount": "2 500 $ + / mois",
+        "likeleeDesc": "Par licence active • Revenu récurrent"
+      },
+      "campaigns": {
+        "title": "Revenus par campagne",
+        "placeholderTitle": "Vos campagnes apparaîtront ici",
+        "placeholderMessage": "Une fois que vous aurez des licences actives générant des revenus",
+        "campaignFallback": "Campagne",
+        "thisMonth": "ce mois-ci"
+      },
+      "history": {
+        "title": "Historique des paiements",
+        "placeholderTitle": "Votre historique de paiements apparaîtra ici",
+        "placeholderMessage": "Une fois que vous recevrez votre premier virement",
+        "columns": {
+          "date": "Date",
+          "amount": "Montant",
+          "method": "Méthode",
+          "status": "Statut"
+        },
+        "standardMethod": "standard"
+      },
+      "readyTitle": "Prêt à retirer ?",
+      "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer.",
+      "byIndustry": "Ganancias por Industria",
+      "byCampaign": "Ganancias por Campaña",
+      "bankConnection": {
+        "title": "Conecte su cuenta bancaria",
+        "subtitle": "Vincule su cuenta bancaria para recibir sus ganancias directamente.",
+        "securityTitle": "Seguridad bancaria",
+        "securityMessage": "Su información está encriptada y protegida",
+        "privateTitle": "Privado y seguro",
+        "privateMessage": "Nunca almacenamos sus credenciales bancarias",
+        "button": "Conectar cuenta bancaria",
+        "comingSoon": "Conexión bancaria próximamente. Estamos integrando procesamiento de pagos seguro.",
+        "back": "Volver"
+      }
+    },
+    "settings": {
+      "myRules": "My Rules",
+      "profileSettings": "Profile Settings"
+    },
+    "settingsContent": {
+      "myRules": "Mes Règles",
+      "profileSettings": "Paramètres du Profil"
+    },
+    "completeness": {
+      "profileCompleteness": "Complétude du profil: {{percentage}}%",
+      "missingSections": "Il vous manque {{count}} sections"
+    },
+    "referenceImageLibrary": {
+      "title": "BIBLIOTHÈQUE D'IMAGES DE RÉFÉRENCE",
+      "subtitle": "Les marques utilisent ces images pour faire correspondre votre apparence dans différents contextes",
+      "completenessFilled": "Complétude: {{filled}}/{{total}} sections remplies",
+      "sectionsNeeded": "{{count}} sections nécessaires pour \"Profil Complet\""
+    },
+    "myLikenessSection": {
+      "banner": {
+        "strong": "Les profils complets gagnent 15 % de plus.",
+        "text": "Les marques paient des tarifs premium pour les créateurs avec des bibliothèques de référence complètes."
+      },
+      "howThisWorks": {
+        "title": "Comment cela fonctionne :",
+        "text": "Téléchargez des photos dans 15 catégories différentes. Les marques les utilisent pour générer des images de vous cohérentes et photoréalistes. Plus de variété = meilleure qualité de contenu = tarifs plus élevés."
+      },
+      "qualityStandards": {
+        "title": "Normes de qualité :",
+        "text": "Haute résolution (minimum 1080x1080), éclairage clair, visage/corps clairement visible, pas de filtres lourds, qualité professionnelle préférée."
+      },
+      "imageActions": {
+        "view": "Voir",
+        "replace": "Remplacer",
+        "delete": "Supprimer",
+        "upload": "Télécharger",
+        "uploadImage": "Télécharger l'image"
+      },
+      "imageStatus": {
+        "uploaded": "TÉLÉCHARGÉ",
+        "missing": "MANQUANT",
+        "bestFor": "Idéal pour :"
+      }
+    },
+    "usageGuidelines": {
+      "title": "DIRECTIVES D'UTILISATION",
+      "subtitle": "Dites aux marques ce avec quoi vous êtes à l'aise",
+      "comfortableWith": "À l'aise avec :",
+      "notComfortableWith": "Pas à l'aise avec :",
+      "editPreferences": "Modifier les préférences"
+    },
+    "verificationStatus": {
+      "title": "Vérification et statut",
+      "identityVerification": "Vérification d'identité",
+      "likenessRights": "Droits d'image",
+      "confirmed": "Confirmé",
+      "notStarted": "Non commencé",
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "viewVerification": "Voir les détails de vérification",
+      "updateRights": "Mettre à jour l'accord de droits",
+      "completeVerification": "Compléter la vérification",
+      "refreshStatus": "Actualiser le statut"
+    },
+    "dashboard": {
+      "totalMonthlyRevenue": "Revenu Mensuel Total",
+      "revenueInfo": "Revenu mensuel récurrent actuel",
+      "activeCampaigns": "Campagnes Actives",
+      "activeCampaignsInfo": "Génère des revenus actuellement",
+      "pendingApprovals": "Approbations en Attente",
+      "pendingApprovalsInfo": "Campagnes attendant votre examen",
+      "annualRunRate": "Taux Annuel",
+      "annualRunRateInfo": "Gains annuels projetés",
+      "quickActions": "Actions Rapides",
+      "priority": "PRIORITÉ",
+      "completeProfile": "Complétez Votre Profil",
+      "completeProfileInfo": "Il vous manque X sections. Complétez-les pour être vérifié.",
+      "uploadVoiceTone": "Télécharger le Ton de Voix",
+      "uploadVoiceToneInfo": "Ajoutez des échantillons de voix pour activer les campagnes audio",
+      "recentActivity": "Activité Récente",
+      "previewExamples": {
+        "title": "Exemples d'aperçu :",
+        "message": "Voici des exemples de campagnes pour vous montrer à quoi ressemblera votre tableau de bord."
+      },
+      "active": "ACTIF",
+      "noCampaigns": "Aucune Campagne Active",
+      "noCampaignsInfo": "Complétez votre profil pour commencer à recevoir des offres !",
+      "profileStatus": "Statut du Profil",
+      "completeToGetDiscovered": "Compléter pour être découvert",
+      "referenceImages": "Images de Référence",
+      "voiceRecordings": "Enregistrements Vocaux",
+      "missing": "MANQUANT"
+    },
+    "planStatus": {
+      "endsIn": "Se termine dans :",
+      "days": "{{count}} jour",
+      "days_other": "{{count}} jours",
+      "started": "Démarré le {{date}}",
+      "expiringSoon": "Expire bientôt",
+      "manageSubscription": "Gérer l’abonnement",
+      "accountSettings": "Paramètres du compte"
+    },
+    "trialGate": {
+      "upgradeToBasicForKyc": "Passez à Basic pour commencer la vérification KYC",
+      "basicRequired": "Basic requis",
+      "basicAndKycDescription": "Sans Basic et une vérification KYC approuvée, votre profil créateur ne peut pas être visible sur la marketplace ni géré par les marques et les agences.",
+      "processing": "Traitement...",
+      "upgradePlan": "Mettre à niveau"
+    },
+    "trialOffer": {
+      "badge": "Offre créateur exclusive",
+      "titlePrefix": "Découvrez Likelee",
+      "pro": "Pro",
+      "titleSuffix": "pendant 30 jours",
+      "description": "Débloquez des fonctionnalités professionnelles, notamment les profils vocaux IA, les analyses avancées, le suivi de contenu et les opportunités de campagnes premium.",
+      "cta": "Voir les plans et débloquer l'essai",
+      "bullets": {
+        "premiumAccess": "30 jours d'accès premium",
+        "cancelAnytime": "Annulez à tout moment pendant l'essai",
+        "autoBilling": "Facturation automatique après 30 jours"
+      }
+    },
+    "content": {
+      "title": "Contenu",
+      "subtitle": "Suivez le contenu créé avec votre image",
+      "welcome": {
+        "title": "Bienvenue sur votre page de Contenu !",
+        "message": "Voici un exemple de ce à quoi ressembleront le contenu de marque et les détections. Vous n'avez pas encore de contenu, mais lorsque les marques créeront du contenu avec votre image, il apparaîtra ici !"
+      },
+      "examples": {
+        "instagramReel": "Reel Instagram",
+        "webBanner": "Bannière Web",
+        "tvCommercial": "Publicité TV"
+      },
+      "tabs": {
+        "brandContent": "Contenu de Marque",
+        "detections": "Détections"
+      },
+      "brandContent": {
+        "info": "Ce flux montre tout le contenu autorisé que les marques ont publié en utilisant votre image.",
+        "views": "Vues",
+        "engagement": "Engagement",
+        "published": "Publié le {{date}}",
+        "noContent": "Aucun contenu de marque trouvé."
+      },
+      "detections": {
+        "info": "Protection de l'Image active. Nous scannons continuellement le web pour détecter toute utilisation non autorisée de votre image. Examinez le contenu détecté ci-dessous.",
+        "needsReview": "À Examiner",
+        "takedownRequested": "Retrait Demandé",
+        "resolved": "Résolu",
+        "detected": "Détecté",
+        "matchConfidence": "Confiance de Correspondance",
+        "viewOriginal": "Voir le Contenu Original",
+        "requestTakedown": "Demander le Retrait",
+        "dismiss": "Ignorer (C'est autorisé)",
+        "takedownSent": "Demande de retrait envoyée. Les plateformes répondent généralement sous 24 à 72 heures.",
+        "contentRemoved": "Le contenu a été supprimé ou vérifié comme autorisé.",
+        "noDetections": "Aucune détection trouvée.",
+        "howItWorks": {
+          "title": "Comment fonctionne la détection",
+          "scanning": {
+            "title": "Scanner Continu",
+            "desc": "Nous scannons les principales plateformes pour des correspondances faciales"
+          },
+          "ai": {
+            "title": "Correspondance IA",
+            "desc": "Une IA avancée compare avec votre image"
+          },
+          "takedown": {
+            "title": "Support de Retrait",
+            "desc": "Nous aidons à déposer des rapports DMCA et de plateforme"
+          }
+        }
+      }
+    },
+    "approvals": {
+      "title": "Approbations en Attente",
+      "subtitle": "Examiner et approuver les demandes de campagne des marques",
+      "pendingRequests": "Demandes en attente",
+      "openRequests": "Ouvrir les demandes",
+      "offerActions": "Actions sur les offres",
+      "reviewOffers": "Voir les offres",
+      "pendingCount": "{{count}} En Attente",
+      "welcome": {
+        "title": "Bienvenue !",
+        "message": "Voici un exemple de ce à quoi ressemble une demande de campagne."
+      },
+      "requestedOn": "Demandé le {{date}}",
+      "perpetualRequest": "DEMANDE PERPÉTUELLE",
+      "proposedRate": "Tarif Proposé",
+      "termLength": "Durée du Mandat",
+      "estimatedMonthly": "Est. Mensuel",
+      "regions": "Régions",
+      "industries": "Secteurs d'activité :",
+      "warning": {
+        "title": "Avertissement :",
+        "message": "Cette demande inclut des droits 'À Perpétuité'. Cela signifie que la marque possède les droits pour toujours."
+      },
+      "viewContract": "Voir le Contrat",
+      "labels": {
+        "industries": "Industries :",
+        "regions": "Régions :",
+        "estimatedMonthly": "Mensuel estimé :",
+        "termLength": "Durée :",
+        "proposedRate": "Tarif proposé :",
+        "requestedOn": "Demandé le {{date}}",
+        "pricePerMonth": "{{price}} $ / mois",
+        "months": "{{count}} mois"
+      },
+      "actions": {
+        "viewContract": "Voir le contrat",
+        "decline": "Refuser",
+        "counterOffer": "Contre-offre",
+        "acceptAndSign": "Accepter & Signer",
+        "backToQueue": "Retour à la file"
+      },
+      "backToQueue": "Retour à la file",
+      "contractReviewTitle": "{{brand}} - Révision du contrat",
+      "contractReviewSubtitle": "Examinez les termes avant d'approuver",
+      "whatYouWillEarn": "Ce que vous allez gagner",
+      "yourMonthlyPayment": "Votre paiement mensuel :",
+      "ifYouKeepThisFor": "Si vous gardez ceci pendant {{term}} :",
+      "totalEstimatedEarnings": "Total des gains estimés",
+      "contractTerms": "Termes du contrat",
+      "duration": "Durée :",
+      "territory": "Territoire :",
+      "usageType": "Type d'utilisation :",
+      "yourRightsAndProtections": "Vos droits & protections",
+      "canPause": "Vous pouvez mettre cette licence en pause à tout moment (arrêt temporaire de l'utilisation)",
+      "canRevoke": "Vous pouvez la révoquer avec un préavis de 30 jours (arrêt définitif)",
+      "licenseExpires": "La licence expire à une date précise (pas pour toujours)",
+      "paymentProtected": "Paiement protégé en séquestre jusqu'à ce que la marque approuve les livrables",
+      "perpetualUseWarning": {
+        "title": "⚠️ Avertissement d'utilisation perpétuelle :",
+        "message": "Cette marque souhaite utiliser votre image pour toujours. Vous devriez négocier pour des termes limités dans le temps (6 mois, 1 an) à la place."
+      },
+      "decline": "Refuser",
+      "counterOffer": "Contre-offre",
+      "acceptAndSign": "Accepter & Signer",
+      "contractReview": {
+        "title": "Révision du contrat de {{brand}}",
+        "subtitle": "Veuillez lire attentivement tous les termes ci-dessous avant d'accepter."
+      }
+    },
+    "archive": {
+      "title": "Archives des Campagnes",
+      "subtitle": "Historique des campagnes passées et des gains",
+      "completedCount": "{{count}} Terminées",
+      "welcome": {
+        "title": "Bienvenue !",
+        "message": "Au fur et à mesure que vous terminez des campagnes, elles apparaîtront ici dans vos archives."
+      },
+      "completedOn": "Terminé le {{date}}",
+      "status": {
+        "completed": "TERMINÉ"
+      },
+      "duration": "Durée",
+      "monthlyRate": "Tarif Mensuel",
+      "totalEarned": "Total Gagné",
+      "regions": "Régions",
+      "showOnPortfolio": "Afficher sur le Portfolio",
+      "visibleOnPortfolio": "Visible sur votre profil public",
+      "hiddenFromPortfolio": "Masqué de votre profil public",
+      "viewDetails": "Voir les Détails"
+    },
+    "contracts": {
+      "title": "Licences et Contrats",
+      "subtitle": "Gérez vos accords actifs et l'utilisation des droits",
+      "welcome": {
+        "title": "Bienvenue !",
+        "message": "Gérez vos contrats actifs ici. Mettez en pause, révoquez ou renouvelez à tout moment."
+      },
+      "activeTab": "Actifs ({{count}})",
+      "expiredTab": "Expirés ({{count}})",
+      "status": {
+        "active": "Actif",
+        "expiring_soon": "Expire Bientôt",
+        "expired": "Expiré"
+      },
+      "yourMonthlyFee": "Votre Frais Mensuel",
+      "earnedToDate": "Gagné à Ce Jour",
+      "daysRemainingLabel": "Jours Restants",
+      "expiringIn": "Expire dans {{count}} jours",
+      "renewLicensePrompt": "- renouveler la licence ?",
+      "viewDetails": "Voir les Détails",
+      "renew": "Renouveler",
+      "noExpiredContracts": "Aucun Contrat Expiré",
+      "completedContractsWillAppearHere": "Les contrats terminés apparaîtront ici",
+      "backToContracts": "Retour aux Contrats",
+      "whatYoureEarning": "Ce Que Vous Gagnez",
+      "monthlyPayment": "Paiement Mensuel",
+      "totalEarnedSoFar": "Total Gagné Jusqu'à Présent",
+      "paymentStatus": "Statut du Paiement",
+      "paid": "PAYÉ",
+      "amountReceived": "${{amount}} reçus ce mois-ci",
+      "yourTimeline": "Votre Chronologie",
+      "started": "Commencé",
+      "today": "Aujourd'hui",
+      "expires": "Expire",
+      "daysRemaining": "{{count}} jours restants dans le contrat",
+      "autoRenewal": {
+        "title": "Renouvellement Auto Actif :",
+        "message": "Ce contrat sera renouvelé automatiquement pour une autre durée sauf annulation."
+      },
+      "howLikenessIsUsed": "Comment Votre Apparence Est Utilisée",
+      "whatTheyreUsing": "Ce Qu'ils Utilisent",
+      "whereTheyCanUseIt": "Où Ils Peuvent L'utiliser",
+      "territory": "Territoire :",
+      "channels": "Canaux :",
+      "whatTheyCantDo": "Ce Qu'ils NE PEUVENT PAS Faire",
+      "revisions": "Révisions",
+      "roundsIncluded": "{{count}} tours inclus",
+      "manageLicense": "Gérer la Licence",
+      "pauseLicense": "Mettre la Licence en Pause",
+      "revokeLicense": "Révoquer la Licence",
+      "messageBrand": "Envoyer un Message à la Marque",
+      "viewFullLegalContract": "Voir le Contrat Légal Complet",
+      "modals": {
+        "pause": {
+          "title": "Mettre cette licence en pause ?",
+          "warningTitle": "⚠️ AVERTISSEMENT DE PAIEMENT IMPORTANT",
+          "warningDescription": "Si vous mettez en pause MAINTENANT (mi-mois) :",
+          "warningBullets": {
+            "noPayment": "Vous ne recevrez PAS de paiement pour {{month}}",
+            "earnedSoFar": "Même si vous avez gagné {{amount}} $ jusqu'à présent ce mois-ci",
+            "forfeited": "Cet argent sera perdu"
+          },
+          "option1": {
+            "title": "OPTION 1 : Pause immédiate",
+            "effective": "Effectif :",
+            "effectiveToday": "Aujourd'hui",
+            "thisMonthPayment": "Paiement de ce mois :",
+            "forfeited": "✗ PERDU ({{amount}} $)",
+            "nextMonthPayment": "Paiement du mois prochain :",
+            "paused": "✗ EN PAUSE",
+            "description": "Utilisez cette option si vous souhaitez arrêter immédiatement et acceptez de perdre le paiement partiel de ce mois."
+          },
+          "option2": {
+            "title": "OPTION 2 : Pause le mois prochain",
+            "recommended": "Recommandé",
+            "effective": "Effectif :",
+            "thisMonthPayment": "Paiement de ce mois :",
+            "willBePaid": "✓ VOUS SEREZ PAYÉ ({{amount}} $)",
+            "nextMonthPayment": "Paiement du mois prochain :",
+            "paused": "✗ EN PAUSE",
+            "description": "Utilisez cette option pour continuer à gagner jusqu'à la fin de ce mois, puis mettre en pause à partir du mois prochain."
+          },
+          "cancel": "Annuler - Ne pas mettre en pause"
+        },
+        "revoke": {
+          "title": "Révoquer cette licence ?",
+          "whatHappens": "Ce qui se passe lorsque vous révoquez :",
+          "bullets": {
+            "endPermanently": "Vous demandez de TERMINER cette licence de manière permanente",
+            "noticePeriod": "La période de préavis de 30 jours commence (ils conservent les droits pendant 30 jours supplémentaires)",
+            "takedown": "Après 30 jours, ils doivent retirer tout le contenu",
+            "earningsStop": "Vos gains S'ARRÊTENT après la fin de la période de 30 jours",
+            "cannotReactivate": "La licence ne peut pas être réactivée"
+          },
+          "timeline": {
+            "title": "Chronologie de la révocation",
+            "noticeStarts": "Début du préavis",
+            "finalTakedown": "Retrait final"
+          },
+          "days1to30": "Jours 1-30 : {{brand}} peut toujours utiliser votre image (paiements finaux dus)",
+          "day30": "Jour 30 : Tout le contenu doit être retiré",
+          "finalPayment": "Votre paiement final : {{amount}} $ le {{date}}",
+          "reasonLabel": "Raison de la révocation (facultatif) :",
+          "reasonPlaceholder": "ex: Je ne veux plus travailler avec cette marque",
+          "cancel": "Annuler",
+          "confirm": "Oui, révoquer la licence"
+        }
+      }
+    },
+    "nav": {
+      "dashboard": "Tableau de Bord",
+      "content": "Contenu",
+      "likeness": "Mon Apparence",
+      "voice": "Voix et Enregistrements",
+      "campaigns": "Campagnes Actives",
+      "approvals": "File d'attente d'approbation",
+      "archive": "Archives des Campagnes",
+      "contracts": "Licences et Contrats",
+      "earnings": "Gains",
+      "payouts": "Paiements",
+      "settings": "Paramètres",
+      "profile": {
+        "edit": "Modifier le profil",
+        "viewPublic": "Voir le profil public",
+        "help": "Aide / Support",
+        "logout": "Déconnexion"
+      }
+    },
+    "settingsView": {
+      "title": "Paramètres",
+      "subtitle": "Gérez votre profil et vos préférences",
+      "tabs": {
+        "profile": "Paramètres du Profil",
+        "rules": "Mes Règles",
+        "billing": "Facturation"
+      },
+      "billingSummary": {
+        "title": "Abonnement créateur",
+        "currentAccess": "Accès actuel",
+        "recommendedNextStep": "Prochaine étape recommandée",
+        "included": "Inclus",
+        "upgradeToBasic": "Passer à Basic",
+        "proOnly": "Pro uniquement",
+        "voiceEnabled": "Activé ({{count}} tonalités)",
+        "processing": "Traitement...",
+        "viewDetails": "Voir les détails",
+        "lockInProTitle": "Prêt à passer en Pro ?",
+        "lockInProDescription": "Votre essai est actif, mais vous pouvez sécuriser dès aujourd'hui vos outils de workflow professionnels. Obtenez la priorité complète sur la marketplace et un accès exclusif aux campagnes.",
+        "openingPortal": "Ouverture du portail...",
+        "selectPlan": "Choisir un plan",
+        "cards": {
+          "content": {
+            "label": "Contenu",
+            "value": "Inclus pour tous les créateurs"
+          },
+          "kyc": {
+            "label": "Accès KYC"
+          },
+          "likeness": {
+            "label": "Mon Apparence"
+          },
+          "payouts": {
+            "label": "Paiements"
+          },
+          "rules": {
+            "label": "Mes Règles"
+          },
+          "voice": {
+            "label": "Voix"
+          },
+          "jobs": {
+            "label": "Emplois"
+          },
+          "activeCampaigns": {
+            "label": "Campagnes actives"
+          }
+        },
+        "access": {
+          "proTrial": "Accès essai Pro",
+          "pro": "Accès créateur Pro",
+          "basicTrial": "Accès essai Basic",
+          "basic": "Accès créateur Basic",
+          "free": "Accès créateur gratuit"
+        },
+        "next": {
+          "free": "Passer à Basic",
+          "basic": "Passer à Pro",
+          "pro": "Tout est déjà débloqué"
+        },
+        "descriptions": {
+          "free": "Basic débloque la vérification KYC, la visibilité créateur, les connexions agence et marque, Mon Apparence et les paiements.",
+          "basic": "Pro débloque les uploads Cameo, Emplois, Mes Règles, Voix, Portail des talents, Archives des campagnes et Campagnes actives.",
+          "pro": "Votre formule actuelle inclut tous les outils du workflow créateur."
+        }
+      },
+      "profile": {
+        "photoTitle": "Photo de Profil",
+        "professionalDetails": "Détails Professionnels",
+        "creatorType": "Type de Créateur",
+        "dateOfBirth": "Date de Naissance",
+        "gender": "Genre",
+        "ethnicity": "Ethnicité",
+        "race": "Race",
+        "hairColor": "Couleur de Cheveux",
+        "eyeColor": "Couleur des Yeux",
+        "heightCm": "Taille (cm)",
+        "placeholders": {
+          "fullName": "Votre nom complet",
+          "bio": "Parlez-nous de vous...",
+          "city": "Ville",
+          "state": "État/Région",
+          "instagram": "@votreidentifiant",
+          "youtube": "@votreidentifiant",
+          "tiktok": "@votreidentifiant",
+          "portfolio": "https://votreportfolio.com",
+          "website": "https://votresiteweb.com",
+          "linkedin": "https://linkedin.com/in/votreprofil"
+        },
+        "uploadText": "Télécharger une photo professionnelle",
+        "uploadHint": "JPG ou PNG, max 10 Mo",
+        "basicInfo": "Informations de Base",
+        "name": "Nom",
+        "email": "E-mail",
+        "location": "Emplacement",
+        "bio": "Bio",
+        "saveProfile": "Enregistrer le Profil",
+        "socialMedia": "Réseaux Sociaux",
+        "instagram": "Identifiant Instagram",
+        "tiktok": "Identifiant TikTok",
+        "portfolio": "Lien Portfolio",
+        "saveSocial": "Enregistrer les Liens Sociaux",
+        "visibility": "Paramètres de Visibilité",
+        "visibleToBrands": "Visible par les Marques",
+        "visibleToBrandsDesc": "Permettre aux marques de vous découvrir et de vous contacter",
+        "enableLicensing": "Activer les Licences",
+        "enableLicensingDesc": "Accepter les demandes de licence des marques",
+        "emailNotifications": "Notifications par E-mail",
+        "emailNotificationsDesc": "Recevoir des mises à jour sur les campagnes et les approbations"
+      },
+      "rules": {
+        "title": "Mes règles",
+        "subtitle": "Définissez vos préférences de licence et vos tarifs",
+        "planLimitMessage": "Vous êtes sur le plan créateur {{plan}}. Vous pouvez sélectionner jusqu'à {{limit}} catégories de contenu et industries combinées.",
+        "proCreatorsUnlimitedSelection": "Les créateurs Pro ont une sélection illimitée de catégories.",
+        "edit": "Modifier",
+        "cancel": "Annuler",
+        "save": "Enregistrer",
+        "contentOpenTo": "Contenu que j'accepte",
+        "editRate": "Modifier le tarif",
+        "industries": "Industries avec lesquelles je travaille",
+        "notComfortableWith": "Contenu avec lequel je ne suis PAS à l'aise",
+        "noRestrictions": "Aucune restriction définie",
+        "conflictingCampaigns": "Campagnes conflictuelles (Exclusivité de marque)",
+        "conflictingCampaignsDesc": "Marques avec lesquelles vous ne travaillerez pas simultanément",
+        "noBrandExclusivity": "Aucune exclusivité de marque définie",
+        "initialLicensingRate": "Tarif de licence initial",
+        "baseRateDesc": "Il s'agit de votre tarif mensuel de base pour les licences de médias sociaux standard",
+        "month": "Mois",
+        "acceptNegotiations": "Accepter les négociations",
+        "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base",
+        "negotiationEnabled": "Négociation activée !",
+        "negotiationDisabled": "Négociation désactivée !"
+      },
+      "billing": {
+        "title": "Billing",
+        "subtitle": "Manage your subscription and payment methods",
+        "currentPlan": "Current Plan",
+        "freePlan": "Free Plan",
+        "proPlan": "Pro Plan",
+        "upgradeToPro": "Upgrade to Pro",
+        "manageSubscription": "Manage Subscription",
+        "billingHistory": "Billing History",
+        "noBillingHistory": "No billing history yet",
+        "paymentMethod": "Payment Method",
+        "addPaymentMethod": "Add Payment Method",
+        "updatePaymentMethod": "Update Payment Method"
+      }
+    },
+    "voice": {
+      "title": "Voix & Enregistrements",
+      "subtitle": "Créez votre bibliothèque vocale pour différentes émotions et tonalités",
+      "voiceBadge": "Voix",
+      "voiceBadgePlural": "Voix",
+      "recordingModal": {
+        "title": "Enregistrer un échantillon de voix {{emotion}}",
+        "getReady": "Préparez-vous...",
+        "ready": "Prêt à enregistrer ?",
+        "instruction": "Le script défilera lentement. Parlez naturellement et de manière expressive.",
+        "start": "Démarrer l'enregistrement",
+        "stop": "Arrêter l'enregistrement"
+      },
+      "deleteConfirmation": {
+        "title": "Supprimer l'enregistrement ?",
+        "description": "Cette action est irréversible.",
+        "action": "Supprimer"
+      },
+      "emotionNames": {
+        "happy": "Joyeux",
+        "emotional": "Émotionnel",
+        "excited": "Excité",
+        "mellow": "Doux",
+        "relaxed": "Détendu",
+        "angry": "En colère"
+      },
+      "voiceScripts": {
+        "happy": "Je suis absolument ravi d'être ici aujourd'hui ! La vie est pleine de merveilleuses surprises et d'opportunités passionnantes. Chaque matin apporte un nouveau départ et de nouvelles possibilités. J'adore me connecter avec les gens et partager des énergies positives. Le monde est un endroit incroyable quand on le regarde avec optimisme. Célébrons les petites victoires et chérissons chaque moment de joie. Le bonheur est contagieux, alors propageons-le !",
+        "emotional": "Il y a des moments dans la vie qui touchent nos cœurs profondément. Parfois, nous nous sentons dépassés par la beauté de la connexion humaine. Ces expériences façonnent qui nous sommes et nous rappellent ce qui compte vraiment. J'ai appris que la vulnérabilité n'est pas une faiblesse, mais du courage. Chaque personne que nous rencontrons porte sa propre histoire, ses propres luttes et ses propres triomphes. Honorons ces moments et laissons de la place à une émotion authentique.",
+        "excited": "Oh mon Dieu, c'est incroyable ! Je peux à peine contenir mon enthousiasme en ce moment ! Il y a tellement d'énergie et de potentiel dans cet instant. Je vibre d'anticipation pour ce qui va suivre. Pouvez-vous ressentir cette électricité dans l'air ? Ça va être absolument génial ! Je suis prêt à foncer et à faire bouger les choses. L'avenir est brillant et je suis là pour ça !",
+        "mellow": "Parfois, il est agréable de simplement ralentir et de prendre les choses avec calme. Il n'y a pas d'urgence, pas de pression. Juste une présence calme et stable dans l'instant. La vie n'a pas toujours besoin d'être intense ou dramatique. Ces moments de tranquillité ont leur propre beauté et leur propre but. Respirons simplement et apprécions le calme. Tout se déroule en son temps, et c'est parfaitement normal.",
+        "relaxed": "Salut, je me détends juste un peu aujourd'hui. Pas de stress, pas d'inquiétude. Tout coule naturellement et en douceur. Je suis dans un très bon état d'esprit en ce moment, je profite simplement de l'instant présent. La vie semble équilibrée et confortable. Il y a quelque chose de paisible à ne pas trop réfléchir. Simplement être ici, être présent et laisser les choses se passer naturellement. Tout va bien.",
+        "angry": "Je ne peux pas croire que cela arrive. C'est complètement inacceptable et franchement, j'en ai assez. Il y a des limites à ce que n'importe qui devrait supporter. Cette situation doit changer, et elle doit changer maintenant. Je suis fatigué des excuses et des promesses en l'air. Les actions parlent plus fort que les mots, et je suis prêt à exiger ce qui est juste. Ça s'arrête ici."
+      },
+      "overview": {
+        "title": "Aperçu du profil vocal",
+        "totalRecordings": "Total d'enregistrements",
+        "elevenLabsProfiles": "Profils ElevenLabs",
+        "totalUsage": "Utilisation totale"
+      },
+      "record": {
+        "title": "Enregistrer un nouvel échantillon vocal",
+        "subtitle": "Enregistrez des échantillons avec différentes émotions pour créer un profil vocal polyvalent",
+        "duration": "~60 secondes",
+        "recorded": "Enregistré"
+      },
+      "library": {
+        "title": "Bibliothèque vocale",
+        "used": "Utilisé {{count}} fois",
+        "elevenLabsReady": "Prêt pour ElevenLabs",
+        "reRecord": "Réenregistrer",
+        "creatingProfile": "Création du profil vocal...",
+        "createProfile": "Créer un profil vocal avec ElevenLabs"
+      },
+      "tips": {
+        "title": "Conseils d'entraînement vocal :",
+        "message": "Parlez clairement, évitez le bruit de fond, enregistrez dans une pièce calme et maintenez un volume constant tout au long de l'enregistrement."
+      }
+    },
+    "voiceScripts": {
+      "happy": "Je suis absolument ravi d'être ici aujourd'hui ! La vie est pleine de merveilleuses surprises et d'opportunités passionnantes. Chaque matin apporte un nouveau départ et de nouvelles possibilités. J'adore me connecter avec les gens et partager des énergies positives. Le monde est un endroit incroyable quand on le regarde avec optimisme. Célébrons les petites victoires et chérissons chaque moment de joie. Le bonheur est contagieux, alors propageons-le !",
+      "emotional": "Il y a des moments dans la vie qui touchent nos cœurs profondément. Parfois, nous nous sentons dépassés par la beauté de la connexion humaine. Ces expériences façonnent qui nous sommes et nous rappellent ce qui compte vraiment. J'ai appris que la vulnérabilité n'est pas une faiblesse, mais du courage. Chaque personne que nous rencontrons porte sa propre histoire, ses propres luttes et ses propres triomphes. Honorons ces moments et laissons de la place à une émotion authentique.",
+      "excited": "Oh mon Dieu, c'est incroyable ! Je peux à peine contenir mon enthousiasme en ce moment ! Il y a tellement d'énergie et de potentiel dans cet instant. Je vibre d'anticipation pour ce qui va suivre. Pouvez-vous ressentir cette électricité dans l'air ? Ça va être absolument génial ! Je suis prêt à foncer et à faire bouger les choses. L'avenir est brillant et je suis là pour ça !",
+      "mellow": "Parfois, il est agréable de simplement ralentir et de prendre les choses avec calme. Il n'y a pas d'urgence, pas de pression. Juste une présence calme et stable dans l'instant. La vie n'a pas toujours besoin d'être intense ou dramatique. Ces moments de tranquillité ont leur propre beauté et leur propre but. Respirons simplement et apprécions le calme. Tout se déroule en son temps, et c'est parfaitement normal.",
+      "relaxed": "Salut, je me détends juste un peu aujourd'hui. Pas de stress, pas d'inquiétude. Tout coule naturellement et en douceur. Je suis dans un très bon état d'esprit en ce moment, je profite simplement de l'instant présent. La vie semble équilibrée et confortable. Il y a quelque chose de paisible à ne pas trop réfléchir. Simplement être ici, être présent et laisser les choses se passer naturellement. Tout va bien.",
+      "angry": "Je ne peux pas croire que cela arrive. C'est complètement inacceptable et franchement, j'en ai assez. Il y a des limites à ce que n'importe qui devrait supporter. Cette situation doit changer, et elle doit changer maintenant. Je suis fatigué des excuses et des promesses en l'air. Les actions parlent plus fort que les mots, et je suis prêt à exiger ce qui est juste. Ça s'arrête ici."
+    },
+    "campaigns": {
+      "status": {
+        "active": "Actif",
+        "expiringSoon": "Expire bientôt"
+      },
+      "actions": {
+        "viewDetails": "Voir les détails",
+        "revoke": "Révoquer",
+        "pause": "Pause"
+      },
+      "labels": {
+        "autoRenew": "Renouvellement automatique",
+        "monthlyRate": "Tarif mensuel :",
+        "activeUntil": "Actif jusqu'au :",
+        "regions": "Régions :",
+        "weeklyImpressions": "Impressions hebdomadaires :",
+        "impressionsPerWeek": "{{count}} impressions/semaine"
+      },
+      "consent": {
+        "title": "Votre consentement requis pour toutes les utilisations.",
+        "message": "{{count}} campagnes actives, toutes limitées dans le temps, toutes approuvées par vous. Vous pouvez mettre en pause/révoquer à tout moment."
+      },
+      "title": "Campagnes Actives",
+      "subtitle": "Suivez et gérez vos accords de licence",
+      "activeCount": "{{count}} Actives",
+      "welcome": {
+        "title": "Bienvenue dans vos Campagnes Actives !",
+        "message": "Ceci est un exemple de ce à quoi ressembleront vos campagnes. Vous n'avez pas encore de campagnes actives, mais lorsque les marques commenceront à travailler avec vous, elles apparaîtront ici !"
+      },
+      "table": {
+        "brand": "Marque",
+        "usageType": "Type d'utilisation",
+        "rate": "Tarif",
+        "activeUntil": "Actif jusqu'au",
+        "status": "Statut",
+        "thisMonth": "Ce mois",
+        "actions": "Actions"
+      },
+      "searchPlaceholder": "Rechercher par marque ou campagne",
+      "clearSearch": "Effacer la recherche",
+      "empty": {
+        "searchTitle": "Aucune campagne ne correspond à votre recherche.",
+        "searchDescription": "Essayez un autre nom de marque ou de campagne.",
+        "loadingTitle": "Chargement des campagnes...",
+        "loadingDescription": "Récupération de vos campagnes et licences actives.",
+        "noneTitle": "Aucune campagne active pour le moment.",
+        "noneDescription": "Les nouvelles campagnes apparaîtront ici lorsqu'elles commenceront."
+      },
+      "autoRenew": "Auto-Renew",
+      "statusValues": {
+        "active": "Active",
+        "expiring_soon": "Expiring Soon"
+      },
+      "revoke": "Revoke",
+      "rateLabel": "Rate:",
+      "activeUntilLabel": "Active Until:",
+      "statusLabel": "Status:",
+      "thisMonthLabel": "This Month:",
+      "impressionsLabel": "Impressions/Week:",
+      "pause": "Pause",
+      "viewDetails": "View Details"
+    },
+    "rules": {
+      "modals": {
+        "perWeek": "/sem",
+        "cancel": "Annuler",
+        "save": "Enregistrer les tarifs",
+        "saving": "Enregistrement...",
+        "contentTitle": "Personnaliser les tarifs des types de contenu",
+        "industryTitle": "Personnaliser les tarifs de l industrie",
+        "contentDesc": "Définissez des tarifs hebdomadaires spécifiques pour différents types de contenu. Si laissé vide, votre tarif de base ({rate}) s appliquera.",
+        "industryDesc": "Définissez des tarifs hebdomadaires spécifiques pour différentes industries. Si laissé vide, votre tarif de base ({rate}) s appliquera.",
+        "noContentTitle": "Aucun type de contenu sélectionné.",
+        "noContentMsg": "Veuillez retourner à \"Mes règles\" et sélectionner d abord les types de contenu auxquels vous êtes ouvert.",
+        "noIndustryTitle": "Aucune industrie sélectionnée.",
+        "noIndustryMsg": "Veuillez retourner à \"Mes règles\" et sélectionner d abord les industries avec lesquelles vous travaillez.",
+        "contentHeader": "Types de contenu",
+        "industryHeader": "Industries"
+      }
+    },
+    "toasts": {
+      "profileSaved": "Profil enregistré avec succès !",
+      "profileSaveFailed": "Échec de l'enregistrement du profil",
+      "profilePhotoUpdated": "Photo de profil mise à jour !",
+      "ratesSaved": "Tarifs enregistrés avec succès !",
+      "ratesSaveFailed": "Échec de l'enregistrement des tarifs",
+      "contentSaved": "Préférences de contenu enregistrées !",
+      "industrySaved": "Préférences d'industrie enregistrées !",
+      "saveFailed": "Échec de l'enregistrement",
+      "restrictionsSaved": "Restrictions enregistrées avec succès !",
+      "restrictionsSaveFailed": "Échec de l'enregistrement des restrictions",
+      "negotiationEnabled": "Négociation activée !",
+      "negotiationDisabled": "Négociation désactivée !",
+      "imageUploaded": "Image téléchargée avec succès !",
+      "imageUploadFailed": "Échec du téléchargement de l'image",
+      "imageDeleted": "Image supprimée avec succès !",
+      "imageDeleteFailed": "Échec de la suppression de l'image",
+      "voiceUploaded": "Échantillon vocal téléchargé avec succès !",
+      "voiceUploadFailed": "Échec du téléchargement de l'échantillon vocal",
+      "voiceDeleted": "Échantillon vocal supprimé avec succès !",
+      "voiceDeleteFailed": "Échec de la suppression de l'échantillon vocal",
+      "avatarGenerating": "Génération de l'avatar...",
+      "avatarGenerated": "Avatar généré avec succès !",
+      "avatarGenerationFailed": "Échec de la génération de l'avatar",
+      "pleaseWait": "Veuillez patienter...",
+      "processing": "Traitement en cours...",
+      "success": "Succès !",
+      "error": "Erreur",
+      "warning": "Avertissement",
+      "info": "Information",
+      "authRequiredTitle": "Sign in required",
+      "authRequiredPhotoDesc": "Please sign in to upload a profile photo.",
+      "voiceSuccessTitle": "Voice profile created",
+      "voiceSuccessDesc": "Your voice profile is ready.",
+      "voiceErrorTitle": "Voice error",
+      "voiceErrorDesc": "Failed to create voice profile: {{error}}",
+      "micErrorTitle": "Microphone error",
+      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micNoDataTitle": "No audio captured",
+      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "campaignApproved": "Campaign approved",
+      "campaignDeclined": "Campaign declined",
+      "campaignPaused": "Campaign paused",
+      "campaignRevoked": "Campaign revoked",
+      "licensePausedTitle": "License paused",
+      "licensePausedImmediate": "License is now paused.",
+      "licensePausedNextMonth": "License will pause next billing cycle.",
+      "licenseRevokedTitle": "License revoked",
+      "licenseRevokedDesc": "License revoked. Effective date: {{effectiveDate}}"
+    },
+    "uploadModal": {
+      "requirementsTitle": "Liste de contrôle des exigences :",
+      "resolution": "Résolution d'au moins 1080x1080",
+      "faceVisible": "Visage/corps clairement visible",
+      "goodLighting": "Bon éclairage (naturel ou studio)",
+      "recentPhoto": "Photo récente (des 3 derniers mois)",
+      "noFilters": "Pas de filtres lourds",
+      "professionalQuality": "Qualité professionnelle préférée (pas de style selfie)",
+      "dragOrClick": "Glissez les photos ici ou cliquez pour parcourir",
+      "fileInfo": "Taille du fichier : Max 10 Mo | Formats : JPG, PNG, WebP",
+      "preview": "Aperçu :",
+      "cancel": "Annuler",
+      "upload": "Télécharger",
+      "uploading": "Téléchargement...",
+      "modalTitle": "Télécharger une image de référence",
+      "sectionLabel": "Section :",
+      "bestForLabel": "Idéal pour :"
+    },
+    "contentTypes": {
+      "socialMediaAds": "Publicités sur les réseaux sociaux",
+      "webBannerCampaigns": "Campagnes Web et bannières",
+      "tvStreamingCommercials": "Publicités TV / streaming",
+      "filmScriptedStreaming": "Films et streaming scénarisé",
+      "printOutdoorAds": "Publicités imprimées et extérieures",
+      "musicVideos": "Clips musicaux",
+      "videoGameVRCharacters": "Personnages de jeux vidéo / VR",
+      "stockPhotoVideoLibraries": "Bibliothèques de photos / vidéos",
+      "educationalNonprofitSpots": "Spots éducatifs / à but non lucratif"
+    },
+    "industries": {
+      "fashionBeauty": "Mode / Beauté",
+      "techElectronics": "Technologie / Électronique",
+      "sportsFitness": "Sport / Fitness",
+      "foodBeverage": "Alimentation / Boissons",
+      "filmGamingMusic": "Cinéma / Jeux / Musique",
+      "automotive": "Automobile",
+      "financeFintech": "Finance / Fintech",
+      "healthWellness": "Santé / Bien-être",
+      "luxuryLifestyle": "Luxe et style de vie",
+      "travelHospitality": "Voyage / Hôtellerie",
+      "education": "Éducation",
+      "realEstate": "Immobilier",
+      "entertainment": "Divertissement",
+      "openToAny": "Ouvert à toute industrie"
+    },
+    "restrictions": {
+      "politicalContent": "Contenu politique",
+      "controversialTopics": "Sujets controversés",
+      "explicitAdultContent": "Contenu explicite/adulte",
+      "pharmaceuticalClaims": "Allégations pharmaceutiques",
+      "financialInvestmentAdvice": "Conseils financiers/d'investissement",
+      "tobaccoVapingProducts": "Produits de tabac/vapotage",
+      "gamblingUnlicensed": "Jeux d'argent (non licenciés)",
+      "alcohol": "Alcool",
+      "byproductsAnimalTesting": "Sous-produits/Tests sur animaux",
+      "weaponsFirearms": "Armes à feu",
+      "cryptocurrencyNFT": "Cryptomonnaie/NFT",
+      "mlmMultiLevelMarketing": "Marketing multiniveau",
+      "unlicensedFinancialProducts": "Produits financiers non licenciés",
+      "healthMedicalClaims": "Allégations médicales/santé"
+    },
+    "modals": {
+      "customizeContentTypeRate": {
+        "title": "Personnaliser le tarif par type de contenu",
+        "description": "Sélectionnez les types de contenu que vous acceptez de créer",
+        "customRatesTitle": "Tarifs personnalisés",
+        "customRatesDesc": "Définissez des tarifs personnalisés pour des types de contenu ou industries spécifiques. Votre tarif de base est ${rate}/mois.",
+        "usingBaseRate": "Utilisation du tarif de base : ${rate}/mois",
+        "cancel": "Annuler",
+        "saveChanges": "Enregistrer les modifications"
+      },
+      "customizeIndustryRate": {
+        "title": "Personnaliser le tarif par industrie",
+        "description": "Sélectionnez les industries avec lesquelles vous souhaitez travailler",
+        "cancel": "Annuler",
+        "saveChanges": "Enregistrer les modifications"
+      },
+      "contentRestrictions": {
+        "title": "Restrictions de contenu",
+        "description": "Spécifiez tout contenu avec lequel vous n'êtes pas à l'aise",
+        "currentRestrictions": "Restrictions actuelles",
+        "clickToAdd": "Cliquez pour ajouter des restrictions",
+        "addCustomRestriction": "Ajouter une restriction personnalisée",
+        "customPlaceholder": "ex. Pas de contenu politique",
+        "brandExclusivity": "Exclusivité de marque",
+        "cancel": "Annuler",
+        "saveChanges": "Enregistrer les modifications"
+      }
+    },
+    "publicProfile": {
+      "title": "Aperçu du Profil Public",
+      "subtitle": "Voici comment les marques voient votre profil",
+      "viewCard": "Voir la Carte",
+      "hideCard": "Masquer la Carte",
+      "editProfile": "Modifier le Profil",
+      "verifiedUser": "Utilisateur Vérifié",
+      "kycVerified": "Vérification KYC",
+      "hireCreator": "Embaucher le Créateur",
+      "followers": "Abonnés",
+      "activeCampaigns": "Campagnes Actives",
+      "completedProjects": "Projets Terminés",
+      "voiceProfiles": "Profils Vocaux",
+      "openToWork": "Ouvert au Travail",
+      "industries": "Secteurs d'activité",
+      "licensingRate": "Tarif de Licence",
+      "baseRateDescription": "Tarif de base pour l'utilisation de l'image",
+      "openToNegotiations": "Ouvert aux Négociations",
+      "perWeek": "par semaine",
+      "portfolio": "Portfolio",
+      "previewNote": "Ceci est un aperçu de votre profil public.",
+      "verifiedCreator": "Créateur Vérifié",
+      "engagement": "Engagement",
+      "turnaround": "Délai",
+      "from": "à partir de",
+      "preview": "Aperçu",
+      "profile": "Profil",
+      "exampleBio": "Créateur UGC et influenceur spécialisé dans la beauté, le lifestyle et les revues de produits. Passionné par le storytelling authentique.",
+      "namePlaceholder": "[Insérer le nom et le prénom de l'utilisateur]",
+      "locationPlaceholder": "Paris, France",
+      "handlesPlaceholder": "@lilycreations",
+      "portfolioItems": {
+        "targetRetail": "Target Retail",
+        "holidayCampaign": "Campagne de Vacances",
+        "spotifyPremium": "Spotify Premium",
+        "audioCampaign": "Campagne Audio",
+        "lululemon": "Lululemon",
+        "fitnessSeries": "Série Fitness",
+        "months": "{{count}} mois"
+      },
+      "verifyBannerTitle": "Verify your account",
+      "verifyBannerDesc": "[NEEDS TRANSLATION] Complete identity verification to become visible to brands.",
+      "verifyBannerCta": "Verify now",
+      "verifyBannerPending": "Verification pending"
+    },
+    "vibes": {
+      "Streetwear": "Streetwear",
+      "Glam": "Glamour",
+      "Natural": "Naturel",
+      "Classic": "Classique",
+      "Edgy": "Audacieux",
+      "Athletic": "Athlétique",
+      "Runway": "Défilé",
+      "Editorial": "Éditorial",
+      "Commercial": "Commercial",
+      "Casual": "Décontracté"
+    },
+    "jobs": {
+      "title": "Emplois",
+      "subtitle": "Consultez les invitations et explorez les rôles ouverts.",
+      "jobInvites": "Invitations d'emploi",
+      "jobInvitesDescription": "Répondez aux invitations d'emploi directes des marques.",
+      "jobBoard": "Tableau des emplois",
+      "openJobBoard": "Ouvrir le tableau des emplois",
+      "loadingInvites": "Chargement des invitations...",
+      "noInvites": "Aucune invitation pour le moment.",
+      "acceptInvite": "Accepter l'invitation",
+      "declineInvite": "Refuser l'invitation",
+      "inviteAccepted": "Invitation acceptée",
+      "inviteDeclined": "Invitation refusée"
+    },
+    "brandConnections": {
+      "title": "Connexion de marque",
+      "subtitle": "Gérez les connexions, les demandes et les offres de campagne entrantes.",
+      "connections": "Marques connectées",
+      "connectionsDescription": "Vous êtes connecté avec les marques ci-dessous.",
+      "noConnectionsDescription": "Vous n'êtes pas encore connecté à des marques.",
+      "requests": "Demandes",
+      "offers": "Offres de marque",
+      "deliverables": "Livrables",
+      "sendDeliverable": "Envoyer un livrable",
+      "uploadDeliverables": "Télécharger les livrables",
+      "uploadDeliverableDescription": "Téléchargez un livrable, choisissez la marque connectée et sélectionnez l'offre de campagne.",
+      "uploadForAgencyRequest": "Téléchargez les livrables pour la demande de l'agence.",
+      "awaitingPayment": "En attente du paiement de la marque avant de pouvoir télécharger les livrables.",
+      "noConnections": "Aucune connexion de marque pour le moment.",
+      "noPendingRequests": "Aucune demande en attente.",
+      "noOffers": "Aucune offre pour le moment.",
+      "viewDetails": "Voir les détails",
+      "acceptRequest": "Accepter",
+      "declineRequest": "Refuser"
+    },
+    "agencyConnections": {
+      "title": "Connexion d'agence",
+      "subtitle": "Gérez les invitations d'agence et vos agences connectées.",
+      "connections": "Connexions",
+      "connectedAgencies": "Agences connectées",
+      "connectedAgenciesDescription": "Vous pouvez être connecté à plusieurs agences à la fois.",
+      "noConnectionsDescription": "Vous n'êtes pas encore connecté à des agences.",
+      "assetRequests": "Demandes d'actifs",
+      "disconnect": "Demander la déconnexion",
+      "viewContract": "Voir le contrat",
+      "noConnections": "Aucune connexion d'agence pour le moment.",
+      "noAssetRequests": "Aucune demande d'actifs pour le moment.",
+      "invitations": "Invitations",
+      "noPendingInvitations": "Aucune invitation en attente pour le moment.",
+      "disconnectConfirm": "Êtes-vous sûr de vouloir vous déconnecter de cette agence ?",
+      "disconnectReason": "Raison de la déconnexion (facultatif)",
+      "disconnected": "Déconnecté avec succès de l'agence",
+      "invitationAccepted": "Vous êtes maintenant connecté à cette agence. Vous pouvez modifier votre profil par agence dans les paramètres du portail des talents."
+    },
+    "talentPortal": {
+      "title": "Portail des talents",
+      "overview": "Aperçu",
+      "bookings": "Réservations",
+      "licenses": "Licences",
+      "requests": "Demandes",
+      "noBookings": "Aucune réservation pour le moment.",
+      "noLicenses": "Aucune licence pour le moment.",
+      "noRequests": "Aucune demande pour le moment."
+    },
+    "payouts": {
+      "title": "Paiements",
+      "connectAccount": "Connecter un compte",
+      "accountConnected": "Compte connecté",
+      "availableBalance": "Solde disponible",
+      "pendingBalance": "Solde en attente",
+      "requestPayout": "Demander un paiement",
+      "payoutHistory": "Historique des paiements",
+      "noHistory": "Aucun historique de paiement pour le moment.",
+      "setupPayouts": "Configurer les paiements",
+      "stripeConnect": "Connecter avec Stripe",
+      "paypalConnect": "Connecter avec PayPal",
+      "wiseConnect": "Connecter avec Wise",
+      "paymentPreferences": "Préférences de paiement",
+      "taxDocumentation": "Documentation fiscale",
+      "w9OnFile": "W-9 au dossier • Mis à jour {{date}}",
+      "noW9OnFile": "Aucun W-9 au dossier",
+      "download1099": "Télécharger le 1099 ({{year}})",
+      "cashOutEarnings": "Retirer les revenus",
+      "requesting": "Demande en cours..."
+    },
+    "profileSettings": "Profile Settings",
+    "myRules": "My Rules",
+    "imageSections": {
+      "headshot_neutral": {
+        "title": "Headshots - Neutral Expression",
+        "description": "[NEEDS TRANSLATION] Face front-facing, neutral expression (not smiling or frowning). Good lighting on face. Professional clothing or plain background. 1080x1080 minimum.",
+        "bestFor": "Brands need a clean face reference"
+      },
+      "headshot_smiling": {
+        "title": "Headshots - Smiling",
+        "description": "[NEEDS TRANSLATION] Face front-facing, natural smile (genuine, not forced). Good lighting. Professional setting. 1080x1080 minimum.",
+        "bestFor": "Brands want to show you happy/approachable"
+      },
+      "fullbody_casual": {
+        "title": "Full Body - Casual Outfit",
+        "description": "[NEEDS TRANSLATION] Full body shot in casual everyday clothing. Natural pose.",
+        "bestFor": "Everyday casual look"
+      },
+      "fullbody_formal": {
+        "title": "Full Body - Formal/Professional",
+        "description": "Full body shot in professional or formal attire.",
+        "bestFor": "Professional or business contexts"
+      },
+      "side_profile": {
+        "title": "Side Profile",
+        "description": "Clean side view of your face and upper body.",
+        "bestFor": "Brands need your side angle"
+      },
+      "three_quarter": {
+        "title": "3/4 Angle",
+        "description": "[NEEDS TRANSLATION] Face turned at a 45-degree angle, natural expression.",
+        "bestFor": "Natural conversational angle"
+      },
+      "hair_down": {
+        "title": "Hair Down - Loose/Wavy",
+        "description": "Hair worn down in your natural style.",
+        "bestFor": "Casual, relaxed look"
+      },
+      "hair_up": {
+        "title": "Hair Up - Ponytail/Bun",
+        "description": "Hair pulled up/back, clean look.",
+        "bestFor": "Professional or active look"
+      },
+      "hair_styling": {
+        "title": "Hair Styling - Braids/Specific Style",
+        "description": "If you have a signature hairstyle.",
+        "bestFor": "If you have a signature style"
+      },
+      "upper_body": {
+        "title": "Upper Body Close-Up",
+        "description": "[NEEDS TRANSLATION] Shoulders and up, detailed facial features visible.",
+        "bestFor": "Close-up shots, detailed facial features"
+      },
+      "outdoors": {
+        "title": "In Environment - Outdoors",
+        "description": "You in an outdoor setting (park, street, nature).",
+        "bestFor": "Contextual, lifestyle content"
+      },
+      "indoors": {
+        "title": "In Environment - Indoors",
+        "description": "You in an indoor setting (home, office, cafe).",
+        "bestFor": "Indoor/office/home contexts"
+      },
+      "makeup_variation": {
+        "title": "Different Makeup Style",
+        "description": "[NEEDS TRANSLATION] If you vary your makeup style, show different looks.",
+        "bestFor": "If you vary makeup, brands should know"
+      },
+      "seasonal": {
+        "title": "Seasonal/Outfit Variation",
+        "description": "Different seasonal styles or outfit variations.",
+        "bestFor": "Seasonal campaigns, different looks"
+      },
+      "signature": {
+        "title": "Your Choice - Signature Moment",
+        "description": "[NEEDS TRANSLATION] A photo that really represents YOU and how people recognize you.",
+        "bestFor": "A photo that really represents YOU"
+      }
+    }
+  },
+  "talentPortal": {
+    "title": "Portail des Talents",
+    "overview": "Aperçu",
+    "bookings": "Réservations",
+    "licenses": "Licences",
+    "requests": "Demandes",
+    "mode": {
+      "aiTitle": "Portail de licences IA",
+      "irlTitle": "Portail de réservations IRL",
+      "aiSubtitle": "Gérez vos accords de licence IA et vos revenus",
+      "irlSubtitle": "Suivez vos réservations et vos revenus",
+      "aiButton": "Mode IA",
+      "irlButton": "Mode IRL"
+    },
+    "tabs": {
+      "overview": "Aperçu",
+      "bookingCalendar": "Calendrier des réservations",
+      "activeProjects": "Projets actifs",
+      "jobHistory": "Historique des emplois",
+      "availability": "Disponibilité",
+      "portfolio": "Portfolio",
+      "earnings": "Revenus",
+      "messages": "Messages",
+      "settings": "Paramètres",
+      "agencyConnection": "Connexion agence",
+      "myLikeness": "Mon Apparence",
+      "activeCampaigns": "Campagnes actives",
+      "archive": "Archives",
+      "analytics": "Analytique"
+    },
+    "portalSettings": "Paramètres du portail",
+    "portalSettingsDescription": "Configurez vos préférences du portail des talents",
+    "settingsTabs": {
+      "profile": "Profil",
+      "payments": "Paiements",
+      "privacy": "Confidentialité"
+    },
+    "settings": {
+      "profile": {
+        "title": "Profil",
+        "subtitle": "Ce profil est spécifique à l'agence sélectionnée.",
+        "allAgencies": "Toutes les agences",
+        "defaultAgency": "Agence par défaut",
+        "save": "Enregistrer le profil",
+        "saving": "Enregistrement...",
+        "fields": {
+          "stageName": "Nom de scène",
+          "fullLegalName": "Nom légal complet",
+          "email": "E-mail",
+          "phone": "Téléphone",
+          "dateOfBirth": "Date de naissance",
+          "roleType": "Type de rôle",
+          "status": "Statut",
+          "skinTone": "Teint",
+          "instagram": "Instagram",
+          "instagramFollowers": "Abonnés Instagram",
+          "engagementRate": "Taux d'engagement",
+          "city": "Ville",
+          "stateProvince": "État / Province",
+          "country": "Pays",
+          "bio": "Bio"
+        }
+      },
+      "privacy": {
+        "title": "Contrôles de confidentialité",
+        "dataUsageTitle": "Utilisation des données pour l'entraînement",
+        "dataUsageDescription": "Autoriser les données anonymisées pour l'amélioration du modèle d'IA"
+      }
+    },
+    "content": {
+      "irl": {
+        "overview": {
+          "upcomingBookings": "Réservations à venir",
+          "totalEarnings": "Revenus totaux",
+          "completedJobs": "Travaux terminés",
+          "thisMonth": "Ce mois-ci",
+          "noUpcomingBookings": "Aucune réservation à venir pour le moment.",
+          "bookingFallback": "Réservation",
+          "pending": "en attente",
+          "earningsByAgency": "Revenus par agence",
+          "noEarningsByAgency": "Aucun revenu par agence pour ce mois pour le moment.",
+          "agencyFallback": "Agence",
+          "monthlySuffix": "/mois",
+          "yourAgency": "Votre agence",
+          "connectedSince": "Connecté depuis {{date}}",
+          "editProfile": "Modifier le profil",
+          "manageCampaigns": "Gérer les campagnes",
+          "viewEarnings": "Voir les revenus"
+        },
+        "calendar": {
+          "subtitle": "Voir et gérer vos réservations à venir",
+          "scheduleTitle": "Réservations et planning",
+          "scheduleDescription": "Gérez les réservations et la disponibilité de votre {{entity}}",
+          "manageAvailability": "Gérer la disponibilité",
+          "newBooking": "Nouvelle réservation",
+          "selectDate": "Sélectionner une date",
+          "untitled": "Sans titre",
+          "bookOutsTitle": "{{count}} indisponible",
+          "bookOutsLabel": "{{count}} indisponible",
+          "stats": {
+            "totalBookings": "Réservations totales",
+            "thisMonth": "Ce mois-ci",
+            "confirmed": "Confirmé",
+            "pending": "En attente"
+          },
+          "views": {
+            "month": "Mois",
+            "week": "Semaine",
+            "day": "Jour",
+            "teamView": "Vue équipe",
+            "agenda": "Agenda"
+          },
+          "talentView": {
+            "single": "Vue simple",
+            "all": "Tous les {{entity}}",
+            "selected": "{{entity}} sélectionné",
+            "select": "Sélectionner {{entity}}"
+          },
+          "shortcuts": {
+            "navigate": "Naviguer",
+            "today": "Aujourd'hui",
+            "newBooking": "Nouvelle réservation",
+            "close": "Fermer"
+          },
+          "legend": {
+            "casting": "Casting",
+            "option": "Option",
+            "confirmed": "Confirmé",
+            "pending": "En attente",
+            "completed": "Terminé",
+            "cancelled": "Annulé",
+            "testShoot": "Séance test",
+            "fitting": "Essayage",
+            "rehearsal": "Répétition",
+            "unavailable": "Indisponible",
+            "conflict": "Conflit"
+          }
+        },
+        "activeProjects": {
+          "subtitle": "Projets et missions actuellement en cours",
+          "noneTitle": "Aucun projet actif pour le moment.",
+          "noneDescription": "Vos projets et missions en cours apparaîtront ici.",
+          "projectFallback": "Projet"
+        },
+        "jobHistory": {
+          "subtitle": "Voir toutes les réservations terminées",
+          "noneTitle": "Aucun emploi terminé pour le moment.",
+          "noneDescription": "Vos réservations terminées apparaîtront ici.",
+          "jobFallback": "Emploi",
+          "completed": "terminé"
+        },
+        "availability": {
+          "title": "Paramètres de disponibilité",
+          "subtitle": "Gérez votre disponibilité pour les réservations et vos indisponibilités",
+          "bookOutCalendar": "Calendrier des indisponibilités",
+          "bookOutCalendarDescription": "Bloquez les dates où vous n'êtes pas disponible pour les réservations",
+          "talentAvailabilityTitle": "Disponibilité de {{entity}}",
+          "talentAvailabilityDescription": "Gérez les indisponibilités et absences de votre {{entity}}",
+          "addBookOut": "Ajouter une indisponibilité",
+          "noneTitle": "Aucune indisponibilité planifiée",
+          "noneDescription": "Ajoutez des périodes d'indisponibilité pour votre {{entity}}",
+          "allDatesAvailable": "{{entity}} apparaîtra disponible pour toutes les dates",
+          "unknownEntity": "{{entity}} inconnu",
+          "deleteDialogTitle": "Supprimer cette indisponibilité ?",
+          "deleteDialogDescription": "Cela supprimera cette période d'indisponibilité du planning.",
+          "deleteFailedTitle": "Échec de la suppression",
+          "deleteFailedDescription": "Impossible de supprimer l'indisponibilité.",
+          "manageModalTitle": "Disponibilité et indisponibilités de {{entity}}",
+          "manageModalDescription": "Gérez quand {{entity}} n'est pas disponible pour les réservations"
+        },
+        "earnings": {
+          "subtitle": "Suivez vos revenus de réservation",
+          "totalEarnings": "Revenus totaux",
+          "withdrawable": "Retirable",
+          "completedJobs": "Travaux terminés",
+          "recentPayments": "Paiements récents",
+          "noPaymentsYet": "Aucun paiement pour le moment.",
+          "paymentFallback": "Paiement"
+        },
+        "shared": {
+          "ok": "OK",
+          "cancel": "Annuler",
+          "delete": "Supprimer",
+          "remove": "Retirer",
+          "status": {
+            "pending": "En attente",
+            "confirmed": "Confirmé",
+            "completed": "Terminé",
+            "cancelled": "Annulé"
+          }
+        },
+        "bookOutReasons": {
+          "personal": "Personnel",
+          "medical": "Médical",
+          "vacation": "Vacances",
+          "other_booking": "Autre réservation",
+          "other": "Autre"
+        },
+        "addBookOut": {
+          "save": "Enregistrer l'indisponibilité",
+          "fields": {
+            "reason": "Motif",
+            "entity": "{{entity}}",
+            "selectEntity": "Sélectionner {{entity}}",
+            "startDate": "Date de début",
+            "endDate": "Date de fin",
+            "notes": "Notes",
+            "additionalDetails": "Détails supplémentaires...",
+            "notifyAgency": "Notifier l'agence par e-mail",
+            "notifyEntity": "Notifier {{entity}} par e-mail"
+          }
+        },
+        "bookingDetails": {
+          "title": "Détails de la réservation",
+          "client": "Client",
+          "viewClientProfile": "Cliquer pour voir le profil client",
+          "notSpecified": "Non spécifié",
+          "dateTime": "Date et heure",
+          "date": "Date :",
+          "location": "Lieu",
+          "viewOnGoogleMaps": "Voir sur Google Maps",
+          "payment": "Paiement",
+          "dayRate": "Tarif journalier",
+          "usageTerms": "Conditions d'utilisation",
+          "duration": "Durée",
+          "digital": "Numérique",
+          "oneMonth": "1 mois",
+          "specialInstructions": "Instructions spéciales",
+          "noSpecialInstructions": "Aucune instruction spéciale.",
+          "attachments": "Pièces jointes",
+          "edit": "Modifier",
+          "duplicate": "Dupliquer",
+          "complete": "Terminer",
+          "remind": "Rappeler",
+          "downloadPdf": "Télécharger le PDF",
+          "generateInvoice": "Générer la facture",
+          "shareBookingLink": "Partager le lien de réservation",
+          "cancelBooking": "Annuler la réservation",
+          "activityLog": "Journal d'activité",
+          "bookingCreated": "Réservation créée",
+          "talentViewedBooking": "Le talent a consulté la réservation",
+          "times": "{{count}} fois",
+          "bookingId": "ID de réservation : {{id}}",
+          "downloadStarted": "Téléchargement démarré",
+          "downloadingFile": "Téléchargement de {{name}}",
+          "downloadFailed": "Échec du téléchargement",
+          "couldNotDownloadFile": "Impossible de télécharger le fichier",
+          "confirmCancelTitle": "Voulez-vous vraiment annuler cette réservation ?",
+          "confirmCancelDescription": "Cette action est irréversible.",
+          "confirmCompleteTitle": "Marquer cette réservation comme terminée ?",
+          "confirmCompleteDescription": "Le statut sera mis à jour sur Terminé.",
+          "bookingMarkedCompletedTitle": "Réservation marquée comme terminée",
+          "bookingMarkedCompletedDescription": "Le statut a été mis à jour avec succès.",
+          "sendReminderTitle": "Envoyer un rappel à {{entity}} ?",
+          "sendReminderDescription": "Un rappel sera envoyé à {{name}}",
+          "reminderSentTitle": "Rappel envoyé",
+          "reminderSentDescription": "La notification a été envoyée à {{name}}",
+          "pdfComingSoon": "La fonction de téléchargement PDF arrive bientôt !",
+          "invoiceComingSoon": "La génération de facture arrive bientôt !",
+          "bookingLinkCopied": "Lien de réservation copié dans le presse-papiers !"
+        }
+      },
+      "bookingPreferences": {
+        "title": "Préférences de réservation",
+        "subtitle": "Définissez les préférences que votre agence peut utiliser pour vos réservations",
+        "willingToTravel": "Prêt à voyager",
+        "acceptOutsideLocalArea": "Accepter les réservations hors zone locale",
+        "minimumDayRate": "Tarif journalier minimum",
+        "minimumRateDescription": "Votre tarif minimum acceptable",
+        "selectAgencyTitle": "Select an agency",
+        "selectAgencyDescription": "[NEEDS TRANSLATION] Please choose the agency for this book-out using the Agency filter dropdown."
+      },
+      "portfolio": {
+        "title": "Portfolio",
+        "subtitle": "Mettez en avant votre travail et vos projets passés",
+        "imagesTitle": "Images du portfolio",
+        "imagesSubtitle": "Téléchargez des images pour votre portfolio IRL",
+        "addImages": "Ajouter des images",
+        "remove": "Supprimer",
+        "pastWorkHighlights": "Temps forts des projets passés",
+        "pastWorkHighlightsDescription": "Ajoutez des projets marquants, collaborations ou mentions presse",
+        "highlightsComingSoon": "Temps forts bientôt disponibles",
+        "highlightsComingSoonDescription": "Votre agence peut vous aider à organiser ici les temps forts du portfolio",
+        "selectAgencyTitle": "Sélectionnez une agence",
+        "selectAgencyDescription": "Veuillez choisir l'agence pour cet envoi dans le filtre Agence."
+      },
+      "analytics": {
+        "totalRevenue": "Revenu total",
+        "monthlyRecurring": "Mensuel récurrent",
+        "campaignPerformance": "Performance des campagnes",
+        "aiLicensing": "Licence IA",
+        "viewsPerWeek": "Vues/semaine",
+        "revenue": "Revenu",
+        "empty": "Aucune statistique pour le moment. Demandez à votre agence d'ajouter les vues hebdomadaires."
+      },
+      "ai": {
+        "overview": {
+          "activeCampaigns": "Campagnes actives",
+          "monthlyRevenue": "Revenu mensuel",
+          "latestLicensingRequests": "Dernières demandes de licence",
+          "noLicensingRequests": "Aucune demande de licence pour le moment.",
+          "brandFallback": "Marque",
+          "licensingRequestFallback": "Demande de licence",
+          "pending": "en attente"
+        },
+        "likeness": {
+          "assetLibraryTitle": "Bibliothèque d'actifs d'apparence",
+          "assetLibrarySubtitle": "Gérez vos photos, vidéos et échantillons vocaux utilisés pour générer du contenu IA",
+          "referencePhotos": "Photos de référence",
+          "voiceSamples": "Échantillons vocaux",
+          "managePhotos": "Gérer les photos",
+          "manageVoice": "Gérer la voix",
+          "assetUsageRights": "Droits d'utilisation des actifs",
+          "photosApproved": "Photos : Approuvé",
+          "photosUsageDescription": "Vos photos peuvent être utilisées pour la génération d'images IA par des marques licenciées",
+          "allBrands": "Toutes les marques",
+          "voiceApproved": "Voix : Approuvé",
+          "voiceUsageDescription": "Clonage vocal activé pour les émotions approuvées",
+          "limitedUse": "Usage limité",
+          "portfolioShowcase": "Vitrine du portfolio",
+          "portfolioSubtitle": "Contenu IA approuvé mettant en avant votre apparence",
+          "portfolioUrlPlaceholder": "Collez une URL d'image/vidéo",
+          "add": "Ajouter",
+          "live": "En ligne",
+          "remove": "Supprimer",
+          "portfolioItemFallback": "Élément du portfolio",
+          "noPortfolioItems": "Aucun élément de portfolio pour le moment."
+        },
+        "campaigns": {
+          "allBrands": "Toutes les marques",
+          "searchPlaceholder": "Rechercher par marque ou campagne",
+          "clearSearchAria": "Effacer la recherche",
+          "amount": "Montant",
+          "activeUntil": "Actif jusqu'au",
+          "regions": "Régions",
+          "emptySearch": "Aucune campagne ne correspond à votre recherche.",
+          "loading": "Chargement des campagnes actives...",
+          "emptyNone": "Aucune campagne active pour le moment.",
+          "campaignFallback": "Campagne",
+          "notAvailable": "—"
+        },
+        "archive": {
+          "subtitle": "Campagnes passées (expirées)",
+          "campaignFallback": "Campagne",
+          "loading": "Chargement des campagnes passées...",
+          "empty": "Aucune campagne passée pour le moment"
+        },
+        "earnings": {
+          "subtitle": "Suivez vos revenus de licence",
+          "annualRunRate": "Projection annuelle",
+          "brandFallback": "Marque",
+          "monthlySuffix": "/mois",
+          "yourAgency": "Votre agence",
+          "connectedSince": "Connecté depuis {{date}}",
+          "editProfile": "Modifier le profil",
+          "manageCampaigns": "Gérer les campagnes",
+          "viewEarnings": "Voir les revenus",
+          "manage": "Gérer"
+        },
+        "analytics": {
+          "subtitle": "Indicateurs de performance sur l'ensemble des campagnes",
+          "totalViews": "Vues totales"
+        }
+      }
+    },
+    "chat": {
+      "messagesTitle": "Messages",
+      "agencySingular": "Agence",
+      "agencyPlural": "Agences",
+      "creatorSingular": "Créateur",
+      "creatorPlural": "Créateurs",
+      "searchConversations": "Rechercher des conversations...",
+      "filterAll": "Tous",
+      "filterUnread": "Non lus",
+      "noMessagesYet": "Aucun message pour le moment",
+      "sendToStart": "Envoyez un message pour démarrer la conversation.",
+      "messageDeleted": "Ce message a été supprimé",
+      "edited": "(modifié)",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "typeMessage": "Écrire un message... (Entrée pour envoyer)",
+      "sendMessage": "Envoyer le message",
+      "shiftEnter": "Maj+Entrée pour une nouvelle ligne",
+      "deleteMessageTitle": "Supprimer le message",
+      "deleteMessageDescription": "Êtes-vous sûr de vouloir supprimer ce message ? Cette action est irréversible.",
+      "cancel": "Annuler",
+      "editMessageTitle": "Modifier le message",
+      "enterMessage": "Saisissez votre message...",
+      "saveChanges": "Enregistrer les modifications",
+      "selectConversation": "Sélectionnez une conversation",
+      "chooseThread": "Choisissez un fil à gauche, ou démarrez une nouvelle conversation avec {{role}}.",
+      "selectChatToType": "Sélectionnez un chat pour commencer à écrire...",
+      "roleAgency": "une agence",
+      "roleCreator": "un créateur",
+      "noActiveConnections": "Aucune connexion active",
+      "connectToChat": "Connectez-vous avec {{role}} pour discuter.",
+      "startConversation": "Démarrer la conversation",
+      "noResults": "Aucun résultat trouvé",
+      "time": {
+        "daysAgo": "il y a {{count}} jour",
+        "daysAgo_other": "il y a {{count}} jours",
+        "hoursAgo": "il y a {{count}} heure",
+        "hoursAgo_other": "il y a {{count}} heures",
+        "minutesAgo": "il y a {{count}} minute",
+        "minutesAgo_other": "il y a {{count}} minutes",
+        "justNow": "À l'instant"
+      }
+    },
+    "noBookings": "Aucune réservation pour le moment.",
+    "noLicenses": "Aucune licence pour le moment.",
+    "noRequests": "Aucune demande pour le moment.",
+    "disabledDescription": "Connectez-vous à une agence pour accéder au Portail des talents."
+  },
+  "jobs": {
+    "title": "Emplois",
+    "subtitle": "Consultez les invitations et explorez les rôles ouverts.",
+    "jobInvites": "Invitations d'Emploi",
+    "jobInvitesDescription": "Répondez aux invitations d'emploi directes des marques.",
+    "jobBoard": "Tableau des Emplois",
+    "openJobBoard": "Ouvrir le Tableau des Emplois",
+    "loadingInvites": "Chargement des invitations d'emploi...",
+    "noInvites": "Aucune invitation d'emploi pour le moment.",
+    "acceptInvite": "Accepter l'Invitation",
+    "declineInvite": "Refuser l'Invitation",
+    "inviteAccepted": "Invitation acceptée",
+    "inviteDeclined": "Invitation refusée",
+    "inviteFallbackTitle": "Invitation d'emploi",
+    "viewJobDetails": "Voir les détails de l'emploi",
+    "apply": "Postuler",
+    "browseBoardTitle": "Parcourir l'intégralité du tableau des emplois",
+    "browseBoardDescription": "Ouvrez la page publique des emplois pour voir toutes les opportunités disponibles et postuler.",
+    "findJobs": "Trouver des Emplois",
+    "browseBrandPostedOpportunities": "Parcourir les opportunités publiées par les marques",
+    "searchJobs": "Rechercher des emplois...",
+    "filterByIndustry": "Filtrer par industrie",
+    "filterByLocation": "Filtrer par emplacement",
+    "allIndustries": "Toutes les industries",
+    "allLocations": "Tous les emplacements",
+    "clearFilters": "Effacer les filtres"
+  },
+  "agencyConnections": {
+    "title": "Connexions d'Agence",
+    "subtitle": "Gérez les invitations d'agence et vos agences connectées.",
+    "connections": "Connexions",
+    "connectedAgencies": "Agences Connectées",
+    "connectedAgenciesDescription": "Vous pouvez être connecté à plusieurs agences à la fois.",
+    "noConnectionsDescription": "Vous n'êtes pas encore connecté à des agences.",
+    "assetRequests": "Demandes d'Actifs",
+    "disconnect": "Demander la Déconnexion",
+    "viewContract": "Voir le Contrat",
+    "noConnections": "Aucune connexion d'agence pour le moment.",
+    "noAssetRequests": "Aucune demande d'actifs pour le moment.",
+    "invitations": "Invitations",
+    "noPendingInvitations": "Aucune invitation en attente pour le moment.",
+    "disconnectConfirm": "Êtes-vous sûr de vouloir vous déconnecter de cette agence ?",
+    "disconnectReason": "Raison de la déconnexion (optionnel)",
+    "disconnected": "Déconnexion réussie de l'agence",
+    "invitationAccepted": "Vous êtes maintenant connecté à cette agence. Vous pouvez modifier votre profil par agence dans les paramètres du portail des talents.",
+    "thisAgency": "cette agence",
+    "dialogs": {
+      "requestDisconnectTitle": "Demander la déconnexion de {{agency}} ?",
+      "disconnectTitle": "Se déconnecter de {{agency}} ?",
+      "requestDisconnectDescription": "Ce contrat est toujours actif, l'agence doit donc approuver votre demande de déconnexion sauf si le contrat expire d'abord.",
+      "disconnectDescription": "Cette action peut supprimer l’accès aux réservations, aux gains et aux données du portail pour cette agence.",
+      "requestDisconnectConfirm": "Je comprends que la connexion reste active jusqu'à ce que l'agence approuve cette demande.",
+      "disconnectConfirm": "Je comprends que cette action est difficile à annuler.",
+      "requestReasonLabel": "Raison de la demande",
+      "requestReasonPlaceholder": "Expliquez à l'agence pourquoi vous souhaitez résilier le contrat actif avant son terme.",
+      "requestPending": "Une demande de déconnexion est déjà en attente pour ce contrat.",
+      "cancel": "Annuler",
+      "requestDisconnect": "Demander la déconnexion"
+    },
+    "disconnectNow": "Se déconnecter",
+    "decline": "Refuser",
+    "reviewContract": "Voir le contrat",
+    "sync": "Synchroniser",
+    "accept": "Accepter",
+    "toasts": {
+      "disconnectRequestedTitle": "Déconnexion demandée",
+      "disconnectRequestedDescription": "Votre agence a été informée. La connexion restera active jusqu'à son approbation ou jusqu'à l'expiration du contrat.",
+      "requestAlreadyPendingTitle": "Demande déjà en attente",
+      "requestAlreadyPendingDescription": "Cette demande de déconnexion attend déjà l'approbation de l'agence.",
+      "disconnectedTitle": "Déconnecté",
+      "disconnectedDescription": "Vous avez été déconnecté de l'agence.",
+      "failedDisconnectTitle": "Échec de la déconnexion",
+      "missingInviteTokenTitle": "Jeton d'invitation manquant",
+      "missingInviteTokenDescription": "Ouvrez le lien d'invitation pour répondre.",
+      "failedDeclineTitle": "Échec du refus",
+      "contractLinkUnavailableTitle": "Lien du contrat indisponible",
+      "contractLinkUnavailableDescription": "Le lien de signature n'est pas encore prêt. Réessayez de synchroniser dans un instant.",
+      "contractSyncedTitle": "Contrat synchronisé",
+      "contractSyncedDescription": "Le statut de l'invitation a été actualisé.",
+      "failedSyncTitle": "Échec de la synchronisation",
+      "invitationAcceptedTitle": "Invitation acceptée",
+      "failedAcceptTitle": "Échec de l'acceptation"
+    },
+    "contract": {
+      "title": "Contrat de {{agency}}",
+      "agencyFallback": "Agence",
+      "description": "Consultez les principales conditions de votre contrat actif avec l’agence et le document signé.",
+      "status": "Statut",
+      "commission": "Commission",
+      "validUntil": "Valide jusqu'au",
+      "notSet": "non défini",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "disconnectStatus": "Statut de déconnexion :",
+      "reason": "Raison :",
+      "viewSignedContract": "Voir le contrat signé",
+      "agencyWebsite": "Site web de l'agence",
+      "noDetails": "Aucun détail de contrat marketplace actif n'est disponible pour cette agence."
+    },
+    "loading": "Chargement",
+    "disconnectPending": "Demande de déconnexion en attente",
+    "connectedAgencyFallback": "Agence connectée",
+    "disconnectAria": "Se déconnecter de l'agence",
+    "pendingInvitationsDescription": "Répondez aux invitations en attente des agences.",
+    "invitationFromAgencyNamed": "Invitation de {{agency}}",
+    "invitationFromAgency": "Invitation d'une agence",
+    "profileAvailable": "Profil d'agence disponible sur demande",
+    "assetRequestsDescription": "Téléchargez des livrables pour les demandes de l’agence.",
+    "viewPDF": "Voir le PDF",
+    "loadingRequests": "Chargement des demandes...",
+    "agencyFeedback": "Feedback de l'agence",
+    "likeleeNoticeTitle": "Note Likelee :",
+    "likeleeNoticeDescription": "Cette agence a trouvé votre profil public sur la marketplace et vous a envoyé une invitation de connexion.",
+    "assetRequestFallback": "Demande d'assets",
+    "feedback": {
+      "good": "bien",
+      "requestingChanges": "modifications demandées"
+    },
+    "offerMissingTitle": "Offre de campagne introuvable",
+    "offerMissingDescription": "Nous n'avons pas pu trouver l'offre de campagne pour cette demande. Actualisez la page puis réessayez."
+  },
+  "brandConnections": {
+    "title": "Connexions de Marque",
+    "subtitle": "Gérez les connexions, les demandes et les offres de campagne entrantes.",
+    "connections": "Marques Connectées",
+    "connectionsDescription": "Vous êtes connecté avec les marques ci-dessous.",
+    "noConnectionsDescription": "Vous n'êtes pas encore connecté à des marques.",
+    "requests": "Demandes",
+    "offers": "Offres de Marque",
+    "deliverables": "Livrables",
+    "sendDeliverable": "Envoyer un Livrable",
+    "uploadDeliverables": "Télécharger des Livrables",
+    "uploadDeliverableDescription": "Téléchargez un livrable, choisissez la marque connectée et sélectionnez l'offre de campagne.",
+    "uploadForAgencyRequest": "Téléchargez des livrables pour la demande de l'agence.",
+    "awaitingPayment": "En attente du paiement de la marque avant de pouvoir télécharger les livrables.",
+    "noConnections": "Aucune connexion de marque pour le moment.",
+    "noPendingRequests": "Aucune demande en attente.",
+    "noOffers": "Aucune offre pour le moment.",
+    "viewDetails": "Voir les Détails",
+    "acceptRequest": "Accepter",
+    "declineRequest": "Refuser",
+    "notificationSummarySingular": "{{count}} nouvelle notification concernant les demandes, offres et livrables.",
+    "notificationSummaryPlural": "{{count}} nouvelles notifications concernant les demandes, offres et livrables.",
+    "connectedBrandFallback": "Marque connectée",
+    "requestsDescription": "Répondez aux demandes de connexion de marque en attente.",
+    "noPendingRequestsDescription": "Aucune demande en attente pour le moment.",
+    "requestFallback": "Demande de connexion de marque",
+    "profileAvailable": "Profil de marque disponible",
+    "loadingOffers": "Chargement des offres de campagne...",
+    "noOffersAvailable": "Aucune offre de campagne disponible pour le moment.",
+    "offerFallback": "Offre de campagne",
+    "viewBrief": "Voir le brief",
+    "backToOffers": "← Retour aux offres de marque",
+    "offerBriefNotFound": "Brief introuvable.",
+    "campaignFallback": "Campagne",
+    "briefAndContractTitle": "{{campaign}} - Brief & contrat",
+    "briefAndContractSubtitle": "Portée détaillée et exigences",
+    "disconnectAria": "Se déconnecter de la marque",
+    "offerStatusLabel": "Statut de l'offre :",
+    "offerStatus": "Statut de l'offre :",
+    "deliverableStatus": "Statut du livrable :",
+    "hide": "Masquer",
+    "open": "Ouvrir",
+    "brandFallback": "Marque",
+    "creator": "créateur",
+    "agency": "agence",
+    "viewPDF": "Voir le PDF",
+    "openFile": "Ouvrir le fichier",
+    "yourDeliverables": "Vos livrables",
+    "noDeliverablesSubmitted": "Aucun livrable soumis pour le moment.",
+    "noDeliverablesForSignedOffers": "Aucun livrable disponible pour les offres signées pour le moment.",
+    "noDeliverablesYet": "Aucun livrable pour le moment.",
+    "viewed": "vu",
+    "fulfilled": "terminé",
+    "submitted": "soumis",
+    "signContract": "Signer le Contrat",
+    "contractAlreadySigned": "Contrat déjà signé",
+    "accepted": "accepté",
+    "declined": "refusé",
+    "approved": "approuvé",
+    "sent": "envoyé",
+    "contractFullySigned": "Contrat Entièrement Signé",
+    "changesRequested": "Modifications Demandées",
+    "contractPartiallySigned": "Contrat Partiellement Signé",
+    "contractSent": "Contrat Envoyé",
+    "requestReview": "Demander une révision",
+    "readyToSubmit": "Prêt à soumettre",
+    "notStarted": "Non commencé",
+    "editsRequestedByBrand": "Modifications demandées par la marque",
+    "loadingDeliverables": "Chargement des livrables...",
+    "selectBrand": "Sélectionner une marque",
+    "selectConnectedBrand": "Sélectionner une marque connectée",
+    "selectCampaign": "Sélectionner une campagne",
+    "selectCampaignOffer": "Sélectionner une offre de campagne",
+    "noCampaignOffersForBrandYet": "Aucune offre de campagne trouvée pour cette marque pour le moment.",
+    "remove": "Retirer",
+    "cancel": "Annuler",
+    "send": "Envoyer",
+    "sending": "Envoi...",
+    "deliverableFeedback": "Feedback des livrables",
+    "viewFeedback": "Voir le feedback",
+    "needsYourAttention": "Nécessite votre attention",
+    "needsYourAttentionDescription": "Les derniers éléments qui nécessitent encore votre réponse.",
+    "noApprovalsWaiting": "Aucune approbation en attente pour le moment.",
+    "connectionRequestAwaitingResponse": "Demande de connexion en attente de votre réponse",
+    "deliverableReview": "Révision de livrable",
+    "feedbackReceivedOnDeliverables": "Feedback reçu sur les livrables soumis",
+    "feedback": "Retour",
+    "chooseFiles": "Choisir des fichiers",
+    "noFileChosen": "Aucun fichier choisi",
+    "filesSelected": "{{count}} fichier sélectionné",
+    "filesSelected_other": "{{count}} fichiers sélectionnés",
+    "uploadHint": "Les fichiers envoyés seront stockés et partagés sous forme de liens téléchargeables."
+  },
+  "common": {
+    "dashboard": "Tableau de bord",
+    "signIn": "Se connecter",
+    "viewPDF": "Voir le PDF",
+    "uploadDeliverables": "Télécharger les Livrables",
+    "yourDeliverables": "Vos livrables",
+    "noDeliverablesSubmitted": "Aucun livrable soumis pour le moment.",
+    "viewed": "vu",
+    "signContract": "Signer le Contrat",
+    "accepted": "accepté",
+    "declined": "refusé",
+    "approved": "approuvé",
+    "sent": "envoyé",
+    "contractFullySigned": "Contrat Entièrement Signé",
+    "changesRequested": "Modifications Demandées",
+    "contractPartiallySigned": "Contrat Partiellement Signé",
+    "contractSent": "Contrat Envoyé",
+    "proCreatorsUnlimited": "Les créateurs Pro ont une sélection illimitée de catégories.",
+    "backToBrandOffers": "← Retour aux offres de marque",
+    "companyNamePlaceholder": "Nom de votre entreprise",
+    "websitePlaceholder": "https://votreentreprise.com",
+    "phonePlaceholder": "+33 1 23 45 67 89"
+  },
+  "jobsPage": {
+    "title": "Trouver des Emplois",
+    "subtitle": "Parcourez les opportunités publiées par les marques et postulez directement.",
+    "backToDashboard": "Retour au tableau de bord",
+    "searchPlaceholder": "Rechercher un titre de poste ou un mot-clé",
+    "callTypePlaceholder": "Type d'appel",
+    "jobTypePlaceholder": "Type d'emploi",
+    "locationPlaceholder": "Emplacement",
+    "allCallTypes": "Tous les types d'appel",
+    "allJobTypes": "Tous les types d'emploi",
+    "allLocations": "Tous les emplacements",
+    "viewDetails": "Voir les Détails",
+    "applyNow": "Postuler Maintenant",
+    "upgradeToApply": "Mettre à niveau pour postuler",
+    "remote": "À distance",
+    "aboutRole": "À propos du rôle",
+    "openRoles": "{{count}} postes ouverts",
+    "showingAllJobs": "Affichage des {{count}} emplois",
+    "applyDialog": {
+      "title": "Postuler à {{title}}",
+      "description": "Renseignez vos informations et votre CV pour postuler à ce poste.",
+      "uploadResume": "Télécharger le CV",
+      "browseResume": "Parcourir le CV",
+      "uploadCompCard": "Télécharger la comp card",
+      "generateCompCard": "Générer une comp card",
+      "orUploadCompCard": "Ou téléchargez une comp card PDF/image existante.",
+      "browseCompCards": "Parcourir les comp cards",
+      "clearAll": "Tout effacer",
+      "portfolioLink": "Lien portfolio *",
+      "portfolioPlaceholder": "https://votreportfolio.com",
+      "optionalMessagePlaceholder": "Message facultatif, ex. \"Voici mon CV...\"",
+      "cancel": "Annuler",
+      "sending": "Envoi...",
+      "sendApplication": "Envoyer la candidature"
+    },
+    "details": {
+      "title": "Détails de l'emploi",
+      "description": "Informations détaillées sur l’offre sélectionnée.",
+      "close": "Fermer",
+      "apply": "Postuler"
+    },
+    "callTypes": {
+      "creator": "Appel créateur",
+      "agency": "Appel agence",
+      "athlete": "Appel athlète",
+      "aiArtist": "Appel artiste IA"
+    },
+    "jobTypes": {
+      "fullTime": "Temps plein",
+      "partTime": "Temps partiel",
+      "contract": "Contrat",
+      "freelance": "Freelance",
+      "gig": "Mission",
+      "perProject": "Par projet"
+    },
+    "locations": {
+      "remote": "À distance",
+      "hybrid": "Hybride",
+      "onSite": "Sur site"
+    }
+  },
+  "billing": {
+    "title": "Facturation",
+    "subscription": "Abonnement",
+    "currentPlan": "Plan Actuel",
+    "managePlan": "Gérer le Plan",
+    "upgradeNow": "Mettre à Niveau Maintenant",
+    "free": "Gratuit",
+    "basic": "Basique",
+    "pro": "Pro",
+    "monthly": "Mensuel",
+    "annual": "Annuel",
+    "perMonth": "/mois",
+    "billedMonthly": "Facturé mensuellement",
+    "billedAnnually": "Facturé annuellement",
+    "save20Percent": "ÉCONOMISEZ 20%"
+  },
+  "creatorSubscribe": {
+    "hero": {
+      "badge": "Plans créateur",
+      "title": "Prenez possession de votre image.",
+      "subtitle": "Gagnez avec elle pour toujours.",
+      "description": "Des plans simples et accessibles pour permettre aux créateurs de protéger, licencier et monétiser leur identité à l'ère de l'IA avec le bon niveau d'accès."
+    },
+    "billing": {
+      "plansAreBilled": "Les plans sont facturés {{interval}}",
+      "monthly": "Mensuel",
+      "annually": "annuellement",
+      "annual": "Annuel",
+      "save20": "ÉCONOMISEZ 20%",
+      "subscriptionStarted": "Abonnement démarré",
+      "checkoutCanceled": "Paiement annulé",
+      "perMonth": "/mois",
+      "annualSuffix": "(annuel)"
+    },
+    "currentPlan": {
+      "label": "Plan actuel :",
+      "expiresOn": "Expire le ",
+      "renewsOn": "Renouvelle le ",
+      "manageSubscription": "Gérer l'abonnement"
+    },
+    "trial": {
+      "oneTimeOffer": "Offre unique",
+      "startPrefix": "Lancez votre essai de 30 jours",
+      "free": "gratuit",
+      "startSuffix": "",
+      "description": "Choisissez l'un des plans ci-dessous et entrez votre carte. Vous ne serez pas débité avant la fin de l'essai.",
+      "continuation": "Suite de l'essai",
+      "basicCarryOver": "En passant sur l'essai Basic, vos jours restants sont conservés. La facturation Basic commencera automatiquement le",
+      "proCarryOver": "Vous conservez vos jours d'essai restants. La facturation Pro commencera automatiquement le",
+      "ended": "Essai terminé",
+      "daysLeft": "Il reste {{count}} jour",
+      "daysLeft_other": "Il reste {{count}} jours"
+    },
+    "plans": {
+      "basic": {
+        "badge": "ESSENTIEL",
+        "name": "Basic",
+        "description": "Vérifiez-vous et commencez à gagner."
+      },
+      "pro": {
+        "badge": "LE PLUS POPULAIRE",
+        "recommended": "RECO.",
+        "name": "Pro",
+        "description": "La suite premium complète pour les créateurs."
+      }
+    },
+    "actions": {
+      "currentPlan": "Plan actuel",
+      "switchToInterval": "Passer en {{interval}}",
+      "switchToBasic": "Passer à Basic",
+      "switchToBasicTrial": "Passer à l'essai Basic",
+      "switchToPro": "Passer à Pro",
+      "switchToProTrial": "Passer à l'essai Pro",
+      "startFreeTrial": "Commencer l'essai gratuit de 30 jours",
+      "subscribeToBasic": "S'abonner à Basic",
+      "subscribeToPro": "S'abonner à Pro"
+    },
+    "groups": {
+      "dashboardProfile": "Tableau de bord et profil",
+      "connectionsPayouts": "Connexions et paiements",
+      "everythingInBasic": "Tout dans Basic, plus",
+      "voiceTools": "Voix et outils créateur",
+      "campaignsAnalytics": "Campagnes et analytique"
+    },
+    "features": {
+      "content": "Contenu",
+      "dashboard": "Tableau de bord",
+      "dashboardOverview": "Vue d'ensemble du tableau de bord",
+      "likeness": "Mon Apparence",
+      "kyc": "Vérification d'identité (KYC)",
+      "visibilityUnlock": "Déblocage de visibilité créateur",
+      "agencyConnection": "Connexion agence",
+      "brandConnection": "Connexion marque",
+      "payouts": "Paiements",
+      "cameoUploads": "Uploads vidéo Cameo",
+      "jobs": "Emplois",
+      "rules": "Paramètres : Mes Règles",
+      "voice": "Voix",
+      "voiceProfileCreation": "Création de profil vocal",
+      "voiceTones": "Jusqu'à 6 tonalités de voix",
+      "talentPortal": "Portail des talents",
+      "archives": "Archives de campagnes",
+      "activeCampaigns": "Campagnes actives",
+      "analytics": "Analytique avancée des revenus"
+    },
+    "comparison": {
+      "title": "Comparaison complète",
+      "subtitle": "Chaque fonctionnalité, côte à côte.",
+      "feature": "Fonctionnalité",
+      "coreAccess": "Accès principal",
+      "premiumWorkflow": "Workflow premium"
+    },
+    "moreFeatures": "+ Plus de fonctionnalités",
+    "backToDashboard": "Retour au tableau de bord"
+  },
+  "talentAgencyLabel": "Talent / Modeling Agency",
+  "talentAgencySub": "Talent representation",
+  "forCreators": "For Creators",
+  "forCreatorsMessage": "[NEEDS TRANSLATION] License your digital likeness, set your rates, and earn royalties automatically",
+  "forAiArtists": "For AI Artists",
+  "forAiArtistsMessage": "[NEEDS TRANSLATION] Build your portfolio and connect with studios for campaigns and projects",
+  "forCreatorsAndAthletes": "👤 For Creators & Athletes",
+  "forCreatorsAndAthletesMessage1": "[NEEDS TRANSLATION] License your digital likeness and earn passive income",
+  "forCreatorsAndAthletesMessage2": "Set your own rates and approval parameters",
+  "forCreatorsAndAthletesMessage3": "Track every usage with automated royalty payments",
+  "forCreatorsAndAthletesMessage4": "Full control over who uses your image and where",
+  "forAiArtistsAndFilmmakers": "🎨 For AI Artists & Filmmakers",
+  "forAiArtistsAndFilmmakersMessage1": "[NEEDS TRANSLATION] Build professional portfolio showcasing AI creative work",
+  "forAiArtistsAndFilmmakersMessage2": "Connect directly with brands and studios",
+  "forAiArtistsAndFilmmakersMessage3": "Access exclusive AI filmmaking opportunities",
+  "forAiArtistsAndFilmmakersMessage4": "Browse curated job board for AI creative roles",
+  "howItWorksSportsStep1Title": "Roster Integration",
+  "howItWorksSportsStep2Title": "Brand Discovery & Request Submission",
+  "howItWorksSportsStep3Title": "Agency Review & Contract Execution",
+  "howItWorksSportsStep4Title": "Revenue Distribution",
+  "faces": {
+    "featuredCreator": {},
+    "digitalTalentOwner": {
+      "comparison": {}
+    }
+  },
+  "faces.featuredCreator.title": "Featured Creator",
+  "faces.featuredCreator.royaltiesEarned": "Royalties Earned",
+  "faces.featuredCreator.royaltiesDescription": "From licensing to 5 brands",
+  "faces.featuredCreator.usageRequests": "Usage Requests",
+  "faces.featuredCreator.controlSettings": "Control Settings",
+  "faces.featuredCreator.allowCommercialUse": "Allow Commercial Use",
+  "faces.featuredCreator.allowFilmUse": "Allow Film Use",
+  "faces.featuredCreator.viewUsageReportButton": "View Usage Report",
+  "faces.featuredCreator.updateSettingsButton": "Update Settings",
+  "faces.digitalTalentOwner.title": "From Creator → Digital Talent Owner",
+  "faces.digitalTalentOwner.subtitle": "You've already built your image — now make it work for you.",
+  "faces.digitalTalentOwner.mainContent": "Licensing your likeness isn't selling out; it's scaling up. While you're filming your next project, your digital twin can be earning in ten more.",
+  "faces.digitalTalentOwner.comparison.title": "Traditional Model vs. Likelee Likeness Model",
+  "faces.digitalTalentOwner.comparison.traditionalPath": "Traditional Path",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription1": "You perform or shoot manually",
+  "faces.digitalTalentOwner.comparison.likeleeModel": "Likelee Model",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription1": "You scale automatically",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription2": "You get paid once per project",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription2": "You earn monthly retainers as long as brands use your likeness",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription3": "You often lose IP",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription3": "You retain IP",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription4": "You can't reuse or repurpose",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription4": "You approve each reuse",
+  "faces.digitalTalentOwner.footer": "You're not a gig worker. You're an owner.",
+  "sportsAgencySolutions": "Soluciones para Agencias Deportivas",
+  "sportsAgencySolutionsDescription": "Convierte a tus atletas en generadores de ingresos durante todo el año con licencias NIL que crecen mientras las contrataciones disminuyen.",
+  "vibes": {
+    "Streetwear": "Streetwear",
+    "Glam": "Glamuroso",
+    "Natural": "Natural",
+    "Classic": "Clásico",
+    "Edgy": "Atrevido",
+    "Athletic": "Atlético",
+    "Runway": "Pasarela",
+    "Editorial": "Editorial",
+    "Commercial": "Comercial",
+    "Casual": "Casual"
+  },
+  "payouts": {
+    "title": "Pagos",
+    "connectAccount": "Conectar cuenta",
+    "accountConnected": "Cuenta conectada",
+    "availableBalance": "Saldo disponible",
+    "pendingBalance": "Saldo pendiente",
+    "requestPayout": "Solicitar pago",
+    "payoutHistory": "Historial de pagos",
+    "noHistory": "Aún no hay historial de pagos.",
+    "setupPayouts": "Configurar pagos",
+    "stripeConnect": "Conectar con Stripe",
+    "paypalConnect": "Conectar con PayPal",
+    "wiseConnect": "Conectar con Wise",
+    "paymentPreferences": "Preferencias de pago",
+    "taxDocumentation": "Documentación fiscal",
+    "w9OnFile": "W-9 en archivo • Actualizado {{date}}",
+    "noW9OnFile": "No hay W-9 en archivo",
+    "download1099": "Descargar 1099 ({{year}})",
+    "cashOutEarnings": "Retirar ganancias",
+    "requesting": "Solicitando..."
+  }
+}
