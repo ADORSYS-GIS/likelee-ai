@@ -5,6 +5,7 @@ use axum::{
     http::{request::Parts, StatusCode},
     response::{IntoResponse, Response},
 };
+use base64::Engine;
 use jsonwebtoken::decode;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -166,31 +167,53 @@ where
         };
 
         // 2. Verify JWT - support both ES256 (Supabase default) and HS256 (legacy)
-        // Supabase ES256 JWT secret is base64-encoded SPKI public key
-        let pem = format!(
-            "-----BEGIN PUBLIC KEY-----\n{}\n-----END PUBLIC KEY-----",
-            app_state.supabase_jwt_secret
-        );
-        let (decoding_key, validation) =
-            match jsonwebtoken::DecodingKey::from_ec_pem(pem.as_bytes()) {
-                Ok(key) => {
-                    let mut validation =
-                        jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::ES256);
-                    validation.set_audience(&["authenticated"]);
-                    (key, validation)
+        // Supabase ES256 JWT secret is base64-encoded DER public key
+        let token_data = {
+            // Try ES256 with DER (base64-decoded raw bytes)
+            if let Ok(der_bytes) = base64::engine::general_purpose::STANDARD
+                .decode(app_state.supabase_jwt_secret.as_str())
+            {
+                let key = jsonwebtoken::DecodingKey::from_ec_der(&der_bytes);
+                let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::ES256);
+                validation.set_audience(&["authenticated"]);
+                match decode::<Claims>(&token, &key, &validation) {
+                    Ok(data) => data,
+                    Err(es256_err) => {
+                        // Try HS256 as fallback
+                        let key = jsonwebtoken::DecodingKey::from_secret(
+                            app_state.supabase_jwt_secret.as_bytes(),
+                        );
+                        let mut validation = jsonwebtoken::Validation::default();
+                        validation.set_audience(&["authenticated"]);
+                        match decode::<Claims>(&token, &key, &validation) {
+                            Ok(data) => data,
+                            Err(_hs256_err) => {
+                                return Err((
+                                    StatusCode::UNAUTHORIZED,
+                                    format!("Invalid token: ES256={}, HS256 failed", es256_err),
+                                ));
+                            }
+                        }
+                    }
                 }
-                Err(e) => {
-                    tracing::debug!("ES256 key parse failed, falling back to HS256: {}", e);
-                    let key = jsonwebtoken::DecodingKey::from_secret(
-                        app_state.supabase_jwt_secret.as_bytes(),
-                    );
-                    let mut validation = jsonwebtoken::Validation::default();
-                    validation.set_audience(&["authenticated"]);
-                    (key, validation)
+            } else {
+                // Not valid base64, try HS256 directly
+                let key = jsonwebtoken::DecodingKey::from_secret(
+                    app_state.supabase_jwt_secret.as_bytes(),
+                );
+                let mut validation = jsonwebtoken::Validation::default();
+                validation.set_audience(&["authenticated"]);
+                match decode::<Claims>(&token, &key, &validation) {
+                    Ok(data) => data,
+                    Err(e) => {
+                        return Err((
+                            StatusCode::UNAUTHORIZED,
+                            format!("Invalid token: {}", e),
+                        ));
+                    }
                 }
-            };
-        let token_data = decode::<Claims>(&token, &decoding_key, &validation)
-            .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {e}")))?;
+            }
+        };
 
         let user_id = token_data.claims.sub;
 
