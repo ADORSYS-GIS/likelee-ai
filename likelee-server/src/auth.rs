@@ -289,9 +289,13 @@ where
         // 2. Verify JWT - use JWKS for Supabase JWT Signing Keys, fall back to legacy secret
         let token_data = {
             // Decode header to check for kid (JWT Signing Key)
-            let header = decode_header(&token)
-                .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token header: {}", e)))?;
-            
+            let header = decode_header(&token).map_err(|e| {
+                (
+                    StatusCode::UNAUTHORIZED,
+                    format!("Invalid token header: {}", e),
+                )
+            })?;
+
             if let Some(kid) = header.kid {
                 // New-style token with JWT Signing Key - use JWKS
                 if let Some(key) = app_state.jwks_cache.get_key(&kid).await {
@@ -349,9 +353,8 @@ where
                                 }
                             }
                         } else {
-                            let key = DecodingKey::from_secret(
-                                app_state.supabase_jwt_secret.as_bytes(),
-                            );
+                            let key =
+                                DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
                             let mut validation = Validation::new(Algorithm::HS256);
                             validation.set_audience(&["authenticated"]);
                             match decode::<Claims>(&token, &key, &validation) {
@@ -377,9 +380,8 @@ where
                     match decode::<Claims>(&token, &key, &validation) {
                         Ok(data) => data,
                         Err(es256_err) => {
-                            let key = DecodingKey::from_secret(
-                                app_state.supabase_jwt_secret.as_bytes(),
-                            );
+                            let key =
+                                DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
                             let mut validation = Validation::default();
                             validation.set_audience(&["authenticated"]);
                             match decode::<Claims>(&token, &key, &validation) {
@@ -394,9 +396,7 @@ where
                         }
                     }
                 } else {
-                    let key = DecodingKey::from_secret(
-                        app_state.supabase_jwt_secret.as_bytes(),
-                    );
+                    let key = DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
                     let mut validation = Validation::default();
                     validation.set_audience(&["authenticated"]);
                     match decode::<Claims>(&token, &key, &validation) {
