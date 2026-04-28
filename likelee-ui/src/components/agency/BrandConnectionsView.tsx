@@ -2346,13 +2346,23 @@ const BrandConnectionsView = () => {
       {activeTab === "feedback" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-bold text-gray-900 mb-3">
-            Package Feedback
+            {tBrand("feedback.title", {
+              defaultValue: "Package Feedback",
+            })}
           </h3>
           {feedbackQuery.isLoading && (
-            <p className="text-sm text-gray-500">Loading package feedback...</p>
+            <p className="text-sm text-gray-500">
+              {tBrand("feedback.loading", {
+                defaultValue: "Loading package feedback...",
+              })}
+            </p>
           )}
           {!feedbackQuery.isLoading && feedbackItems.length === 0 && (
-            <p className="text-sm text-gray-500">No package feedback yet.</p>
+            <p className="text-sm text-gray-500">
+              {tBrand("feedback.empty", {
+                defaultValue: "No package feedback yet.",
+              })}
+            </p>
           )}
           {feedbackItems.length > 0 && (
             <div className="space-y-3">
@@ -2388,7 +2398,9 @@ const BrandConnectionsView = () => {
                       }}
                     >
                       <Eye className="w-3 h-3 mr-2" />
-                      View Activity
+                      {tBrand("feedback.viewActivity", {
+                        defaultValue: "View Activity",
+                      })}
                     </Button>
                   </div>
                 </div>
@@ -2401,9 +2413,15 @@ const BrandConnectionsView = () => {
       {activeTab === "contract_hub" && (
         <Card className="p-6 border border-gray-200 rounded-xl space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-900">Contract Hub</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              {tBrand("contractHub.title", {
+                defaultValue: "Contract Hub",
+              })}
+            </h3>
             <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              Agency Management
+              {tBrand("contractHub.managementTag", {
+                defaultValue: "Agency Management",
+              })}
             </div>
           </div>
 
@@ -2411,7 +2429,10 @@ const BrandConnectionsView = () => {
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-sm text-gray-500 font-medium">
-                No active campaign offers to manage contracts for.
+                {tBrand("contractHub.noActiveOffers", {
+                  defaultValue:
+                    "No active campaign offers to manage contracts for.",
+                })}
               </p>
             </div>
           ) : (
@@ -2419,7 +2440,9 @@ const BrandConnectionsView = () => {
               {/* Sidebar: Offer List */}
               <div className="md:col-span-1 space-y-3">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
-                  Campaign Offers
+                  {tBrand("contractHub.campaignOffers", {
+                    defaultValue: "Campaign Offers",
+                  })}
                 </p>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                   {offers.map((offer: any) => {
@@ -2440,7 +2463,10 @@ const BrandConnectionsView = () => {
                             className={`font-bold text-sm ${isSelected ? "text-blue-900" : "text-gray-900"}`}
                           >
                             {String(
-                              offer?.brand_campaigns?.name || "Campaign offer",
+                              offer?.brand_campaigns?.name ||
+                                tBrand("contractHub.campaignOffer", {
+                                  defaultValue: "Campaign offer",
+                                }),
                             )}
                           </p>
                           {isSelected && (
@@ -2448,13 +2474,18 @@ const BrandConnectionsView = () => {
                           )}
                         </div>
                         <p className="text-xs text-gray-500 mt-1 truncate">
-                          Brand:{" "}
+                          {tBrand("contractHub.brandLabel", {
+                            defaultValue: "Brand",
+                          })}
+                          :{" "}
                           {String(
                             offer?.brands?.company_name ||
                               offer?.brands?.name ||
                               offer?.brand_campaigns?.brands?.company_name ||
                               offer?.brand_campaigns?.brands?.name ||
-                              "Unknown",
+                              tBrand("contractHub.unknownBrand", {
+                                defaultValue: "Unknown",
+                              }),
                           )}
                         </p>
                       </div>
@@ -2471,10 +2502,15 @@ const BrandConnectionsView = () => {
                       <ArrowLeft className="w-6 h-6 text-gray-400" />
                     </div>
                     <h4 className="text-lg font-bold text-gray-900 mb-1">
-                      Select an offer
+                      {tBrand("contractHub.selectOfferTitle", {
+                        defaultValue: "Select an offer",
+                      })}
                     </h4>
                     <p className="text-sm text-gray-500 max-w-xs">
-                      Choose an offer from the sidebar to manage its contracts.
+                      {tBrand("contractHub.selectOfferDescription", {
+                        defaultValue:
+                          "Choose an offer from the sidebar to manage its contracts.",
+                      })}
                     </p>
                   </div>
                 ) : (
@@ -3400,7 +3436,9 @@ const BrandConnectionsView = () => {
                 className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold text-sm flex items-center justify-center gap-2"
               >
                 <Mail className="w-4 h-4" />
-                Go to Roster &amp; Invite
+                {tBrand("dialogs.goToRosterInvite", {
+                  defaultValue: "Go to Roster & Invite",
+                })}
               </Button>
               <Button
                 variant="ghost"
@@ -3413,7 +3451,9 @@ const BrandConnectionsView = () => {
                 }
                 className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
               >
-                Cancel
+                {t("agencyDashboard.deliverables.unassignTalent.cancel", {
+                  defaultValue: "Cancel",
+                })}
               </Button>
             </div>
           </div>
@@ -3429,15 +3469,29 @@ const BrandConnectionsView = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm talent assignment?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t(
+                "agencyDashboard.deliverables.assignTalent.confirmDialogTitle",
+                {
+                  defaultValue: "Confirm talent assignment?",
+                },
+              )}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You can update assigned talents before the contract is sent. After
-              you send the contract, assignments are locked.
+              {t(
+                "agencyDashboard.deliverables.assignTalent.changeBeforeContract",
+                {
+                  defaultValue:
+                    "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
+                },
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={assignSubmitting}>
-              Cancel
+              {t("agencyDashboard.deliverables.unassignTalent.cancel", {
+                defaultValue: "Cancel",
+              })}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={assignSubmitting || assignmentLockedForOffer}
@@ -3446,7 +3500,12 @@ const BrandConnectionsView = () => {
                 setAssignConfirmOpen(false);
               }}
             >
-              Confirm assignment
+              {t(
+                "agencyDashboard.deliverables.assignTalent.confirmAssignment",
+                {
+                  defaultValue: "Confirm assignment",
+                },
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -3461,15 +3520,24 @@ const BrandConnectionsView = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unassign talent?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.deliverables.unassignTalent.title", {
+                defaultValue: "Unassign talent?",
+              })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Remove <strong>{unassignConfirm.talentName}</strong> from this
-              offer. You can re-assign talents until the contract is sent.
+              {t("agencyDashboard.deliverables.unassignTalent.description", {
+                defaultValue:
+                  "Remove {talentName} from this offer. You can change assigned talents before the contract is sent. After you send the contract, assignments are locked.",
+                talentName: unassignConfirm.talentName,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={assignSubmitting}>
-              Cancel
+              {t("agencyDashboard.deliverables.unassignTalent.cancel", {
+                defaultValue: "Cancel",
+              })}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={assignSubmitting || assignmentLockedForSelectedOffer}
@@ -3477,7 +3545,9 @@ const BrandConnectionsView = () => {
                 await handleUnassignTalent();
               }}
             >
-              Unassign
+              {t("agencyDashboard.deliverables.unassignTalent.unassign", {
+                defaultValue: "Unassign",
+              })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

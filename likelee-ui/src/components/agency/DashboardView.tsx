@@ -129,6 +129,32 @@ const DashboardView = ({
     });
   };
 
+  const translateRecentActivityTitle = (title: unknown) => {
+    const raw = String(title || "").trim();
+    if (!raw) return raw;
+
+    if (raw.toLowerCase() === "new licensing request") {
+      return t("agencyDashboard.dashboard.recentActivity.newLicensingRequest", {
+        defaultValue: "New Licensing Request",
+      });
+    }
+
+    return raw;
+  };
+
+  const translateRecentActivityTime = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return raw;
+
+    if (raw.toLowerCase() === "recently") {
+      return t("agencyDashboard.dashboard.time.recently", {
+        defaultValue: "Recently",
+      });
+    }
+
+    return raw;
+  };
+
   const recentTalents = React.useMemo(() => {
     const withDates = rosterData
       .map((t) => ({ t, ms: getTalentDateMs(t) }))
@@ -858,10 +884,10 @@ const DashboardView = ({
                 />
                 <div>
                   <p className="text-sm font-bold text-gray-900">
-                    {item.title}
+                    {translateRecentActivityTitle(item.title)}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {item.relative_time ?? ""}
+                    {translateRecentActivityTime(item.relative_time) ?? ""}
                   </p>
                 </div>
               </div>

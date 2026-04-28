@@ -721,18 +721,35 @@ export function AgencyDeliverablesView() {
         <div className="p-4 space-y-3">
           <p className="text-xs text-gray-700 font-medium leading-relaxed line-clamp-2">
             {caption || (
-              <span className="text-gray-300 italic">No caption</span>
+              <span className="text-gray-300 italic">
+                {t("agencyDashboard.deliverables.noCaption", {
+                  defaultValue: "No caption",
+                })}
+              </span>
             )}
           </p>
 
           {agencyFeedback && (
             <div className="p-2 bg-amber-50 border border-amber-100 text-[10px] text-amber-800 rounded-xl">
-              <strong>Your Feedback:</strong> {agencyFeedback}
+              <strong>
+                {t("agencyDashboard.deliverables.feedbackLabels.yourFeedback", {
+                  defaultValue: "Your Feedback:",
+                })}
+              </strong>{" "}
+              {agencyFeedback}
             </div>
           )}
           {brandFeedback && (
             <div className="p-2 bg-blue-50 border border-blue-100 text-[10px] text-blue-800 rounded-xl">
-              <strong>Brand Feedback:</strong> {brandFeedback}
+              <strong>
+                {t(
+                  "agencyDashboard.deliverables.feedbackLabels.brandFeedback",
+                  {
+                    defaultValue: "Brand Feedback:",
+                  },
+                )}
+              </strong>{" "}
+              {brandFeedback}
             </div>
           )}
 
@@ -765,7 +782,15 @@ export function AgencyDeliverablesView() {
                     </TooltipTrigger>
                     {!canApproveDeliverables && (
                       <TooltipContent>
-                        <p>Your role cannot approve deliverables</p>
+                        <p>
+                          {t(
+                            "agencyDashboard.deliverables.permissions.cannotApprove",
+                            {
+                              defaultValue:
+                                "Your role cannot approve deliverables",
+                            },
+                          )}
+                        </p>
                       </TooltipContent>
                     )}
                   </Tooltip>
@@ -800,7 +825,15 @@ export function AgencyDeliverablesView() {
                   </TooltipTrigger>
                   {!canApproveDeliverables && (
                     <TooltipContent>
-                      <p>Your role cannot revise deliverables</p>
+                      <p>
+                        {t(
+                          "agencyDashboard.deliverables.permissions.cannotRevise",
+                          {
+                            defaultValue:
+                              "Your role cannot revise deliverables",
+                          },
+                        )}
+                      </p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -832,7 +865,15 @@ export function AgencyDeliverablesView() {
                   </TooltipTrigger>
                   {!canApproveDeliverables && (
                     <TooltipContent>
-                      <p>Your role cannot reject deliverables</p>
+                      <p>
+                        {t(
+                          "agencyDashboard.deliverables.permissions.cannotReject",
+                          {
+                            defaultValue:
+                              "Your role cannot reject deliverables",
+                          },
+                        )}
+                      </p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -1191,10 +1232,16 @@ export function AgencyDeliverablesView() {
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
-            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="font-bold text-amber-800">
+              {t("agencyDashboard.deliverables.viewOnly.title", {
+                defaultValue: "View Only Mode",
+              })}
+            </p>
             <p className="text-sm text-amber-700">
-              Your role allows viewing deliverables but not approving or
-              managing them.
+              {t("agencyDashboard.deliverables.viewOnly.description", {
+                defaultValue:
+                  "Your role allows viewing deliverables but not approving or managing them.",
+              })}
             </p>
           </div>
         </div>
@@ -2588,11 +2635,16 @@ export function AgencyDeliverablesView() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Offer not signed yet</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.deliverables.notSignedDialog.title", {
+                defaultValue: "Offer not signed yet",
+              })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              The offer must be fully signed before you can submit deliverables.
-              Once signed, you can submit even if payment is still pending (with
-              confirmation).
+              {t("agencyDashboard.deliverables.notSignedDialog.description", {
+                defaultValue:
+                  "The offer must be fully signed before you can submit deliverables. Once signed, you can submit even if payment is still pending (with confirmation).",
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2615,11 +2667,18 @@ export function AgencyDeliverablesView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Submit deliverables before payment?
+              {t("agencyDashboard.deliverables.unpaidSubmitDialog.title", {
+                defaultValue: "Submit deliverables before payment?",
+              })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              The brand has not paid for this offer yet. You can still submit
-              deliverables now, but payment is required before escrow release.
+              {t(
+                "agencyDashboard.deliverables.unpaidSubmitDialog.description",
+                {
+                  defaultValue:
+                    "The brand has not paid for this offer yet. You can still submit deliverables now, but payment is required before escrow release.",
+                },
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2670,7 +2729,11 @@ export function AgencyDeliverablesView() {
                     confirm_unpaid: true,
                   });
                   await loadDeliverables(offerId);
-                  toast({ title: "Submitted to brand" });
+                  toast({
+                    title: t("agencyDashboard.deliverables.submittedToBrand", {
+                      defaultValue: "Submitted to brand",
+                    }),
+                  });
                   setUnpaidSubmitDialog({
                     open: false,
                     offerId: "",
@@ -2678,8 +2741,17 @@ export function AgencyDeliverablesView() {
                   });
                 } catch (e: any) {
                   toast({
-                    title: "Submit failed",
-                    description: e?.message || "Please try again.",
+                    title: t("agencyDashboard.deliverables.submitFailed", {
+                      defaultValue: "Submit failed",
+                    }),
+                    description:
+                      e?.message ||
+                      t(
+                        "agencyDashboard.brandConnections.toasts.pleaseTryAgain",
+                        {
+                          defaultValue: "Please try again.",
+                        },
+                      ),
                     variant: "destructive",
                   });
                   setUnpaidSubmitDialog((prev) => ({
@@ -2689,7 +2761,9 @@ export function AgencyDeliverablesView() {
                 }
               }}
             >
-              Submit anyway
+              {t("agencyDashboard.deliverables.unpaidSubmitDialog.confirm", {
+                defaultValue: "Submit anyway",
+              })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2704,10 +2778,22 @@ export function AgencyDeliverablesView() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm talent assignment?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t(
+                "agencyDashboard.deliverables.assignTalent.confirmDialogTitle",
+                {
+                  defaultValue: "Confirm talent assignment?",
+                },
+              )}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              You can update assigned talents before the contract is sent. After
-              you send the contract, assignments are locked.
+              {t(
+                "agencyDashboard.deliverables.assignTalent.changeBeforeContract",
+                {
+                  defaultValue:
+                    "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
+                },
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -3094,17 +3180,46 @@ export function AgencyDeliverablesView() {
               </div>
               <DialogTitle className="text-2xl font-bold text-white">
                 {reviewDialog.action === "final_approve"
-                  ? "Approve Deliverable"
+                  ? t("agencyDashboard.deliverables.reviewModal.approveTitle", {
+                      defaultValue: "Approve Deliverable",
+                    })
                   : reviewDialog.action === "reject"
-                    ? "Reject Deliverable"
-                    : "Request Changes"}
+                    ? t(
+                        "agencyDashboard.deliverables.reviewModal.rejectTitle",
+                        {
+                          defaultValue: "Reject Deliverable",
+                        },
+                      )
+                    : t(
+                        "agencyDashboard.deliverables.reviewModal.requestChangesTitle",
+                        {
+                          defaultValue: "Request Changes",
+                        },
+                      )}
               </DialogTitle>
               <p className="text-gray-400 text-sm">
                 {reviewDialog.action === "final_approve"
-                  ? "Mark this deliverable as approved after brand sign-off."
+                  ? t(
+                      "agencyDashboard.deliverables.reviewModal.approveDescription",
+                      {
+                        defaultValue:
+                          "Mark this deliverable as approved after brand sign-off.",
+                      },
+                    )
                   : reviewDialog.action === "reject"
-                    ? "Reject this deliverable and notify the creator."
-                    : "Request revisions from the creator."}
+                    ? t(
+                        "agencyDashboard.deliverables.reviewModal.rejectDescription",
+                        {
+                          defaultValue:
+                            "Reject this deliverable and notify the creator.",
+                        },
+                      )
+                    : t(
+                        "agencyDashboard.deliverables.reviewModal.requestChangesDescription",
+                        {
+                          defaultValue: "Request revisions from the creator.",
+                        },
+                      )}
               </p>
             </DialogHeader>
           </div>
@@ -3113,14 +3228,34 @@ export function AgencyDeliverablesView() {
             <div className="space-y-3">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                 {reviewDialog.action === "final_approve"
-                  ? "Optional note for the creator."
-                  : "Feedback for creator"}
+                  ? t(
+                      "agencyDashboard.deliverables.reviewModal.optionalNoteLabel",
+                      {
+                        defaultValue: "Optional note for the creator.",
+                      },
+                    )
+                  : t(
+                      "agencyDashboard.deliverables.reviewModal.feedbackLabel",
+                      {
+                        defaultValue: "Feedback for creator",
+                      },
+                    )}
               </label>
               <Textarea
                 placeholder={
                   reviewDialog.action === "final_approve"
-                    ? "Optional note for the creator."
-                    : "What exactly should be changed?"
+                    ? t(
+                        "agencyDashboard.deliverables.reviewModal.optionalNotePlaceholder",
+                        {
+                          defaultValue: "Optional note for the creator.",
+                        },
+                      )
+                    : t(
+                        "agencyDashboard.deliverables.reviewModal.feedbackPlaceholder",
+                        {
+                          defaultValue: "What exactly should be changed?",
+                        },
+                      )
                 }
                 className="min-h-[150px] resize-none rounded-none border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
                 value={reviewDialog.note}
@@ -3157,11 +3292,20 @@ export function AgencyDeliverablesView() {
                 {reviewDialog.submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : reviewDialog.action === "final_approve" ? (
-                  "Approve"
+                  t("agencyDashboard.deliverables.reviewModal.approveAction", {
+                    defaultValue: "Approve",
+                  })
                 ) : reviewDialog.action === "reject" ? (
-                  "Reject"
+                  t("agencyDashboard.deliverables.reviewModal.rejectAction", {
+                    defaultValue: "Reject",
+                  })
                 ) : (
-                  "Send Feedback"
+                  t(
+                    "agencyDashboard.deliverables.reviewModal.sendFeedbackAction",
+                    {
+                      defaultValue: "Send Feedback",
+                    },
+                  )
                 )}
               </Button>
             </div>
@@ -3177,7 +3321,9 @@ export function AgencyDeliverablesView() {
           <div className="bg-gray-900 p-6 text-white">
             <DialogHeader className="space-y-1">
               <DialogTitle className="text-xl font-bold text-white">
-                Delete Deliverable
+                {t("agencyDashboard.deliverables.deleteDialog.title", {
+                  defaultValue: "Delete Deliverable",
+                })}
               </DialogTitle>
               <p className="text-gray-400 text-sm">
                 {t("agencyDashboard.deliverables.confirmDelete", {
@@ -3208,7 +3354,9 @@ export function AgencyDeliverablesView() {
                 {deleteDialog.submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  "Delete"
+                  t("agencyDashboard.catalogs.actions.delete", {
+                    defaultValue: "Delete",
+                  })
                 )}
               </Button>
             </div>
