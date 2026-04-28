@@ -962,7 +962,9 @@
       "genericError": "Something went wrong. Please try again or contact support.",
       "bucketNotFound": "Upload service unavailable. Please try again later.",
       "constraintViolation": "Invalid data. Please check your input and try again."
-    }
+    },
+    "unknown": "Unknown",
+    "noResults": "No Results"
   },
   "faces.realFutures.title": "Real Faces. Real Futures.",
   "faces.realFutures.line1": "Brands and studios are already generating AI campaigns — most use unlicensed or synthetic faces.",
@@ -1558,7 +1560,46 @@
     "completeToGetDiscovered": "Complete to get discovered",
     "referenceImages": "Reference Images",
     "voiceRecordings": "Voice Recordings",
-    "missing": "MISSING"
+    "missing": "MISSING",
+    "usageRightsPage": {
+      "stats": {
+        "expiring15d": "Expiring15d"
+      }
+    },
+    "hireModal": {
+      "title": "Title",
+      "subtitle": "Subtitle",
+      "intro": "Intro",
+      "options": {
+        "self": {
+          "title": "Title",
+          "description": "Description"
+        },
+        "agency": {
+          "title": "Title",
+          "description": "Description"
+        },
+        "browse": {
+          "title": "Title",
+          "description": "Description"
+        }
+      }
+    },
+    "contractUpdateRequestModal": {
+      "title": "Title",
+      "description": "Description",
+      "options": {
+        "self": {
+          "title": "Title",
+          "description": "Description"
+        },
+        "agency": {
+          "title": "Title",
+          "description": "Description"
+        }
+      },
+      "note": "Note"
+    }
   },
   "content": {
     "title": "Content",
@@ -2207,5 +2248,294 @@
   },
   "credits": "Credits",
   "credits_lower": "credits",
-  "history": "History"
+  "history": "History",
+  "campaigns": {
+    "inbox": {
+      "talentCount": "{{count}} talent"
+    },
+    "campaignDetails": {
+      "notAvailable": "Not Available",
+      "invalidDate": "Invalid Date",
+      "close": "Close",
+      "viewCompleteBrief": "View Complete Brief",
+      "assignedCollaborators": "Assigned Collaborators",
+      "contractManagement": "Contract Management",
+      "contractManagementDesc": "Contract Management Desc"
+    },
+    "myOffers": {
+      "collaboratorsCount": "{{count}} collaborators"
+    },
+    "contractHub": {
+      "noResults": "No contracts found",
+      "empty": {
+        "pendingTitle": "No active contracts",
+        "pendingSubtitle": "Contracts requiring your attention will appear here.",
+        "title": "No contracts found",
+        "subtitle": "Contracts requiring your attention will appear here."
+      }
+    }
+  },
+  "assetLibrary": {
+    "collectionsCount": "Collections Count"
+  },
+  "agencyDashboard": {
+    "brandConnections": {
+      "accounting": {
+        "expenseTrackingView": {
+          "toasts": {
+            "expenseAdded": "Expense Added",
+            "failedToAddExpense": "Failed To Add Expense"
+          },
+          "actions": {
+            "addExpense": "Add Expense",
+            "cancel": "Cancel"
+          },
+          "searchPlaceholder": "Search Placeholder",
+          "filters": {
+            "allCategories": "All Categories"
+          },
+          "categories": {
+            "travel": "Travel",
+            "equipment": "Equipment",
+            "marketing": "Marketing",
+            "other": "Other"
+          },
+          "totalExpenses": "Total Expenses",
+          "modal": {
+            "title": "Title",
+            "subtitle": "Subtitle",
+            "fields": {
+              "name": "Name",
+              "category": "Category",
+              "date": "Date",
+              "amountUsd": "Amount Usd",
+              "status": "Status",
+              "submitterOptional": "Submitter Optional"
+            },
+            "placeholders": {
+              "name": "Name",
+              "submitter": "Submitter"
+            }
+          },
+          "statuses": {
+            "approved": "Approved",
+            "pending": "Pending",
+            "rejected": "Rejected"
+          }
+        },
+        "expenseTracking": "Expense Tracking",
+        "expenseTrackingSubtitle": "Expense Tracking Subtitle",
+        "talentStatementsView": {
+          "actions": {
+            "emailStatement": "Email Statement",
+            "downloadPdf": "Download Pdf",
+            "print": "Print",
+            "exportAll": "Export All",
+            "viewStatement": "View Statement"
+          },
+          "filters": {
+            "selectPeriod": "Select Period",
+            "allTime": "All Time",
+            "thisMonth": "This Month",
+            "lastMonth": "Last Month",
+            "thisQuarter": "This Quarter",
+            "thisYear": "This Year",
+            "customRange": "Custom Range",
+            "sortBy": "Sort By",
+            "amountHigh": "Amount High",
+            "amountLow": "Amount Low",
+            "totalPaidHigh": "Total Paid High",
+            "nameAz": "Name Az",
+            "nameZa": "Name Za",
+            "hasUnpaidEarnings": "Has Unpaid Earnings"
+          },
+          "labels": {
+            "totalOwed": "Total Owed",
+            "unpaidJobs": "Unpaid Jobs",
+            "totalPaidYtd": "Total Paid Ytd",
+            "paidJobs": "Paid Jobs",
+            "lifetimeEarnings": "Lifetime Earnings",
+            "avgPerMonth": "Avg Per Month",
+            "lastPayment": "Last Payment",
+            "noPayments": "No Payments",
+            "earningsDetail": "Earnings Detail",
+            "totalGrossAmount": "Total Gross Amount",
+            "totalAgencyCommission": "Total Agency Commission",
+            "totalJobs": "Total Jobs",
+            "hasUnpaid": "Has Unpaid",
+            "noUnpaid": "No Unpaid",
+            "hasPaid": "Has Paid",
+            "noPaid": "No Paid"
+          },
+          "table": {
+            "jobDate": "Job Date",
+            "client": "Client",
+            "description": "Description",
+            "gross": "Gross",
+            "commission": "Commission",
+            "net": "Net",
+            "status": "Status",
+            "invoice": "Invoice"
+          },
+          "statuses": {
+            "paid": "Paid",
+            "unpaid": "Unpaid"
+          },
+          "title": "Title",
+          "subtitle": "Subtitle",
+          "searchPlaceholder": "Search Placeholder",
+          "empty": "Empty"
+        },
+        "paymentTracking": "Payment Tracking",
+        "paymentTrackingSubtitle": "Payment Tracking Subtitle",
+        "loadFailed": "Load Failed",
+        "financialReports": "Financial Reports",
+        "financialReportsSubtitle": "Financial Reports Subtitle",
+        "invoiceManagement": "Invoice Management",
+        "invoiceGeneration": "Invoice Generation",
+        "connectBank": "Connect Bank",
+        "invoiceManagementSubtitle": "Invoice Management Subtitle",
+        "invoiceManagementView": {
+          "filters": {
+            "title": "Title",
+            "allStatus": "All Status",
+            "sortBy": "Sort By",
+            "issueDateFrom": "Issue Date From",
+            "issueDateTo": "Issue Date To",
+            "minAmount": "Min Amount",
+            "maxAmount": "Max Amount",
+            "showOverdueOnly": "Show Overdue Only",
+            "allCurrencies": "All Currencies",
+            "clearAll": "Clear All"
+          },
+          "searchPlaceholder": "Search Placeholder",
+          "statuses": {
+            "draft": "Draft",
+            "sent": "Sent",
+            "paid": "Paid",
+            "overdue": "Overdue",
+            "void": "Void"
+          },
+          "sort": {
+            "newest": "Newest",
+            "oldest": "Oldest",
+            "dueSoonest": "Due Soonest",
+            "dueLatest": "Due Latest",
+            "amountHigh": "Amount High",
+            "amountLow": "Amount Low",
+            "clientAz": "Client Az",
+            "clientZa": "Client Za",
+            "invoiceAsc": "Invoice Asc",
+            "invoiceDesc": "Invoice Desc"
+          },
+          "showing": "Showing",
+          "invoices": "Invoices",
+          "table": {
+            "invoiceNumber": "Invoice Number",
+            "clientName": "Client Name",
+            "issueDate": "Issue Date",
+            "dueDate": "Due Date",
+            "amount": "Amount",
+            "status": "Status",
+            "actions": "Actions"
+          },
+          "actions": {
+            "paymentHistory": "Payment History",
+            "print": "Print",
+            "close": "Close"
+          },
+          "paymentHistory": {
+            "title": "Title",
+            "invoiceTotal": "Invoice Total",
+            "totalPaid": "Total Paid",
+            "remainingBalance": "Remaining Balance",
+            "paymentTransactions": "Payment Transactions",
+            "noPaymentsRecorded": "No Payments Recorded",
+            "noPaymentsRecordedDescription": "No Payments Recorded Description",
+            "paymentNumber": "Payment Number",
+            "invoiceMarkedPaid": "Invoice Marked Paid",
+            "exportHistory": "Export History"
+          }
+        },
+        "financialReportsProOnly": "Financial Reports Pro Only",
+        "expenseTrackingProOnly": "Expense Tracking Pro Only"
+      }
+    },
+    "scouting": {
+      "title": "Title",
+      "subtitle": "Subtitle",
+      "addProspect": "Add Prospect",
+      "createEvent": "Create Event",
+      "planScoutingTrip": "Plan Scouting Trip"
+    },
+    "payouts": {
+      "commissionBreakdown": {
+        "totalVolume": "Total Volume",
+        "talentTotalShare": "Talent Total Share",
+        "agencyTotalRevenue": "Agency Total Revenue",
+        "exportReport": "Export Report",
+        "totalGross": "Total Gross",
+        "talentEarnings": "Talent Earnings",
+        "talentPool": "Talent Pool",
+        "agencyFee": "Agency Fee",
+        "noDealsDescription": "No Deals Description",
+        "transparencyTitle": "Transparency Title",
+        "transparencyDescription": "Transparency Description",
+        "configure": "Configure"
+      }
+    },
+    "navigation": {
+      "licensing": "Licensing"
+    },
+    "labels": {
+      "verified": "Verified"
+    }
+  },
+  "creatorDashboard": {
+    "verificationStatus": {
+      "restartVerification": "Restart Verification",
+      "retryVerification": "Retry Verification",
+      "followUpNeeded": "Follow Up Needed",
+      "followUpReasonLabel": "Follow Up Reason Label",
+      "rejectedReasonLabel": "Rejected Reason Label",
+      "resumeHint": "Resume Hint",
+      "restartHint": "Restart Hint"
+    },
+    "voice": {
+      "deleteFailedTitle": "Delete Failed Title",
+      "deleteFailedDesc": "Delete Failed Desc"
+    },
+    "marketplaceVerification": {
+      "followUpTitle": "Follow Up Title",
+      "pendingTitle": "Pending Title",
+      "rejectedTitle": "Rejected Title",
+      "title": "Title",
+      "followUpDescription": "Follow Up Description",
+      "pendingDescription": "Pending Description",
+      "rejectedDescription": "Rejected Description",
+      "description": "Description",
+      "followUpBadge": "Follow Up Badge",
+      "notVerified": "Not Verified",
+      "restartCta": "Restart Cta",
+      "retryCta": "Retry Cta",
+      "cta": "Cta",
+      "followUpReasonLabel": "Follow Up Reason Label",
+      "rejectedReasonLabel": "Rejected Reason Label",
+      "refreshCta": "Refresh Cta"
+    },
+    "earnings": {
+      "bankConnection": {
+        "back": "Back",
+        "title": "Title",
+        "subtitle": "Subtitle",
+        "securityTitle": "Security Title",
+        "securityMessage": "Security Message",
+        "privateTitle": "Private Title",
+        "privateMessage": "Private Message",
+        "button": "Button",
+        "comingSoon": "Coming Soon"
+      }
+    }
+  },
+  "error": "Error"
 }
