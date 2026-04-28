@@ -12,12 +12,14 @@ import {
   BarChart3,
 } from "lucide-react";
 import { ScoutingTrip } from "@/types/scouting";
+import { useTranslation } from "react-i18next";
 
 interface TripAnalyticsProps {
   trips: ScoutingTrip[];
 }
 
 export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
+  const { t } = useTranslation();
   // Calculate metrics
   const totalTrips = trips.length;
   const totalProspects = trips.reduce(
@@ -135,7 +137,9 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
       <div className="flex items-center gap-2 text-indigo-700">
         <TrendingUp className="w-5 h-5" />
         <h3 className="text-lg font-black tracking-tight">
-          Trip Analytics Overview
+          {t("agencyDashboard.scouting.tripAnalytics.title", {
+            defaultValue: "Trip Analytics Overview",
+          })}
         </h3>
       </div>
 
@@ -143,13 +147,17 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-            Total Trips
+            {t("agencyDashboard.scouting.tripAnalytics.totalTrips", {
+              defaultValue: "Total Trips",
+            })}
           </p>
           <p className="text-3xl font-black text-indigo-600">{totalTrips}</p>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-            Prospects Discovered
+            {t("agencyDashboard.scouting.tripAnalytics.prospectsDiscovered", {
+              defaultValue: "Prospects Discovered",
+            })}
           </p>
           <p className="text-3xl font-black text-emerald-600">
             {totalProspects}
@@ -157,7 +165,9 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
         </div>
         <div className="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-            Avg Conversion Rate
+            {t("agencyDashboard.scouting.tripAnalytics.avgConversionRate", {
+              defaultValue: "Avg Conversion Rate",
+            })}
           </p>
           <p className="text-3xl font-black text-purple-600">
             {avgConversion}%
@@ -165,7 +175,9 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
         </div>
         <div className="bg-white p-4 rounded-2xl border border-indigo-50 shadow-sm">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-            Total Investment
+            {t("agencyDashboard.scouting.tripAnalytics.totalInvestment", {
+              defaultValue: "Total Investment",
+            })}
           </p>
           <p className="text-3xl font-black text-gray-900">
             ${totalInvestment.toLocaleString()}
@@ -178,7 +190,9 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
         {/* Scout Performance */}
         <div className="bg-white p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-4">
           <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">
-            Scout Performance
+            {t("agencyDashboard.scouting.tripAnalytics.scoutPerformance", {
+              defaultValue: "Scout Performance",
+            })}
           </h4>
           <div className="space-y-3">
             {scoutStats.map((scout) => (
@@ -197,7 +211,10 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
                       {scout.name}
                     </p>
                     <p className="text-[10px] text-gray-400 font-bold">
-                      {scout.trips} trips
+                      {t("agencyDashboard.scouting.tripAnalytics.tripsCount", {
+                        count: scout.trips,
+                        defaultValue: `${scout.trips} trips`,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -217,7 +234,12 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
         {/* Most Productive Locations */}
         <div className="bg-white p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-4">
           <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">
-            Most Productive Locations
+            {t(
+              "agencyDashboard.scouting.tripAnalytics.mostProductiveLocations",
+              {
+                defaultValue: "Most Productive Locations",
+              },
+            )}
           </h4>
           <div className="space-y-3">
             {locations.map((loc) => (
@@ -229,7 +251,10 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
                       {loc.name}
                     </p>
                     <p className="text-[10px] text-gray-400 font-bold">
-                      {loc.visits} visits
+                      {t("agencyDashboard.scouting.tripAnalytics.visitsCount", {
+                        count: loc.visits,
+                        defaultValue: `${loc.visits} visits`,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -249,7 +274,9 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
         {/* ROI by Trip Type */}
         <div className="bg-white p-5 rounded-2xl border border-indigo-50 shadow-sm space-y-4">
           <h4 className="text-sm font-black text-gray-900 uppercase tracking-wider">
-            ROI by Trip Type
+            {t("agencyDashboard.scouting.tripAnalytics.roiByTripType", {
+              defaultValue: "ROI by Trip Type",
+            })}
           </h4>
           <div className="space-y-3">
             {roiStats.map((roi) => (
@@ -257,7 +284,10 @@ export const TripAnalytics = ({ trips }: TripAnalyticsProps) => {
                 <div>
                   <p className="text-xs font-black text-gray-900">{roi.type}</p>
                   <p className="text-[10px] text-gray-400 font-bold">
-                    {roi.trips} trips
+                    {t("agencyDashboard.scouting.tripAnalytics.tripsCount", {
+                      count: roi.trips,
+                      defaultValue: `${roi.trips} trips`,
+                    })}
                   </p>
                 </div>
                 <div className="text-right">

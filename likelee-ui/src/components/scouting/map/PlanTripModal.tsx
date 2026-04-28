@@ -377,7 +377,14 @@ export const PlanTripModal = ({
                         onValueChange={setLocationSearch}
                       />
                       <CommandList>
-                        <CommandEmpty>No location found.</CommandEmpty>
+                        <CommandEmpty>
+                          {t(
+                            "agencyDashboard.scouting.planTripModal.states.noLocation",
+                            {
+                              defaultValue: "No location found.",
+                            },
+                          )}
+                        </CommandEmpty>
                         <CommandGroup>
                           {locationResults.map((result, index) => (
                             <CommandItem
@@ -458,26 +465,59 @@ export const PlanTripModal = ({
                     htmlFor="trip-type"
                     className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                   >
-                    <Briefcase className="w-3 h-3" /> Trip Type *
+                    <Briefcase className="w-3 h-3" />{" "}
+                    {t(
+                      "agencyDashboard.scouting.planTripModal.fields.tripType",
+                      {
+                        defaultValue: "Trip Type *",
+                      },
+                    )}
                   </Label>
                   <Select
                     value={tripType}
                     onValueChange={(val: any) => setTripType(val)}
                   >
                     <SelectTrigger className="rounded-xl border-gray-200 bg-gray-50/50 h-10 focus:bg-white focus:border-indigo-300 transition-all font-bold text-gray-900">
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.scouting.planTripModal.placeholders.selectType",
+                          { defaultValue: "Select type" },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-gray-200 shadow-xl">
                       <SelectItem value="Open Scouting">
-                        Open Scouting
+                        {t(
+                          "agencyDashboard.scouting.planTripModal.tripTypes.openScouting",
+                          {
+                            defaultValue: "Open Scouting",
+                          },
+                        )}
                       </SelectItem>
                       <SelectItem value="Specific Casting">
-                        Specific Casting
+                        {t(
+                          "agencyDashboard.scouting.planTripModal.tripTypes.specificCasting",
+                          {
+                            defaultValue: "Specific Casting",
+                          },
+                        )}
                       </SelectItem>
                       <SelectItem value="Event Coverage">
-                        Event Coverage
+                        {t(
+                          "agencyDashboard.scouting.planTripModal.tripTypes.eventCoverage",
+                          {
+                            defaultValue: "Event Coverage",
+                          },
+                        )}
                       </SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
+                      <SelectItem value="Other">
+                        {t(
+                          "agencyDashboard.scouting.planTripModal.tripTypes.other",
+                          {
+                            defaultValue: "Other",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -486,7 +526,10 @@ export const PlanTripModal = ({
                     htmlFor="status"
                     className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                   >
-                    <Activity className="w-3 h-3" /> Status *
+                    <Activity className="w-3 h-3" />{" "}
+                    {t("agencyDashboard.scouting.planTripModal.fields.status", {
+                      defaultValue: "Status *",
+                    })}
                   </Label>
                   <Select
                     value={status}
@@ -495,12 +538,38 @@ export const PlanTripModal = ({
                     <SelectTrigger
                       className={`rounded-xl h-10 transition-all font-black border-2 ${getStatusColor(status)} shadow-sm`}
                     >
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.scouting.planTripModal.placeholders.selectStatus",
+                          { defaultValue: "Select status" },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-gray-200 shadow-xl">
-                      <SelectItem value="planned">Planned</SelectItem>
-                      <SelectItem value="ongoing">Ongoing</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="planned">
+                        {t(
+                          "agencyDashboard.scouting.planTripModal.statuses.planned",
+                          {
+                            defaultValue: "Planned",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="ongoing">
+                        {t(
+                          "agencyDashboard.scouting.planTripModal.statuses.ongoing",
+                          {
+                            defaultValue: "Ongoing",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        {t(
+                          "agencyDashboard.scouting.planTripModal.statuses.completed",
+                          {
+                            defaultValue: "Completed",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -513,7 +582,9 @@ export const PlanTripModal = ({
             <div className="flex items-center gap-2 text-indigo-700 mb-2">
               <Calendar className="w-4 h-4" />
               <h3 className="text-xs font-black uppercase tracking-[0.2em]">
-                Schedule
+                {t("agencyDashboard.scouting.planTripModal.sections.schedule", {
+                  defaultValue: "Schedule",
+                })}
               </h3>
             </div>
 
@@ -524,7 +595,13 @@ export const PlanTripModal = ({
                     htmlFor="start-date"
                     className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                   >
-                    <Calendar className="w-3 h-3" /> Start Date *
+                    <Calendar className="w-3 h-3" />{" "}
+                    {t(
+                      "agencyDashboard.scouting.planTripModal.fields.startDate",
+                      {
+                        defaultValue: "Start Date *",
+                      },
+                    )}
                   </Label>
                   <Input
                     id="start-date"
@@ -539,7 +616,13 @@ export const PlanTripModal = ({
                     htmlFor="start-time"
                     className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                   >
-                    <Clock className="w-3 h-3" /> Start Time
+                    <Clock className="w-3 h-3" />{" "}
+                    {t(
+                      "agencyDashboard.scouting.planTripModal.fields.startTime",
+                      {
+                        defaultValue: "Start Time",
+                      },
+                    )}
                   </Label>
                   <Input
                     id="start-time"
@@ -557,7 +640,13 @@ export const PlanTripModal = ({
                     htmlFor="end-date"
                     className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                   >
-                    <Calendar className="w-3 h-3" /> End Date *
+                    <Calendar className="w-3 h-3" />{" "}
+                    {t(
+                      "agencyDashboard.scouting.planTripModal.fields.endDate",
+                      {
+                        defaultValue: "End Date *",
+                      },
+                    )}
                   </Label>
                   <Input
                     id="end-date"
@@ -572,7 +661,13 @@ export const PlanTripModal = ({
                     htmlFor="end-time"
                     className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2"
                   >
-                    <Clock className="w-3 h-3" /> End Time
+                    <Clock className="w-3 h-3" />{" "}
+                    {t(
+                      "agencyDashboard.scouting.planTripModal.fields.endTime",
+                      {
+                        defaultValue: "End Time",
+                      },
+                    )}
                   </Label>
                   <Input
                     id="end-time"
@@ -591,7 +686,12 @@ export const PlanTripModal = ({
             <div className="flex items-center gap-2 text-indigo-700 mb-2">
               <BarChart3 className="w-4 h-4" />
               <h3 className="text-xs font-black uppercase tracking-[0.2em]">
-                Performance Metrics
+                {t(
+                  "agencyDashboard.scouting.planTripModal.sections.performanceMetrics",
+                  {
+                    defaultValue: "Performance Metrics",
+                  },
+                )}
               </h3>
             </div>
 
@@ -601,7 +701,13 @@ export const PlanTripModal = ({
                   htmlFor="goal"
                   className="text-[10px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-1.5"
                 >
-                  <Target className="w-3 h-3" /> Target Goal
+                  <Target className="w-3 h-3" />{" "}
+                  {t(
+                    "agencyDashboard.scouting.planTripModal.fields.targetGoal",
+                    {
+                      defaultValue: "Target Goal",
+                    },
+                  )}
                 </Label>
                 <Input
                   id="goal"
@@ -616,7 +722,10 @@ export const PlanTripModal = ({
                   htmlFor="budget"
                   className="text-[10px] font-black text-emerald-600 uppercase tracking-widest flex items-center gap-1.5"
                 >
-                  <DollarSign className="w-3 h-3" /> Budget ($)
+                  <DollarSign className="w-3 h-3" />{" "}
+                  {t("agencyDashboard.scouting.planTripModal.fields.budget", {
+                    defaultValue: "Budget ($)",
+                  })}
                 </Label>
                 <Input
                   id="budget"
@@ -631,7 +740,13 @@ export const PlanTripModal = ({
                   htmlFor="approached"
                   className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-1.5"
                 >
-                  <Users className="w-3 h-3" /> Approached
+                  <Users className="w-3 h-3" />{" "}
+                  {t(
+                    "agencyDashboard.scouting.planTripModal.fields.approached",
+                    {
+                      defaultValue: "Approached",
+                    },
+                  )}
                 </Label>
                 <Input
                   id="approached"
@@ -646,7 +761,13 @@ export const PlanTripModal = ({
                   htmlFor="submitted"
                   className="text-[10px] font-black text-purple-600 uppercase tracking-widest flex items-center gap-1.5"
                 >
-                  <ArrowUpRight className="w-3 h-3" /> Submitted
+                  <ArrowUpRight className="w-3 h-3" />{" "}
+                  {t(
+                    "agencyDashboard.scouting.planTripModal.fields.submitted",
+                    {
+                      defaultValue: "Submitted",
+                    },
+                  )}
                 </Label>
                 <Input
                   id="submitted"
@@ -661,7 +782,10 @@ export const PlanTripModal = ({
                   htmlFor="added"
                   className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5"
                 >
-                  <Plus className="w-3 h-3" /> Added
+                  <Plus className="w-3 h-3" />{" "}
+                  {t("agencyDashboard.scouting.planTripModal.fields.added", {
+                    defaultValue: "Added",
+                  })}
                 </Label>
                 <Input
                   id="added"
@@ -676,7 +800,10 @@ export const PlanTripModal = ({
                   htmlFor="conversion"
                   className="text-[10px] font-black text-rose-600 uppercase tracking-widest flex items-center gap-1.5"
                 >
-                  <Activity className="w-3 h-3" /> Rate (%)
+                  <Activity className="w-3 h-3" />{" "}
+                  {t("agencyDashboard.scouting.planTripModal.fields.rate", {
+                    defaultValue: "Rate (%)",
+                  })}
                 </Label>
                 <Input
                   id="conversion"
@@ -694,14 +821,25 @@ export const PlanTripModal = ({
             <div className="flex items-center gap-2 text-indigo-700 mb-2">
               <Users className="w-4 h-4" />
               <h3 className="text-xs font-black uppercase tracking-[0.2em]">
-                Team & Assets
+                {t(
+                  "agencyDashboard.scouting.planTripModal.sections.teamAssets",
+                  {
+                    defaultValue: "Team & Assets",
+                  },
+                )}
               </h3>
             </div>
 
             <div className="space-y-6">
               <div className="grid gap-3">
                 <Label className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                  <UserPlus className="w-3 h-3" /> Assigned Scouts
+                  <UserPlus className="w-3 h-3" />{" "}
+                  {t(
+                    "agencyDashboard.scouting.planTripModal.fields.assignedScouts",
+                    {
+                      defaultValue: "Assigned Scouts",
+                    },
+                  )}
                 </Label>
                 <div className="flex flex-wrap gap-2 items-center p-4 bg-gray-50 rounded-[24px] border border-gray-200 min-h-[60px] shadow-inner">
                   {scouts.map((scout) => (
@@ -738,7 +876,10 @@ export const PlanTripModal = ({
                             setIsAddingScout(false);
                           }
                         }}
-                        placeholder="Enter name..."
+                        placeholder={t(
+                          "agencyDashboard.scouting.planTripModal.placeholders.enterName",
+                          { defaultValue: "Enter name..." },
+                        )}
                         className="h-6 w-28 text-xs border-none focus-visible:ring-0 p-0 font-black text-gray-900"
                       />
                       <div className="flex items-center gap-1 border-l border-gray-200 pl-2">
@@ -769,7 +910,13 @@ export const PlanTripModal = ({
                       className="text-indigo-700 hover:text-indigo-800 text-xs font-black flex items-center gap-2 h-10 px-4 bg-indigo-100/50 hover:bg-indigo-100 rounded-xl border border-dashed border-indigo-300 transition-all"
                       onClick={() => setIsAddingScout(true)}
                     >
-                      <Plus className="w-4 h-4" /> Add Scout
+                      <Plus className="w-4 h-4" />{" "}
+                      {t(
+                        "agencyDashboard.scouting.planTripModal.actions.addScout",
+                        {
+                          defaultValue: "Add Scout",
+                        },
+                      )}
                     </Button>
                   )}
                 </div>
@@ -777,7 +924,13 @@ export const PlanTripModal = ({
 
               <div className="grid gap-3">
                 <Label className="text-[11px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                  <Camera className="w-3 h-3" /> Trip Photos
+                  <Camera className="w-3 h-3" />{" "}
+                  {t(
+                    "agencyDashboard.scouting.planTripModal.fields.tripPhotos",
+                    {
+                      defaultValue: "Trip Photos",
+                    },
+                  )}
                 </Label>
                 <div className="grid grid-cols-4 gap-4">
                   {photos.map((photo, index) => (
@@ -827,7 +980,9 @@ export const PlanTripModal = ({
             <div className="flex items-center gap-2 text-indigo-700 mb-2">
               <FileText className="w-4 h-4" />
               <h3 className="text-xs font-black uppercase tracking-[0.2em]">
-                Notes & Observations
+                {t("agencyDashboard.scouting.planTripModal.sections.notes", {
+                  defaultValue: "Notes & Observations",
+                })}
               </h3>
             </div>
             <Textarea
@@ -845,7 +1000,9 @@ export const PlanTripModal = ({
             onClick={onClose}
             className="rounded-xl h-10 px-8 font-black text-gray-600 border-gray-200 hover:bg-gray-100 hover:text-gray-900 transition-all"
           >
-            Cancel
+            {t("agencyDashboard.scouting.planTripModal.actions.cancel", {
+              defaultValue: "Cancel",
+            })}
           </Button>
           <Button
             disabled={isSaving || isUploading}
@@ -915,8 +1072,18 @@ export const PlanTripModal = ({
             {isSaving
               ? "Saving..."
               : initialData
-                ? "Update Trip"
-                : "Create Trip"}
+                ? t(
+                    "agencyDashboard.scouting.planTripModal.actions.updateTrip",
+                    {
+                      defaultValue: "Update Trip",
+                    },
+                  )
+                : t(
+                    "agencyDashboard.scouting.planTripModal.actions.createTrip",
+                    {
+                      defaultValue: "Create Trip",
+                    },
+                  )}
           </Button>
         </DialogFooter>
       </DialogContent>

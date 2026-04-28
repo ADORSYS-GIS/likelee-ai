@@ -1224,7 +1224,9 @@ export function AgencyDeliverablesView() {
             }}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Collapse All
+            {t("agencyDashboard.deliverables.collapseAll", {
+              defaultValue: "Collapse All",
+            })}
           </Button>
         </div>
         <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
@@ -1232,7 +1234,11 @@ export function AgencyDeliverablesView() {
 
       {offers.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-2 bg-white/50 rounded-2xl">
-          <p className="text-gray-500 text-sm">No brand offers available.</p>
+          <p className="text-gray-500 text-sm">
+            {t("agencyDashboard.deliverables.noBrandOffers", {
+              defaultValue: "No brand offers available.",
+            })}
+          </p>
         </Card>
       ) : (
         offers.map((offer, idx) => {
@@ -1348,13 +1354,37 @@ export function AgencyDeliverablesView() {
                         <Badge
                           className={`text-[10px] py-0 ${isOfferSigned ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}
                         >
-                          {isOfferSigned ? "Signed" : "Not signed"}
+                          {isOfferSigned
+                            ? t(
+                                "agencyDashboard.deliverables.offerStates.signed",
+                                {
+                                  defaultValue: "Signed",
+                                },
+                              )
+                            : t(
+                                "agencyDashboard.deliverables.offerStates.notSigned",
+                                {
+                                  defaultValue: "Not signed",
+                                },
+                              )}
                         </Badge>
                         {isOfferSigned ? (
                           <Badge
                             className={`text-[10px] py-0 ${isOfferPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
                           >
-                            {isOfferPaid ? "Paid" : "Awaiting Payment"}
+                            {isOfferPaid
+                              ? t(
+                                  "agencyDashboard.deliverables.offerStates.paid",
+                                  {
+                                    defaultValue: "Paid",
+                                  },
+                                )
+                              : t(
+                                  "agencyDashboard.deliverables.offerStates.awaitingPayment",
+                                  {
+                                    defaultValue: "Awaiting Payment",
+                                  },
+                                )}
                           </Badge>
                         ) : null}
                       </div>
@@ -1370,7 +1400,13 @@ export function AgencyDeliverablesView() {
                         openOffer(offerId);
                       }}
                     >
-                      {expanded ? "Hide" : "Open"}
+                      {expanded
+                        ? t("agencyDashboard.deliverables.actions.hide", {
+                            defaultValue: "Hide",
+                          })
+                        : t("agencyDashboard.deliverables.actions.open", {
+                            defaultValue: "Open",
+                          })}
                     </Button>
                     <Button
                       size="sm"
@@ -1379,9 +1415,19 @@ export function AgencyDeliverablesView() {
                         e.stopPropagation();
                         if (offerAssignmentsLocked) {
                           toast({
-                            title: "Assignments locked",
-                            description:
-                              "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+                            title: t(
+                              "agencyDashboard.deliverables.assignmentsLockedTitle",
+                              {
+                                defaultValue: "Assignments locked",
+                              },
+                            ),
+                            description: t(
+                              "agencyDashboard.deliverables.assignmentsLockedDescription",
+                              {
+                                defaultValue:
+                                  "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+                              },
+                            ),
                             variant: "destructive",
                           });
                           return;
@@ -1398,7 +1444,9 @@ export function AgencyDeliverablesView() {
                               defaultValue: "Assign Talent",
                             },
                           )
-                        : "Add Talent"}
+                        : t("agencyDashboard.deliverables.addTalent", {
+                            defaultValue: "Add Talent",
+                          })}
                     </Button>
                   </div>
                 </div>
@@ -1407,9 +1455,10 @@ export function AgencyDeliverablesView() {
                 {offer?.status === "contract_fully_signed" && !isOfferPaid && (
                   <div className="mx-5 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                     <span className="text-amber-700 text-xs font-semibold">
-                      ⏳ Brand payment is still pending. You can upload and
-                      submit deliverables now, but you’ll need to confirm the
-                      unpaid status before submitting.
+                      {t("agencyDashboard.deliverables.paymentPendingBanner", {
+                        defaultValue:
+                          "⏳ Brand payment is still pending. You can upload and submit deliverables now, but you’ll need to confirm the unpaid status before submitting.",
+                      })}
                     </span>
                   </div>
                 )}
@@ -1486,16 +1535,27 @@ export function AgencyDeliverablesView() {
                         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-gray-800">
-                              Payout Status
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.title",
+                                {
+                                  defaultValue: "Payout Status",
+                                },
+                              )}
                             </span>
                             {allSucceeded && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                all transferred
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.allTransferred",
+                                  { defaultValue: "all transferred" },
+                                )}
                               </span>
                             )}
                             {hasFailedTransfers && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                action required
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.actionRequired",
+                                  { defaultValue: "action required" },
+                                )}
                               </span>
                             )}
                           </div>
@@ -1510,7 +1570,12 @@ export function AgencyDeliverablesView() {
                               <RefreshCw
                                 className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`}
                               />
-                              Refresh
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.refresh",
+                                {
+                                  defaultValue: "Refresh",
+                                },
+                              )}
                             </Button>
                             {hasFailedTransfers && (
                               <Button
@@ -1524,7 +1589,12 @@ export function AgencyDeliverablesView() {
                                 ) : (
                                   <RotateCcw className="w-3 h-3" />
                                 )}
-                                Retry failed
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.retryFailed",
+                                  {
+                                    defaultValue: "Retry failed",
+                                  },
+                                )}
                               </Button>
                             )}
                           </div>
@@ -1535,12 +1605,23 @@ export function AgencyDeliverablesView() {
                           <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             <span className="text-xs">
-                              Loading payout status\u2026
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.loading",
+                                {
+                                  defaultValue: "Loading payout status...",
+                                },
+                              )}
                             </span>
                           </div>
                         ) : !ts ? (
                           <div className="px-4 py-4 text-xs text-gray-400 text-center">
-                            Click refresh to load payout status.
+                            {t(
+                              "agencyDashboard.deliverables.payoutStatus.clickRefresh",
+                              {
+                                defaultValue:
+                                  "Click refresh to load payout status.",
+                              },
+                            )}
                           </div>
                         ) : (
                           <div className="divide-y divide-gray-100">
@@ -1559,31 +1640,58 @@ export function AgencyDeliverablesView() {
                                         </span>
                                         <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
                                           {r.recipient_type === "agency"
-                                            ? "agency"
-                                            : "talent"}
+                                            ? t(
+                                                "agencyDashboard.deliverables.payoutStatus.agency",
+                                                { defaultValue: "agency" },
+                                              )
+                                            : t(
+                                                "agencyDashboard.deliverables.payoutStatus.talent",
+                                                { defaultValue: "talent" },
+                                              )}
                                         </span>
                                       </div>
                                       {/* Stripe health */}
                                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                         {!r.stripe_connected ? (
                                           <span className="text-[10px] text-red-600 font-semibold">
-                                            No Stripe account
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.noStripeAccount",
+                                              {
+                                                defaultValue:
+                                                  "No Stripe account",
+                                              },
+                                            )}
                                           </span>
                                         ) : !r.stripe_transfers_enabled ? (
                                           <span className="text-[10px] text-amber-600 font-semibold">
-                                            Transfers not enabled
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.transfersNotEnabled",
+                                              {
+                                                defaultValue:
+                                                  "Transfers not enabled",
+                                              },
+                                            )}
                                           </span>
                                         ) : (
                                           <span className="text-[10px] text-emerald-600 font-semibold">
-                                            Stripe ready
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.stripeReady",
+                                              { defaultValue: "Stripe ready" },
+                                            )}
                                           </span>
                                         )}
                                         {r.retry_count > 0 && (
                                           <span className="text-[10px] text-gray-400">
                                             {r.retry_count}{" "}
                                             {r.retry_count === 1
-                                              ? "retry"
-                                              : "retries"}
+                                              ? t(
+                                                  "agencyDashboard.deliverables.payoutStatus.retry",
+                                                  { defaultValue: "retry" },
+                                                )
+                                              : t(
+                                                  "agencyDashboard.deliverables.payoutStatus.retries",
+                                                  { defaultValue: "retries" },
+                                                )}
                                           </span>
                                         )}
                                       </div>
@@ -1608,15 +1716,25 @@ export function AgencyDeliverablesView() {
                                                 }
                                               >
                                                 <ArrowRight className="w-3 h-3" />
-                                                Fix your Stripe account
+                                                {t(
+                                                  "agencyDashboard.deliverables.payoutStatus.fixStripeAccount",
+                                                  {
+                                                    defaultValue:
+                                                      "Fix your Stripe account",
+                                                  },
+                                                )}
                                               </button>
                                             ) : (
                                               // Creator = talent's account → agency can't fix it, show guidance + message button
                                               <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                                                 <p className="text-[11px] text-gray-500 leading-snug">
-                                                  Ask this talent to complete
-                                                  their Stripe onboarding in
-                                                  their portal.
+                                                  {t(
+                                                    "agencyDashboard.deliverables.payoutStatus.askTalentStripe",
+                                                    {
+                                                      defaultValue:
+                                                        "Ask this talent to complete their Stripe onboarding in their portal.",
+                                                    },
+                                                  )}
                                                 </p>
                                                 <button
                                                   className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1 flex-shrink-0"
@@ -1627,7 +1745,13 @@ export function AgencyDeliverablesView() {
                                                   }
                                                 >
                                                   <Mail className="w-3 h-3" />
-                                                  Message talent
+                                                  {t(
+                                                    "agencyDashboard.deliverables.payoutStatus.messageTalent",
+                                                    {
+                                                      defaultValue:
+                                                        "Message talent",
+                                                    },
+                                                  )}
                                                 </button>
                                               </div>
                                             )}
@@ -1676,11 +1800,21 @@ export function AgencyDeliverablesView() {
                       <div className="p-4 space-y-4 bg-gray-50/50">
                         {loadingAssignments[offerId] ? (
                           <p className="text-xs text-gray-500">
-                            Loading assignments...
+                            {t(
+                              "agencyDashboard.deliverables.states.loadingAssignments",
+                              {
+                                defaultValue: "Loading assignments...",
+                              },
+                            )}
                           </p>
                         ) : assignments.length === 0 ? (
                           <p className="text-xs text-gray-500">
-                            No talents assigned yet.
+                            {t(
+                              "agencyDashboard.deliverables.states.noTalentsAssigned",
+                              {
+                                defaultValue: "No talents assigned yet.",
+                              },
+                            )}
                           </p>
                         ) : (
                           <div className="space-y-2">
@@ -1720,7 +1854,12 @@ export function AgencyDeliverablesView() {
                                           "Talent"}
                                       </p>
                                       <p className="text-xs text-gray-500">
-                                        Assigned
+                                        {t(
+                                          "agencyDashboard.deliverables.assigned",
+                                          {
+                                            defaultValue: "Assigned",
+                                          },
+                                        )}
                                       </p>
                                     </div>
                                   </div>
@@ -1730,7 +1869,12 @@ export function AgencyDeliverablesView() {
                                         size="icon"
                                         variant="outline"
                                         className="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50"
-                                        title="Unassign talent"
+                                        title={t(
+                                          "agencyDashboard.deliverables.unassignTalentButton",
+                                          {
+                                            defaultValue: "Unassign talent",
+                                          },
+                                        )}
                                         onClick={async (e) => {
                                           e.stopPropagation();
                                           if (!assignment?.id) return;
@@ -1812,7 +1956,12 @@ export function AgencyDeliverablesView() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-sm font-semibold text-gray-900">
-                                  Deliverables
+                                  {t(
+                                    "agencyDashboard.deliverables.sectionTitle",
+                                    {
+                                      defaultValue: "Deliverables",
+                                    },
+                                  )}
                                 </p>
                                 <p className="text-xs text-gray-500">
                                   {selectedAssignment?.creators?.full_name ||
@@ -1838,7 +1987,12 @@ export function AgencyDeliverablesView() {
                                   {submittingDrafts[offerId] ? (
                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                                   ) : null}
-                                  Submit to Brand
+                                  {t(
+                                    "agencyDashboard.deliverables.submitToBrand",
+                                    {
+                                      defaultValue: "Submit to Brand",
+                                    },
+                                  )}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -1854,24 +2008,39 @@ export function AgencyDeliverablesView() {
                                     })
                                   }
                                 >
-                                  <Upload className="w-4 h-4 mr-2" /> Upload
+                                  <Upload className="w-4 h-4 mr-2" />{" "}
+                                  {t("agencyDashboard.deliverables.upload", {
+                                    defaultValue: "Upload",
+                                  })}
                                 </Button>
                               </div>
                             </div>
 
                             {loadingDeliverables[offerId] ? (
                               <p className="text-xs text-gray-500">
-                                Loading deliverables...
+                                {t("agencyDashboard.deliverables.loading", {
+                                  defaultValue: "Loading deliverables...",
+                                })}
                               </p>
                             ) : (
                               <div className="space-y-6">
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
                                   <p className="text-sm font-semibold text-gray-900 mb-3">
-                                    Creator uploads
+                                    {t(
+                                      "agencyDashboard.deliverables.creatorUploads",
+                                      {
+                                        defaultValue: "Creator uploads",
+                                      },
+                                    )}
                                   </p>
                                   {creatorDeliverables.length === 0 ? (
                                     <p className="text-xs text-gray-400">
-                                      None yet.
+                                      {t(
+                                        "agencyDashboard.deliverables.noneYet",
+                                        {
+                                          defaultValue: "None yet.",
+                                        },
+                                      )}
                                     </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -1947,23 +2116,32 @@ export function AgencyDeliverablesView() {
               })}
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium mt-1">
-              Select one or more talents from your roster to assign to this
-              offer.
+              {t("agencyDashboard.deliverables.assignTalent.subtitle", {
+                defaultValue:
+                  "Select one or more talents from your roster to assign to this offer.",
+              })}
             </p>
           </DialogHeader>
 
           <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
             <AlertDescription className="text-sm text-blue-900 font-medium">
-              You can change assigned talents any time before the contract is
-              sent. Once you send the contract, assignments are locked.
+              {t(
+                "agencyDashboard.deliverables.assignTalent.changeBeforeContract",
+                {
+                  defaultValue:
+                    "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
+                },
+              )}
             </AlertDescription>
           </Alert>
 
           {assignmentLockedForOffer ? (
             <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
               <AlertDescription className="text-sm text-amber-900 font-semibold">
-                This offer’s contract has already been sent. Talent assignments
-                are locked.
+                {t("agencyDashboard.deliverables.assignTalent.contractSent", {
+                  defaultValue:
+                    "This offer's contract has already been sent. Talent assignments are locked.",
+                })}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -1971,7 +2149,12 @@ export function AgencyDeliverablesView() {
           <div className="relative mb-8">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Filter by name or email..."
+              placeholder={t(
+                "agencyDashboard.deliverables.assignTalent.filterPlaceholder",
+                {
+                  defaultValue: "Filter by name or email...",
+                },
+              )}
               value={assignSearch}
               onChange={(e) => setAssignSearch(e.target.value)}
               className="h-12 pl-10 bg-gray-100 border-none rounded-xl"
@@ -1983,10 +2166,20 @@ export function AgencyDeliverablesView() {
               <div className="h-[420px] flex flex-col items-center justify-center text-center">
                 <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
                 <p className="text-sm font-bold text-gray-500">
-                  Loading talents…
+                  {t(
+                    "agencyDashboard.deliverables.assignTalent.loadingTalents",
+                    {
+                      defaultValue: "Loading talents...",
+                    },
+                  )}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Fetching your agency roster.
+                  {t(
+                    "agencyDashboard.deliverables.assignTalent.fetchingRoster",
+                    {
+                      defaultValue: "Fetching your agency roster.",
+                    },
+                  )}
                 </p>
               </div>
             ) : (
@@ -2005,7 +2198,12 @@ export function AgencyDeliverablesView() {
                     talent?.stage_name ||
                     talent?.name ||
                     talent?.full_legal_name ||
-                    "Talent";
+                    t(
+                      "agencyDashboard.deliverables.assignTalent.talentFallback",
+                      {
+                        defaultValue: "Talent",
+                      },
+                    );
                   return (
                     <Card
                       key={
@@ -2131,14 +2329,19 @@ export function AgencyDeliverablesView() {
             </div>
             <div>
               <h3 className="text-lg font-black text-gray-900 tracking-tight">
-                Onboarding not completed
+                {t("agencyDashboard.deliverables.inviteRequired.title", {
+                  defaultValue: "Onboarding not completed",
+                })}
               </h3>
               <p className="text-sm text-gray-500 mt-2 leading-relaxed">
                 <span className="font-semibold text-gray-700">
                   {inviteRequiredDialog.talentName}
                 </span>{" "}
-                hasn't accepted their portal invite yet. They need to complete
-                onboarding before they can be assigned to a contract.
+                {t("agencyDashboard.deliverables.inviteRequired.description", {
+                  defaultValue:
+                    "{{name}} hasn't accepted their portal invite yet. They need to complete onboarding before they can be assigned to a contract.",
+                  name: inviteRequiredDialog.talentName,
+                })}
               </p>
             </div>
             <div className="flex flex-col gap-2 w-full mt-2">
@@ -2157,7 +2360,9 @@ export function AgencyDeliverablesView() {
                 className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold text-sm flex items-center justify-center gap-2"
               >
                 <Mail className="w-4 h-4" />
-                Go to Roster &amp; Invite
+                {t("agencyDashboard.deliverables.inviteRequired.goToRoster", {
+                  defaultValue: "Go to Roster & Invite",
+                })}
               </Button>
               <Button
                 variant="ghost"

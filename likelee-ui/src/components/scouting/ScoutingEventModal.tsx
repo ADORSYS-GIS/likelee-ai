@@ -211,8 +211,14 @@ export const ScoutingEventModal = ({
   >([]);
 
   const title = useMemo(() => {
-    return eventToEdit ? "Edit Event" : "Create Event";
-  }, [eventToEdit]);
+    return eventToEdit
+      ? t("agencyDashboard.scouting.eventModal.titleEdit", {
+          defaultValue: "Edit Event",
+        })
+      : t("agencyDashboard.scouting.eventModal.titleCreate", {
+          defaultValue: "Create Event",
+        });
+  }, [eventToEdit, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -314,8 +320,15 @@ export const ScoutingEventModal = ({
       const agencyId = await scoutingService.getUserAgencyId();
       if (!agencyId) {
         toast({
-          title: "Error",
-          description: "Could not determine agency.",
+          title: t("agencyDashboard.scouting.eventModal.toasts.errorTitle", {
+            defaultValue: "Error",
+          }),
+          description: t(
+            "agencyDashboard.scouting.eventModal.toasts.missingAgency",
+            {
+              defaultValue: "Could not determine agency.",
+            },
+          ),
           variant: "destructive",
         });
         return;
@@ -323,8 +336,18 @@ export const ScoutingEventModal = ({
 
       if (!form.name || !form.event_date || !form.location) {
         toast({
-          title: "Missing fields",
-          description: "Name, date, and location are required.",
+          title: t(
+            "agencyDashboard.scouting.eventModal.toasts.missingFieldsTitle",
+            {
+              defaultValue: "Missing fields",
+            },
+          ),
+          description: t(
+            "agencyDashboard.scouting.eventModal.toasts.missingFields",
+            {
+              defaultValue: "Name, date, and location are required.",
+            },
+          ),
           variant: "destructive",
         });
         return;
@@ -371,20 +394,34 @@ export const ScoutingEventModal = ({
 
       if (eventToEdit?.id) {
         await scoutingService.updateEvent(eventToEdit.id, payload);
-        toast({ title: "Event updated" });
+        toast({
+          title: t("agencyDashboard.scouting.eventModal.toasts.updated", {
+            defaultValue: "Event updated",
+          }),
+        });
       } else {
         await scoutingService.createEvent(
           payload as Omit<ScoutingEvent, "id" | "created_at" | "updated_at">,
         );
-        toast({ title: "Event created" });
+        toast({
+          title: t("agencyDashboard.scouting.eventModal.toasts.created", {
+            defaultValue: "Event created",
+          }),
+        });
       }
 
       await onSaved?.();
       onOpenChange(false);
     } catch (e: any) {
       toast({
-        title: "Error",
-        description: e?.message || "Failed to save event.",
+        title: t("agencyDashboard.scouting.eventModal.toasts.errorTitle", {
+          defaultValue: "Error",
+        }),
+        description:
+          e?.message ||
+          t("agencyDashboard.scouting.eventModal.toasts.saveFailed", {
+            defaultValue: "Failed to save event.",
+          }),
         variant: "destructive",
       });
     } finally {
@@ -400,7 +437,10 @@ export const ScoutingEventModal = ({
             {title}
           </DialogTitle>
           <DialogDescription className="text-gray-500 font-medium">
-            Manage open calls and casting events for your scouting pipeline.
+            {t("agencyDashboard.scouting.eventModal.subtitle", {
+              defaultValue:
+                "Manage open calls and casting events for your scouting pipeline.",
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -450,25 +490,36 @@ export const ScoutingEventModal = ({
           <div className="space-y-6">
             {step === 0 && (
               <div>
-                <h3 className="text-sm font-bold text-gray-900">Basics</h3>
+                <h3 className="text-sm font-bold text-gray-900">
+                  {t("agencyDashboard.scouting.eventModal.sections.basics", {
+                    defaultValue: "Basics",
+                  })}
+                </h3>
                 <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50/40 p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2 sm:col-span-2">
                       <Label className="text-sm font-bold text-gray-700">
-                        Name
+                        {t("agencyDashboard.scouting.eventModal.fields.name", {
+                          defaultValue: "Name",
+                        })}
                       </Label>
                       <Input
                         value={form.name}
                         onChange={(e) =>
                           setForm((p) => ({ ...p, name: e.target.value }))
                         }
-                        placeholder="Event name"
+                        placeholder={t(
+                          "agencyDashboard.scouting.eventModal.placeholders.eventName",
+                          { defaultValue: "Event name" },
+                        )}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-gray-700">
-                        Date
+                        {t("agencyDashboard.scouting.eventModal.fields.date", {
+                          defaultValue: "Date",
+                        })}
                       </Label>
                       <Input
                         type="date"
@@ -481,7 +532,12 @@ export const ScoutingEventModal = ({
 
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-gray-700">
-                        Status
+                        {t(
+                          "agencyDashboard.scouting.eventModal.fields.status",
+                          {
+                            defaultValue: "Status",
+                          },
+                        )}
                       </Label>
                       <Select
                         value={form.status}
@@ -532,7 +588,12 @@ export const ScoutingEventModal = ({
 
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-gray-700">
-                        Start time
+                        {t(
+                          "agencyDashboard.scouting.eventModal.fields.startTime",
+                          {
+                            defaultValue: "Start time",
+                          },
+                        )}
                       </Label>
                       <Input
                         value={form.start_time}
@@ -545,7 +606,12 @@ export const ScoutingEventModal = ({
 
                     <div className="space-y-2">
                       <Label className="text-sm font-bold text-gray-700">
-                        End time
+                        {t(
+                          "agencyDashboard.scouting.eventModal.fields.endTime",
+                          {
+                            defaultValue: "End time",
+                          },
+                        )}
                       </Label>
                       <Input
                         value={form.end_time}
@@ -558,7 +624,12 @@ export const ScoutingEventModal = ({
 
                     <div className="space-y-2 sm:col-span-2">
                       <Label className="text-sm font-bold text-gray-700">
-                        Location
+                        {t(
+                          "agencyDashboard.scouting.eventModal.fields.location",
+                          {
+                            defaultValue: "Location",
+                          },
+                        )}
                       </Label>
                       <div className="relative">
                         <Input
@@ -574,10 +645,20 @@ export const ScoutingEventModal = ({
                               location: e.target.value,
                             }));
                           }}
-                          placeholder="Search a city, venue, or address"
+                          placeholder={t(
+                            "agencyDashboard.scouting.eventModal.placeholders.location",
+                            {
+                              defaultValue: "Search a city, venue, or address",
+                            },
+                          )}
                         />
                         <p className="mt-1 text-xs text-gray-500 font-medium">
-                          Type 3+ characters to search.
+                          {t(
+                            "agencyDashboard.scouting.eventModal.locationHint",
+                            {
+                              defaultValue: "Type 3+ characters to search.",
+                            },
+                          )}
                         </p>
                         {locationOpen && locationResults.length > 0 && (
                           <div className="absolute z-50 mt-1 w-full rounded-md border bg-white shadow-md overflow-hidden">
@@ -608,7 +689,12 @@ export const ScoutingEventModal = ({
 
                     <div className="space-y-2 sm:col-span-2">
                       <Label className="text-sm font-bold text-gray-700">
-                        Description
+                        {t(
+                          "agencyDashboard.scouting.eventModal.fields.description",
+                          {
+                            defaultValue: "Description",
+                          },
+                        )}
                       </Label>
                       <Textarea
                         value={form.description}
@@ -618,7 +704,10 @@ export const ScoutingEventModal = ({
                             description: e.target.value,
                           }))
                         }
-                        placeholder="Optional details"
+                        placeholder={t(
+                          "agencyDashboard.scouting.eventModal.placeholders.description",
+                          { defaultValue: "Optional details" },
+                        )}
                       />
                     </div>
                   </div>
@@ -1054,7 +1143,9 @@ export const ScoutingEventModal = ({
         <DialogFooter>
           <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 w-full">
             <Button variant="outline" onClick={onClose} disabled={isSaving}>
-              Cancel
+              {t("agencyDashboard.scouting.eventModal.actions.cancel", {
+                defaultValue: "Cancel",
+              })}
             </Button>
 
             <div className="flex items-center justify-end gap-2">
@@ -1079,7 +1170,13 @@ export const ScoutingEventModal = ({
                   onClick={handleSave}
                   disabled={isSaving}
                 >
-                  {isSaving ? "Saving..." : "Save"}
+                  {isSaving
+                    ? t("agencyDashboard.scouting.eventModal.actions.saving", {
+                        defaultValue: "Saving...",
+                      })
+                    : t("agencyDashboard.scouting.eventModal.actions.save", {
+                        defaultValue: "Save",
+                      })}
                 </Button>
               )}
             </div>

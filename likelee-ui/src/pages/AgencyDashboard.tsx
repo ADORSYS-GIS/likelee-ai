@@ -3123,6 +3123,7 @@ const ShareFileModal = ({
 // --- Accounting & Invoicing Views ---
 
 const ExpenseTrackingView = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -3289,10 +3290,18 @@ const ExpenseTrackingView = () => {
       setNewExpenseAmount("0");
       setNewExpenseSubmitter("");
       await loadExpenses();
-      toast({ title: "Expense added" });
+      toast({
+        title: t(
+          "agencyDashboard.brandConnections.accounting.expenseTrackingView.toasts.expenseAdded",
+          { defaultValue: "Expense added" },
+        ),
+      });
     } catch (e: any) {
       toast({
-        title: "Failed to add expense",
+        title: t(
+          "agencyDashboard.brandConnections.accounting.expenseTrackingView.toasts.failedToAddExpense",
+          { defaultValue: "Failed to add expense" },
+        ),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -3317,7 +3326,10 @@ const ExpenseTrackingView = () => {
           className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <Plus className="w-5 h-5" />
-          Add Expense
+          {t(
+            "agencyDashboard.brandConnections.accounting.expenseTrackingView.actions.addExpense",
+            { defaultValue: "Add Expense" },
+          )}
         </Button>
       </div>
 
@@ -3325,7 +3337,10 @@ const ExpenseTrackingView = () => {
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
-            placeholder="Search expenses..."
+            placeholder={t(
+              "agencyDashboard.brandConnections.accounting.expenseTrackingView.searchPlaceholder",
+              { defaultValue: "Search expenses..." },
+            )}
             className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -3333,13 +3348,38 @@ const ExpenseTrackingView = () => {
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-full sm:w-64 h-12 bg-white border-gray-100 rounded-xl">
-            <SelectValue placeholder="All Categories" />
+            <SelectValue
+              placeholder={t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.filters.allCategories",
+                { defaultValue: "All Categories" },
+              )}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="travel">Travel</SelectItem>
-            <SelectItem value="equipment">Equipment</SelectItem>
-            <SelectItem value="marketing">Marketing</SelectItem>
+            <SelectItem value="all">
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.filters.allCategories",
+                { defaultValue: "All Categories" },
+              )}
+            </SelectItem>
+            <SelectItem value="travel">
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.travel",
+                { defaultValue: "Travel" },
+              )}
+            </SelectItem>
+            <SelectItem value="equipment">
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.equipment",
+                { defaultValue: "Equipment" },
+              )}
+            </SelectItem>
+            <SelectItem value="marketing">
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.marketing",
+                { defaultValue: "Marketing" },
+              )}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -3389,7 +3429,10 @@ const ExpenseTrackingView = () => {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-bold text-gray-700 mb-1">
-              Total Expenses
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.totalExpenses",
+                { defaultValue: "Total Expenses" },
+              )}
             </p>
             <p className="text-3xl font-bold text-orange-600">
               {totalExpensesText}
@@ -3405,26 +3448,46 @@ const ExpenseTrackingView = () => {
         <DialogContent className="sm:max-w-[520px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900">
-              Add Expense
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.title",
+                { defaultValue: "Add Expense" },
+              )}
             </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
-              Create a new operating expense for your agency.
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.subtitle",
+                {
+                  defaultValue:
+                    "Create a new operating expense for your agency.",
+                },
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Label className="text-sm font-bold text-gray-700">
+                {t(
+                  "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.name",
+                  { defaultValue: "Name" },
+                )}
+              </Label>
               <Input
                 value={newExpenseName}
                 onChange={(e) => setNewExpenseName(e.target.value)}
                 className="h-11 rounded-xl"
-                placeholder="e.g. Camera rental"
+                placeholder={t(
+                  "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.placeholders.name",
+                  { defaultValue: "e.g. Camera rental" },
+                )}
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Category
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.category",
+                    { defaultValue: "Category" },
+                  )}
                 </Label>
                 <Select
                   value={newExpenseCategory}
@@ -3434,15 +3497,40 @@ const ExpenseTrackingView = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="Travel">Travel</SelectItem>
-                    <SelectItem value="Equipment">Equipment</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Travel">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.travel",
+                        { defaultValue: "Travel" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="Equipment">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.equipment",
+                        { defaultValue: "Equipment" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="Marketing">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.marketing",
+                        { defaultValue: "Marketing" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="Other">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.other",
+                        { defaultValue: "Other" },
+                      )}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.date",
+                    { defaultValue: "Date" },
+                  )}
+                </Label>
                 <Input
                   type="date"
                   value={newExpenseDate}
@@ -3454,7 +3542,10 @@ const ExpenseTrackingView = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Amount (USD)
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.amountUsd",
+                    { defaultValue: "Amount (USD)" },
+                  )}
                 </Label>
                 <Input
                   value={newExpenseAmount}
@@ -3465,7 +3556,10 @@ const ExpenseTrackingView = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Status
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.status",
+                    { defaultValue: "Status" },
+                  )}
                 </Label>
                 <Select
                   value={newExpenseStatus}
@@ -3475,22 +3569,43 @@ const ExpenseTrackingView = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="approved">approved</SelectItem>
-                    <SelectItem value="pending">pending</SelectItem>
-                    <SelectItem value="rejected">rejected</SelectItem>
+                    <SelectItem value="approved">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.statuses.approved",
+                        { defaultValue: "Approved" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="pending">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.statuses.pending",
+                        { defaultValue: "Pending" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="rejected">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.statuses.rejected",
+                        { defaultValue: "Rejected" },
+                      )}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                Submitter (optional)
+                {t(
+                  "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.submitterOptional",
+                  { defaultValue: "Submitter (optional)" },
+                )}
               </Label>
               <Input
                 value={newExpenseSubmitter}
                 onChange={(e) => setNewExpenseSubmitter(e.target.value)}
                 className="h-11 rounded-xl"
-                placeholder="e.g. Emma"
+                placeholder={t(
+                  "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.placeholders.submitter",
+                  { defaultValue: "e.g. Emma" },
+                )}
               />
             </div>
           </div>
@@ -3500,14 +3615,20 @@ const ExpenseTrackingView = () => {
               onClick={() => setShowAddExpense(false)}
               className="h-11 rounded-xl font-bold"
             >
-              Cancel
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.actions.cancel",
+                { defaultValue: "Cancel" },
+              )}
             </Button>
             <Button
               onClick={submitNewExpense}
               disabled={!newExpenseName.trim() || loading}
               className="h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
             >
-              Add Expense
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.actions.addExpense",
+                { defaultValue: "Add Expense" },
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3521,6 +3642,7 @@ const TalentStatementsView = ({
 }: {
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralTitle = isSportsAgency ? "Athletes" : "Talent";
@@ -3771,21 +3893,30 @@ const TalentStatementsView = ({
               className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <Mail className="w-4 h-4" />
-              Email Statement
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.emailStatement",
+                { defaultValue: "Email Statement" },
+              )}
             </Button>
             <Button
               variant="outline"
               className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Download PDF
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.downloadPdf",
+                { defaultValue: "Download PDF" },
+              )}
             </Button>
             <Button
               variant="outline"
               className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <Printer className="w-4 h-4" />
-              Print
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.print",
+                { defaultValue: "Print" },
+              )}
             </Button>
           </div>
         </div>
@@ -3803,15 +3934,50 @@ const TalentStatementsView = ({
               </h3>
               <Select defaultValue="all-time">
                 <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 font-bold text-gray-700">
-                  <SelectValue placeholder="Select period" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.selectPeriod",
+                      { defaultValue: "Select period" },
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="all-time">All Time</SelectItem>
-                  <SelectItem value="this-month">This Month</SelectItem>
-                  <SelectItem value="last-month">Last Month</SelectItem>
-                  <SelectItem value="this-quarter">This Quarter</SelectItem>
-                  <SelectItem value="this-year">This Year</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
+                  <SelectItem value="all-time">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.allTime",
+                      { defaultValue: "All Time" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="this-month">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.thisMonth",
+                      { defaultValue: "This Month" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="last-month">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.lastMonth",
+                      { defaultValue: "Last Month" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="this-quarter">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.thisQuarter",
+                      { defaultValue: "This Quarter" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="this-year">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.thisYear",
+                      { defaultValue: "This Year" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="custom">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.customRange",
+                      { defaultValue: "Custom Range" },
+                    )}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -3822,55 +3988,90 @@ const TalentStatementsView = ({
           <Card className="p-6 bg-orange-50 border border-orange-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-orange-600" />
-              <p className="text-sm font-bold text-gray-700">Total Owed</p>
+              <p className="text-sm font-bold text-gray-700">
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalOwed",
+                  { defaultValue: "Total Owed" },
+                )}
+              </p>
             </div>
             <p className="text-3xl font-bold text-orange-600 mb-1">
               {money(Number(selectedTalent.totalOwedCents || 0) || 0, "USD")}
             </p>
             <p className="text-xs text-gray-600 font-medium">
-              {unpaidCount} unpaid jobs
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.unpaidJobs",
+                { count: unpaidCount, defaultValue: "{{count}} unpaid jobs" },
+              )}
             </p>
           </Card>
           <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-green-600" />
               <p className="text-sm font-bold text-gray-700">
-                Total Paid (YTD)
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalPaidYtd",
+                  { defaultValue: "Total Paid (YTD)" },
+                )}
               </p>
             </div>
             <p className="text-3xl font-bold text-green-600 mb-1">
               {money(Number(selectedTalent.totalPaidYTDCents || 0) || 0, "USD")}
             </p>
             <p className="text-xs text-gray-600 font-medium">
-              {paidCount} paid jobs
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.paidJobs",
+                { count: paidCount, defaultValue: "{{count}} paid jobs" },
+              )}
             </p>
           </Card>
           <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-purple-600" />
               <p className="text-sm font-bold text-gray-700">
-                Lifetime Earnings
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.lifetimeEarnings",
+                  { defaultValue: "Lifetime Earnings" },
+                )}
               </p>
             </div>
             <p className="text-3xl font-bold text-purple-600 mb-1">$2.4</p>
-            <p className="text-xs text-gray-600 font-medium">Avg: $0/mo</p>
+            <p className="text-xs text-gray-600 font-medium">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.avgPerMonth",
+                { defaultValue: "Avg: $0/mo" },
+              )}
+            </p>
           </Card>
           <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4 text-blue-600" />
-              <p className="text-sm font-bold text-gray-700">Last Payment</p>
+              <p className="text-sm font-bold text-gray-700">
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.lastPayment",
+                  { defaultValue: "Last Payment" },
+                )}
+              </p>
             </div>
             <p className="text-lg font-bold text-blue-600 mb-1">
               {selectedTalent.lastPaymentAt
                 ? formatDate(selectedTalent.lastPaymentAt)
-                : "No payments"}
+                : t(
+                    "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.noPayments",
+                    { defaultValue: "No payments" },
+                  )}
             </p>
           </Card>
         </div>
 
         <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
           <div className="p-6 border-b border-gray-100">
-            <h4 className="text-lg font-bold text-gray-900">Earnings Detail</h4>
+            <h4 className="text-lg font-bold text-gray-900">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.earningsDetail",
+                { defaultValue: "Earnings Detail" },
+              )}
+            </h4>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -3878,28 +4079,52 @@ const TalentStatementsView = ({
                 <tr>
                   <th className="px-6 py-3 text-left w-12"></th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Job Date
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.jobDate",
+                      { defaultValue: "Job Date" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Client
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.client",
+                      { defaultValue: "Client" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Description
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.description",
+                      { defaultValue: "Description" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Gross
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.gross",
+                      { defaultValue: "Gross" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Commission
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.commission",
+                      { defaultValue: "Commission" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Net
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.net",
+                      { defaultValue: "Net" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Status
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.status",
+                      { defaultValue: "Status" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Invoice
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.invoice",
+                      { defaultValue: "Invoice" },
+                    )}
                   </th>
                 </tr>
               </thead>
@@ -3944,7 +4169,15 @@ const TalentStatementsView = ({
                               : "bg-yellow-100 text-yellow-700 border-yellow-200 font-bold"
                           }
                         >
-                          {isPaid ? "Paid" : "Unpaid"}
+                          {isPaid
+                            ? t(
+                                "agencyDashboard.brandConnections.accounting.talentStatementsView.statuses.paid",
+                                { defaultValue: "Paid" },
+                              )
+                            : t(
+                                "agencyDashboard.brandConnections.accounting.talentStatementsView.statuses.unpaid",
+                                { defaultValue: "Unpaid" },
+                              )}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-sm font-bold text-indigo-600">
@@ -3959,7 +4192,10 @@ const TalentStatementsView = ({
           <div className="p-6 bg-gray-50 border-t border-gray-100 space-y-3">
             <div className="flex justify-between items-center max-w-md ml-auto">
               <span className="text-sm text-gray-600 font-bold">
-                Total Gross Amount
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalGrossAmount",
+                  { defaultValue: "Total Gross Amount" },
+                )}
               </span>
               <span className="text-sm font-bold text-gray-900">
                 {money(totalGrossCents, "USD")}
@@ -3967,7 +4203,10 @@ const TalentStatementsView = ({
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto">
               <span className="text-sm text-gray-600 font-bold">
-                Total Agency Commission (20%)
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalAgencyCommission",
+                  { defaultValue: "Total Agency Commission (20%)" },
+                )}
               </span>
               <span className="text-sm font-bold text-red-600">
                 -{money(totalAgencyFeeCents, "USD")}
@@ -3992,10 +4231,23 @@ const TalentStatementsView = ({
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {`${entitySingularTitle} Earnings Statements`}
+            {t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.title",
+              {
+                entitySingular: entitySingularTitle,
+                defaultValue: "{{entitySingular}} Earnings Statements",
+              },
+            )}
           </h2>
           <p className="text-gray-600 font-medium">
-            {`View and manage ${entitySingularLower} payment statements`}
+            {t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.subtitle",
+              {
+                entitySingularLower,
+                defaultValue:
+                  "View and manage {{entitySingularLower}} payment statements",
+              },
+            )}
           </p>
         </div>
         <Button
@@ -4005,7 +4257,10 @@ const TalentStatementsView = ({
           disabled={loading}
         >
           <Download className="w-5 h-5" />
-          Export All
+          {t(
+            "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.exportAll",
+            { defaultValue: "Export All" },
+          )}
         </Button>
       </div>
 
@@ -4013,7 +4268,13 @@ const TalentStatementsView = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder={`Search by ${entitySingularLower} name...`}
+            placeholder={t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.searchPlaceholder",
+              {
+                entitySingularLower,
+                defaultValue: "Search by {{entitySingularLower}} name...",
+              },
+            )}
             className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -4021,18 +4282,44 @@ const TalentStatementsView = ({
         </div>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full sm:w-56 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="Sort by..." />
+            <SelectValue
+              placeholder={t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.sortBy",
+                { defaultValue: "Sort by..." },
+              )}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="amount-high">
-              Amount Owed (High to Low)
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.amountHigh",
+                { defaultValue: "Amount Owed (High to Low)" },
+              )}
             </SelectItem>
             <SelectItem value="amount-low">
-              Amount Owed (Low to High)
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.amountLow",
+                { defaultValue: "Amount Owed (Low to High)" },
+              )}
             </SelectItem>
-            <SelectItem value="total-paid">Total Paid (High to Low)</SelectItem>
-            <SelectItem value="name-az">Name (A-Z)</SelectItem>
-            <SelectItem value="name-za">Name (Z-A)</SelectItem>
+            <SelectItem value="total-paid">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.totalPaidHigh",
+                { defaultValue: "Total Paid (High to Low)" },
+              )}
+            </SelectItem>
+            <SelectItem value="name-az">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.nameAz",
+                { defaultValue: "Name (A-Z)" },
+              )}
+            </SelectItem>
+            <SelectItem value="name-za">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.nameZa",
+                { defaultValue: "Name (Z-A)" },
+              )}
+            </SelectItem>
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2 px-3 h-10 bg-white border border-gray-200 rounded-xl w-full sm:w-auto">
@@ -4048,7 +4335,10 @@ const TalentStatementsView = ({
             htmlFor="unpaid-earnings"
             className="text-sm font-bold text-gray-700 cursor-pointer"
           >
-            Has Unpaid Earnings
+            {t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.hasUnpaidEarnings",
+              { defaultValue: "Has Unpaid Earnings" },
+            )}
           </Label>
         </div>
       </div>
@@ -4078,41 +4368,75 @@ const TalentStatementsView = ({
                       {talent.name}
                     </h4>
                     <p className="text-xs text-gray-600 font-bold">
-                      {talent.totalJobs} total jobs
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalJobs",
+                        {
+                          count: talent.totalJobs,
+                          defaultValue: "{{count}} total jobs",
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                   <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                      Total Owed
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalOwed",
+                        { defaultValue: "Total Owed" },
+                      )}
                     </p>
                     <p className="text-base font-bold text-orange-600">
                       {money(talent.totalOwedCents, "USD")}
                     </p>
                     <p className="text-[10px] text-gray-400 font-medium">
-                      {talent.totalOwedCents > 0 ? "Has unpaid" : "No unpaid"}
+                      {talent.totalOwedCents > 0
+                        ? t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.hasUnpaid",
+                            { defaultValue: "Has unpaid" },
+                          )
+                        : t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.noUnpaid",
+                            { defaultValue: "No unpaid" },
+                          )}
                     </p>
                   </div>
                   <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                      Total Paid (YTD)
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalPaidYtd",
+                        { defaultValue: "Total Paid (YTD)" },
+                      )}
                     </p>
                     <p className="text-base font-bold text-green-600">
                       {money(talent.totalPaidYTDCents, "USD")}
                     </p>
                     <p className="text-[10px] text-gray-400 font-medium">
-                      {talent.totalPaidYTDCents > 0 ? "Has paid" : "No paid"}
+                      {talent.totalPaidYTDCents > 0
+                        ? t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.hasPaid",
+                            { defaultValue: "Has paid" },
+                          )
+                        : t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.noPaid",
+                            { defaultValue: "No paid" },
+                          )}
                     </p>
                   </div>
                   <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                      Last Payment
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.lastPayment",
+                        { defaultValue: "Last Payment" },
+                      )}
                     </p>
                     <p className="text-xs text-gray-600 font-medium">
                       {talent.lastPaymentAt
                         ? formatDate(talent.lastPaymentAt)
-                        : "No payments"}
+                        : t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.noPayments",
+                            { defaultValue: "No payments" },
+                          )}
                     </p>
                   </div>
                   <Button
@@ -4120,7 +4444,10 @@ const TalentStatementsView = ({
                     className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 col-span-2 sm:col-span-3"
                   >
                     <FileText className="w-4 h-4" />
-                    View Statement
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.viewStatement",
+                      { defaultValue: "View Statement" },
+                    )}
                   </Button>
                 </div>
               </div>
@@ -4128,7 +4455,10 @@ const TalentStatementsView = ({
           ))
         ) : (
           <div className="text-sm text-gray-600 font-medium">
-            No talent statements yet.
+            {t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.empty",
+              { defaultValue: "No talent statements yet." },
+            )}
           </div>
         )}
       </div>
@@ -4137,6 +4467,7 @@ const TalentStatementsView = ({
 };
 
 const PaymentTrackingView = () => {
+  const { t } = useTranslation();
   const reminderKey = "likelee.payment_reminders.v1";
   const [reminder3Days, setReminder3Days] = useState(true);
   const [reminderDueDate, setReminderDueDate] = useState(true);
@@ -9011,7 +9342,10 @@ const InvoiceManagementView = ({
             className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Filter className="w-4 h-4" />
-            Filters
+            {t(
+              "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.title",
+              { defaultValue: "Filters" },
+            )}
             <ChevronDown
               className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
             />
@@ -9023,7 +9357,12 @@ const InvoiceManagementView = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Search by invoice #, client, or talent name..."
+            placeholder={t(
+              "agencyDashboard.brandConnections.accounting.invoiceManagementView.searchPlaceholder",
+              {
+                defaultValue: "Search by invoice #, client, or talent name...",
+              },
+            )}
             className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -9031,81 +9370,149 @@ const InvoiceManagementView = ({
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="All Status" />
+            <SelectValue
+              placeholder={t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.allStatus",
+                { defaultValue: "All Status" },
+              )}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="all" className="font-bold text-gray-700">
-              All Status
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.allStatus",
+                { defaultValue: "All Status" },
+              )}
             </SelectItem>
             <SelectItem value="draft" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
-                <span className="text-gray-900">Draft</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.draft",
+                    { defaultValue: "Draft" },
+                  )}
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="sent" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-yellow-500 rounded-sm"></div>
-                <span className="text-gray-900">Sent</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.sent",
+                    { defaultValue: "Sent" },
+                  )}
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="paid" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
-                <span className="text-gray-900">Paid</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.paid",
+                    { defaultValue: "Paid" },
+                  )}
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="overdue" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
-                <span className="text-gray-900">Overdue</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.overdue",
+                    { defaultValue: "Overdue" },
+                  )}
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="void" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
-                <span className="text-gray-900">Void</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.void",
+                    { defaultValue: "Void" },
+                  )}
+                </span>
               </div>
             </SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full sm:w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="Sort by..." />
+            <SelectValue
+              placeholder={t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.sortBy",
+                { defaultValue: "Sort by..." },
+              )}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="newest" className="font-bold text-gray-700">
-              Newest First
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.newest",
+                { defaultValue: "Newest First" },
+              )}
             </SelectItem>
             <SelectItem value="oldest" className="font-bold text-gray-700">
-              Oldest First
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.oldest",
+                { defaultValue: "Oldest First" },
+              )}
             </SelectItem>
             <SelectItem value="due-soonest" className="font-bold text-gray-700">
-              Due Date (Soonest)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.dueSoonest",
+                { defaultValue: "Due Date (Soonest)" },
+              )}
             </SelectItem>
             <SelectItem value="due-latest" className="font-bold text-gray-700">
-              Due Date (Latest)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.dueLatest",
+                { defaultValue: "Due Date (Latest)" },
+              )}
             </SelectItem>
             <SelectItem value="amount-high" className="font-bold text-gray-700">
-              Amount (High to Low)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.amountHigh",
+                { defaultValue: "Amount (High to Low)" },
+              )}
             </SelectItem>
             <SelectItem value="amount-low" className="font-bold text-gray-700">
-              Amount (Low to High)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.amountLow",
+                { defaultValue: "Amount (Low to High)" },
+              )}
             </SelectItem>
             <SelectItem value="client-az" className="font-bold text-gray-700">
-              Client (A-Z)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.clientAz",
+                { defaultValue: "Client (A-Z)" },
+              )}
             </SelectItem>
             <SelectItem value="client-za" className="font-bold text-gray-700">
-              Client (Z-A)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.clientZa",
+                { defaultValue: "Client (Z-A)" },
+              )}
             </SelectItem>
             <SelectItem value="invoice-asc" className="font-bold text-gray-700">
-              Invoice # (Asc)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.invoiceAsc",
+                { defaultValue: "Invoice # (Asc)" },
+              )}
             </SelectItem>
             <SelectItem
               value="invoice-desc"
               className="font-bold text-gray-700"
             >
-              Invoice # (Desc)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.invoiceDesc",
+                { defaultValue: "Invoice # (Desc)" },
+              )}
             </SelectItem>
           </SelectContent>
         </Select>
@@ -9117,7 +9524,10 @@ const InvoiceManagementView = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Issue Date From
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.issueDateFrom",
+                  { defaultValue: "Issue Date From" },
+                )}
               </Label>
               <Input
                 type="date"
@@ -9128,7 +9538,10 @@ const InvoiceManagementView = ({
             </div>
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Issue Date To
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.issueDateTo",
+                  { defaultValue: "Issue Date To" },
+                )}
               </Label>
               <Input
                 type="date"
@@ -9139,7 +9552,10 @@ const InvoiceManagementView = ({
             </div>
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Min Amount
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.minAmount",
+                  { defaultValue: "Min Amount" },
+                )}
               </Label>
               <Input
                 type="number"
@@ -9151,7 +9567,10 @@ const InvoiceManagementView = ({
             </div>
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Max Amount
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.maxAmount",
+                  { defaultValue: "Max Amount" },
+                )}
               </Label>
               <Input
                 type="number"
@@ -9173,15 +9592,28 @@ const InvoiceManagementView = ({
                   className="rounded-md w-4 h-4 border-gray-300"
                 />
                 <Label className="text-sm font-bold text-gray-700">
-                  Show Overdue Only
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.showOverdueOnly",
+                    { defaultValue: "Show Overdue Only" },
+                  )}
                 </Label>
               </div>
               <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
                 <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 text-sm">
-                  <SelectValue placeholder="All Currencies" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.allCurrencies",
+                      { defaultValue: "All Currencies" },
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="all">All Currencies</SelectItem>
+                  <SelectItem value="all">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.allCurrencies",
+                      { defaultValue: "All Currencies" },
+                    )}
+                  </SelectItem>
                   <SelectItem value="usd">USD</SelectItem>
                   <SelectItem value="eur">EUR</SelectItem>
                   <SelectItem value="gbp">GBP</SelectItem>
@@ -9194,18 +9626,27 @@ const InvoiceManagementView = ({
               className="h-10 px-4 rounded-xl font-bold text-gray-700 flex items-center gap-2"
             >
               <X className="w-4 h-4" />
-              Clear All Filters
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.clearAll",
+                { defaultValue: "Clear All Filters" },
+              )}
             </Button>
           </div>
         </Card>
       )}
 
       <div className="text-sm text-gray-700 font-bold">
-        Showing{" "}
+        {t(
+          "agencyDashboard.brandConnections.accounting.invoiceManagementView.showing",
+          { defaultValue: "Showing" },
+        )}{" "}
         <span className="font-bold text-gray-900">
           {filteredInvoices.length} of {normalizedInvoices.length}
         </span>{" "}
-        invoices
+        {t(
+          "agencyDashboard.brandConnections.accounting.invoiceManagementView.invoices",
+          { defaultValue: "invoices" },
+        )}
       </div>
 
       <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
@@ -9217,25 +9658,46 @@ const InvoiceManagementView = ({
                   <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Invoice #
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.invoiceNumber",
+                    { defaultValue: "Invoice #" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Client Name
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.clientName",
+                    { defaultValue: "Client Name" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Issue Date
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.issueDate",
+                    { defaultValue: "Issue Date" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Due Date
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.dueDate",
+                    { defaultValue: "Due Date" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Amount
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.amount",
+                    { defaultValue: "Amount" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Status
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.status",
+                    { defaultValue: "Status" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Actions
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.actions",
+                    { defaultValue: "Actions" },
+                  )}
                 </th>
               </tr>
             </thead>
@@ -9347,11 +9809,17 @@ const InvoiceManagementView = ({
                             className="font-bold text-gray-700 cursor-pointer"
                           >
                             <History className="w-4 h-4 mr-2" />
-                            Payment History
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceManagementView.actions.paymentHistory",
+                              { defaultValue: "Payment History" },
+                            )}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
                             <Printer className="w-4 h-4 mr-2" />
-                            Print
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceManagementView.actions.print",
+                              { defaultValue: "Print" },
+                            )}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -9369,7 +9837,10 @@ const InvoiceManagementView = ({
         <DialogContent className="max-w-2xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Payment History
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.title",
+                { defaultValue: "Payment History" },
+              )}
             </DialogTitle>
             <p className="text-sm text-gray-600 font-medium">
               Invoice #{selectedInvoice?.invoiceNumber}
@@ -9381,7 +9852,10 @@ const InvoiceManagementView = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
-                  Invoice Total
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.invoiceTotal",
+                    { defaultValue: "Invoice Total" },
+                  )}
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
                   {money(
@@ -9392,7 +9866,10 @@ const InvoiceManagementView = ({
               </Card>
               <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
-                  Total Paid
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.totalPaid",
+                    { defaultValue: "Total Paid" },
+                  )}
                 </p>
                 <p className="text-2xl font-bold text-green-600">
                   {money(
@@ -9405,7 +9882,10 @@ const InvoiceManagementView = ({
               </Card>
               <Card className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
-                  Remaining Balance
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.remainingBalance",
+                    { defaultValue: "Remaining Balance" },
+                  )}
                 </p>
                 <p className="text-2xl font-bold text-orange-600">
                   {money(
@@ -9428,7 +9908,10 @@ const InvoiceManagementView = ({
             {/* Payment Transactions */}
             <div>
               <h4 className="text-sm font-bold text-gray-900 mb-3">
-                Payment Transactions
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.paymentTransactions",
+                  { defaultValue: "Payment Transactions" },
+                )}
               </h4>
               {(() => {
                 const inv: any = selectedInvoice || {};
@@ -9470,10 +9953,19 @@ const InvoiceManagementView = ({
                   return (
                     <Card className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
                       <p className="text-sm font-bold text-gray-900">
-                        No payments recorded
+                        {t(
+                          "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.noPaymentsRecorded",
+                          { defaultValue: "No payments recorded" },
+                        )}
                       </p>
                       <p className="text-xs text-gray-600 font-medium">
-                        This invoice has not been marked as paid.
+                        {t(
+                          "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.noPaymentsRecordedDescription",
+                          {
+                            defaultValue:
+                              "This invoice has not been marked as paid.",
+                          },
+                        )}
                       </p>
                     </Card>
                   );
@@ -9492,7 +9984,13 @@ const InvoiceManagementView = ({
                         <div className="flex justify-between items-start mb-1">
                           <div>
                             <p className="text-sm font-bold text-gray-900">
-                              Payment #{idx + 1}
+                              {t(
+                                "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.paymentNumber",
+                                {
+                                  count: idx + 1,
+                                  defaultValue: "Payment #{{count}}",
+                                },
+                              )}
                             </p>
                             <p className="text-xs text-gray-600 font-medium">
                               {formatDateTime(p.at)}
@@ -9503,7 +10001,10 @@ const InvoiceManagementView = ({
                           </span>
                         </div>
                         <p className="text-xs text-gray-600 font-medium">
-                          Invoice marked as paid
+                          {t(
+                            "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.invoiceMarkedPaid",
+                            { defaultValue: "Invoice marked as paid" },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -9519,13 +10020,19 @@ const InvoiceManagementView = ({
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Export History
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.exportHistory",
+                { defaultValue: "Export History" },
+              )}
             </Button>
             <Button
               onClick={() => setShowPaymentHistory(false)}
               className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
             >
-              Close
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.actions.close",
+                { defaultValue: "Close" },
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

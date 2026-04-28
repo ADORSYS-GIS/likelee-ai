@@ -32,6 +32,7 @@ import {
 import { MapStats } from "./MapStats";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
@@ -81,6 +82,7 @@ export const ScoutingMap = ({
   refreshData?: () => void;
   isVisible?: boolean;
 }) => {
+  const { t } = useTranslation();
   const [prospects, setProspects] = useState<
     (ScoutingProspect & { coords: { lat: number; lng: number } })[]
   >([]);
@@ -263,9 +265,16 @@ export const ScoutingMap = ({
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-black text-gray-900">Scouting Map</h2>
+          <h2 className="text-2xl font-black text-gray-900">
+            {t("agencyDashboard.scouting.map.title", {
+              defaultValue: "Scouting Map",
+            })}
+          </h2>
           <p className="text-sm text-gray-500 font-medium">
-            Track discoveries, plan trips, and analyze scouting activity
+            {t("agencyDashboard.scouting.map.subtitle", {
+              defaultValue:
+                "Track discoveries, plan trips, and analyze scouting activity",
+            })}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3"></div>
@@ -273,13 +282,22 @@ export const ScoutingMap = ({
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-[11px] font-bold border border-blue-100">
-          <Calendar className="w-3.5 h-3.5" /> Calendar Sync Enabled
+          <Calendar className="w-3.5 h-3.5" />{" "}
+          {t("agencyDashboard.scouting.map.badges.calendarSync", {
+            defaultValue: "Calendar Sync Enabled",
+          })}
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-[11px] font-bold border border-purple-100">
-          <Share2 className="w-3.5 h-3.5" /> Social Activity Tracked
+          <Share2 className="w-3.5 h-3.5" />{" "}
+          {t("agencyDashboard.scouting.map.badges.socialActivity", {
+            defaultValue: "Social Activity Tracked",
+          })}
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-[11px] font-bold border border-green-100">
-          <Link className="w-3.5 h-3.5" /> Linked to Pipeline
+          <Link className="w-3.5 h-3.5" />{" "}
+          {t("agencyDashboard.scouting.map.badges.linkedToPipeline", {
+            defaultValue: "Linked to Pipeline",
+          })}
         </div>
       </div>
 
@@ -295,7 +313,10 @@ export const ScoutingMap = ({
         <div className="mb-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <Layers className="w-4 h-4 text-gray-400" /> Map Layers
+              <Layers className="w-4 h-4 text-gray-400" />{" "}
+              {t("agencyDashboard.scouting.map.layers.title", {
+                defaultValue: "Map Layers",
+              })}
             </h3>
           </div>
 
@@ -303,42 +324,60 @@ export const ScoutingMap = ({
             {[
               {
                 id: "discoveries",
-                label: "Total Discoveries",
+                label: t(
+                  "agencyDashboard.scouting.map.layers.totalDiscoveries",
+                  {
+                    defaultValue: "Total Discoveries",
+                  },
+                ),
                 count: rawCounts.totalDiscoveries,
                 icon: Layers,
                 color: "orange",
               },
               {
                 id: "signedTalent",
-                label: "Signed Talent",
+                label: t("agencyDashboard.scouting.map.layers.signedTalent", {
+                  defaultValue: "Signed Talent",
+                }),
                 count: rawCounts.signed,
                 icon: User,
                 color: "blue",
               },
               {
                 id: "prospects",
-                label: "Prospects",
+                label: t("agencyDashboard.scouting.map.layers.prospects", {
+                  defaultValue: "Prospects",
+                }),
                 count: rawCounts.prospects,
                 icon: Clock,
                 color: "amber",
               },
               {
                 id: "declined",
-                label: "Declined prospect",
+                label: t(
+                  "agencyDashboard.scouting.map.layers.declinedProspect",
+                  {
+                    defaultValue: "Declined prospect",
+                  },
+                ),
                 count: rawCounts.declined,
                 icon: Clock,
                 color: "red",
               },
               {
                 id: "scoutingTrips",
-                label: "Scouting Trips",
+                label: t("agencyDashboard.scouting.map.layers.scoutingTrips", {
+                  defaultValue: "Scouting Trips",
+                }),
                 count: rawCounts.trips,
                 icon: Plane,
                 color: "purple",
               },
               {
                 id: "events",
-                label: "Events",
+                label: t("agencyDashboard.scouting.map.layers.events", {
+                  defaultValue: "Events",
+                }),
                 count: rawCounts.events,
                 icon: Calendar,
                 color: "pink",
@@ -457,7 +496,10 @@ export const ScoutingMap = ({
                       <p
                         className={`text-[9px] font-medium transition-colors duration-300 truncate ${colorClasses.subtext}`}
                       >
-                        {layer.count} items
+                        {t("agencyDashboard.scouting.map.layers.items", {
+                          count: layer.count,
+                          defaultValue: `${layer.count} items`,
+                        })}
                       </p>
                     </div>
                   </div>
@@ -481,11 +523,16 @@ export const ScoutingMap = ({
                 <RefreshCw className="w-12 h-12 text-indigo-600 animate-spin" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-1">
-                Geocoding Locations...
+                {t("agencyDashboard.scouting.map.states.geocodingTitle", {
+                  defaultValue: "Geocoding Locations...",
+                })}
               </h3>
               <p className="text-sm text-gray-500 max-w-xs">
-                We're mapping your {prospects.length + events.length} talent
-                leads and events.
+                {t("agencyDashboard.scouting.map.states.geocodingDescription", {
+                  count: prospects.length + events.length,
+                  defaultValue:
+                    "We're mapping your {{count}} talent leads and events.",
+                })}
               </p>
               <div className="w-64 h-2 bg-gray-100 rounded-full mt-6 overflow-hidden">
                 <div
@@ -541,7 +588,9 @@ export const ScoutingMap = ({
 
           <div className="absolute bottom-6 right-6 z-[1000] bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-gray-200 shadow-xl">
             <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
-              Legend
+              {t("agencyDashboard.scouting.map.legend.title", {
+                defaultValue: "Legend",
+              })}
             </h5>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
@@ -549,7 +598,9 @@ export const ScoutingMap = ({
                   <Layers className="w-3.5 h-3.5 stroke-[2.5px]" />
                 </div>
                 <span className="text-[11px] font-bold text-gray-700">
-                  Talent Discovery
+                  {t("agencyDashboard.scouting.map.legend.talentDiscovery", {
+                    defaultValue: "Talent Discovery",
+                  })}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -557,7 +608,9 @@ export const ScoutingMap = ({
                   <User className="w-3.5 h-3.5 stroke-[2.5px]" />
                 </div>
                 <span className="text-[11px] font-bold text-gray-700">
-                  Signed Talent
+                  {t("agencyDashboard.scouting.map.legend.signedTalent", {
+                    defaultValue: "Signed Talent",
+                  })}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -565,7 +618,9 @@ export const ScoutingMap = ({
                   <Clock className="w-3.5 h-3.5 stroke-[2.5px]" />
                 </div>
                 <span className="text-[11px] font-bold text-gray-700">
-                  Prospect (Non-Signed)
+                  {t("agencyDashboard.scouting.map.legend.prospectNonSigned", {
+                    defaultValue: "Prospect (Non-Signed)",
+                  })}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -573,7 +628,9 @@ export const ScoutingMap = ({
                   <Plane className="w-3.5 h-3.5 stroke-[2.5px]" />
                 </div>
                 <span className="text-[11px] font-bold text-gray-700">
-                  Scouting Trip
+                  {t("agencyDashboard.scouting.map.legend.scoutingTrip", {
+                    defaultValue: "Scouting Trip",
+                  })}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -581,7 +638,9 @@ export const ScoutingMap = ({
                   <Calendar className="w-3.5 h-3.5 stroke-[2.5px]" />
                 </div>
                 <span className="text-[11px] font-bold text-gray-700">
-                  Event
+                  {t("agencyDashboard.scouting.map.legend.event", {
+                    defaultValue: "Event",
+                  })}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -589,7 +648,9 @@ export const ScoutingMap = ({
                   <Clock className="w-3.5 h-3.5 stroke-[2.5px]" />
                 </div>
                 <span className="text-[11px] font-bold text-gray-700">
-                  Declined prospect
+                  {t("agencyDashboard.scouting.map.legend.declinedProspect", {
+                    defaultValue: "Declined prospect",
+                  })}
                 </span>
               </div>
             </div>

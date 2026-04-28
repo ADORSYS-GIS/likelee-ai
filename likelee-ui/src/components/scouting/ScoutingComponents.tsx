@@ -55,7 +55,6 @@ export const AddProspectModal = ({
   });
 
   const handleInputChange = (field: keyof ScoutingProspect, value: any) => {
-    const { t } = useTranslation();
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -128,7 +127,25 @@ export const AddProspectModal = ({
               defaultValue: "Prospect Already Exists",
             },
           ),
-          description: `This prospect (${existing.full_name}) is already in your pipeline with the same ${existing.email === formData.email ? "email" : "Instagram handle"}.`,
+          description: t(
+            "agencyDashboard.scouting.addProspectForm.errors.duplicateDescription",
+            {
+              defaultValue:
+                "This prospect ({{name}}) is already in your pipeline with the same {{field}}.",
+              name: existing.full_name,
+              field:
+                existing.email === formData.email
+                  ? t("agencyDashboard.scouting.addProspectForm.fields.email", {
+                      defaultValue: "email",
+                    })
+                  : t(
+                      "agencyDashboard.scouting.addProspectForm.fields.instagramHandleLower",
+                      {
+                        defaultValue: "Instagram handle",
+                      },
+                    ),
+            },
+          ),
           variant: "destructive",
         });
         return;
@@ -229,7 +246,10 @@ export const AddProspectModal = ({
                 </Label>
                 <Input
                   id="email"
-                  placeholder="email@example.com"
+                  placeholder={t(
+                    "agencyDashboard.scouting.addProspectForm.placeholders.email",
+                    { defaultValue: "email@example.com" },
+                  )}
                   value={formData.email || ""}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                 />
@@ -242,7 +262,10 @@ export const AddProspectModal = ({
                 </Label>
                 <Input
                   id="phone"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder={t(
+                    "agencyDashboard.scouting.addProspectForm.placeholders.phone",
+                    { defaultValue: "+1 (555) 123-4567" },
+                  )}
                   value={formData.phone || ""}
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                 />
@@ -596,6 +619,7 @@ export const ProspectPipelineTab = ({
   onAddProspect: () => void;
   refreshTrigger?: any;
 }) => {
+  const { t } = useTranslation();
   const [prospects, setProspects] = useState<ScoutingProspect[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -635,22 +659,30 @@ export const ProspectPipelineTab = ({
 
   const stats = [
     {
-      label: "New Leads",
+      label: t("agencyDashboard.scouting.pipeline.stats.newLeads", {
+        defaultValue: "New Leads",
+      }),
       count: prospects.filter((p) => p.status === "new_lead").length,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
-      label: "In Contact",
+      label: t("agencyDashboard.scouting.pipeline.stats.inContact", {
+        defaultValue: "In Contact",
+      }),
       count: prospects.filter((p) => p.status === "in_contact").length,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
-      label: "Test Shoots",
+      label: t("agencyDashboard.scouting.pipeline.stats.testShoots", {
+        defaultValue: "Test Shoots",
+      }),
       count: prospects.filter((p) => p.status.startsWith("test_shoot_")).length,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
-      label: "Offers Sent",
+      label: t("agencyDashboard.scouting.pipeline.stats.offersSent", {
+        defaultValue: "Offers Sent",
+      }),
       count: prospects.filter((p) =>
         ["offer_sent", "opened", "signed", "declined"].includes(p.status),
       ).length,
@@ -662,12 +694,19 @@ export const ProspectPipelineTab = ({
     <div className="space-y-6">
       <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <h2 className="text-xl font-bold text-gray-900">Prospect Pipeline</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {t("agencyDashboard.scouting.pipeline.title", {
+              defaultValue: "Prospect Pipeline",
+            })}
+          </h2>
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                placeholder="Search prospects..."
+                placeholder={t(
+                  "agencyDashboard.scouting.pipeline.searchPlaceholder",
+                  { defaultValue: "Search prospects..." },
+                )}
                 className="pl-10 h-10 border-gray-200 bg-white"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -675,32 +714,82 @@ export const ProspectPipelineTab = ({
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px] h-10 border-gray-200">
-                <SelectValue placeholder="Status" />
+                <SelectValue
+                  placeholder={t("agencyDashboard.scouting.pipeline.status", {
+                    defaultValue: "Status",
+                  })}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="new_lead">New Lead</SelectItem>
-                <SelectItem value="in_contact">In Contact</SelectItem>
+                <SelectItem value="all">
+                  {t("agencyDashboard.scouting.pipeline.filters.allStatus", {
+                    defaultValue: "All Status",
+                  })}
+                </SelectItem>
+                <SelectItem value="new_lead">
+                  {t("agencyDashboard.scouting.pipeline.filters.newLead", {
+                    defaultValue: "New Lead",
+                  })}
+                </SelectItem>
+                <SelectItem value="in_contact">
+                  {t("agencyDashboard.scouting.pipeline.filters.inContact", {
+                    defaultValue: "In Contact",
+                  })}
+                </SelectItem>
                 <SelectItem value="test_shoot_pending">
-                  Test Shoot (Pending)
+                  {t(
+                    "agencyDashboard.scouting.pipeline.filters.testShootPending",
+                    {
+                      defaultValue: "Test Shoot (Pending)",
+                    },
+                  )}
                 </SelectItem>
                 <SelectItem value="test_shoot_success">
-                  Test Shoot (Success)
+                  {t(
+                    "agencyDashboard.scouting.pipeline.filters.testShootSuccess",
+                    {
+                      defaultValue: "Test Shoot (Success)",
+                    },
+                  )}
                 </SelectItem>
                 <SelectItem value="test_shoot_failed">
-                  Test Shoot (Failed)
+                  {t(
+                    "agencyDashboard.scouting.pipeline.filters.testShootFailed",
+                    {
+                      defaultValue: "Test Shoot (Failed)",
+                    },
+                  )}
                 </SelectItem>
-                <SelectItem value="offer_sent">Offer Sent</SelectItem>
-                <SelectItem value="opened">Offer Opened</SelectItem>
-                <SelectItem value="signed">Signed</SelectItem>
-                <SelectItem value="declined">Declined</SelectItem>
+                <SelectItem value="offer_sent">
+                  {t("agencyDashboard.scouting.pipeline.filters.offerSent", {
+                    defaultValue: "Offer Sent",
+                  })}
+                </SelectItem>
+                <SelectItem value="opened">
+                  {t("agencyDashboard.scouting.pipeline.filters.offerOpened", {
+                    defaultValue: "Offer Opened",
+                  })}
+                </SelectItem>
+                <SelectItem value="signed">
+                  {t("agencyDashboard.scouting.pipeline.filters.signed", {
+                    defaultValue: "Signed",
+                  })}
+                </SelectItem>
+                <SelectItem value="declined">
+                  {t("agencyDashboard.scouting.pipeline.filters.declined", {
+                    defaultValue: "Declined",
+                  })}
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm"
               onClick={onAddProspect}
             >
-              <Plus className="w-4 h-4 mr-2" /> Add Prospect
+              <Plus className="w-4 h-4 mr-2" />{" "}
+              {t("agencyDashboard.scouting.addProspect", {
+                defaultValue: "Add Prospect",
+              })}
             </Button>
           </div>
         </div>
@@ -724,13 +813,19 @@ export const ProspectPipelineTab = ({
         <div className="space-y-4">
           {loading ? (
             <div className="text-center py-12 text-gray-500">
-              Loading prospects...
+              {t("agencyDashboard.scouting.pipeline.states.loading", {
+                defaultValue: "Loading prospects...",
+              })}
             </div>
           ) : filteredProspects.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               {searchTerm || statusFilter !== "all"
-                ? "No prospects match your filters."
-                : "No prospects found. Add one to get started!"}
+                ? t("agencyDashboard.scouting.pipeline.states.noMatches", {
+                    defaultValue: "No prospects match your filters.",
+                  })
+                : t("agencyDashboard.scouting.pipeline.states.empty", {
+                    defaultValue: "No prospects found. Add one to get started!",
+                  })}
             </div>
           ) : (
             filteredProspects.map((prospect) => (
@@ -808,7 +903,13 @@ export const ProspectPipelineTab = ({
                     )}
                   </div>
                   <div className="mt-1 text-xs text-gray-400">
-                    Assigned to: {prospect.assigned_agent_name || "Unassigned"}
+                    {t("agencyDashboard.scouting.pipeline.assignedTo", {
+                      defaultValue: "Assigned to:",
+                    })}{" "}
+                    {prospect.assigned_agent_name ||
+                      t("agencyDashboard.scouting.pipeline.unassigned", {
+                        defaultValue: "Unassigned",
+                      })}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -826,7 +927,10 @@ export const ProspectPipelineTab = ({
                     onClick={async () => {
                       if (
                         confirm(
-                          "Are you sure you want to delete this prospect?",
+                          t("agencyDashboard.scouting.pipeline.confirmDelete", {
+                            defaultValue:
+                              "Are you sure you want to delete this prospect?",
+                          }),
                         )
                       ) {
                         await scoutingService.deleteProspect(prospect.id);

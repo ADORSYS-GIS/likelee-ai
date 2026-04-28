@@ -553,7 +553,9 @@
         },
         "fields": {
           "name": "Nombre *",
+          "email": "correo electrónico",
           "instagramHandle": "Usuario de Instagram",
+          "instagramHandleLower": "usuario de Instagram",
           "discoverySource": "Fuente de descubrimiento",
           "discoveryDate": "Fecha de descubrimiento",
           "discoveryLocation": "Ubicación del descubrimiento",
@@ -564,6 +566,8 @@
         },
         "placeholders": {
           "fullName": "Nombre completo",
+          "email": "email@example.com",
+          "phone": "+1 (555) 123-4567",
           "selectSource": "Selecciona una fuente",
           "discoveryLocation": "Nueva York, NY",
           "selectStatus": "Selecciona un estado",
@@ -574,7 +578,8 @@
           "missingInfoTitle": "Falta información",
           "missingName": "Por favor ingresa un nombre para el prospecto.",
           "missingAgency": "No se pudo identificar tu agencia. Asegúrate de haber iniciado sesión como miembro de una agencia.",
-          "duplicateTitle": "El prospecto ya existe"
+          "duplicateTitle": "El prospecto ya existe",
+          "duplicateDescription": "Este prospecto ({{name}}) ya está en tu pipeline con el mismo {{field}}."
         },
         "toasts": {
           "successTitle": "Éxito",
@@ -588,20 +593,173 @@
         "titleEdit": "Actualizar viaje de scouting",
         "subtitle": "Configura los detalles de tu misión en campo",
         "sections": {
-          "tripEssentials": "Aspectos esenciales del viaje"
+          "tripEssentials": "Aspectos esenciales del viaje",
+          "schedule": "Horario",
+          "performanceMetrics": "Métricas de rendimiento",
+          "teamAssets": "Equipo y recursos",
+          "notes": "Notas y observaciones"
         },
         "fields": {
           "tripName": "Nombre del viaje *",
           "destination": "Destino *",
           "latitude": "Latitud",
-          "longitude": "Longitud"
+          "longitude": "Longitud",
+          "tripType": "Tipo de viaje *",
+          "status": "Estado *",
+          "startDate": "Fecha de inicio *",
+          "startTime": "Hora de inicio",
+          "endDate": "Fecha de fin *",
+          "endTime": "Hora de fin",
+          "targetGoal": "Objetivo",
+          "budget": "Presupuesto ($)",
+          "approached": "Contactados",
+          "submitted": "Enviados",
+          "added": "Añadidos",
+          "rate": "Tasa (%)",
+          "assignedScouts": "Scouts asignados",
+          "tripPhotos": "Fotos del viaje"
         },
         "placeholders": {
           "tripName": "p. ej., scouting navideño en SoHo NYC",
           "searchLocation": "Buscar una ubicación...",
           "searchLocationInput": "Buscar ubicación...",
           "latitude": "p. ej., 34.0522",
-          "longitude": "p. ej., -118.2437"
+          "longitude": "p. ej., -118.2437",
+          "selectType": "Selecciona un tipo",
+          "selectStatus": "Selecciona un estado",
+          "enterName": "Escribe un nombre..."
+        },
+        "tripTypes": {
+          "openScouting": "Scouting abierto",
+          "specificCasting": "Casting específico",
+          "eventCoverage": "Cobertura de evento",
+          "other": "Otro"
+        },
+        "statuses": {
+          "planned": "Planificado",
+          "ongoing": "En curso",
+          "completed": "Completado"
+        },
+        "states": {
+          "noLocation": "No se encontró ninguna ubicación."
+        },
+        "actions": {
+          "addScout": "Agregar scout",
+          "cancel": "Cancelar",
+          "createTrip": "Crear viaje",
+          "updateTrip": "Actualizar viaje"
+        }
+      },
+      "pipeline": {
+        "title": "Pipeline de prospectos",
+        "searchPlaceholder": "Buscar prospectos...",
+        "status": "Estado",
+        "assignedTo": "Asignado a:",
+        "unassigned": "Sin asignar",
+        "confirmDelete": "¿Seguro que quieres eliminar este prospecto?",
+        "stats": {
+          "newLeads": "Nuevos leads",
+          "inContact": "En contacto",
+          "testShoots": "Sesiones de prueba",
+          "offersSent": "Ofertas enviadas"
+        },
+        "filters": {
+          "allStatus": "Todos los estados",
+          "newLead": "Nuevo lead",
+          "inContact": "En contacto",
+          "testShootPending": "Sesión de prueba (pendiente)",
+          "testShootSuccess": "Sesión de prueba (éxito)",
+          "testShootFailed": "Sesión de prueba (fallida)",
+          "offerSent": "Oferta enviada",
+          "offerOpened": "Oferta abierta",
+          "signed": "Firmado",
+          "declined": "Rechazado"
+        },
+        "states": {
+          "loading": "Cargando prospectos...",
+          "noMatches": "Ningún prospecto coincide con tus filtros.",
+          "empty": "No se encontraron prospectos. Agrega uno para empezar."
+        }
+      },
+      "map": {
+        "title": "Mapa de scouting",
+        "subtitle": "Haz seguimiento de descubrimientos, planifica viajes y analiza la actividad de scouting",
+        "badges": {
+          "calendarSync": "Sincronización de calendario activada",
+          "socialActivity": "Actividad social registrada",
+          "linkedToPipeline": "Vinculado al pipeline"
+        },
+        "layers": {
+          "title": "Capas del mapa",
+          "totalDiscoveries": "Descubrimientos totales",
+          "signedTalent": "Talento firmado",
+          "prospects": "Prospectos",
+          "declinedProspect": "Prospecto rechazado",
+          "scoutingTrips": "Viajes de scouting",
+          "events": "Eventos",
+          "items": "{{count}} elementos"
+        },
+        "states": {
+          "geocodingTitle": "Geocodificando ubicaciones...",
+          "geocodingDescription": "Estamos mapeando tus {{count}} leads de talento y eventos."
+        },
+        "legend": {
+          "title": "Leyenda",
+          "talentDiscovery": "Descubrimiento de talento",
+          "signedTalent": "Talento firmado",
+          "prospectNonSigned": "Prospecto (no firmado)",
+          "scoutingTrip": "Viaje de scouting",
+          "event": "Evento",
+          "declinedProspect": "Prospecto rechazado"
+        }
+      },
+      "tripAnalytics": {
+        "title": "Resumen analítico del viaje",
+        "totalTrips": "Viajes totales",
+        "prospectsDiscovered": "Prospectos descubiertos",
+        "avgConversionRate": "Tasa media de conversión",
+        "totalInvestment": "Inversión total",
+        "scoutPerformance": "Rendimiento de scouts",
+        "mostProductiveLocations": "Ubicaciones más productivas",
+        "roiByTripType": "ROI por tipo de viaje",
+        "tripsCount": "{{count}} viajes",
+        "visitsCount": "{{count}} visitas"
+      },
+      "eventModal": {
+        "titleCreate": "Crear evento",
+        "titleEdit": "Editar evento",
+        "subtitle": "Gestiona convocatorias abiertas y eventos de casting para tu pipeline de scouting.",
+        "sections": {
+          "basics": "Aspectos básicos"
+        },
+        "fields": {
+          "name": "Nombre",
+          "date": "Fecha",
+          "status": "Estado",
+          "startTime": "Hora de inicio",
+          "endTime": "Hora de fin",
+          "location": "Ubicación",
+          "description": "Descripción"
+        },
+        "placeholders": {
+          "eventName": "Nombre del evento",
+          "location": "Busca una ciudad, recinto o dirección",
+          "description": "Detalles opcionales"
+        },
+        "locationHint": "Escribe 3 o más caracteres para buscar.",
+        "actions": {
+          "cancel": "Cancelar",
+          "saving": "Guardando...",
+          "save": "Guardar"
+        },
+        "toasts": {
+          "errorTitle": "Error",
+          "missingAgency": "No se pudo determinar la agencia.",
+          "missingFieldsTitle": "Faltan campos",
+          "missingFields": "El nombre, la fecha y la ubicación son obligatorios.",
+          "updated": "Evento actualizado",
+          "created": "Evento creado",
+          "saveFailed": "No se pudo guardar el evento."
         }
       },
       "tabs": {
@@ -2590,6 +2748,51 @@
       "deliverables": {
         "title": "Entregables",
         "subtitle": "Asigne talentos, solicite assets y revise entregables para ofertas de marca.",
+        "collapseAll": "Contraer todo",
+        "noBrandOffers": "No hay ofertas de marca disponibles.",
+        "addTalent": "Agregar talento",
+        "assigned": "Asignado",
+        "sectionTitle": "Entregables",
+        "submitToBrand": "Enviar a la marca",
+        "creatorUploads": "Cargas del creador",
+        "noneYet": "Aún no hay.",
+        "unassignTalentButton": "Desasignar talento",
+        "paymentPendingBanner": "El pago de la marca sigue pendiente. Puedes subir y enviar entregables ahora, pero tendrás que confirmar el estado impago antes de enviarlos.",
+        "assignmentsLockedTitle": "Asignaciones bloqueadas",
+        "assignmentsLockedDescription": "Puedes cambiar los talentos asignados antes de enviar el contrato. Esta oferta ya fue enviada, por lo que las asignaciones no se pueden cambiar.",
+        "offerStates": {
+          "signed": "Firmado",
+          "notSigned": "No firmado",
+          "paid": "Pagado",
+          "awaitingPayment": "Pago pendiente"
+        },
+        "actions": {
+          "hide": "Ocultar",
+          "open": "Abrir"
+        },
+        "states": {
+          "loadingAssignments": "Cargando asignaciones...",
+          "noTalentsAssigned": "Aún no hay talentos asignados."
+        },
+        "payoutStatus": {
+          "title": "Estado del pago",
+          "allTransferred": "todo transferido",
+          "actionRequired": "acción requerida",
+          "refresh": "Actualizar",
+          "retryFailed": "Reintentar fallidos",
+          "loading": "Cargando estado del pago...",
+          "clickRefresh": "Haz clic en actualizar para cargar el estado del pago.",
+          "agency": "agencia",
+          "talent": "talento",
+          "noStripeAccount": "Sin cuenta de Stripe",
+          "transfersNotEnabled": "Transferencias no habilitadas",
+          "stripeReady": "Stripe listo",
+          "retry": "reintento",
+          "retries": "reintentos",
+          "fixStripeAccount": "Corrige tu cuenta de Stripe",
+          "askTalentStripe": "Pide a este talento que complete su onboarding de Stripe en su portal.",
+          "messageTalent": "Enviar mensaje al talento"
+        },
         "noDeliverables": "No se encontraron entregables",
         "loading": "Cargando entregables...",
         "upload": "Subir",
@@ -2627,6 +2830,7 @@
           "filterPlaceholder": "Filtrar por nombre o correo...",
           "loadingTalents": "Cargando talentos…",
           "fetchingRoster": "Obteniendo su lista de agencia.",
+          "talentFallback": "Talento",
           "confirmSelection": "Confirmar selección",
           "assigned": "asignado",
           "inviteRequired": "invitación requerida",
@@ -2717,6 +2921,276 @@
           "viewFeedback": "Ver comentarios",
           "empty": "Aún no hay comentarios del paquete.",
           "loading": "Cargando comentarios del paquete…"
+        },
+        "accounting": {
+          "invoiceGenerationView": {
+            "title": "Generación de facturas",
+            "subtitle": "Crear y gestionar facturas de clientes",
+            "fields": {
+              "createInvoiceFrom": "Crear factura desde",
+              "selectBooking": "Seleccionar reserva para facturar",
+              "invoiceNumber": "Número de factura",
+              "invoiceDate": "Fecha de factura",
+              "dueDate": "Fecha de vencimiento",
+              "billToClient": "Facturar a (cliente)",
+              "poNumber": "Número de orden de compra",
+              "projectReference": "Referencia del proyecto / trabajo",
+              "invoiceItems": "Conceptos de factura",
+              "description": "Descripción",
+              "talent": "Talento",
+              "dateOfService": "Fecha del servicio",
+              "rateType": "Tipo de tarifa",
+              "quantityHours": "Cantidad / horas",
+              "unitPriceCents": "Precio unitario (centavos)",
+              "expensesOptional": "Gastos (opcional)",
+              "agencyCommissionPercent": "Comisión de la agencia (%)",
+              "taxRatePercent": "Tasa de impuesto (%)",
+              "taxExempt": "Exento de impuestos",
+              "discount": "Descuento",
+              "additionalNotesOptional": "Notas adicionales (opcional)",
+              "paymentInstructions": "Instrucciones de pago",
+              "invoiceFooterText": "Texto del pie de factura",
+              "attachedFilesOptional": "Archivos adjuntos (opcional)"
+            },
+            "sections": {
+              "financialSettings": "Configuración financiera",
+              "invoiceSummary": "Resumen de factura"
+            },
+            "placeholders": {
+              "selectBooking": "Elige una reserva completada o confirmada",
+              "invoiceNumber": "Se asigna automáticamente al guardar",
+              "selectClient": "Seleccionar cliente",
+              "selectTalent": "Seleccionar talento",
+              "expenseDescription": "Descripción del gasto"
+            },
+            "options": {
+              "existingBooking": "Reserva existente",
+              "manualEntry": "Entrada manual",
+              "dueOnReceipt": "Vence al recibir",
+              "noTax": "0 % - Sin impuesto"
+            },
+            "labels": {
+              "itemNumber": "Concepto #{{count}}",
+              "lineTotal": "Total de la línea:",
+              "subtotalItems": "Subtotal ({{count}} conceptos)",
+              "agencyCommissionSummary": "Comisión de la agencia ({{percent}} %)",
+              "talentNetAmount": "Monto neto del talento",
+              "grandTotal": "Total general",
+              "attachedFilesDescription": "Adjunta contratos, acuerdos de uso o documentos de respaldo."
+            },
+            "actions": {
+              "preview": "Vista previa",
+              "addLineItem": "Agregar concepto",
+              "addExpense": "Agregar gasto",
+              "uploadFile": "Subir archivo",
+              "saveAsDraft": "Guardar como borrador",
+              "markAsSent": "Marcar como enviada",
+              "emailToClient": "Enviar al cliente",
+              "downloadPdf": "Descargar PDF",
+              "print": "Imprimir",
+              "duplicate": "Duplicar",
+              "markAsPaid": "Marcar como pagada",
+              "void": "Anular",
+              "close": "Cerrar"
+            },
+            "empty": {
+              "noFilesAttached": "No hay archivos adjuntos"
+            },
+            "preview": {
+              "title": "Vista previa de factura",
+              "invoice": "Factura",
+              "notAssignedYet": "(aún no asignado)",
+              "invoiceDate": "Fecha de factura",
+              "dueDate": "Fecha de vencimiento",
+              "billTo": "Facturar a",
+              "noClientSelected": "(ningún cliente seleccionado)",
+              "status": "Estado",
+              "lineItems": "Conceptos",
+              "qty": "Cant.",
+              "unit": "Unidad",
+              "total": "Total",
+              "noLineItems": "No hay conceptos",
+              "expenses": "Gastos",
+              "taxable": "Gravable",
+              "yes": "Sí",
+              "no": "No",
+              "noExpenses": "No hay gastos",
+              "noneProvided": "(no proporcionado)",
+              "footer": "Pie",
+              "subtotal": "Subtotal",
+              "tax": "Impuesto",
+              "agencyFee": "Tarifa de la agencia ({{percent}} %)",
+              "talentNet": "Neto del talento"
+            },
+            "table": {
+              "amount": "Monto"
+            }
+          },
+          "invoiceManagementView": {
+            "searchPlaceholder": "Buscar por n.º de factura, cliente o nombre del talento...",
+            "showing": "Mostrando",
+            "invoices": "facturas",
+            "filters": {
+              "title": "Filtros",
+              "allStatus": "Todos los estados",
+              "sortBy": "Ordenar por...",
+              "issueDateFrom": "Fecha de emisión desde",
+              "issueDateTo": "Fecha de emisión hasta",
+              "minAmount": "Monto mín.",
+              "maxAmount": "Monto máx.",
+              "showOverdueOnly": "Mostrar solo vencidas",
+              "allCurrencies": "Todas las monedas",
+              "clearAll": "Limpiar todos los filtros"
+            },
+            "statuses": {
+              "draft": "Borrador",
+              "sent": "Enviada",
+              "paid": "Pagada",
+              "overdue": "Vencida",
+              "void": "Anulada"
+            },
+            "sort": {
+              "newest": "Más recientes primero",
+              "oldest": "Más antiguas primero",
+              "dueSoonest": "Fecha de vencimiento (más próxima)",
+              "dueLatest": "Fecha de vencimiento (más lejana)",
+              "amountHigh": "Monto (de mayor a menor)",
+              "amountLow": "Monto (de menor a mayor)",
+              "clientAz": "Cliente (A-Z)",
+              "clientZa": "Cliente (Z-A)",
+              "invoiceAsc": "Factura # (Asc)",
+              "invoiceDesc": "Factura # (Desc)"
+            },
+            "table": {
+              "invoiceNumber": "Factura #",
+              "clientName": "Nombre del cliente",
+              "issueDate": "Fecha de emisión",
+              "dueDate": "Fecha de vencimiento",
+              "amount": "Monto",
+              "status": "Estado",
+              "actions": "Acciones"
+            },
+            "actions": {
+              "paymentHistory": "Historial de pagos",
+              "print": "Imprimir",
+              "close": "Cerrar"
+            },
+            "paymentHistory": {
+              "title": "Historial de pagos",
+              "invoiceTotal": "Total de la factura",
+              "totalPaid": "Total pagado",
+              "remainingBalance": "Saldo restante",
+              "paymentTransactions": "Transacciones de pago",
+              "noPaymentsRecorded": "No hay pagos registrados",
+              "noPaymentsRecordedDescription": "Esta factura aún no ha sido marcada como pagada.",
+              "paymentNumber": "Pago #{{count}}",
+              "invoiceMarkedPaid": "Factura marcada como pagada",
+              "exportHistory": "Exportar historial"
+            }
+          },
+          "expenseTrackingView": {
+            "searchPlaceholder": "Buscar gastos...",
+            "totalExpenses": "Gastos totales",
+            "filters": {
+              "allCategories": "Todas las categorías"
+            },
+            "categories": {
+              "travel": "Viaje",
+              "equipment": "Equipo",
+              "marketing": "Marketing",
+              "other": "Otro"
+            },
+            "statuses": {
+              "approved": "Aprobado",
+              "pending": "Pendiente",
+              "rejected": "Rechazado"
+            },
+            "actions": {
+              "addExpense": "Agregar gasto",
+              "cancel": "Cancelar"
+            },
+            "modal": {
+              "title": "Agregar gasto",
+              "subtitle": "Crea un nuevo gasto operativo para tu agencia.",
+              "fields": {
+                "name": "Nombre",
+                "category": "Categoría",
+                "date": "Fecha",
+                "amountUsd": "Monto (USD)",
+                "status": "Estado",
+                "submitterOptional": "Remitente (opcional)"
+              },
+              "placeholders": {
+                "name": "p. ej. Alquiler de cámara",
+                "submitter": "p. ej. Emma"
+              }
+            },
+            "toasts": {
+              "expenseAdded": "Gasto agregado",
+              "failedToAddExpense": "No se pudo agregar el gasto"
+            }
+          },
+          "talentStatementsView": {
+            "title": "Estados de ganancias de {{entitySingular}}",
+            "subtitle": "Ver y gestionar los estados de pago de {{entitySingularLower}}",
+            "searchPlaceholder": "Buscar por nombre del {{entitySingularLower}}...",
+            "empty": "Aún no hay estados de talento.",
+            "actions": {
+              "exportAll": "Exportar todo",
+              "viewStatement": "Ver estado",
+              "emailStatement": "Enviar estado por correo",
+              "downloadPdf": "Descargar PDF",
+              "print": "Imprimir"
+            },
+            "filters": {
+              "sortBy": "Ordenar por...",
+              "hasUnpaidEarnings": "Tiene ganancias pendientes",
+              "selectPeriod": "Seleccionar período",
+              "allTime": "Todo el tiempo",
+              "thisMonth": "Este mes",
+              "lastMonth": "Mes pasado",
+              "thisQuarter": "Este trimestre",
+              "thisYear": "Este año",
+              "customRange": "Rango personalizado",
+              "amountHigh": "Monto adeudado (de mayor a menor)",
+              "amountLow": "Monto adeudado (de menor a mayor)",
+              "totalPaidHigh": "Total pagado (de mayor a menor)",
+              "nameAz": "Nombre (A-Z)",
+              "nameZa": "Nombre (Z-A)"
+            },
+            "labels": {
+              "totalOwed": "Total adeudado",
+              "unpaidJobs": "{{count}} trabajos impagos",
+              "totalPaidYtd": "Total pagado (YTD)",
+              "paidJobs": "{{count}} trabajos pagados",
+              "lifetimeEarnings": "Ganancias de por vida",
+              "avgPerMonth": "Prom.: $0/mes",
+              "lastPayment": "Último pago",
+              "noPayments": "Sin pagos",
+              "earningsDetail": "Detalle de ganancias",
+              "totalGrossAmount": "Monto bruto total",
+              "totalAgencyCommission": "Comisión total de la agencia (20%)",
+              "totalJobs": "{{count}} trabajos en total",
+              "hasUnpaid": "Tiene pendiente",
+              "noUnpaid": "Sin pendientes",
+              "hasPaid": "Tiene pagado",
+              "noPaid": "Sin pagos"
+            },
+            "table": {
+              "jobDate": "Fecha del trabajo",
+              "client": "Cliente",
+              "description": "Descripción",
+              "gross": "Bruto",
+              "commission": "Comisión",
+              "net": "Neto",
+              "status": "Estado",
+              "invoice": "Factura"
+            },
+            "statuses": {
+              "paid": "Pagado",
+              "unpaid": "Impago"
+            }
+          }
         },
         "ui": {
           "verifyingAccess": "Verificando acceso…",
