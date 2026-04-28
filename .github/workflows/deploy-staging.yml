@@ -169,24 +169,37 @@ jobs:
 
             # No certbot services in ALB/ACM mode
 
-            sleep 10
+            # Wait for containers to be ready and show diagnostics
+            sleep 5
+            echo "=== Docker containers status ==="
+            docker ps -a --filter "name=likelee-staging"
+            echo "=== Docker networks ==="
+            docker network ls | grep -E "likelee|NETWORK"
+            echo "=== Checking port bindings ==="
+            docker port likelee-staging-gateway-1 80 2>/dev/null || echo "Gateway port not available yet"
+
             set +e
             # Gateway health check (nginx /healthz endpoint, no upstream dependency)
             GATEWAY_OK=1
-            for i in 1 2 3 4 5 6; do
-              curl -sS --max-time 10 http://localhost/healthz >/dev/null && { GATEWAY_OK=0; break; }
-              sleep 3
+            for i in 1 2 3 4 5 6 7 8; do
+              sleep 2
+              curl -sS --max-time 5 http://localhost/healthz && { GATEWAY_OK=0; break; }
             done
             # API check: hit explicit health endpoint with retries to allow for cold start
             API_OK=1
             for i in 1 2 3 4 5 6; do
-              curl -sS --max-time 15 http://localhost/api/health >/dev/null && { API_OK=0; break; }
+              curl -sS --max-time 10 http://localhost/api/health >/dev/null && { API_OK=0; break; }
               sleep 5
             done
             set -e
 
             if [ "$GATEWAY_OK" -ne 0 ] || [ "$API_OK" -ne 0 ]; then
-              echo "Health checks failed (GATEWAY=$GATEWAY_OK API=$API_OK); attempting rollback if possible" >&2
+              echo "Health checks failed (GATEWAY=$GATEWAY_OK API=$API_OK)"
+              echo "=== Container logs ==="
+              docker logs likelee-staging-gateway-1 --tail 50 2>&1 || true
+              docker logs likelee-staging-server-1 --tail 50 2>&1 || true
+              docker logs likelee-staging-ui-1 --tail 50 2>&1 || true
+              echo "Attempting rollback if possible" >&2
               if [ -f ./.state/previous_tag ]; then
                 ./scripts/rollback.sh || true
               else
