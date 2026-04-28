@@ -48,7 +48,6 @@ import { CreatorTermsContent } from "@/components/CreatorTermsContent";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
 import { DobInput } from "@/components/ui/DobInput";
-import { downloadTermsPdf } from "@/utils/termsDownload";
 import {
   normalizeEmail,
   resendSignupEmailOtp,
@@ -1770,10 +1769,10 @@ export default function ReserveProfile() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() =>
-                    void downloadTermsPdf(
-                      "creator-terms-content",
-                      "Likelee AI — Creator & Talent Terms and Conditions",
-                      "open",
+                    window.open(
+                      "/creator-talent-terms-and-conditions.html",
+                      "_blank",
+                      "noopener,noreferrer",
                     )
                   }
                 >

@@ -32,7 +32,6 @@ import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
-import { downloadTermsPdf } from "@/utils/termsDownload";
 import {
   EmailOtpDialog,
   type EmailOtpDialogTheme,
@@ -2770,10 +2769,10 @@ export default function OrganizationSignup() {
                   variant="outline"
                   className="border-2 border-black rounded-none"
                   onClick={() =>
-                    void downloadTermsPdf(
-                      "agency-terms-content",
-                      "Likelee AI — Terms and Conditions (Agencies and Brands)",
-                      "open",
+                    window.open(
+                      "/agency_brand_terms_and-conditions.pdf",
+                      "_blank",
+                      "noopener,noreferrer",
                     )
                   }
                 >
