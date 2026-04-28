@@ -72,10 +72,18 @@ impl JwksCache {
                 return;
             }
         };
-        let jwks: JwksResponse = match resp.json().await {
+        let text = match resp.text().await {
+            Ok(t) => t,
+            Err(e) => {
+                tracing::error!("Failed to read JWKS response: {}", e);
+                return;
+            }
+        };
+        tracing::info!("JWKS response: {}", text);
+        let jwks: JwksResponse = match serde_json::from_str(&text) {
             Ok(j) => j,
             Err(e) => {
-                tracing::error!("Failed to parse JWKS: {}", e);
+                tracing::error!("Failed to parse JWKS: {} - response: {}", e, text);
                 return;
             }
         };
