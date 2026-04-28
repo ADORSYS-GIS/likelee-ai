@@ -1357,12 +1357,12 @@ export function AgencyDeliverablesView() {
                       onClick={(e) => {
                         e.stopPropagation();
                         if (offerAssignmentsLocked) {
-      toast({
-        title: "Assignments locked",
-        description:
-          "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
-        variant: "warning",
-      });
+                          toast({
+                            title: "Assignments locked",
+                            description:
+                              "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+                            variant: "warning",
+                          });
                           return;
                         }
                         setAssignDialog({ open: true, offerId });

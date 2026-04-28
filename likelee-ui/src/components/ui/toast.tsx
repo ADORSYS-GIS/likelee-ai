@@ -83,14 +83,14 @@ const ToastClose = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, ...props }, ref) => (
-    <button
-      ref={ref}
-      className={cn(
-        "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-100 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-white group-[.destructive]:hover:text-white group-[.destructive]:focus:ring-red-300 group-[.destructive]:focus:ring-offset-red-500",
-        "group-[.warning]:text-amber-900/60 group-[.warning]:hover:text-amber-950 group-[.warning]:focus:ring-amber-300 group-[.warning]:focus:ring-offset-amber-100 dark:group-[.warning]:text-amber-100/70 dark:group-[.warning]:hover:text-amber-50 dark:group-[.warning]:focus:ring-amber-400 dark:group-[.warning]:focus:ring-offset-amber-950",
-        className,
-      )}
-      toast-close=""
+  <button
+    ref={ref}
+    className={cn(
+      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-100 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-white group-[.destructive]:hover:text-white group-[.destructive]:focus:ring-red-300 group-[.destructive]:focus:ring-offset-red-500",
+      "group-[.warning]:text-amber-900/60 group-[.warning]:hover:text-amber-950 group-[.warning]:focus:ring-amber-300 group-[.warning]:focus:ring-offset-amber-100 dark:group-[.warning]:text-amber-100/70 dark:group-[.warning]:hover:text-amber-50 dark:group-[.warning]:focus:ring-amber-400 dark:group-[.warning]:focus:ring-offset-amber-950",
+      className,
+    )}
+    toast-close=""
     {...props}
   >
     <X className="h-4 w-4" />
