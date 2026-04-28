@@ -321,89 +321,8 @@ const getImageSections = (t: any) => [
 // Example campaigns moved inside CreatorDashboard component to support translations
 
 // Example content items for blank users
-const exampleContentItems = [
-  {
-    id: "content-nike",
-    brand: "Nike Sportswear",
-    brand_logo:
-      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
-    titleKey: "instagramReel",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
-    platform: "Instagram",
-    views: "125,000",
-    engagement: "4.2%",
-    published_at: "2026-03-20",
-    is_live: true,
-    url: "#",
-  },
-  {
-    id: "content-glossier",
-    brand: "Glossier Beauty",
-    brand_logo:
-      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
-    titleKey: "webBanner",
-    thumbnail_url:
-      "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
-    platform: "Website",
-    views: "89,000",
-    engagement: "2.8%",
-    published_at: "2026-03-18",
-    is_live: true,
-    url: "#",
-  },
-  {
-    id: "content-tesla",
-    brand: "Tesla Motors",
-    brand_logo:
-      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
-    titleKey: "tvCommercial",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2000&auto=format&fit=crop",
-    platform: "YouTube",
-    views: "450,000",
-    engagement: "5.1%",
-    published_at: "2026-02-15",
-    is_live: true,
-    url: "#",
-  },
-];
-
-const exampleDetections = [
-  {
-    id: "det-1",
-    account: "@crypto_gains_2026",
-    platform: "TikTok",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
-    status: "needs_review",
-    match_confidence: 94,
-    detected_at: "2026-03-24",
-    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/1200px-TikTok_logo.svg.png",
-  },
-  {
-    id: "det-2",
-    account: "@beauty_deals_shop",
-    platform: "Instagram",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1611262588024-d12430b98920?q=80&w=1000&auto=format&fit=crop",
-    status: "takedown_requested",
-    match_confidence: 87,
-    detected_at: "2026-03-22",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png",
-  },
-  {
-    id: "det-3",
-    account: "Quick Weight Loss Co.",
-    platform: "Facebook",
-    thumbnail_url:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Facebook_icon_2013.svg/2048px-Facebook_icon_2013.svg.png",
-    status: "resolved",
-    match_confidence: 91,
-    detected_at: "2026-03-19",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png",
-  },
-];
+const exampleContentItems: any[] = [];
+const exampleDetections: any[] = [];
 
 // Example public profile data
 const exampleProfilePreviewData = {
@@ -4001,11 +3920,11 @@ export default function CreatorDashboard() {
     },
     {
       id: "jobs",
-      label: "Jobs",
+      label: t("creatorDashboard.nav.jobs", { defaultValue: "Jobs" }),
       icon: Briefcase,
       locked: !creatorCanUseJobs,
       requiredPlan: "pro",
-      premiumFeature: "Jobs",
+      premiumFeature: t("creatorDashboard.jobs.title", { defaultValue: "Jobs" }),
       onClick: () => {
         navigate(createPageUrl("Jobs"));
       },
@@ -4051,7 +3970,9 @@ export default function CreatorDashboard() {
     },
     {
       id: "talent-portal",
-      label: "Talent Portal",
+      label: t("creatorDashboard.nav.talentPortal", {
+        defaultValue: "Talent Portal",
+      }),
       icon: Briefcase,
       locked: !creatorCanUseTalentPortal,
       requiredPlan: "pro",
@@ -4063,8 +3984,12 @@ export default function CreatorDashboard() {
         }
         if (!talentPortalEnabled) {
           toast({
-            title: "Talent Portal",
-            description: "Connect to an agency to access Talent Portal.",
+            title: t("creatorDashboard.talentPortal.title", {
+              defaultValue: "Talent Portal",
+            }),
+            description: t("creatorDashboard.talentPortal.connectAgencyHint", {
+              defaultValue: "Connect to an agency to access Talent Portal.",
+            }),
           });
           return;
         }
@@ -4073,11 +3998,15 @@ export default function CreatorDashboard() {
     },
     {
       id: "agency-connection",
-      label: "Agency Connection",
+      label: t("creatorDashboard.nav.agencyConnection", {
+        defaultValue: "Agency Connection",
+      }),
       icon: LinkIcon,
       locked: !creatorCanUseAgencyConnection,
       requiredPlan: "basic",
-      premiumFeature: "Agency Connection",
+      premiumFeature: t("creatorDashboard.agencyConnections.title", {
+        defaultValue: "Agency Connection",
+      }),
       badge:
         agencyInvites.filter((i) => i.status === "pending").length > 0
           ? agencyInvites.filter((i) => i.status === "pending").length
@@ -4085,11 +4014,15 @@ export default function CreatorDashboard() {
     },
     {
       id: "brand-connection",
-      label: "Brand Connection",
+      label: t("creatorDashboard.nav.brandConnection", {
+        defaultValue: "Brand Connection",
+      }),
       icon: LinkIcon,
       locked: !creatorCanUseBrandConnection,
       requiredPlan: "basic",
-      premiumFeature: "Brand Connection",
+      premiumFeature: t("creatorDashboard.brandConnections.title", {
+        defaultValue: "Brand Connection",
+      }),
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
     },
@@ -6121,7 +6054,11 @@ export default function CreatorDashboard() {
               {trialActive && trialEndsAt && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <div className="flex items-center gap-1.5 font-medium text-[#64748B]">
-                    <span className="text-[#94A3B8]">Ends in:</span>
+                    <span className="text-[#94A3B8]">
+                      {t("creatorDashboard.planStatus.endsIn", {
+                        defaultValue: "Ends in:",
+                      })}
+                    </span>
                     <span
                       className={`font-black ${
                         isExpiringSoon ? "text-red-500" : "text-[#0F172A]"
@@ -6132,7 +6069,10 @@ export default function CreatorDashboard() {
                   </div>
                   {trialStartAt && (
                     <span className="text-[10px] text-[#94A3B8] font-medium bg-[#F1F5F9] px-2 py-0.5 rounded-full">
-                      Started {new Date(trialStartAt).toLocaleDateString()}
+                      {t("creatorDashboard.planStatus.started", {
+                        defaultValue: "Started {{date}}",
+                        date: new Date(trialStartAt).toLocaleDateString(),
+                      })}
                     </span>
                   )}
                   {isExpiringSoon && (
@@ -6142,7 +6082,9 @@ export default function CreatorDashboard() {
                       className="flex items-center gap-1 bg-red-100/80 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight"
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                      Expiring Soon
+                      {t("creatorDashboard.planStatus.expiringSoon", {
+                        defaultValue: "Expiring Soon",
+                      })}
                     </motion.div>
                   )}
                 </div>
@@ -6173,7 +6115,13 @@ export default function CreatorDashboard() {
                 <Gift className="h-4 w-4 text-[#38BDF8]" />
               </motion.div>
             )}
-            {trialActive ? "Manage Subscription" : "Account Settings"}
+            {trialActive
+              ? t("creatorDashboard.planStatus.manageSubscription", {
+                  defaultValue: "Manage Subscription",
+                })
+              : t("creatorDashboard.planStatus.accountSettings", {
+                  defaultValue: "Account Settings",
+                })}
             <ChevronRight
               className={`ml-2 h-4 w-4 transition-transform ${
                 isExpiringSoon
@@ -7637,10 +7585,15 @@ export default function CreatorDashboard() {
 
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
-            Agency Connection
+            {t("creatorDashboard.agencyConnections.title", {
+              defaultValue: "Agency Connection",
+            })}
           </h2>
           <p className="text-gray-600 mt-1">
-            Manage agency invitations and your connected agencies.
+            {t("creatorDashboard.agencyConnections.subtitle", {
+              defaultValue:
+                "Manage agency invitations and your connected agencies.",
+            })}
           </p>
         </div>
 
@@ -7656,7 +7609,9 @@ export default function CreatorDashboard() {
             }
             onClick={() => setAgencyConnectionSubTab("connections")}
           >
-            Connections
+            {t("creatorDashboard.agencyConnections.connections", {
+              defaultValue: "Connections",
+            })}
           </Button>
           <Button
             variant={
@@ -7671,7 +7626,9 @@ export default function CreatorDashboard() {
             }
             onClick={() => setAgencyConnectionSubTab("asset_requests")}
           >
-            Asset Requests
+            {t("creatorDashboard.agencyConnections.assetRequests", {
+              defaultValue: "Asset Requests",
+            })}
             {unseenAssetRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenAssetRequestCount}
@@ -7686,12 +7643,26 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-lg font-semibold text-gray-900">
-                    Connected Agencies
+                    {t("creatorDashboard.agencyConnections.connectedAgencies", {
+                      defaultValue: "Connected Agencies",
+                    })}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {agencyConnections.length > 0
-                      ? "You can be connected to multiple agencies at once."
-                      : "You are not connected to any agencies yet."}
+                      ? t(
+                          "creatorDashboard.agencyConnections.connectedAgenciesDescription",
+                          {
+                            defaultValue:
+                              "You can be connected to multiple agencies at once.",
+                          },
+                        )
+                      : t(
+                          "creatorDashboard.agencyConnections.noConnectionsDescription",
+                          {
+                            defaultValue:
+                              "You are not connected to any agencies yet.",
+                          },
+                        )}
                   </div>
                 </div>
                 {agencyConnectionLoading && (
@@ -8298,9 +8269,16 @@ export default function CreatorDashboard() {
     return (
       <div className="space-y-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Brand Connection</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {t("creatorDashboard.brandConnections.title", {
+              defaultValue: "Brand Connection",
+            })}
+          </h2>
           <p className="text-gray-600 mt-1">
-            Manage connections, requests, and incoming campaign offers.
+            {t("creatorDashboard.brandConnections.subtitle", {
+              defaultValue:
+                "Manage connections, requests, and incoming campaign offers.",
+            })}
           </p>
           {totalBrandConnectionNotifications > 0 && (
             <p className="text-xs text-amber-700 mt-2">
@@ -8323,7 +8301,9 @@ export default function CreatorDashboard() {
             }
             onClick={() => setBrandConnectionSubTab("connections")}
           >
-            Connected Brands
+            {t("creatorDashboard.brandConnections.connections", {
+              defaultValue: "Connected Brands",
+            })}
           </Button>
           <Button
             variant={
@@ -8345,7 +8325,9 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            Requests
+            {t("creatorDashboard.brandConnections.requests", {
+              defaultValue: "Requests",
+            })}
             {unseenRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenRequestCount}
@@ -10915,7 +10897,9 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900">
-                Pending Transfers
+                {t("creatorDashboard.earnings.transfers.pendingTransfers", {
+                  defaultValue: "Pending Transfers",
+                })}
               </h3>
               <Button
                 size="sm"
@@ -10927,7 +10911,9 @@ export default function CreatorDashboard() {
                 <RefreshCw
                   className={`w-3 h-3 mr-1 ${loadingCreatorTransfers ? "animate-spin" : ""}`}
                 />
-                Refresh
+                {t("creatorDashboard.earnings.transfers.refresh", {
+                  defaultValue: "Refresh",
+                })}
               </Button>
             </div>
 
@@ -10938,25 +10924,31 @@ export default function CreatorDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {creatorTransfers.map((t: any) => {
+                {creatorTransfers.map((transfer: any) => {
                   const statusIcon =
-                    t.transfer_status === "created" ? (
+                    transfer.transfer_status === "created" ? (
                       <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    ) : t.transfer_status === "failed" ||
-                      t.transfer_status === "pending_retry" ? (
+                    ) : transfer.transfer_status === "failed" ||
+                      transfer.transfer_status === "pending_retry" ? (
                       <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
                     ) : (
                       <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     );
 
                   const statusLabel =
-                    t.transfer_status === "created"
+                    transfer.transfer_status === "created"
                       ? "transferred"
-                      : t.transfer_status === "pending_retry"
-                        ? "retrying…"
-                        : t.transfer_status === "failed"
-                          ? "failed"
-                          : "pending";
+                      : transfer.transfer_status === "pending_retry"
+                        ? t("creatorDashboard.earnings.transfers.status.retrying", {
+                            defaultValue: "retrying…",
+                          })
+                        : transfer.transfer_status === "failed"
+                          ? t("creatorDashboard.earnings.transfers.status.failed", {
+                              defaultValue: "failed",
+                            })
+                          : t("creatorDashboard.earnings.transfers.status.pending", {
+                              defaultValue: "pending",
+                            });
 
                   const friendlyReason = (reason: string) => {
                     if (!reason) return null;
@@ -10978,7 +10970,7 @@ export default function CreatorDashboard() {
 
                   return (
                     <div
-                      key={t.offer_id}
+                      key={transfer.offer_id}
                       className="p-4 rounded-xl border border-gray-200 bg-gray-50/50"
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -10987,37 +10979,43 @@ export default function CreatorDashboard() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-semibold text-gray-900 truncate">
-                                {t.offer_title}
+                                {transfer.offer_title}
                               </span>
                               <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
-                                {t.brand_name}
+                                {transfer.brand_name}
                               </span>
                             </div>
-                            {t.transfer_status === "failed" &&
-                              t.failure_reason && (
+                            {transfer.transfer_status === "failed" &&
+                              transfer.failure_reason && (
                                 <p className="text-[11px] text-amber-700 mt-1 leading-snug">
-                                  {friendlyReason(t.failure_reason)}
+                                  {friendlyReason(transfer.failure_reason)}
                                 </p>
                               )}
-                            {t.retry_count > 0 && (
+                            {transfer.retry_count > 0 && (
                               <p className="text-[10px] text-gray-400 mt-0.5">
-                                {t.retry_count}{" "}
-                                {t.retry_count === 1 ? "retry" : "retries"}
+                                {transfer.retry_count}{" "}
+                                {transfer.retry_count === 1
+                                  ? t("creatorDashboard.earnings.transfers.retry", {
+                                      defaultValue: "retry",
+                                    })
+                                  : t("creatorDashboard.earnings.transfers.retries", {
+                                      defaultValue: "retries",
+                                    })}
                               </p>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
                           <span className="text-sm font-bold text-gray-900">
-                            ${((t.amount_cents ?? 0) / 100).toFixed(2)}
+                            ${((transfer.amount_cents ?? 0) / 100).toFixed(2)}
                           </span>
                           <span
                             className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
-                              t.transfer_status === "created"
+                              transfer.transfer_status === "created"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : t.transfer_status === "failed"
+                                : transfer.transfer_status === "failed"
                                   ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : t.transfer_status === "pending_retry"
+                                  : transfer.transfer_status === "pending_retry"
                                     ? "bg-blue-50 text-blue-700 border-blue-200"
                                     : "bg-gray-50 text-gray-500 border-gray-200"
                             }`}
@@ -11040,13 +11038,15 @@ export default function CreatorDashboard() {
                   <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-bold text-amber-900">
-                      Action required
+                      {t("creatorDashboard.earnings.transfers.actionRequired", {
+                        defaultValue: "Action required",
+                      })}
                     </p>
                     <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                      One or more transfers failed because your Stripe account
-                      is not fully set up. Complete your Stripe onboarding to
-                      receive these funds. The agency will retry the transfer
-                      once your account is ready.
+                      {t("creatorDashboard.earnings.transfers.failedReason", {
+                        defaultValue:
+                          "One or more transfers failed because your Stripe account is not fully set up. Complete your Stripe onboarding to receive these funds. The agency will retry the transfer once your account is ready.",
+                      })}
                     </p>
                     {!payoutAccountStatus?.transfers_enabled && (
                       <Button
@@ -11054,7 +11054,9 @@ export default function CreatorDashboard() {
                         className="mt-3 h-8 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs"
                         onClick={() => setShowPayoutSettings(true)}
                       >
-                        Complete Stripe setup
+                        {t("creatorDashboard.earnings.transfers.completeStripeSetup", {
+                          defaultValue: "Complete Stripe setup",
+                        })}
                       </Button>
                     )}
                   </div>
@@ -12020,7 +12022,9 @@ export default function CreatorDashboard() {
                 <div>
                   <div className="flex items-center gap-3">
                     <h3 className="text-xl font-bold text-[#142033]">
-                      Creator subscription
+                      {t("creatorDashboard.billing.title", {
+                        defaultValue: "Creator subscription",
+                      })}
                     </h3>
                     <Badge
                       className={
@@ -12033,13 +12037,23 @@ export default function CreatorDashboard() {
                     >
                       {effectivePlanTier === "pro"
                         ? trialActive
-                          ? "Pro Trial"
-                          : "Pro"
+                          ? t("creatorDashboard.billing.proTrial", {
+                              defaultValue: "Pro Trial",
+                            })
+                          : t("creatorDashboard.billing.pro", {
+                              defaultValue: "Pro",
+                            })
                         : effectivePlanTier === "basic"
                           ? trialActive
-                            ? "Basic Trial"
-                            : "Basic"
-                          : "Free"}
+                            ? t("creatorDashboard.billing.basicTrial", {
+                                defaultValue: "Basic Trial",
+                              })
+                            : t("creatorDashboard.billing.basic", {
+                                defaultValue: "Basic",
+                              })
+                          : t("creatorDashboard.billing.free", {
+                              defaultValue: "Free",
+                            })}
                     </Badge>
                   </div>
                 </div>
@@ -12051,18 +12065,30 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                      Current access
+                      {t("creatorDashboard.billing.currentAccess", {
+                        defaultValue: "Current access",
+                      })}
                     </div>
                     <div className="mt-1 text-2xl font-bold text-[#142033]">
                       {effectivePlanTier === "pro"
                         ? trialActive
-                          ? "Pro Trial access"
-                          : "Pro creator access"
+                          ? t("creatorDashboard.billing.proTrialAccess", {
+                              defaultValue: "Pro Trial access",
+                            })
+                          : t("creatorDashboard.billing.proCreatorAccess", {
+                              defaultValue: "Pro creator access",
+                            })
                         : effectivePlanTier === "basic"
                           ? trialActive
-                            ? "Basic Trial access"
-                            : "Basic creator access"
-                          : "Free creator access"}
+                            ? t("creatorDashboard.billing.basicTrialAccess", {
+                                defaultValue: "Basic Trial access",
+                              })
+                            : t("creatorDashboard.billing.basicCreatorAccess", {
+                                defaultValue: "Basic creator access",
+                              })
+                          : t("creatorDashboard.billing.freeCreatorAccess", {
+                              defaultValue: "Free creator access",
+                            })}
                     </div>
                   </div>
                 </div>
@@ -12106,7 +12132,9 @@ export default function CreatorDashboard() {
                       included: creatorCanUseVoice,
                     },
                     {
-                      label: "Jobs",
+                      label: t("creatorDashboard.nav.jobs", {
+                        defaultValue: "Jobs",
+                      }),
                       value: creatorCanUseJobs ? "Included" : "Pro only",
                       included: creatorCanUseJobs,
                     },
@@ -12159,21 +12187,38 @@ export default function CreatorDashboard() {
               <div className="space-y-4">
                 <div className="rounded-3xl border border-[#D7E6F5] bg-gradient-to-br from-[#F9FCFF] to-[#EEF5FB] p-6">
                   <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                    Recommended next step
+                    {t("creatorDashboard.billing.recommendedNextStep", {
+                      defaultValue: "Recommended next step",
+                    })}
                   </div>
                   <div className="mt-2 text-2xl font-bold text-[#142033]">
                     {effectivePlanTier === "free"
-                      ? "Move to Basic"
+                      ? t("creatorDashboard.billing.moveToBasic", {
+                          defaultValue: "Move to Basic",
+                        })
                       : effectivePlanTier === "basic"
-                        ? "Move to Pro"
-                        : "You’re fully unlocked"}
+                        ? t("creatorDashboard.billing.moveToPro", {
+                            defaultValue: "Move to Pro",
+                          })
+                        : t("creatorDashboard.billing.fullyUnlocked", {
+                            defaultValue: "You're fully unlocked",
+                          })}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[#5A6880]">
                     {effectivePlanTier === "free"
-                      ? "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts."
+                      ? t("creatorDashboard.billing.basicUnlocks", {
+                          defaultValue:
+                            "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts.",
+                        })
                       : effectivePlanTier === "basic"
-                        ? "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns."
-                        : "Your current plan includes the full creator workflow toolset."}
+                        ? t("creatorDashboard.billing.proUnlocks", {
+                            defaultValue:
+                              "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns.",
+                          })
+                        : t("creatorDashboard.billing.currentPlanFullToolset", {
+                            defaultValue:
+                              "Your current plan includes the full creator workflow toolset.",
+                          })}
                   </p>
                   {effectivePlanTier !== "pro" && (
                     <Button
@@ -12184,10 +12229,14 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          Processing...
+                          {t("creatorDashboard.billing.processing", {
+                            defaultValue: "Processing...",
+                          })}
                         </>
                       ) : (
-                        "View Details"
+                        t("creatorDashboard.billing.viewDetails", {
+                          defaultValue: "View Details",
+                        })
                       )}
                     </Button>
                   )}
@@ -12198,12 +12247,15 @@ export default function CreatorDashboard() {
                   <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                     <div className="max-w-md text-center md:text-left">
                       <h4 className="text-2xl font-black tracking-tight">
-                        Ready to lock in Pro?
+                        {t("creatorDashboard.billing.lockInProTitle", {
+                          defaultValue: "Ready to lock in Pro?",
+                        })}
                       </h4>
                       <p className="mt-3 text-base text-indigo-100/100 leading-relaxed font-medium">
-                        Your trial is active, but you can secure your
-                        professional workflow tools today. Get full marketplace
-                        priority and exclusive campaign access.
+                        {t("creatorDashboard.billing.lockInProDescription", {
+                          defaultValue:
+                            "Your trial is active, but you can secure your professional workflow tools today. Get full marketplace priority and exclusive campaign access.",
+                        })}
                       </p>
                     </div>
                     <Button
@@ -12213,10 +12265,14 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-6 h-6 animate-spin mr-3" />
-                          Opening Portal...
+                          {t("creatorDashboard.billing.openingPortal", {
+                            defaultValue: "Opening Portal...",
+                          })}
                         </>
                       ) : (
-                        "Select Plan"
+                        t("creatorDashboard.billing.selectPlan", {
+                          defaultValue: "Select Plan",
+                        })
                       )}
                     </Button>
                   </div>
@@ -13470,44 +13526,6 @@ export default function CreatorDashboard() {
                         {section.bestFor}
                       </p>
                     </div>
-
-                    <Card className="p-4 bg-gray-50 border border-gray-200">
-                      <h4 className="font-bold text-gray-900 mb-3">
-                        {t("creatorDashboard.uploadModal.requirementsTitle")}
-                      </h4>
-                      <div className="space-y-2 text-sm text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.resolution")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.faceVisible")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t("creatorDashboard.uploadModal.goodLighting")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.recentPhoto")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.noFilters")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t(
-                              "creatorDashboard.uploadModal.professionalQuality",
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
 
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#32C8D1] transition-colors">
                       <input
