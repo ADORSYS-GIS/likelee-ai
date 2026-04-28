@@ -649,7 +649,10 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
       return rawT(key, options);
     }
     const suffix = key.replace("agencyDashboard.settings.", "");
-    const fallback = rawT(`agencyDashboard.analytics.settings.${suffix}`, options);
+    const fallback = rawT(
+      `agencyDashboard.analytics.settings.${suffix}`,
+      options,
+    );
     return rawT(key, {
       ...(options || {}),
       defaultValue: fallback,
@@ -1348,65 +1351,101 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
   const defaultNotificationPrefs = [
     {
       key: "booking_created",
-      title: t("agencyDashboard.settings.notifications.events.bookingCreated.title", {
-        defaultValue: "Booking Created",
-      }),
-      desc: t("agencyDashboard.settings.notifications.events.bookingCreated.desc", {
-        defaultValue: "When a new booking is created",
-      }),
+      title: t(
+        "agencyDashboard.settings.notifications.events.bookingCreated.title",
+        {
+          defaultValue: "Booking Created",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.bookingCreated.desc",
+        {
+          defaultValue: "When a new booking is created",
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "booking_confirmed",
-      title: t("agencyDashboard.settings.notifications.events.bookingConfirmed.title", {
-        defaultValue: "Booking Confirmed",
-      }),
-      desc: t("agencyDashboard.settings.notifications.events.bookingConfirmed.desc", {
-        defaultValue: "When a booking status changes to confirmed",
-      }),
+      title: t(
+        "agencyDashboard.settings.notifications.events.bookingConfirmed.title",
+        {
+          defaultValue: "Booking Confirmed",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.bookingConfirmed.desc",
+        {
+          defaultValue: "When a booking status changes to confirmed",
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "payment_received",
-      title: t("agencyDashboard.settings.notifications.events.paymentReceived.title", {
-        defaultValue: "Payment Received",
-      }),
-      desc: t("agencyDashboard.settings.notifications.events.paymentReceived.desc", {
-        defaultValue: "When payment is received from a client",
-      }),
+      title: t(
+        "agencyDashboard.settings.notifications.events.paymentReceived.title",
+        {
+          defaultValue: "Payment Received",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.paymentReceived.desc",
+        {
+          defaultValue: "When payment is received from a client",
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "invoice_sent",
-      title: t("agencyDashboard.settings.notifications.events.invoiceSent.title", {
-        defaultValue: "Invoice Sent",
-      }),
-      desc: t("agencyDashboard.settings.notifications.events.invoiceSent.desc", {
-        defaultValue: "When an invoice is sent to a client",
-      }),
+      title: t(
+        "agencyDashboard.settings.notifications.events.invoiceSent.title",
+        {
+          defaultValue: "Invoice Sent",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.invoiceSent.desc",
+        {
+          defaultValue: "When an invoice is sent to a client",
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "talent_book_out",
-      title: t("agencyDashboard.settings.notifications.events.entityBookOut.title", {
-        entitySingular: entitySingularTitle,
-        defaultValue: `${entitySingularTitle} Book Out`,
-      }),
-      desc: t("agencyDashboard.settings.notifications.events.entityBookOut.desc", {
-        entitySingularLower,
-        defaultValue: `When ${entitySingularLower} marks themselves unavailable`,
-      }),
+      title: t(
+        "agencyDashboard.settings.notifications.events.entityBookOut.title",
+        {
+          entitySingular: entitySingularTitle,
+          defaultValue: `${entitySingularTitle} Book Out`,
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.entityBookOut.desc",
+        {
+          entitySingularLower,
+          defaultValue: `When ${entitySingularLower} marks themselves unavailable`,
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "license_expiring",
-      title: t("agencyDashboard.settings.notifications.events.licenseExpiring.title", {
-        defaultValue: "License Expiring",
-      }),
-      desc: t("agencyDashboard.settings.notifications.events.licenseExpiring.desc", {
-        entitySingularLower,
-        defaultValue: `When a ${entitySingularLower} license is about to expire`,
-      }),
+      title: t(
+        "agencyDashboard.settings.notifications.events.licenseExpiring.title",
+        {
+          defaultValue: "License Expiring",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.licenseExpiring.desc",
+        {
+          entitySingularLower,
+          defaultValue: `When a ${entitySingularLower} license is about to expire`,
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
   ] as {
@@ -2648,17 +2687,23 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   <DollarSign className="w-5 h-5 text-green-600" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  {t("agencyDashboard.settings.commissions.defaultCommissionRate", {
-                    defaultValue: "Default Commission Rate",
-                  })}
+                  {t(
+                    "agencyDashboard.settings.commissions.defaultCommissionRate",
+                    {
+                      defaultValue: "Default Commission Rate",
+                    },
+                  )}
                 </h3>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {t("agencyDashboard.settings.commissions.agencyCommission", {
-                      defaultValue: "Agency Commission (%)",
-                    })}
+                    {t(
+                      "agencyDashboard.settings.commissions.agencyCommission",
+                      {
+                        defaultValue: "Agency Commission (%)",
+                      },
+                    )}
                   </Label>
                   <Input
                     type="number"
@@ -2682,9 +2727,13 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                     className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
                   />
                   <p className="text-xs text-gray-500 font-medium">
-                    {t("agencyDashboard.settings.commissions.appliedUnlessOverridden", {
-                      defaultValue: "Applied to all bookings unless overridden",
-                    })}
+                    {t(
+                      "agencyDashboard.settings.commissions.appliedUnlessOverridden",
+                      {
+                        defaultValue:
+                          "Applied to all bookings unless overridden",
+                      },
+                    )}
                   </p>
                 </div>
               </div>
@@ -2770,9 +2819,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
 
               <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-2xl mb-8">
                 <h4 className="text-sm font-bold text-blue-900 mb-4">
-                  {t("agencyDashboard.settings.emailTemplates.availableVariables", {
-                    defaultValue: "Available Variables:",
-                  })}
+                  {t(
+                    "agencyDashboard.settings.emailTemplates.availableVariables",
+                    {
+                      defaultValue: "Available Variables:",
+                    },
+                  )}
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-y-3 gap-x-8">
                   {[
@@ -2851,9 +2903,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       </div>
                       <div className="space-y-2">
                         <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                          {t("agencyDashboard.settings.emailTemplates.subject", {
-                            defaultValue: "Subject:",
-                          })}
+                          {t(
+                            "agencyDashboard.settings.emailTemplates.subject",
+                            {
+                              defaultValue: "Subject:",
+                            },
+                          )}
                         </Label>
                         <p className="text-sm font-bold text-gray-900">
                           {template.subject}
@@ -2904,20 +2959,29 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold text-gray-900">
                     {editingTemplateKey
-                      ? t("agencyDashboard.settings.emailTemplates.editTemplate", {
-                          defaultValue: "Edit Template",
-                        })
-                      : t("agencyDashboard.settings.emailTemplates.newTemplate", {
-                          defaultValue: "New Template",
-                        })}
+                      ? t(
+                          "agencyDashboard.settings.emailTemplates.editTemplate",
+                          {
+                            defaultValue: "Edit Template",
+                          },
+                        )
+                      : t(
+                          "agencyDashboard.settings.emailTemplates.newTemplate",
+                          {
+                            defaultValue: "New Template",
+                          },
+                        )}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-5 py-2">
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      {t("agencyDashboard.settings.emailTemplates.templateName", {
-                        defaultValue: "Template Name",
-                      })}
+                      {t(
+                        "agencyDashboard.settings.emailTemplates.templateName",
+                        {
+                          defaultValue: "Template Name",
+                        },
+                      )}
                     </Label>
                     <Input
                       value={emailTemplateDraft.name}
@@ -2932,9 +2996,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      {t("agencyDashboard.settings.emailTemplates.subjectLabel", {
-                        defaultValue: "Subject",
-                      })}
+                      {t(
+                        "agencyDashboard.settings.emailTemplates.subjectLabel",
+                        {
+                          defaultValue: "Subject",
+                        },
+                      )}
                     </Label>
                     <Input
                       value={emailTemplateDraft.subject}
@@ -2970,9 +3037,13 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                         {t("agencyDashboard.settings.team.active")}
                       </p>
                       <p className="text-xs text-gray-500 font-medium">
-                        {t("agencyDashboard.settings.emailTemplates.enableTemplateHint", {
-                          defaultValue: "Enable this template for automated emails",
-                        })}
+                        {t(
+                          "agencyDashboard.settings.emailTemplates.enableTemplateHint",
+                          {
+                            defaultValue:
+                              "Enable this template for automated emails",
+                          },
+                        )}
                       </p>
                     </div>
                     <Switch
@@ -3067,35 +3138,50 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                           }
                         />
                         <span className="text-xs font-bold text-gray-900">
-                          {t("agencyDashboard.settings.notifications.channels.email", {
-                            defaultValue: "Email",
-                          })}
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.email",
+                            {
+                              defaultValue: "Email",
+                            },
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
-                          {t("agencyDashboard.settings.notifications.channels.sms", {
-                            defaultValue: "SMS",
-                          })}
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.sms",
+                            {
+                              defaultValue: "SMS",
+                            },
+                          )}
                         </span>
                         <span className="text-[10px] font-bold text-gray-500 opacity-80">
-                          {t("agencyDashboard.settings.notifications.channels.comingSoon", {
-                            defaultValue: "Coming Soon",
-                          })}
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.comingSoon",
+                            {
+                              defaultValue: "Coming Soon",
+                            },
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
-                          {t("agencyDashboard.settings.notifications.channels.push", {
-                            defaultValue: "Push",
-                          })}
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.push",
+                            {
+                              defaultValue: "Push",
+                            },
+                          )}
                         </span>
                         <span className="text-[10px] font-bold text-gray-500 opacity-80">
-                          {t("agencyDashboard.settings.notifications.channels.comingSoon", {
-                            defaultValue: "Coming Soon",
-                          })}
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.comingSoon",
+                            {
+                              defaultValue: "Coming Soon",
+                            },
+                          )}
                         </span>
                       </div>
                     </div>
@@ -3113,9 +3199,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {t("agencyDashboard.settings.notifications.recipients.primaryEmail", {
-                      defaultValue: "Primary Notification Email",
-                    })}
+                    {t(
+                      "agencyDashboard.settings.notifications.recipients.primaryEmail",
+                      {
+                        defaultValue: "Primary Notification Email",
+                      },
+                    )}
                   </Label>
                   <Input
                     value={notificationRecipients.primaryEmail}
@@ -3130,9 +3219,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    {t("agencyDashboard.settings.notifications.recipients.smsNumber", {
-                      defaultValue: "SMS Notification Number",
-                    })}
+                    {t(
+                      "agencyDashboard.settings.notifications.recipients.smsNumber",
+                      {
+                        defaultValue: "SMS Notification Number",
+                      },
+                    )}
                   </Label>
                   <Input
                     value={notificationRecipients.smsNumber}
@@ -3765,15 +3857,21 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   </div>
                   <div>
                     <h4 className="text-lg font-bold text-gray-900 tracking-tight">
-                      {t("agencyDashboard.settings.integrations.connectBankAccount", {
-                        defaultValue: "Connect Bank Account",
-                      })}
+                      {t(
+                        "agencyDashboard.settings.integrations.connectBankAccount",
+                        {
+                          defaultValue: "Connect Bank Account",
+                        },
+                      )}
                     </h4>
                     <p className="text-sm text-gray-500 font-medium mt-1">
-                      {t("agencyDashboard.settings.integrations.connectBankHint", {
-                        defaultValue:
-                          "Link your bank to receive client payments and manage payouts.",
-                      })}
+                      {t(
+                        "agencyDashboard.settings.integrations.connectBankHint",
+                        {
+                          defaultValue:
+                            "Link your bank to receive client payments and manage payouts.",
+                        },
+                      )}
                     </p>
                     {bankStatus?.connected && (
                       <p className="text-xs text-gray-600 font-medium mt-2">
@@ -3789,9 +3887,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       bankStatus &&
                       !bankStatus.connected && (
                         <p className="text-xs text-gray-500 font-medium mt-2">
-                          {t("agencyDashboard.settings.integrations.notConnected", {
-                            defaultValue: "Not connected",
-                          })}
+                          {t(
+                            "agencyDashboard.settings.integrations.notConnected",
+                            {
+                              defaultValue: "Not connected",
+                            },
+                          )}
                         </p>
                       )}
                   </div>
@@ -3799,9 +3900,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 <Button asChild className="h-10 px-5 rounded-xl font-bold">
                   <a href={`/AgencyDashboard?tab=payouts`}>
                     {bankStatus?.connected
-                      ? t("agencyDashboard.settings.integrations.changeAccount", {
-                          defaultValue: "Change account",
-                        })
+                      ? t(
+                          "agencyDashboard.settings.integrations.changeAccount",
+                          {
+                            defaultValue: "Change account",
+                          },
+                        )
                       : t("agencyDashboard.settings.integrations.connect", {
                           defaultValue: "Connect",
                         })}
@@ -3820,9 +3924,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                        {t("agencyDashboard.settings.integrations.calendly.title", {
-                          defaultValue: "Calendly Integration",
-                        })}
+                        {t(
+                          "agencyDashboard.settings.integrations.calendly.title",
+                          {
+                            defaultValue: "Calendly Integration",
+                          },
+                        )}
                       </h3>
                       <p className="text-sm text-gray-500 font-medium">
                         {hasCalendlyAccess
@@ -3849,9 +3956,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                             ? t("agencyDashboard.settings.team.active", {
                                 defaultValue: "Active",
                               })
-                            : t("agencyDashboard.settings.integrations.disabled", {
-                                defaultValue: "Disabled",
-                              })
+                            : t(
+                                "agencyDashboard.settings.integrations.disabled",
+                                {
+                                  defaultValue: "Disabled",
+                                },
+                              )
                           : t("agencyDashboard.settings.integrations.locked", {
                               defaultValue: "Locked",
                             })}
@@ -3876,10 +3986,13 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
               {!hasIrlBookingAddon && (
                 <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    {t("agencyDashboard.settings.integrations.calendly.upgradeHint", {
-                      defaultValue:
-                        "Enable the IRL Booking add-on to use Calendly, scouting, client CRM, bookings, and IRL accounting workflows.",
-                    })}
+                    {t(
+                      "agencyDashboard.settings.integrations.calendly.upgradeHint",
+                      {
+                        defaultValue:
+                          "Enable the IRL Booking add-on to use Calendly, scouting, client CRM, bookings, and IRL accounting workflows.",
+                      },
+                    )}
                   </div>
                   <Button
                     asChild
@@ -3887,9 +4000,12 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                     className="h-9 rounded-xl bg-amber-600 px-4 font-bold text-white hover:bg-amber-700"
                   >
                     <a href={createPageUrl("AgencySubscribe")}>
-                      {t("agencyDashboard.settings.integrations.calendly.getAddon", {
-                        defaultValue: "Get IRL Booking Add-on",
-                      })}
+                      {t(
+                        "agencyDashboard.settings.integrations.calendly.getAddon",
+                        {
+                          defaultValue: "Get IRL Booking Add-on",
+                        },
+                      )}
                     </a>
                   </Button>
                 </div>

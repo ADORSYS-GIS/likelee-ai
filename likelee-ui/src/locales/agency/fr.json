@@ -2544,6 +2544,8 @@
           "viewContract": "Voir le contrat",
           "download": "Télécharger",
           "sign": "Signer",
+          "emptyState": "Aucun contrat disponible.",
+          "loading": "Chargement des contrats…",
           "submissions": "Soumissions",
           "newContract": "Nouveau contrat",
           "assignTalentBeforeContract": "Assignez un talent avant de créer un contrat.",
@@ -2562,10 +2564,22 @@
         "feedback": {
           "title": "Commentaires client",
           "noFeedback": "Aucun commentaire disponible",
-          "viewFeedback": "Voir les commentaires"
+          "viewFeedback": "Voir les commentaires",
+          "empty": "Aucun commentaire sur le package pour le moment.",
+          "loading": "Chargement des commentaires sur le package…"
+        },
+        "packageFeedbackData": {
+          "title": "Commentaires sur le package",
+          "empty": "Aucun commentaire sur le package pour le moment.",
+          "loading": "Chargement des commentaires sur le package…"
         },
         "connectedBrands": "Marques connectées",
         "brandOffers": "Offres de marque",
+        "brandOffersData": {
+          "title": "Offres de marque",
+          "empty": "Aucune offre de marque trouvée.",
+          "loading": "Chargement des offres de marque…"
+        },
         "deliverables": "Livraisons",
         "packageFeedback": "Commentaires du package",
         "loadingBrands": "Chargement des marques connectées…",
@@ -2640,12 +2654,28 @@
         },
         "commissions": {
           "title": "Taux de commission par défaut",
-          "subtitle": "Définir le taux de commission par défaut pour les nouveaux talents"
+          "subtitle": "Définissez le taux de commission par défaut pour les nouveaux talents",
+          "defaultCommissionRate": "Taux de commission par défaut",
+          "agencyCommission": "Commission de l'agence (%)",
+          "appliedUnlessOverridden": "Appliqué à toutes les réservations sauf remplacement",
+          "rulesTitle": "Règles de commission {{entitySingular}}",
+          "rulesDescription": "Les {{entityPlural}} gérés par l’agence peuvent utiliser ici des remplacements basés sur les paramètres. Les {{entityPlural}} connectés au marketplace suivent le taux du contrat signé actif et sont en lecture seule sur cet écran.",
+          "save": "Enregistrer les paramètres de commission"
         },
         "taxAndCurrency": {
           "title": "Paramètres de taxe et devise",
           "defaultCurrency": "Devise par défaut",
           "selectCurrency": "Sélectionner une devise",
+          "defaultRate": "Taux de taxe par défaut (%)",
+          "defaultRateHint": "Appliqué aux factures (ex. taxe de vente, TVA)",
+          "taxDisplayName": "Nom affiché de la taxe",
+          "includeTaxInPrices": "Inclure la taxe dans les prix affichés",
+          "paymentTermsLabel": "Conditions de paiement",
+          "lateFee": "Frais de retard (%)",
+          "lateFeeHint": "Intérêt mensuel sur les factures en retard",
+          "invoicePrefix": "Préfixe de facture",
+          "invoicePrefixExample": "Exemple : INV-00001, INV-00002",
+          "save": "Enregistrer les paramètres de taxe et devise",
           "currencies": {
             "usd": "USD - Dollar américain",
             "eur": "EUR - Euro",
@@ -2754,14 +2784,48 @@
           }
         },
         "team": {
-          "title": "Membres de l'équipe",
+          "title": "Gestion de l’équipe",
+          "subtitle": "Gérez les membres de l’équipe, les rôles et les autorisations",
           "invite": "Inviter un membre",
+          "inviteUser": "Inviter un utilisateur",
           "remove": "Supprimer le membre",
           "editPermissions": "Modifier les permissions",
+          "activeMembers": "Membres actifs de l’équipe",
+          "loadingMembers": "Chargement des membres de l’équipe...",
+          "emptyMembers": "Aucun membre actif pour le moment.",
+          "memberCount": "{{count}} membres",
+          "memberStatus": "Statut",
+          "active": "Actif",
+          "inactive": "Inactif",
+          "pendingInvitations": {
+            "title": "Invitations en attente",
+            "description": "Invitations envoyées aux coéquipiers qui n’ont pas encore rejoint l’équipe.",
+            "pending": "en attente",
+            "empty": "Aucune invitation en attente.",
+            "expires": "Expire"
+          },
+          "actions": {
+            "inviteUser": "Inviter un utilisateur",
+            "editRole": "Modifier le rôle"
+          },
+          "activity": {
+            "title": "Activité"
+          },
           "roles": {
-            "admin": "Administrateur",
-            "manager": "Gestionnaire",
-            "member": "Membre"
+            "owner": "Propriétaire",
+            "admin": {
+              "label": "Administrateur",
+              "description": "Accès complet aux paramètres de l’agence et à la gestion de l’équipe"
+            },
+            "projectManager": {
+              "label": "Chef de projet",
+              "description": "Peut gérer les projets, réservations et communications"
+            },
+            "reviewer": {
+              "label": "Réviseur",
+              "description": "Peut examiner le contenu et suivre l’activité"
+            },
+            "unknown": "Rôle inconnu"
           },
           "inviteSuccess": "Membre invité avec succès",
           "inviteFailed": "Échec de l'invitation du membre",
@@ -2770,10 +2834,43 @@
         },
         "integrations": {
           "title": "Intégrations",
-          "calendly": "Calendly",
+          "subtitle": "Connectez votre agence à d’autres outils",
+          "addIntegration": "Ajouter une intégration",
+          "connectBankAccount": "Connecter le compte bancaire",
+          "connectBankHint": "Liez votre banque pour recevoir les paiements clients et gérer les versements.",
+          "connected": "Connecté",
+          "notConnected": "Non connecté",
+          "changeAccount": "Changer de compte",
+          "calendly": {
+            "title": "Intégration Calendly",
+            "enabledHint": "Automatisez la planification des rendez-vous avec vos clients",
+            "lockedHint": "Disponible avec Pro et l’add-on IRL Booking",
+            "upgradeHint": "Activez l’add-on IRL Booking pour utiliser Calendly, le scouting, le CRM client, les réservations et les flux comptables IRL.",
+            "getAddon": "Obtenir l’add-on IRL Booking",
+            "buyAddon": "Acheter l’add-on IRL Booking",
+            "tokenLabel": "Jeton d’accès personnel Calendly",
+            "getToken": "Obtenir le jeton",
+            "tokenPlaceholder": "calendly_v2_...",
+            "publicLinkLabel": "Lien public de planification Calendly",
+            "whereToFind": "Où le trouver",
+            "publicLinkPlaceholder": "https://calendly.com/your-handle/your-event",
+            "publicLinkHelp": "Utilisez le lien public de l’événement Calendly qui doit s’ouvrir lorsqu’une réservation est envoyée via Calendly depuis Likelee. Dans Calendly, ouvrez votre page de planification, trouvez le type d’événement et copiez son lien.",
+            "eventTypeLabel": "Type d’événement Calendly",
+            "eventTypeHint": "Sélectionnez le type d’événement Calendly que Likelee doit utiliser pour les invitations et rappels de réservation",
+            "selectEvent": "Sélectionner un événement Calendly",
+            "leaveUnset": "Laisser vide",
+            "durationMins": "{{mins}} min",
+            "eventTypeUriPlaceholder": "https://api.calendly.com/event_types/...",
+            "eventTypeUriHelp": "Collez l’URI complète du type d’événement Calendly que Likelee doit utiliser pour les réservations. Cela fonctionne même si le jeton ne peut pas lister automatiquement les types d’événements.",
+            "noActiveTypes": "Aucun type d’événement Calendly actif trouvé pour ce compte",
+            "saveValidToken": "Enregistrez un jeton Calendly valide pour charger les types d’événements",
+            "saveConfiguration": "Enregistrer la configuration Calendly"
+          },
           "stripe": "Stripe",
           "connect": "Connecter",
           "disconnect": "Déconnecter",
+          "disabled": "Désactivé",
+          "locked": "Verrouillé",
           "connectSuccess": "Intégration connectée avec succès",
           "connectFailed": "Échec de la connexion de l'intégration",
           "disconnectSuccess": "Intégration déconnectée avec succès",
@@ -2790,12 +2887,56 @@
         },
         "notifications": {
           "title": "Notifications",
+          "subtitle": "Choisissez comment vous souhaitez être informé des événements importants",
+          "channels": {
+            "email": "Email",
+            "sms": "SMS",
+            "push": "Push",
+            "comingSoon": "Bientôt disponible"
+          },
+          "recipients": {
+            "title": "Destinataires des notifications",
+            "primaryEmail": "Email principal de notification",
+            "smsNumber": "Numéro SMS de notification",
+            "additional": "Destinataires supplémentaires (séparés par des virgules)"
+          },
+          "save": "Enregistrer les paramètres de notification",
+          "events": {
+            "bookingCreated": {
+              "title": "Réservation créée",
+              "desc": "Lorsqu’une nouvelle réservation est créée"
+            },
+            "bookingConfirmed": {
+              "title": "Réservation confirmée",
+              "desc": "Lorsqu’une réservation passe au statut confirmé"
+            },
+            "paymentReceived": {
+              "title": "Paiement reçu",
+              "desc": "Lorsqu’un paiement est reçu d’un client"
+            },
+            "invoiceSent": {
+              "title": "Facture envoyée",
+              "desc": "Lorsqu’une facture est envoyée à un client"
+            },
+            "entityBookOut": {
+              "title": "{{entitySingular}} indisponible",
+              "desc": "Lorsque {{entitySingularLower}} se marque comme indisponible"
+            },
+            "licenseExpiring": {
+              "title": "Licence arrivant à expiration",
+              "desc": "Lorsqu’une licence de {{entitySingularLower}} est sur le point d’expirer"
+            }
+          },
           "email": "Notifications par email",
           "push": "Notifications push",
           "sms": "Notifications SMS",
           "preferences": "Préférences de notification",
           "saveSuccess": "Préférences enregistrées avec succès",
           "saveFailed": "Échec de l'enregistrement des préférences"
+        },
+        "common": {
+          "saving": "Enregistrement...",
+          "save": "Enregistrer"
         }
       }
     }

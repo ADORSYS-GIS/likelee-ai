@@ -2061,13 +2061,23 @@ export function AgencyDeliverablesView() {
                         <div className="mt-1 flex items-center gap-2 flex-wrap">
                           {alreadyAssigned && (
                             <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] tracking-widest font-black px-2 py-0.5">
-                              assigned
+                              {t(
+                                "agencyDashboard.deliverables.assignTalent.assigned",
+                                {
+                                  defaultValue: "assigned",
+                                },
+                              )}
                             </Badge>
                           )}
                           {needsInvite && (
                             <Badge className="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] tracking-widest font-black px-2 py-0.5 flex items-center gap-1">
                               <Mail className="w-2.5 h-2.5" />
-                              invite required
+                              {t(
+                                "agencyDashboard.deliverables.assignTalent.inviteRequired",
+                                {
+                                  defaultValue: "invite required",
+                                },
+                              )}
                             </Badge>
                           )}
                         </div>
@@ -2099,7 +2109,10 @@ export function AgencyDeliverablesView() {
             {assignSubmitting ? (
               <Loader2 className="w-5 h-5 animate-spin mr-3" />
             ) : null}
-            Confirm Selection ({assignSelectedIds.length})
+            {t("agencyDashboard.deliverables.assignTalent.confirmSelection", {
+              defaultValue: "Confirm Selection",
+            })}{" "}
+            ({assignSelectedIds.length})
           </Button>
         </DialogContent>
       </Dialog>
@@ -2505,7 +2518,12 @@ export function AgencyDeliverablesView() {
                 setAssignConfirmOpen(false);
               }}
             >
-              Confirm assignment
+              {t(
+                "agencyDashboard.deliverables.assignTalent.confirmAssignment",
+                {
+                  defaultValue: "Confirm assignment",
+                },
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2520,22 +2538,36 @@ export function AgencyDeliverablesView() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Unassign talent?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t("agencyDashboard.deliverables.unassignTalent.title", {
+                defaultValue: "Unassign talent?",
+              })}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Remove <strong>{unassignDialog.talentName}</strong> from this
-              offer. You can change assigned talents before the contract is
-              sent. After you send the contract, assignments are locked.
+              {t("agencyDashboard.deliverables.unassignTalent.description", {
+                defaultValue:
+                  "Remove {talentName} from this offer. You can change assigned talents before the contract is sent. After you send the contract, assignments are locked.",
+                talentName: unassignDialog.talentName,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={unassignDialog.submitting}>
-              Cancel
+              {t("agencyDashboard.deliverables.unassignTalent.cancel", {
+                defaultValue: "Cancel",
+              })}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={unassignDialog.submitting}
               onClick={confirmUnassign}
             >
-              {unassignDialog.submitting ? "Unassigning..." : "Unassign"}
+              {unassignDialog.submitting
+                ? t("agencyDashboard.deliverables.unassignTalent.unassigning", {
+                    defaultValue: "Unassigning...",
+                  })
+                : t("agencyDashboard.deliverables.unassignTalent.unassign", {
+                    defaultValue: "Unassign",
+                  })}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2570,12 +2602,21 @@ export function AgencyDeliverablesView() {
                       <FileText className="w-6 h-6 text-white" />
                     </div>
                     <DialogTitle className="text-2xl font-bold text-white">
-                      {t("agencyDashboard.deliverables.requestAsset", {
-                        defaultValue: "Request Asset",
-                      })}
+                      {t(
+                        "agencyDashboard.deliverables.requestAssetModal.title",
+                        {
+                          defaultValue: "Request Asset",
+                        },
+                      )}
                     </DialogTitle>
                     <p className="text-gray-400 text-sm">
-                      Send a clear brief and optional PDF to guide the talent.
+                      {t(
+                        "agencyDashboard.deliverables.requestAssetModal.subtitle",
+                        {
+                          defaultValue:
+                            "Send a clear brief and optional PDF to guide the talent.",
+                        },
+                      )}
                     </p>
                   </DialogHeader>
                 </div>
@@ -2597,17 +2638,34 @@ export function AgencyDeliverablesView() {
                             "Talent"}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
-                          {requestTalent?.email || "Selected talent"}
+                          {requestTalent?.email ||
+                            t(
+                              "agencyDashboard.deliverables.requestAssetModal.selectedTalent",
+                              {
+                                defaultValue: "Selected talent",
+                              },
+                            )}
                         </div>
                       </div>
                     </div>
                   )}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      Title
+                      {t(
+                        "agencyDashboard.deliverables.requestAssetModal.titleLabel",
+                        {
+                          defaultValue: "Title",
+                        },
+                      )}
                     </label>
                     <Input
-                      placeholder="Short title (e.g., Product shots for May)"
+                      placeholder={t(
+                        "agencyDashboard.deliverables.requestAssetModal.titlePlaceholder",
+                        {
+                          defaultValue:
+                            "Short title (e.g., Product shots for May)",
+                        },
+                      )}
                       value={requestDialog.title}
                       onChange={(e) =>
                         setRequestDialog((prev) => ({
@@ -2620,10 +2678,21 @@ export function AgencyDeliverablesView() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      Details
+                      {t(
+                        "agencyDashboard.deliverables.requestAssetModal.detailsLabel",
+                        {
+                          defaultValue: "Details",
+                        },
+                      )}
                     </label>
                     <Textarea
-                      placeholder="Describe exactly what you need, delivery format, and deadline."
+                      placeholder={t(
+                        "agencyDashboard.deliverables.requestAssetModal.detailsPlaceholder",
+                        {
+                          defaultValue:
+                            "Describe exactly what you need, delivery format, and deadline.",
+                        },
+                      )}
                       value={requestDialog.message}
                       onChange={(e) =>
                         setRequestDialog((prev) => ({
@@ -2636,7 +2705,12 @@ export function AgencyDeliverablesView() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      Brief PDF (optional)
+                      {t(
+                        "agencyDashboard.deliverables.requestAssetModal.briefPdfLabel",
+                        {
+                          defaultValue: "Brief PDF (optional)",
+                        },
+                      )}
                     </label>
                     <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                       <input
@@ -2656,10 +2730,21 @@ export function AgencyDeliverablesView() {
                         className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer"
                       >
                         <Upload className="w-4 h-4" />
-                        Choose File
+                        {t(
+                          "agencyDashboard.deliverables.requestAssetModal.chooseFile",
+                          {
+                            defaultValue: "Choose File",
+                          },
+                        )}
                       </label>
                       <span className="text-xs text-gray-500 truncate">
-                        {requestDialog.file?.name || "No file selected"}
+                        {requestDialog.file?.name ||
+                          t(
+                            "agencyDashboard.deliverables.requestAssetModal.noFileSelected",
+                            {
+                              defaultValue: "No file selected",
+                            },
+                          )}
                       </span>
                     </div>
                   </div>
@@ -2673,7 +2758,12 @@ export function AgencyDeliverablesView() {
                     {requestDialog.sending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      "Send Request"
+                      t(
+                        "agencyDashboard.deliverables.requestAssetModal.sendRequest",
+                        {
+                          defaultValue: "Send Request",
+                        },
+                      )
                     )}
                   </Button>
                 </div>
@@ -2690,17 +2780,27 @@ export function AgencyDeliverablesView() {
         <DialogContent className="sm:max-w-[520px] w-full rounded-lg p-6">
           <DialogHeader className="space-y-1">
             <DialogTitle>
-              {t("agencyDashboard.deliverables.uploadDeliverable", {
+              {t("agencyDashboard.deliverables.uploadDeliverableModal.title", {
                 defaultValue: "Upload Deliverable",
               })}
             </DialogTitle>
             <p className="text-xs text-gray-500">
-              Add a caption and upload one or more files.
+              {t(
+                "agencyDashboard.deliverables.uploadDeliverableModal.subtitle",
+                {
+                  defaultValue: "Add a caption and upload one or more files.",
+                },
+              )}
             </p>
           </DialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder="Caption"
+              placeholder={t(
+                "agencyDashboard.deliverables.uploadDeliverableModal.captionPlaceholder",
+                {
+                  defaultValue: "Caption",
+                },
+              )}
               value={uploadDialog.caption}
               onChange={(e) =>
                 setUploadDialog((prev) => ({
@@ -2729,12 +2829,28 @@ export function AgencyDeliverablesView() {
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer"
               >
                 <Upload className="w-4 h-4" />
-                Choose Files
+                {t(
+                  "agencyDashboard.deliverables.uploadDeliverableModal.chooseFiles",
+                  {
+                    defaultValue: "Choose Files",
+                  },
+                )}
               </label>
               <span className="text-xs text-gray-500 truncate">
                 {uploadDialog.files?.length
-                  ? `${uploadDialog.files.length} file(s) selected`
-                  : "No files selected"}
+                  ? t(
+                      "agencyDashboard.deliverables.uploadDeliverableModal.filesSelected",
+                      {
+                        defaultValue: "{count} file(s) selected",
+                        count: uploadDialog.files.length,
+                      },
+                    )
+                  : t(
+                      "agencyDashboard.deliverables.uploadDeliverableModal.noFilesSelected",
+                      {
+                        defaultValue: "No files selected",
+                      },
+                    )}
               </span>
             </div>
             <Button
@@ -2749,7 +2865,12 @@ export function AgencyDeliverablesView() {
               {uploadDialog.sending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <>Upload</>
+                t(
+                  "agencyDashboard.deliverables.uploadDeliverableModal.upload",
+                  {
+                    defaultValue: "Upload",
+                  },
+                )
               )}
             </Button>
           </div>
