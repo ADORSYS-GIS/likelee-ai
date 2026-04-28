@@ -35,6 +35,11 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
 import { ComplianceRenewableLicense } from "@/types/licensing";
+import {
+  DashboardSectionHeader,
+  DashboardTabRail,
+  DashboardTableSurface,
+} from "@/components/dashboard/DashboardResponsive";
 
 const formatLicenseDate = (dateStr?: string) => {
   if (!dateStr) return "N/A";
@@ -263,35 +268,27 @@ const AnalyticsDashboardView = ({
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center bg-white p-4 sm:p-6 border-b border-gray-100">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Analytics Dashboard
-          </h2>
-          <div className="mt-6 overflow-x-auto">
-            <div className="flex w-max min-w-full bg-gray-100 p-1 rounded-xl">
-              {subTabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg whitespace-nowrap ${
-                    activeTab === tab
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          className="w-full sm:w-auto gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm hover:bg-gray-50 transition-all"
-        >
-          <Download className="w-4 h-4" /> Export Report
-        </Button>
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
+        <DashboardSectionHeader
+          title="Analytics Dashboard"
+          actions={
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-gray-200 bg-white px-4 text-sm font-bold transition-all hover:bg-gray-50 sm:w-auto"
+            >
+              <Download className="w-4 h-4" /> Export Report
+            </Button>
+          }
+        />
+        <DashboardTabRail
+          className="mt-5"
+          items={subTabs.map((tab) => ({
+            id: tab,
+            label: tab,
+            active: activeTab === tab,
+            onClick: () => setActiveTab(tab),
+          }))}
+        />
       </div>
 
       {activeTab === "Overview" ? (
@@ -896,7 +893,7 @@ const AnalyticsDashboardView = ({
                   Talent Performance Metrics
                 </h3>
               </div>
-              <div className="overflow-x-auto">
+              <DashboardTableSurface>
                 <table className="w-full min-w-[760px] text-left">
                   <thead>
                     <tr className="bg-gray-50/80">
@@ -960,7 +957,7 @@ const AnalyticsDashboardView = ({
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </DashboardTableSurface>
             </Card>
           </div>
         ) : (
@@ -1084,7 +1081,7 @@ const AnalyticsDashboardView = ({
                   Top Clients Performance
                 </h3>
               </div>
-              <div className="overflow-x-auto">
+              <DashboardTableSurface>
                 <table className="w-full min-w-[560px] text-left">
                   <thead>
                     <tr className="bg-gray-50/80">
@@ -1129,7 +1126,7 @@ const AnalyticsDashboardView = ({
                     )}
                   </tbody>
                 </table>
-              </div>
+              </DashboardTableSurface>
             </Card>
 
             <div

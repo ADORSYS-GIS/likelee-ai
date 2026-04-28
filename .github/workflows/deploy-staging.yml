@@ -1,0 +1,230 @@
+name: Deploy to Staging EC2
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_TAG: ${{ github.sha }}
+  SERVER_IMAGE_NAME: likelee-server
+  UI_IMAGE_NAME: likelee-ui
+  REMOTE_DIR: /opt/likelee-staging/deploy/ec2
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute lowercase repository path
+        shell: bash
+        run: echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push likelee-server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: likelee-server/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/likelee-server:staging-${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.REPO_LOWER }}/likelee-server:staging-latest
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}/likelee-server:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}/likelee-server:buildcache,mode=max
+
+      - name: Build and push likelee-ui
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: likelee-ui/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:staging-${{ env.IMAGE_TAG }}
+            ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:staging-latest
+          cache-from: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ env.REPO_LOWER }}/likelee-ui:buildcache,mode=max
+          build-args: |
+            VITE_SUPABASE_URL=${{ secrets.STAGING_VITE_SUPABASE_URL }}
+            VITE_SUPABASE_ANON_KEY=${{ secrets.STAGING_VITE_SUPABASE_ANON_KEY }}
+            VITE_API_BASE_URL=/api
+
+  deploy:
+    name: Deploy on Staging EC2 via SSH
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compute lowercase repository path
+        shell: bash
+        run: |
+          echo "REPO_LOWER=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Upload deploy assets to EC2 (staging in /tmp)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_EC2_HOST }}
+          username: ${{ secrets.STAGING_EC2_USER }}
+          key: ${{ secrets.STAGING_EC2_SSH_KEY }}
+          source: "deploy/ec2"
+          target: "/tmp/likelee-staging-deploy"
+
+      - name: Deploy and verify on Staging EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.STAGING_EC2_HOST }}
+          username: ${{ secrets.STAGING_EC2_USER }}
+          key: ${{ secrets.STAGING_EC2_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            # Run the remote script with a single-quoted heredoc to avoid any quoting/expansion issues.
+            sudo -n bash -lc 'bash -s' <<'REMOTE_SCRIPT'
+            set -euo pipefail
+            echo "Running STAGING deployment as root (user: $(whoami), home: $HOME)"
+            DEPLOY_DIR="${{ env.REMOTE_DIR }}"
+
+            mkdir -p "$(dirname "${DEPLOY_DIR}")"
+            mkdir -p "${DEPLOY_DIR}"
+
+            # Preserve instance-specific files
+            if [ -f "${DEPLOY_DIR}/.env" ]; then cp "${DEPLOY_DIR}/.env" /tmp/.env.staging.backup || true; fi
+
+            # Sync staged assets to target directory
+            if command -v rsync >/dev/null 2>&1; then
+              rsync -a --delete \
+                --exclude '.env' \
+                /tmp/likelee-staging-deploy/deploy/ec2/ "${DEPLOY_DIR}"/
+            else
+              rm -rf "${DEPLOY_DIR}"/*
+              cp -a /tmp/likelee-staging-deploy/deploy/ec2/. "${DEPLOY_DIR}"/
+            fi
+
+            # Restore preserved files
+            if [ -f /tmp/.env.staging.backup ]; then mv -f /tmp/.env.staging.backup "${DEPLOY_DIR}/.env"; fi
+
+            cd "${DEPLOY_DIR}"
+            echo "CWD: $(pwd)"
+            echo "Listing deploy directory:" && ls -la
+
+            # Preflight validations
+            if [ ! -f docker-compose.yml ]; then
+              echo "ERROR: docker-compose.yml not found in $(pwd)" >&2
+              exit 1
+            fi
+            if [ ! -f docker-compose.prod.yml ]; then
+              echo "ERROR: docker-compose.prod.yml not found in $(pwd)" >&2
+              exit 1
+            fi
+
+            # Load variables from .env if present (no TLS management here)
+            if [ -f .env ]; then set -a; . ./.env; set +a; fi
+            PROJECT_NAME="likelee-staging"
+            # Use staging-specific nginx config
+            cp -f nginx.staging.conf nginx.conf || true
+            HAS_CERT=0
+
+            # Optional GHCR login if credentials provided
+            GHCR_USER="${{ secrets.STAGING_GHCR_USER }}"
+            GHCR_TOKEN="${{ secrets.STAGING_GHCR_TOKEN }}"
+            if [ -n "${GHCR_USER}" ] && [ -n "${GHCR_TOKEN}" ]; then
+              echo "Logging into GHCR as ${GHCR_USER}"
+              echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin || true
+            else
+              echo "STAGING_GHCR_USER/STAGING_GHCR_TOKEN not set; assuming images are public or host already logged in."
+            fi
+
+            export REGISTRY_IMAGE_SERVER="ghcr.io/${{ env.REPO_LOWER }}/likelee-server"
+            export REGISTRY_IMAGE_UI="ghcr.io/${{ env.REPO_LOWER }}/likelee-ui"
+            export IMAGE_TAG="staging-${{ env.IMAGE_TAG }}"
+            export COMPOSE_PROJECT_NAME="likelee-staging"
+            export COMPOSE_EXTRA_FILES="docker-compose.staging.yml"
+            # Defensive cleanup: remove any existing containers with fixed names to avoid name conflicts
+            docker rm -f likelee-staging-server likelee-staging-ui likelee-staging-gateway >/dev/null 2>&1 || true
+            chmod +x scripts/update-images.sh scripts/rollback.sh || true
+
+            if ! ./scripts/update-images.sh; then
+              echo "Update step failed; attempting rollback" >&2
+              ./scripts/rollback.sh || true
+              exit 1
+            fi
+
+            # No local certificates expected in ALB/ACM mode
+
+            # No certbot services in ALB/ACM mode
+
+            # Wait for containers to be ready and show diagnostics
+            sleep 5
+            echo "=== Docker containers status ==="
+            docker ps -a --filter "name=likelee-staging"
+            echo "=== Docker networks ==="
+            docker network ls | grep -E "likelee|NETWORK"
+            echo "=== Checking port bindings ==="
+            docker port likelee-staging-gateway-1 80 2>/dev/null || echo "Gateway port not available yet"
+
+            set +e
+            # Gateway health check (nginx /healthz endpoint, no upstream dependency)
+            GATEWAY_OK=1
+            for i in 1 2 3 4 5 6 7 8; do
+              sleep 2
+              curl -sS --max-time 5 http://localhost/healthz && { GATEWAY_OK=0; break; }
+            done
+            # API check: hit explicit health endpoint with retries to allow for cold start
+            API_OK=1
+            for i in 1 2 3 4 5 6; do
+              curl -sS --max-time 10 http://localhost/api/health >/dev/null && { API_OK=0; break; }
+              sleep 5
+            done
+            set -e
+
+            if [ "$GATEWAY_OK" -ne 0 ] || [ "$API_OK" -ne 0 ]; then
+              echo "Health checks failed (GATEWAY=$GATEWAY_OK API=$API_OK)"
+              echo "=== Container logs ==="
+              docker logs likelee-staging-gateway-1 --tail 50 2>&1 || true
+              docker logs likelee-staging-server-1 --tail 50 2>&1 || true
+              docker logs likelee-staging-ui-1 --tail 50 2>&1 || true
+              echo "Attempting rollback if possible" >&2
+              if [ -f ./.state/previous_tag ]; then
+                ./scripts/rollback.sh || true
+              else
+                echo "No previous tag recorded; skipping rollback" >&2
+              fi
+              exit 1
+            fi
+
+            # Verify that the running containers belong to the expected project and tag
+            VERIFY_OK=1
+            for svc in server ui; do
+              CID=$(docker ps -q --filter "label=com.docker.compose.project=${PROJECT_NAME}" --filter "label=com.docker.compose.service=${svc}" | head -n1)
+              if [ -z "$CID" ]; then echo "Service ${svc} not running under project ${PROJECT_NAME}" >&2; VERIFY_OK=0; continue; fi
+              IMG=$(docker inspect -f '{{.Config.Image}}' "$CID" 2>/dev/null || true)
+              echo "Service ${svc} container=$CID image=$IMG"
+              case "$IMG" in
+                *:"${IMAGE_TAG}") : ;;
+                *) echo "Service ${svc} image tag does not match ${IMAGE_TAG}" >&2; VERIFY_OK=0 ;;
+              esac
+            done
+            if [ "$VERIFY_OK" -ne 1 ]; then
+              echo "Image verification failed; attempting rollback if possible" >&2
+              if [ -f ./.state/previous_tag ]; then ./scripts/rollback.sh || true; else echo "No previous tag recorded; skipping rollback" >&2; fi
+              exit 1
+            fi
+
+            echo "Staging deployment succeeded for tag ${IMAGE_TAG}"
+            REMOTE_SCRIPT
