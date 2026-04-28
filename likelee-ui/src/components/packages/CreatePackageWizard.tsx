@@ -660,7 +660,12 @@ export function CreatePackageWizard({
           consent_items: normalizedConsentItems,
           items: itemsArray.map((item: any) => ({
             talent_id: item.talent_id || item.id,
-            talent_name: item?.talent?.name || item?.talent?.full_name,
+            talent_name:
+              item?.talent?.stage_name ||
+              item?.talent?.full_legal_name ||
+              item?.talent?.name ||
+              item?.talent?.full_name ||
+              item?.talent_name,
             asset_ids: (item.assets || []).map((asset: any) => ({
               asset_id: asset.asset_id || asset.id,
               asset_type: asset.asset_type || asset.type || "image",
