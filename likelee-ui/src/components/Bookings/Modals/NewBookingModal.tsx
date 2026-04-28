@@ -1241,7 +1241,10 @@ export const NewBookingModal = ({
                   onClick={() => setShowCampaignModal(true)}
                   className="flex items-center gap-2 p-2 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-100 font-bold text-xs"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Create New Campaign
+                  <Plus className="w-3.5 h-3.5" />{" "}
+                  {t("agencyDashboard.bookings.campaignModal.titleCreate", {
+                    defaultValue: "Create New Campaign",
+                  })}
                 </div>
               </div>
               {selectedCampaign && (
