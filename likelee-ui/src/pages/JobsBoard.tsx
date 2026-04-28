@@ -90,23 +90,29 @@ export default function JobsBoard() {
     () => [
       {
         value: "all",
-        label: t("jobs.allCallTypes", { defaultValue: "All call types" }),
+        label: t("jobsPage.allCallTypes", { defaultValue: "All call types" }),
       },
       {
         value: "creator",
-        label: t("jobs.callTypes.creator", { defaultValue: "Creator call" }),
+        label: t("jobsPage.callTypes.creator", {
+          defaultValue: "Creator call",
+        }),
       },
       {
         value: "agency",
-        label: t("jobs.callTypes.agency", { defaultValue: "Agency call" }),
+        label: t("jobsPage.callTypes.agency", { defaultValue: "Agency call" }),
       },
       {
         value: "athlete",
-        label: t("jobs.callTypes.athlete", { defaultValue: "Athlete call" }),
+        label: t("jobsPage.callTypes.athlete", {
+          defaultValue: "Athlete call",
+        }),
       },
       {
         value: "ai_artist",
-        label: t("jobs.callTypes.aiArtist", { defaultValue: "AI artist call" }),
+        label: t("jobsPage.callTypes.aiArtist", {
+          defaultValue: "AI artist call",
+        }),
       },
     ],
     [t],
@@ -115,25 +121,28 @@ export default function JobsBoard() {
     () => [
       {
         value: "all",
-        label: t("jobs.allJobTypes", { defaultValue: "All job types" }),
+        label: t("jobsPage.allJobTypes", { defaultValue: "All job types" }),
       },
       {
         value: "full_time",
-        label: t("jobs.jobTypes.fullTime", { defaultValue: "Full-time" }),
+        label: t("jobsPage.jobTypes.fullTime", { defaultValue: "Full-time" }),
       },
       {
         value: "part_time",
-        label: t("jobs.jobTypes.partTime", { defaultValue: "Part-time" }),
+        label: t("jobsPage.jobTypes.partTime", { defaultValue: "Part-time" }),
       },
       {
         value: "contract",
-        label: t("jobs.jobTypes.contract", { defaultValue: "Contract" }),
+        label: t("jobsPage.jobTypes.contract", { defaultValue: "Contract" }),
       },
       {
         value: "freelance",
-        label: t("jobs.jobTypes.freelance", { defaultValue: "Freelance" }),
+        label: t("jobsPage.jobTypes.freelance", { defaultValue: "Freelance" }),
       },
-      { value: "gig", label: t("jobs.jobTypes.gig", { defaultValue: "Gig" }) },
+      {
+        value: "gig",
+        label: t("jobsPage.jobTypes.gig", { defaultValue: "Gig" }),
+      },
     ],
     [t],
   );
@@ -141,19 +150,19 @@ export default function JobsBoard() {
     () => [
       {
         value: "all",
-        label: t("jobs.allLocations", { defaultValue: "All locations" }),
+        label: t("jobsPage.allLocations", { defaultValue: "All locations" }),
       },
       {
         value: "remote",
-        label: t("jobs.locations.remote", { defaultValue: "Remote" }),
+        label: t("jobsPage.locations.remote", { defaultValue: "Remote" }),
       },
       {
         value: "hybrid",
-        label: t("jobs.locations.hybrid", { defaultValue: "Hybrid" }),
+        label: t("jobsPage.locations.hybrid", { defaultValue: "Hybrid" }),
       },
       {
         value: "on_site",
-        label: t("jobs.locations.onSite", { defaultValue: "On-site" }),
+        label: t("jobsPage.locations.onSite", { defaultValue: "On-site" }),
       },
     ],
     [t],
@@ -730,15 +739,15 @@ export default function JobsBoard() {
                 }}
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                {t("jobs.backToDashboard", {
+                {t("jobsPage.backToDashboard", {
                   defaultValue: "Back to dashboard",
                 })}
               </Button>
               <h1 className="text-3xl font-bold text-gray-900">
-                {t("jobs.findJobs", { defaultValue: "Find Jobs" })}
+                {t("jobsPage.title", { defaultValue: "Find Jobs" })}
               </h1>
               <p className="text-gray-600">
-                {t("jobs.browseBrandPostedOpportunities", {
+                {t("jobsPage.subtitle", {
                   defaultValue:
                     "Browse brand-posted opportunities and apply directly.",
                 })}
@@ -747,7 +756,7 @@ export default function JobsBoard() {
             <div className="flex items-center gap-2 text-gray-500">
               <Briefcase className="w-5 h-5" />
               <span className="text-sm">
-                {t("jobs.openRoles", {
+                {t("jobsPage.openRoles", {
                   count: filteredJobs.length,
                   defaultValue: "{{count}} open roles",
                 })}
@@ -763,7 +772,7 @@ export default function JobsBoard() {
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder={t("jobs.searchJobs", {
+                    placeholder={t("jobsPage.searchPlaceholder", {
                       defaultValue: "Search job title or keyword",
                     })}
                     className="pl-9"
@@ -773,7 +782,7 @@ export default function JobsBoard() {
               <Select value={callType} onValueChange={setCallType}>
                 <SelectTrigger>
                   <SelectValue
-                    placeholder={t("jobs.callType", {
+                    placeholder={t("jobsPage.callTypePlaceholder", {
                       defaultValue: "Call type",
                     })}
                   />
@@ -789,7 +798,7 @@ export default function JobsBoard() {
               <Select value={jobType} onValueChange={setJobType}>
                 <SelectTrigger>
                   <SelectValue
-                    placeholder={t("jobs.jobType", {
+                    placeholder={t("jobsPage.jobTypePlaceholder", {
                       defaultValue: "Job type",
                     })}
                   />
@@ -805,7 +814,7 @@ export default function JobsBoard() {
               <Select value={location} onValueChange={setLocation}>
                 <SelectTrigger>
                   <SelectValue
-                    placeholder={t("jobs.filterByLocation", {
+                    placeholder={t("jobsPage.locationPlaceholder", {
                       defaultValue: "Location",
                     })}
                   />
@@ -854,10 +863,10 @@ export default function JobsBoard() {
                   <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="font-semibold text-gray-800">
                     {isFiltered
-                      ? t("jobs.noResultsSearch", {
+                      ? t("jobsPage.noResultsSearch", {
                           defaultValue: "No results found for your search",
                         })
-                      : t("jobs.noJobsAvailable", {
+                      : t("jobsPage.noJobsAvailable", {
                           defaultValue: "No jobs available right now",
                         })}
                   </p>
@@ -960,10 +969,10 @@ export default function JobsBoard() {
                     }}
                   >
                     {isAgencyUser && !agencyCanApply
-                      ? t("jobs.upgradeToApply", {
+                      ? t("jobsPage.upgradeToApply", {
                           defaultValue: "Upgrade to Apply",
                         })
-                      : t("jobs.applyNow", { defaultValue: "Apply Now" })}
+                      : t("jobsPage.applyNow", { defaultValue: "Apply Now" })}
                   </Button>
                 </div>
               </Card>
@@ -986,7 +995,10 @@ export default function JobsBoard() {
             {!loading && jobs.length > 0 && !hasMore && (
               <div className="col-span-full text-center py-4">
                 <p className="text-sm text-gray-400">
-                  Showing all {jobs.length} job{jobs.length !== 1 ? "s" : ""}
+                  {t("jobsPage.showingAllJobs", {
+                    defaultValue: "Showing all {{count}} jobs",
+                    count: jobs.length,
+                  })}
                 </p>
               </div>
             )}
@@ -997,7 +1009,7 @@ export default function JobsBoard() {
           <DialogContent className="max-w-2xl">
             <DialogHeader className="pb-3">
               <DialogTitle className="text-lg font-semibold">
-                {t("jobs.applyDialog.title", {
+                {t("jobsPage.applyDialog.title", {
                   title: selectedJob?.title,
                   defaultValue: "Apply to {{title}}",
                 })}
@@ -1012,7 +1024,7 @@ export default function JobsBoard() {
                   {/* Resume upload */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      {t("jobs.applyDialog.uploadResume", {
+                      {t("jobsPage.applyDialog.uploadResume", {
                         defaultValue: "Upload resume (CV)",
                       })}
                     </label>
@@ -1063,7 +1075,7 @@ export default function JobsBoard() {
                   {/* Comp card upload */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      {t("jobs.applyDialog.uploadCompCard", {
+                      {t("jobsPage.applyDialog.uploadCompCard", {
                         defaultValue: "Upload comp card",
                       })}
                     </label>
@@ -1166,7 +1178,7 @@ export default function JobsBoard() {
             </div>
             <DialogFooter className="pt-5">
               <Button variant="outline" onClick={() => setApplyOpen(false)}>
-                {t("jobs.applyDialog.cancel", { defaultValue: "Cancel" })}
+                {t("jobsPage.applyDialog.cancel", { defaultValue: "Cancel" })}
               </Button>
               <Button
                 className="bg-black text-white"
@@ -1181,10 +1193,10 @@ export default function JobsBoard() {
                 }
               >
                 {applyLoading
-                  ? t("jobs.applyDialog.sending", {
+                  ? t("jobsPage.applyDialog.sending", {
                       defaultValue: "Sending...",
                     })
-                  : t("jobs.applyDialog.sendApplication", {
+                  : t("jobsPage.applyDialog.sendApplication", {
                       defaultValue: "Send application",
                     })}
               </Button>
@@ -1196,10 +1208,13 @@ export default function JobsBoard() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="border-b border-gray-100 pb-3">
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Job Details
+              {t("jobsPage.details.title", { defaultValue: "Job Details" })}
             </DialogTitle>
             <DialogDescription>
-              In-depth information about the selected job posting.
+              {t("jobsPage.details.description", {
+                defaultValue:
+                  "In-depth information about the selected job posting.",
+              })}
             </DialogDescription>
           </DialogHeader>
           {selectedJob ? (
@@ -1696,7 +1711,7 @@ export default function JobsBoard() {
           )}
           <DialogFooter className="mt-6 border-t border-gray-100 pt-4">
             <Button variant="outline" onClick={() => setDetailsOpen(false)}>
-              Close
+              {t("jobsPage.details.close", { defaultValue: "Close" })}
             </Button>
             {selectedJob && (
               <Button
@@ -1717,10 +1732,10 @@ export default function JobsBoard() {
                 }}
               >
                 {isAgencyUser && !agencyCanApply
-                  ? t("jobs.upgradeToApply", {
+                  ? t("jobsPage.upgradeToApply", {
                       defaultValue: "Upgrade to Apply",
                     })
-                  : t("jobs.apply", { defaultValue: "Apply" })}
+                  : t("jobsPage.details.apply", { defaultValue: "Apply" })}
               </Button>
             )}
           </DialogFooter>

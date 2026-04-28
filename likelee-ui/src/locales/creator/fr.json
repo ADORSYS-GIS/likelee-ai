@@ -320,6 +320,7 @@
       "endsIn": "Se termine dans :",
       "days": "{{count}} jour",
       "days_other": "{{count}} jours",
+      "trialEnded": "Essai terminé",
       "started": "Démarré le {{date}}",
       "expiringSoon": "Expire bientôt",
       "manageSubscription": "Gérer l’abonnement",
@@ -1921,6 +1922,8 @@
     "aboutRole": "À propos du rôle",
     "openRoles": "{{count}} postes ouverts",
     "showingAllJobs": "Affichage des {{count}} emplois",
+    "noResultsSearch": "Aucune offre ne correspond à votre recherche.",
+    "noJobsAvailable": "Aucune offre n'est disponible pour le moment.",
     "applyDialog": {
       "title": "Postuler à {{title}}",
       "description": "Renseignez vos informations et votre CV pour postuler à ce poste.",

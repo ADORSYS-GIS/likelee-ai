@@ -831,6 +831,7 @@
       "endsIn": "Ends in:",
       "days": "{{count}} day",
       "days_other": "{{count}} days",
+      "trialEnded": "Trial ended",
       "started": "Started {{date}}",
       "expiringSoon": "Expiring Soon",
       "manageSubscription": "Manage Subscription",
@@ -1903,6 +1904,8 @@
     "aboutRole": "About role",
     "openRoles": "{{count}} open roles",
     "showingAllJobs": "Showing all {{count}} jobs",
+    "noResultsSearch": "No jobs match your search criteria.",
+    "noJobsAvailable": "No jobs are available right now.",
     "applyDialog": {
       "title": "Apply to {{title}}",
       "description": "Provide your details and resume to apply for this position.",

@@ -155,63 +155,75 @@ export default function CreatorSubscribe() {
 
   const basicGroups = [
     {
-      title: "Dashboard & Profile",
+      title: t("creatorSubscribe.groups.dashboardProfile"),
       items: [
-        "Dashboard overview",
-        "My Likeness",
-        "Identity verification (KYC)",
-        "Creator visibility trust unlock",
+        t("creatorSubscribe.features.dashboardOverview"),
+        t("creatorSubscribe.features.likeness"),
+        t("creatorSubscribe.features.kyc"),
+        t("creatorSubscribe.features.visibilityUnlock"),
       ],
     },
     {
-      title: "Connections & Payouts",
-      items: ["Agency connection", "Brand connection", "Payouts"],
+      title: t("creatorSubscribe.groups.connectionsPayouts"),
+      items: [
+        t("creatorSubscribe.features.agencyConnection"),
+        t("creatorSubscribe.features.brandConnection"),
+        t("creatorSubscribe.features.payouts"),
+      ],
     },
   ];
 
   const proGroups = [
     {
-      title: "Everything in Basic, plus",
-      items: ["Cameo video uploads", "Jobs", "Settings: My Rules"],
-    },
-    {
-      title: "Voice & Creator Tools",
-      items: ["Voice profile creation", "Up to 6 voice tones", "Talent Portal"],
-    },
-    {
-      title: "Campaigns & Analytics",
+      title: t("creatorSubscribe.groups.everythingInBasic"),
       items: [
-        "Campaign Archives",
-        "Active Campaigns",
-        "Advanced earnings analytics",
+        t("creatorSubscribe.features.cameoUploads"),
+        t("creatorSubscribe.features.jobs"),
+        t("creatorSubscribe.features.rules"),
+      ],
+    },
+    {
+      title: t("creatorSubscribe.groups.voiceTools"),
+      items: [
+        t("creatorSubscribe.features.voiceProfileCreation"),
+        t("creatorSubscribe.features.voiceTones"),
+        t("creatorSubscribe.features.talentPortal"),
+      ],
+    },
+    {
+      title: t("creatorSubscribe.groups.campaignsAnalytics"),
+      items: [
+        t("creatorSubscribe.features.archives"),
+        t("creatorSubscribe.features.activeCampaigns"),
+        t("creatorSubscribe.features.analytics"),
       ],
     },
   ];
 
   const comparisonSections = [
     {
-      title: "Core access",
+      title: t("creatorSubscribe.comparison.coreAccess"),
       rows: [
-        ["Content", true, true],
-        ["Dashboard", true, true],
-        ["My Likeness", true, true],
-        ["Identity verification (KYC)", true, true],
-        ["Agency connection", true, true],
-        ["Brand connection", true, true],
-        ["Payouts", true, true],
+        [t("creatorSubscribe.features.content"), true, true],
+        [t("creatorSubscribe.features.dashboard"), true, true],
+        [t("creatorSubscribe.features.likeness"), true, true],
+        [t("creatorSubscribe.features.kyc"), true, true],
+        [t("creatorSubscribe.features.agencyConnection"), true, true],
+        [t("creatorSubscribe.features.brandConnection"), true, true],
+        [t("creatorSubscribe.features.payouts"), true, true],
       ],
     },
     {
-      title: "Premium workflow",
+      title: t("creatorSubscribe.comparison.premiumWorkflow"),
       rows: [
-        ["Cameo video uploads", false, true],
-        ["Jobs", false, true],
-        ["Settings: My Rules", false, true],
-        ["Voice", false, true],
-        ["Talent Portal", false, true],
-        ["Campaign Archives", false, true],
-        ["Active Campaigns", false, true],
-        ["Advanced earnings analytics", false, true],
+        [t("creatorSubscribe.features.cameoUploads"), false, true],
+        [t("creatorSubscribe.features.jobs"), false, true],
+        [t("creatorSubscribe.features.rules"), false, true],
+        [t("creatorSubscribe.features.voice"), false, true],
+        [t("creatorSubscribe.features.talentPortal"), false, true],
+        [t("creatorSubscribe.features.archives"), false, true],
+        [t("creatorSubscribe.features.activeCampaigns"), false, true],
+        [t("creatorSubscribe.features.analytics"), false, true],
       ],
     },
   ] as const;

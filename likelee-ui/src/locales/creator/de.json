@@ -614,6 +614,7 @@
       "endsIn": "Endet in:",
       "days": "{{count}} Tag",
       "days_other": "{{count}} Tage",
+      "trialEnded": "Testversion beendet",
       "started": "Gestartet {{date}}",
       "expiringSoon": "Läuft bald ab",
       "manageSubscription": "Abonnement verwalten",
@@ -1984,6 +1985,8 @@
     "aboutRole": "Über die Rolle",
     "openRoles": "{{count}} offene Stellen",
     "showingAllJobs": "Alle {{count}} Jobs werden angezeigt",
+    "noResultsSearch": "Keine Jobs entsprechen Ihrer Suche.",
+    "noJobsAvailable": "Derzeit sind keine Jobs verfügbar.",
     "applyDialog": {
       "title": "Bewerben auf {{title}}",
       "description": "Gib deine Daten und deinen Lebenslauf an, um dich auf diese Stelle zu bewerben.",

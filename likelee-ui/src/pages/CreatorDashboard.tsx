@@ -3754,16 +3754,25 @@ export default function CreatorDashboard() {
       const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
       setDaysLeft(days);
       if (ms <= 0) {
-        setTrialCountdown("Trial ended");
+        setTrialCountdown(
+          t("creatorDashboard.planStatus.trialEnded", {
+            defaultValue: "Trial ended",
+          }),
+        );
         return;
       }
-      setTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
+      setTrialCountdown(
+        t("creatorDashboard.planStatus.days", {
+          count: days,
+          defaultValue: "{{count}} days",
+        }),
+      );
     };
 
     compute();
     const id = window.setInterval(compute, 60 * 1000);
     return () => window.clearInterval(id);
-  }, [creatorPlanTier, trialActive, trialEndsAt]);
+  }, [creatorPlanTier, t, trialActive, trialEndsAt]);
 
   const creatorCategoryLimit =
     typeof creatorBilling?.category_limit === "number"
@@ -8354,7 +8363,9 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            Brand Offers
+            {t("creatorDashboard.brandConnections.offers", {
+              defaultValue: "Brand Offers",
+            })}
             {unseenOfferCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenOfferCount}
@@ -8372,7 +8383,9 @@ export default function CreatorDashboard() {
             }
             onClick={() => setBrandConnectionSubTab("job-invites")}
           >
-            Job Invites
+            {t("creatorDashboard.jobs.jobInvites", {
+              defaultValue: "Job Invites",
+            })}
             {jobInvites.length > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {jobInvites.length}
@@ -8399,7 +8412,9 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            Deliverables
+            {t("creatorDashboard.brandConnections.deliverables", {
+              defaultValue: "Deliverables",
+            })}
             {unseenDeliverableFeedbackCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenDeliverableFeedbackCount}
@@ -8411,12 +8426,24 @@ export default function CreatorDashboard() {
         {brandConnectionSubTab === "connections" && (
           <Card className="p-6">
             <div className="text-lg font-semibold text-gray-900">
-              Connected Brands
+              {t("creatorDashboard.brandConnections.connections", {
+                defaultValue: "Connected Brands",
+              })}
             </div>
             <div className="text-sm text-gray-600 mt-1">
               {brandConnections.length > 0
-                ? "You are connected with brands below."
-                : "You are not connected to any brands yet."}
+                ? t(
+                    "creatorDashboard.brandConnections.connectionsDescription",
+                    {
+                      defaultValue: "You are connected with brands below.",
+                    },
+                  )
+                : t(
+                    "creatorDashboard.brandConnections.noConnectionsDescription",
+                    {
+                      defaultValue: "You are not connected to any brands yet.",
+                    },
+                  )}
             </div>
             {brandConnections.length > 0 && (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -9522,7 +9549,9 @@ export default function CreatorDashboard() {
               <Input
                 value={campaignSearch}
                 onChange={(e) => setCampaignSearch(e.target.value)}
-                placeholder="Search by brand or campaign"
+                placeholder={t("creatorDashboard.campaigns.searchPlaceholder", {
+                  defaultValue: "Search by brand or campaign",
+                })}
                 className="pl-12 pr-12 h-12"
               />
               {campaignSearch.trim() && (
@@ -9830,17 +9859,24 @@ export default function CreatorDashboard() {
       <div className="space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            Approval Queue
+            {t("creatorDashboard.nav.approvals", {
+              defaultValue: "Approval Queue",
+            })}
           </h2>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
-            Review brand requests, contract actions, and deliverable feedback.
+            {t("creatorDashboard.approvals.subtitle", {
+              defaultValue:
+                "Review brand requests, contract actions, and deliverable feedback.",
+            })}
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              Pending requests
+              {t("creatorDashboard.approvals.pendingRequests", {
+                defaultValue: "Pending requests",
+              })}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pending.length}
@@ -10016,7 +10052,9 @@ export default function CreatorDashboard() {
               <Input
                 value={archiveSearch}
                 onChange={(e) => setArchiveSearch(e.target.value)}
-                placeholder="Search by brand or campaign"
+                placeholder={t("creatorDashboard.campaigns.searchPlaceholder", {
+                  defaultValue: "Search by brand or campaign",
+                })}
                 className="pl-12 pr-12 h-12"
               />
               {archiveSearch.trim() && (
@@ -10725,7 +10763,12 @@ export default function CreatorDashboard() {
               <div className="mt-2 flex items-center gap-2 text-sm text-blue-800 font-medium">
                 <CreditCard className="w-4 h-4" />
                 <span>
-                  Connected bank account ending in{" "}
+                  {t(
+                    "creatorDashboard.earnings.metrics.connectedBankAccountEndingIn",
+                    {
+                      defaultValue: "Connected bank account ending in",
+                    },
+                  )}{" "}
                   <strong>{payoutAccountStatus.bank_last4}</strong>
                 </span>
               </div>
@@ -10738,7 +10781,9 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500"></div>
             <p className="text-sm font-medium text-gray-600 mb-2 relative z-10">
-              cashout Balance (Stripe)
+              {t("creatorDashboard.earnings.metrics.cashoutBalanceStripe", {
+                defaultValue: "Cashout Balance (Stripe)",
+              })}
             </p>
             <p className="text-3xl font-bold text-emerald-600 relative z-10">
               $
@@ -10748,10 +10793,18 @@ export default function CreatorDashboard() {
               ).toFixed(2)}
             </p>
             <p className="text-sm text-gray-600 mt-1 relative z-10">
-              Available in your connected Stripe account.
+              {t(
+                "creatorDashboard.earnings.metrics.availableInConnectedStripe",
+                {
+                  defaultValue: "Available in your connected Stripe account.",
+                },
+              )}
             </p>
             <p className="text-xs text-gray-500 mt-2 relative z-10">
-              Held (pending transfer): $
+              {t("creatorDashboard.earnings.metrics.heldPendingTransfer", {
+                defaultValue: "Held (pending transfer)",
+              })}
+              : $
               {(
                 (balances.find((b) => b.currency === "USD")?.available_cents ||
                   0) / 100
@@ -11452,12 +11505,14 @@ export default function CreatorDashboard() {
 
               <div className="pt-2">
                 <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                  Professional Details
+                  {t(
+                    "creatorDashboard.settingsView.profile.professionalDetails",
+                  )}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Creator Type
+                      {t("creatorDashboard.settingsView.profile.creatorType")}
                     </Label>
                     <Input
                       value={creator.creator_type || ""}
@@ -11468,13 +11523,15 @@ export default function CreatorDashboard() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="Model / Influencer / Actor"
+                      placeholder={t(
+                        "creatorDashboard.settingsView.profile.placeholders.creatorType",
+                      )}
                     />
                   </div>
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Date of Birth
+                      {t("creatorDashboard.settingsView.profile.dateOfBirth")}
                     </Label>
                     <DobInput
                       value={creator.birthday || ""}
@@ -11491,7 +11548,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Gender
+                      {t("creatorDashboard.settingsView.profile.gender")}
                     </Label>
                     <Input
                       value={creator.gender || ""}
@@ -11507,7 +11564,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Ethnicity
+                      {t("creatorDashboard.settingsView.profile.ethnicity")}
                     </Label>
                     <Input
                       value={creator.ethnicity || ""}
@@ -11523,7 +11580,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Race
+                      {t("creatorDashboard.settingsView.profile.race")}
                     </Label>
                     <Input
                       value={creator.race || ""}
@@ -11539,7 +11596,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Hair Color
+                      {t("creatorDashboard.settingsView.profile.hairColor")}
                     </Label>
                     <Input
                       value={creator.hair_color || ""}
@@ -11555,7 +11612,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Eye Color
+                      {t("creatorDashboard.settingsView.profile.eyeColor")}
                     </Label>
                     <Input
                       value={creator.eye_color || ""}
@@ -11571,7 +11628,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Height (cm)
+                      {t("creatorDashboard.settingsView.profile.heightCm")}
                     </Label>
                     <Input
                       type="number"
@@ -12042,7 +12099,7 @@ export default function CreatorDashboard() {
                 <div>
                   <div className="flex items-center gap-3">
                     <h3 className="text-xl font-bold text-[#142033]">
-                      {t("creatorDashboard.billing.title", {
+                      {t("creatorDashboard.settingsView.billingSummary.title", {
                         defaultValue: "Creator subscription",
                       })}
                     </h3>
@@ -12085,30 +12142,48 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                      {t("creatorDashboard.billing.currentAccess", {
-                        defaultValue: "Current access",
-                      })}
+                      {t(
+                        "creatorDashboard.settingsView.billingSummary.currentAccess",
+                        {
+                          defaultValue: "Current access",
+                        },
+                      )}
                     </div>
                     <div className="mt-1 text-2xl font-bold text-[#142033]">
                       {effectivePlanTier === "pro"
                         ? trialActive
-                          ? t("creatorDashboard.billing.proTrialAccess", {
-                              defaultValue: "Pro Trial access",
-                            })
-                          : t("creatorDashboard.billing.proCreatorAccess", {
-                              defaultValue: "Pro creator access",
-                            })
+                          ? t(
+                              "creatorDashboard.settingsView.billingSummary.access.proTrial",
+                              {
+                                defaultValue: "Pro Trial access",
+                              },
+                            )
+                          : t(
+                              "creatorDashboard.settingsView.billingSummary.access.pro",
+                              {
+                                defaultValue: "Pro creator access",
+                              },
+                            )
                         : effectivePlanTier === "basic"
                           ? trialActive
-                            ? t("creatorDashboard.billing.basicTrialAccess", {
-                                defaultValue: "Basic Trial access",
-                              })
-                            : t("creatorDashboard.billing.basicCreatorAccess", {
-                                defaultValue: "Basic creator access",
-                              })
-                          : t("creatorDashboard.billing.freeCreatorAccess", {
-                              defaultValue: "Free creator access",
-                            })}
+                            ? t(
+                                "creatorDashboard.settingsView.billingSummary.access.basicTrial",
+                                {
+                                  defaultValue: "Basic Trial access",
+                                },
+                              )
+                            : t(
+                                "creatorDashboard.settingsView.billingSummary.access.basic",
+                                {
+                                  defaultValue: "Basic creator access",
+                                },
+                              )
+                          : t(
+                              "creatorDashboard.settingsView.billingSummary.access.free",
+                              {
+                                defaultValue: "Free creator access",
+                              },
+                            )}
                     </div>
                   </div>
                 </div>
@@ -12116,53 +12191,152 @@ export default function CreatorDashboard() {
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
                   {[
                     {
-                      label: "Content",
-                      value: "Included for all creators",
+                      label: t("creatorSubscribe.features.content", {
+                        defaultValue: "Content",
+                      }),
+                      value: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.content.value",
+                        {
+                          defaultValue: "Included for all creators",
+                        },
+                      ),
                       included: true,
                     },
                     {
-                      label: "KYC access",
-                      value: creatorCanUseKyc ? "Included" : "Upgrade to Basic",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.kyc.label",
+                        {
+                          defaultValue: "KYC access",
+                        },
+                      ),
+                      value: creatorCanUseKyc
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                            {
+                              defaultValue: "Included",
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                            {
+                              defaultValue: "Upgrade to Basic",
+                            },
+                          ),
                       included: creatorCanUseKyc,
                     },
                     {
-                      label: "My Likeness",
+                      label: t("creatorSubscribe.features.likeness", {
+                        defaultValue: "My Likeness",
+                      }),
                       value: creatorCanUseLikeness
-                        ? "Included"
-                        : "Upgrade to Basic",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                            {
+                              defaultValue: "Included",
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                            {
+                              defaultValue: "Upgrade to Basic",
+                            },
+                          ),
                       included: creatorCanUseLikeness,
                     },
                     {
-                      label: "Payouts",
+                      label: t("creatorSubscribe.features.payouts", {
+                        defaultValue: "Payouts",
+                      }),
                       value: creatorCanUsePayouts
-                        ? "Included"
-                        : "Upgrade to Basic",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                            {
+                              defaultValue: "Included",
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                            {
+                              defaultValue: "Upgrade to Basic",
+                            },
+                          ),
                       included: creatorCanUsePayouts,
                     },
                     {
-                      label: "My Rules",
-                      value: creatorCanUseRules ? "Included" : "Pro only",
+                      label: t("creatorSubscribe.features.rules", {
+                        defaultValue: "Settings: My Rules",
+                      }),
+                      value: creatorCanUseRules
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                            {
+                              defaultValue: "Included",
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                            {
+                              defaultValue: "Pro only",
+                            },
+                          ),
                       included: creatorCanUseRules,
                     },
                     {
-                      label: "Voice",
+                      label: t("creatorSubscribe.features.voice", {
+                        defaultValue: "Voice",
+                      }),
                       value: creatorCanUseVoice
-                        ? `Enabled (${Math.max(creatorVoiceLimit, 6)} tones)`
-                        : "Pro only",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.voiceEnabled",
+                            {
+                              defaultValue: "Enabled ({{count}} tones)",
+                              count: Math.max(creatorVoiceLimit, 6),
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                            {
+                              defaultValue: "Pro only",
+                            },
+                          ),
                       included: creatorCanUseVoice,
                     },
                     {
                       label: t("creatorDashboard.nav.jobs", {
                         defaultValue: "Jobs",
                       }),
-                      value: creatorCanUseJobs ? "Included" : "Pro only",
+                      value: creatorCanUseJobs
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                            {
+                              defaultValue: "Included",
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                            {
+                              defaultValue: "Pro only",
+                            },
+                          ),
                       included: creatorCanUseJobs,
                     },
                     {
-                      label: "Active Campaigns",
+                      label: t("creatorSubscribe.features.activeCampaigns", {
+                        defaultValue: "Active Campaigns",
+                      }),
                       value: creatorCanUseActiveCampaigns
-                        ? "Included"
-                        : "Pro only",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                            {
+                              defaultValue: "Included",
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                            {
+                              defaultValue: "Pro only",
+                            },
+                          ),
                       included: creatorCanUseActiveCampaigns,
                     },
                   ].map((item) => (
@@ -12175,16 +12349,35 @@ export default function CreatorDashboard() {
                           className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${
                             item.included
                               ? "bg-[#E8F7FB] text-[#1683A3]"
-                              : item.value === "Pro only"
+                              : item.value ===
+                                  t(
+                                    "creatorDashboard.settingsView.billingSummary.proOnly",
+                                    {
+                                      defaultValue: "Pro only",
+                                    },
+                                  )
                                 ? "bg-[#FFF4DA] text-[#B7791F]"
                                 : "bg-[#F1F5F9] text-[#718096]"
                           }`}
                         >
                           {item.included ? (
                             <Check className="h-4 w-4" />
-                          ) : item.value === "Pro only" ? (
+                          ) : item.value ===
+                            t(
+                              "creatorDashboard.settingsView.billingSummary.proOnly",
+                              {
+                                defaultValue: "Pro only",
+                              },
+                            ) ? (
                             <Crown className="h-4 w-4 text-amber-500" />
-                          ) : item.value.startsWith("Upgrade to Basic") ? (
+                          ) : item.value.startsWith(
+                              t(
+                                "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                                {
+                                  defaultValue: "Upgrade to Basic",
+                                },
+                              ),
+                            ) ? (
                             <Star className="h-4 w-4 text-blue-500" />
                           ) : (
                             <Shield className="h-4 w-4" />
@@ -12207,38 +12400,59 @@ export default function CreatorDashboard() {
               <div className="space-y-4">
                 <div className="rounded-3xl border border-[#D7E6F5] bg-gradient-to-br from-[#F9FCFF] to-[#EEF5FB] p-6">
                   <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                    {t("creatorDashboard.billing.recommendedNextStep", {
-                      defaultValue: "Recommended next step",
-                    })}
+                    {t(
+                      "creatorDashboard.settingsView.billingSummary.recommendedNextStep",
+                      {
+                        defaultValue: "Recommended next step",
+                      },
+                    )}
                   </div>
                   <div className="mt-2 text-2xl font-bold text-[#142033]">
                     {effectivePlanTier === "free"
-                      ? t("creatorDashboard.billing.moveToBasic", {
-                          defaultValue: "Move to Basic",
-                        })
+                      ? t(
+                          "creatorDashboard.settingsView.billingSummary.next.free",
+                          {
+                            defaultValue: "Move to Basic",
+                          },
+                        )
                       : effectivePlanTier === "basic"
-                        ? t("creatorDashboard.billing.moveToPro", {
-                            defaultValue: "Move to Pro",
-                          })
-                        : t("creatorDashboard.billing.fullyUnlocked", {
-                            defaultValue: "You're fully unlocked",
-                          })}
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.next.basic",
+                            {
+                              defaultValue: "Move to Pro",
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.next.pro",
+                            {
+                              defaultValue: "You're fully unlocked",
+                            },
+                          )}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[#5A6880]">
                     {effectivePlanTier === "free"
-                      ? t("creatorDashboard.billing.basicUnlocks", {
-                          defaultValue:
-                            "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts.",
-                        })
+                      ? t(
+                          "creatorDashboard.settingsView.billingSummary.descriptions.free",
+                          {
+                            defaultValue:
+                              "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts.",
+                          },
+                        )
                       : effectivePlanTier === "basic"
-                        ? t("creatorDashboard.billing.proUnlocks", {
-                            defaultValue:
-                              "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns.",
-                          })
-                        : t("creatorDashboard.billing.currentPlanFullToolset", {
-                            defaultValue:
-                              "Your current plan includes the full creator workflow toolset.",
-                          })}
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.descriptions.basic",
+                            {
+                              defaultValue:
+                                "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns.",
+                            },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.descriptions.pro",
+                            {
+                              defaultValue:
+                                "Your current plan includes the full creator workflow toolset.",
+                            },
+                          )}
                   </p>
                   {effectivePlanTier !== "pro" && (
                     <Button
@@ -12249,14 +12463,20 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          {t("creatorDashboard.billing.processing", {
-                            defaultValue: "Processing...",
-                          })}
+                          {t(
+                            "creatorDashboard.settingsView.billingSummary.processing",
+                            {
+                              defaultValue: "Processing...",
+                            },
+                          )}
                         </>
                       ) : (
-                        t("creatorDashboard.billing.viewDetails", {
-                          defaultValue: "View Details",
-                        })
+                        t(
+                          "creatorDashboard.settingsView.billingSummary.viewDetails",
+                          {
+                            defaultValue: "View Details",
+                          },
+                        )
                       )}
                     </Button>
                   )}
@@ -12267,15 +12487,21 @@ export default function CreatorDashboard() {
                   <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                     <div className="max-w-md text-center md:text-left">
                       <h4 className="text-2xl font-black tracking-tight">
-                        {t("creatorDashboard.billing.lockInProTitle", {
-                          defaultValue: "Ready to lock in Pro?",
-                        })}
+                        {t(
+                          "creatorDashboard.settingsView.billingSummary.lockInProTitle",
+                          {
+                            defaultValue: "Ready to lock in Pro?",
+                          },
+                        )}
                       </h4>
                       <p className="mt-3 text-base text-indigo-100/100 leading-relaxed font-medium">
-                        {t("creatorDashboard.billing.lockInProDescription", {
-                          defaultValue:
-                            "Your trial is active, but you can secure your professional workflow tools today. Get full marketplace priority and exclusive campaign access.",
-                        })}
+                        {t(
+                          "creatorDashboard.settingsView.billingSummary.lockInProDescription",
+                          {
+                            defaultValue:
+                              "Your trial is active, but you can secure your professional workflow tools today. Get full marketplace priority and exclusive campaign access.",
+                          },
+                        )}
                       </p>
                     </div>
                     <Button
@@ -12285,14 +12511,20 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-6 h-6 animate-spin mr-3" />
-                          {t("creatorDashboard.billing.openingPortal", {
-                            defaultValue: "Opening Portal...",
-                          })}
+                          {t(
+                            "creatorDashboard.settingsView.billingSummary.openingPortal",
+                            {
+                              defaultValue: "Opening Portal...",
+                            },
+                          )}
                         </>
                       ) : (
-                        t("creatorDashboard.billing.selectPlan", {
-                          defaultValue: "Select Plan",
-                        })
+                        t(
+                          "creatorDashboard.settingsView.billingSummary.selectPlan",
+                          {
+                            defaultValue: "Select Plan",
+                          },
+                        )
                       )}
                     </Button>
                   </div>

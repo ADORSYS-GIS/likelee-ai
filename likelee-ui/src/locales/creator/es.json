@@ -612,6 +612,7 @@
       "endsIn": "Termina en:",
       "days": "{{count}} día",
       "days_other": "{{count}} días",
+      "trialEnded": "Prueba finalizada",
       "started": "Iniciado {{date}}",
       "expiringSoon": "Próximo a vencer",
       "manageSubscription": "Gestionar suscripción",
@@ -1984,6 +1985,8 @@
     "aboutRole": "Sobre el rol",
     "openRoles": "{{count}} roles abiertos",
     "showingAllJobs": "Mostrando los {{count}} trabajos",
+    "noResultsSearch": "No hay trabajos que coincidan con tu búsqueda.",
+    "noJobsAvailable": "No hay trabajos disponibles en este momento.",
     "applyDialog": {
       "title": "Postular a {{title}}",
       "description": "Proporciona tus datos y CV para postular a esta posición.",
