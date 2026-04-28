@@ -15,7 +15,7 @@ ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 COPY likelee-ui/package*.json ./
 COPY likelee-ui/vite.config.* likelee-ui/tsconfig*.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts || npm install
 COPY likelee-ui/ ./
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
