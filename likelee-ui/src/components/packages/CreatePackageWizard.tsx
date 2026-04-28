@@ -661,9 +661,6 @@ export function CreatePackageWizard({
           items: itemsArray.map((item: any) => ({
             talent_id: item.talent_id || item.id,
             talent_name:
-              item?.talent?.stage_name ||
-              item?.talent?.full_legal_name ||
-              item?.talent?.name ||
               item?.talent?.full_name ||
               item?.talent_name,
             asset_ids: (item.assets || []).map((asset: any) => ({
@@ -982,10 +979,7 @@ export function CreatePackageWizard({
                               full_name: item?.talent_name || "Talent",
                             };
                           const talentName = String(
-                            resolvedTalent?.stage_name ||
-                              resolvedTalent?.name ||
-                              resolvedTalent?.full_legal_name ||
-                              resolvedTalent?.full_name ||
+                            resolvedTalent?.full_name ||
                               item?.talent_name ||
                               "Talent",
                           ).trim();

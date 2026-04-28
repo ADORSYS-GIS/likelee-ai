@@ -12642,10 +12642,6 @@ export default function BrandDashboard() {
                       .map(
                         (item: any) =>
                           item.talent_name ||
-                          item?.talent?.stage_name ||
-                          item?.talent?.full_legal_name ||
-                          item?.talent?.full_name ||
-                          item?.talent?.name ||
                           "Unnamed Talent",
                       );
 
