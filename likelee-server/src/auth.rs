@@ -60,7 +60,12 @@ impl JwksCache {
             supabase_auth_base_url(state)
         );
         let client = reqwest::Client::new();
-        let resp = match client.get(&url).send().await {
+        let resp = match client
+            .get(&url)
+            .header("apikey", &state.supabase_service_key)
+            .send()
+            .await
+        {
             Ok(r) => r,
             Err(e) => {
                 tracing::error!("Failed to fetch JWKS: {}", e);
