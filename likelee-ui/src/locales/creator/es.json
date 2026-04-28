@@ -37,7 +37,8 @@
       "actions": {
         "cashOut": "Retirar Fondos",
         "loading": "Procesando...",
-        "downloadTax": "Descargar documentos fiscales (PDF)"
+        "downloadTax": "Descargar documentos fiscales (PDF)",
+        "setupPayouts": "Configurar pagos"
       },
       "metrics": {
         "totalEarnedYTD": "Total ganado (YTD)",
@@ -88,6 +89,27 @@
           "status": "Estado"
         },
         "standardMethod": "estándar"
+      },
+      "transfers": {
+        "pendingTransfers": "Transferencias pendientes",
+        "refresh": "Refrescar",
+        "loadingStatus": "Cargando estado de transferencia...",
+        "actionRequired": "Acción requerida",
+        "failedReason": "Una o más transferencias fallaron porque su cuenta Stripe no está completamente configurada. Complete su incorporación a Stripe para recibir estos fondos. La agencia volverá a intentar la transferencia una vez que su cuenta esté lista.",
+        "completeStripeSetup": "Configuración completa de Stripe",
+        "retry": "rever",
+        "retries": "reintentos",
+        "status": {
+          "transferred": "transferido",
+          "retrying": "reintentando...",
+          "failed": "fallido",
+          "pending": "pendiente"
+        },
+        "errors": {
+          "incompleteStripe": "Tu cuenta de Stripe no está completamente configurada. Complete la incorporación de Stripe para recibir transferencias.",
+          "notAllowed": "Transferencias no permitidas en su cuenta Stripe.",
+          "noStripeAccount": "No hay ninguna cuenta de Stripe conectada. Complete la incorporación de Stripe para recibir fondos."
+        }
       }
     },
     "settings": {
@@ -436,73 +458,13 @@
       "viewDetails": "Ver Detalles"
     },
     "approvals": {
-      "backToQueue": "Volver a la Cola",
-      "contractReviewTitle": "{{brand}} - Revisión de Contrato",
-      "contractReviewSubtitle": "Revisa los términos antes de aprobar",
-      "whatYouWillEarn": "Lo que Ganarás",
-      "yourMonthlyPayment": "Tu Pago Mensual:",
-      "ifYouKeepThisFor": "Si mantienes esto por {{term}}:",
-      "totalEstimatedEarnings": "Ganancias totales estimadas",
-      "contractTerms": "Términos del Contrato",
-      "duration": "Duración:",
-      "territory": "Territorio:",
-      "usageType": "Tipo de Uso:",
-      "industries": "Industrias:",
-      "yourRightsAndProtections": "Tus Derechos y Protecciones",
-      "canPause": "Puedes pausar esta licencia en cualquier momento (detener el uso temporalmente)",
-      "canRevoke": "Puedes revocar con 30 días de antelación (finalizar permanentemente)",
-      "licenseExpires": "La licencia expira en una fecha específica (no para siempre)",
-      "paymentProtected": "Pago protegido en depósito hasta que la marca apruebe los entregables",
-      "perpetualUseWarning": {
-        "title": "⚠️ Advertencia de Uso Perpetuo:",
-        "message": "Esta marca quiere usar tu imagen para siempre. Deberías negociar términos de tiempo limitado (6 meses, 1 año) en su lugar."
-      },
-      "decline": "Rechazar",
-      "counterOffer": "Contraoferta",
-      "acceptAndSign": "Aceptar y Firmar",
-      "title": "Cola de Aprobación",
-      "subtitle": "Revisa y aprueba las solicitudes de licencia",
+      "subtitle": "Revise las solicitudes de marca, las acciones contractuales y los comentarios entregables.",
       "pendingRequests": "Solicitudes pendientes",
-      "openRequests": "Abrir solicitudes",
-      "offerActions": "Acciones de ofertas",
+      "openRequests": "Solicitudes abiertas",
+      "offerActions": "Acciones de oferta",
       "reviewOffers": "Revisar ofertas",
-      "pendingCount": "{{count}} Pendientes",
-      "welcome": {
-        "title": "¡Bienvenido a tu Cola de Aprobación!",
-        "message": "Este es un ejemplo de cómo se verán las solicitudes de las marcas. Aún no tienes aprobaciones pendientes, pero cuando las marcas quieran trabajar contigo, ¡sus solicitudes aparecerán aquí!"
-      },
-      "requestedOn": "Solicitado el {{date}}",
-      "perpetualRequest": "Solicitud Perpetua",
-      "proposedRate": "Tarifa Propuesta:",
-      "termLength": "Duración del Plazo:",
-      "estimatedMonthly": "Estimado Mensual:",
-      "regions": "Regiones:",
-      "warning": {
-        "title": "Advertencia:",
-        "message": "Esta es una solicitud de uso perpetuo. Renunciarías al control a largo plazo de tu imagen para esta campaña. Considera negociar términos de tiempo limitado en su lugar."
-      },
-      "viewContract": "Ver Contrato",
-      "labels": {
-        "industries": "Industrias:",
-        "regions": "Regiones:",
-        "estimatedMonthly": "Mensual estimado:",
-        "termLength": "Duración:",
-        "proposedRate": "Tarifa propuesta:",
-        "requestedOn": "Solicitado el {{date}}",
-        "pricePerMonth": "${{price}} / mes",
-        "months": "{{count}} meses"
-      },
-      "actions": {
-        "viewContract": "Ver Contrato",
-        "decline": "Rechazar",
-        "counterOffer": "Contraoferta",
-        "acceptAndSign": "Aceptar y Firmar",
-        "backToQueue": "Volver a la cola"
-      },
-      "contractReview": {
-        "title": "Revisar Contrato de {{brand}}",
-        "subtitle": "Revise cuidadosamente todos los términos a continuación antes de aceptar."
-      }
+      "deliverableFeedback": "Comentarios entregables",
+      "viewFeedback": "Ver comentarios"
     },
     "campaigns": {
       "title": "Campañas Activas",
@@ -790,7 +752,11 @@
         "viewPublic": "Ver Perfil Público",
         "help": "Ayuda / Soporte",
         "logout": "Cerrar sesión"
-      }
+      },
+      "jobs": "Empleos",
+      "talentPortal": "Portal de Talento",
+      "agencyConnection": "Conexión de agencia",
+      "brandConnection": "Conexión de marca"
     },
     "voiceScripts": {
       "happy": "¡Estoy absolutamente encantado de estar aquí hoy! La vida está llena de sorpresas maravillosas y oportunidades emocionantes. Cada mañana trae un nuevo comienzo y nuevas posibilidades. Me encanta conectar con la gente y compartir energía positiva. El mundo es un lugar increíble cuando lo miras con optimismo. ¡Celebremos las pequeñas victorias y valoremos cada momento de alegría. La felicidad es contagiosa, así que contagiémosla!",
@@ -1049,24 +1015,24 @@
       "Casual": "Casual"
     },
     "jobs": {
-      "title": "Jobs",
-      "subtitle": "Review invitations and explore open roles.",
-      "jobInvites": "Job Invites",
-      "jobInvitesDescription": "Respond to direct job invitations from brands.",
-      "jobBoard": "Job Board",
-      "openJobBoard": "Open Job Board",
-      "loadingInvites": "Loading job invites...",
-      "noInvites": "No job invites yet.",
-      "acceptInvite": "Accept Invite",
-      "declineInvite": "Decline Invite",
-      "inviteAccepted": "Invite accepted",
-      "inviteDeclined": "Invite declined"
+      "title": "Empleos",
+      "subtitle": "Revise las invitaciones y explore los puestos vacantes.",
+      "jobInvites": "invitaciones de trabajo",
+      "jobInvitesDescription": "Responder a invitaciones laborales directas de marcas.",
+      "jobBoard": "Bolsa de trabajo",
+      "openJobBoard": "Bolsa de trabajo abierta",
+      "loadingInvites": "Cargando invitaciones de trabajo...",
+      "noInvites": "Aún no hay invitaciones de trabajo.",
+      "acceptInvite": "Aceptar invitación",
+      "declineInvite": "Rechazar invitación",
+      "inviteAccepted": "Invitación aceptada",
+      "inviteDeclined": "Invitación rechazada"
     },
     "brandConnections": {
-      "title": "Brand Connection",
-      "subtitle": "[NEEDS TRANSLATION] Manage connections, requests, and incoming campaign offers.",
-      "connections": "Connected Brands",
-      "connectionsDescription": "You are connected with brands below.",
+      "title": "Conexión de marca",
+      "subtitle": "Gestiona conexiones, solicitudes y ofertas de campañas entrantes.",
+      "connections": "Marcas conectadas",
+      "connectionsDescription": "Estás conectado con las marcas de abajo.",
       "noConnectionsDescription": "You are not connected to any brands yet.",
       "requests": "Requests",
       "offers": "Brand Offers",
@@ -1084,10 +1050,10 @@
       "declineRequest": "Decline"
     },
     "agencyConnections": {
-      "title": "Agency Connection",
-      "subtitle": "[NEEDS TRANSLATION] Manage agency invitations and your connected agencies.",
-      "connections": "Connections",
-      "connectedAgencies": "Connected Agencies",
+      "title": "Conexión de agencia",
+      "subtitle": "Gestiona invitaciones de agencias y tus agencias conectadas.",
+      "connections": "Conexiones",
+      "connectedAgencies": "Agencias conectadas",
       "connectedAgenciesDescription": "You can be connected to multiple agencies at once.",
       "noConnectionsDescription": "You are not connected to any agencies yet.",
       "assetRequests": "Asset Requests",
@@ -1103,14 +1069,14 @@
       "invitationAccepted": "[NEEDS TRANSLATION] You are now connected to this agency. You can edit your profile per agency in Talent Portal settings."
     },
     "talentPortal": {
-      "title": "Talent Portal",
-      "overview": "Overview",
-      "bookings": "Bookings",
-      "licenses": "Licenses",
-      "requests": "Requests",
-      "noBookings": "No bookings yet.",
-      "noLicenses": "No licenses yet.",
-      "noRequests": "No requests yet."
+      "title": "Portal de Talento",
+      "overview": "Descripción general",
+      "bookings": "Reservas",
+      "licenses": "Licencias",
+      "requests": "Solicitudes",
+      "noBookings": "Aún no hay reservas.",
+      "noLicenses": "Aún no hay licencias.",
+      "noRequests": "Aún no hay solicitudes."
     },
     "payouts": {
       "title": "Payouts",
@@ -1132,6 +1098,40 @@
       "download1099": "Download 1099 ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
       "requesting": "Requesting..."
+    },
+    "agencyConnection": {
+      "subtitle": "Administre las invitaciones de las agencias y sus agencias conectadas.",
+      "connections": "Conexiones"
+    },
+    "billing": {
+      "title": "Suscripción de creador",
+      "proTrial": "Prueba profesional",
+      "pro": "Pro",
+      "basicTrial": "Prueba básica",
+      "basic": "Básico",
+      "free": "Gratis",
+      "currentAccess": "Acceso actual",
+      "proTrialAccess": "Acceso de prueba profesional",
+      "proCreatorAccess": "Acceso de creador profesional",
+      "basicTrialAccess": "Acceso de prueba básico",
+      "basicCreatorAccess": "Acceso básico para creadores",
+      "freeCreatorAccess": "Acceso gratuito para creadores",
+      "included": "Incluido",
+      "upgradeToBasic": "Actualizar a Básico",
+      "proOnly": "Sólo profesional",
+      "recommendedNextStep": "Siguiente paso recomendado",
+      "moveToBasic": "Pasar a Básico",
+      "moveToPro": "Pasar a Pro",
+      "fullyUnlocked": "Estás completamente desbloqueado",
+      "basicUnlocks": "Basic desbloquea KYC, visibilidad del creador, conexiones de agencia y marca, My Likeness y pagos.",
+      "proUnlocks": "Pro desbloquea cargas de Cameo, trabajos, Mis reglas, Voz, Portal de talentos, Archivos de campañas y Campañas activas.",
+      "currentPlanFullToolset": "Tu plan actual incluye el conjunto completo de herramientas de flujo de trabajo para creadores.",
+      "processing": "Tratamiento...",
+      "viewDetails": "Ver detalles",
+      "lockInProTitle": "¿Listo para bloquear Pro?",
+      "lockInProDescription": "Su prueba está activa, pero puede proteger sus herramientas de flujo de trabajo profesionales hoy. Obtenga prioridad total en el mercado y acceso exclusivo a la campaña.",
+      "openingPortal": "Abriendo Portal...",
+      "selectPlan": "Seleccionar plan"
     }
   },
   "creators": "Creadores",

@@ -135,7 +135,8 @@
       "actions": {
         "cashOut": "Retirer",
         "loading": "Traitement...",
-        "downloadTax": "Télécharger les documents fiscaux (PDF)"
+        "downloadTax": "Télécharger les documents fiscaux (PDF)",
+        "setupPayouts": "Configurer les paiements"
       },
       "metrics": {
         "totalEarnedYTD": "Total gagné (YTD)",
@@ -175,6 +176,16 @@
         "campaignFallback": "Campagne",
         "thisMonth": "ce mois-ci"
       },
+      "pendingTransfers": "Virements en attente",
+      "refresh": "Actualiser",
+      "retrying": "nouvelle tentative...",
+      "failed": "échoué",
+      "pending": "en attente",
+      "retry": "tentative",
+      "retries": "tentatives",
+      "actionRequired": "Action requise",
+      "actionRequiredDescription": "Un ou plusieurs virements ont échoué car votre compte Stripe n'est pas entièrement configuré. Terminez votre configuration Stripe pour recevoir ces fonds. L'agence réessaiera le virement une fois votre compte prêt.",
+      "completeStripeSetup": "Terminer la configuration Stripe",
       "history": {
         "title": "Historique des paiements",
         "placeholderTitle": "Votre historique de paiements apparaîtra ici",
@@ -188,7 +199,28 @@
         "standardMethod": "standard"
       },
       "readyTitle": "Prêt à retirer ?",
-      "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer."
+      "readyMessage": "Connectez votre méthode de paiement pour retirer vos gains. Cela ne prend que quelques minutes pour configurer.",
+      "transfers": {
+        "pendingTransfers": "Transferts en attente",
+        "refresh": "Rafraîchir",
+        "loadingStatus": "Chargement du statut du transfert...",
+        "actionRequired": "Action requise",
+        "failedReason": "Un ou plusieurs transferts ont échoué car votre compte Stripe n'est pas entièrement configuré. Complétez votre intégration Stripe pour recevoir ces fonds. L'agence réessayera le transfert une fois que votre compte sera prêt.",
+        "completeStripeSetup": "Configuration complète de Stripe",
+        "retry": "réessayer",
+        "retries": "nouvelles tentatives",
+        "status": {
+          "transferred": "transféré",
+          "retrying": "je réessaye...",
+          "failed": "échoué",
+          "pending": "en attente"
+        },
+        "errors": {
+          "incompleteStripe": "Votre compte Stripe n'est pas entièrement configuré. Terminez l’intégration de Stripe pour recevoir des transferts.",
+          "notAllowed": "Virements non autorisés sur votre compte Stripe.",
+          "noStripeAccount": "Aucun compte Stripe connecté. Terminez l'intégration de Stripe pour recevoir des fonds."
+        }
+      }
     },
     "settings": {
       "myRules": "My Rules",
@@ -367,73 +399,13 @@
       }
     },
     "approvals": {
-      "title": "Approbations en Attente",
-      "subtitle": "Examiner et approuver les demandes de campagne des marques",
+      "subtitle": "Examinez les demandes de la marque, les actions contractuelles et les commentaires sur les livrables.",
       "pendingRequests": "Demandes en attente",
-      "openRequests": "Ouvrir les demandes",
-      "offerActions": "Actions sur les offres",
-      "reviewOffers": "Voir les offres",
-      "pendingCount": "{{count}} En Attente",
-      "welcome": {
-        "title": "Bienvenue !",
-        "message": "Voici un exemple de ce à quoi ressemble une demande de campagne."
-      },
-      "requestedOn": "Demandé le {{date}}",
-      "perpetualRequest": "DEMANDE PERPÉTUELLE",
-      "proposedRate": "Tarif Proposé",
-      "termLength": "Durée du Mandat",
-      "estimatedMonthly": "Est. Mensuel",
-      "regions": "Régions",
-      "industries": "Secteurs d'activité :",
-      "warning": {
-        "title": "Avertissement :",
-        "message": "Cette demande inclut des droits 'À Perpétuité'. Cela signifie que la marque possède les droits pour toujours."
-      },
-      "viewContract": "Voir le Contrat",
-      "labels": {
-        "industries": "Industries :",
-        "regions": "Régions :",
-        "estimatedMonthly": "Mensuel estimé :",
-        "termLength": "Durée :",
-        "proposedRate": "Tarif proposé :",
-        "requestedOn": "Demandé le {{date}}",
-        "pricePerMonth": "{{price}} $ / mois",
-        "months": "{{count}} mois"
-      },
-      "actions": {
-        "viewContract": "Voir le contrat",
-        "decline": "Refuser",
-        "counterOffer": "Contre-offre",
-        "acceptAndSign": "Accepter & Signer",
-        "backToQueue": "Retour à la file"
-      },
-      "backToQueue": "Retour à la file",
-      "contractReviewTitle": "{{brand}} - Révision du contrat",
-      "contractReviewSubtitle": "Examinez les termes avant d'approuver",
-      "whatYouWillEarn": "Ce que vous allez gagner",
-      "yourMonthlyPayment": "Votre paiement mensuel :",
-      "ifYouKeepThisFor": "Si vous gardez ceci pendant {{term}} :",
-      "totalEstimatedEarnings": "Total des gains estimés",
-      "contractTerms": "Termes du contrat",
-      "duration": "Durée :",
-      "territory": "Territoire :",
-      "usageType": "Type d'utilisation :",
-      "yourRightsAndProtections": "Vos droits & protections",
-      "canPause": "Vous pouvez mettre cette licence en pause à tout moment (arrêt temporaire de l'utilisation)",
-      "canRevoke": "Vous pouvez la révoquer avec un préavis de 30 jours (arrêt définitif)",
-      "licenseExpires": "La licence expire à une date précise (pas pour toujours)",
-      "paymentProtected": "Paiement protégé en séquestre jusqu'à ce que la marque approuve les livrables",
-      "perpetualUseWarning": {
-        "title": "⚠️ Avertissement d'utilisation perpétuelle :",
-        "message": "Cette marque souhaite utiliser votre image pour toujours. Vous devriez négocier pour des termes limités dans le temps (6 mois, 1 an) à la place."
-      },
-      "decline": "Refuser",
-      "counterOffer": "Contre-offre",
-      "acceptAndSign": "Accepter & Signer",
-      "contractReview": {
-        "title": "Révision du contrat de {{brand}}",
-        "subtitle": "Veuillez lire attentivement tous les termes ci-dessous avant d'accepter."
-      }
+      "openRequests": "Demandes ouvertes",
+      "offerActions": "Proposer des actions",
+      "reviewOffers": "Consulter les offres",
+      "deliverableFeedback": "Commentaires livrables",
+      "viewFeedback": "Afficher les commentaires"
     },
     "archive": {
       "title": "Archives des Campagnes",
@@ -582,7 +554,11 @@
         "viewPublic": "Voir le profil public",
         "help": "Aide / Support",
         "logout": "Déconnexion"
-      }
+      },
+      "jobs": "Emplois",
+      "talentPortal": "Portail des talents",
+      "agencyConnection": "Connexion à l'agence",
+      "brandConnection": "Connexion à la marque"
     },
     "settingsView": {
       "title": "Paramètres",
@@ -1079,13 +1055,13 @@
     },
     "jobs": {
       "title": "Emplois",
-      "subtitle": "Consultez les invitations et explorez les rôles ouverts.",
+      "subtitle": "Passez en revue les invitations et explorez les rôles ouverts.",
       "jobInvites": "Invitations d'emploi",
-      "jobInvitesDescription": "Répondez aux invitations d'emploi directes des marques.",
-      "jobBoard": "Tableau des emplois",
-      "openJobBoard": "Ouvrir le tableau des emplois",
-      "loadingInvites": "Chargement des invitations...",
-      "noInvites": "Aucune invitation pour le moment.",
+      "jobInvitesDescription": "Répondez aux invitations d’emploi directes des marques.",
+      "jobBoard": "Tableau d'emploi",
+      "openJobBoard": "Tableau d'emploi ouvert",
+      "loadingInvites": "Chargement des invitations à un emploi...",
+      "noInvites": "Aucune invitation à un emploi pour l'instant.",
       "acceptInvite": "Accepter l'invitation",
       "declineInvite": "Refuser l'invitation",
       "inviteAccepted": "Invitation acceptée",
@@ -1133,13 +1109,14 @@
     },
     "talentPortal": {
       "title": "Portail des talents",
+      "connectAgencyHint": "Connectez-vous à une agence pour accéder au Portail des talents.",
       "overview": "Aperçu",
       "bookings": "Réservations",
       "licenses": "Licences",
       "requests": "Demandes",
-      "noBookings": "Aucune réservation pour le moment.",
-      "noLicenses": "Aucune licence pour le moment.",
-      "noRequests": "Aucune demande pour le moment."
+      "noBookings": "Aucune réservation pour l'instant.",
+      "noLicenses": "Pas encore de licence.",
+      "noRequests": "Aucune demande pour l'instant."
     },
     "payouts": {
       "title": "Paiements",
@@ -1240,6 +1217,40 @@
         "description": "[NEEDS TRANSLATION] A photo that really represents YOU and how people recognize you.",
         "bestFor": "A photo that really represents YOU"
       }
+    },
+    "agencyConnection": {
+      "subtitle": "Gérez les invitations aux agences et vos agences connectées.",
+      "connections": "Relations"
+    },
+    "billing": {
+      "title": "Abonnement créateur",
+      "proTrial": "Essai professionnel",
+      "pro": "Pro",
+      "basicTrial": "Essai de base",
+      "basic": "Basique",
+      "free": "Gratuit",
+      "currentAccess": "Accès actuel",
+      "proTrialAccess": "Accès à l'essai Pro",
+      "proCreatorAccess": "Accès créateur professionnel",
+      "basicTrialAccess": "Accès à l'essai de base",
+      "basicCreatorAccess": "Accès créateur de base",
+      "freeCreatorAccess": "Accès gratuit aux créateurs",
+      "included": "Compris",
+      "upgradeToBasic": "Mise à niveau vers Basic",
+      "proOnly": "Professionnel uniquement",
+      "recommendedNextStep": "Prochaine étape recommandée",
+      "moveToBasic": "Passer au basique",
+      "moveToPro": "Passer à Pro",
+      "fullyUnlocked": "Vous êtes entièrement débloqué",
+      "basicUnlocks": "Basic débloque le KYC, la visibilité du créateur, les connexions entre agences et marques, My Likeness et les paiements.",
+      "proUnlocks": "Pro déverrouille les téléchargements Cameo, les emplois, mes règles, la voix, le portail des talents, les archives de campagne et les campagnes actives.",
+      "currentPlanFullToolset": "Votre forfait actuel comprend l'ensemble complet d'outils de flux de travail du créateur.",
+      "processing": "Traitement...",
+      "viewDetails": "Afficher les détails",
+      "lockInProTitle": "Prêt à vous connecter à Pro ?",
+      "lockInProDescription": "Votre essai est actif, mais vous pouvez sécuriser vos outils de flux de travail professionnels dès aujourd'hui. Bénéficiez d’une priorité totale sur le marché et d’un accès exclusif aux campagnes.",
+      "openingPortal": "Ouverture du portail...",
+      "selectPlan": "Sélectionnez le forfait"
     }
   },
   "talentPortal": {

@@ -3924,7 +3924,9 @@ export default function CreatorDashboard() {
       icon: Briefcase,
       locked: !creatorCanUseJobs,
       requiredPlan: "pro",
-      premiumFeature: t("creatorDashboard.jobs.title", { defaultValue: "Jobs" }),
+      premiumFeature: t("creatorDashboard.jobs.title", {
+        defaultValue: "Jobs",
+      }),
       onClick: () => {
         navigate(createPageUrl("Jobs"));
       },
@@ -10939,16 +10941,25 @@ export default function CreatorDashboard() {
                     transfer.transfer_status === "created"
                       ? "transferred"
                       : transfer.transfer_status === "pending_retry"
-                        ? t("creatorDashboard.earnings.transfers.status.retrying", {
-                            defaultValue: "retrying…",
-                          })
+                        ? t(
+                            "creatorDashboard.earnings.transfers.status.retrying",
+                            {
+                              defaultValue: "retrying…",
+                            },
+                          )
                         : transfer.transfer_status === "failed"
-                          ? t("creatorDashboard.earnings.transfers.status.failed", {
-                              defaultValue: "failed",
-                            })
-                          : t("creatorDashboard.earnings.transfers.status.pending", {
-                              defaultValue: "pending",
-                            });
+                          ? t(
+                              "creatorDashboard.earnings.transfers.status.failed",
+                              {
+                                defaultValue: "failed",
+                              },
+                            )
+                          : t(
+                              "creatorDashboard.earnings.transfers.status.pending",
+                              {
+                                defaultValue: "pending",
+                              },
+                            );
 
                   const friendlyReason = (reason: string) => {
                     if (!reason) return null;
@@ -10995,12 +11006,18 @@ export default function CreatorDashboard() {
                               <p className="text-[10px] text-gray-400 mt-0.5">
                                 {transfer.retry_count}{" "}
                                 {transfer.retry_count === 1
-                                  ? t("creatorDashboard.earnings.transfers.retry", {
-                                      defaultValue: "retry",
-                                    })
-                                  : t("creatorDashboard.earnings.transfers.retries", {
-                                      defaultValue: "retries",
-                                    })}
+                                  ? t(
+                                      "creatorDashboard.earnings.transfers.retry",
+                                      {
+                                        defaultValue: "retry",
+                                      },
+                                    )
+                                  : t(
+                                      "creatorDashboard.earnings.transfers.retries",
+                                      {
+                                        defaultValue: "retries",
+                                      },
+                                    )}
                               </p>
                             )}
                           </div>
@@ -11054,9 +11071,12 @@ export default function CreatorDashboard() {
                         className="mt-3 h-8 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs"
                         onClick={() => setShowPayoutSettings(true)}
                       >
-                        {t("creatorDashboard.earnings.transfers.completeStripeSetup", {
-                          defaultValue: "Complete Stripe setup",
-                        })}
+                        {t(
+                          "creatorDashboard.earnings.transfers.completeStripeSetup",
+                          {
+                            defaultValue: "Complete Stripe setup",
+                          },
+                        )}
                       </Button>
                     )}
                   </div>

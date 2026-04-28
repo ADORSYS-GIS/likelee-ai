@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
@@ -48,32 +49,9 @@ import CompCardAttachModal from "@/components/jobs/CompCardAttachModal";
 
 const PAGE_SIZE = 10;
 
-const callTypeOptions = [
-  { value: "all", label: "All call types" },
-  { value: "creator", label: "Creator call" },
-  { value: "agency", label: "Agency call" },
-  { value: "athlete", label: "Athlete call" },
-  { value: "ai_artist", label: "AI artist call" },
-];
-
-const jobTypeOptions = [
-  { value: "all", label: "All job types" },
-  { value: "full_time", label: "Full-time" },
-  { value: "part_time", label: "Part-time" },
-  { value: "contract", label: "Contract" },
-  { value: "freelance", label: "Freelance" },
-  { value: "gig", label: "Gig" },
-];
-
-const locationOptions = [
-  { value: "all", label: "All locations" },
-  { value: "remote", label: "Remote" },
-  { value: "hybrid", label: "Hybrid" },
-  { value: "on_site", label: "On-site" },
-];
-
 export default function JobsBoard() {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { authenticated, profile } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -108,6 +86,78 @@ export default function JobsBoard() {
   const compCardInputRef = useRef<HTMLInputElement>(null);
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
   const isAgencyUser = authenticated && profile?.role === "agency";
+  const callTypeOptions = React.useMemo(
+    () => [
+      {
+        value: "all",
+        label: t("jobs.allCallTypes", { defaultValue: "All call types" }),
+      },
+      {
+        value: "creator",
+        label: t("jobs.callTypes.creator", { defaultValue: "Creator call" }),
+      },
+      {
+        value: "agency",
+        label: t("jobs.callTypes.agency", { defaultValue: "Agency call" }),
+      },
+      {
+        value: "athlete",
+        label: t("jobs.callTypes.athlete", { defaultValue: "Athlete call" }),
+      },
+      {
+        value: "ai_artist",
+        label: t("jobs.callTypes.aiArtist", { defaultValue: "AI artist call" }),
+      },
+    ],
+    [t],
+  );
+  const jobTypeOptions = React.useMemo(
+    () => [
+      {
+        value: "all",
+        label: t("jobs.allJobTypes", { defaultValue: "All job types" }),
+      },
+      {
+        value: "full_time",
+        label: t("jobs.jobTypes.fullTime", { defaultValue: "Full-time" }),
+      },
+      {
+        value: "part_time",
+        label: t("jobs.jobTypes.partTime", { defaultValue: "Part-time" }),
+      },
+      {
+        value: "contract",
+        label: t("jobs.jobTypes.contract", { defaultValue: "Contract" }),
+      },
+      {
+        value: "freelance",
+        label: t("jobs.jobTypes.freelance", { defaultValue: "Freelance" }),
+      },
+      { value: "gig", label: t("jobs.jobTypes.gig", { defaultValue: "Gig" }) },
+    ],
+    [t],
+  );
+  const locationOptions = React.useMemo(
+    () => [
+      {
+        value: "all",
+        label: t("jobs.allLocations", { defaultValue: "All locations" }),
+      },
+      {
+        value: "remote",
+        label: t("jobs.locations.remote", { defaultValue: "Remote" }),
+      },
+      {
+        value: "hybrid",
+        label: t("jobs.locations.hybrid", { defaultValue: "Hybrid" }),
+      },
+      {
+        value: "on_site",
+        label: t("jobs.locations.onSite", { defaultValue: "On-site" }),
+      },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -496,8 +546,10 @@ export default function JobsBoard() {
         portfolio_link: portfolioLink || undefined,
       });
       toast({
-        title: "Application sent",
-        description: "Your application was submitted to the brand.",
+        title: t("jobs.applicationSent", { defaultValue: "Application sent" }),
+        description: t("jobs.applicationSubmitted", {
+          defaultValue: "Your application was submitted to the brand.",
+        }),
       });
       setApplyOpen(false);
       setApplyMessage("");
@@ -508,8 +560,10 @@ export default function JobsBoard() {
       setCompCardMetas([]);
     } catch (e: any) {
       toast({
-        title: "Apply failed",
-        description: e?.message || "Please try again.",
+        title: t("jobs.applyFailed", { defaultValue: "Apply failed" }),
+        description:
+          e?.message ||
+          t("jobs.tryAgain", { defaultValue: "Please try again." }),
         variant: "destructive",
       });
     } finally {
@@ -523,16 +577,22 @@ export default function JobsBoard() {
     if (!file) return;
     if (!/pdf$/i.test(file.name) && !String(file.type).includes("pdf")) {
       toast({
-        title: "Invalid file",
-        description: "Please upload a PDF resume.",
+        title: t("jobs.invalidFile", { defaultValue: "Invalid file" }),
+        description: t("jobs.uploadPdfResume", {
+          defaultValue: "Please upload a PDF resume.",
+        }),
         variant: "destructive",
       });
       return;
     }
     if (!supabase) {
       toast({
-        title: "Upload unavailable",
-        description: "Storage is not configured for this environment.",
+        title: t("jobs.uploadUnavailable", {
+          defaultValue: "Upload unavailable",
+        }),
+        description: t("jobs.storageNotConfigured", {
+          defaultValue: "Storage is not configured for this environment.",
+        }),
         variant: "destructive",
       });
       return;
@@ -561,8 +621,12 @@ export default function JobsBoard() {
       });
     } catch (e: any) {
       toast({
-        title: "Resume upload failed",
-        description: e?.message || "Please try again.",
+        title: t("jobs.resumeUploadFailed", {
+          defaultValue: "Resume upload failed",
+        }),
+        description:
+          e?.message ||
+          t("jobs.tryAgain", { defaultValue: "Please try again." }),
         variant: "destructive",
       });
     } finally {
@@ -595,8 +659,12 @@ export default function JobsBoard() {
     if (files.length === 0) return;
     if (!supabase) {
       toast({
-        title: "Upload unavailable",
-        description: "Storage is not configured for this environment.",
+        title: t("jobs.uploadUnavailable", {
+          defaultValue: "Upload unavailable",
+        }),
+        description: t("jobs.storageNotConfigured", {
+          defaultValue: "Storage is not configured for this environment.",
+        }),
         variant: "destructive",
       });
       return;
@@ -662,16 +730,28 @@ export default function JobsBoard() {
                 }}
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                Back to dashboard
+                {t("jobs.backToDashboard", {
+                  defaultValue: "Back to dashboard",
+                })}
               </Button>
-              <h1 className="text-3xl font-bold text-gray-900">Find Jobs</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {t("jobs.findJobs", { defaultValue: "Find Jobs" })}
+              </h1>
               <p className="text-gray-600">
-                Browse brand-posted opportunities and apply directly.
+                {t("jobs.browseBrandPostedOpportunities", {
+                  defaultValue:
+                    "Browse brand-posted opportunities and apply directly.",
+                })}
               </p>
             </div>
             <div className="flex items-center gap-2 text-gray-500">
               <Briefcase className="w-5 h-5" />
-              <span className="text-sm">{filteredJobs.length} open roles</span>
+              <span className="text-sm">
+                {t("jobs.openRoles", {
+                  count: filteredJobs.length,
+                  defaultValue: "{{count}} open roles",
+                })}
+              </span>
             </div>
           </div>
 
@@ -683,14 +763,20 @@ export default function JobsBoard() {
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search job title or keyword"
+                    placeholder={t("jobs.searchJobs", {
+                      defaultValue: "Search job title or keyword",
+                    })}
                     className="pl-9"
                   />
                 </div>
               </div>
               <Select value={callType} onValueChange={setCallType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Call type" />
+                  <SelectValue
+                    placeholder={t("jobs.callType", {
+                      defaultValue: "Call type",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {callTypeOptions.map((opt) => (
@@ -702,7 +788,11 @@ export default function JobsBoard() {
               </Select>
               <Select value={jobType} onValueChange={setJobType}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Job type" />
+                  <SelectValue
+                    placeholder={t("jobs.jobType", {
+                      defaultValue: "Job type",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {jobTypeOptions.map((opt) => (
@@ -714,7 +804,11 @@ export default function JobsBoard() {
               </Select>
               <Select value={location} onValueChange={setLocation}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Location" />
+                  <SelectValue
+                    placeholder={t("jobs.filterByLocation", {
+                      defaultValue: "Location",
+                    })}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {locationOptions.map((opt) => (
@@ -760,8 +854,12 @@ export default function JobsBoard() {
                   <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="font-semibold text-gray-800">
                     {isFiltered
-                      ? "No results found for your search"
-                      : "No jobs available right now"}
+                      ? t("jobs.noResultsSearch", {
+                          defaultValue: "No results found for your search",
+                        })
+                      : t("jobs.noJobsAvailable", {
+                          defaultValue: "No jobs available right now",
+                        })}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
                     {isFiltered
@@ -862,8 +960,10 @@ export default function JobsBoard() {
                     }}
                   >
                     {isAgencyUser && !agencyCanApply
-                      ? "Upgrade to Apply"
-                      : "Apply Now"}
+                      ? t("jobs.upgradeToApply", {
+                          defaultValue: "Upgrade to Apply",
+                        })
+                      : t("jobs.applyNow", { defaultValue: "Apply Now" })}
                   </Button>
                 </div>
               </Card>
@@ -897,7 +997,10 @@ export default function JobsBoard() {
           <DialogContent className="max-w-2xl">
             <DialogHeader className="pb-3">
               <DialogTitle className="text-lg font-semibold">
-                Apply to {selectedJob?.title}
+                {t("jobs.applyDialog.title", {
+                  title: selectedJob?.title,
+                  defaultValue: "Apply to {{title}}",
+                })}
               </DialogTitle>
               <DialogDescription>
                 Provide your details and resume to apply for this position.
@@ -909,7 +1012,9 @@ export default function JobsBoard() {
                   {/* Resume upload */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      Upload resume (CV)
+                      {t("jobs.applyDialog.uploadResume", {
+                        defaultValue: "Upload resume (CV)",
+                      })}
                     </label>
                     <input
                       ref={resumeInputRef}
@@ -932,7 +1037,9 @@ export default function JobsBoard() {
                       )}
                       {resumeUploading && (
                         <p className="text-xs text-gray-500">
-                          Uploading resume...
+                          {t("jobs.uploading", {
+                            defaultValue: "Uploading...",
+                          })}
                         </p>
                       )}
                       {!resumeUploading && resumeMeta?.name && (
@@ -956,7 +1063,9 @@ export default function JobsBoard() {
                   {/* Comp card upload */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-900">
-                      Upload comp card
+                      {t("jobs.applyDialog.uploadCompCard", {
+                        defaultValue: "Upload comp card",
+                      })}
                     </label>
                     <input
                       ref={compCardInputRef}
@@ -995,7 +1104,9 @@ export default function JobsBoard() {
                       )}
                       {compCardUploading && (
                         <p className="text-xs text-gray-500">
-                          Uploading comp cards...
+                          {t("jobs.uploading", {
+                            defaultValue: "Uploading...",
+                          })}
                         </p>
                       )}
                       {!compCardUploading && compCardMetas.length > 0 && (
@@ -1055,7 +1166,7 @@ export default function JobsBoard() {
             </div>
             <DialogFooter className="pt-5">
               <Button variant="outline" onClick={() => setApplyOpen(false)}>
-                Cancel
+                {t("jobs.applyDialog.cancel", { defaultValue: "Cancel" })}
               </Button>
               <Button
                 className="bg-black text-white"
@@ -1069,7 +1180,13 @@ export default function JobsBoard() {
                   !portfolioLink.trim()
                 }
               >
-                {applyLoading ? "Sending..." : "Send application"}
+                {applyLoading
+                  ? t("jobs.applyDialog.sending", {
+                      defaultValue: "Sending...",
+                    })
+                  : t("jobs.applyDialog.sendApplication", {
+                      defaultValue: "Send application",
+                    })}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1599,7 +1716,11 @@ export default function JobsBoard() {
                   setApplyOpen(true);
                 }}
               >
-                {isAgencyUser && !agencyCanApply ? "Upgrade to Apply" : "Apply"}
+                {isAgencyUser && !agencyCanApply
+                  ? t("jobs.upgradeToApply", {
+                      defaultValue: "Upgrade to Apply",
+                    })
+                  : t("jobs.apply", { defaultValue: "Apply" })}
               </Button>
             )}
           </DialogFooter>

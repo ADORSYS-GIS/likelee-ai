@@ -37,7 +37,8 @@
       "actions": {
         "cashOut": "Auszahlen",
         "loading": "Wird verarbeitet...",
-        "downloadTax": "Steuerdokumente herunterladen (PDF)"
+        "downloadTax": "Steuerdokumente herunterladen (PDF)",
+        "setupPayouts": "Auszahlungen einrichten"
       },
       "metrics": {
         "totalEarnedYTD": "Gesamtverdienst (YTD)",
@@ -88,6 +89,27 @@
           "status": "Status"
         },
         "standardMethod": "standard"
+      },
+      "transfers": {
+        "pendingTransfers": "Ausstehende Überweisungen",
+        "refresh": "Aktualisieren",
+        "loadingStatus": "Übertragungsstatus wird geladen...",
+        "actionRequired": "Aktion erforderlich",
+        "failedReason": "Eine oder mehrere Überweisungen sind fehlgeschlagen, weil Ihr Stripe-Konto nicht vollständig eingerichtet ist. Schließen Sie Ihr Stripe-Onboarding ab, um diese Gelder zu erhalten. Die Agentur wird die Übertragung erneut versuchen, sobald Ihr Konto bereit ist.",
+        "completeStripeSetup": "Komplettes Stripe-Setup",
+        "retry": "wiederholen",
+        "retries": "wiederholt",
+        "status": {
+          "transferred": "übertragen",
+          "retrying": "Ich versuche es noch einmal...",
+          "failed": "fehlgeschlagen",
+          "pending": "ausstehend"
+        },
+        "errors": {
+          "incompleteStripe": "Ihr Stripe-Konto ist nicht vollständig eingerichtet. Schließen Sie das Stripe-Onboarding ab, um Überweisungen zu erhalten.",
+          "notAllowed": "Überweisungen auf Ihrem Stripe-Konto sind nicht zulässig.",
+          "noStripeAccount": "Kein Stripe-Konto verbunden. Schließen Sie das Stripe-Onboarding ab, um Gelder zu erhalten."
+        }
       }
     },
     "settings": {
@@ -438,73 +460,13 @@
       "viewDetails": "Details anzeigen"
     },
     "approvals": {
-      "backToQueue": "Zurück zur Liste",
-      "contractReviewTitle": "{{brand}} - Vertragsprüfung",
-      "contractReviewSubtitle": "Prüfen Sie die Bedingungen vor der Zustimmung",
-      "whatYouWillEarn": "Ihre Einnahmen",
-      "yourMonthlyPayment": "Ihre monatliche Zahlung:",
-      "ifYouKeepThisFor": "Wenn Sie dies für {{term}} behalten:",
-      "totalEstimatedEarnings": "Geschätzte Gesamteinnahmen",
-      "contractTerms": "Vertragsbedingungen",
-      "duration": "Dauer:",
-      "territory": "Gebiet:",
-      "usageType": "Nutzungsart:",
-      "industries": "Branchen:",
-      "yourRightsAndProtections": "Ihre Rechte & Schutzmaßnahmen",
-      "canPause": "Sie können diese Lizenz jederzeit pausieren (Nutzung vorübergehend stoppen)",
-      "canRevoke": "Sie können sie mit einer Frist von 30 Tagen widerrufen (dauerhaft beenden)",
-      "licenseExpires": "Die Lizenz läuft an einem bestimmten Datum aus (nicht für immer)",
-      "paymentProtected": "Zahlung auf einem Treuhandkonto geschützt, bis die Marke die Ergebnisse genehmigt",
-      "perpetualUseWarning": {
-        "title": "⚠️ Warnung vor unbefristeter Nutzung:",
-        "message": "Diese Marke möchte Ihr Ebenbild für immer verwenden. Sie sollten stattdessen zeitlich begrenzte Bedingungen (6 Monate, 1 Jahr) aushandeln."
-      },
-      "decline": "Ablehnen",
-      "counterOffer": "Gegenangebot",
-      "acceptAndSign": "Akzeptieren & Unterschreiben",
-      "title": "Genehmigungswarteschlange",
-      "subtitle": "Überprüfen und genehmigen Sie Lizenzanfragen",
+      "subtitle": "Überprüfen Sie Markenanfragen, Vertragsmaßnahmen und zu lieferndes Feedback.",
       "pendingRequests": "Ausstehende Anfragen",
       "openRequests": "Offene Anfragen",
-      "offerActions": "Angebotsaktionen",
-      "reviewOffers": "Angebote prüfen",
-      "pendingCount": "{{count}} ausstehend",
-      "welcome": {
-        "title": "Willkommen in Ihrer Genehmigungswarteschlange!",
-        "message": "Dies ist ein Beispiel dafür, wie Markenanfragen aussehen werden. Sie haben noch keine ausstehenden Genehmigungen – aber wenn Marken mit Ihnen arbeiten möchten, werden ihre Anfragen hier erscheinen!"
-      },
-      "requestedOn": "Angefragt am {{date}}",
-      "perpetualRequest": "Unbefristete Anfrage",
-      "proposedRate": "Vorgeschlagene Rate:",
-      "termLength": "Laufzeit:",
-      "estimatedMonthly": "Geschätzter monatlicher Betrag:",
-      "regions": "Regionen:",
-      "warning": {
-        "title": "Warnung:",
-        "message": "Dies ist eine Anfrage zur unbefristeten Nutzung. Sie würden die langfristige Kontrolle über Ihr Abbild für diese Kampagne aufgeben. Erwägen Sie stattdessen, über zeitlich begrenzte Bedingungen zu verhandeln."
-      },
-      "viewContract": "Vertrag anzeigen",
-      "labels": {
-        "industries": "Branchen:",
-        "regions": "Regionen:",
-        "estimatedMonthly": "Geschätzt monatlich:",
-        "termLength": "Laufzeit:",
-        "proposedRate": "Vorgeschlagener Tarif:",
-        "requestedOn": "Angefordert am {{date}}",
-        "pricePerMonth": "{{price}} $ / Monat",
-        "months": "{{count}} Monate"
-      },
-      "actions": {
-        "viewContract": "Vertrag anzeigen",
-        "decline": "Ablehnen",
-        "counterOffer": "Gegenangebot",
-        "acceptAndSign": "Akzeptieren & Unterschreiben",
-        "backToQueue": "Zurück zur Liste"
-      },
-      "contractReview": {
-        "title": "Vertragsprüfung von {{brand}}",
-        "subtitle": "Bitte lesen Sie alle untenstehenden Bedingungen sorgfältig durch, bevor Sie zustimmen."
-      }
+      "offerActions": "Bieten Sie Aktionen an",
+      "reviewOffers": "Überprüfen Sie Angebote",
+      "deliverableFeedback": "Lieferbares Feedback",
+      "viewFeedback": "Feedback ansehen"
     },
     "campaigns": {
       "title": "Aktive Kampagnen",
@@ -792,7 +754,11 @@
         "viewPublic": "Öffentliches Profil ansehen",
         "help": "Hilfe / Support",
         "logout": "Abmelden"
-      }
+      },
+      "jobs": "Jobs",
+      "talentPortal": "Talentportal",
+      "agencyConnection": "Agenturverbindung",
+      "brandConnection": "Markenverbindung"
     },
     "voiceScripts": {
       "happy": "Ich bin absolut begeistert, heute hier zu sein! Das Leben ist voller wunderbarer Überraschungen und aufregender Möglichkeiten. Jeder Morgen bringt einen Neuanfang und neue Möglichkeiten. Ich liebe es, mit Menschen in Kontakt zu treten und positive Energie zu teilen. Die Welt ist ein erstaunlicher Ort, wenn man sie mit Optimismus betrachtet. Lasst uns die kleinen Siege feiern und jeden Moment der Freude schätzen. Glück ist ansteckend, also lasst es uns verbreiten!",
@@ -1050,23 +1016,23 @@
     },
     "jobs": {
       "title": "Jobs",
-      "subtitle": "Review invitations and explore open roles.",
-      "jobInvites": "Job Invites",
-      "jobInvitesDescription": "Respond to direct job invitations from brands.",
-      "jobBoard": "Job Board",
-      "openJobBoard": "Open Job Board",
-      "loadingInvites": "Loading job invites...",
-      "noInvites": "No job invites yet.",
-      "acceptInvite": "Accept Invite",
-      "declineInvite": "Decline Invite",
-      "inviteAccepted": "Invite accepted",
-      "inviteDeclined": "Invite declined"
+      "subtitle": "Sehen Sie sich Einladungen an und erkunden Sie offene Stellen.",
+      "jobInvites": "Jobeinladungen",
+      "jobInvitesDescription": "Reagieren Sie auf direkte Jobeinladungen von Marken.",
+      "jobBoard": "Jobbörse",
+      "openJobBoard": "Jobbörse öffnen",
+      "loadingInvites": "Jobeinladungen werden geladen...",
+      "noInvites": "Noch keine Jobeinladungen.",
+      "acceptInvite": "Einladung annehmen",
+      "declineInvite": "Einladung ablehnen",
+      "inviteAccepted": "Einladung angenommen",
+      "inviteDeclined": "Einladung abgelehnt"
     },
     "brandConnections": {
-      "title": "Brand Connection",
-      "subtitle": "[NEEDS TRANSLATION] Manage connections, requests, and incoming campaign offers.",
-      "connections": "Connected Brands",
-      "connectionsDescription": "You are connected with brands below.",
+      "title": "Markenverbindung",
+      "subtitle": "Verwalten Sie Verbindungen, Anfragen und eingehende Kampagnenangebote.",
+      "connections": "Verbundene Marken",
+      "connectionsDescription": "Sie sind mit den untenstehenden Marken verbunden.",
       "noConnectionsDescription": "You are not connected to any brands yet.",
       "requests": "Requests",
       "offers": "Brand Offers",
@@ -1084,10 +1050,10 @@
       "declineRequest": "Decline"
     },
     "agencyConnections": {
-      "title": "Agency Connection",
-      "subtitle": "[NEEDS TRANSLATION] Manage agency invitations and your connected agencies.",
-      "connections": "Connections",
-      "connectedAgencies": "Connected Agencies",
+      "title": "Agenturverbindung",
+      "subtitle": "Verwalten Sie Agentureinladungen und Ihre verbundenen Agenturen.",
+      "connections": "Verbindungen",
+      "connectedAgencies": "Verbundene Agenturen",
       "connectedAgenciesDescription": "You can be connected to multiple agencies at once.",
       "noConnectionsDescription": "You are not connected to any agencies yet.",
       "assetRequests": "Asset Requests",
@@ -1103,14 +1069,14 @@
       "invitationAccepted": "[NEEDS TRANSLATION] You are now connected to this agency. You can edit your profile per agency in Talent Portal settings."
     },
     "talentPortal": {
-      "title": "Talent Portal",
-      "overview": "Overview",
-      "bookings": "Bookings",
-      "licenses": "Licenses",
-      "requests": "Requests",
-      "noBookings": "No bookings yet.",
-      "noLicenses": "No licenses yet.",
-      "noRequests": "No requests yet."
+      "title": "Talentportal",
+      "overview": "Überblick",
+      "bookings": "Buchungen",
+      "licenses": "Lizenzen",
+      "requests": "Anfragen",
+      "noBookings": "Noch keine Buchungen.",
+      "noLicenses": "Noch keine Lizenzen.",
+      "noRequests": "Noch keine Anfragen."
     },
     "payouts": {
       "title": "Payouts",
@@ -1132,6 +1098,40 @@
       "download1099": "Download 1099 ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
       "requesting": "Requesting..."
+    },
+    "agencyConnection": {
+      "subtitle": "Verwalten Sie Agentureinladungen und Ihre verbundenen Agenturen.",
+      "connections": "Verbindungen"
+    },
+    "billing": {
+      "title": "Creator-Abonnement",
+      "proTrial": "Pro-Testversion",
+      "pro": "Profi",
+      "basicTrial": "Grundlegende Testversion",
+      "basic": "Basic",
+      "free": "Frei",
+      "currentAccess": "Aktueller Zugriff",
+      "proTrialAccess": "Pro-Testzugang",
+      "proCreatorAccess": "Pro-Creator-Zugriff",
+      "basicTrialAccess": "Grundlegender Testzugang",
+      "basicCreatorAccess": "Grundlegender Erstellerzugriff",
+      "freeCreatorAccess": "Kostenloser Erstellerzugang",
+      "included": "Im Lieferumfang enthalten",
+      "upgradeToBasic": "Upgrade auf Basic",
+      "proOnly": "Nur Pro",
+      "recommendedNextStep": "Empfohlener nächster Schritt",
+      "moveToBasic": "Wechseln Sie zu Basic",
+      "moveToPro": "Wechseln Sie zu Pro",
+      "fullyUnlocked": "Sie sind vollständig entsperrt",
+      "basicUnlocks": "Basic schaltet KYC, Sichtbarkeit des Erstellers, Agentur- und Markenverbindungen, My Likeness und Auszahlungen frei.",
+      "proUnlocks": "Pro schaltet Cameo-Uploads, Jobs, Meine Regeln, Stimme, Talentportal, Kampagnenarchive und aktive Kampagnen frei.",
+      "currentPlanFullToolset": "Ihr aktueller Plan umfasst das vollständige Toolset für den Ersteller-Workflow.",
+      "processing": "Verarbeitung...",
+      "viewDetails": "Details anzeigen",
+      "lockInProTitle": "Bereit, sich für Pro zu entscheiden?",
+      "lockInProDescription": "Ihre Testversion ist aktiv, aber Sie können sich Ihre professionellen Workflow-Tools noch heute sichern. Erhalten Sie volle Marktplatzpriorität und exklusiven Kampagnenzugang.",
+      "openingPortal": "Portal öffnen...",
+      "selectPlan": "Wählen Sie Planen aus"
     }
   },
   "creators": "Schöpfer",
