@@ -351,13 +351,22 @@ export default function BrandCampaignDashboard({
 
       setNewCampaignStep(safeStep);
     } else {
-      // Full reset for a brand-new campaign — clear any state left from a previous session
+      // Full reset — reuse resetCampaignBuilder logic to clear all wizard state
+      // (form, brief, collaborator selections, contract draft, validation errors, etc.)
+      // then re-open the modal for a fresh new campaign.
+      setShowCampaignDocuSealBuilder(false);
+      setBrandSignOpen(false);
+      setBrandSignUrl("");
+      setAwaitingBrandSignature(false);
+      setNewCampaignStep(1);
       setBrandCampaignId("");
       setIsExistingCampaign(false);
       setStep1FieldErrors({});
       setStep2FieldErrors({});
       setWizardErrorBanner(null);
-      setNewCampaignStep(1);
+      setExistingCampaignAgencyIds(new Set());
+      setExistingCampaignCreatorIds(new Set());
+      setLoadingExistingCollaborators(false);
       setCampaignForm({
         name: "",
         objective: "",
@@ -409,6 +418,12 @@ export default function BrandCampaignDashboard({
         watermark_protection: "",
         legal_terms: "",
       });
+      setOfferByCreatorId({});
+      setContractDraft({ title: "", file_url: "", docuseal_template_id: "" });
+      setSelectedCreatorsById({});
+      setSelectedTalentCreatorIds(new Set());
+      setMarketplaceCreators([]);
+      setCreatorSearch("");
     }
 
     setShowNewCampaignModal(true);
