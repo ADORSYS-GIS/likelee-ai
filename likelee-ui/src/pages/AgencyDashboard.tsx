@@ -10693,14 +10693,29 @@ const ScoutingHubView = ({
       await scoutingService.deleteEvent(eventToDelete.id);
       refreshData();
       toast({
-        title: "Event deleted",
-        description: `"${eventToDelete.name}" has been successfully removed.`,
+        title: t("agencyDashboard.scouting.toasts.eventDeleted", {
+          defaultValue: "Event deleted",
+        }),
+        description: t(
+          "agencyDashboard.scouting.toasts.eventDeletedDescription",
+          {
+            defaultValue: `"{{name}}" has been successfully removed.`,
+            name: eventToDelete.name,
+          },
+        ),
       });
     } catch (error) {
       console.error("Error deleting event:", error);
       toast({
-        title: "Delete failed",
-        description: "An error occurred while deleting the event.",
+        title: t("agencyDashboard.scouting.toasts.deleteFailed", {
+          defaultValue: "Delete failed",
+        }),
+        description: t(
+          "agencyDashboard.scouting.toasts.deleteFailedDescription",
+          {
+            defaultValue: "An error occurred while deleting the event.",
+          },
+        ),
         variant: "destructive",
       });
     } finally {
@@ -10919,28 +10934,50 @@ const ScoutingHubView = ({
         <DialogContent className="sm:max-w-[600px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900">
-              {eventToEdit ? "Edit Event" : "Create Event"}
+              {eventToEdit
+                ? t("agencyDashboard.scouting.eventModal.titleEdit", {
+                    defaultValue: "Edit Event",
+                  })
+                : t("agencyDashboard.scouting.eventModal.titleCreate", {
+                    defaultValue: "Create Event",
+                  })}
             </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
-              Manage open calls and casting events for your scouting pipeline.
+              {t("agencyDashboard.scouting.eventModal.subtitle", {
+                defaultValue:
+                  "Manage open calls and casting events for your scouting pipeline.",
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Label className="text-sm font-bold text-gray-700">
+                {t("agencyDashboard.scouting.eventModal.fields.name", {
+                  defaultValue: "Name",
+                })}
+              </Label>
               <Input
                 value={eventForm.name}
                 onChange={(e) =>
                   setEventForm((p) => ({ ...p, name: e.target.value }))
                 }
-                placeholder="Event name"
+                placeholder={t(
+                  "agencyDashboard.scouting.eventModal.placeholders.eventName",
+                  {
+                    defaultValue: "Event name",
+                  },
+                )}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  {t("agencyDashboard.scouting.eventModal.fields.date", {
+                    defaultValue: "Date",
+                  })}
+                </Label>
                 <Input
                   type="date"
                   value={eventForm.event_date}
@@ -10951,7 +10988,9 @@ const ScoutingHubView = ({
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Status
+                  {t("agencyDashboard.scouting.eventModal.fields.status", {
+                    defaultValue: "Status",
+                  })}
                 </Label>
                 <Input
                   value={eventForm.status}
@@ -10961,7 +11000,12 @@ const ScoutingHubView = ({
                       status: e.target.value as ScoutingEvent["status"],
                     }))
                   }
-                  placeholder="scheduled"
+                  placeholder={t(
+                    "agencyDashboard.scouting.eventModal.placeholders.status",
+                    {
+                      defaultValue: "scheduled",
+                    },
+                  )}
                 />
               </div>
             </div>
@@ -10969,53 +11013,81 @@ const ScoutingHubView = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Start time
+                  {t("agencyDashboard.scouting.eventModal.fields.startTime", {
+                    defaultValue: "Start time",
+                  })}
                 </Label>
                 <Input
                   value={eventForm.start_time}
                   onChange={(e) =>
                     setEventForm((p) => ({ ...p, start_time: e.target.value }))
                   }
-                  placeholder="09:00"
+                  placeholder={t(
+                    "agencyDashboard.scouting.eventModal.placeholders.startTime",
+                    {
+                      defaultValue: "09:00",
+                    },
+                  )}
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  End time
+                  {t("agencyDashboard.scouting.eventModal.fields.endTime", {
+                    defaultValue: "End time",
+                  })}
                 </Label>
                 <Input
                   value={eventForm.end_time}
                   onChange={(e) =>
                     setEventForm((p) => ({ ...p, end_time: e.target.value }))
                   }
-                  placeholder="18:00"
+                  placeholder={t(
+                    "agencyDashboard.scouting.eventModal.placeholders.endTime",
+                    {
+                      defaultValue: "18:00",
+                    },
+                  )}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                Location
+                {t("agencyDashboard.scouting.eventModal.fields.location", {
+                  defaultValue: "Location",
+                })}
               </Label>
               <Input
                 value={eventForm.location}
                 onChange={(e) =>
                   setEventForm((p) => ({ ...p, location: e.target.value }))
                 }
-                placeholder="Location"
+                placeholder={t(
+                  "agencyDashboard.scouting.eventModal.placeholders.location",
+                  {
+                    defaultValue: "Location",
+                  },
+                )}
               />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                Description
+                {t("agencyDashboard.scouting.eventModal.fields.description", {
+                  defaultValue: "Description",
+                })}
               </Label>
               <Textarea
                 value={eventForm.description}
                 onChange={(e) =>
                   setEventForm((p) => ({ ...p, description: e.target.value }))
                 }
-                placeholder="Optional details"
+                placeholder={t(
+                  "agencyDashboard.scouting.eventModal.placeholders.description",
+                  {
+                    defaultValue: "Optional details",
+                  },
+                )}
               />
             </div>
           </div>
@@ -11025,7 +11097,9 @@ const ScoutingHubView = ({
               variant="outline"
               onClick={() => setIsEventModalOpen(false)}
             >
-              Cancel
+              {t("agencyDashboard.scouting.eventModal.actions.cancel", {
+                defaultValue: "Cancel",
+              })}
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
@@ -12068,44 +12142,61 @@ const ScoutingMapTab = ({
   </Card>
 );
 
-const SubmissionsTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Website Submissions</h2>
-        <p className="text-sm text-gray-500 font-medium">
-          Review talent applications
+const SubmissionsTab = () => {
+  const { t } = useTranslation();
+  return (
+    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">
+            {t("agencyDashboard.scouting.submissions.title", {
+              defaultValue: "Website Submissions",
+            })}
+          </h2>
+          <p className="text-sm text-gray-500 font-medium">
+            {t("agencyDashboard.scouting.submissions.subtitle", {
+              defaultValue: "Review talent applications",
+            })}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge
+            variant="secondary"
+            className="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 text-sm rounded-xl h-11 flex items-center gap-2"
+          >
+            {t("agencyDashboard.scouting.submissions.pendingReview", {
+              defaultValue: "18 Pending Review",
+            })}
+          </Badge>
+          <Button
+            variant="outline"
+            className="font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm border-gray-300"
+          >
+            {t("agencyDashboard.scouting.submissions.bulkActions", {
+              defaultValue: "Bulk Actions",
+            })}
+          </Button>
+        </div>
+      </div>
+
+      <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
+        <div className="p-8 bg-gray-50 rounded-full mb-6">
+          <Mail className="w-12 h-12 text-gray-200" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          {t("agencyDashboard.scouting.submissions.emptyTitle", {
+            defaultValue: "No new submissions",
+          })}
+        </h3>
+        <p className="text-gray-500 max-w-sm font-medium">
+          {t("agencyDashboard.scouting.submissions.emptyDescription", {
+            defaultValue: "Applications from your website will appear here",
+          })}
         </p>
       </div>
-      <div className="flex items-center gap-3">
-        <Badge
-          variant="secondary"
-          className="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 text-sm rounded-xl h-11 flex items-center gap-2"
-        >
-          18 Pending Review
-        </Badge>
-        <Button
-          variant="outline"
-          className="font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm border-gray-300"
-        >
-          Bulk Actions
-        </Button>
-      </div>
-    </div>
-
-    <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
-      <div className="p-8 bg-gray-50 rounded-full mb-6">
-        <Mail className="w-12 h-12 text-gray-200" />
-      </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">
-        No new submissions
-      </h3>
-      <p className="text-gray-500 max-w-sm font-medium">
-        Applications from your website will appear here
-      </p>
-    </div>
-  </Card>
-);
+    </Card>
+  );
+};
 
 const OpenCallsTab = ({
   onCreateEvent,
@@ -12116,6 +12207,7 @@ const OpenCallsTab = ({
   onEditEvent: (event: ScoutingEvent) => void;
   onDeleteEvent: (event: ScoutingEvent) => void;
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { data: events, isLoading } = useQuery({
     queryKey: ["scouting-events", user?.id],
@@ -12133,37 +12225,55 @@ const OpenCallsTab = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h2 className="text-xl font-bold text-gray-900">
-            Open Calls & Events
+            {t("agencyDashboard.scouting.openCalls.title", {
+              defaultValue: "Open Calls & Events",
+            })}
           </h2>
           <p className="text-sm text-gray-500 font-medium">
-            Organize open calls and virtual castings to find new talent
+            {t("agencyDashboard.scouting.openCalls.subtitle", {
+              defaultValue:
+                "Organize open calls and virtual castings to find new talent",
+            })}
           </p>
         </div>
         <Button
           onClick={onCreateEvent}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-xl shadow-sm"
         >
-          <Plus className="w-4 h-4" /> Create Event
+          <Plus className="w-4 h-4" />{" "}
+          {t("agencyDashboard.scouting.createEvent", {
+            defaultValue: "Create Event",
+          })}
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">Loading events...</div>
+        <div className="text-center py-12">
+          {t("agencyDashboard.scouting.openCalls.loading", {
+            defaultValue: "Loading events...",
+          })}
+        </div>
       ) : !events || events.length === 0 ? (
         <div className="text-center py-20 border-2 border-dashed border-gray-100 rounded-3xl">
           <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-gray-900 mb-1">
-            No events scheduled
+            {t("agencyDashboard.scouting.openCalls.emptyTitle", {
+              defaultValue: "No events scheduled",
+            })}
           </h3>
           <p className="text-gray-500 mb-6 text-sm">
-            Create your first open call or scouting event
+            {t("agencyDashboard.scouting.openCalls.emptyDescription", {
+              defaultValue: "Create your first open call or scouting event",
+            })}
           </p>
           <Button
             onClick={onCreateEvent}
             variant="outline"
             className="font-bold rounded-xl"
           >
-            Create First Event
+            {t("agencyDashboard.scouting.openCalls.createFirstEvent", {
+              defaultValue: "Create First Event",
+            })}
           </Button>
         </div>
       ) : (
@@ -12180,14 +12290,19 @@ const OpenCallsTab = ({
                     <Calendar className="w-6 h-6 text-indigo-600" />
                   </div>
                   <Badge className="bg-green-50 text-green-700 border-green-100">
-                    Active
+                    {t("agencyDashboard.scouting.openCalls.active", {
+                      defaultValue: "Active",
+                    })}
                   </Badge>
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-indigo-600 transition-colors line-clamp-1">
                   {event.name}
                 </h3>
                 <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-4 min-h-[2rem]">
-                  {event.description || "No description provided."}
+                  {event.description ||
+                    t("agencyDashboard.scouting.openCalls.noDescription", {
+                      defaultValue: "No description provided.",
+                    })}
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-gray-600 bg-gray-50/80 p-2 rounded-lg border border-gray-100/50 group-hover:bg-indigo-50/30 transition-colors">
@@ -12225,14 +12340,18 @@ const OpenCallsTab = ({
                     }}
                   >
                     <Trash2 className="w-3.5 h-3.5 mr-1" />
-                    Delete
+                    {t("agencyDashboard.scouting.openCalls.delete", {
+                      defaultValue: "Delete",
+                    })}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
                   >
-                    Edit Details
+                    {t("agencyDashboard.scouting.openCalls.editDetails", {
+                      defaultValue: "Edit Details",
+                    })}
                   </Button>
                 </div>
               </div>
@@ -12245,6 +12364,7 @@ const OpenCallsTab = ({
 };
 
 const ScoutingAnalyticsTab = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     data: analytics,
@@ -12272,28 +12392,44 @@ const ScoutingAnalyticsTab = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-500">
         <AlertCircle className="w-12 h-12 mb-4 text-red-500" />
-        <p>Failed to load analytics data.</p>
+        <p>
+          {t("agencyDashboard.scouting.analytics.failedToLoad", {
+            defaultValue: "Failed to load analytics data.",
+          })}
+        </p>
       </div>
     );
   }
 
   const stats = [
     {
-      label: "TOTAL PROSPECTS",
+      label: t("agencyDashboard.scouting.analytics.totalProspects", {
+        defaultValue: "TOTAL PROSPECTS",
+      }),
       value: analytics.totalProspects.toString(),
-      sub: "All time",
+      sub: t("agencyDashboard.scouting.analytics.allTime", {
+        defaultValue: "All time",
+      }),
       subColor: "text-gray-500",
     },
     {
-      label: "CONVERSION RATE",
+      label: t("agencyDashboard.scouting.analytics.conversionRate", {
+        defaultValue: "CONVERSION RATE",
+      }),
       value: `${analytics.conversionRate}%`,
-      sub: "Prospects → Signed",
+      sub: t("agencyDashboard.scouting.analytics.prospectsToSigned", {
+        defaultValue: "Prospects → Signed",
+      }),
       subColor: "text-gray-500",
     },
     {
-      label: "AVG. TIME TO SIGN",
+      label: t("agencyDashboard.scouting.analytics.avgTimeToSign", {
+        defaultValue: "AVG. TIME TO SIGN",
+      }),
       value: `${analytics.avgTimeToSign}d`,
-      sub: "From discovery",
+      sub: t("agencyDashboard.scouting.analytics.fromDiscovery", {
+        defaultValue: "From discovery",
+      }),
       subColor: "text-gray-500",
     },
   ];

@@ -706,11 +706,29 @@ export default function CreatorDashboard() {
     unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
 
   const formatStatus = (status: unknown) => {
-    const normalized = String(status || "sent").toLowerCase();
-    const mapped = t(`creatorDashboard.status.${normalized}`, {
-      defaultValue: "",
-    });
-    if (mapped) return mapped;
+    const normalized = String(status || "sent")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/-+/g, "_");
+    const statusKeyMap: Record<string, string> = {
+      accepted: "common.accepted",
+      declined: "common.declined",
+      approved: "common.approved",
+      sent: "common.sent",
+      contract_fully_signed: "common.contractFullySigned",
+      contract_partially_signed: "common.contractPartiallySigned",
+      contract_sent: "common.contractSent",
+      changes_requested: "common.changesRequested",
+      viewed: "common.viewed",
+      fulfilled: "common.fulfilled",
+    };
+    const mappedKey = statusKeyMap[normalized];
+    if (mappedKey) {
+      return t(mappedKey, {
+        defaultValue: "",
+      });
+    }
     return String(status || "sent")
       .replace(/_/g, " ")
       .replace(/\b\w/g, (m) => m.toUpperCase());
@@ -8359,7 +8377,7 @@ export default function CreatorDashboard() {
             <p className="text-xs text-amber-700 mt-2">
               {t("creatorDashboard.brandConnections.notificationsSummary", {
                 defaultValue:
-                  "{{count}} new notifications across requests, offers, and deliverables.",
+                  "{{count}} neue Benachrichtigungen zu Anfragen, Angeboten und Lieferungen.",
                 count: totalBrandConnectionNotifications,
               })}
             </p>
@@ -8403,7 +8421,7 @@ export default function CreatorDashboard() {
             }}
           >
             {t("creatorDashboard.brandConnections.requests", {
-              defaultValue: "Requests",
+              defaultValue: "Anfragen",
             })}
             {unseenRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
@@ -8430,7 +8448,7 @@ export default function CreatorDashboard() {
             }}
           >
             {t("creatorDashboard.brandConnections.offers", {
-              defaultValue: "Brand Offers",
+              defaultValue: "Markenangebote",
             })}
             {unseenOfferCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
@@ -8479,7 +8497,7 @@ export default function CreatorDashboard() {
             }}
           >
             {t("creatorDashboard.brandConnections.deliverables", {
-              defaultValue: "Deliverables",
+              defaultValue: "Lieferungen",
             })}
             {unseenDeliverableFeedbackCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
@@ -8507,7 +8525,7 @@ export default function CreatorDashboard() {
                 : t(
                     "creatorDashboard.brandConnections.noConnectionsDescription",
                     {
-                      defaultValue: "You are not connected to any brands yet.",
+                      defaultValue: "Sie sind noch mit keiner Marke verbunden.",
                     },
                   )}
             </div>
@@ -8562,14 +8580,14 @@ export default function CreatorDashboard() {
               <div>
                 <div className="text-lg font-semibold text-gray-900">
                   {t("creatorDashboard.brandConnections.requests", {
-                    defaultValue: "Requests",
+                    defaultValue: "Anfragen",
                   })}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
                   {pending.length > 0
                     ? "Respond to pending brand connection requests."
                     : t("creatorDashboard.brandConnections.noPendingRequests", {
-                        defaultValue: "No pending requests right now.",
+                        defaultValue: "Derzeit keine ausstehenden Anfragen.",
                       })}
                 </div>
               </div>
@@ -8629,13 +8647,23 @@ export default function CreatorDashboard() {
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
-                Job Invites
+                {t("creatorDashboard.brandConnections.jobInvites", {
+                  defaultValue: "Job Invites",
+                })}
               </div>
               {loadingJobInvites && (
-                <p className="text-sm text-gray-600">Loading job invites...</p>
+                <p className="text-sm text-gray-600">
+                  {t("creatorDashboard.brandConnections.loadingJobInvites", {
+                    defaultValue: "Loading job invites...",
+                  })}
+                </p>
               )}
               {!loadingJobInvites && jobInvites.length === 0 && (
-                <p className="text-sm text-gray-600">No job invites yet.</p>
+                <p className="text-sm text-gray-600">
+                  {t("creatorDashboard.brandConnections.noJobInvites", {
+                    defaultValue: "No job invites yet.",
+                  })}
+                </p>
               )}
               {!loadingJobInvites && jobInvites.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -8681,7 +8709,12 @@ export default function CreatorDashboard() {
                                 )
                               }
                             >
-                              View job details
+                              {t(
+                                "creatorDashboard.brandConnections.viewJobDetails",
+                                {
+                                  defaultValue: "View job details",
+                                },
+                              )}
                             </Button>
                             <Button
                               variant="outline"
@@ -8692,7 +8725,9 @@ export default function CreatorDashboard() {
                                 setJobInviteConfirmOpen(true);
                               }}
                             >
-                              Accept
+                              {t("common.accept", {
+                                defaultValue: "Accept",
+                              })}
                             </Button>
                             <Button
                               variant="outline"
@@ -8703,7 +8738,9 @@ export default function CreatorDashboard() {
                                 setJobInviteConfirmOpen(true);
                               }}
                             >
-                              Decline
+                              {t("common.decline", {
+                                defaultValue: "Decline",
+                              })}
                             </Button>
                           </>
                         ) : (
@@ -8717,7 +8754,9 @@ export default function CreatorDashboard() {
                               )
                             }
                           >
-                            Apply
+                            {t("jobsPage.details.apply", {
+                              defaultValue: "Apply",
+                            })}
                           </Button>
                         )}
                       </div>
@@ -8734,17 +8773,21 @@ export default function CreatorDashboard() {
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
                 {t("creatorDashboard.brandConnections.offers", {
-                  defaultValue: "Brand Offers",
+                  defaultValue: "Markenangebote",
                 })}
               </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">
-                  Loading campaign offers...
+                  {t("creatorDashboard.brandConnections.loadingOffers", {
+                    defaultValue: "Loading campaign offers...",
+                  })}
                 </p>
               )}
               {!loadingBrandOffers && brandOffers.length === 0 && (
                 <p className="text-sm text-gray-600">
-                  No campaign offers available yet.
+                  {t("creatorDashboard.brandConnections.noCampaignOffers", {
+                    defaultValue: "No campaign offers available yet.",
+                  })}
                 </p>
               )}
               {!selectedOfferBriefId && brandOffers.length > 0 && (
@@ -8783,7 +8826,7 @@ export default function CreatorDashboard() {
                             onClick={() => openOfferBriefPage(offerId)}
                           >
                             {t("creatorDashboard.brandConnections.viewBrief", {
-                              defaultValue: "View brief",
+                              defaultValue: "Brief anzeigen",
                             })}
                           </Button>
                         </div>
@@ -8800,10 +8843,14 @@ export default function CreatorDashboard() {
                     onClick={closeOfferBriefPage}
                   >
                     {t("creatorDashboard.brandConnections.backToBrandOffers", {
-                      defaultValue: "← Back to Brand Offers",
+                      defaultValue: "← Zurück zu Markenangeboten",
                     })}
                   </Button>
-                  <p className="text-sm text-red-600">Offer brief not found.</p>
+                  <p className="text-sm text-red-600">
+                    {t("creatorDashboard.brandConnections.offerBriefNotFound", {
+                      defaultValue: "Offer brief not found.",
+                    })}
+                  </p>
                 </div>
               )}
               {selectedOfferBriefId && selectedBriefOffer && (
@@ -8818,16 +8865,23 @@ export default function CreatorDashboard() {
                         {t(
                           "creatorDashboard.brandConnections.backToBrandOffers",
                           {
-                            defaultValue: "← Back to Brand Offers",
+                            defaultValue: "← Zurück zu Markenangeboten",
                           },
                         )}
                       </Button>
                       <h1 className="text-3xl font-bold text-gray-900">
-                        {selectedBriefCampaign?.name || "Campaign"} - Brief &
-                        Contract
+                        {selectedBriefCampaign?.name || "Campaign"} -{" "}
+                        {t(
+                          "creatorDashboard.brandConnections.briefAndContract",
+                          {
+                            defaultValue: "Brief & Contract",
+                          },
+                        )}
                       </h1>
                       <p className="text-gray-600">
-                        Detailed scope and requirements
+                        {t("creatorDashboard.brandConnections.detailedScope", {
+                          defaultValue: "Detailed scope and requirements",
+                        })}
                       </p>
                     </div>
                     <Badge
@@ -9222,7 +9276,7 @@ export default function CreatorDashboard() {
                         disabled={!selectedBriefContract}
                       >
                         {t("creatorDashboard.brandConnections.signContract", {
-                          defaultValue: "Sign Contract",
+                          defaultValue: "Vertrag unterschreiben",
                         })}
                       </Button>
                     ) : (
@@ -9230,7 +9284,7 @@ export default function CreatorDashboard() {
                         {t(
                           "creatorDashboard.brandConnections.contractAlreadySigned",
                           {
-                            defaultValue: "Contract already signed.",
+                            defaultValue: "Vertrag bereits unterschrieben.",
                           },
                         )}
                       </div>
@@ -9269,71 +9323,112 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
                         <p>
-                          Offer status:{" "}
+                          {t("creatorDashboard.brandConnections.offerStatus", {
+                            defaultValue: "Offer status:",
+                          })}{" "}
                           <span className="font-semibold text-gray-900">
                             {formatStatus(offer?.status || "sent")}
                           </span>
                         </p>
                         <p>
-                          Deliverable status:{" "}
+                          {t(
+                            "creatorDashboard.brandConnections.deliverableStatus",
+                            {
+                              defaultValue: "Deliverable status:",
+                            },
+                          )}{" "}
                           <span className="font-semibold text-gray-900">
                             {(() => {
                               const normalized = String(
                                 offer?.status || "",
                               ).toLowerCase();
                               if (normalized.includes("changes_requested")) {
-                                return "Request Review";
+                                return t(
+                                  "creatorDashboard.brandConnections.requestReview",
+                                  {
+                                    defaultValue: "Request Review",
+                                  },
+                                );
                               }
                               if (
                                 normalized.includes("deliverables_submitted")
                               ) {
-                                return "Submitted";
+                                return t(
+                                  "creatorDashboard.brandConnections.submitted",
+                                  {
+                                    defaultValue: "Submitted",
+                                  },
+                                );
                               }
                               if (normalized.includes("approved")) {
-                                return "Approved";
+                                return t("common.approved", {
+                                  defaultValue: "Approved",
+                                });
                               }
                               if (
                                 normalized.includes("contract_fully_signed") ||
                                 normalized.includes("signed")
                               ) {
-                                return "Ready to submit";
+                                return t(
+                                  "creatorDashboard.brandConnections.readyToSubmit",
+                                  {
+                                    defaultValue: "Ready to submit",
+                                  },
+                                );
                               }
-                              return "Not started";
+                              return t(
+                                "creatorDashboard.brandConnections.notStarted",
+                                {
+                                  defaultValue: "Not started",
+                                },
+                              );
                             })()}
                           </span>
                         </p>
                         <p>
-                          Category:{" "}
+                          {t("creatorDashboard.brandConnections.category", {
+                            defaultValue: "Category:",
+                          })}{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.category || "N/A")}
                           </span>
                         </p>
                         <p>
-                          Budget range:{" "}
+                          {t("creatorDashboard.brandConnections.budgetRange", {
+                            defaultValue: "Budget range:",
+                          })}{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.budget_range || "N/A")}
                           </span>
                         </p>
                         <p>
-                          Usage scope:{" "}
+                          {t("creatorDashboard.brandConnections.usageScope", {
+                            defaultValue: "Usage scope:",
+                          })}{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.usage_scope || "N/A")}
                           </span>
                         </p>
                         <p>
-                          Territory:{" "}
+                          {t("creatorDashboard.brandConnections.territory", {
+                            defaultValue: "Territory:",
+                          })}{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.territory || "N/A")}
                           </span>
                         </p>
                         <p>
-                          Start date:{" "}
+                          {t("creatorDashboard.brandConnections.startDate", {
+                            defaultValue: "Start date:",
+                          })}{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.start_date || "N/A")}
                           </span>
                         </p>
                         <p>
-                          Duration:{" "}
+                          {t("creatorDashboard.brandConnections.duration", {
+                            defaultValue: "Duration:",
+                          })}{" "}
                           <span className="font-semibold text-gray-900">
                             {campaign?.duration_days
                               ? `${campaign.duration_days} days`
@@ -9352,8 +9447,13 @@ export default function CreatorDashboard() {
                           String(offer?.id || ""),
                         ) && (
                           <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                            Edits requested by brand. Open brief and check
-                            feedback comments.
+                            {t(
+                              "creatorDashboard.brandConnections.editsRequested",
+                              {
+                                defaultValue:
+                                  "Edits requested by brand. Open brief and check feedback comments.",
+                              },
+                            )}
                           </div>
                         )}
                       <Button
@@ -9362,7 +9462,7 @@ export default function CreatorDashboard() {
                         onClick={() => openOfferBriefPage(offerId)}
                       >
                         {t("creatorDashboard.brandConnections.viewBrief", {
-                          defaultValue: "View brief",
+                          defaultValue: "Brief anzeigen",
                         })}
                       </Button>
                     </div>
@@ -9378,7 +9478,7 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between gap-3">
                 <div className="text-lg font-semibold text-gray-900">
                   {t("creatorDashboard.brandConnections.deliverables", {
-                    defaultValue: "Deliverables",
+                    defaultValue: "Lieferungen",
                   })}
                 </div>
                 <Button
@@ -9395,12 +9495,22 @@ export default function CreatorDashboard() {
                 </Button>
               </div>
               {loadingBrandOffers && (
-                <p className="text-sm text-gray-600">Loading deliverables...</p>
+                <p className="text-sm text-gray-600">
+                  {t("creatorDashboard.brandConnections.loadingDeliverables", {
+                    defaultValue: "Loading deliverables...",
+                  })}
+                </p>
               )}
               {!loadingBrandOffers &&
                 deliverableEligibleOffers.length === 0 && (
                   <p className="text-sm text-gray-600">
-                    No deliverables yet for fully signed offers.
+                    {t(
+                      "creatorDashboard.brandConnections.noDeliverablesForSignedOffers",
+                      {
+                        defaultValue:
+                          "No deliverables yet for fully signed offers.",
+                      },
+                    )}
                   </p>
                 )}
               {deliverableEligibleOffers.map((offer: any) => {
@@ -9417,7 +9527,10 @@ export default function CreatorDashboard() {
                           {offer?.brand_campaigns?.name || "Campaign offer"}
                         </p>
                         <p className="text-xs text-gray-600">
-                          Offer status: {formatStatus(offer?.status || "sent")}
+                          {t("creatorDashboard.brandConnections.offerStatus", {
+                            defaultValue: "Offer status:",
+                          })}{" "}
+                          {formatStatus(offer?.status || "sent")}
                         </p>
                       </div>
                       <Button
@@ -9425,18 +9538,34 @@ export default function CreatorDashboard() {
                         className="border-gray-200"
                         onClick={() => openOfferBrief(offerId)}
                       >
-                        {expanded ? "Hide" : "Open"}
+                        {expanded
+                          ? t("common.hide", {
+                              defaultValue: "Hide",
+                            })
+                          : t("common.open", {
+                              defaultValue: "Open",
+                            })}
                       </Button>
                     </div>
                     {expanded && (
                       <div className="rounded-md border border-gray-200 p-3">
                         {loadingOfferDetails ? (
                           <div className="text-xs text-gray-500">
-                            Loading deliverables...
+                            {t(
+                              "creatorDashboard.brandConnections.loadingDeliverables",
+                              {
+                                defaultValue: "Loading deliverables...",
+                              },
+                            )}
                           </div>
                         ) : selectedOfferDeliverables.length === 0 ? (
                           <div className="text-xs text-gray-500">
-                            No deliverables yet.
+                            {t(
+                              "creatorDashboard.brandConnections.noDeliverables",
+                              {
+                                defaultValue: "No deliverables yet.",
+                              },
+                            )}
                           </div>
                         ) : (
                           selectedOfferDeliverables.map((deliverable: any) => (
@@ -9456,7 +9585,9 @@ export default function CreatorDashboard() {
                                   {String(
                                     deliverable?.status || "submitted",
                                   ).toLowerCase() === "brand_approved"
-                                    ? "Approved"
+                                    ? t("common.approved", {
+                                        defaultValue: "Approved",
+                                      })
                                     : formatStatus(
                                         deliverable?.status || "submitted",
                                       )}
@@ -9980,7 +10111,7 @@ export default function CreatorDashboard() {
               onClick={() => openBrandConnectionSubTab("requests")}
             >
               {t("creatorDashboard.approvals.openRequests", {
-                defaultValue: "Open requests",
+                defaultValue: "Offene Anfragen",
               })}
             </Button>
           </Card>
@@ -9997,7 +10128,7 @@ export default function CreatorDashboard() {
               onClick={() => openBrandConnectionSubTab("offers")}
             >
               {t("creatorDashboard.approvals.reviewOffers", {
-                defaultValue: "Review offers",
+                defaultValue: "Angebote prüfen",
               })}
             </Button>
           </Card>
@@ -10005,7 +10136,7 @@ export default function CreatorDashboard() {
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
               {t("creatorDashboard.approvals.deliverableFeedback", {
-                defaultValue: "Deliverable feedback",
+                defaultValue: "Lieferungs-Feedback",
               })}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
@@ -10016,7 +10147,7 @@ export default function CreatorDashboard() {
               onClick={() => openBrandConnectionSubTab("deliverables")}
             >
               {t("creatorDashboard.approvals.viewFeedback", {
-                defaultValue: "View feedback",
+                defaultValue: "Feedback anzeigen",
               })}
             </Button>
           </Card>
@@ -10027,13 +10158,13 @@ export default function CreatorDashboard() {
             <div>
               <div className="text-base sm:text-lg font-semibold text-gray-900">
                 {t("creatorDashboard.approvals.needsAttention", {
-                  defaultValue: "Needs your attention",
+                  defaultValue: "Benötigt Ihre Aufmerksamkeit",
                 })}
               </div>
               <div className="text-xs sm:text-sm text-gray-600 mt-1">
                 {t("creatorDashboard.approvals.needsAttentionDescription", {
                   defaultValue:
-                    "The latest items that still need a response from you.",
+                    "Die neuesten Elemente, die noch eine Antwort von Ihnen benötigen.",
                 })}
               </div>
             </div>
@@ -10111,7 +10242,7 @@ export default function CreatorDashboard() {
                           "creatorDashboard.approvals.feedbackReceivedOnDeliverables",
                           {
                             defaultValue:
-                              "Feedback received on submitted deliverables",
+                              "Feedback zu eingereichten Lieferungen erhalten",
                           },
                         )}
                       </div>
@@ -13312,7 +13443,7 @@ export default function CreatorDashboard() {
                               setSendDeliverablePreviewUrls(nextUrls);
                             }}
                           >
-                            {t("creatorDashboard.common.remove", {
+                            {t("common.remove", {
                               defaultValue: "Remove",
                             })}
                           </Button>
@@ -13427,7 +13558,7 @@ export default function CreatorDashboard() {
                 }}
                 disabled={offerActionLoading}
               >
-                {t("creatorDashboard.common.cancel", {
+                {t("common.cancel", {
                   defaultValue: "Cancel",
                 })}
               </Button>
@@ -13450,10 +13581,10 @@ export default function CreatorDashboard() {
                 }
               >
                 {offerActionLoading
-                  ? t("creatorDashboard.common.sending", {
+                  ? t("common.sending", {
                       defaultValue: "Sending...",
                     })
-                  : t("creatorDashboard.common.send", { defaultValue: "Send" })}
+                  : t("common.send", { defaultValue: "Send" })}
               </Button>
             </DialogFooter>
           </DialogContent>
