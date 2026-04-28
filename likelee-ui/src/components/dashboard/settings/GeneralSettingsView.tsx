@@ -80,6 +80,10 @@ import {
 import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
+import {
+  DashboardSectionHeader,
+  DashboardTabRail,
+} from "@/components/dashboard/DashboardResponsive";
 
 type GeneralSettingsViewProps = {
   hasIrlBookingAddon?: boolean;
@@ -318,60 +322,70 @@ const InviteTeamMemberModal = ({
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900">
+      <DialogContent className="max-w-md w-[95vw] rounded-2xl p-4 sm:p-6 overflow-hidden">
+        <DialogHeader className="space-y-1 sm:space-y-1.5 text-left">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
             Invite Team Member
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
             Send an email invitation to join your agency team
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6 py-4">
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">
+        <div className="space-y-4 sm:space-y-6 py-4">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm font-bold text-gray-900">
               Email Address
             </Label>
             <Input
               value={email}
               onChange={(event) => onEmailChange(event.target.value)}
               placeholder="colleague@example.com"
-              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm"
             />
           </div>
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">User Role</Label>
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm font-bold text-gray-900">
+              User Role
+            </Label>
             <Select
               value={role}
               onValueChange={(value) =>
                 onRoleChange(value as Exclude<TeamRoleValue, "owner">)
               }
             >
-              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+              <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label} - {option.description}
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="text-xs font-bold py-2.5"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <span>{option.label}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {option.description}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-            <p className="text-xs text-indigo-700 font-medium leading-relaxed">
+          <div className="p-3 sm:p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+            <p className="text-[10px] sm:text-xs text-indigo-700 font-medium leading-relaxed">
               <span className="font-bold">Note:</span> The invited user will
-              receive an email with instructions to set up their account and
-              access the dashboard with the assigned role.
+              receive instructions via email to access the dashboard.
             </p>
           </div>
         </div>
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="font-bold"
+            className="w-full sm:w-auto font-bold text-xs sm:text-sm"
             disabled={submitting}
           >
             Cancel
@@ -379,7 +393,7 @@ const InviteTeamMemberModal = ({
           <Button
             onClick={onSubmit}
             disabled={submitting}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
+            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-6 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm"
           >
             {submitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -415,46 +429,57 @@ const EditPermissionsModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="text-xl font-bold text-gray-900">
+      <DialogContent className="max-w-md w-[95vw] rounded-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
             Update Team Role
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
             {member.email} is currently {formatTeamRoleLabel(member.role)}.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
-          <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-900">New Role</Label>
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-5 sm:space-y-6">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label className="text-xs sm:text-sm font-bold text-gray-900">
+              New Role
+            </Label>
             <Select
               value={nextRole}
               onValueChange={(value) =>
                 onRoleChange(value as Exclude<TeamRoleValue, "owner">)
               }
             >
-              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+              <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label} - {option.description}
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="text-xs font-bold py-2.5"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <span>{option.label}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">
+                        {option.description}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium text-amber-800">
+          <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 sm:p-4 text-[10px] sm:text-xs font-medium text-amber-800">
             This change takes effect immediately for the member’s active
             session.
           </div>
         </div>
-        <DialogFooter className="p-6 border-t border-gray-100 gap-2 sm:gap-0">
+        <DialogFooter className="p-4 sm:p-6 border-t border-gray-100 flex-col sm:flex-row gap-2 sm:gap-0">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="font-bold"
+            className="w-full sm:w-auto font-bold text-xs sm:text-sm"
             disabled={submitting}
           >
             Cancel
@@ -462,7 +487,7 @@ const EditPermissionsModal = ({
           <Button
             onClick={onSubmit}
             disabled={submitting}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl"
+            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-8 rounded-xl text-xs sm:text-sm"
           >
             {submitting ? "Saving..." : "Confirm Role Change"}
           </Button>
@@ -534,18 +559,18 @@ const ActivityLogModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-2xl max-h-[80vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle className="text-xl font-bold text-gray-900">
+      <DialogContent className="max-w-lg w-[95vw] rounded-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
             Team Activity Log
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
             Recent invite, role, and membership events
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-3 sm:space-y-4">
           {logs.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
               No team activity recorded yet.
             </div>
           ) : (
@@ -554,21 +579,21 @@ const ActivityLogModal = ({
               return (
                 <div
                   key={log.id}
-                  className="flex gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
+                  className="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
                 >
                   <div
-                    className={`w-10 h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}
                   >
-                    <activity.icon className="w-5 h-5" />
+                    <activity.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                       {activity.label}
                     </p>
-                    <p className="text-xs text-gray-500 font-medium mt-0.5">
+                    <p className="text-[10px] sm:text-xs text-gray-500 font-medium mt-0.5 leading-tight">
                       {activity.details}
                     </p>
-                    <p className="text-[10px] text-gray-400 font-medium mt-1">
+                    <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-wider">
                       {new Date(log.created_at).toLocaleString()}
                     </p>
                   </div>
@@ -577,11 +602,11 @@ const ActivityLogModal = ({
             })
           )}
         </div>
-        <DialogFooter className="p-6 border-t border-gray-100">
+        <DialogFooter className="p-4 sm:p-6 border-t border-gray-100">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="w-full font-bold rounded-xl h-11"
+            className="w-full font-bold rounded-xl h-9 sm:h-11 text-xs sm:text-sm"
           >
             Close
           </Button>
@@ -2005,17 +2030,13 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
   return (
     <div className="max-w-full mx-auto">
       <div className="space-y-6 animate-in fade-in duration-500">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-            Agency Settings
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 font-medium">
-            Configure your agency profile and preferences
-          </p>
-        </div>
+        <DashboardSectionHeader
+          title="Agency Settings"
+          description="Configure your agency profile and preferences"
+        />
 
-        <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
-          {[
+        <DashboardTabRail
+          items={[
             "Profile",
             "Commissions",
             "Email Templates",
@@ -2024,20 +2045,13 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
             "Team",
             "File Storage",
             "Integrations",
-          ].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+          ].map((tab) => ({
+            id: tab,
+            label: tab,
+            active: activeTab === tab,
+            onClick: () => setActiveTab(tab),
+          }))}
+        />
 
         {activeTab === "Profile" && (
           <div className="space-y-6">
@@ -2299,7 +2313,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   <Label className="text-sm font-bold text-gray-900">
                     Agency Logo
                   </Label>
-                  <div className="flex items-center gap-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                     <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
                       {profile?.logo_url ? (
                         <img
@@ -2324,7 +2338,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+                      className="h-10 w-full px-4 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 sm:w-auto"
                     >
                       {isUploading ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
@@ -3027,14 +3041,19 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
 
         {activeTab === "Team" && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  Team Management
-                </h3>
-                <p className="text-sm text-gray-500 font-medium hidden sm:block">
-                  Manage team members, roles, and permissions
-                </p>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">
+                    Team Management
+                  </h3>
+                  <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
+                    Manage team members, roles, and permissions
+                  </p>
+                </div>
               </div>
               <Button
                 onClick={() => setShowInviteModal(true)}
@@ -3042,10 +3061,10 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   isLoadingTeamContext ||
                   !teamContext?.permissions?.includes("invite_team_members")
                 }
-                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto"
+                className="h-8 sm:h-9 px-3 sm:px-4 bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all"
               >
-                <Plus className="w-4 h-4" />
-                Invite User
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm">Invite</span>
               </Button>
             </div>
 
@@ -3058,18 +3077,18 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
               </Card>
             ) : (
               <>
-                <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-gray-600" />
+                <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                  <div className="flex flex-col gap-4 sm:gap-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                         </div>
                         <div>
-                          <h4 className="text-lg font-bold text-gray-900 tracking-tight">
-                            Active Team Members
+                          <h4 className="text-sm sm:text-lg font-bold text-gray-900 tracking-tight">
+                            Active Members
                           </h4>
-                          <p className="text-sm text-gray-500 font-medium mt-1">
+                          <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
                             Current access inside{" "}
                             {teamContext?.organization_name || "your agency"}.
                           </p>
@@ -3078,21 +3097,24 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
-                          className="rounded-xl"
+                          size="sm"
+                          className="h-8 rounded-xl bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold transition-all px-3"
                           onClick={() => setShowActivityModal(true)}
                         >
-                          <History className="w-4 h-4 mr-2" />
-                          Activity
+                          <History className="w-3.5 h-3.5 mr-1.5" />
+                          <span className="text-[10px] sm:text-xs">
+                            Activity
+                          </span>
                         </Button>
-                        <Badge className="bg-gray-50 text-gray-700 border-gray-200 font-bold text-[10px] h-6">
-                          {teamContext?.members?.length || 0} Members
+                        <Badge className="bg-gray-50 text-gray-500 border-gray-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
+                          {teamContext?.members?.length || 0}
                         </Badge>
                       </div>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {(teamContext?.members || []).length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                        <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
                           No active team members yet.
                         </div>
                       ) : (
@@ -3113,22 +3135,24 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                           return (
                             <div
                               key={member.user_id}
-                              className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+                              className="flex flex-col justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 hover:border-indigo-100 transition-all duration-300"
                             >
                               <div className="min-w-0">
-                                <div className="text-sm font-bold text-gray-900 truncate">
+                                <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                                   {member.email}
                                 </div>
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                  <Badge className="bg-white text-gray-700 border-gray-200">
+                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                  <Badge className="bg-white text-gray-600 border-gray-100 text-[9px] sm:text-[10px] px-1.5 py-0">
                                     {formatTeamRoleLabel(member.role)}
                                   </Badge>
-                                  <span>Status: {member.status}</span>
+                                  <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                    {member.status}
+                                  </span>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-end border-t border-gray-100 pt-3">
                                 {member.role === "owner" ? (
-                                  <Badge className="bg-amber-50 text-amber-700 border-amber-200">
+                                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 text-[9px] font-black uppercase tracking-widest px-2">
                                     Owner
                                   </Badge>
                                 ) : (
@@ -3165,37 +3189,36 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   </div>
                 </Card>
 
-                <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                          <Mail className="w-5 h-5 text-gray-600" />
+                <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                  <div className="flex flex-col gap-4 sm:gap-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                          <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
                         </div>
                         <div>
-                          <h4 className="text-lg font-bold text-gray-900 tracking-tight">
-                            Pending Invitations
+                          <h4 className="text-sm sm:text-lg font-bold text-gray-900 tracking-tight">
+                            Invitations
                           </h4>
-                          <p className="text-sm text-gray-500 font-medium mt-1">
-                            Outstanding invites waiting to be accepted.
+                          <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
+                            Outstanding invites waiting for acceptance.
                           </p>
                         </div>
                       </div>
-                      <Badge className="bg-gray-50 text-gray-700 border-gray-200 font-bold text-[10px] h-6">
+                      <Badge className="bg-orange-50 text-orange-600 border-orange-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
                         {
                           (teamContext?.invites || []).filter(
                             (invite) => invite.status === "pending",
                           ).length
-                        }{" "}
-                        Pending
+                        }
                       </Badge>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {(teamContext?.invites || []).filter(
                         (invite) => invite.status === "pending",
                       ).length === 0 ? (
-                        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                        <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
                           No pending invitations.
                         </div>
                       ) : (
@@ -3204,27 +3227,30 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                           .map((invite) => (
                             <div
                               key={invite.id}
-                              className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
+                              className="flex flex-col justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 hover:border-orange-100 transition-all duration-300"
                             >
                               <div className="min-w-0">
-                                <div className="text-sm font-bold text-gray-900 truncate">
+                                <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
                                   {invite.email}
                                 </div>
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                  <Badge className="bg-white text-gray-700 border-gray-200">
+                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                  <Badge className="bg-white text-gray-600 border-gray-100 text-[9px] sm:text-[10px] px-1.5 py-0">
                                     {formatTeamRoleLabel(invite.role)}
                                   </Badge>
-                                  <span>
-                                    Expires{" "}
-                                    {new Date(
-                                      invite.expires_at,
-                                    ).toLocaleString()}
+                                  <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                    Pending
                                   </span>
                                 </div>
                               </div>
-                              <Badge className="bg-amber-50 text-amber-700 border-amber-200">
-                                Pending
-                              </Badge>
+                              <div className="border-t border-gray-100 pt-3">
+                                <div className="text-[9px] sm:text-[10px] text-gray-400 font-bold flex items-center gap-1.5">
+                                  <History className="w-2.5 h-2.5" />
+                                  Exp:{" "}
+                                  {new Date(
+                                    invite.expires_at,
+                                  ).toLocaleDateString()}
+                                </div>
+                              </div>
                             </div>
                           ))
                       )}

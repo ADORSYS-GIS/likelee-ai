@@ -2726,7 +2726,9 @@ export default function BrandDashboard() {
           ← Back to Dashboard
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Escrow Details</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+            Escrow Details
+          </h1>
           <p className="text-gray-600">
             Securely held payments for your active projects
           </p>
@@ -2872,14 +2874,14 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Welcome back{brand?.name ? `, ${brand.name}` : ""}
           </h1>
           <p className="text-gray-600">Your creative workspace is ready.</p>
         </div>
 
         {/* Top Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
@@ -2887,7 +2889,7 @@ export default function BrandDashboard() {
               </p>
               <Target className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               {campaignMetrics.active_projects_count}
             </p>
             <p className="text-sm text-gray-600 mt-1">
@@ -2903,7 +2905,7 @@ export default function BrandDashboard() {
               <p className="text-sm font-medium text-gray-600">In Escrow</p>
               <DollarSign className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               ${(escrowTotal / 1000).toFixed(1)}K
             </p>
             <p className="text-sm text-blue-600 mt-1 font-medium">
@@ -2918,7 +2920,7 @@ export default function BrandDashboard() {
               </p>
               <AlertCircle className="w-5 h-5 text-yellow-600" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               {campaignMetrics.pending_approvals_count}
             </p>
             {campaignMetrics.pending_approvals_count > 0 && (
@@ -2935,7 +2937,7 @@ export default function BrandDashboard() {
               </p>
               <TrendingUp className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               {homeCurrentMonthSpendLabel}
             </p>
             <p className={`text-sm mt-1 ${homeSpendGrowthClass}`}>
@@ -2950,7 +2952,7 @@ export default function BrandDashboard() {
               </p>
               <Clock className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               {campaignMetrics.avg_turnaround_hours > 0
                 ? `${campaignMetrics.avg_turnaround_hours}h`
                 : "—"}
@@ -2963,51 +2965,53 @@ export default function BrandDashboard() {
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             Quick Actions
           </h2>
-          <div className="grid md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
             <Button
               onClick={() => {
                 goToCampaignsSection();
               }}
-              className="h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
+              className="h-20 sm:h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
             >
-              <Plus className="w-6 h-6" />
-              <span className="font-semibold">Start New Project</span>
+              <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="font-semibold text-xs sm:text-sm">
+                Start New Project
+              </span>
             </Button>
             <Button
               onClick={() => navigateToSection("marketplace")}
-              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+              className="h-20 sm:h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
-              <Search className="w-6 h-6" />
-              <span>Browse Creators</span>
+              <Search className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">Browse Creators</span>
             </Button>
             <Button
               onClick={() => {
                 goToCampaignsSection();
               }}
-              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+              className="h-20 sm:h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
-              <CheckCircle2 className="w-6 h-6" />
-              <span>View Active Campaigns</span>
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">View Active Campaigns</span>
             </Button>
             <Button
               onClick={handleAgencyCollaborationEntry}
-              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+              className="h-20 sm:h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
-              <Users className="w-6 h-6" />
-              <span>Invite Agency</span>
+              <Users className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">Invite Agency</span>
             </Button>
             <Button
               onClick={() => navigateToSection("marketplace-agencies")}
-              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+              className="h-20 sm:h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
-              <Users className="w-6 h-6" />
-              <span>Browse Agencies</span>
+              <Users className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm">Browse Agencies</span>
             </Button>
           </div>
         </Card>
 
         {/* Recent Projects & Activity Feed */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               Recent Projects
@@ -3250,7 +3254,7 @@ export default function BrandDashboard() {
             ← Back to Marketplace
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
               {selectedCreator.name}'s Profile
             </h1>
             <p className="text-gray-600">Verified Creator</p>
@@ -3593,7 +3597,7 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Verified Creators Marketplace
           </h1>
           <p className="text-gray-600">
@@ -4118,9 +4122,9 @@ export default function BrandDashboard() {
 
   const renderBrandLicensingRequests = () => (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
             Licensing Requests
           </h2>
           <p className="text-gray-600">
@@ -4137,7 +4141,7 @@ export default function BrandDashboard() {
 
       {!loadingBrandLicensingRequests &&
         brandLicensingRequests.length === 0 && (
-          <Card className="p-8 text-center text-sm text-gray-600">
+          <Card className="p-4 sm:p-8 text-center text-sm text-gray-600">
             No licensing requests yet.
           </Card>
         )}
@@ -4243,7 +4247,7 @@ export default function BrandDashboard() {
                   <Badge className={`border ${statusClass}`}>{status}</Badge>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4 text-sm">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
                   <div>
                     <p className="text-gray-500">Start Date</p>
                     <p className="font-semibold text-gray-900">
@@ -4369,7 +4373,7 @@ export default function BrandDashboard() {
         <div className="space-y-5">
           <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
             <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
               Access Restricted
             </h2>
             <p className="text-gray-600">
@@ -4386,7 +4390,9 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-5">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+            Inbox
+          </h2>
           <p className="text-gray-600">
             View packages and licensing proposals from agencies
           </p>
@@ -4502,9 +4508,9 @@ export default function BrandDashboard() {
                     </p>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2 mt-2">
                     <Button
-                      className={`flex-1 rounded-none ${
+                      className={`flex-1 min-w-[120px] rounded-none text-sm ${
                         isExpired || !canManagePayOffers
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-black hover:bg-gray-800 text-white"
@@ -4522,7 +4528,7 @@ export default function BrandDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="border border-gray-300 rounded-none"
+                      className="flex-1 min-w-[120px] border border-gray-300 rounded-none text-sm"
                       disabled={isDone || isExpired}
                       onClick={() => {
                         const token = pkg?.meta?.agency_package_token;
@@ -4536,14 +4542,13 @@ export default function BrandDashboard() {
                     >
                       Open Package
                     </Button>
-                    {canManagePayOffers && (
-                      <Button
-                        variant="outline"
-                        className="border border-gray-300 rounded-none"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      className="border border-gray-300 rounded-none flex-shrink-0"
+                      disabled={!canManagePayOffers}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </Card>
               );
@@ -4884,7 +4889,9 @@ export default function BrandDashboard() {
   const renderCampaignContractHub = () => (
     <div className="space-y-5">
       <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-1">Contract Hub</h2>
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">
+          Contract Hub
+        </h2>
         <p className="text-gray-600">Campaign contracts and signing status.</p>
       </div>
       <div className="space-y-3">
@@ -5063,7 +5070,7 @@ export default function BrandDashboard() {
                         return (
                           <div
                             key={String(contract?.id)}
-                            className="bg-white p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                            className="bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50/50 transition-colors"
                           >
                             <div className="flex items-center gap-4">
                               <div
@@ -5339,7 +5346,7 @@ export default function BrandDashboard() {
   const renderCampaignDeliverablesHub = () => (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-black text-gray-900 font-syne tracking-tight">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 font-syne tracking-tight">
           Deliverables
         </h2>
         <p className="text-gray-500 font-medium mt-1">
@@ -5447,19 +5454,19 @@ export default function BrandDashboard() {
                 className="rounded-2xl border-2 border-sky-300/80 bg-white/70 backdrop-blur-xl shadow-sm ring-1 ring-sky-100/70 overflow-hidden transition-shadow hover:shadow-md"
               >
                 <div
-                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer hover:bg-white/80 transition-colors"
                   onClick={() => {
                     setExpandedCampaignHubId(
                       campaignExpanded ? "" : campaignId,
                     );
                   }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-xl bg-gray-100 text-gray-600">
-                      <Briefcase className="w-5 h-5" />
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="p-2 sm:p-3 rounded-xl bg-gray-100 text-gray-600 flex-shrink-0">
+                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-gray-900 truncate">
                         {group?.campaignName || "Campaign"}
                       </h3>
                       <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
@@ -5467,20 +5474,20 @@ export default function BrandDashboard() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
                       {aggregate.reviewed} reviewed
                     </Badge>
-                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
                       {aggregate.approved} approved
                     </Badge>
-                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                       {completionPct}%
                     </Badge>
                     {campaignExpanded ? (
-                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     ) : (
-                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                     )}
                   </div>
                 </div>
@@ -5562,7 +5569,7 @@ export default function BrandDashboard() {
                             className="rounded-xl border border-sky-200/60 bg-white/60 backdrop-blur-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md"
                           >
                             <div
-                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
+                              className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 cursor-pointer hover:bg-white/80 transition-colors"
                               onClick={async (event) => {
                                 event.stopPropagation();
                                 const next = expanded ? "" : offerId;
@@ -5570,15 +5577,15 @@ export default function BrandDashboard() {
                                 await loadOfferHubDetails(next);
                               }}
                             >
-                              <div className="flex items-center gap-3">
-                                <Avatar className="w-9 h-9">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <Avatar className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
                                   <AvatarImage src={collaboratorAvatar} />
                                   <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
                                     {collaboratorInitial}
                                   </AvatarFallback>
                                 </Avatar>
-                                <div>
-                                  <p className="text-sm font-bold text-gray-900">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-gray-900 truncate">
                                     {collaboratorName}
                                   </p>
                                   <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
@@ -5594,14 +5601,14 @@ export default function BrandDashboard() {
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
                                   {reviewedCount} reviewed
                                 </Badge>
-                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
                                   {approvedCount} approved
                                 </Badge>
-                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                                   {completionPct}%
                                 </Badge>
                                 {expanded ? (
@@ -6190,7 +6197,7 @@ export default function BrandDashboard() {
                 ← Back to Project
               </Button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                   {campaign.name} - Brief & Contract
                 </h1>
                 <p className="text-gray-600">Detailed scope and requirements</p>
@@ -6585,7 +6592,7 @@ export default function BrandDashboard() {
               ← Back to Campaigns
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
                 {campaign.name}
               </h1>
               <p className="text-gray-600">Created {campaign.last_update}</p>
@@ -6753,7 +6760,9 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Offers</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            My Offers
+          </h1>
           <p className="text-gray-600">
             Review and manage campaign offers and ongoing collaborations
           </p>
@@ -6804,7 +6813,7 @@ export default function BrandDashboard() {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
           {loadingBrandOfferItems && (
             <Card className="p-6 bg-white border border-gray-200">
               <p className="text-sm text-gray-600">Loading campaigns...</p>
@@ -7002,56 +7011,68 @@ export default function BrandDashboard() {
 
     return (
       <div className="space-y-8">
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
-            <p className="text-3xl font-bold text-gray-900">$12.4K</p>
+        <div className="grid grid-cols-3 gap-3 sm:gap-6">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
+            <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
+            <p className="text-xs sm:text-sm text-gray-600 mb-1">
+              Total Spend (30d)
+            </p>
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+              $12.4K
+            </p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <Users className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Active Collaborators</p>
-            <p className="text-3xl font-bold text-gray-900">8</p>
+          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
+            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
+            <p className="text-xs sm:text-sm text-gray-600 mb-1">
+              Active Collaborators
+            </p>
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+              8
+            </p>
           </Card>
-          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
-            <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
-            <p className="text-3xl font-bold text-gray-900">12</p>
+          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
+            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
+            <p className="text-xs sm:text-sm text-gray-600 mb-1">
+              Campaigns Launched
+            </p>
+            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+              12
+            </p>
           </Card>
         </div>
 
-        <div className="grid md:grid-cols-5 gap-6">
-          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-[#F7B750] rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
               Collaborate with Agency
             </h3>
             <Button
               onClick={handleAgencyCollaborationEntry}
-              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
             >
               {brandCanUseCampaignCollaboration
                 ? "Invite Agency"
                 : "Upgrade to Pro"}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
               Add AI Creator
             </h3>
             <Button
               disabled
-              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed"
+              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed text-xs sm:text-sm h-8 sm:h-10"
             >
               Coming Soon
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-amber-600/60 rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-amber-600/60 rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
               Invite Company Seat
             </h3>
             <Button
               onClick={handleCompanySeatEntry}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
             >
               {(brandSeatLimit ?? 0) === 0
                 ? "Upgrade to Basic"
@@ -7060,12 +7081,12 @@ export default function BrandDashboard() {
                   : `Up to ${brandSeatLimitLabel} seats`}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-orange-600 rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
               AI Studio Add-On
             </h3>
             <Button
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none"
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
               onClick={() =>
                 navigate(
                   brandHasStudioAddon
@@ -7081,10 +7102,12 @@ export default function BrandDashboard() {
                   : "Upgrade to Pro"}
             </Button>
           </Card>
-          <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Post a Job</h3>
+          <Card className="p-4 sm:p-6 bg-white border-2 border-blue-600 rounded-none">
+            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
+              Post a Job
+            </h3>
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
               onClick={() => {
                 if (typeof window !== "undefined") {
                   window.localStorage.removeItem("jobDraftId");
@@ -7099,34 +7122,36 @@ export default function BrandDashboard() {
         </div>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Your Campaigns</h2>
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Your Campaigns
+            </h2>
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("active")}
-                className={`border-2 rounded-none ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Active
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("pending_approval")}
-                className={`border-2 rounded-none ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Pending Approval
+                Pending
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("completed")}
-                className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Expired
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("jobs")}
-                className={`border-2 rounded-none ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
                 Jobs
               </Button>
@@ -7134,9 +7159,9 @@ export default function BrandDashboard() {
           </div>
           {campaignHubTab === "jobs" ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">
                     Job Postings
                   </h3>
                   <p className="text-sm text-gray-600">
@@ -7151,13 +7176,13 @@ export default function BrandDashboard() {
                     }
                     navigate(createPageUrl("PostJob"));
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md shrink-0"
                 >
                   Post Job
                 </Button>
               </div>
               <Card className="p-4 bg-white border border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="md:col-span-2">
                     <div className="relative">
                       <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
@@ -7314,8 +7339,8 @@ export default function BrandDashboard() {
                                 "No role description added yet."}
                             </p>
                           </div>
-                          <div className="flex flex-col items-start lg:items-end gap-3">
-                            <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
+                          <div className="flex flex-col items-start lg:items-end gap-2">
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-500">
                               {job.budget ? (
                                 <span>
                                   Budget {job.budget} {job.currency || "USD"}
@@ -7330,11 +7355,11 @@ export default function BrandDashboard() {
                             </div>
                           </div>
                         </div>
-                        <div className="pt-3 border-t border-slate-200 flex flex-wrap justify-end gap-2">
+                        <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-2">
                           {job.status === "open" && (
                             <Button
                               variant="outline"
-                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50 flex-1 sm:flex-none"
                               disabled={!canManageJobs}
                               title={
                                 !canManageJobs
@@ -7351,7 +7376,7 @@ export default function BrandDashboard() {
 
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md"
+                            className="border-2 rounded-md flex-1 sm:flex-none"
                             onClick={() =>
                               setSelectedJobForApplications({
                                 ...job,
@@ -7363,7 +7388,7 @@ export default function BrandDashboard() {
                           </Button>
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md"
+                            className="border-2 rounded-md flex-1 sm:flex-none"
                             onClick={async () => {
                               setSelectedJobForApplications(job);
                               setLoadingJobApplications(true);
@@ -7461,46 +7486,46 @@ export default function BrandDashboard() {
 
   const renderStudio = () => (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
             Asset Library
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-sm sm:text-base">
             Download, manage, and organize all your creative assets
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
-            className="border-2 border-gray-300"
+            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             onClick={handleBatchDownload}
             disabled={selectedAssetIds.size === 0 || isBatchDownloading}
           >
             {isBatchDownloading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
             ) : (
-              <Download className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-1.5" />
             )}
-            Batch Download
+            Batch
             {selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-gray-300"
+            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             onClick={() => setShowFilterDialog(true)}
           >
-            <Filter className="w-4 h-4 mr-2" />
+            <Filter className="w-4 h-4 mr-1.5" />
             Filter
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-gray-300"
+            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             onClick={handleRefreshAssets}
             disabled={studioLoading}
           >
             <RefreshCw
-              className={`w-4 h-4 mr-2 ${studioLoading ? "animate-spin" : ""}`}
+              className={`w-4 h-4 mr-1.5 ${studioLoading ? "animate-spin" : ""}`}
             />
             Refresh
           </Button>
@@ -7508,7 +7533,7 @@ export default function BrandDashboard() {
       </div>
 
       {/* Asset Stats */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card className="p-4 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Assets</p>
           <p className="text-3xl font-bold text-gray-900">
@@ -7536,22 +7561,22 @@ export default function BrandDashboard() {
       </div>
 
       {/* Search & Filter Bar */}
-      <Card className="p-4 bg-white border border-gray-200">
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <Card className="p-3 sm:p-4 bg-white border border-gray-200">
+        <div className="flex flex-wrap gap-2">
+          <div className="flex-1 min-w-[140px] relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search by project, creator, or filename..."
-              className="pl-10 border-2 border-gray-300"
+              placeholder="Search assets..."
+              className="pl-9 border-2 border-gray-300 h-9 text-sm"
               value={studioSearchQuery}
               onChange={(e) => setStudioSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <Button
               variant={studioSourceFilter === "all" ? "default" : "outline"}
               onClick={() => setStudioSourceFilter("all")}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             >
               All
             </Button>
@@ -7562,25 +7587,27 @@ export default function BrandDashboard() {
                   : "outline"
               }
               onClick={() => setStudioSourceFilter("studio_generation")}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
             >
               Studio
             </Button>
           </div>
-          <Button
-            variant={viewMode === "grid" ? "default" : "outline"}
-            onClick={() => setViewMode("grid")}
-            className="border-2 border-gray-300"
-          >
-            Grid
-          </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "outline"}
-            onClick={() => setViewMode("list")}
-            className="border-2 border-gray-300"
-          >
-            List
-          </Button>
+          <div className="flex gap-1.5">
+            <Button
+              variant={viewMode === "grid" ? "default" : "outline"}
+              onClick={() => setViewMode("grid")}
+              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+            >
+              Grid
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              onClick={() => setViewMode("list")}
+              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+            >
+              List
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -7598,7 +7625,7 @@ export default function BrandDashboard() {
           </p>
         </Card>
       ) : viewMode === "grid" ? (
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
           {displayedAssets.map((asset) => (
             <Card
               key={asset.id}
@@ -7773,7 +7800,7 @@ export default function BrandDashboard() {
   const renderAnalytics = () => (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
           Analytics & Reporting
         </h1>
         <p className="text-gray-600">
@@ -7782,28 +7809,28 @@ export default function BrandDashboard() {
       </div>
 
       {/* Top KPI Section */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-6 bg-white border border-gray-200">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Projects (YTD)</p>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
             {brandAnalytics.loading ? "—" : brandAnalytics.total_projects_ytd}
           </p>
         </Card>
-        <Card className="p-6 bg-white border border-gray-200">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Turnaround</p>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
             {campaignMetrics.avg_turnaround_hours > 0
               ? `${campaignMetrics.avg_turnaround_hours}h`
               : "—"}
           </p>
         </Card>
-        <Card className="p-6 bg-white border border-gray-200">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
-          <p className="text-3xl font-bold text-gray-900">$45.2K</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">$45.2K</p>
         </Card>
-        <Card className="p-6 bg-white border border-gray-200">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Cost/Project</p>
-          <p className="text-3xl font-bold text-gray-900">$3.8K</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">$3.8K</p>
         </Card>
       </div>
 
@@ -7995,7 +8022,7 @@ export default function BrandDashboard() {
             ← Back to Contract Hub
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
               {contract.project_name}
             </h1>
             <p className="text-gray-600">Contract Details</p>
@@ -8704,10 +8731,12 @@ export default function BrandDashboard() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Contract Hub</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              Contract Hub
+            </h1>
+            <p className="text-gray-600">
               All your verified licensing agreements in one place
             </p>
           </div>
@@ -8926,9 +8955,11 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Usage Rights</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Manage your licensing agreements and monitor expiry
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            Usage Rights & Compliance
+          </h1>
+          <p className="text-gray-600">
+            Manage licensing, prevent misuse, ensure compliance
           </p>
         </div>
 
@@ -9089,7 +9120,7 @@ export default function BrandDashboard() {
   const renderBilling = () => (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
           Billing & Payments
         </h1>
         <p className="text-gray-600">
@@ -9100,7 +9131,7 @@ export default function BrandDashboard() {
       {/* Budget Overview - Prominent Position */}
       {budgetLimit !== null && budgetLimit > 0 && (
         <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-bold text-blue-900 mb-1">
                 Monthly Budget Tracker
@@ -9110,15 +9141,15 @@ export default function BrandDashboard() {
               </p>
             </div>
             {budgetAlertEnabled && (
-              <Badge className="bg-blue-100 text-blue-800 border border-blue-300">
+              <Badge className="bg-blue-100 text-blue-800 border border-blue-300 self-start">
                 <Bell className="w-3 h-3 mr-1" />
                 Alerts On
               </Badge>
             )}
           </div>
           <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl font-bold text-blue-900">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+              <span className="text-xl sm:text-2xl font-bold text-blue-900">
                 {loadingBillingData
                   ? "..."
                   : `$${((billingCurrentMonthSpend || 0) / 100).toLocaleString()}`}
@@ -9161,10 +9192,10 @@ export default function BrandDashboard() {
       )}
 
       {/* Billing Overview */}
-      <div className="grid md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">This Month's Spend</p>
-          <p className="text-4xl font-bold text-gray-900">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
             {loadingBillingData
               ? "..."
               : billingCurrentMonthSpend > 0
@@ -9174,14 +9205,14 @@ export default function BrandDashboard() {
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">In Escrow</p>
-          <p className="text-4xl font-bold text-gray-900">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
             ${(escrowTotal / 1000).toFixed(1)}K
           </p>
           <p className="text-xs text-gray-500 mt-1">Pending delivery</p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Amount Spent YTD</p>
-          <p className="text-4xl font-bold text-gray-900">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
             {loadingBillingData
               ? "..."
               : billingYtdSpend > 0
@@ -9208,13 +9239,13 @@ export default function BrandDashboard() {
 
       {/* Budget Management */}
       <Card
-        className={`p-6 border-2 ${
+        className={`p-4 sm:p-6 border-2 ${
           budgetLimit === null || budgetLimit === 0
             ? "bg-amber-50 border-amber-300"
             : "bg-white border-gray-200"
         }`}
       >
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
           <div>
             <h3 className="text-xl font-bold text-gray-900">
               Budget Management
@@ -9613,7 +9644,9 @@ export default function BrandDashboard() {
   const renderSettings = () => (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          Settings
+        </h1>
         <p className="text-gray-600">
           Manage your company profile and preferences
         </p>
@@ -9669,9 +9702,9 @@ export default function BrandDashboard() {
             <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-tight">
               Company Logo
             </h3>
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               <div className="relative">
-                <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
+                <Avatar className="w-24 sm:w-32 h-24 sm:h-32 border-2 border-gray-200 rounded-none bg-gray-50">
                   <AvatarImage src={brand?.logo} alt={brand?.name} />
                   <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
                     {getBrandInitials(brand?.name)}
@@ -9700,11 +9733,11 @@ export default function BrandDashboard() {
           </Card>
 
           {/* Company Information */}
-          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+          <Card className="p-4 sm:p-6 md:p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
               <Building2 className="w-6 h-6" /> Company Information
             </h3>
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
                   Company Name
@@ -9754,7 +9787,7 @@ export default function BrandDashboard() {
             <div className="mt-12">
               <Button
                 onClick={handleSaveProfile}
-                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-12 h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-6 sm:px-12 h-11 sm:h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none w-full sm:w-auto"
               >
                 Save Profile Changes
               </Button>
@@ -9763,8 +9796,8 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+          <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
               <Bell className="w-6 h-6" /> Communication Preferences
             </h3>
             <div className="space-y-2">
@@ -9810,11 +9843,11 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="billing" className="space-y-6 mt-0">
-          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+          <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
               <CreditCard className="w-6 h-6" /> Billing & Payment
             </h3>
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
                   Billing Address
@@ -9902,9 +9935,9 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6 mt-0">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 rounded-none shadow-none">
+              <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
                 <Shield className="w-6 h-6" /> Security Settings
               </h3>
               <div className="space-y-4">
@@ -9941,8 +9974,8 @@ export default function BrandDashboard() {
               </div>
             </Card>
 
-            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+            <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 rounded-none shadow-none">
+              <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
                 <FileText className="w-6 h-6" /> Legal & Governance
               </h3>
               <div className="space-y-3">
@@ -12012,7 +12045,7 @@ export default function BrandDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
+        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         {/* Brand Section */}
         <div className="p-6 border-b border-gray-200">
@@ -12261,11 +12294,32 @@ export default function BrandDashboard() {
         </button>
       </aside>
 
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Main Content */}
       <main
-        className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
+        className={`flex-1 ${sidebarOpen ? "md:ml-64" : "md:ml-20"} transition-all duration-300 overflow-y-auto`}
       >
-        <div className="p-8">
+        {/* Mobile top bar */}
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 sticky top-0 z-20">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <Menu className="w-5 h-5 text-gray-600" />
+          </button>
+          <span className="text-sm font-bold text-gray-900 truncate">
+            {navigationItems.find((n) => n.id === activeSection)?.label ||
+              "Dashboard"}
+          </span>
+        </div>
+        <div className="p-4 sm:p-6 md:p-8">
           <TrialCountdownBanner trialEndsAt={brandTrialEndsAt} />
           {activeSection === "home" && renderHome()}
           {activeSection === "marketplace" && renderCreatorMarketplace()}
@@ -12404,8 +12458,8 @@ export default function BrandDashboard() {
                                 "No role description added yet."}
                             </p>
                           </div>
-                          <div className="flex flex-col items-start gap-3 lg:items-end lg:ml-auto">
-                            <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
+                          <div className="flex flex-col items-start gap-2 lg:items-end lg:ml-auto">
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-500">
                               {job.budget ? (
                                 <span>
                                   Budget {job.budget} {job.currency || "USD"}
@@ -12420,11 +12474,11 @@ export default function BrandDashboard() {
                             </div>
                           </div>
                         </div>
-                        <div className="pt-3 border-t border-slate-200 flex flex-wrap justify-end gap-2">
+                        <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-2">
                           {job.status === "open" && (
                             <Button
                               variant="outline"
-                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
+                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50 flex-1 sm:flex-none"
                               disabled={!canManageJobs}
                               title={
                                 !canManageJobs
@@ -12441,7 +12495,7 @@ export default function BrandDashboard() {
 
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md"
+                            className="border-2 rounded-md flex-1 sm:flex-none"
                             onClick={() =>
                               setSelectedJobForApplications({
                                 ...job,
@@ -12453,7 +12507,7 @@ export default function BrandDashboard() {
                           </Button>
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md"
+                            className="border-2 rounded-md flex-1 sm:flex-none"
                             onClick={async () => {
                               setSelectedJobForApplications(job);
                               setLoadingJobApplications(true);

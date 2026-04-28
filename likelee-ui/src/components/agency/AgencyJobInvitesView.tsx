@@ -18,6 +18,7 @@ import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { createPageUrl } from "@/utils";
+import { DashboardSectionHeader } from "@/components/dashboard/DashboardResponsive";
 
 const AgencyJobInvitesView = () => {
   const { toast } = useToast();
@@ -147,24 +148,22 @@ const AgencyJobInvitesView = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Job Invites</h2>
-        <p className="text-gray-600">
-          Review invited jobs and respond from the agency dashboard.
-        </p>
-      </div>
+      <DashboardSectionHeader
+        title="Job Invites"
+        description="Review invited jobs and respond from the agency dashboard."
+      />
 
-      <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
-        <div className="flex items-center justify-between">
+      <Card className="space-y-4 rounded-2xl border border-gray-200 p-4 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <div className="text-xl font-semibold text-gray-900">
+            <div className="text-lg font-semibold text-gray-900 sm:text-xl">
               Brand Offers
             </div>
-            <div className="text-base font-semibold text-gray-800">
+            <div className="text-sm font-semibold text-gray-800 sm:text-base">
               Job Invites
             </div>
           </div>
-          <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
+          <Badge className="w-fit bg-slate-100 text-slate-700 border border-slate-200">
             {jobInvites.length}
           </Badge>
         </div>
@@ -174,7 +173,7 @@ const AgencyJobInvitesView = () => {
         {!jobInvitesQuery.isLoading && jobInvites.length === 0 && (
           <p className="text-sm text-gray-500">No job invites yet.</p>
         )}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {jobInvites.map((job: any) => {
             const jobId = String(job?.id || "");
             const companyName = resolveJobCompanyName(job);
@@ -193,18 +192,18 @@ const AgencyJobInvitesView = () => {
             return (
               <div
                 key={jobId}
-                className="rounded-xl border border-slate-200 bg-white p-4 space-y-4"
+                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
-                    <p className="font-semibold text-2xl text-gray-900 truncate">
+                    <p className="text-xl font-semibold text-gray-900 break-words sm:text-2xl">
                       {jobTitle}
                     </p>
-                    <p className="text-sm text-gray-600 truncate">
+                    <p className="text-sm text-gray-600 break-words">
                       {companyName}
                     </p>
                   </div>
-                  <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                  <Badge className="w-fit bg-blue-50 text-blue-700 border border-blue-200 capitalize">
                     {callType}
                   </Badge>
                 </div>
@@ -215,13 +214,13 @@ const AgencyJobInvitesView = () => {
                     </p>
                   ) : null}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   {!isAccepted ? (
                     <>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-gray-300 bg-white hover:bg-gray-50"
+                        className="w-full border-gray-300 bg-white hover:bg-gray-50 sm:w-auto"
                         onClick={() => {
                           navigate(
                             `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}&backTo=${encodeURIComponent(agencyJobsBackTo)}`,
@@ -232,7 +231,7 @@ const AgencyJobInvitesView = () => {
                       </Button>
                       <Button
                         size="sm"
-                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                        className="w-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] sm:w-auto"
                         disabled={isBusy}
                         onClick={() => {
                           setConfirmJobId(jobId);
@@ -245,7 +244,7 @@ const AgencyJobInvitesView = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-red-300 text-red-600 bg-white hover:bg-red-50"
+                        className="w-full border-red-300 bg-white text-red-600 hover:bg-red-50 sm:w-auto"
                         disabled={isBusy}
                         onClick={() => {
                           setConfirmJobId(jobId);
@@ -259,7 +258,7 @@ const AgencyJobInvitesView = () => {
                   ) : (
                     <Button
                       size="sm"
-                      className="bg-black text-white hover:bg-gray-800"
+                      className="w-full bg-black text-white hover:bg-gray-800 sm:w-auto"
                       onClick={() => {
                         if (isJobClosed(job)) {
                           setClosedJobLabel(

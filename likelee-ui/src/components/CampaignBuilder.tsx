@@ -329,9 +329,9 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="bg-white rounded-lg w-full max-w-5xl">
           {/* Header */}
-          <div className="border-b-2 border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+          <div className="border-b-2 border-gray-200 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h2 className="text-lg sm:text-2xl font-bold text-gray-900">
                 Create New Campaign
               </h2>
               <Button variant="ghost" onClick={onClose}>
@@ -340,11 +340,14 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
             </div>
 
             {/* Progress Stepper */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 overflow-x-auto pb-1">
               {steps.map((step, index) => (
-                <div key={step.number} className="flex items-center flex-1">
+                <div
+                  key={step.number}
+                  className="flex items-center flex-1 min-w-0"
+                >
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 shrink-0 ${
                       currentStep === step.number
                         ? "bg-cyan-600 border-cyan-600 text-white"
                         : currentStep > step.number
@@ -353,12 +356,12 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                     }`}
                   >
                     {currentStep > step.number ? (
-                      <CheckCircle2 className="w-5 h-5" />
+                      <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
                     ) : (
-                      <step.icon className="w-5 h-5" />
+                      <step.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     )}
                   </div>
-                  <span className="text-xs mt-2 text-gray-600 hidden md:block">
+                  <span className="text-xs mt-2 text-gray-600 hidden sm:block truncate ml-1">
                     {step.title}
                   </span>
                 </div>
@@ -369,11 +372,11 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
           </div>
 
           {/* Content */}
-          <div className="p-6 min-h-[500px]">
+          <div className="p-4 sm:p-6 min-h-[400px] sm:min-h-[500px]">
             {/* Step 1: Client & Campaign Info */}
             {currentStep === 1 && (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-2">
                       Client *
@@ -733,7 +736,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                       <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {mockCreators
                         .filter((c) => !c.name.includes("AI"))
                         .map((creator) => (
@@ -797,7 +800,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                   </TabsContent>
 
                   <TabsContent value="ai" className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {mockCreators
                         .filter((c) => c.name.includes("AI"))
                         .map((creator) => (
@@ -903,7 +906,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                       {/* Setup Tab */}
                       <TabsContent value="setup" className="space-y-6">
                         {/* Model & Generation Type Selection */}
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium text-gray-700 block mb-2">
                               AI Model *
@@ -995,7 +998,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                         </div>
 
                         {/* Voice & Style Settings */}
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
                             <label className="text-sm font-medium text-gray-700 block mb-2">
                               AI Voice (ElevenLabs)
@@ -1179,7 +1182,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                           </p>
 
                           {/* Sample Output Grid */}
-                          <div className="grid md:grid-cols-2 gap-4 mt-6">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
                             <Card className="p-4 bg-white border-2 border-gray-200">
                               <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
                                 <Play className="w-12 h-12 text-gray-400" />
@@ -1491,7 +1494,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                   </p>
                 </Card>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <Card className="p-6 bg-white border-2 border-gray-200">
                     <h4 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
                       <FileText className="w-5 h-5 text-cyan-600" />
@@ -1639,22 +1642,22 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
           </div>
 
           {/* Footer Actions */}
-          <div className="border-t-2 border-gray-200 p-6 flex items-center justify-between bg-gray-50">
+          <div className="border-t-2 border-gray-200 p-4 sm:p-6 flex items-center justify-between bg-gray-50 gap-2">
             <Button
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 1}
-              className="border-2 border-gray-300"
+              className="border-2 border-gray-300 h-9 sm:h-10 px-3 sm:px-4 text-sm"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
               Back
             </Button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
-                className="border-2 border-gray-300"
+                className="border-2 border-gray-300 h-9 sm:h-10 px-3 sm:px-4 text-sm"
               >
                 Save Draft
               </Button>
@@ -1662,18 +1665,18 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
               {currentStep < 6 ? (
                 <Button
                   onClick={handleNext}
-                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white h-9 sm:h-10 px-3 sm:px-4 text-sm"
                 >
                   Continue
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-4 h-4 ml-1 sm:ml-2" />
                 </Button>
               ) : (
                 <Button
                   onClick={handleFinish}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-white h-9 sm:h-10 px-3 sm:px-4 text-sm"
                 >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Submit Campaign
+                  <CheckCircle2 className="w-4 h-4 mr-1 sm:mr-2" />
+                  Submit
                 </Button>
               )}
             </div>

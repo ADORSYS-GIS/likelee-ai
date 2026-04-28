@@ -206,7 +206,7 @@ const ActiveLicensesView = ({
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
         {[
           {
             icon: CheckCircle2,
@@ -244,7 +244,7 @@ const ActiveLicensesView = ({
         ].map((card, i) => (
           <Card
             key={i}
-            className={`p-6 bg-white border ${card.border} shadow-sm rounded-2xl`}
+            className={`p-4 sm:p-6 bg-white border ${card.border} shadow-sm rounded-2xl min-h-[150px] sm:min-h-0`}
           >
             <div className="flex items-center gap-3 mb-4">
               <div
@@ -254,7 +254,9 @@ const ActiveLicensesView = ({
               </div>
               <p className={`text-sm font-bold ${card.color}`}>{card.label}</p>
             </div>
-            <p className="text-3xl font-black text-gray-900">{card.value}</p>
+            <p className="text-2xl sm:text-3xl font-black text-gray-900 break-words">
+              {card.value}
+            </p>
           </Card>
         ))}
       </div>

@@ -496,8 +496,8 @@ export function TeamManagementCard({
             : "p-6 bg-white border border-gray-200"
         }
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="min-w-0">
             <h3
               className={
                 organizationType === "brand"
@@ -518,12 +518,12 @@ export function TeamManagementCard({
                 `Manage members, roles, and invitations for ${context?.organization_name || "your team"}.`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Button
               variant="outline"
               className={
                 organizationType === "brand"
-                  ? "rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white"
+                  ? "rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-4 sm:px-6 hover:bg-gray-950 hover:text-white"
                   : "border-2 border-gray-300"
               }
               onClick={() => setShowActivityModal(true)}
@@ -532,14 +532,12 @@ export function TeamManagementCard({
               Activity
             </Button>
             <Button
-              className={accentClassName}
+              className={`${accentClassName} text-xs sm:text-sm px-3 sm:px-4`}
               onClick={handleInviteButtonClick}
               disabled={!canInvite && !seatLimitBlocked}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              {seatLimitBlocked
-                ? "Upgrade to Add Members"
-                : "Invite Team Member"}
+              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+              {seatLimitBlocked ? "Upgrade to Add Members" : "Invite"}
             </Button>
           </div>
         </div>
@@ -589,16 +587,16 @@ export function TeamManagementCard({
                       key={member.user_id}
                       className={
                         organizationType === "brand"
-                          ? "flex items-center justify-between p-4 bg-gray-50 border-2 border-gray-200 rounded-none"
-                          : "flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg"
+                          ? "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-none"
+                          : "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg"
                       }
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div
                           className={
                             organizationType === "brand"
-                              ? "w-10 h-10 bg-gray-900 rounded-none flex items-center justify-center"
-                              : "w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center"
+                              ? "w-10 h-10 bg-gray-900 rounded-none flex items-center justify-center shrink-0"
+                              : "w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center shrink-0"
                           }
                         >
                           <User
@@ -609,12 +607,12 @@ export function TeamManagementCard({
                             }
                           />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p
                             className={
                               organizationType === "brand"
-                                ? "font-black text-gray-900 text-sm"
-                                : "font-semibold text-gray-900"
+                                ? "font-black text-gray-900 text-sm truncate"
+                                : "font-semibold text-gray-900 truncate"
                             }
                           >
                             {member.email}
@@ -633,7 +631,7 @@ export function TeamManagementCard({
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 shrink-0">
                         <Badge
                           className={
                             organizationType === "brand"

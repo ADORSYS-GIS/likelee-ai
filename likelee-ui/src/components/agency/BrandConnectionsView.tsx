@@ -62,6 +62,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
+import {
+  DashboardSectionHeader,
+  DashboardTabRail,
+  DashboardTableSurface,
+} from "@/components/dashboard/DashboardResponsive";
 
 const extractFirstNumber = (value: unknown): number => {
   const raw = String(value ?? "").trim();
@@ -1270,75 +1275,128 @@ const BrandConnectionsView = () => {
           </div>
         </div>
       )}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Brand Connections</h2>
-        <p className="text-gray-600">
-          Manage active connections and invitations.
-        </p>
-      </div>
+      <DashboardSectionHeader
+        title="Brand Connections"
+        description="Manage active connections and invitations."
+      />
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={activeTab === "connections" ? "default" : "outline"}
-          onClick={() => setActiveTab("connections")}
-        >
-          Connected Brands
-        </Button>
-        <Button
-          variant={activeTab === "requests" ? "default" : "outline"}
-          onClick={() => setActiveTab("requests")}
-          className="relative"
-        >
-          Requests
-          {showRequestsBadge && (
-            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
-              {pendingRequests - (seenCounts.requests || 0)}
-            </Badge>
-          )}
-        </Button>
-        <Button
-          variant={activeTab === "offers" ? "default" : "outline"}
-          onClick={() => setActiveTab("offers")}
-          className="relative"
-        >
-          Brand Offers
-          {showOffersBadge && (
-            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
-              {pendingOffers - (seenCounts.offers || 0)}
-            </Badge>
-          )}
-        </Button>
-        <Button
-          variant={activeTab === "contract_hub" ? "default" : "outline"}
-          onClick={() => setActiveTab("contract_hub")}
-        >
-          Contract Hub
-        </Button>
-        <Button
-          variant={activeTab === "deliverables" ? "default" : "outline"}
-          onClick={() => {
-            navigate("/AgencyDashboard?tab=deliverables");
-            setActiveTab("connections");
-          }}
-        >
-          Deliverables
-        </Button>
-        <Button
-          variant={activeTab === "feedback" ? "default" : "outline"}
-          onClick={() => setActiveTab("feedback")}
-          className="relative"
-        >
-          Package Feedback
-          {showFeedbackBadge && (
-            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
-              {pendingFeedback - (seenCounts.feedback || 0)}
-            </Badge>
-          )}
-        </Button>
+      {/* Mobile Tabs: Horizontal Scroll */}
+      <div className="flex gap-2 mb-6 sm:hidden overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+        {[
+          {
+            id: "connections",
+            label: "Brands",
+            active: activeTab === "connections",
+            onClick: () => setActiveTab("connections"),
+          },
+          {
+            id: "requests",
+            label: showRequestsBadge
+              ? `Requests (${pendingRequests - (seenCounts.requests || 0)})`
+              : "Requests",
+            active: activeTab === "requests",
+            onClick: () => setActiveTab("requests"),
+          },
+          {
+            id: "offers",
+            label: showOffersBadge
+              ? `Offers (${pendingOffers - (seenCounts.offers || 0)})`
+              : "Offers",
+            active: activeTab === "offers",
+            onClick: () => setActiveTab("offers"),
+          },
+          {
+            id: "contract_hub",
+            label: "Contracts",
+            active: activeTab === "contract_hub",
+            onClick: () => setActiveTab("contract_hub"),
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            active: false,
+            onClick: () => {
+              navigate("/AgencyDashboard?tab=deliverables");
+              setActiveTab("connections");
+            },
+          },
+          {
+            id: "feedback",
+            label: showFeedbackBadge
+              ? `Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
+              : "Feedback",
+            active: activeTab === "feedback",
+            onClick: () => setActiveTab("feedback"),
+          },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={item.onClick}
+            className={`min-h-[40px] rounded-xl px-4 py-2 text-center text-[13px] font-bold transition-all whitespace-nowrap ${
+              item.active
+                ? "bg-indigo-50/70 text-indigo-700 shadow-sm ring-1 ring-indigo-700/10"
+                : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+      <div className="hidden sm:block">
+        <DashboardTabRail
+          items={[
+            {
+              id: "connections",
+              label: "Connected Brands",
+              active: activeTab === "connections",
+              onClick: () => setActiveTab("connections"),
+            },
+            {
+              id: "requests",
+              label: showRequestsBadge
+                ? `Requests (${pendingRequests - (seenCounts.requests || 0)})`
+                : "Requests",
+              active: activeTab === "requests",
+              onClick: () => setActiveTab("requests"),
+            },
+            {
+              id: "offers",
+              label: showOffersBadge
+                ? `Brand Offers (${pendingOffers - (seenCounts.offers || 0)})`
+                : "Brand Offers",
+              active: activeTab === "offers",
+              onClick: () => setActiveTab("offers"),
+            },
+            {
+              id: "contract_hub",
+              label: "Contract Hub",
+              active: activeTab === "contract_hub",
+              onClick: () => setActiveTab("contract_hub"),
+            },
+            {
+              id: "deliverables",
+              label: "Deliverables",
+              active: false,
+              onClick: () => {
+                navigate("/AgencyDashboard?tab=deliverables");
+                setActiveTab("connections");
+              },
+            },
+            {
+              id: "feedback",
+              label: showFeedbackBadge
+                ? `Package Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
+                : "Package Feedback",
+              active: activeTab === "feedback",
+              onClick: () => setActiveTab("feedback"),
+            },
+          ]}
+        />
       </div>
 
       {activeTab === "connections" && (
-        <Card className="p-6 border border-gray-200 rounded-xl">
+        <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-bold text-gray-900 mb-3">
             Connected Brands
           </h3>
@@ -1358,7 +1416,7 @@ const BrandConnectionsView = () => {
           {!connectionsQuery.isLoading &&
             !connectionsQuery.error &&
             connections.length > 0 && (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {connections.map((connection: any) => {
                   const companyName = String(
                     connection?.brands?.company_name || "Brand",
@@ -1376,17 +1434,17 @@ const BrandConnectionsView = () => {
                       key={String(
                         connection?.id || `${companyName}-${connectedAt}`,
                       )}
-                      className="border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4"
+                      className="border border-gray-200 rounded-lg p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div>
-                        <p className="font-semibold text-gray-900">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900 break-words">
                           {companyName}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 break-words">
                           {email || "No email provided"}
                         </p>
                       </div>
-                      <div className="text-right flex items-center gap-3">
+                      <div className="flex items-center justify-between gap-3 sm:justify-end sm:text-right">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -1448,7 +1506,7 @@ const BrandConnectionsView = () => {
           {!requestsQuery.isLoading &&
             !requestsQuery.error &&
             requests.length > 0 && (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {requests.map((req: any) => {
                   const requestId = String(req?.id || "");
                   const isBusy = busyIds.has(requestId);
@@ -1555,7 +1613,7 @@ const BrandConnectionsView = () => {
 
       {activeTab === "offers" && (
         <>
-          <Card className="p-6 border border-gray-200 rounded-xl">
+          <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900">
@@ -1610,7 +1668,7 @@ const BrandConnectionsView = () => {
                   return (
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
                       {/* Fixed Header Style */}
-                      <div className="bg-gray-50 px-6 py-6 border-b border-gray-200">
+                      <div className="bg-gray-50 px-4 py-4 sm:px-6 sm:py-6 border-b border-gray-200">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-3">
@@ -1651,9 +1709,9 @@ const BrandConnectionsView = () => {
                         </div>
                       </div>
 
-                      <div className="p-6 md:p-8 space-y-8">
+                      <div className="p-4 sm:p-6 md:p-8 space-y-8">
                         {/* Action Bar */}
-                        <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-indigo-50/50 p-2.5 sm:p-4 rounded-xl border border-indigo-100/50">
                           {isPending && (
                             <>
                               <TooltipProvider>
@@ -1661,7 +1719,7 @@ const BrandConnectionsView = () => {
                                   <TooltipTrigger asChild>
                                     <span>
                                       <Button
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 sm:px-6 h-8 sm:h-auto text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         disabled={
                                           busyIds.has(selectedOfferId) ||
                                           !canManageConnections
@@ -1690,7 +1748,7 @@ const BrandConnectionsView = () => {
                                     <span>
                                       <Button
                                         variant="outline"
-                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold px-3 sm:px-4 h-8 sm:h-auto text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         disabled={
                                           busyIds.has(selectedOfferId) ||
                                           !canManageConnections
@@ -1728,15 +1786,15 @@ const BrandConnectionsView = () => {
                                   const token =
                                     offerPkg.meta?.agency_package_token;
                                   return (
-                                    <div className="flex items-center gap-3">
-                                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-2 px-4 rounded-full flex items-center gap-2">
-                                        <CheckCircle2 className="h-4 w-4" />
+                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-1.5 sm:py-2 px-3 sm:px-4 rounded-full flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
+                                        <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                         Package Successfully Sent
                                       </Badge>
                                       {token && (
                                         <Button
                                           variant="secondary"
-                                          className="font-bold"
+                                          className="font-bold h-8 sm:h-10 text-xs sm:text-sm px-3 sm:px-4"
                                           onClick={() =>
                                             window.open(
                                               `/share/package/${token}`,
@@ -1752,7 +1810,7 @@ const BrandConnectionsView = () => {
                                 }
                                 return (
                                   <Button
-                                    className="bg-black hover:bg-gray-800 text-white font-bold px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+                                    className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold px-4 sm:px-5 py-2 sm:py-3 w-full sm:w-auto h-9 sm:h-11 text-xs sm:text-sm rounded-xl transition-all ring-1 ring-indigo-700/10"
                                     onClick={() => {
                                       navigate(
                                         "/AgencyDashboard?tab=packages",
@@ -1775,11 +1833,10 @@ const BrandConnectionsView = () => {
                           )}
                           {isFullySigned &&
                             offer?.payment_status !== "paid" && (
-                              <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                                <span className="text-amber-700 text-sm font-semibold">
+                              <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 sm:px-4 py-2 sm:py-3">
+                                <span className="text-amber-700 text-[10px] sm:text-sm font-semibold">
                                   ⏳ Brand has not yet completed payment.
-                                  Deliverable uploads and submissions are
-                                  disabled until paid.
+                                  Deliverable uploads/submissions are disabled.
                                 </span>
                               </div>
                             )}
@@ -1794,7 +1851,7 @@ const BrandConnectionsView = () => {
                             return (
                               <Button
                                 variant="outline"
-                                className="border-indigo-200 text-indigo-700 font-bold"
+                                className="bg-white border-indigo-200 text-indigo-700 font-bold h-8 sm:h-10 text-xs sm:text-sm"
                                 disabled={!canEdit}
                                 onClick={() =>
                                   setAssignDialog({
@@ -1811,21 +1868,21 @@ const BrandConnectionsView = () => {
                                     : undefined
                                 }
                               >
-                                <User className="h-4 w-4 mr-2" />
+                                <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                                 Assign Talent
                               </Button>
                             );
                           })()}
                           {assignmentLockedForSelectedOffer && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-[10px] sm:text-xs text-gray-500">
                               {selectedOfferContractSigned
-                                ? "Contract is already signed and you can’t change assigned talents."
-                                : "Talent assignments are locked because the contract was already sent."}
+                                ? "Contract is already signed."
+                                : "Assignments are locked."}
                             </p>
                           )}
                         </div>
 
-                        <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
+                        <div className="rounded-xl border border-indigo-100 bg-white p-3 sm:p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-bold text-gray-900">
                               Assigned Talent
@@ -1914,10 +1971,10 @@ const BrandConnectionsView = () => {
                           )}
                         </div>
 
-                        {/* Full brief — shown directly, no duplicate summary */}
+                        {/* Full brief — shown directly, no duplicate summary, full width of container */}
                         {offer?.brief_snapshot &&
                         typeof offer.brief_snapshot === "object" ? (
-                          <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                          <div className="-mx-4 sm:-mx-6 md:-mx-8 -mb-4 sm:-mb-6 md:-mb-8 border-t border-gray-200 bg-slate-50 overflow-hidden">
                             <CampaignBriefView
                               brief={offer.brief_snapshot}
                               brandName={String(
@@ -2007,22 +2064,22 @@ const BrandConnectionsView = () => {
                         onClick={() => setSelectedOfferId(offerId)}
                       >
                         {/* Row header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-white gap-4">
-                          <div className="flex items-center gap-4 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-3 sm:px-6 border-b border-blue-100 bg-white gap-3 sm:gap-4">
+                          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                             <div className="min-w-0">
-                              <h4 className="font-extrabold text-gray-900 text-base tracking-tight truncate">
+                              <h4 className="font-extrabold text-gray-900 text-sm sm:text-base tracking-tight truncate">
                                 {offer?.brand_campaigns?.name ||
                                   offer?.offer_title ||
                                   "Campaign Offer"}
                               </h4>
-                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+                              <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-widest truncate">
                                 {offer?.offer_title || "Direct Request"}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
                             <Badge
-                              className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide ${
                                 isAccepted
                                   ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                                   : "bg-indigo-100 text-indigo-700 border-indigo-200"
@@ -2032,7 +2089,7 @@ const BrandConnectionsView = () => {
                             </Badge>
                             {isFullySigned && (
                               <Badge
-                                className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide ${
                                   offer?.payment_status === "paid"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                     : "bg-amber-50 text-amber-700 border-amber-200"
@@ -2044,14 +2101,14 @@ const BrandConnectionsView = () => {
                               </Badge>
                             )}
                             {isPending && (
-                              <>
+                              <div className="flex items-center gap-1.5 sm:gap-2">
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span>
                                         <Button
                                           size="sm"
-                                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="h-7 sm:h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] sm:text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                           disabled={
                                             busyIds.has(offerId) ||
                                             !canManageConnections
@@ -2079,7 +2136,7 @@ const BrandConnectionsView = () => {
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="h-7 sm:h-8 border-red-200 text-red-600 hover:bg-red-50 font-bold text-[10px] sm:text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                           disabled={
                                             busyIds.has(offerId) ||
                                             !canManageConnections
@@ -2100,7 +2157,7 @@ const BrandConnectionsView = () => {
                                     )}
                                   </Tooltip>
                                 </TooltipProvider>
-                              </>
+                              </div>
                             )}
                             {isAccepted &&
                               (() => {
@@ -2140,7 +2197,7 @@ const BrandConnectionsView = () => {
                                 return (
                                   <Button
                                     size="sm"
-                                    className="bg-black hover:bg-gray-800 text-white font-bold"
+                                    className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold h-8 px-3"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       navigate(
@@ -2182,85 +2239,93 @@ const BrandConnectionsView = () => {
                         </div>
 
                         {/* Brief & Scope body */}
-                        <div className="px-6 py-5 space-y-5">
-                          <div className="flex items-center justify-between gap-4">
-                            <h3 className="text-base font-extrabold text-gray-900 tracking-tight">
+                        <div className="px-4 py-3 sm:px-6 sm:py-5 space-y-5">
+                          <div className="flex items-center justify-between gap-4 mb-1">
+                            <h3 className="text-sm font-black text-gray-900 tracking-tight uppercase">
                               Brief &amp; Scope
                             </h3>
                             <button
                               onClick={() => setSelectedOfferId(offerId)}
-                              className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
+                              className="text-[11px] font-bold text-blue-600 border border-blue-200 rounded-md px-2.5 py-1 hover:bg-blue-50 transition-colors whitespace-nowrap"
                             >
-                              View Full Details →
+                              Details →
                             </button>
                           </div>
 
-                          {/* Deliverables */}
-                          <div>
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                              Deliverables
-                            </p>
-                            <p className="text-sm text-gray-800">
-                              {deliverablesSummary}
-                            </p>
-                          </div>
+                          {/* Reorganized Metadata Grid: Deliverables | Timeline | Budget */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                            {/* Deliverables */}
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                Deliverables
+                              </p>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {deliverablesSummary}
+                              </p>
+                            </div>
 
-                          {/* Timeline + Budget */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                            {/* Timeline */}
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                 Timeline
                               </p>
-                              {launchDate && (
-                                <p className="text-sm text-gray-800">
-                                  Start: {launchDate}
-                                </p>
-                              )}
-                              {deadlineDate && (
-                                <p className="text-sm text-gray-800">
-                                  Due: {deadlineDate}
-                                </p>
-                              )}
-                              {!launchDate && !deadlineDate && (
-                                <p className="text-sm text-gray-400">
-                                  Not specified
-                                </p>
-                              )}
+                              <div className="text-[13px] text-gray-700 font-medium">
+                                {launchDate || deadlineDate ? (
+                                  <>
+                                    {launchDate && (
+                                      <div>Start: {launchDate}</div>
+                                    )}
+                                    {deadlineDate && (
+                                      <div>Due: {deadlineDate}</div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400 italic font-normal">
+                                    Not specified
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+
+                            {/* Budget */}
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                                 Budget
                               </p>
-                              {budgetTotal && (
-                                <p className="text-sm font-bold text-gray-900">
-                                  Total: {budgetTotal}
-                                </p>
-                              )}
-                              {budgetCreator && (
-                                <p className="text-sm text-gray-700">
-                                  Creator: {budgetCreator}
-                                </p>
-                              )}
-                              {!budgetTotal && !budgetCreator && (
-                                <p className="text-sm text-gray-400">
-                                  Not specified
-                                </p>
-                              )}
+                              <div className="text-[13px] text-gray-700">
+                                {budgetTotal || budgetCreator ? (
+                                  <>
+                                    {budgetTotal && (
+                                      <div className="font-bold text-gray-900">
+                                        Total: {budgetTotal}
+                                      </div>
+                                    )}
+                                    {budgetCreator && (
+                                      <div className="text-gray-500 text-[11px]">
+                                        Talent: {budgetCreator}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-gray-400 italic font-normal">
+                                    Not specified
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
 
                           {/* Teaser — navigates to full-page detail */}
                           {(bs || offer?.message) && (
                             <div
-                              className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
+                              className="flex items-center gap-2 bg-blue-50/50 border border-blue-100/50 rounded-lg px-3 py-2 cursor-pointer hover:bg-blue-100/50 transition-colors"
                               onClick={() => setSelectedOfferId(offerId)}
                             >
-                              <span className="text-blue-500 mt-0.5 shrink-0">
+                              <span className="text-blue-500 text-xs shrink-0">
                                 ⓘ
                               </span>
-                              <p className="text-sm font-medium text-blue-700">
-                                Click to view complete brief with dialogue,
-                                visuals, and contract details
+                              <p className="text-[11px] font-medium text-blue-700">
+                                View complete brief, dialogue & visuals
                               </p>
                             </div>
                           )}
@@ -2331,7 +2396,7 @@ const BrandConnectionsView = () => {
       )}
 
       {activeTab === "contract_hub" && (
-        <Card className="p-6 border border-gray-200 rounded-xl space-y-6">
+        <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900">Contract Hub</h3>
             <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
@@ -2348,8 +2413,10 @@ const BrandConnectionsView = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Sidebar: Offer List */}
-              <div className="md:col-span-1 space-y-3">
+              {/* Sidebar: Offer List - Hidden on mobile if an offer is selected */}
+              <div
+                className={`${selectedOfferId ? "hidden md:block" : "block"} md:col-span-1 space-y-3`}
+              >
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
                   Campaign Offers
                 </p>
@@ -2395,8 +2462,22 @@ const BrandConnectionsView = () => {
                 </div>
               </div>
 
-              {/* Main: Contract Management */}
-              <div className="md:col-span-2">
+              {/* Main: Contract Management - Full width on mobile if selected */}
+              <div
+                className={`${selectedOfferId ? "block" : "hidden md:block"} md:col-span-2`}
+              >
+                {selectedOfferId && (
+                  <div className="md:hidden mb-4">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setSelectedOfferId("")}
+                      className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 -ml-2"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Offers
+                    </Button>
+                  </div>
+                )}
                 {!selectedOfferId ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-gray-50 rounded-2xl border border-gray-200">
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
@@ -2420,13 +2501,13 @@ const BrandConnectionsView = () => {
                         <TabsList className="bg-gray-100 p-1 rounded-lg">
                           <TabsTrigger
                             value="submissions"
-                            className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50/70 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm ring-1 ring-indigo-700/5"
                           >
                             Submissions
                           </TabsTrigger>
                           <TabsTrigger
                             value="upload"
-                            className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50/70 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm ring-1 ring-indigo-700/5"
                           >
                             New Contract
                           </TabsTrigger>
@@ -2443,25 +2524,27 @@ const BrandConnectionsView = () => {
                       )}
                       {!agencyStripeReadyForPayouts && (
                         <Alert className="mb-4 bg-blue-50 border border-blue-200 rounded-xl">
-                          <AlertCircle className="h-4 w-4 text-blue-600" />
-                          <AlertDescription className="text-blue-900 text-sm font-medium flex items-start justify-between gap-3">
-                            <span>
-                              Before sending contracts, connect your agency
-                              Stripe account and complete onboarding. Brands
-                              can’t pay until payouts are set up, and
-                              commissions/talent earnings can’t be transferred
-                              unless transfers are enabled.
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-blue-200 text-blue-700 hover:bg-blue-100"
-                              onClick={() =>
-                                navigate("/AgencyDashboard?tab=payouts")
-                              }
-                            >
-                              Go to Payouts
-                            </Button>
+                          <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
+                          <AlertDescription className="text-blue-900 text-sm font-medium mt-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                              <p className="flex-1">
+                                Before sending contracts, connect your agency
+                                Stripe account and complete onboarding. Brands
+                                can’t pay until payouts are set up, and
+                                commissions/talent earnings can’t be transferred
+                                unless transfers are enabled.
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100 whitespace-nowrap"
+                                onClick={() =>
+                                  navigate("/AgencyDashboard?tab=payouts")
+                                }
+                              >
+                                Go to Payouts
+                              </Button>
+                            </div>
                           </AlertDescription>
                         </Alert>
                       )}
@@ -2509,8 +2592,8 @@ const BrandConnectionsView = () => {
                                     Ready to Prepare
                                   </span>
                                 </div>
-                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                                  <table className="w-full text-left">
+                                <DashboardTableSurface className="bg-white shadow-sm">
+                                  <table className="min-w-[620px] w-full text-left">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
@@ -2543,7 +2626,7 @@ const BrandConnectionsView = () => {
                                               key={cId}
                                               className="hover:bg-gray-50/50 transition-colors"
                                             >
-                                              <td className="px-6 py-4">
+                                              <td className="px-3 sm:px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                   <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                                                     <FileText className="w-5 h-5 text-blue-500" />
@@ -2565,7 +2648,7 @@ const BrandConnectionsView = () => {
                                                   </div>
                                                 </div>
                                               </td>
-                                              <td className="px-6 py-4 text-right">
+                                              <td className="px-3 sm:px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
                                                   <Button
                                                     size="sm"
@@ -2627,7 +2710,7 @@ const BrandConnectionsView = () => {
                                         })}
                                     </tbody>
                                   </table>
-                                </div>
+                                </DashboardTableSurface>
                               </section>
                             )}
 
@@ -2646,8 +2729,8 @@ const BrandConnectionsView = () => {
                                     Active Submissions
                                   </span>
                                 </div>
-                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                                  <table className="w-full text-left">
+                                <DashboardTableSurface className="bg-white shadow-sm">
+                                  <table className="min-w-[760px] w-full text-left">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
@@ -2721,7 +2804,7 @@ const BrandConnectionsView = () => {
                                                   {statusLabel}
                                                 </Badge>
                                               </td>
-                                              <td className="px-6 py-4 text-right">
+                                              <td className="px-3 sm:px-6 py-4 text-right">
                                                 {(() => {
                                                   const agencySignUrl =
                                                     String(
@@ -2878,7 +2961,7 @@ const BrandConnectionsView = () => {
                                         })}
                                     </tbody>
                                   </table>
-                                </div>
+                                </DashboardTableSurface>
                               </section>
                             )}
                           </div>

@@ -743,8 +743,8 @@ export default function Layout({ children, currentPageName }) {
       {!isDashboardPage && !isBookingFlow && (
         <footer className="bg-white border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
-            <div className="grid md:grid-cols-4 gap-12">
-              <div>
+            <div className="grid md:grid-cols-4 gap-12 text-center md:text-left">
+              <div className="flex flex-col items-center md:items-start">
                 <Link
                   to={createPageUrl("Landing")}
                   className="flex items-center gap-3 mb-6"
@@ -766,7 +766,7 @@ export default function Layout({ children, currentPageName }) {
                 </p>
               </div>
 
-              <div>
+              <div className="flex flex-col items-center md:items-start">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
                   {t("resources")}
                 </h3>
@@ -798,7 +798,7 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </div>
 
-              <div>
+              <div className="flex flex-col items-center md:items-start">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
                   {t("legalAndCompliance")}
                 </h3>
@@ -818,7 +818,7 @@ export default function Layout({ children, currentPageName }) {
                 </div>
               </div>
 
-              <div>
+              <div className="flex flex-col items-center md:items-start">
                 <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider">
                   {t("company")}
                 </h3>
@@ -845,7 +845,7 @@ export default function Layout({ children, currentPageName }) {
               </div>
             </div>
 
-            <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
               <p className="text-sm text-gray-500">{t("copyright")}</p>
               <p className="text-sm text-gray-500">
                 {t("followUs")}{" "}

@@ -1137,10 +1137,12 @@ export default function ScoutingOffers() {
 
       {/* Template Builder Modal */}
       {showTemplateBuilder && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-6xl h-[90vh] overflow-hidden flex flex-col bg-white shadow-2xl rounded-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-              <h2 className="text-lg font-bold text-gray-900">Edit Template</h2>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4">
+          <Card className="w-full max-w-6xl h-[88vh] sm:h-[90vh] overflow-hidden flex flex-col bg-white shadow-2xl rounded-xl sm:rounded-2xl">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 bg-white shrink-0">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                Edit Template
+              </h2>
               <Button
                 variant="ghost"
                 size="icon"
@@ -1149,7 +1151,18 @@ export default function ScoutingOffers() {
                 <XCircle className="w-5 h-5 text-gray-500" />
               </Button>
             </div>
-            <div className="flex-1 bg-gray-50 relative">
+            <div className="flex-1 bg-gray-50 relative overflow-hidden">
+              {/* Hide DocuSeal's floating bottom-right toolbar button via CSS */}
+              <style>{`
+                docuseal-builder [data-role="toolbar"],
+                docuseal-builder .toolbar-button:not([data-action="add-field"]),
+                docuseal-builder button[title="Draw"],
+                docuseal-builder button[title="Signature"],
+                docuseal-builder .bottom-toolbar,
+                docuseal-builder [class*="bottom-right"] button:last-child {
+                  display: none !important;
+                }
+              `}</style>
               {/* DocuSeal Builder Component */}
               <docuseal-builder
                 data-token={builderToken}
@@ -1158,6 +1171,7 @@ export default function ScoutingOffers() {
                 data-save-button-text="Save Template"
                 data-with-send-button={true}
                 data-with-sign-yourself-button={false}
+                data-with-upload-button={false}
                 className="w-full h-full absolute inset-0"
                 ref={(el: any) => {
                   if (el && !el._hasSaveListener) {
