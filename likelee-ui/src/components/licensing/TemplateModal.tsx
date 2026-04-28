@@ -18,6 +18,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { CreateTemplateRequest, LicenseTemplate } from "@/api/licenseTemplates";
 import { ContractEditor } from "./ContractEditor";
+import { MandatoryHint } from "@/components/ui/field-hint";
 import {
   FileSignature,
   Calendar,
@@ -237,9 +238,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800 ml-1">
-                      Template Name *
-                    </Label>
+                    <div className="flex items-center justify-between gap-2 ml-1">
+                      <Label className="text-sm font-bold text-slate-800">
+                        Template Name *
+                      </Label>
+                      <MandatoryHint />
+                    </div>
                     <Input
                       {...register("template_name", { required: true })}
                       placeholder="e.g. Standard Social Media"
@@ -247,15 +251,18 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                     />
                     {errors.template_name && (
-                      <span className="text-red-500 text-xs font-bold px-1">
-                        This field is required
+                      <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                        This field is mandatory.
                       </span>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800 ml-1">
-                      Category *
-                    </Label>
+                    <div className="flex items-center justify-between gap-2 ml-1">
+                      <Label className="text-sm font-bold text-slate-800">
+                        Category *
+                      </Label>
+                      <MandatoryHint />
+                    </div>
                     <Select
                       value={categoryValue}
                       onValueChange={(val) => setValue("category", val)}
@@ -277,8 +284,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       </SelectContent>
                     </Select>
                     {errors.category && (
-                      <span className="text-red-500 text-xs font-bold px-1">
-                        This field is required
+                      <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                        This field is mandatory.
                       </span>
                     )}
                   </div>
@@ -335,9 +342,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">
-                  Exclusivity *
-                </Label>
+                <div className="flex items-center justify-between gap-2 ml-1">
+                  <Label className="text-sm font-bold text-slate-800">
+                    Exclusivity *
+                  </Label>
+                  <MandatoryHint />
+                </div>
                 <Select
                   onValueChange={(val) => setValue("exclusivity", val)}
                   defaultValue={initialData?.exclusivity || "Non-exclusive"}

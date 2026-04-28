@@ -14,6 +14,21 @@ const actionTypes = {
 
 let count = 0;
 
+const VALIDATION_MESSAGE_PATTERN =
+  /(missing information|validation error|please (fill|select|provide)|required fields?|is required|at least one|does not match|cannot proceed|enter.*required|select a valid|invalid login credentials|incorrect email or password|email not confirmed|password should be at least|rate limit exceeded)/i;
+
+function inferToastVariant(props) {
+  const title = String(props?.title || "");
+  const description = String(props?.description || "");
+  const combined = `${title} ${description}`;
+
+  if (VALIDATION_MESSAGE_PATTERN.test(combined)) {
+    return "warning";
+  }
+
+  return props?.variant;
+}
+
 function genId() {
   count = (count + 1) % Number.MAX_VALUE;
   return count.toString();
@@ -113,11 +128,12 @@ function dispatch(action) {
 
 function toast({ ...props }) {
   const id = genId();
+  const variant = inferToastVariant(props);
 
   const update = (props) =>
     dispatch({
       type: actionTypes.UPDATE_TOAST,
-      toast: { ...props, id },
+      toast: { ...props, id, variant: inferToastVariant(props) },
     });
 
   const dismiss = () => {
@@ -129,6 +145,7 @@ function toast({ ...props }) {
     toast: {
       ...props,
       id,
+      ...(variant ? { variant } : {}),
       open: true,
     },
   });
