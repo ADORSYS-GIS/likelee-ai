@@ -56,7 +56,7 @@ impl JwksCache {
 
     pub async fn refresh(&self, state: &AppState) {
         let url = format!(
-            "{}/auth/v1/jwks",
+            "{}/auth/v1/.well-known/jwks.json",
             supabase_auth_base_url(state)
         );
         let client = reqwest::Client::new();
