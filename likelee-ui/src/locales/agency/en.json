@@ -901,7 +901,25 @@
         "creatorDescription": "Availability, rates, portfolio, and campaign history",
         "loading": "Loading profile details...",
         "loadFailedTitle": "Failed to load profile details",
-        "tryAgain": "Please try again."
+        "tryAgain": "Please try again.",
+        "openToWork": "Open to work",
+        "noOpenWorkPreferences": "No open-work preferences shared yet.",
+        "industries": "Industries",
+        "noIndustriesShared": "No industries shared yet.",
+        "licensingRate": "Licensing rate",
+        "baseRate": "Base rate from public profile",
+        "openToNegotiations": "Open to negotiations",
+        "negotiationPreferences": "Negotiation preferences not specified",
+        "perMonth": "/month",
+        "verified": "Verified",
+        "locationNotSpecified": "Location not specified",
+        "followersLabel": "Followers",
+        "agencyTypeLabel": "Agency Type",
+        "servicesLabel": "Services",
+        "noServicesShared": "No services shared yet.",
+        "website": "Website",
+        "notSpecified": "Not specified",
+        "connectionStatusLabel": "Connection Status"
       },
       "toasts": {
         "requestAlreadyDeclinedTitle": "Request already declined",
@@ -1788,7 +1806,8 @@
         "client": "Client",
         "template": "Template",
         "status": "Status",
-        "sentDate": "Sent Date"
+        "sentDate": "Sent Date",
+        "actions": "Actions"
       },
       "reason": "Reason:",
       "toast": {
@@ -1819,11 +1838,15 @@
         "moreActions": "More actions",
         "openAgencySigningLink": "Open agency signing link",
         "openAgencyLink": "Open agency link",
+        "openClientLink": "Open Client Link",
         "copyClientLink": "Copy Client Link",
         "copyAgencyLink": "Copy Agency Link",
-        "viewDocument": "View Document"
+        "viewDocument": "View Document",
+        "recoverToActive": "Recover to Active"
       },
       "noSubmissions": "No submissions found",
+      "noActiveSubmissions": "No active submissions found.",
+      "noArchivedSubmissions": "No archived submissions found.",
       "searchPlaceholder": "Search submissions..."
     },
     "licenseTemplates": {
@@ -1876,11 +1899,57 @@
         "updateTemplate": "Update Template",
         "createTemplate": "Create Template"
       },
+      "form": {
+        "templateIdentity": "Template Identity",
+        "templateName": "Template Name *",
+        "templateNamePlaceholder": "e.g. Standard Social Media",
+        "required": "This field is required",
+        "category": "Category *",
+        "selectCategory": "Select category",
+        "description": "Description",
+        "descriptionPlaceholder": "Description of the template...",
+        "usageScope": "Usage Scope",
+        "usageScopePlaceholder": "e.g. Organic Social Media",
+        "durationDays": "Duration (days)",
+        "territory": "Territory",
+        "exclusivity": "Exclusivity",
+        "selectExclusivity": "Select exclusivity",
+        "exclusivityOptions": {
+          "nonExclusive": "Non-exclusive",
+          "categoryExclusive": "Category exclusive",
+          "fullExclusivity": "Full exclusivity"
+        },
+        "licenseFee": "License Fee ($)",
+        "licenseFeePlaceholder": "Amount ($)",
+        "licenseFeeHelp": "Enter amount in dollars (e.g. 10.00)",
+        "customTerms": "Custom Terms",
+        "customTermsPlaceholder": "Any extra conditions...",
+        "modificationsAllowed": "Modifications Allowed",
+        "selectOption": "Select option"
+      },
+      "useModal": {
+        "title": "Use Contract: {{name}}",
+        "description": "Enter the client's information to create a new contract from this template.",
+        "clientName": "Client Name",
+        "clientNamePlaceholder": "e.g. Acme Corp",
+        "clientNameRequired": "Client name is required",
+        "clientEmail": "Client Email",
+        "clientEmailRequired": "Client email is required",
+        "invalidEmail": "Invalid email address",
+        "createAndSign": "Create & Sign"
+      },
       "wizard": {
+        "stepOf": "Step {{step}} of 3",
         "dealSpecifics": "Deal Specifics",
         "contentReview": "Content Review",
         "dealSpecificsSubtitle": "Enter the core details of this licensing deal",
         "contentReviewSubtitle": "Review and personalize the contract content",
+        "identification": "Identification",
+        "brandName": "Brand Name *",
+        "clientEmail": "Client Email*",
+        "agencySignsFirst": "Agency signs first (on platform)",
+        "startDate": "Start Date",
+        "commercials": "Commercials",
         "preparing": "Preparing...",
         "finalize": "Finalize",
         "nextStep": "Next Step"
@@ -2022,7 +2091,8 @@
         "billingSubscription": "Billing & Subscription",
         "legalCompliance": "Legal & Compliance",
         "legalSubtitle": "Contracts, terms, privacy",
-        "integrations": "Integrations"
+        "integrations": "Integrations",
+        "integrationsSubtitle": "Stripe, ElevenLabs connected"
       }
     },
     "compCard": {

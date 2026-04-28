@@ -705,10 +705,16 @@ export default function CreatorDashboard() {
   const totalBrandConnectionNotifications =
     unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
 
-  const formatStatus = (status: unknown) =>
-    String(status || "sent")
+  const formatStatus = (status: unknown) => {
+    const normalized = String(status || "sent").toLowerCase();
+    const mapped = t(`creatorDashboard.status.${normalized}`, {
+      defaultValue: "",
+    });
+    if (mapped) return mapped;
+    return String(status || "sent")
       .replace(/_/g, " ")
       .replace(/\b\w/g, (m) => m.toUpperCase());
+  };
 
   const offerStatusBadgeClass = (statusRaw: unknown) => {
     const status = String(statusRaw || "").toLowerCase();
@@ -7460,8 +7466,12 @@ export default function CreatorDashboard() {
                 }}
               >
                 {disconnectRequiresApproval
-                  ? "Request disconnect"
-                  : "Disconnect"}
+                  ? t("creatorDashboard.agencyConnections.disconnect", {
+                      defaultValue: "Request disconnect",
+                    })
+                  : t("creatorDashboard.agencyConnections.disconnectNow", {
+                      defaultValue: "Disconnect",
+                    })}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -7719,7 +7729,12 @@ export default function CreatorDashboard() {
                               c.marketplace_contract?.disconnect_status || "",
                             ).toLowerCase() === "pending"
                               ? "Disconnect request pending"
-                              : "Connected agency"}
+                              : t(
+                                  "creatorDashboard.agencyConnections.connectedAgency",
+                                  {
+                                    defaultValue: "Connected agency",
+                                  },
+                                )}
                           </div>
                         </div>
                       </button>
@@ -7752,8 +7767,18 @@ export default function CreatorDashboard() {
                           {String(
                             c.marketplace_contract?.status || "",
                           ).toLowerCase() === "active"
-                            ? "Request disconnect"
-                            : "Disconnect"}
+                            ? t(
+                                "creatorDashboard.agencyConnections.disconnect",
+                                {
+                                  defaultValue: "Request disconnect",
+                                },
+                              )
+                            : t(
+                                "creatorDashboard.agencyConnections.disconnectNow",
+                                {
+                                  defaultValue: "Disconnect",
+                                },
+                              )}
                         </Button>
                       )}
                     </div>
@@ -7766,12 +7791,19 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-lg font-semibold text-gray-900">
-                    Invitations
+                    {t("creatorDashboard.agencyConnections.invitations", {
+                      defaultValue: "Invitations",
+                    })}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {pending.length > 0
                       ? "Respond to pending invitations from agencies."
-                      : "No pending invitations right now."}
+                      : t(
+                          "creatorDashboard.agencyConnections.noPendingInvitations",
+                          {
+                            defaultValue: "No pending invitations right now.",
+                          },
+                        )}
                   </div>
                 </div>
                 {pending.length > 0 && (
@@ -8013,10 +8045,17 @@ export default function CreatorDashboard() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-lg font-semibold text-gray-900">
-                  Asset Requests
+                  {t("creatorDashboard.agencyConnections.assetRequests", {
+                    defaultValue: "Asset Requests",
+                  })}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Upload deliverables for agency requests.
+                  {t(
+                    "creatorDashboard.agencyConnections.uploadForAgencyRequest",
+                    {
+                      defaultValue: "Upload deliverables for agency requests.",
+                    },
+                  )}
                 </div>
               </div>
               {unseenAssetRequestCount > 0 && (
@@ -8027,7 +8066,11 @@ export default function CreatorDashboard() {
             </div>
             <div className="mt-6 space-y-4">
               {loadingAssetRequests && (
-                <p className="text-sm text-gray-600">Loading requests...</p>
+                <p className="text-sm text-gray-600">
+                  {t("creatorDashboard.agencyConnections.loadingRequests", {
+                    defaultValue: "Loading requests...",
+                  })}
+                </p>
               )}
               {!loadingAssetRequests && assetRequests.length === 0 && (
                 <p className="text-sm text-gray-600">No asset requests yet.</p>
@@ -8095,7 +8138,7 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="capitalize">
-                          {String(req?.status || "sent").replace(/_/g, " ")}
+                          {formatStatus(req?.status || "sent")}
                         </Badge>
                         <ChevronDown
                           className={`w-4 h-4 text-gray-400 transition-transform ${
@@ -8120,7 +8163,10 @@ export default function CreatorDashboard() {
                               window.open(String(req.file_url), "_blank")
                             }
                           >
-                            <FileText className="w-4 h-4 mr-2" /> View PDF
+                            <FileText className="w-4 h-4 mr-2" />{" "}
+                            {t("creatorDashboard.brandConnections.viewPDF", {
+                              defaultValue: "View PDF",
+                            })}
                           </Button>
                         )}
                         <div className="flex flex-wrap gap-2 pt-2">
@@ -8166,12 +8212,24 @@ export default function CreatorDashboard() {
                               } catch {}
                             }}
                           >
-                            Upload Deliverables
+                            {t(
+                              "creatorDashboard.brandConnections.uploadDeliverables",
+                              {
+                                defaultValue: "Upload Deliverables",
+                              },
+                            )}
                           </Button>
                         </div>
                         <div className="pt-2 border-t border-gray-100">
                           <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-2">
-                            <span>Your deliverables</span>
+                            <span>
+                              {t(
+                                "creatorDashboard.brandConnections.yourDeliverables",
+                                {
+                                  defaultValue: "Your deliverables",
+                                },
+                              )}
+                            </span>
                           </div>
                           {loadingOfferDeliverablesById[offerId] && (
                             <p className="text-xs text-gray-500">
@@ -8181,7 +8239,13 @@ export default function CreatorDashboard() {
                           {!loadingOfferDeliverablesById[offerId] &&
                             requestDeliverables.length === 0 && (
                               <p className="text-xs text-gray-500">
-                                No deliverables submitted yet.
+                                {t(
+                                  "creatorDashboard.brandConnections.noDeliverablesSubmitted",
+                                  {
+                                    defaultValue:
+                                      "No deliverables submitted yet.",
+                                  },
+                                )}
                               </p>
                             )}
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -8293,9 +8357,11 @@ export default function CreatorDashboard() {
           </p>
           {totalBrandConnectionNotifications > 0 && (
             <p className="text-xs text-amber-700 mt-2">
-              {totalBrandConnectionNotifications} new notification
-              {totalBrandConnectionNotifications > 1 ? "s" : ""} across
-              requests, offers, and deliverables.
+              {t("creatorDashboard.brandConnections.notificationsSummary", {
+                defaultValue:
+                  "{{count}} new notifications across requests, offers, and deliverables.",
+                count: totalBrandConnectionNotifications,
+              })}
             </p>
           )}
         </div>
@@ -8495,12 +8561,16 @@ export default function CreatorDashboard() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-lg font-semibold text-gray-900">
-                  Requests
+                  {t("creatorDashboard.brandConnections.requests", {
+                    defaultValue: "Requests",
+                  })}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
                   {pending.length > 0
                     ? "Respond to pending brand connection requests."
-                    : "No pending requests right now."}
+                    : t("creatorDashboard.brandConnections.noPendingRequests", {
+                        defaultValue: "No pending requests right now.",
+                      })}
                 </div>
               </div>
               {pending.length > 0 && (
@@ -8663,7 +8733,9 @@ export default function CreatorDashboard() {
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
-                Brand Offers
+                {t("creatorDashboard.brandConnections.offers", {
+                  defaultValue: "Brand Offers",
+                })}
               </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">
@@ -8692,11 +8764,11 @@ export default function CreatorDashboard() {
                             </div>
                             <div className="text-xs text-gray-500">
                               {offer?.brands?.company_name || "Brand"} •{" "}
-                              {status.replace(/_/g, " ")}
+                              {formatStatus(status)}
                             </div>
                           </div>
                           <Badge variant="outline" className="capitalize">
-                            {status.replace(/_/g, " ")}
+                            {formatStatus(status)}
                           </Badge>
                         </div>
                         {offer?.message && (
@@ -8710,7 +8782,9 @@ export default function CreatorDashboard() {
                             className="border-gray-200"
                             onClick={() => openOfferBriefPage(offerId)}
                           >
-                            View brief
+                            {t("creatorDashboard.brandConnections.viewBrief", {
+                              defaultValue: "View brief",
+                            })}
                           </Button>
                         </div>
                       </div>
@@ -8725,7 +8799,9 @@ export default function CreatorDashboard() {
                     className="border-gray-300"
                     onClick={closeOfferBriefPage}
                   >
-                    ← Back to Brand Offers
+                    {t("creatorDashboard.brandConnections.backToBrandOffers", {
+                      defaultValue: "← Back to Brand Offers",
+                    })}
                   </Button>
                   <p className="text-sm text-red-600">Offer brief not found.</p>
                 </div>
@@ -8739,7 +8815,12 @@ export default function CreatorDashboard() {
                         onClick={closeOfferBriefPage}
                         className="border-2 border-gray-300"
                       >
-                        ← Back to Brand Offers
+                        {t(
+                          "creatorDashboard.brandConnections.backToBrandOffers",
+                          {
+                            defaultValue: "← Back to Brand Offers",
+                          },
+                        )}
                       </Button>
                       <h1 className="text-3xl font-bold text-gray-900">
                         {selectedBriefCampaign?.name || "Campaign"} - Brief &
@@ -9140,11 +9221,18 @@ export default function CreatorDashboard() {
                         onClick={signContract}
                         disabled={!selectedBriefContract}
                       >
-                        Sign Contract
+                        {t("creatorDashboard.brandConnections.signContract", {
+                          defaultValue: "Sign Contract",
+                        })}
                       </Button>
                     ) : (
                       <div className="text-sm font-medium text-emerald-700">
-                        Contract already signed.
+                        {t(
+                          "creatorDashboard.brandConnections.contractAlreadySigned",
+                          {
+                            defaultValue: "Contract already signed.",
+                          },
+                        )}
                       </div>
                     )}
                   </div>
@@ -9273,7 +9361,9 @@ export default function CreatorDashboard() {
                         className="border-gray-200"
                         onClick={() => openOfferBriefPage(offerId)}
                       >
-                        View brief
+                        {t("creatorDashboard.brandConnections.viewBrief", {
+                          defaultValue: "View brief",
+                        })}
                       </Button>
                     </div>
                   );
@@ -9287,7 +9377,9 @@ export default function CreatorDashboard() {
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-lg font-semibold text-gray-900">
-                  Deliverables
+                  {t("creatorDashboard.brandConnections.deliverables", {
+                    defaultValue: "Deliverables",
+                  })}
                 </div>
                 <Button
                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -9297,7 +9389,9 @@ export default function CreatorDashboard() {
                     setSendDeliverableOpen(true);
                   }}
                 >
-                  Send deliverable
+                  {t("creatorDashboard.brandConnections.sendDeliverable", {
+                    defaultValue: "Send deliverable",
+                  })}
                 </Button>
               </div>
               {loadingBrandOffers && (
@@ -9885,7 +9979,9 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("requests")}
             >
-              Open requests
+              {t("creatorDashboard.approvals.openRequests", {
+                defaultValue: "Open requests",
+              })}
             </Button>
           </Card>
 
@@ -9900,13 +9996,17 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("offers")}
             >
-              Review offers
+              {t("creatorDashboard.approvals.reviewOffers", {
+                defaultValue: "Review offers",
+              })}
             </Button>
           </Card>
 
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              Deliverable feedback
+              {t("creatorDashboard.approvals.deliverableFeedback", {
+                defaultValue: "Deliverable feedback",
+              })}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pendingDeliverables.length}
@@ -9915,7 +10015,9 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("deliverables")}
             >
-              View feedback
+              {t("creatorDashboard.approvals.viewFeedback", {
+                defaultValue: "View feedback",
+              })}
             </Button>
           </Card>
         </div>
@@ -9924,10 +10026,15 @@ export default function CreatorDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="text-base sm:text-lg font-semibold text-gray-900">
-                Needs your attention
+                {t("creatorDashboard.approvals.needsAttention", {
+                  defaultValue: "Needs your attention",
+                })}
               </div>
               <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                The latest items that still need a response from you.
+                {t("creatorDashboard.approvals.needsAttentionDescription", {
+                  defaultValue:
+                    "The latest items that still need a response from you.",
+                })}
               </div>
             </div>
             <Badge className="bg-[#1A2140] text-white w-fit">
@@ -9979,11 +10086,11 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {offer?.brands?.company_name || "Brand"} •{" "}
-                        {String(offer?.status || "sent").replace(/_/g, " ")}
+                        {formatStatus(offer?.status || "sent")}
                       </div>
                     </div>
                     <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
-                      {String(offer?.status || "sent").replace(/_/g, " ")}
+                      {formatStatus(offer?.status || "sent")}
                     </Badge>
                   </div>
                 </div>
@@ -10000,11 +10107,19 @@ export default function CreatorDashboard() {
                         {offer?.brand_campaigns?.name || "Deliverable review"}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        Feedback received on submitted deliverables
+                        {t(
+                          "creatorDashboard.approvals.feedbackReceivedOnDeliverables",
+                          {
+                            defaultValue:
+                              "Feedback received on submitted deliverables",
+                          },
+                        )}
                       </div>
                     </div>
                     <Badge className="bg-rose-50 text-rose-700 border border-rose-200">
-                      Feedback
+                      {t("creatorDashboard.approvals.feedback", {
+                        defaultValue: "Feedback",
+                      })}
                     </Badge>
                   </div>
                 </div>
@@ -10074,23 +10189,35 @@ export default function CreatorDashboard() {
           <Card className="p-6 rounded-xl shadow-sm text-center text-gray-600">
             {archiveSearch.trim() ? (
               <>
-                <p>No campaigns match your search.</p>
+                <p>{t("creatorDashboard.campaigns.empty.searchTitle")}</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Try a different brand or campaign name.
+                  {t("creatorDashboard.campaigns.empty.searchDescription")}
                 </p>
               </>
             ) : loadingBrandOffers ? (
               <>
-                <p>Loading past campaigns...</p>
+                <p>
+                  {t("creatorDashboard.archive.loadingPastCampaigns", {
+                    defaultValue: "Loading past campaigns...",
+                  })}
+                </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Fetching your completed campaigns.
+                  {t("creatorDashboard.archive.fetchingCompletedCampaigns", {
+                    defaultValue: "Fetching your completed campaigns.",
+                  })}
                 </p>
               </>
             ) : (
               <>
-                <p>No past campaigns yet.</p>
+                <p>
+                  {t("creatorDashboard.archive.noPastCampaigns", {
+                    defaultValue: "No past campaigns yet.",
+                  })}
+                </p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Completed campaigns will appear here.
+                  {t("creatorDashboard.archive.completedCampaignsWillAppear", {
+                    defaultValue: "Completed campaigns will appear here.",
+                  })}
                 </p>
               </>
             )}
@@ -11019,7 +11146,13 @@ export default function CreatorDashboard() {
                     if (
                       reason.includes("insufficient_capabilities_for_transfer")
                     )
-                      return "Your Stripe account is not fully set up. Complete Stripe onboarding to receive transfers.";
+                      return t(
+                        "creatorDashboard.earnings.transfers.errors.incompleteStripe",
+                        {
+                          defaultValue:
+                            "Your Stripe account is not fully set up. Complete Stripe onboarding to receive transfers.",
+                        },
+                      );
                     if (reason.includes("transfers_not_allowed"))
                       return "Transfers not allowed on your Stripe account.";
                     if (
@@ -13032,7 +13165,13 @@ export default function CreatorDashboard() {
               <DialogTitle>Send deliverable</DialogTitle>
               <DialogDescription>
                 {sendDeliverableRequestId
-                  ? "Upload deliverables for the agency request."
+                  ? t(
+                      "creatorDashboard.agencyConnections.uploadForAgencyRequest",
+                      {
+                        defaultValue:
+                          "Upload deliverables for the agency request.",
+                      },
+                    )
                   : "Upload a deliverable, choose the connected brand, and select the campaign offer."}
               </DialogDescription>
             </DialogHeader>
@@ -13075,8 +13214,13 @@ export default function CreatorDashboard() {
                   return (
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                       <span className="text-amber-700 text-sm font-semibold">
-                        ⏳ Awaiting brand payment before deliverables can be
-                        uploaded.
+                        {t(
+                          "creatorDashboard.brandConnections.awaitingPayment",
+                          {
+                            defaultValue:
+                              "Awaiting brand payment before deliverables can be uploaded.",
+                          },
+                        )}
                       </span>
                     </div>
                   );
@@ -13084,7 +13228,11 @@ export default function CreatorDashboard() {
                 return null;
               })()}
               <div className="space-y-2">
-                <Label htmlFor="deliverable-upload">Upload deliverables</Label>
+                <Label htmlFor="deliverable-upload">
+                  {t("creatorDashboard.brandConnections.uploadDeliverables", {
+                    defaultValue: "Upload deliverables",
+                  })}
+                </Label>
                 <Input
                   id="deliverable-upload"
                   type="file"
@@ -13113,8 +13261,10 @@ export default function CreatorDashboard() {
                   }}
                 />
                 <p className="text-xs text-gray-500">
-                  Uploaded assets will be stored and shared as downloadable
-                  links.
+                  {t("creatorDashboard.brandConnections.uploadedAssetsNotice", {
+                    defaultValue:
+                      "Uploaded assets will be stored and shared as downloadable links.",
+                  })}
                 </p>
                 {sendDeliverableFiles.length > 0 && (
                   <div className="mt-2 space-y-2">
@@ -13162,7 +13312,9 @@ export default function CreatorDashboard() {
                               setSendDeliverablePreviewUrls(nextUrls);
                             }}
                           >
-                            Remove
+                            {t("creatorDashboard.common.remove", {
+                              defaultValue: "Remove",
+                            })}
                           </Button>
                         </div>
                       </div>
@@ -13173,7 +13325,11 @@ export default function CreatorDashboard() {
               {!sendDeliverableRequestId && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="deliverable-brand">Select brand</Label>
+                    <Label htmlFor="deliverable-brand">
+                      {t("creatorDashboard.brandConnections.selectBrand", {
+                        defaultValue: "Select brand",
+                      })}
+                    </Label>
                     <select
                       id="deliverable-brand"
                       value={sendDeliverableBrandId}
@@ -13183,7 +13339,14 @@ export default function CreatorDashboard() {
                       }}
                       className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      <option value="">Select connected brand</option>
+                      <option value="">
+                        {t(
+                          "creatorDashboard.brandConnections.selectConnectedBrand",
+                          {
+                            defaultValue: "Select connected brand",
+                          },
+                        )}
+                      </option>
                       {brandConnections.map((c: any) => (
                         <option
                           key={String(c?.brand_id || c?.id)}
@@ -13196,7 +13359,9 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="deliverable-campaign">
-                      Select campaign
+                      {t("creatorDashboard.brandConnections.selectCampaign", {
+                        defaultValue: "Select campaign",
+                      })}
                     </Label>
                     <select
                       id="deliverable-campaign"
@@ -13216,7 +13381,14 @@ export default function CreatorDashboard() {
                       }}
                       className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      <option value="">Select campaign offer</option>
+                      <option value="">
+                        {t(
+                          "creatorDashboard.brandConnections.selectCampaignOffer",
+                          {
+                            defaultValue: "Select campaign offer",
+                          },
+                        )}
+                      </option>
                       {campaignOptions.map((offer: any) => (
                         <option
                           key={String(offer?.id)}
@@ -13232,7 +13404,9 @@ export default function CreatorDashboard() {
                     </select>
                     {sendDeliverableBrandId && campaignOptions.length === 0 && (
                       <p className="text-xs text-amber-700">
-                        No campaign offers found for this brand yet.
+                        {t("creatorDashboard.brandConnections.noOffers", {
+                          defaultValue: "No offers yet.",
+                        })}
                       </p>
                     )}
                   </div>
@@ -13253,7 +13427,9 @@ export default function CreatorDashboard() {
                 }}
                 disabled={offerActionLoading}
               >
-                Cancel
+                {t("creatorDashboard.common.cancel", {
+                  defaultValue: "Cancel",
+                })}
               </Button>
               <Button
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -13273,7 +13449,11 @@ export default function CreatorDashboard() {
                     })())
                 }
               >
-                {offerActionLoading ? "Sending..." : "Send"}
+                {offerActionLoading
+                  ? t("creatorDashboard.common.sending", {
+                      defaultValue: "Sending...",
+                    })
+                  : t("creatorDashboard.common.send", { defaultValue: "Send" })}
               </Button>
             </DialogFooter>
           </DialogContent>

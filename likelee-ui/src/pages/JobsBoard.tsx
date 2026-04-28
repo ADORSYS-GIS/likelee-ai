@@ -872,7 +872,10 @@ export default function JobsBoard() {
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
                     {isFiltered
-                      ? "Try different keywords or clear your filters."
+                      ? t("jobsPage.tryDifferentKeywords", {
+                          defaultValue:
+                            "Try different keywords or clear your filters.",
+                        })
                       : "Check back soon — new roles are posted regularly."}
                   </p>
                 </Card>
@@ -948,7 +951,9 @@ export default function JobsBoard() {
                       setDetailsOpen(true);
                     }}
                   >
-                    View Details
+                    {t("jobsPage.viewDetails", {
+                      defaultValue: "View Details",
+                    })}
                   </Button>
                   <Button
                     className="w-full bg-black text-white hover:bg-gray-800"

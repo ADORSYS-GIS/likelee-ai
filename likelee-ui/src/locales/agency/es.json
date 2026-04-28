@@ -1268,7 +1268,7 @@
       }
     },
     "marketplace": {
-      "title": "Marketplace de Likelee",
+      "title": "Mercado Likelee",
       "subtitle": "Solo creadores verificados",
       "verifiedBadge": "Perfiles verificados",
       "connectLockedReason": "Mejora tu plan para conectar.",
@@ -1350,7 +1350,25 @@
         "creatorDescription": "Disponibilidad, tarifas, portafolio e historial de campañas",
         "loading": "Cargando detalles del perfil...",
         "loadFailedTitle": "No se pudieron cargar los detalles del perfil",
-        "tryAgain": "Inténtalo de nuevo."
+        "tryAgain": "Inténtalo de nuevo.",
+        "openToWork": "Disponible para trabajar",
+        "noOpenWorkPreferences": "Aún no se compartieron preferencias de trabajo.",
+        "industries": "Industrias",
+        "noIndustriesShared": "Aún no se compartieron industrias.",
+        "licensingRate": "Tarifa de licencia",
+        "baseRate": "Tarifa base del perfil público",
+        "openToNegotiations": "Abierto a negociaciones",
+        "negotiationPreferences": "Preferencias de negociación no especificadas",
+        "perMonth": "/mes",
+        "verified": "Verificado",
+        "locationNotSpecified": "Ubicación no especificada",
+        "followersLabel": "Seguidores",
+        "agencyTypeLabel": "Tipo de agencia",
+        "servicesLabel": "Servicios",
+        "noServicesShared": "Aún no se compartieron servicios.",
+        "website": "Sitio web",
+        "notSpecified": "No especificado",
+        "connectionStatusLabel": "Estado de conexión"
       },
       "toasts": {
         "requestAlreadyDeclinedTitle": "Solicitud ya rechazada",
@@ -2268,7 +2286,8 @@
         "client": "Cliente",
         "template": "Plantilla",
         "status": "Estado",
-        "sentDate": "Fecha de envío"
+        "sentDate": "Fecha de envío",
+        "actions": "Acciones"
       },
       "reason": "Motivo:",
       "toast": {
@@ -2299,11 +2318,15 @@
         "moreActions": "Más acciones",
         "openAgencySigningLink": "Abrir enlace de firma de la agencia",
         "openAgencyLink": "Abrir enlace de la agencia",
+        "openClientLink": "Abrir enlace del cliente",
         "copyClientLink": "Copiar enlace del cliente",
         "copyAgencyLink": "Copiar enlace de la agencia",
-        "viewDocument": "Ver documento"
+        "viewDocument": "Ver documento",
+        "recoverToActive": "Recuperar como activo"
       },
       "noSubmissions": "No se encontraron envíos",
+      "noActiveSubmissions": "No se encontraron envíos activos.",
+      "noArchivedSubmissions": "No se encontraron envíos archivados.",
       "searchPlaceholder": "Buscar envíos..."
     },
     "licenseTemplates": {
@@ -2357,6 +2380,7 @@
         "createTemplate": "Crear plantilla"
       },
       "wizard": {
+        "stepOf": "Paso {{step}} de 3",
         "dealSpecifics": "Detalles del acuerdo",
         "contentReview": "Revisión de contenido",
         "dealSpecificsSubtitle": "Introduce los detalles principales de este acuerdo de licencia",
@@ -2381,22 +2405,47 @@
         "startDate": "Fecha de inicio",
         "commercials": "Condiciones comerciales",
         "durationDays": "Duración (días)",
-        "territory": "Territorio"
+        "territory": "Territorio",
+        "clientEmailRequired": "El correo del cliente es obligatorio"
       },
       "form": {
         "templateIdentity": "Identidad de plantilla",
-        "templateName": "Nombre de plantilla",
+        "templateName": "Nombre de plantilla *",
         "templateNamePlaceholder": "p. ej. Estándar de redes sociales",
-        "category": "Categoría",
+        "required": "Este campo es obligatorio",
+        "category": "Categoría *",
+        "selectCategory": "Seleccionar categoría",
         "description": "Descripción",
         "descriptionPlaceholder": "Descripción de la plantilla...",
         "usageScope": "Alcance de uso",
+        "usageScopePlaceholder": "p. ej. Redes sociales orgánicas",
         "durationDays": "Duración (días)",
         "territory": "Territorio",
         "exclusivity": "Exclusividad",
-        "categoryExclusive": "Exclusivo por categoría",
+        "selectExclusivity": "Seleccionar exclusividad",
+        "exclusivityOptions": {
+          "nonExclusive": "No exclusiva",
+          "categoryExclusive": "Exclusiva por categoría",
+          "fullExclusivity": "Exclusividad total"
+        },
         "licenseFee": "Tarifa de licencia ($)",
-        "modificationsAllowed": "Modificaciones permitidas"
+        "licenseFeePlaceholder": "Importe ($)",
+        "licenseFeeHelp": "Introduce el importe en dólares (p. ej. 10,00)",
+        "customTerms": "Términos personalizados",
+        "customTermsPlaceholder": "Cualquier condición extra...",
+        "modificationsAllowed": "Modificaciones permitidas",
+        "selectOption": "Seleccionar opción"
+      },
+      "useModal": {
+        "title": "Usar contrato: {{name}}",
+        "description": "Introduce la información del cliente para crear un nuevo contrato a partir de esta plantilla.",
+        "clientName": "Nombre del cliente",
+        "clientNamePlaceholder": "p. ej. Acme Corp",
+        "clientNameRequired": "El nombre del cliente es obligatorio",
+        "clientEmail": "Correo del cliente",
+        "clientEmailRequired": "El correo del cliente es obligatorio",
+        "invalidEmail": "Dirección de correo no válida",
+        "createAndSign": "Crear y firmar"
       },
       "deleteModal": {
         "title": "Eliminar plantilla",

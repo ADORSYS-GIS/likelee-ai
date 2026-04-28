@@ -1257,7 +1257,7 @@
       }
     },
     "marketplace": {
-      "title": "Marketplace Likelee",
+      "title": "Place de marché Likelee",
       "subtitle": "Créateurs vérifiés uniquement",
       "verifiedBadge": "Profils vérifiés",
       "connectLockedReason": "Passez à une offre supérieure pour vous connecter.",
@@ -1339,7 +1339,25 @@
         "creatorDescription": "Disponibilité, tarifs, portfolio et historique de campagnes",
         "loading": "Chargement des détails du profil...",
         "loadFailedTitle": "Impossible de charger les détails du profil",
-        "tryAgain": "Veuillez réessayer."
+        "tryAgain": "Veuillez réessayer.",
+        "openToWork": "Ouvert au travail",
+        "noOpenWorkPreferences": "Aucune préférence de travail partagée pour le moment.",
+        "industries": "Secteurs",
+        "noIndustriesShared": "Aucun secteur partagé pour le moment.",
+        "licensingRate": "Tarif de licence",
+        "baseRate": "Tarif de base du profil public",
+        "openToNegotiations": "Ouvert aux négociations",
+        "negotiationPreferences": "Préférences de négociation non précisées",
+        "perMonth": "/mois",
+        "verified": "Vérifié",
+        "locationNotSpecified": "Lieu non précisé",
+        "followersLabel": "Abonnés",
+        "agencyTypeLabel": "Type d'agence",
+        "servicesLabel": "Services",
+        "noServicesShared": "Aucun service partagé pour le moment.",
+        "website": "Site web",
+        "notSpecified": "Non précisé",
+        "connectionStatusLabel": "Statut de connexion"
       },
       "toasts": {
         "requestAlreadyDeclinedTitle": "Demande déjà refusée",
@@ -2216,8 +2234,18 @@
         "signed": "Signé",
         "sent": "Envoyé",
         "opened": "Ouvert",
+        "agencyPending": "Agence en attente",
+        "clientPending": "Client en attente",
+        "archived": "Archivé",
         "declined": "Refusé",
         "expired": "Expiré"
+      },
+      "table": {
+        "client": "Client",
+        "template": "Modèle",
+        "status": "Statut",
+        "sentDate": "Date d'envoi",
+        "actions": "Actions"
       },
       "reason": "Raison :",
       "toast": {
@@ -2242,11 +2270,21 @@
         "resendEmail": "Renvoyer l'e-mail",
         "archive": "Archiver",
         "recover": "Récupérer",
+        "signHere": "Signer ici",
+        "download": "Télécharger",
+        "downloadPdf": "Télécharger le PDF",
+        "moreActions": "Plus d'actions",
+        "openAgencySigningLink": "Ouvrir le lien de signature de l'agence",
+        "openAgencyLink": "Ouvrir le lien de l'agence",
+        "openClientLink": "Ouvrir le lien client",
         "copyClientLink": "Copier le lien client",
         "copyAgencyLink": "Copier le lien agence",
-        "viewDocument": "Voir le document"
+        "viewDocument": "Voir le document",
+        "recoverToActive": "Rétablir en actif"
       },
       "noSubmissions": "Aucune soumission trouvée",
+      "noActiveSubmissions": "Aucune soumission active trouvée.",
+      "noArchivedSubmissions": "Aucune soumission archivée trouvée.",
       "searchPlaceholder": "Rechercher des soumissions..."
     },
     "licenseTemplates": {
@@ -2288,6 +2326,71 @@
         "useTemplate": "Utiliser le modèle",
         "editInBuilder": "Modifier dans le constructeur",
         "sendContract": "Envoyer le contrat"
+      },
+      "modal": {
+        "newTitle": "Nouveau modèle de contrat",
+        "editTitle": "Modifier le modèle de licence",
+        "detailsTitle": "Détails du modèle de licence",
+        "detailsSubtitle": "Consultez vos conditions et détails standardisés d'agence",
+        "editSubtitle": "Standardisez les conditions de votre agence avec des espaces réservés dynamiques",
+        "saving": "Enregistrement...",
+        "updateTemplate": "Mettre à jour le modèle",
+        "createTemplate": "Créer le modèle"
+      },
+      "form": {
+        "templateIdentity": "Identité du modèle",
+        "templateName": "Nom du modèle *",
+        "templateNamePlaceholder": "ex. Réseaux sociaux standard",
+        "required": "Ce champ est requis",
+        "category": "Catégorie *",
+        "selectCategory": "Sélectionner une catégorie",
+        "description": "Description",
+        "descriptionPlaceholder": "Description du modèle...",
+        "usageScope": "Portée d'utilisation",
+        "usageScopePlaceholder": "ex. Réseaux sociaux organiques",
+        "durationDays": "Durée (jours)",
+        "territory": "Territoire",
+        "exclusivity": "Exclusivité",
+        "selectExclusivity": "Sélectionner l'exclusivité",
+        "exclusivityOptions": {
+          "nonExclusive": "Non exclusive",
+          "categoryExclusive": "Exclusive à la catégorie",
+          "fullExclusivity": "Exclusivité totale"
+        },
+        "licenseFee": "Frais de licence ($)",
+        "licenseFeePlaceholder": "Montant ($)",
+        "licenseFeeHelp": "Saisissez le montant en dollars (ex. 10,00)",
+        "customTerms": "Conditions personnalisées",
+        "customTermsPlaceholder": "Conditions supplémentaires...",
+        "modificationsAllowed": "Modifications autorisées",
+        "selectOption": "Sélectionner une option"
+      },
+      "useModal": {
+        "title": "Utiliser le contrat : {{name}}",
+        "description": "Saisissez les informations du client pour créer un nouveau contrat à partir de ce modèle.",
+        "clientName": "Nom du client",
+        "clientNamePlaceholder": "ex. Acme SARL",
+        "clientNameRequired": "Le nom du client est requis",
+        "clientEmail": "E-mail du client",
+        "clientEmailRequired": "L'e-mail du client est requis",
+        "invalidEmail": "Adresse e-mail invalide",
+        "createAndSign": "Créer et signer"
+      },
+      "wizard": {
+        "stepOf": "Étape {{step}} sur 3",
+        "dealSpecifics": "Détails du contrat",
+        "contentReview": "Révision du contenu",
+        "dealSpecificsSubtitle": "Saisissez les détails clés de cet accord de licence",
+        "contentReviewSubtitle": "Vérifiez et personnalisez le contenu du contrat",
+        "identification": "Identification",
+        "brandName": "Nom de la marque *",
+        "clientEmail": "E-mail du client*",
+        "agencySignsFirst": "L'agence signe d'abord (sur la plateforme)",
+        "startDate": "Date de début",
+        "commercials": "Conditions commerciales",
+        "preparing": "Préparation...",
+        "finalize": "Finaliser",
+        "nextStep": "Étape suivante"
       },
       "deleteModal": {
         "title": "Supprimer le modèle",

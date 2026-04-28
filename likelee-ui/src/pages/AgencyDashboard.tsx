@@ -21796,7 +21796,12 @@ export default function AgencyDashboard() {
                           })}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Stripe, ElevenLabs connected
+                          {t(
+                            "agencyDashboard.header.profile.integrationsSubtitle",
+                            {
+                              defaultValue: "Stripe, ElevenLabs connected",
+                            },
+                          )}
                         </p>
                       </div>
                     </button>
@@ -22009,7 +22014,7 @@ export default function AgencyDashboard() {
                         className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
                         onClick={() => navigate("/agencysubscribe")}
                       >
-                        Choose a plan
+                        {t("agencyDashboard.navigation.choosePlan")}
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     )}
