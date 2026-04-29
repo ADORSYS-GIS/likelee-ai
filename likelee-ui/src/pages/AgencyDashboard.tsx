@@ -17666,13 +17666,25 @@ export default function AgencyDashboard() {
       ? brandReqs.filter((r: any) => r?.status === "pending").length
       : 0;
 
-    // Total pending count (always show, even when on the tab)
-    return regPending + brandPending;
+    const totalCount = regPending + brandPending;
+
+    // Check if user has seen this count on the licensing tab
+    const seenKey = `agency_licensing_seen_${user?.id}`;
+    const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
+
+    // If on licensing tab, mark current count as seen
+    if (activeTab === "licensing" && totalCount > 0) {
+      localStorage.setItem(seenKey, totalCount.toString());
+      return 0; // Hide badge when viewing the tab
+    }
+
+    // Show badge only if there are new items since last view
+    return totalCount > seenCount ? totalCount : 0;
   }, [
     licensingRequestsCountQuery.data,
     brandLicenseRequestsQuery.data,
     activeTab,
-    activeSubTab,
+    user?.id,
   ]);
 
   const brandConnectionRequestsCountQuery = useQuery({
@@ -17770,16 +17782,44 @@ export default function AgencyDashboard() {
 
   const pendingBrandConnectionCount = useMemo(() => {
     const { numRequests, numOffers, numFeedback } = brandCounts;
+    const totalCount = numRequests + numOffers + numFeedback;
 
-    // Always show the total count (don't hide when on the tab)
-    return numRequests + numOffers + numFeedback;
-  }, [brandCounts]);
+    // Check if user has seen this count on the jobs tab
+    const seenKey = `agency_brand_connections_seen_${user?.id}`;
+    const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
+
+    // If on jobs tab, mark current count as seen
+    if (activeTab === "jobs" && totalCount > 0) {
+      localStorage.setItem(seenKey, totalCount.toString());
+      return 0; // Hide badge when viewing the tab
+    }
+
+    // Show badge only if there are new items since last view
+    return totalCount > seenCount ? totalCount : 0;
+  }, [brandCounts, activeTab, user?.id]);
 
   const pendingJobInvitesCount = useMemo(() => {
-    return Array.isArray(brandConnectionJobInvitesQuery.data)
+    const totalCount = Array.isArray(brandConnectionJobInvitesQuery.data)
       ? brandConnectionJobInvitesQuery.data.length
       : 0;
-  }, [brandConnectionJobInvitesQuery.data]);
+
+    // Check if user has seen this count on the jobs tab (Job Invites subtab)
+    const seenKey = `agency_job_invites_seen_${user?.id}`;
+    const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
+
+    // If on jobs tab with Job Invites subtab, mark current count as seen
+    if (
+      activeTab === "jobs" &&
+      activeSubTab === "Job Invites" &&
+      totalCount > 0
+    ) {
+      localStorage.setItem(seenKey, totalCount.toString());
+      return 0; // Hide badge when viewing the tab
+    }
+
+    // Show badge only if there are new items since last view
+    return totalCount > seenCount ? totalCount : 0;
+  }, [brandConnectionJobInvitesQuery.data, activeTab, activeSubTab, user?.id]);
 
   const rosterTalents = useMemo(() => {
     const d: any = rosterQuery.data;
@@ -19032,13 +19072,31 @@ export default function AgencyDashboard() {
 
   const chatUnreadCount = useUnreadMessages(profile?.id);
 
+  // Track and clear chat unread count when viewing messages tab
+  const displayChatUnreadCount = useMemo(() => {
+    const totalCount = chatUnreadCount || 0;
+
+    // Check if user has seen this count on the messages tab
+    const seenKey = `agency_messages_seen_${user?.id}`;
+    const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
+    
+    // If on messages tab, mark current count as seen
+    if (activeTab === "messages" && totalCount > 0) {
+      localStorage.setItem(seenKey, totalCount.toString());
+      return 0; // Hide badge when viewing the tab
+    }
+
+    // Show badge only if there are new items since last view
+    return totalCount > seenCount ? totalCount : 0;
+  }, [chatUnreadCount, activeTab, user?.id]);
+
   const allNotifications = useMemo(() => {
     const chatNotification =
-      chatUnreadCount > 0
+      displayChatUnreadCount > 0
         ? {
-            id: `chat_unread_${chatUnreadCount}`,
+            id: `chat_unread_${displayChatUnreadCount}`,
             title: "Messages",
-            message: `You have ${chatUnreadCount} unread message(s).`,
+            message: `You have ${displayChatUnreadCount} unread message(s).`,
             time: "New message",
             color: "blue",
             isSummary: true,
@@ -19050,10 +19108,10 @@ export default function AgencyDashboard() {
     return chatNotification
       ? [chatNotification, ...notifications]
       : notifications;
-  }, [chatUnreadCount, notifications]);
+  }, [displayChatUnreadCount, notifications]);
 
   const unreadCount =
-    notifications.filter((n: any) => !n.read).length + (chatUnreadCount || 0);
+    notifications.filter((n: any) => !n.read).length + (displayChatUnreadCount || 0);
   const filteredNotifications = allNotifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
@@ -19222,7 +19280,7 @@ export default function AgencyDashboard() {
             id: "messages",
             label: "Messages",
             icon: MessageSquare,
-            badge: chatUnreadCount || undefined,
+            badge: displayChatUnreadCount || undefined,
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
@@ -19308,7 +19366,7 @@ export default function AgencyDashboard() {
             id: "messages",
             label: "Messages",
             icon: MessageSquare,
-            badge: chatUnreadCount || undefined,
+            badge: displayChatUnreadCount || undefined,
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
