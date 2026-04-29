@@ -19079,7 +19079,7 @@ export default function AgencyDashboard() {
     // Check if user has seen this count on the messages tab
     const seenKey = `agency_messages_seen_${user?.id}`;
     const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
-    
+
     // If on messages tab, mark current count as seen
     if (activeTab === "messages" && totalCount > 0) {
       localStorage.setItem(seenKey, totalCount.toString());
@@ -19111,7 +19111,8 @@ export default function AgencyDashboard() {
   }, [displayChatUnreadCount, notifications]);
 
   const unreadCount =
-    notifications.filter((n: any) => !n.read).length + (displayChatUnreadCount || 0);
+    notifications.filter((n: any) => !n.read).length +
+    (displayChatUnreadCount || 0);
   const filteredNotifications = allNotifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
