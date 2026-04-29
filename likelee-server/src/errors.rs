@@ -93,6 +93,18 @@ pub fn sanitize_db_error(status_code: u16, text: String) -> (StatusCode, String)
                             .to_string(),
                         );
                     }
+                    "23P01" => {
+                        // Role mixing violation — custom constraint from
+                        // _enforce_single_role() trigger
+                        return (
+                            StatusCode::CONFLICT,
+                            json!({
+                                "error": "This account already has a profile with a different role. Each user may only have one role (creator, brand, or agency). Please contact support if you believe this is incorrect.",
+                                "code": code
+                            })
+                            .to_string(),
+                        );
+                    }
                     _ if contains_sensitive => {
                         return (
                             StatusCode::INTERNAL_SERVER_ERROR,
