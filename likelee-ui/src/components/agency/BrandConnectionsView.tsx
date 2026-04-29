@@ -1217,14 +1217,16 @@ const BrandConnectionsView = ({
   };
 
   // Track viewed feedback items in localStorage
-  const [viewedFeedbackIds, setViewedFeedbackIds] = useState<Set<string>>(() => {
-    try {
-      const saved = localStorage.getItem("viewed_feedback_ids");
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
+  const [viewedFeedbackIds, setViewedFeedbackIds] = useState<Set<string>>(
+    () => {
+      try {
+        const saved = localStorage.getItem("viewed_feedback_ids");
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+      } catch {
+        return new Set();
+      }
+    },
+  );
 
   // Save viewed feedback IDs to localStorage
   useEffect(() => {
@@ -1270,7 +1272,12 @@ const BrandConnectionsView = ({
       : offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
   // Use unviewed count for feedback instead of total count
   const pendingFeedback =
-    feedbackCount > 0 ? Math.max(0, feedbackCount - (feedbackItems.length - unviewedFeedbackCount)) : unviewedFeedbackCount;
+    feedbackCount > 0
+      ? Math.max(
+          0,
+          feedbackCount - (feedbackItems.length - unviewedFeedbackCount),
+        )
+      : unviewedFeedbackCount;
 
   // Always show badges - they disappear when count reaches 0
   const showRequestsBadge = pendingRequests > 0;

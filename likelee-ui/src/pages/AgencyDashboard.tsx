@@ -17752,12 +17752,12 @@ export default function AgencyDashboard() {
           ["sent", "viewed"].includes(o.status),
         ).length
       : 0;
-    
+
     // Calculate unviewed feedback count
     const feedbackItems = Array.isArray(brandConnectionFeedbackQuery.data)
       ? brandConnectionFeedbackQuery.data
       : [];
-    
+
     let viewedFeedbackIds: Set<string>;
     try {
       const saved = localStorage.getItem("viewed_feedback_ids");
@@ -17765,7 +17765,7 @@ export default function AgencyDashboard() {
     } catch {
       viewedFeedbackIds = new Set();
     }
-    
+
     const numFeedback = feedbackItems.filter((item: any) => {
       const feedbackId = String(item?.id || "");
       return feedbackId && !viewedFeedbackIds.has(feedbackId);
