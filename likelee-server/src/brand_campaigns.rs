@@ -5018,8 +5018,7 @@ async fn normalize_package_snapshot_talent_names(
 
     // Batch-fetch names from agency_users.
     let id_refs: Vec<&str> = needs_name.iter().map(String::as_str).collect();
-    let mut name_map: std::collections::HashMap<String, String> =
-        std::collections::HashMap::new();
+    let mut name_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
 
     if let Ok(resp) = state
         .pg
