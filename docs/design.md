@@ -330,21 +330,6 @@ Configuration variables:
 - `STRIPE_CHECKOUT_CANCEL_URL`
   - URL Stripe redirects to after checkout is canceled.
 
-### Stripe Subscriptions (Creator Billing)
-
-- `STRIPE_CREATOR_BASIC_PRICE_ID`
-  - Stripe Price ID for Creator Basic monthly plan.
-- `STRIPE_CREATOR_PRO_PRICE_ID`
-  - Stripe Price ID for Creator Pro monthly plan.
-- `STRIPE_CREATOR_BASIC_ANNUAL_PRICE_ID`
-  - Stripe Price ID for Creator Basic annual plan (recurring interval = year).
-- `STRIPE_CREATOR_PRO_ANNUAL_PRICE_ID`
-  - Stripe Price ID for Creator Pro annual plan (recurring interval = year).
-- `STRIPE_CREATOR_SUCCESS_URL`
-  - URL Stripe redirects to after successful creator checkout.
-- `STRIPE_CREATOR_CANCEL_URL`
-  - URL Stripe redirects to after canceled creator checkout.
-
 ### Stripe (Studio credit packs)
 
 - `STRIPE_STUDIO_SUCCESS_URL`
@@ -536,35 +521,13 @@ To ensure financial security:
 
 ### Escrow Status & Transfers
 
-Agency campaign offers track escrow release separately from the deliverable workflow:
+Agency campaign offers track escrow release separately from deliverable workflow:
 
 - `campaign_offers.escrow_status`: `holding` → `releasing` → `released`
 - Transfer attempts are recorded in `campaign_offer_transfers` per recipient (agency + creators).
-- **Internal Balance Ledger (Held vs Cashout)**:
-  - **Held (pending transfer)**: An internal platform ledger tracked in `public.agency_balances` and `public.creator_balances`. These balances are credited immediately when a Brand payment is distributed (`handle_campaign_offer_agency_distribution`), regardless of whether the recipient has connected a Stripe account.
-  - **cashout (Stripe)**: The actual withdrawable funds in the recipient's connected Stripe account. This balance is only updated when a platform payout request is successfully executed.
-- **Deferred Payout Model**: The system supports deferred Stripe connectivity. Brands can pay for campaigns immediately; Likelee holds the funds in the internal "Held" ledger until the Agency or Creator completes their Stripe onboarding.
-- **Trigger-Based Integrity**: PostgreSQL triggers (`tr_update_agency_balance_on_payout_request`) automatically refund funds from an "approved" payout back to the internal "Held" balance if the Stripe transfer fails, ensuring no funds are lost due to connectivity issues.
-
-#### Transfer Failure Recovery
-
-Stripe transfers can fail silently when a recipient's connected account is not fully onboarded (e.g. `transfers` capability not active). The system handles this without blocking escrow release:
-
-- **Escrow always releases on brand approval** — this is the brand's obligation being fulfilled. Whether the recipient can receive the funds is a separate operational concern.
-- Failed transfers are recorded in `campaign_offer_transfers` with `status = "failed"` and a `failure_reason`.
-- Funds that fail to transfer remain on the platform's Stripe balance until a retry succeeds.
-- The agency can retry failed transfers at any time after escrow release via `POST /api/agency/campaign-offers/:offer_id/retry-transfers`.
-- Transfer status (including live Stripe account health) is available via `GET /api/agency/campaign-offers/:offer_id/transfer-status`.
-- The **Payout Status** panel in `AgencyDeliverablesView` surfaces this information inline per offer, with a "Retry failed" button when action is needed.
-
-#### `campaign_offer_transfers` Status Values
-
-| Status          | Meaning                                                        |
-| --------------- | -------------------------------------------------------------- |
-| `created`       | Stripe transfer succeeded — funds in recipient's account       |
-| `failed`        | Transfer failed — funds held on platform Stripe balance        |
-| `pending_retry` | Retry in progress (transient)                                  |
-| `reversed`      | Transfer was reversed by Stripe                                |
+- Dashboard balances distinguish:
+  - **Held (pending transfer)**: internal Likelee tracking
+  - **cashout (Stripe)**: Stripe connected-account available balance (actual withdrawable funds)
 
 #### Commission semantics (agency campaign offers)
 
@@ -708,12 +671,6 @@ The Studio Wallet is tied directly to the user's permanent `user_id` in the data
 
 Voice recording and cloning capabilities for talent profiles.
 
-### Creator Tier Gating
-
-- `free` and `basic` creators cannot create ElevenLabs voice profiles.
-- `pro` creators can create up to 6 creator voice tones/profiles.
-- Agency voice limits remain governed by agency entitlements and are not changed by creator plan logic.
-
 ### Data Model
 
 #### `voice_recordings`
@@ -749,99 +706,6 @@ Voice recording and cloning capabilities for talent profiles.
 
 - **Backend Logic**: `likelee-server/src/voice.rs`
 - **TTS Provider**: ElevenLabs (`ELEVENLABS_API_KEY`)
-
----
-
-## Creator Billing & Entitlements
-
-Creator subscriptions are backed by Stripe and persisted directly on the creator profile.
-
-### Creator Free Trial (Standardized Stripe Model)
-
-- For new creators or those who haven't started their trial, a "Gift Box" offer banner appears on the Dashboard and Subscription pages.
-- The trial is activated by selecting a plan (Basic or Pro) and entering payment details via **Stripe Checkout**.
-- Card details are collected upfront, but no charge is made for 30 days.
-- Upon activation, Stripe initiates a `trialing` subscription, and the backend syncs this to set `creators.trial_started_at`.
-- The `plan_tier` is updated from `free` to `basic` or `pro` immediately, but access remains free until the trial ends.
-- This prevents multiple trials per user since `trial_started_at` is checked before allowing a trial checkout session.
-
-### Plan Visibility & Management
-
-- **Dashboard Banner**: The standalone large navy banner has been removed.
-- **Top Utility Bar**: Current plan status and 30-day trial countdown are integrated into a professional, sleek "Plan Status Bar" at the very top of the dashboard main content area.
-- **Simplification**: The trial countdown displays only the number of days remaining (e.g., "30 days") for a cleaner, more professional interface.
-- **Billing Redirection**: The Plan Status Bar includes a "Manage Subscription" action that redirects the user directly to the **Billing** sub-tab within the **Settings** section.
-
-### Plans
-
-- `free`
-  - fallback state when no active paid creator subscription exists
-  - capped at 15 combined public categories
-- `basic` (`$25/mo`)
-  - likeness profile
-  - KYC
-  - agency connection
-  - up to 15 combined `content_types` + `industries`
-- `pro` (`$50/mo`)
-  - everything in Basic
-  - Cameo uploads
-  - unauthorized-use monitoring access
-  - ElevenLabs voice profile creation for up to 6 tones
-  - advanced earnings analytics
-
-### Data Model
-
-#### `creators`
-
-- `plan_tier` (text, default `free`)
-- `stripe_customer_id` (text, nullable)
-- `stripe_subscription_id` (text, nullable)
-- `plan_updated_at` (timestamptz, nullable)
-
-#### `creator_subscription_events`
-
-- `id` (uuid, PK)
-- `creator_id` (uuid, FK to `creators`)
-- `provider` (text, default `stripe`)
-- `stripe_customer_id` (text, nullable)
-- `stripe_subscription_id` (text, nullable)
-- `event_type` (text)
-- `plan_tier` (text)
-- `subscription_status` (text)
-- `payload_json` (jsonb)
-- `created_at` (timestamptz)
-
-### Entitlement Rules
-
-- category cap is enforced at creator profile save time using the combined distinct count of:
-  - `content_types`
-  - `industries`
-- creator plan checks must resolve the effective creator id for both `creator` and `talent` users
-- entitlement enforcement is backend-first; UI only mirrors the locked/unlocked state
-
-### API Endpoints
-
-- `POST /api/creator/billing/checkout`
-  - Creates Stripe checkout for `basic` or `pro`
-- `GET /api/creator/billing/status`
-  - Returns creator plan and derived entitlements
-- `GET /api/talent/me`
-  - Returns `plan_tier` and creator entitlement metadata for dashboard bootstrapping
-- `GET /api/talent/analytics`
-  - Returns stable analytics payload plus `advanced_analytics_enabled`
-
-### UI Behavior
-
-- Basic onboarding should still expose core creator flows:
-  - likeness profile
-  - KYC
-  - agency connection
-- Pro-only features should not appear as dead-end actions.
-- Locked surfaces should route creators toward upgrade instead of failing late:
-  - voice profile creation
-  - advanced analytics
-  - unauthorized-use monitoring
-  - Cameo upload workflows
 
 ---
 
@@ -1163,7 +1027,7 @@ Public marketplace for talent discovery.
 ### API Endpoints
 
 - `GET /api/marketplace/search` - Search marketplace profiles
-- `GET /api/marketplace/:profile_type/:id/details` - Get profile details (viewable by Brands without active agency membership)
+- `GET /api/marketplace/:profile_type/:id/details` - Get profile details
 - `POST /api/marketplace/connect` - Request connection
 
 ### Implementation
@@ -1382,9 +1246,5 @@ Dashboard section headers follow a standard responsive pattern to maximize verti
 
 - [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Multi-stage deliverable review workflow and secure media proxy with JWT fallback.
 - [x] **Creator Payment Gate (2026-03-17)**: Payment gating for campaign deliverables; Stripe-based campaign offer checkout.
-- [x] **Two-Way Messaging Hub (2026-04-02)**: Real-time two-way chat between agencies and creators. Isolated conversations, Supabase Realtime, professional chat UI with avatars/logos, Rust backend endpoints, Supabase RLS.
-- [x] **Creator Free Trial Standardization (2026-04-09)**: Standardized Creator trial flow to require upfront payment details via Stripe Checkout. Implemented 30-day trial attached to paid plans with reuse prevention and persistent UI visibility.
-- [x] **Vulnerability Fixes & CI Stabilization (2026-04-15)**: Resolved critical `rustls-webpki` vulnerabilities in backend by transitioning `async-stripe` to use `native-tls` and upgrading other dependencies. Fixed frontend `npm install` failure by resolving `overrides` conflicts in `package.json`. Verified full project health with `cargo audit`, `cargo clippy`, `npm lint`, and `npm build`.
-- [x] **Marketplace & Billing Refinement (2026-04-18)**: Refactored marketplace access to allow Brands to view profiles without agency membership. Optimized campaign payment flow by removing redundant session tracking and formalizing the internal payout ledger (Held) vs live Stripe balance (Cashout) logic.
-- [x] **Full Asset Request Professionalization (2026-04-20)**: Integrated detailed full asset request metadata (name, email, message) into the Client Activity modal with a premium timeline view and backend interaction persistence.
+- [x] **Two-Way Messaging Hub (2026-04-02)**: Real-time two-way chat between agencies and creators. Isolated conversations, Supabase Realtime, professional chat UI with avatars/logos.
 - [x] **Agency Dashboard Responsiveness (2026-04-14)**: Optimized the agency dashboard for professional mobile and desktop experience. Unified tab navigation with the new `DashboardTabRail` featuring CSS mask-fading for horizontal scrolling and compact mobile headers.
