@@ -279,9 +279,9 @@
       "subtitle": "Tell us about your athlete roster",
       "athleteCount": "Number of Athletes Represented",
       "licenseAthletesQuestion": "Do you currently license your athletes' likeness?",
-      "openToAiQuestion": "[NEEDS TRANSLATION] Are your athletes open to AI recreation or only likeness protection?",
-      "campaignTypesQuestion": "[NEEDS TRANSLATION] What types of campaigns or collaborations do you pursue most?",
-      "bulkOnboardQuestion": "[NEEDS TRANSLATION] Do you want to bulk-onboard your roster to Likelee?"
+      "openToAiQuestion": "Sind Ihre Athletinnen und Athleten offen fuer KI-Nachbildungen oder nur fuer den Schutz ihrer Abbildrechte?",
+      "campaignTypesQuestion": "Welche Arten von Kampagnen oder Kooperationen verfolgen Sie am haeufigsten?",
+      "bulkOnboardQuestion": "Moechten Sie Ihren Kader gesammelt bei Likelee onboarden?"
     }
   },
   "faces.hero.signUpButton": "Anmelden",
