@@ -465,8 +465,12 @@
         "noMoreFiles": "Keine weiteren Dateien",
         "fileCount": "{{count}} Datei",
         "fileCount_other": "{{count}} Dateien",
-        "folders": { "title": "Ordner" },
-        "files": { "title": "Dateien" }
+        "folders": {
+          "title": "Ordner"
+        },
+        "files": {
+          "title": "Dateien"
+        }
       },
       "subTabs": {
         "profile": "Profil",
@@ -1221,6 +1225,38 @@
           "wrapAfterCall": "Abschlusszeit muss nach der Anrufzeit liegen",
           "selectRequired": "Auswählen: {{fields}}",
           "calendlyOneToOne": "Calendly-Buchung unterstützt jeweils ein Talent"
+        }
+      },
+      "campaignModal": {
+        "titleCreate": "Create New Campaign",
+        "titleEdit": "Kampagne bearbeiten",
+        "fields": {
+          "name": "Campaign Name *",
+          "status": "Status",
+          "duration": "Duration (days)",
+          "startDate": "Startdatum"
+        },
+        "placeholders": {
+          "name": "e.g. Summer Shoot 2024",
+          "startDate": "mm/dd/yyyy"
+        },
+        "statuses": {
+          "created": "Erstellt",
+          "ongoing": "Laufend",
+          "completed": "Abgeschlossen"
+        },
+        "actions": {
+          "cancel": "Abbrechen",
+          "saving": "Speichern...",
+          "save": "Save Campaign"
+        },
+        "errors": {
+          "missingName": "Please fill in the campaign name"
+        },
+        "toasts": {
+          "created": "Campaign created",
+          "updated": "Campaign updated",
+          "error": "Error saving campaign"
         }
       }
     },
@@ -3683,7 +3719,9 @@
               "label": "Prüfer",
               "description": "Kann Inhalte prüfen und Aktivitäten verfolgen"
             },
-            "unknown": "Unbekannte Rolle"
+            "unknown": "Unbekannte Rolle",
+            "manager": "Manager",
+            "member": "Mitglied"
           },
           "inviteSuccess": "Mitglied erfolgreich eingeladen",
           "inviteFailed": "Einladung des Mitglieds fehlgeschlagen",

@@ -1837,6 +1837,88 @@
         "toEntityThisYear": "Pagado al/a la {{entitySingular}} este año",
         "agencyCommissionYTD": "Comisión de agencia YTD",
         "avgCommissionRate": "{{rate}}% de comisión promedio"
+      },
+      "commissionStructure": {
+        "title": "Reglas de comision de {{entitySingular}}",
+        "description": "Agency-managed {{entitySingularLower}} can use settings-based overrides here. Marketplace-connected {{entitySingularLower}} follow the active signed contract rate and are read-only on this screen.",
+        "loadingRoster": "Cargando datos del roster...",
+        "loadFailed": "No se pudieron cargar los datos del roster",
+        "tryAgain": "Intentar de nuevo",
+        "connectionRequired": "Conexion requerida",
+        "connectionRequiredDescription": "Only talents with an active creator account are listed here. To manage commissions for pending or uninvited roster members, please ensure they have accepted their invitation to the talent portal. Marketplace-connected creator accounts are shown as contract controlled once their signed agreement becomes active.",
+        "searchTalentByName": "Buscar {{entity}} por nombre...",
+        "contractLocked": "Contrato bloqueado",
+        "customOverride": "Ajuste personalizado",
+        "tierDefault": "Valor predeterminado del nivel",
+        "currentTier": "Nivel actual",
+        "settingsRate": "Tarifa de ajustes (%)",
+        "contractControlled": "Controlado por contrato",
+        "marketplaceConnected": "Conectado al marketplace",
+        "agencyManaged": "Gestionado por la agencia",
+        "locked": "Bloqueado",
+        "discardChange": "Descartar cambio",
+        "resetToTierDefault": "Restablecer al valor del nivel",
+        "noResultsFound": "No se encontraron resultados",
+        "noEntityFound": "No se encontro {{entity}}",
+        "commissionModel": "Modelo de comision",
+        "modelDescriptionPrefix": "Commission rates represent the",
+        "modelDescriptionBody": ". Agency-managed {{entity}} accounts can be adjusted here with settings overrides, while marketplace-connected {{entity}} accounts follow the active signed contract rate and stay locked on this screen.",
+        "discardAll": "Descartar todo",
+        "saving": "Guardando...",
+        "saveChanges": "Guardar cambios"
+      },
+      "payoutPreferences": {
+        "scheduleSettings": "Configuracion del calendario de pagos",
+        "frequency": "Frecuencia de pago",
+        "selectFrequency": "Seleccionar frecuencia",
+        "weekly": "Semanal",
+        "biWeekly": "Quincenal",
+        "monthly": "Mensual",
+        "frequencyDescription": "How often {{entitySingularLower}} receive their share",
+        "minThreshold": "Umbral minimo de pago",
+        "minThresholdDescription": "Don't pay if balance is under this amount",
+        "method": "Metodo de pago",
+        "stripeConnected": "Cuenta conectada de Stripe",
+        "autoDeduct": "Auto-deduct agency commission and send net to talent",
+        "active": "Activo",
+        "howItWorks": "Como funciona:",
+        "upcomingSchedule": "Proximo calendario de pagos",
+        "scheduledPayout": "Pago programado",
+        "scheduled": "programado",
+        "nextPayoutDateNotReached": "La proxima fecha de pago aun no ha llegado",
+        "howItWorksStep1": "1. Brand pays license fee to agency Stripe account",
+        "howItWorksStep2": "2. Agency commission (14%) auto-deducted",
+        "howItWorksStep3": "3. Net amount transferred to talent's connected account",
+        "howItWorksStep4": "4. Automatic payout on schedule (monthly)",
+        "noUpcoming": "No hay pagos proximos",
+        "noUpcomingDescription": "Los pagos apareceran aqui cuando se programen"
+      },
+      "commissionBreakdown": {
+        "title": "Desglose de acuerdos de licencia recientes",
+        "description": "Consulta como se dividieron las comisiones en acuerdos de licencia recientes",
+        "noDeals": "No se encontraron acuerdos recientes",
+        "dealDate": "Fecha del acuerdo",
+        "client": "Cliente",
+        "talent": "{{entitySingular}}",
+        "totalDeal": "Acuerdo total",
+        "agencyCommission": "Comision de la agencia",
+        "talentPayout": "Pago de {{entitySingular}}",
+        "status": "Estado"
+      },
+      "paymentHistory": {
+        "topEarningTitle": "Top Earning {{entitySingular}} (Last 30 Days)",
+        "campaigns": "{{count}} campaigns",
+        "talentLabel": "{{entitySingular}}:",
+        "agencyLabel": "Agency:",
+        "noPayments": "No successful payments found in the last 30 days."
+      },
+      "royalties": {
+        "accruedThisMonth": "Acumulado este mes",
+        "liveEarningsPool": "Bolsa de ganancias en vivo",
+        "pendingApproval": "Pendiente de aprobacion",
+        "awaitingPayoutProcessing": "Esperando procesamiento del pago",
+        "ytdPaidToEntity": "Pagado a {{entitySingular}} en el ano",
+        "totalNetPayouts": "Pagos netos totales 2024"
       }
     },
     "subscribe": {
@@ -3370,7 +3452,10 @@
           "cantUnassignAfterSent": "No puedes cambiar el talento asignado después de enviar el contrato.",
           "disconnected": "Desconectado",
           "disconnectedDesc": "Marca desconectada exitosamente.",
-          "disconnectFailed": "Error al desconectar la marca"
+          "disconnectFailed": "Error al desconectar la marca",
+          "talentUnassigned": "Talent unassigned",
+          "talentRemovedFromOffer": "Talent was removed from this offer.",
+          "assignmentFailed": "Assignment failed"
         },
         "connectedBrands": "Marcas conectadas",
         "requests": "Solicitudes",
@@ -3594,7 +3679,9 @@
               "label": "Revisor",
               "description": "Puede revisar contenido y seguir la actividad"
             },
-            "unknown": "Rol desconocido"
+            "unknown": "Rol desconocido",
+            "manager": "Manager",
+            "member": "Member"
           },
           "inviteSuccess": "Miembro invitado exitosamente",
           "inviteFailed": "Error al invitar miembro",
@@ -3706,8 +3793,85 @@
         "common": {
           "saving": "Guardando...",
           "save": "Guardar"
+        },
+        "taxAndCurrency": {
+          "title": "Tax & Currency Settings",
+          "defaultCurrency": "Default Currency",
+          "selectCurrency": "Select currency",
+          "currencies": {
+            "usd": "USD - US Dollar",
+            "eur": "EUR - Euro",
+            "gbp": "GBP - British Pound"
+          },
+          "dateFormat": "Date Format",
+          "selectFormat": "Select format",
+          "invoiceSettings": "Invoice Settings",
+          "defaultPaymentTerms": "Default Payment Terms",
+          "selectTerms": "Select terms",
+          "paymentTerms": {
+            "due": "Due on Receipt",
+            "net15": "Net 15",
+            "net30": "Net 30",
+            "net60": "Net 60"
+          }
         }
-      }
+      },
+      "labels": {
+        "growthPercent": "+{{value}}% de crecimiento",
+        "vsLastPeriod": "+{{value}}% vs periodo anterior",
+        "monthlyPerformanceTrends": "Tendencias mensuales de rendimiento",
+        "earnings": "Ganancias ($)",
+        "earningsLower": "ganancias",
+        "licenses": "Licencias",
+        "campaigns": "Campanas",
+        "aiUsages": "Usos de IA",
+        "complete": "Complete",
+        "missing": "Missing",
+        "expiring": "Expiring",
+        "projected": "projected",
+        "inactive": "inactive",
+        "active": "active",
+        "talent": "Talent",
+        "talentPerformanceMetrics": "Talent Performance Metrics",
+        "engagement": "engagement",
+        "mostActive": "Most Active ({{metric}})",
+        "clientAcquisition": "Client Acquisition",
+        "newClients": "New clients in the last 30 days",
+        "repeatClientRate": "Repeat Client Rate",
+        "action": "Action",
+        "ofTotal": "{{value}}% of total",
+        "percentOfTotal": "{{value}}% of total",
+        "topClientsPerformance": "Top Clients Performance",
+        "geographicDistribution": "Geographic Distribution",
+        "complianceSummary": "Compliance Summary",
+        "consentStatusDistribution": "Consent Status Distribution",
+        "comingSoon": "Proximamente",
+        "licenseExpiryPipeline": "License Expiry Pipeline",
+        "expiredOn": "Expired on {{date}}",
+        "nextDays": "Next {{count}} days",
+        "next10Days": "Next 10 days",
+        "verified": "{{count}} of {{total}} verified",
+        "verifiedOfTotal": "{{count}} of {{total}} verified",
+        "completeOfTotal": "{{count}} of {{total}} complete",
+        "licensesLower": "licenses",
+        "campaignsLower": "campaigns",
+        "30dEarnings": "30D Earnings"
+      },
+      "months": {
+        "jan": "Jan",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Apr",
+        "may": "May",
+        "jun": "Jun",
+        "jul": "Jul",
+        "aug": "Aug",
+        "sep": "Sep",
+        "oct": "Oct",
+        "nov": "Nov",
+        "dec": "Dec"
+      },
+      "irlComingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon."
     }
   }
 }
