@@ -18578,6 +18578,8 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
+  // Creator ID to auto-open a conversation with when navigating to Messages tab
+  const [messagingCreatorId, setMessagingCreatorId] = useState<string | undefined>(undefined);
 
   const goToEditProfile = () => {
     setActiveView("settings", "General Settings");
@@ -20940,7 +20942,12 @@ export default function AgencyDashboard() {
               {activeTab === "licensing" &&
                 activeSubTab === "Brand Connections" &&
                 (agencyCanUseBrandConnections ? (
-                  <BrandConnectionsView />
+                  <BrandConnectionsView
+                    onMessageTalent={(creatorId) => {
+                      setMessagingCreatorId(creatorId);
+                      setActiveTab("messages");
+                    }}
+                  />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                     <div className="text-lg font-black text-gray-900">
@@ -20961,7 +20968,12 @@ export default function AgencyDashboard() {
                 ))}
               {activeTab === "brand-connections" &&
                 (agencyCanUseBrandConnections ? (
-                  <BrandConnectionsView />
+                  <BrandConnectionsView
+                    onMessageTalent={(creatorId) => {
+                      setMessagingCreatorId(creatorId);
+                      setActiveTab("messages");
+                    }}
+                  />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                     <div className="text-lg font-black text-gray-900">
@@ -21121,7 +21133,10 @@ export default function AgencyDashboard() {
               )}
               {activeTab === "messages" &&
                 (hasProAccess ? (
-                  <CommunicationHub />
+                  <CommunicationHub
+                    initialCreatorId={messagingCreatorId}
+                    onInitialCreatorHandled={() => setMessagingCreatorId(undefined)}
+                  />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                     <div className="text-lg font-black text-gray-900">

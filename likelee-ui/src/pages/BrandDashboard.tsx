@@ -810,6 +810,8 @@ export default function BrandDashboard() {
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
+  const [confirmingDonePkgPublicData, setConfirmingDonePkgPublicData] = useState<any>(null);
+  const [loadingConfirmingDonePkgPublicData, setLoadingConfirmingDonePkgPublicData] = useState(false);
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [expandedInboxPackageId, setExpandedInboxPackageId] =
     useState<string>("");
@@ -4516,7 +4518,28 @@ export default function BrandDashboard() {
                           : "bg-black hover:bg-gray-800 text-white"
                       }`}
                       disabled={isExpired || isDone || !canManagePayOffers}
-                      onClick={() => setConfirmingDonePkg(pkg)}
+                      onClick={async () => {
+                        setConfirmingDonePkg(pkg);
+                        setConfirmingDonePkgPublicData(null);
+                        // Fetch the linked agency_talent_packages record to get
+                        // the brand's talent selections (stored as interactions
+                        // with type "selected" on the public package).
+                        const token = pkg?.meta?.agency_package_token;
+                        if (token) {
+                          setLoadingConfirmingDonePkgPublicData(true);
+                          try {
+                            const resp = await base44.get<any>(
+                              `/api/public/packages/${encodeURIComponent(token)}`,
+                            );
+                            const publicPkg = resp?.package || resp?.data || resp;
+                            setConfirmingDonePkgPublicData(publicPkg);
+                          } catch {
+                            // non-fatal — dialog will show empty selection
+                          } finally {
+                            setLoadingConfirmingDonePkgPublicData(false);
+                          }
+                        }
+                      }}
                       title={
                         !canManagePayOffers
                           ? "You do not have permission to mark packages as done"
@@ -12613,7 +12636,7 @@ export default function BrandDashboard() {
       {/* Confirmation Dialog for Mark Done */}
       <AlertDialog
         open={!!confirmingDonePkg}
-        onOpenChange={(open) => !open && setConfirmingDonePkg(null)}
+        onOpenChange={(open) => { if (!open) { setConfirmingDonePkg(null); setConfirmingDonePkgPublicData(null); } }}
       >
         <AlertDialogContent className="bg-white rounded-none border border-gray-300 shadow-2xl">
           <AlertDialogHeader>
@@ -12629,21 +12652,45 @@ export default function BrandDashboard() {
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
                   Selected Talents:
                 </p>
+                {loadingConfirmingDonePkgPublicData ? (
+                  <p className="text-sm text-gray-500 italic">Loading selections...</p>
+                ) : (
                 <ul className="space-y-1">
                   {(() => {
-                    const selectedIds =
-                      confirmingDonePkg?.meta?.selected_talent_ids || [];
-                    const items =
-                      confirmingDonePkg?.package_snapshot?.items || [];
-                    const selectedNames = items
-                      .filter((item: any) =>
-                        selectedIds.includes(String(item.talent_id || item.id)),
-                      )
-                      .map((item: any) => item.talent_name || "Unnamed Talent");
+                    // Selections are stored as interactions (type "selected") on the
+                    // linked agency_talent_packages record, fetched via the public token.
+                    const publicPkg = confirmingDonePkgPublicData;
+                    const selectedIds = (publicPkg?.interactions || [])
+                      .filter((i: any) => i?.type === "selected")
+                      .map((i: any) => String(i?.talent_id || "").trim())
+                      .filter(Boolean);
 
-                    if (selectedNames.length === 0)
+                    const items: any[] = Array.isArray(publicPkg?.items)
+                      ? publicPkg.items
+                      : Array.isArray(confirmingDonePkg?.package_snapshot?.items)
+                        ? confirmingDonePkg.package_snapshot.items
+                        : [];
+
+                    const selectedNames = items
+                      .filter((item: any) => {
+                        const id = String(item?.talent_id || item?.id || "").trim();
+                        return id && selectedIds.includes(id);
+                      })
+                      .map(
+                        (item: any) =>
+                          item?.talent_name ||
+                          item?.talent?.stage_name ||
+                          item?.talent?.full_legal_name ||
+                          item?.talent?.full_name ||
+                          "Unnamed Talent",
+                      );
+
+                    if (selectedIds.length === 0)
                       return (
-                        <li className="text-sm italic">No talent selected</li>
+                        <li className="text-sm italic text-gray-500">
+                          No talent selected yet. Open the package and select
+                          talents before confirming.
+                        </li>
                       );
                     return selectedNames.map((name: string, idx: number) => (
                       <li
@@ -12656,6 +12703,7 @@ export default function BrandDashboard() {
                     ));
                   })()}
                 </ul>
+                )}
               </div>
               <p className="text-sm font-medium text-red-600 bg-red-50 p-3 border border-red-100 italic">
                 Note: Once you click "Confirm", you will not be able to modify
@@ -12669,7 +12717,13 @@ export default function BrandDashboard() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-none bg-black hover:bg-gray-800 text-white"
+              className="rounded-none bg-black hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={
+                loadingConfirmingDonePkgPublicData ||
+                (confirmingDonePkgPublicData?.interactions || []).filter(
+                  (i: any) => i?.type === "selected",
+                ).length === 0
+              }
               onClick={async () => {
                 const pkg = confirmingDonePkg;
                 if (!pkg) return;
@@ -12679,7 +12733,12 @@ export default function BrandDashboard() {
                     {
                       package_id: String(pkg?.id || ""),
                       feedback_note: "Brand completed package selection.",
-                      selected_talent_ids: pkg?.meta?.selected_talent_ids || [],
+                      // Derive selected_talent_ids from the public package interactions
+                      // (type "selected") — these are set by the brand in PublicPackageView.
+                      selected_talent_ids: (confirmingDonePkgPublicData?.interactions || [])
+                        .filter((i: any) => i?.type === "selected")
+                        .map((i: any) => String(i?.talent_id || "").trim())
+                        .filter(Boolean),
                     },
                   );
                   const response = await base44.get<{ packages?: any[] }>(
@@ -12701,6 +12760,7 @@ export default function BrandDashboard() {
                   });
                 } finally {
                   setConfirmingDonePkg(null);
+                  setConfirmingDonePkgPublicData(null);
                 }
               }}
             >

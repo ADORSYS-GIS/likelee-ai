@@ -1042,12 +1042,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/campaign-offers/:offer_id/assignments",
-            get(crate::brand_campaigns::list_offer_talent_assignments)
-                .post(crate::brand_campaigns::create_offer_talent_assignment),
-        )
-        .route(
-            "/api/campaign-offers/:offer_id/assignments/:assignment_id",
-            delete(crate::brand_campaigns::delete_offer_talent_assignment),
+            get(crate::brand_campaigns::list_offer_talent_assignments),
         )
         .route(
             "/api/campaign-offers/:offer_id/asset-requests",

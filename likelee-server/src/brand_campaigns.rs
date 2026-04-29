@@ -4972,6 +4972,132 @@ pub async fn delete_offer_contract(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// Internal helper: insert a single talent assignment for an offer.
+///
+/// Called exclusively from `mark_brand_package_done` — assignments are always
+/// created automatically from the brand's package selection, never manually.
+///
+/// Returns the upserted assignment row on success.
+async fn insert_offer_talent_assignment_internal(
+    state: &AppState,
+    agency_id: &str,
+    offer_id: &str,
+    // Accepts any resolvable ID shape: agency_users.id, creator_id, or legacy roster id.
+    talent_id_or_creator_id: &str,
+) -> Result<serde_json::Value, (StatusCode, String)> {
+    let raw_id = talent_id_or_creator_id.trim();
+    if raw_id.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "talent_id is required".to_string()));
+    }
+
+    // Resolve to canonical agency_users row using the multi-shape resolver.
+    let talent = resolve_agency_talent(state, agency_id, raw_id).await?;
+
+    let canonical_talent_id = talent
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let creator_id = talent
+        .get("creator_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if creator_id.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "This talent must create a creator account before they can be assigned to a contract."
+                .to_string(),
+        ));
+    }
+
+    let insert_payload = json!({
+        "offer_id": offer_id,
+        "agency_id": agency_id,
+        "talent_id": if canonical_talent_id.is_empty() { serde_json::Value::Null } else { json!(canonical_talent_id) },
+        "creator_id": creator_id,
+        "status": "assigned",
+        "assigned_by": agency_id,
+        "meta": json!({}),
+    });
+
+    let resp = state
+        .pg
+        .from("offer_talent_assignments")
+        .upsert(insert_payload.to_string())
+        .on_conflict("offer_id,creator_id")
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status_code = resp.status().as_u16();
+        let body = resp.text().await.unwrap_or_default();
+
+        // Backward-compat: if the UNIQUE index backing ON CONFLICT doesn't exist yet,
+        // fall back to read-then-insert.
+        if body.contains("42P10")
+            || body.contains("no unique or exclusion constraint matching the ON CONFLICT")
+        {
+            let existing_resp = state
+                .pg
+                .from("offer_talent_assignments")
+                .select("*")
+                .eq("offer_id", offer_id)
+                .eq("agency_id", agency_id)
+                .eq("creator_id", &creator_id)
+                .eq("status", "assigned")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if existing_resp.status().is_success() {
+                let existing_text = existing_resp.text().await.unwrap_or_default();
+                let existing_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&existing_text).unwrap_or_default();
+                if let Some(row) = existing_rows.first().cloned() {
+                    return Ok(row);
+                }
+            }
+
+            let insert_only_resp = state
+                .pg
+                .from("offer_talent_assignments")
+                .insert(insert_payload.to_string())
+                .select("*")
+                .single()
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !insert_only_resp.status().is_success() {
+                return Err(sanitize_db_error(
+                    insert_only_resp.status().as_u16(),
+                    insert_only_resp.text().await.unwrap_or_default(),
+                ));
+            }
+
+            let row: serde_json::Value =
+                serde_json::from_str(&insert_only_resp.text().await.unwrap_or_default())
+                    .unwrap_or_default();
+            return Ok(row);
+        }
+
+        return Err(sanitize_db_error(status_code, body));
+    }
+
+    let row: serde_json::Value =
+        serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or_default();
+    Ok(row)
+}
+
 pub async fn create_offer_package(
     State(state): State<AppState>,
     user: AuthUser,
@@ -5143,13 +5269,15 @@ pub async fn mark_brand_package_done(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let now = chrono::Utc::now().to_rfc3339();
+
+    // Fetch the current package row to check status and read existing meta.
     let current_resp = state
         .pg
         .from("campaign_offer_packages")
         .eq("id", &payload.package_id)
         .eq("offer_id", &offer_id)
         .eq("brand_id", &user.id)
-        .select("meta")
+        .select("meta,status,agency_id")
         .single()
         .execute()
         .await
@@ -5157,14 +5285,48 @@ pub async fn mark_brand_package_done(
 
     let current_text = current_resp.text().await.unwrap_or_default();
     let current_row: serde_json::Value = serde_json::from_str(&current_text).unwrap_or_default();
+
+    // Idempotency guard: if the package is already finalized, reject re-submission.
+    // This prevents the brand from changing their selection after the agency has
+    // already seen it and started preparing the contract.
+    let current_status = current_row
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    if current_status == "feedback_received" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "package_already_finalized".to_string(),
+        ));
+    }
+
+    let agency_id = current_row
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
     let mut current_meta = current_row
         .get("meta")
         .cloned()
         .unwrap_or_else(|| json!({}));
 
+    // Collect selected_talent_ids before consuming payload.
+    let selected_talent_ids: Vec<String> = payload
+        .selected_talent_ids
+        .clone()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
     if let Some(obj) = current_meta.as_object_mut() {
-        if let Some(ids) = payload.selected_talent_ids {
-            obj.insert("selected_talent_ids".to_string(), json!(ids));
+        if !selected_talent_ids.is_empty() {
+            obj.insert("selected_talent_ids".to_string(), json!(selected_talent_ids));
         }
         if let Some(note) = payload
             .feedback_note
@@ -5205,8 +5367,49 @@ pub async fn mark_brand_package_done(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    let row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
-    Ok(Json(json!({"status":"ok","package": row})))
+    let package_row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
+
+    // Auto-assign selected talents to the offer.
+    // This eliminates the redundant manual assignment step for the agency.
+    // Individual failures are non-fatal: we collect errors and continue so that
+    // a single unresolvable talent ID doesn't block the entire finalization.
+    let mut assignments: Vec<serde_json::Value> = Vec::new();
+    let mut assignment_errors: Vec<serde_json::Value> = Vec::new();
+
+    if !agency_id.is_empty() && !selected_talent_ids.is_empty() {
+        for talent_id in &selected_talent_ids {
+            match insert_offer_talent_assignment_internal(
+                &state,
+                &agency_id,
+                &offer_id,
+                talent_id,
+            )
+            .await
+            {
+                Ok(assignment) => assignments.push(assignment),
+                Err((_, reason)) => {
+                    warn!(
+                        offer_id = %offer_id,
+                        agency_id = %agency_id,
+                        talent_id = %talent_id,
+                        reason = %reason,
+                        "Auto-assignment failed for talent during package finalization"
+                    );
+                    assignment_errors.push(json!({
+                        "talent_id": talent_id,
+                        "reason": reason,
+                    }));
+                }
+            }
+        }
+    }
+
+    Ok(Json(json!({
+        "status": "ok",
+        "package": package_row,
+        "assignments": assignments,
+        "assignment_errors": assignment_errors,
+    })))
 }
 
 pub async fn list_agency_offer_packages(
@@ -5347,282 +5550,36 @@ pub async fn list_offer_talent_assignments(
         }
     }
 
-    Ok(Json(json!({ "assignments": rows })))
-}
-
-pub async fn create_offer_talent_assignment(
-    State(state): State<AppState>,
-    user: AuthUser,
-    Path(OfferPath { offer_id }): Path<OfferPath>,
-    Json(payload): Json<CreateOfferTalentAssignmentRequest>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
-    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
-    let access = team::require_agency_access(&state, &user).await?;
-    let agency_id = &access.organization_id;
-    let offer_status = offer
-        .get("status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_lowercase();
-    if offer_status == "contract_sent" || offer_status == "contract_fully_signed" {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "cannot_change_assignments_after_contract_sent".to_string(),
-        ));
-    }
-    let payment_status = offer
-        .get("payment_status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("unpaid")
-        .trim()
-        .to_lowercase();
-    if payment_status != "unpaid" && !payment_status.is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "cannot_change_assignments_after_payment_started".to_string(),
-        ));
-    }
-    let mut creator_id = payload
-        .creator_id
-        .as_deref()
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    let mut canonical_talent_id = payload
-        .talent_id
-        .as_deref()
-        .unwrap_or("")
-        .trim()
-        .to_string();
-
-    if creator_id.is_empty() {
-        // Legacy/roster flow: resolve by talent_id (agency_users.id or alias id shapes).
-        canonical_talent_id = trim_non_empty(&canonical_talent_id, "talent_id")?;
-        let talent = resolve_agency_talent(&state, agency_id, &canonical_talent_id).await?;
-        canonical_talent_id = talent
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        creator_id = talent
-            .get("creator_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if creator_id.is_empty() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "This talent must create a creator account before they can be assigned to a contract."
-                    .to_string(),
-            ));
-        }
-    } else {
-        // Creator-only assignment: ensure relationship exists OR creator is already on roster.
-        let rel_resp = state
+    // Assignments are always auto-populated from the brand's package selection.
+    // The is_locked flag tells the frontend that assignments exist and are read-only.
+    // Since there is no manual assignment path, is_locked is always true when
+    // assignments exist (they came from a finalized package by definition).
+    // We still query the package to be explicit and future-proof.
+    let is_locked = {
+        let pkg_resp = state
             .pg
-            .from("agency_talent_relationships")
-            .select("id,status")
-            .eq("agency_id", agency_id)
-            .eq("creator_id", &creator_id)
+            .from("campaign_offer_packages")
+            .select("id")
+            .eq("offer_id", &offer_id)
+            .eq("status", "feedback_received")
             .limit(1)
             .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !rel_resp.status().is_success() {
-            return Err(sanitize_db_error(
-                rel_resp.status().as_u16(),
-                rel_resp.text().await.unwrap_or_default(),
-            ));
+            .await;
+        match pkg_resp {
+            Ok(r) if r.status().is_success() => {
+                let text = r.text().await.unwrap_or_default();
+                let rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&text).unwrap_or_default();
+                !rows.is_empty()
+            }
+            _ => false,
         }
-        let rel_text = rel_resp.text().await.unwrap_or_default();
-        let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
-        let rel_status = rel_rows
-            .first()
-            .and_then(|r| r.get("status"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        if rel_rows.is_empty() {
-            // Allow direct roster creators even if relationship row is missing.
-            let roster_resp = state
-                .pg
-                .from("agency_users")
-                .select("id")
-                .eq("agency_id", agency_id)
-                .eq("creator_id", &creator_id)
-                .limit(1)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            if !roster_resp.status().is_success() {
-                return Err(sanitize_db_error(
-                    roster_resp.status().as_u16(),
-                    roster_resp.text().await.unwrap_or_default(),
-                ));
-            }
-            let roster_text = roster_resp.text().await.unwrap_or_default();
-            let roster_rows: Vec<serde_json::Value> =
-                serde_json::from_str(&roster_text).unwrap_or_default();
-            if roster_rows.is_empty() {
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    "creator is not linked to this agency".to_string(),
-                ));
-            }
-        } else if rel_status == "declined" || rel_status == "inactive" {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "creator is not linked to this agency".to_string(),
-            ));
-        }
-    }
-    let insert_payload = json!({
-        "offer_id": offer_id,
-        "agency_id": agency_id,
-        "talent_id": if canonical_talent_id.is_empty() { serde_json::Value::Null } else { json!(canonical_talent_id) },
-        "creator_id": creator_id,
-        "status": "assigned",
-        "assigned_by": user.id,
-        "meta": json!({}),
-    });
-    let resp = state
-        .pg
-        .from("offer_talent_assignments")
-        .upsert(insert_payload.to_string())
-        .on_conflict("offer_id,creator_id")
-        .select("*")
-        .single()
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
-        let status_code = resp.status().as_u16();
-        let body = resp.text().await.unwrap_or_default();
-        // Backward/partial-migration compatibility: if the UNIQUE index backing our ON CONFLICT
-        // does not exist yet, Postgres returns 42P10. In that case, fallback to a manual
-        // read-then-insert flow.
-        if body.contains("42P10")
-            || body.contains("no unique or exclusion constraint matching the ON CONFLICT")
-        {
-            let existing_resp = state
-                .pg
-                .from("offer_talent_assignments")
-                .select("*")
-                .eq("offer_id", &offer_id)
-                .eq("agency_id", agency_id)
-                .eq("creator_id", &creator_id)
-                .eq("status", "assigned")
-                .limit(1)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            if existing_resp.status().is_success() {
-                let existing_text = existing_resp.text().await.unwrap_or_default();
-                let existing_rows: Vec<serde_json::Value> =
-                    serde_json::from_str(&existing_text).unwrap_or_default();
-                if let Some(row) = existing_rows.first().cloned() {
-                    return Ok(Json(json!({ "status": "ok", "assignment": row })));
-                }
-            }
+    };
 
-            let insert_only_resp = state
-                .pg
-                .from("offer_talent_assignments")
-                .insert(insert_payload.to_string())
-                .select("*")
-                .single()
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            if !insert_only_resp.status().is_success() {
-                return Err(sanitize_db_error(
-                    insert_only_resp.status().as_u16(),
-                    insert_only_resp.text().await.unwrap_or_default(),
-                ));
-            }
-            let row: serde_json::Value =
-                serde_json::from_str(&insert_only_resp.text().await.unwrap_or_default())
-                    .unwrap_or_default();
-            return Ok(Json(json!({ "status": "ok", "assignment": row })));
-        }
-
-        return Err(sanitize_db_error(status_code, body));
-    }
-    let row: serde_json::Value =
-        serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or_default();
-    Ok(Json(json!({ "status": "ok", "assignment": row })))
-}
-
-pub async fn delete_offer_talent_assignment(
-    State(state): State<AppState>,
-    user: AuthUser,
-    Path(OfferAssignmentPath {
-        offer_id,
-        assignment_id,
-    }): Path<OfferAssignmentPath>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
-    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
-    let access = team::require_agency_access(&state, &user).await?;
-    let agency_id = &access.organization_id;
-    let offer_status = offer
-        .get("status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .trim()
-        .to_lowercase();
-    if offer_status == "contract_sent" || offer_status == "contract_fully_signed" {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "cannot_change_assignments_after_contract_sent".to_string(),
-        ));
-    }
-    let payment_status = offer
-        .get("payment_status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("unpaid")
-        .trim()
-        .to_lowercase();
-    if payment_status != "unpaid" && !payment_status.is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "cannot_change_assignments_after_payment_started".to_string(),
-        ));
-    }
-    let resp = state
-        .pg
-        .from("offer_talent_assignments")
-        .eq("id", &assignment_id)
-        .eq("offer_id", &offer_id)
-        .eq("agency_id", agency_id)
-        .update(
-            json!({
-                "status": "removed",
-                "updated_at": chrono::Utc::now().to_rfc3339(),
-            })
-            .to_string(),
-        )
-        .select("*")
-        .single()
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
-        return Err(sanitize_db_error(
-            resp.status().as_u16(),
-            resp.text().await.unwrap_or_default(),
-        ));
-    }
-    let row: serde_json::Value =
-        serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or_default();
-    Ok(Json(json!({ "status": "ok", "assignment": row })))
+    Ok(Json(json!({
+        "assignments": rows,
+        "is_locked": is_locked,
+    })))
 }
 
 pub async fn list_offer_asset_requests(
