@@ -1216,14 +1216,61 @@ const BrandConnectionsView = ({
     }
   };
 
+  // Track viewed feedback items in localStorage
+  const [viewedFeedbackIds, setViewedFeedbackIds] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem("viewed_feedback_ids");
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Save viewed feedback IDs to localStorage
+  useEffect(() => {
+    localStorage.setItem(
+      "viewed_feedback_ids",
+      JSON.stringify(Array.from(viewedFeedbackIds)),
+    );
+  }, [viewedFeedbackIds]);
+
+  // Mark feedback as viewed when on feedback tab
+  useEffect(() => {
+    if (activeTab === "feedback" && feedbackItems.length > 0) {
+      const newViewedIds = new Set(viewedFeedbackIds);
+      let hasNewViews = false;
+
+      feedbackItems.forEach((item: any) => {
+        const feedbackId = String(item?.id || "");
+        if (feedbackId && !newViewedIds.has(feedbackId)) {
+          newViewedIds.add(feedbackId);
+          hasNewViews = true;
+        }
+      });
+
+      if (hasNewViews) {
+        setViewedFeedbackIds(newViewedIds);
+      }
+    }
+  }, [activeTab, feedbackItems, viewedFeedbackIds]);
+
+  // Calculate unviewed feedback count
+  const unviewedFeedbackCount = useMemo(() => {
+    return feedbackItems.filter((item: any) => {
+      const feedbackId = String(item?.id || "");
+      return feedbackId && !viewedFeedbackIds.has(feedbackId);
+    }).length;
+  }, [feedbackItems, viewedFeedbackIds]);
+
   // Use props if provided, otherwise calculate from queries
   const pendingRequests = requestsCount > 0 ? requestsCount : requests.length;
   const pendingOffers =
     offersCount > 0
       ? offersCount
       : offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
+  // Use unviewed count for feedback instead of total count
   const pendingFeedback =
-    feedbackCount > 0 ? feedbackCount : feedbackItems.length;
+    feedbackCount > 0 ? Math.max(0, feedbackCount - (feedbackItems.length - unviewedFeedbackCount)) : unviewedFeedbackCount;
 
   // Always show badges - they disappear when count reaches 0
   const showRequestsBadge = pendingRequests > 0;
