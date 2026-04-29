@@ -264,39 +264,39 @@ export default function MarketingAgency() {
           <div className="grid md:grid-cols-3 gap-8">
             {/* Operational Simplicity */}
             <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none flex flex-col">
-              <div className="w-12 h-12 mb-6">
+              <div className="w-12 h-12 mb-6 flex-shrink-0">
                 <Users className="w-12 h-12 text-[#32C8D1]" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 {t("operationalSimplicity")}
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed flex-1">
                 {t("operationalSimplicityDescription")}
               </p>
             </Card>
 
             {/* Faster AI Campaign Delivery */}
             <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none flex flex-col">
-              <div className="w-12 h-12 mb-6">
+              <div className="w-12 h-12 mb-6 flex-shrink-0">
                 <Clock className="w-12 h-12 text-[#32C8D1]" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 {t("fasterAICampaignDelivery")}
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed flex-1">
                 {t("fasterAICampaignDeliveryDescription")}
               </p>
             </Card>
 
             {/* New Business From Brands Moving to AI */}
             <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none flex flex-col">
-              <div className="w-12 h-12 mb-6">
+              <div className="w-12 h-12 mb-6 flex-shrink-0">
                 <TrendingUp className="w-12 h-12 text-[#32C8D1]" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 {t("newBusinessFromBrands")}
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed flex-1">
                 {t("newBusinessFromBrandsDescription")}
               </p>
             </Card>

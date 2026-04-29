@@ -1,14 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { createPageUrl, clampAndSnapCommissionPct } from "@/utils";
 import {
   getAgencyPayoutsAccountStatus,
   getTeamAuditLogs,
 } from "@/api/functions";
-import { Loader2, RefreshCw, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import {
   Building2,
   Upload,
@@ -80,6 +79,7 @@ import {
 import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
+import { AgencySettingsSubscription } from "./AgencySettingsSubscription";
 import {
   DashboardSectionHeader,
   DashboardTabRail,
@@ -89,7 +89,6 @@ type GeneralSettingsViewProps = {
   hasIrlBookingAddon?: boolean;
   hasProAccess?: boolean;
   agencyDisplayPlanLabel?: string;
-  agencyPlanIntervalLabel?: string;
   kycStatus?: string;
 };
 
@@ -540,13 +539,6 @@ const ActivityLogModal = ({
           icon: XCircle,
           color: "text-red-600 bg-red-50",
         };
-      case "member_removed":
-        return {
-          label: "Member removed",
-          details: `${log.target_email || "A member"} was removed from the team`,
-          icon: User,
-          color: "text-red-600 bg-red-50",
-        };
       default:
         return {
           label: log.action.replaceAll("_", " "),
@@ -616,14 +608,12 @@ const ActivityLogModal = ({
   );
 };
 
-const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
-  const {
-    hasIrlBookingAddon,
-    hasProAccess,
-    agencyDisplayPlanLabel,
-    agencyPlanIntervalLabel,
-    kycStatus,
-  } = props;
+const GeneralSettingsView = ({
+  kycStatus,
+  hasIrlBookingAddon = false,
+  hasProAccess = false,
+  agencyDisplayPlanLabel,
+}: GeneralSettingsViewProps) => {
   const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -656,8 +646,6 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
   const [isLoadingTeamContext, setIsLoadingTeamContext] = useState(false);
   const [isSubmittingTeamInvite, setIsSubmittingTeamInvite] = useState(false);
   const [isUpdatingTeamRole, setIsUpdatingTeamRole] = useState(false);
-  const [isDeletingTeamMember, setIsDeletingTeamMember] = useState(false);
-  const [showDeleteMemberModal, setShowDeleteMemberModal] = useState(false);
   const [teamInviteEmail, setTeamInviteEmail] = useState("");
   const [teamInviteRole, setTeamInviteRole] =
     useState<Exclude<TeamRoleValue, "owner">>("reviewer");
@@ -876,44 +864,6 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
       });
     } finally {
       setIsUpdatingTeamRole(false);
-    }
-  };
-
-  const handleRemoveTeamMember = async () => {
-    if (!selectedMember) return;
-    try {
-      setIsDeletingTeamMember(true);
-      const resp = await fetch(
-        `/api/team/members/${encodeURIComponent(selectedMember.user_id)}?organization_type=agency`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-        },
-      );
-      const payload = await parseApiResponse(resp);
-      if (!resp.ok) {
-        throw new Error(
-          payload?.message || payload?.error || "Failed to remove member.",
-        );
-      }
-      setShowDeleteMemberModal(false);
-      setSelectedMember(null);
-      toast({
-        title: "Member removed",
-        description: `${selectedMember.email} has been removed from the team.`,
-      });
-      await fetchTeamContext();
-      await fetchTeamAuditLogs();
-    } catch (error: any) {
-      toast({
-        title: "Removal failed",
-        description: error?.message || "Could not remove the member.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDeletingTeamMember(false);
     }
   };
 
@@ -1195,6 +1145,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
   const currentPlanDisplay = useMemo(() => {
     const label = String(agencyDisplayPlanLabel || "").trim();
     const normalized = label
+      .replace(/\b(annual|monthly)\b/gi, "")
       .replace(/\bplan\b/gi, "")
       .replace(/\s+/g, " ")
       .trim();
@@ -1989,19 +1940,24 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
+    // For team members, update the organization's profile (owner's profile)
     const effectiveAgencyId = (profile as any).organization_id || profile.id;
 
     try {
       setIsUploading(true);
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("visibility", "public");
-      const uploadResult = await base44.post<{
-        id: string;
-        public_url: string | null;
-        storage_path: string;
-      }>("/agency/storage/files/upload", fd);
-      const publicUrl = uploadResult.public_url || "";
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${effectiveAgencyId}-${Math.random()}.${fileExt}`;
+      const filePath = `agency-logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("likelee-public")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("likelee-public").getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
         .from("agencies")
@@ -2035,23 +1991,35 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
           description="Configure your agency profile and preferences"
         />
 
-        <DashboardTabRail
-          items={[
-            "Profile",
-            "Commissions",
-            "Email Templates",
-            "Notifications",
-            "Tax & Currency",
-            "Team",
-            "File Storage",
-            "Integrations",
-          ].map((tab) => ({
-            id: tab,
-            label: tab,
-            active: activeTab === tab,
-            onClick: () => setActiveTab(tab),
-          }))}
-        />
+        <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
+          {(
+            [
+              "Profile",
+              ...(teamContext?.permissions?.includes("manage_billing")
+                ? ["Subscription"]
+                : []),
+              "Commissions",
+              "Email Templates",
+              "Notifications",
+              "Tax & Currency",
+              "Team",
+              "File Storage",
+              "Integrations",
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
+                activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
         {activeTab === "Profile" && (
           <div className="space-y-6">
@@ -2082,39 +2050,51 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       }`}
                     >
                       {currentPlanDisplay}
-                      {agencyPlanIntervalLabel && (
-                        <span className="ml-1 text-sm font-bold opacity-60">
-                          ({agencyPlanIntervalLabel})
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
                 {(!teamContext ||
                   teamContext.permissions?.includes("manage_billing")) && (
-                  <Button
-                    asChild
-                    variant={
-                      planTier === "pro" ||
-                      planTier === "basic" ||
-                      planTier === "enterprise"
-                        ? "default"
-                        : "outline"
-                    }
-                    className={`rounded-xl font-bold ${
-                      planTier === "pro"
-                        ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
-                        : planTier === "basic" || planTier === "agency"
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
-                          : planTier === "enterprise"
-                            ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
-                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <a href={createPageUrl("AgencySubscribe")}>
-                      Billing & Subscription
-                    </a>
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className={`rounded-xl font-bold ${
+                        planTier === "pro"
+                          ? "border-indigo-400/30 text-indigo-200 hover:bg-indigo-500/20"
+                          : planTier === "basic" || planTier === "agency"
+                            ? "border-emerald-400/30 text-emerald-700 hover:bg-emerald-100"
+                            : planTier === "enterprise"
+                              ? "border-amber-400/30 text-amber-700 hover:bg-amber-100"
+                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <a href={createPageUrl("AgencySubscribe")}>View Plans</a>
+                    </Button>
+                    <Button
+                      asChild
+                      variant={
+                        planTier === "pro" ||
+                        planTier === "basic" ||
+                        planTier === "enterprise"
+                          ? "default"
+                          : "outline"
+                      }
+                      className={`rounded-xl font-bold ${
+                        planTier === "pro"
+                          ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
+                          : planTier === "basic" || planTier === "agency"
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                            : planTier === "enterprise"
+                              ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
+                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <a href={createPageUrl("AgencySubscribe")}>
+                        Billing & Subscription
+                      </a>
+                    </Button>
+                  </div>
                 )}
               </div>
             </Card>
@@ -2382,6 +2362,8 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
             </div>
           </div>
         )}
+
+        {activeTab === "Subscription" && <AgencySettingsSubscription />}
 
         {activeTab === "Commissions" && (
           <div className="space-y-6">
@@ -3126,12 +3108,6 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                             ) &&
                             member.role !== "owner" &&
                             !(actorRole === "admin" && member.role === "admin");
-                          const canRemove =
-                            teamContext?.permissions?.includes(
-                              "remove_team_members",
-                            ) &&
-                            member.role !== "owner" &&
-                            !(actorRole === "admin" && member.role === "admin");
                           return (
                             <div
                               key={member.user_id}
@@ -3156,29 +3132,16 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                                     Owner
                                   </Badge>
                                 ) : (
-                                  <>
-                                    <Button
-                                      variant="outline"
-                                      className="rounded-xl"
-                                      disabled={!canEditRole}
-                                      onClick={() => openRoleEditor(member)}
-                                    >
-                                      <Edit2 className="w-4 h-4 mr-2" />
-                                      Edit Role
-                                    </Button>
-                                    {canRemove && (
-                                      <Button
-                                        variant="outline"
-                                        className="rounded-xl border-red-300 text-red-600 hover:bg-red-50"
-                                        onClick={() => {
-                                          setSelectedMember(member);
-                                          setShowDeleteMemberModal(true);
-                                        }}
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
-                                    )}
-                                  </>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 sm:h-8 rounded-lg bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold text-[10px] sm:text-xs transition-all w-full sm:w-auto"
+                                    disabled={!canEditRole}
+                                    onClick={() => openRoleEditor(member)}
+                                  >
+                                    <Edit2 className="w-3 h-3 mr-1.5" />
+                                    Edit Role
+                                  </Button>
                                 )}
                               </div>
                             </div>
@@ -3748,53 +3711,6 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
           onOpenChange={setShowActivityModal}
           logs={teamAuditLogs}
         />
-        <Dialog
-          open={showDeleteMemberModal}
-          onOpenChange={setShowDeleteMemberModal}
-        >
-          <DialogContent className="max-w-md rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-gray-900">
-                Remove Team Member
-              </DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 font-medium">
-                Are you sure you want to remove{" "}
-                {selectedMember?.email || "this member"} from the team?
-              </DialogDescription>
-            </DialogHeader>
-            <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
-                <p className="text-xs text-red-700 font-medium leading-relaxed">
-                  This action cannot be undone. The member will lose access to
-                  all organization resources immediately.
-                </p>
-              </div>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="ghost"
-                onClick={() => setShowDeleteMemberModal(false)}
-                className="font-bold"
-                disabled={isDeletingTeamMember}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleRemoveTeamMember}
-                disabled={isDeletingTeamMember}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
-              >
-                {isDeletingTeamMember ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
-                )}
-                {isDeletingTeamMember ? "Removing..." : "Remove Member"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

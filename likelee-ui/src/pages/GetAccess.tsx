@@ -98,7 +98,7 @@ export default function GetAccess() {
             return (
               <Card
                 key={org.type}
-                className="p-8 bg-white border-2 border-black rounded-none hover:shadow-2xl transition-all cursor-pointer group"
+                className="p-8 bg-white border-2 border-black rounded-none hover:shadow-2xl transition-all cursor-pointer group flex flex-col"
                 onClick={() => handleSelect(org.type)}
               >
                 <div className="flex flex-col items-center text-center mb-6">
@@ -114,7 +114,7 @@ export default function GetAccess() {
                     <p className="text-gray-600 font-medium">{org.subtitle}</p>
                   </div>
                 </div>
-                <p className="text-gray-700 leading-relaxed text-base mb-6">
+                <p className="text-gray-700 leading-relaxed text-base mb-6 flex-1">
                   {org.description}
                 </p>
                 <Button className="w-full h-12 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform">

@@ -4972,6 +4972,129 @@ pub async fn delete_offer_contract(
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// Resolve `talent_name` for every item in `package_snapshot.items` that is
+/// missing one, using a single batch query against `agency_users`.
+/// Items without a valid `talent_id` UUID are left untouched.
+async fn normalize_package_snapshot_talent_names(
+    state: &AppState,
+    agency_id: &str,
+    snapshot: Option<serde_json::Value>,
+) -> serde_json::Value {
+    let mut snapshot = snapshot.unwrap_or_else(|| json!({}));
+
+    let items = match snapshot
+        .as_object_mut()
+        .and_then(|o| o.get_mut("items"))
+        .and_then(|v| v.as_array_mut())
+    {
+        Some(arr) if !arr.is_empty() => arr,
+        _ => return snapshot,
+    };
+
+    // Collect talent_ids that need a name resolved (missing or blank).
+    let needs_name: Vec<String> = items
+        .iter()
+        .filter(|item| {
+            item.get("talent_name")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().is_empty())
+                .unwrap_or(true)
+        })
+        .filter_map(|item| {
+            item.get("talent_id")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .filter(|s| Uuid::parse_str(s).is_ok())
+                .map(str::to_string)
+        })
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    if needs_name.is_empty() {
+        return snapshot;
+    }
+
+    // Batch-fetch names from agency_users.
+    let id_refs: Vec<&str> = needs_name.iter().map(String::as_str).collect();
+    let mut name_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+
+    if let Ok(resp) = state
+        .pg
+        .from("agency_users")
+        .select("id,stage_name,full_legal_name")
+        .eq("agency_id", agency_id)
+        .in_("id", id_refs)
+        .limit(needs_name.len().max(1) + 1)
+        .execute()
+        .await
+    {
+        if resp.status().is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            for row in rows {
+                let id = row
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                if id.is_empty() {
+                    continue;
+                }
+                let name = row
+                    .get("stage_name")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .or_else(|| {
+                        row.get("full_legal_name")
+                            .and_then(|v| v.as_str())
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                    })
+                    .unwrap_or("")
+                    .to_string();
+                if !name.is_empty() {
+                    name_map.insert(id, name);
+                }
+            }
+        }
+    }
+
+    // Patch items in-place.
+    let items = snapshot
+        .as_object_mut()
+        .and_then(|o| o.get_mut("items"))
+        .and_then(|v| v.as_array_mut())
+        .expect("items array was present above");
+
+    for item in items.iter_mut() {
+        let already_has_name = item
+            .get("talent_name")
+            .and_then(|v| v.as_str())
+            .map(|s| !s.trim().is_empty())
+            .unwrap_or(false);
+        if already_has_name {
+            continue;
+        }
+        let talent_id = item
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .unwrap_or("")
+            .to_string();
+        if let Some(name) = name_map.get(&talent_id) {
+            if let Some(obj) = item.as_object_mut() {
+                obj.insert("talent_name".to_string(), json!(name));
+            }
+        }
+    }
+
+    snapshot
+}
+
 pub async fn create_offer_package(
     State(state): State<AppState>,
     user: AuthUser,
@@ -4992,6 +5115,13 @@ pub async fn create_offer_package(
             "packages are only available for agency offers".to_string(),
         ));
     }
+
+    // Normalise package_snapshot.items at write time: resolve talent_name from
+    // agency_users so that the stored snapshot is always correct regardless of
+    // which UI path created the package.
+    let package_snapshot =
+        normalize_package_snapshot_talent_names(&state, &user.id, payload.package_snapshot).await;
+
     let insert_payload = json!({
         "offer_id": offer_id,
         "brand_campaign_id": offer.get("brand_campaign_id").cloned().unwrap_or(serde_json::Value::Null),
@@ -5000,7 +5130,7 @@ pub async fn create_offer_package(
         "status": "draft",
         "title": payload.title.as_deref().map(str::trim).filter(|s| !s.is_empty()),
         "message": payload.message.as_deref().map(str::trim).filter(|s| !s.is_empty()),
-        "package_snapshot": payload.package_snapshot.unwrap_or_else(|| json!({})),
+        "package_snapshot": package_snapshot,
         "expires_at": payload.expires_at,
         "meta": payload.meta.unwrap_or_else(|| json!({})),
         "created_by": user.id,

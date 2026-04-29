@@ -662,7 +662,7 @@ const BrandConnectionsView = () => {
         title: "Assignments locked",
         description:
           "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
-        variant: "destructive",
+        variant: "warning",
       });
       return;
     }
@@ -726,14 +726,17 @@ const BrandConnectionsView = () => {
       });
     } catch (e: any) {
       const msg = String(e?.message || "");
+      const isLockedAssignmentError =
+        msg.includes("cannot_change_assignments_after_contract_sent") ||
+        msg.includes("cannot_change_assignments_after_payment_started");
       toast({
-        title: "Assignment failed",
-        description: msg.includes(
-          "cannot_change_assignments_after_contract_sent",
-        )
-          ? "You can’t change assigned talents after the contract is sent."
+        title: isLockedAssignmentError
+          ? "Assignments locked"
+          : "Assignment failed",
+        description: isLockedAssignmentError
+          ? "This offer is already in progress, so talent assignments can’t be changed anymore."
           : msg || "Please try again.",
-        variant: "destructive",
+        variant: isLockedAssignmentError ? "warning" : "destructive",
       });
     } finally {
       setAssignSubmitting(false);
@@ -750,7 +753,7 @@ const BrandConnectionsView = () => {
         description: selectedOfferContractSigned
           ? "Contract is already signed and you can’t change assigned talents."
           : "You can’t unassign talent after the contract is sent.",
-        variant: "destructive",
+        variant: "warning",
       });
       return;
     }
@@ -1130,12 +1133,27 @@ const BrandConnectionsView = () => {
     const draft = packageDraftByOffer[offerId] || { title: "", message: "" };
     setBusyIds((prev) => new Set(prev).add(offerId));
     try {
+      // Build snapshot items from the offer's assigned talent IDs so the
+      // backend can resolve their names via normalize_package_snapshot_talent_names.
+      const offer = (offersQuery.data || []).find(
+        (o: any) => String(o?.id || "") === offerId,
+      );
+      const selectedTalentIds: string[] = Array.isArray(
+        offer?.meta?.selected_talent_ids,
+      )
+        ? offer.meta.selected_talent_ids
+        : [];
+      const snapshotItems = selectedTalentIds.map((tid: string) => ({
+        talent_id: tid,
+        talent_name: "", // backend will resolve this
+      }));
+
       const createResp = await base44.post<{ package?: any }>(
         `/api/campaign-offers/${offerId}/packages`,
         {
           title: draft.title || "Talent Package",
           message: draft.message || "",
-          package_snapshot: { talents: [] },
+          package_snapshot: { items: snapshotItems },
         },
       );
       const packageId = String(createResp?.package?.id || "").trim();

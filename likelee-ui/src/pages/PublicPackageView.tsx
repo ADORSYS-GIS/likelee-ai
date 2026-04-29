@@ -87,9 +87,6 @@ export function PublicPackageView() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const [fullAssetsRequestOpen, setFullAssetsRequestOpen] = useState(false);
-  const [requestClientName, setRequestClientName] = useState("");
-  const [requestEmail, setRequestEmail] = useState("");
-  const [requestMessage, setRequestMessage] = useState("");
 
   const {
     data: packageData,
@@ -148,9 +145,6 @@ export function PublicPackageView() {
     }) => packageApi.createPublicPackageFullAssetsRequest(token!, data),
     onSuccess: () => {
       setFullAssetsRequestOpen(false);
-      setRequestClientName("");
-      setRequestEmail("");
-      setRequestMessage("");
       toast({
         title: "Request sent",
         description: "Your request has been sent to the agency.",
@@ -166,23 +160,15 @@ export function PublicPackageView() {
   });
 
   const submitFullAssetsRequest = () => {
-    if (!token) {
-      toast({
-        title: "Request failed",
-        description: "Missing package token.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (fullAssetsRequestMutation.isPending) return;
-
-    const name = requestClientName.trim();
-    const email = requestEmail.trim();
-    const message = requestMessage.trim();
+    if (!token || fullAssetsRequestMutation.isPending) return;
+    // Unwrap the package the same way `pkg` does — try .package, .data, then root
+    const d = packageData as any;
+    const unwrapped = d?.package || d?.data || d;
+    const clientName = String(unwrapped?.client_name || "").trim();
+    const clientEmail = String(unwrapped?.client_email || "").trim();
     fullAssetsRequestMutation.mutate({
-      client_name: name ? name : undefined,
-      client_email: email ? email : undefined,
-      message: message ? message : undefined,
+      client_name: clientName || undefined,
+      client_email: clientEmail || undefined,
     });
   };
 
@@ -1251,61 +1237,99 @@ export function PublicPackageView() {
         open={fullAssetsRequestOpen}
         onOpenChange={setFullAssetsRequestOpen}
       >
-        <DialogContent className="sm:max-w-[460px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5" /> Request Full Assets
-            </DialogTitle>
-            <DialogDescription>
-              Send a request to the agency for full assets.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="request-client-name">Name (optional)</Label>
-              <Input
-                id="request-client-name"
-                placeholder="Your name"
-                value={requestClientName}
-                onChange={(e) => setRequestClientName(e.target.value)}
-                disabled={fullAssetsRequestMutation.isPending}
-              />
+        <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
+          {/* Header */}
+          <div
+            className="px-8 pt-8 pb-6 text-white"
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}cc 100%)`,
+            }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xs font-black uppercase tracking-widest text-white/70">
+                Full Asset Access
+              </span>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="request-email">Email (optional)</Label>
-              <Input
-                id="request-email"
-                type="email"
-                placeholder="client@company.com"
-                value={requestEmail}
-                onChange={(e) => setRequestEmail(e.target.value)}
-                disabled={fullAssetsRequestMutation.isPending}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="request-message">Message (optional)</Label>
-              <Textarea
-                id="request-message"
-                placeholder="Tell the agency what you need..."
-                value={requestMessage}
-                onChange={(e) => setRequestMessage(e.target.value)}
-                disabled={fullAssetsRequestMutation.isPending}
-              />
-            </div>
+            <h2 className="text-2xl font-black text-white leading-tight">
+              Request the complete package
+            </h2>
+            <p className="text-white/75 text-sm mt-1">
+              You're about to request access to all high-resolution assets in
+              this package.
+            </p>
           </div>
 
-          <DialogFooter>
+          {/* Body */}
+          <div className="px-8 py-6 space-y-4 bg-white">
+            {[
+              {
+                icon: "📦",
+                title: "What you'll get",
+                body: "The agency will receive your request and share the full, uncompressed asset files directly with you.",
+              },
+              {
+                icon: "⚡",
+                title: "What happens next",
+                body: "You'll be contacted by the agency to discuss usage rights, licensing terms, and delivery.",
+              },
+              {
+                icon: "🔒",
+                title: "No commitment required",
+                body: "Sending a request is free and non-binding. It simply opens the conversation.",
+              },
+            ].map(({ icon, title, body }) => (
+              <div key={title} className="flex items-start gap-3">
+                <span className="text-xl mt-0.5">{icon}</span>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{title}</p>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {body}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {/* Client identity — shown when the package knows who the recipient is */}
+            {(rawPackageData?.client_name || rawPackageData?.client_email) && (
+              <div className="mt-2 rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-gray-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-0.5">
+                    Sending as
+                  </p>
+                  {rawPackageData?.client_name && (
+                    <p className="text-sm font-bold text-gray-900 truncate">
+                      {rawPackageData.client_name}
+                    </p>
+                  )}
+                  {rawPackageData?.client_email && (
+                    <p className="text-xs text-gray-500 truncate">
+                      {rawPackageData.client_email}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-8 pb-8 pt-2 bg-white flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
+              className="flex-1 rounded-2xl font-bold border-gray-200"
               onClick={() => setFullAssetsRequestOpen(false)}
               disabled={fullAssetsRequestMutation.isPending}
             >
               Cancel
             </Button>
             <Button
+              className="flex-1 rounded-2xl font-black text-white shadow-lg"
+              style={{ backgroundColor: primaryColor }}
               onClick={submitFullAssetsRequest}
               disabled={fullAssetsRequestMutation.isPending}
             >
@@ -1314,10 +1338,12 @@ export function PublicPackageView() {
                   <Loader2 className="h-4 w-4 animate-spin" /> Sending...
                 </span>
               ) : (
-                "Send Request"
+                <span className="flex items-center gap-2">
+                  <Send className="w-4 h-4" /> Confirm Request
+                </span>
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

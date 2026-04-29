@@ -112,6 +112,9 @@ async fn main() {
         Duration::from_secs(60),
     ));
 
+    // Initialize JWKS cache for Supabase JWT Signing Keys
+    let jwks_cache = Arc::new(likelee_server::auth::JwksCache::new());
+
     info!(
         l2_ttl_secs = cfg.cache_l2_ttl_secs,
         l3_ttl_secs = cfg.cache_l3_ttl_secs,
@@ -140,6 +143,7 @@ async fn main() {
         supabase_bucket_temp: cfg.supabase_bucket_temp.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
         stripe_secret_key: cfg.stripe_secret_key.clone(),
+        stripe_publishable_key: cfg.stripe_publishable_key.clone(),
         stripe_client_id: cfg.stripe_client_id.clone(),
         stripe_return_url: cfg.stripe_return_url.clone(),
         stripe_refresh_url: cfg.stripe_refresh_url.clone(),
@@ -313,7 +317,14 @@ async fn main() {
 
         // Brand trial configuration
         brand_trial_days: cfg.brand_trial_days,
+
+        // JWKS cache for JWT Signing Keys
+        jwks_cache: jwks_cache.clone(),
     };
+
+    // Initialize JWKS cache on startup
+    jwks_cache.refresh(&state).await;
+    info!("JWKS cache initialized on startup");
 
     // Start background jobs
     tokio::spawn(likelee_server::jobs::start_payment_reminders(state.clone()));

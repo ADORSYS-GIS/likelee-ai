@@ -29,11 +29,13 @@ Authorization: Bearer YOUR_CRON_SECRET
 ### Setting Up CRON_SECRET
 
 1. Generate a secure random token:
+
    ```bash
    openssl rand -hex 32
    ```
 
 2. Add to your `.env` file:
+
    ```bash
    CRON_SECRET=your-generated-token-here
    ```
@@ -124,6 +126,7 @@ Create `vercel.json` in your project root:
 ```
 
 Set the Authorization header in Vercel dashboard:
+
 - Go to Settings > Environment Variables
 - Add `CRON_SECRET` with your token
 
@@ -134,10 +137,12 @@ Note: Vercel automatically adds the `Authorization: Bearer ${CRON_SECRET}` heade
 **URL:** `https://your-api-domain.com/api/cron/budget-alerts`
 **Method:** POST
 **Headers:**
+
 ```
 Authorization: Bearer YOUR_CRON_SECRET
 Content-Type: application/json
 ```
+
 **Schedule:** Every hour (`0 * * * *`)
 
 **For monthly reset:**
@@ -158,7 +163,7 @@ name: Budget Alerts Cron
 on:
   schedule:
     # Every hour
-    - cron: '0 * * * *'
+    - cron: "0 * * * *"
 
 jobs:
   check-budget-alerts:
@@ -179,7 +184,7 @@ name: Monthly Budget Reset
 on:
   schedule:
     # 1st of each month at midnight UTC
-    - cron: '0 0 1 * *'
+    - cron: "0 0 1 * *"
 
 jobs:
   reset-budget-alerts:
@@ -193,6 +198,7 @@ jobs:
 ```
 
 Set secrets in GitHub repository settings:
+
 - `API_URL`: Your API base URL
 - `CRON_SECRET`: Your cron authentication token
 
@@ -239,6 +245,7 @@ curl -X POST "https://your-api-domain.com/api/cron/license-expiration-alerts" \
 ```
 
 Expected response:
+
 ```json
 {
   "success": true,
@@ -258,16 +265,19 @@ Expected response:
 ## Troubleshooting
 
 ### 401 Unauthorized
+
 - Check that `CRON_SECRET` is set in your environment
 - Verify the Authorization header is correctly formatted: `Bearer <token>`
 - Ensure the secret matches between server config and cron service
 
 ### 500 Internal Server Error
+
 - Check server logs for detailed error messages
 - Verify database connectivity
 - Ensure `monthly_budget_limit` column exists in `brands` table
 
 ### No alerts being sent
+
 - Verify brands have `budget_alert_enabled = true`
 - Check brands have `monthly_budget_limit` set
 - Verify campaign offers with `payment_status = 'paid'` or `'released'` exist
