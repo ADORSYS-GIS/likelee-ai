@@ -932,7 +932,7 @@ export function MarketplaceSection({
 
                     {/* Body — always visible on sm+, collapsible on mobile */}
                     <div
-                      className={`${expandedCardIds.has(profile.id) ? "block" : "hidden"} sm:block flex-1 flex flex-col`}
+                      className={`${expandedCardIds.has(profile.id) ? "block" : "hidden"} sm:flex flex-1 flex flex-col`}
                     >
                       <div className="flex-1">
                         {(profile.tagline || profile.bio) && (
