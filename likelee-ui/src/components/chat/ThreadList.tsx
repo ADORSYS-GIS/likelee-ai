@@ -90,7 +90,7 @@ export function ThreadList({
 
   const filteredConversations = conversations.filter((conv) => {
     const participant = getParticipant(conv, currentUserId);
-    const matchesSearch = participant.name
+    const matchesSearch = (participant.name || "")
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesFilter =
@@ -99,7 +99,7 @@ export function ThreadList({
   });
 
   const filteredContacts = contactsWithoutConversation.filter((contact) => {
-    const matchesSearch = contact.display_name
+    const matchesSearch = (contact.display_name || "")
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     return filter === "all" && matchesSearch; // Only show new contacts in "All" view
