@@ -30,7 +30,7 @@ function AvatarPlaceholder({
   size?: number;
 }) {
   const dimRem = `${size * 0.25}rem`;
-  const initials = name
+  const initials = (name || "?")
     .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
