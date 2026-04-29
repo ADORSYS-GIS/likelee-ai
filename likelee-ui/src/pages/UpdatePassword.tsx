@@ -173,7 +173,9 @@ export default function UpdatePassword() {
             </button>
           </div>
         </div>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && (
+          <p className="text-amber-700 text-sm dark:text-amber-400">{error}</p>
+        )}
         {message && <p className="text-green-600 text-sm">{message}</p>}
         <div className="flex items-center gap-3">
           <button

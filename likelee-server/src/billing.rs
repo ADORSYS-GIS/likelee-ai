@@ -4817,7 +4817,7 @@ pub async fn get_brand_billing_status(
     let resp = state
         .pg
         .from("brands")
-        .select("id,plan_tier,subscription_status,stripe_customer_id,stripe_subscription_id,stripe_cancel_at_period_end")
+        .select("id,plan_tier,subscription_status,stripe_customer_id,stripe_subscription_id,subscription_current_period_end,stripe_cancel_at_period_end,trial_ends_at")
         .eq("id", &brand_id)
         .limit(1)
         .execute()
@@ -4863,7 +4863,10 @@ pub async fn get_brand_billing_status(
             .get("stripe_subscription_id")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
-        current_period_end: None,
+        current_period_end: row
+            .get("subscription_current_period_end")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
         cancel_at_period_end: row
             .get("stripe_cancel_at_period_end")
             .and_then(|v| v.as_bool())
