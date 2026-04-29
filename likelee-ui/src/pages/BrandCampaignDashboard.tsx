@@ -2325,10 +2325,10 @@ export default function BrandCampaignDashboard({
         {/* Collaboration CTAs + Post Job */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <Card
-            className="p-4 sm:p-6 bg-white border-2 border-[#F7B750] hover:shadow-xl transition-all cursor-pointer rounded-none"
+            className="p-4 sm:p-6 bg-white border-2 border-[#F7B750] hover:shadow-xl transition-all cursor-pointer rounded-none flex flex-col"
             onClick={handleInviteAgencyEntry}
           >
-            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0 flex-1">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#F7B750] rounded-none flex items-center justify-center sm:mb-4 shrink-0">
                 <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
@@ -2341,7 +2341,7 @@ export default function BrandCampaignDashboard({
                 </p>
               </div>
             </div>
-            <Button className="w-full mt-3 sm:mt-0 bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
+            <Button className="w-full mt-3 sm:mt-4 bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               {canUseCampaignCollaboration ? (
                 <>
                   <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -2353,8 +2353,8 @@ export default function BrandCampaignDashboard({
             </Button>
           </Card>
 
-          <Card className="p-4 sm:p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
-            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+          <Card className="p-4 sm:p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none flex flex-col">
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0 flex-1">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-[#FAD54C] rounded-none flex items-center justify-center sm:mb-4 shrink-0">
                 <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
@@ -2369,17 +2369,17 @@ export default function BrandCampaignDashboard({
             </div>
             <Button
               disabled
-              className="w-full mt-3 sm:mt-0 bg-[#FAD54C] text-white rounded-none cursor-not-allowed text-xs sm:text-sm h-8 sm:h-10"
+              className="w-full mt-3 sm:mt-4 bg-[#FAD54C] text-white rounded-none cursor-not-allowed text-xs sm:text-sm h-8 sm:h-10"
             >
               Coming Soon
             </Button>
           </Card>
 
           <Card
-            className="p-4 sm:p-6 bg-white border-2 border-amber-600/60 rounded-none cursor-pointer"
+            className="p-4 sm:p-6 bg-white border-2 border-amber-600/60 rounded-none cursor-pointer flex flex-col"
             onClick={handleCompanySeatEntry}
           >
-            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0 flex-1">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-amber-600 rounded-none flex items-center justify-center sm:mb-4 shrink-0">
                 <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
@@ -2392,7 +2392,7 @@ export default function BrandCampaignDashboard({
                 </p>
               </div>
             </div>
-            <Button className="w-full mt-3 sm:mt-0 bg-amber-600 hover:bg-amber-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
+            <Button className="w-full mt-3 sm:mt-4 bg-amber-600 hover:bg-amber-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               {(brandSeatLimit ?? 0) === 0
                 ? "Upgrade Plan"
                 : brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit
@@ -2402,7 +2402,7 @@ export default function BrandCampaignDashboard({
           </Card>
 
           <Card
-            className="p-4 sm:p-6 bg-white border-2 border-orange-600 hover:shadow-xl transition-all cursor-pointer rounded-none"
+            className="p-4 sm:p-6 bg-white border-2 border-orange-600 hover:shadow-xl transition-all cursor-pointer rounded-none flex flex-col"
             onClick={() => {
               if (hasStudioAddon) {
                 navigate(createPageUrl("Studio"));
@@ -2411,7 +2411,7 @@ export default function BrandCampaignDashboard({
               setShowStudioUpgradeModal(true);
             }}
           >
-            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0 flex-1">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-600 rounded-none flex items-center justify-center sm:mb-4 shrink-0 relative">
                 {!hasStudioAddon && (
                   <Lock className="w-3 h-3 sm:w-4 sm:h-4 text-white absolute top-1 right-1" />
@@ -2427,7 +2427,7 @@ export default function BrandCampaignDashboard({
                 </p>
               </div>
             </div>
-            <Button className="w-full mt-3 sm:mt-0 bg-orange-600 hover:bg-orange-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
+            <Button className="w-full mt-3 sm:mt-4 bg-orange-600 hover:bg-orange-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               {hasStudioAddon ? (
                 <>
                   <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -2443,10 +2443,10 @@ export default function BrandCampaignDashboard({
           </Card>
 
           <Card
-            className="p-4 sm:p-6 bg-white border-2 border-blue-600 hover:shadow-xl transition-all cursor-pointer rounded-none"
+            className="p-4 sm:p-6 bg-white border-2 border-blue-600 hover:shadow-xl transition-all cursor-pointer rounded-none flex flex-col"
             onClick={() => setShowPostJobModal(true)}
           >
-            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0">
+            <div className="flex sm:flex-col items-center sm:items-start gap-3 sm:gap-0 flex-1">
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 rounded-none flex items-center justify-center sm:mb-4 shrink-0">
                 <Briefcase className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
@@ -2459,7 +2459,7 @@ export default function BrandCampaignDashboard({
                 </p>
               </div>
             </div>
-            <Button className="w-full mt-3 sm:mt-0 bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
+            <Button className="w-full mt-3 sm:mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               Post Job
             </Button>
