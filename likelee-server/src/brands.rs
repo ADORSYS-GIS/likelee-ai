@@ -188,40 +188,40 @@ pub async fn update(
     };
 
     if let serde_json::Value::Object(ref mut map) = v {
-        // Include the effective brand ID for upsert matching
-        map.insert("id".into(), json!(brand_id));
-        map.insert("onboarding_step".into(), json!("complete"));
-
-        // For new profiles (OAuth signup), set default values
-        if payload.email.is_none() {
-            // Try to get email from auth user metadata if not provided
-            if let Some(email) = &user.email {
-                map.insert("email".into(), json!(email));
-            }
-        }
-
-        // Remove nulls to avoid overwriting existing data with nulls
-
-        // Remove nulls first to avoid overwriting existing data with nulls
-        let null_keys: Vec<String> = map
-            .iter()
-            .filter_map(|(k, v)| if v.is_null() { Some(k.clone()) } else { None })
-            .collect();
-        for k in null_keys {
-            map.remove(&k);
-        }
-
-        // Check if we're only updating notification_prefs (before adding id)
-        let is_only_notification_prefs = map.len() == 1 && map.contains_key("notification_prefs");
+        // Check if we're only updating notification_prefs BEFORE mutating the map
+        let is_only_notification_prefs =
+            payload.notification_prefs.is_some()
+                && payload.company_name.is_none()
+                && payload.contact_name.is_none()
+                && payload.contact_title.is_none()
+                && payload.email.is_none()
+                && payload.website.is_none()
+                && payload.phone_number.is_none()
+                && payload.logo_url.is_none()
+                && payload.industry.is_none()
+                && payload.primary_goal.is_none()
+                && payload.geographic_target.is_none()
+                && payload.provide_creators.is_none()
+                && payload.production_type.is_none()
+                && payload.budget_range.is_none()
+                && payload.creates_for.is_none()
+                && payload.uses_ai.is_none()
+                && payload.roles_needed.is_none()
+                && payload.status.is_none()
+                && payload.onboarding_step.is_none();
 
         // If only updating notification_prefs, use UPDATE instead of UPSERT
         if is_only_notification_prefs {
+            let update_payload = json!({
+                "notification_prefs": payload.notification_prefs
+            });
+
             let resp = state
                 .pg
                 .from("brands")
                 .auth(state.supabase_service_key.clone())
-                .eq("id", &user.id)
-                .update(v.to_string())
+                .eq("id", &brand_id)
+                .update(update_payload.to_string())
                 .execute()
                 .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -242,7 +242,7 @@ pub async fn update(
                 .from("brands")
                 .auth(state.supabase_service_key.clone())
                 .select("*")
-                .eq("id", &user.id)
+                .eq("id", &brand_id)
                 .limit(1)
                 .execute()
                 .await
@@ -264,21 +264,29 @@ pub async fn update(
             return Ok(Json(profile));
         }
 
-        // Include the user's id for upsert matching
-        map.insert("id".into(), json!(user.id));
+        // Include the effective brand ID for upsert matching
+        map.insert("id".into(), json!(brand_id));
+        map.insert("onboarding_step".into(), json!("complete"));
 
-        // Only set onboarding_step to complete if we're updating profile fields (not just notification_prefs)
-        if !is_only_notification_prefs {
-            map.insert("onboarding_step".into(), json!("complete"));
-
-            // For new profiles (OAuth signup), set default values
-            if payload.email.is_none() {
-                // Try to get email from auth user metadata if not provided
-                if let Some(email) = &user.email {
-                    map.insert("email".into(), json!(email));
-                }
+        // For new profiles (OAuth signup), set default values
+        if payload.email.is_none() {
+            // Try to get email from auth user metadata if not provided
+            if let Some(email) = &user.email {
+                map.insert("email".into(), json!(email));
             }
         }
+
+        // Remove nulls to avoid overwriting existing data with nulls
+        let null_keys: Vec<String> = map
+            .iter()
+            .filter_map(|(k, v)| if v.is_null() { Some(k.clone()) } else { None })
+            .collect();
+        for k in null_keys {
+            map.remove(&k);
+        }
+
+        // Include the user's id for upsert matching
+        map.insert("id".into(), json!(user.id));
     }
 
     // Use upsert to create or update the profile
@@ -321,22 +329,6 @@ pub async fn get_by_user(
     // not the team member's user ID. This ensures team members see the same profile data
     // as the organization owner (same subscriptions, plan_tier, etc.)
     let brand_id = resolve_effective_brand_id(&state, &user).await?;
-    let state_for_notify = state.clone();
-    let brand_id_for_notify = brand_id.clone();
-    tokio::spawn(async move {
-        if let Err(e) = crate::licensing_requests::notify_brand_license_expirations_lazy(
-            &state_for_notify,
-            &brand_id_for_notify,
-        )
-        .await
-        {
-            tracing::warn!(
-                error = %e,
-                brand_id = %brand_id_for_notify,
-                "license expiration check failed"
-            );
-        }
-    });
 
     let resp = state
         .pg
