@@ -131,7 +131,7 @@ export default function CreatorSignupOptions() {
                     {creator.title}
                   </h3>
                 </div>
-                <p className="text-gray-700 leading-relaxed text-base mb-6">
+                <p className="text-gray-700 leading-relaxed text-base mb-6 flex-1">
                   {creator.description}
                 </p>
                 <Button className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none group-hover:scale-105 transition-transform">
