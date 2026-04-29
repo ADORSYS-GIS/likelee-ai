@@ -506,7 +506,7 @@
       "unknownDesc": "Une erreur s'est produite. Veuillez réessayer ou contacter le support si le problème persiste.",
       "notAuthenticated": "Please sign in to continue.",
       "genericFailed": "Something went wrong. Please try again.",
-      "unknown": "[NEEDS TRANSLATION] An error occurred. Please try again or contact support if the problem persists."
+      "unknown": "Une erreur s'est produite. Veuillez reessayer ou contacter le support si le probleme persiste."
     },
     "photos": {
       "label": "Téléchargez au moins 3 photos",
@@ -712,17 +712,17 @@
       },
       "verification": {
         "title": "Identity Verification",
-        "description": "[NEEDS TRANSLATION] Verify your identity to become visible to brands and unlock opportunities",
+        "description": "Verifiez votre identite pour devenir visible aupres des marques et debloquer des opportunites",
         "whyVerify": {
           "title": "Why verify your identity?",
-          "reason1": "[NEEDS TRANSLATION] Get discovered by brands looking for verified creators",
-          "reason2": "[NEEDS TRANSLATION] Build trust and credibility with licensing partners",
+          "reason1": "Soyez decouvert par des marques qui recherchent des createurs verifies",
+          "reason2": "Renforcez la confiance et la credibilite avec vos partenaires de licence",
           "reason3": "Unlock higher-value campaign opportunities"
         },
-        "processDesc": "[NEEDS TRANSLATION] We use secure identity verification to ensure all creators on Likelee are authentic. This process typically takes 2–3 minutes.",
+        "processDesc": "Nous utilisons une verification d'identite securisee pour nous assurer que tous les createurs sur Likelee sont authentiques. Ce processus prend generalement 2 a 3 minutes.",
         "requirements": {
           "title": "What you'll need:",
-          "item1": "[NEEDS TRANSLATION] Government-issued ID (driver's license, passport, or state ID)",
+          "item1": "Piece d'identite officielle (permis de conduire, passeport ou carte d'identite)",
           "item2": "Good lighting and camera/mic access",
           "item3": "2–3 minutes in a quiet space"
         },
@@ -1733,7 +1733,7 @@
     },
     "signature": {
       "title": "Your Choice - Signature Moment",
-      "description": "[NEEDS TRANSLATION] A photo that really represents YOU and how people recognize you.",
+      "description": "Une photo qui vous represente vraiment et montre comment les gens vous reconnaissent.",
       "bestFor": "A photo that really represents YOU"
     }
   },
@@ -2274,16 +2274,16 @@
   "blog": "Blog",
   "impact": "Impact",
   "javascriptRequired": "JavaScript Required",
-  "javascriptRequiredMessage": "[NEEDS TRANSLATION] Likelee requires JavaScript to display content and provide full functionality.",
+  "javascriptRequiredMessage": "Likelee requiert JavaScript pour afficher le contenu et fournir toutes les fonctionnalites.",
   "aboutLikelee": "About Likelee:",
   "protectionAndRights": "Protection & Rights",
-  "protectionAndRightsMessage": "[NEEDS TRANSLATION] Every usage is tracked, consented, and compensated through smart contracts",
-  "enableJavascript": "[NEEDS TRANSLATION] Please enable JavaScript in your browser to access the full platform.",
+  "protectionAndRightsMessage": "Chaque utilisation est suivie, consentie et remuneree via des smart contracts",
+  "enableJavascript": "Veuillez activer JavaScript dans votre navigateur pour acceder a toute la plateforme.",
   "viewSimplifiedVersion": "View simplified version",
   "javascriptRequiredFullExperience": "JavaScript Required for Full Experience",
-  "interactivePlatformMessage": "[NEEDS TRANSLATION] Likelee is an interactive platform that requires JavaScript.",
+  "interactivePlatformMessage": "Likelee est une plateforme interactive qui requiert JavaScript.",
   "platformFeatures": "Likelee Platform Features:",
-  "ethicalAiStandards": "[NEEDS TRANSLATION] 🔒 <strong>Ethical AI Standards:</strong> SAG-AFTRA aligned, GDPR/CCPA compliant, with automated consent tracking and fair compensation for all creators.",
+  "ethicalAiStandards": "🔒 <strong>Normes d'IA ethique :</strong> alignees sur SAG-AFTRA, conformes GDPR/CCPA, avec suivi automatise du consentement et remuneration equitable pour tous les createurs.",
   "toAccessPlatform": "To access the full interactive platform:",
   "enableJavascriptInBrowser": "Enable JavaScript in your browser settings",
   "refreshPage": "Refresh this page",
@@ -2303,16 +2303,16 @@
   },
   "success": {
     "title": "Profile reserved—welcome to the Likelee ecosystem",
-    "description": "[NEEDS TRANSLATION] We're onboarding talent in waves to keep demand and visibility balanced. Your profile is saved; we'll notify you when it's time to complete verification and go live.",
+    "description": "Nous integrons les talents par vagues afin de garder la demande et la visibilite equilibrees. Votre profil est enregistre ; nous vous previendrons lorsqu'il sera temps de terminer la verification et de passer en ligne.",
     "dashboardButton": "Go to Dashboard"
   },
   "warning": {
-    "limitedBatches": "[NEEDS TRANSLATION] We're launching in limited batches to make sure every Creator gets visibility and campaign opportunities. Reserve your profile to join the first creator cohort."
+    "limitedBatches": "Nous lancons par lots limites pour garantir a chaque Creator de la visibilite et des opportunites de campagne. Reservez votre profil pour rejoindre la premiere cohorte de createurs."
   },
   "skipModal": {
     "title": "Skip Verification?",
-    "description": "[NEEDS TRANSLATION] Your profile will be saved, but you won't be visible to brands until you verify your identity.",
-    "note": "[NEEDS TRANSLATION] Note: You can return to your dashboard at any time to complete verification.",
+    "description": "Votre profil sera enregistre, mais vous ne serez pas visible par les marques tant que vous n'aurez pas verifie votre identite.",
+    "note": "Remarque : vous pouvez revenir a votre tableau de bord a tout moment pour terminer la verification.",
     "actions": {
       "back": "Go Back",
       "confirm": "Skip & Finish"
@@ -2330,13 +2330,13 @@
     "quickActions": "Quick Actions",
     "priority": "PRIORITY",
     "completeProfile": "Complete Your Profile",
-    "completeProfileInfo": "[NEEDS TRANSLATION] You're missing X sections. Complete them to get verified.",
+    "completeProfileInfo": "Il vous manque X sections. Completez-les pour etre verifie.",
     "uploadVoiceTone": "Upload Voice Tone",
     "uploadVoiceToneInfo": "Add voice samples to enable audio campaigns",
     "recentActivity": "Recent Activity",
     "previewExamples": {
       "title": "Preview Examples:",
-      "message": "[NEEDS TRANSLATION] These are example campaigns to show you what your dashboard will look like."
+      "message": "Voici des exemples de campagnes pour vous montrer a quoi ressemblera votre tableau de bord."
     },
     "active": "ACTIVE",
     "noCampaigns": "No Active Campaigns",
@@ -2379,6 +2379,11 @@
         }
       },
       "note": "Les mises à jour de contrat nécessitent l'approbation du talent. Ils ont 48 heures pour accepter ou refuser les changements proposés."
+    },
+    "usageRightsPage": {
+      "stats": {
+        "expiring15d": "Expire dans 15 j"
+      }
     }
   },
   "content": {
@@ -2386,21 +2391,21 @@
     "subtitle": "Track content created with your likeness",
     "welcome": {
       "title": "Welcome to your Content page!",
-      "message": "[NEEDS TRANSLATION] This is an example of what brand content and detections will look like. You don't have any content yet — but when brands create content with your likeness, it will appear here!"
+      "message": "Voici un exemple de ce a quoi ressembleront les contenus de marque et les detections. Vous n'avez pas encore de contenu, mais lorsque des marques creeront du contenu avec votre image, il apparaitra ici !"
     },
     "tabs": {
       "brandContent": "Brand Content",
       "detections": "Detections"
     },
     "brandContent": {
-      "info": "[NEEDS TRANSLATION] This feed shows all authorized content that brands have published using your likeness.",
+      "info": "Ce fil affiche tous les contenus autorises que les marques ont publies en utilisant votre image.",
       "views": "Views",
       "engagement": "Engagement",
       "published": "Published {{date}}",
       "noContent": "No brand content found."
     },
     "detections": {
-      "info": "[NEEDS TRANSLATION] Likeness Protection Active. We continuously scan the web for unauthorized use of your likeness. Review detected content below.",
+      "info": "Protection de l'image active. Nous analysons continuellement le web pour detecter toute utilisation non autorisee de votre image. Examinez les contenus detectes ci-dessous.",
       "needsReview": "Needs Review",
       "takedownRequested": "Takedown Requested",
       "resolved": "Resolved",
@@ -2409,12 +2414,12 @@
       "viewOriginal": "View Original Content",
       "requestTakedown": "Request Takedown",
       "dismiss": "Dismiss (It's Authorized)",
-      "takedownSent": "[NEEDS TRANSLATION] Takedown request sent. Platforms typically respond within 24-72 hours.",
-      "contentRemoved": "[NEEDS TRANSLATION] Content has been removed or verified as authorized.",
+      "takedownSent": "Demande de retrait envoyee. Les plateformes repondent generalement sous 24 a 72 heures.",
+      "contentRemoved": "Le contenu a ete supprime ou verifie comme autorise.",
       "noDetections": "No detections found.",
       "howItWorks": {
         "title": "How This Works:",
-        "text": "[NEEDS TRANSLATION] Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."
+        "text": "Televersez des photos dans 15 categories differentes. Les marques les utilisent pour generer des images de vous coherentes et photorealistes. Plus de variete = meilleure qualite de contenu = tarifs plus eleves."
       },
       "uploaded": "UPLOADED",
       "missing": "MISSING",
@@ -2430,12 +2435,12 @@
         "saving": "Saving...",
         "contentTitle": "Customize Content Type Rates",
         "industryTitle": "Customize Industry Rates",
-        "contentDesc": "[NEEDS TRANSLATION] Set specific monthly rates for different content types. If left blank, your base rate ({rate}) will apply.",
-        "industryDesc": "[NEEDS TRANSLATION] Set specific monthly rates for different industries. If left blank, your base rate ({rate}) will apply.",
+        "contentDesc": "Definissez des tarifs mensuels specifiques pour differents types de contenu. Si le champ reste vide, votre tarif de base ({rate}) s'appliquera.",
+        "industryDesc": "Definissez des tarifs mensuels specifiques pour differentes industries. Si le champ reste vide, votre tarif de base ({rate}) s'appliquera.",
         "noContentTitle": "No content types selected.",
-        "noContentMsg": "[NEEDS TRANSLATION] Please go back to \"My Rules\" and select the content types you re open to first.",
+        "noContentMsg": "Veuillez retourner a \"Mes regles\" et selectionner d'abord les types de contenu auxquels vous etes ouvert.",
         "noIndustryTitle": "No industries selected.",
-        "noIndustryMsg": "[NEEDS TRANSLATION] Please go back to \"My Rules\" and select the industries you work with first.",
+        "noIndustryMsg": "Veuillez retourner a \"Mes regles\" et selectionner d'abord les industries avec lesquelles vous travaillez.",
         "contentHeader": "Content Types",
         "industryHeader": "Industries"
       }
@@ -2468,9 +2473,9 @@
       "voiceErrorTitle": "Voice error",
       "voiceErrorDesc": "Failed to create voice profile: {{error}}",
       "micErrorTitle": "Microphone error",
-      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micErrorDesc": "Nous n'avons pas pu acceder a votre microphone. Autorisez l'acces au microphone puis reessayez.",
       "micNoDataTitle": "No audio captured",
-      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "micNoDataDesc": "Aucune donnee audio n'a ete recue. Verifiez votre microphone puis reessayez.",
       "avatarGenerating": "Generating avatar...",
       "avatarGenerated": "Avatar generated successfully!",
       "avatarGenerationFailed": "Failed to generate avatar",
@@ -2483,12 +2488,12 @@
     }
   },
   "voiceScripts": {
-    "happy": "[NEEDS TRANSLATION] I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
-    "emotional": "[NEEDS TRANSLATION] There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
-    "excited": "[NEEDS TRANSLATION] Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
-    "mellow": "[NEEDS TRANSLATION] Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
-    "relaxed": "[NEEDS TRANSLATION] Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
-    "angry": "[NEEDS TRANSLATION] I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here."
+    "happy": "Je suis absolument ravi d'etre ici aujourd'hui ! La vie est pleine de belles surprises et d'opportunites passionnantes. Chaque matin apporte un nouveau depart et de nouvelles possibilites. J'aime creer du lien avec les gens et partager une energie positive. Le monde est un endroit incroyable quand on le regarde avec optimisme. Celebrons les petites victoires et cherissons chaque moment de joie. Le bonheur est contagieux, alors partageons-le !",
+    "emotional": "Il y a des moments dans la vie qui touchent profondement le coeur. Parfois, la beaute du lien humain nous submerge. Ces experiences faconnent qui nous sommes et nous rappellent ce qui compte vraiment. J'ai appris que la vulnerabilite n'est pas une faiblesse, mais du courage. Chaque personne que nous rencontrons porte sa propre histoire, ses luttes et ses victoires. Honorons ces moments et laissons de la place a l'emotion authentique.",
+    "excited": "Oh mon Dieu, c'est incroyable ! Je peux a peine contenir mon enthousiasme en ce moment ! Il y a tellement d'energie et de potentiel dans cet instant. Je vibre d'impatience pour ce qui arrive ensuite. Vous sentez cette electricite dans l'air ? Ca va etre absolument genial ! Je suis pret a me lancer a fond et a faire avancer les choses. L'avenir est lumineux et je suis la pour ca !",
+    "mellow": "Parfois, c'est agreable de ralentir et de prendre les choses tranquillement. Pas de precipitation, pas de pression. Juste une presence calme et stable dans l'instant. La vie n'a pas toujours besoin d'etre intense ou dramatique. Ces moments paisibles ont leur propre beaute et leur propre sens. Respirons simplement et apprecions le calme. Tout se devoile en son temps, et c'est parfaitement bien ainsi.",
+    "relaxed": "Salut, aujourd'hui je prends les choses tranquillement. Pas de stress, pas d'inquietude. Tout coule naturellement et en douceur. Je suis dans un tres bon etat d'esprit en ce moment, simplement en train de profiter du present. La vie semble equilibree et confortable. Il y a quelque chose de paisible dans le fait de ne pas trop reflechir. Etre la, etre present, et laisser les choses arriver naturellement. Tout va bien.",
+    "angry": "Je n'arrive pas a croire que cela se produise. C'est totalement inacceptable et, franchement, j'en ai assez. Il y a des limites a ce que chacun devrait tolerer. Cette situation doit changer, et elle doit changer maintenant. J'en ai assez des excuses et des promesses vides. Les actes parlent plus fort que les mots, et je suis pret a exiger ce qui est juste. Cela s'arrete ici."
   },
   "credits": "Credits",
   "credits_lower": "credits",
@@ -2792,6 +2797,13 @@
     },
     "labels": {
       "verified": "Verified"
+    },
+    "scouting": {
+      "title": "Titre",
+      "subtitle": "Sous-titre",
+      "addProspect": "Ajouter un prospect",
+      "createEvent": "Creer un evenement",
+      "planScoutingTrip": "Planifier un voyage de scouting"
     }
   },
   "creatorDashboard": {
@@ -2840,5 +2852,123 @@
       }
     }
   },
-  "error": "Erreur"
+  "error": "Erreur",
+  "faces.hero.flipper.0.line1": "Your Likeness",
+  "faces.hero.flipper.0.line2": "Unlimited Earnings",
+  "faces.hero.flipper.1.line1": "Your Consent",
+  "faces.hero.flipper.1.line2": "Complete Control",
+  "faces.hero.flipper.2.line1": "Your Terms",
+  "faces.hero.flipper.2.line2": "Recurring Revenue",
+  "faces.meta.title": "Creators - Monetize Your Likeness",
+  "faces.meta.description": "Athletes, influencers, actors, and models - earn retainers from your digital twin. Set your own rates, approve usage, and track royalties.",
+  "faces.meta.serviceType": "Digital Likeness Management",
+  "faces.meta.audienceType": "Creators, Athletes, Influencers, Models, Actors",
+  "faces.hero.alert": "Earn recurring royalties from your likeness. Not one-time payments. Join the first cohort of verified creators, athletes, and talent licensing their image on their terms.",
+  "faces.hero.subtitle": "License your likeness to brands, studios, and agencies. Set your rates. Keep full control. Earn every month it's in use.",
+  "faces.hero.forYouButton": "For You",
+  "faces.whyChoose.title": "Why Creators, Athletes, and Talent Choose Likelee",
+  "faces.whyChoose.subtitle1": "The fastest way to offer brand-safe AI likeness and earn royalties on every use.",
+  "faces.whyChoose.subtitle2": "Every creator on Likelee licenses their likeness under clear, time-limited rights and keeps the ability to modify, pause, or withdraw permissions at any time.",
+  "faces.whyChoose.cards.0.title": "Recurring Revenue, Not One-Time Gigs",
+  "faces.whyChoose.cards.0.description": "Set your rates. Earn a monthly retainer for every active campaign using your likeness. One $500 shoot used to pay once. Now it pays $500 every month it's active.",
+  "faces.whyChoose.cards.1.title": "Complete Control",
+  "faces.whyChoose.cards.1.description": "You approve every use. Pause campaigns anytime. Revoke rights with one click. Your likeness, your rules.",
+  "faces.whyChoose.cards.2.title": "Full Transparency",
+  "faces.whyChoose.cards.2.description": "See exactly who's using your image, for how long, in which regions, and how much you've earned. Every campaign tracked, every payment verified.",
+  "faces.whyChoose.cards.3.title": "Usage Rights Dashboard",
+  "faces.whyChoose.cards.3.description": "See who's using your likeness, when rights expire, and how much you've earned. Revoke or renew in one click.",
+  "faces.howItWorks.title": "Start Earning in 3 Simple Steps",
+  "faces.howItWorks.subtitle": "From upload to earning - it's that simple.",
+  "faces.howItWorks.steps.0.title": "Upload Your Photos",
+  "faces.howItWorks.steps.0.description": "Create your verified digital identity with high-quality photos.",
+  "faces.howItWorks.steps.1.title": "Set Your Parameters",
+  "faces.howItWorks.steps.1.description": "Define usage rights, pricing, and approval requirements.",
+  "faces.howItWorks.steps.2.title": "Start Earning",
+  "faces.howItWorks.steps.2.description": "Approve requests. Earn monthly retainers. Scale with multiple concurrent campaigns.",
+  "faces.realFutures.title": "Real Faces. Real Futures.",
+  "faces.realFutures.line1": "Brands and studios are already generating AI campaigns — most use unlicensed or synthetic faces.",
+  "faces.realFutures.line2": "Likelee is where real talent powers the AI world.",
+  "faces.realFutures.line3": "Every creator, model, and performer is verified, tracked, and paid monthly retainers.",
+  "faces.realFutures.line4": "You're not being replaced by AI — you're becoming its monthly revenue stream.",
+  "faces.valueFloor.title": "Creator Value Floor",
+  "faces.valueFloor.line1": "No likeness license on Likelee pays below the community minimum.",
+  "faces.valueFloor.line2": "You can also set your own floor so brands and studios can't lowball you.",
+  "faces.valueFloor.line3": "Transparency builds trust. We publish average creator earnings and benchmark data so you always know your true market value.",
+  "faces.valueFloor.cards.0.description": "Minimum monthly retainer per active license",
+  "faces.valueFloor.cards.1.description": "Average monthly retainer per campaign",
+  "faces.valueFloor.cards.2.title": "As long as licensed",
+  "faces.valueFloor.cards.2.description": "Recurring payment while brand uses your likeness",
+  "faces.realEarnings.title": "Real Creators. Real Earnings.",
+  "faces.realEarnings.subtitle": "See what creators, models, and performers are earning through monthly likeness licensing.",
+  "faces.realEarnings.cards.0.title": "Recurring retainer across 3 active brand licenses",
+  "faces.realEarnings.cards.0.line1": "→ License 1 (Brand A): $500/month — Active for 6 months (so far)",
+  "faces.realEarnings.cards.0.line2": "→ License 2 (Brand B): $600/month — Active for 4 months (so far)",
+  "faces.realEarnings.cards.0.line3": "→ License 3 (Brand C): $400/month — Active for 2 months (so far)",
+  "faces.realEarnings.cards.0.total": "Total earned to date: $7,500 (and still earning monthly as licenses remain active)",
+  "faces.realEarnings.cards.1.title": "Single retainer for music label's AI music video campaign",
+  "faces.realEarnings.cards.1.line1": "→ Licensed for 12-month campaign",
+  "faces.realEarnings.cards.1.line2": "→ Brand uses your likeness for ongoing content generation",
+  "faces.realEarnings.cards.1.line3": "→ You earn $700/month for full year",
+  "faces.realEarnings.cards.1.total": "Total: $8,400",
+  "faces.realEarnings.cards.2.title": "Three licenses stacked together",
+  "faces.realEarnings.cards.2.line1": "→ License 1 (Tech Brand): $400/month × 9 months = $3,600",
+  "faces.realEarnings.cards.2.line2": "→ License 2 (Fashion Brand): $300/month × 6 months = $1,800",
+  "faces.realEarnings.cards.2.line3": "→ License 3 (Wellness Brand): $250/month × 4 months = $1,000",
+  "faces.realEarnings.cards.2.total": "Combined earnings: $6,400 (and more licenses can be added simultaneously)",
+  "faces.retainerModel.title": "How It Works: Monthly Retainer Model",
+  "faces.retainerModel.steps.0.title": "You license your likeness",
+  "faces.retainerModel.steps.0.description": "Brand gets usage rights",
+  "faces.retainerModel.steps.1.title": "You earn monthly",
+  "faces.retainerModel.steps.1.description": "As long as your license is active, you get paid every month",
+  "faces.retainerModel.steps.2.title": "License is active for X months",
+  "faces.retainerModel.steps.2.description": "You agreed to a 90-day, 6-month, or 12-month license period",
+  "faces.retainerModel.steps.3.title": "When license ends",
+  "faces.retainerModel.steps.3.description": "You decide to renew, revoke, or move on to new brands",
+  "faces.retainerModel.steps.4.title": "You can have multiple licenses at once",
+  "faces.retainerModel.steps.4.description": "Each brand pays you separately, each month",
+  "faces.retainerAdvantage.title": "The Monthly Retainer Advantage",
+  "faces.retainerAdvantage.cards.0.title": "✓ Predictable Income",
+  "faces.retainerAdvantage.cards.0.description": "Know exactly how much you're earning each month",
+  "faces.retainerAdvantage.cards.1.title": "✓ Passive While Active",
+  "faces.retainerAdvantage.cards.1.description": "You don't work; the brand generates content; you get paid",
+  "faces.retainerAdvantage.cards.2.title": "✓ Stack Multiple Licenses",
+  "faces.retainerAdvantage.cards.2.description": "Work with 3, 4, or 5 brands at once; get paid by all of them",
+  "faces.retainerAdvantage.cards.3.title": "✓ Full Transparency",
+  "faces.retainerAdvantage.cards.3.description": "Know exactly which brands are using you and how much you're earning from each",
+  "faces.realMonthlyIncome.title": "Real Creators. Real Monthly Income.",
+  "faces.realMonthlyIncome.subtitle1": "Creators on Likelee aren't waiting for payments. They're earning monthly, predictably, passively.",
+  "faces.realMonthlyIncome.subtitle2": "While you create new content, your licensed likeness generates recurring monthly revenue.",
+  "faces.likenessStaysYours.title": "Your Likeness Stays Yours",
+  "faces.likenessStaysYours.line1": "Your consent never expires on its own. Every license has an end date. If you say no, we say no.",
+  "faces.likenessStaysYours.line2": "If a brand wants to keep using your likeness, they renew—and you decide if it's worth it.",
+  "faces.likenessStaysYours.line3": "Watermarked contracts. Automated takedowns. Real legal protection.",
+  "faces.faq.title": "Frequently Asked Questions",
+  "faces.faq.subtitle": "Everything you need to know about being a Creator on Likelee",
+  "faces.faq.questions.0.title": "What is a \"Creator\"?",
+  "faces.faq.questions.0.description": "A Creator is any verified individual licensing their likeness (face, voice, or digital twin) for campaigns or AI-assisted productions. You keep ownership of your image; Likelee only facilitates licensed use under your chosen terms.",
+  "faces.faq.questions.1.title": "How do I get verified?",
+  "faces.faq.questions.1.description": "After your account is granted into the ecosystem, you'll receive a welcome email and verification link. You'll submit ID and a short selfie video so our system can confirm your authenticity and produce your digital twin.",
+  "faces.faq.questions.2.title": "Can my likeness be used without consent?",
+  "faces.faq.questions.2.description": "Never. Each usage request requires your explicit approval. No brand, studio, or AI partner can use your likeness unless you've granted permission for that specific context.",
+  "faces.faq.questions.3.title": "Can I remove my likeness from the platform?",
+  "faces.faq.questions.3.description": "Yes. You can deactivate or delete your profile anytime. Existing active licences will expire automatically at the end of their contractual term, and no new usages can occur.",
+  "faces.faq.questions.4.title": "What if a brand asks for \"in perpetuity\" rights?",
+  "faces.faq.questions.4.description": "Likelee does not allow perpetual-use clauses by default. If you choose to accept one, you'll be shown a clear warning about what it means and can negotiate higher compensation or decline.",
+  "faces.faq.questions.5.title": "Can my likeness be used to train AI models?",
+  "faces.faq.questions.5.description": "Only if you explicitly enable the \"AI training rights\" option. This is disabled by default. You'll always see a disclosure when a campaign involves generative or synthetic use.",
+  "faces.faq.questions.6.title": "What protections exist if my likeness is misused?",
+  "faces.faq.questions.6.description": "Likelee tracks every approved asset and maintains digital proofs. If misuse occurs, our rights-enforcement team assists you with takedowns and documentation for legal follow-up.",
+  "faces.faq.questions.7.title": "Do I still own my digital likeness?",
+  "faces.faq.questions.7.description": "Yes. You retain full ownership. You're licensing usage, not transferring ownership. All digital replicas remain tied to your verified identity.",
+  "faces.faq.questions.8.title": "Can I negotiate rates for different types of usage?",
+  "faces.faq.questions.8.description": "Absolutely. You can set separate pricing for human-recorded UGC, AI campaigns, and full AI digital twins. Our system auto-applies your chosen rate based on campaign type and duration.",
+  "faces.cta.title": "Ready to become a digital talent owner?",
+  "faces.cta.subtitle": "Join creators, models, and performers building sustainable income through monthly likeness licensing.",
+  "faces.cta.howToGetStarted": "How to get started:",
+  "faces.cta.steps.0": "→ Upload your reference video — Record a short video of yourself (AI reference)",
+  "faces.cta.steps.1": "→ Upload reference images — 15 photos from different angles/styles",
+  "faces.cta.steps.2": "→ Set your minimum rate — You decide your floor price ($350+/month)",
+  "faces.cta.steps.3": "→ Brands find you — They request licenses, you approve or decline",
+  "faces.cta.steps.4": "→ Start earning — Monthly payments as long as licenses are active",
+  "faces.cta.reserveProfileButton": "Reserve Your Profile"
 }

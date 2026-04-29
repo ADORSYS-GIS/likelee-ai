@@ -626,7 +626,7 @@
       "description2": "Diese werden verwendet, um Ihr KI-Modell zu trainieren. Stellen Sie sicher, dass sie von hoher Qualität sind und Ihr Gesicht deutlich zeigen.",
       "drop": "Dateien hier ablegen oder klicken zum Hochladen",
       "why": "Why these photos work",
-      "whyDesc": "[NEEDS TRANSLATION] Clear, well-lit photos help potential clients see your versatility."
+      "whyDesc": "Klare, gut ausgeleuchtete Fotos helfen potenziellen Kunden, Ihre Vielseitigkeit zu erkennen."
     },
     "verification": {
       "title": "Identitätsüberprüfung",
@@ -802,17 +802,17 @@
       "specifyMoreLater": "Sie können später mehr angeben",
       "verification": {
         "title": "Identity Verification",
-        "description": "[NEEDS TRANSLATION] Verify your identity to become visible to brands and unlock opportunities",
+        "description": "Verifizieren Sie Ihre Identitaet, um fuer Marken sichtbar zu werden und Chancen freizuschalten",
         "whyVerify": {
           "title": "Why verify your identity?",
-          "reason1": "[NEEDS TRANSLATION] Get discovered by brands looking for verified creators",
-          "reason2": "[NEEDS TRANSLATION] Build trust and credibility with licensing partners",
+          "reason1": "Werden Sie von Marken entdeckt, die verifizierte Creator suchen",
+          "reason2": "Bauen Sie Vertrauen und Glaubwuerdigkeit bei Lizenzpartnern auf",
           "reason3": "Unlock higher-value campaign opportunities"
         },
-        "processDesc": "[NEEDS TRANSLATION] We use secure identity verification to ensure all creators on Likelee are authentic. This process typically takes 2–3 minutes.",
+        "processDesc": "Wir nutzen eine sichere Identitaetspruefung, um sicherzustellen, dass alle Creator auf Likelee authentisch sind. Dieser Vorgang dauert normalerweise 2-3 Minuten.",
         "requirements": {
           "title": "What you'll need:",
-          "item1": "[NEEDS TRANSLATION] Government-issued ID (driver's license, passport, or state ID)",
+          "item1": "Amtlicher Ausweis (Fuehrerschein, Reisepass oder Personalausweis)",
           "item2": "Good lighting and camera/mic access",
           "item3": "2–3 minutes in a quiet space"
         },
@@ -2087,7 +2087,7 @@
   "credits_lower": "Credits",
   "history": "Verlauf",
   "aboutPageName": "About Likelee",
-  "aboutPageDescription": "[NEEDS TRANSLATION] In the age of AI, human identity should be an asset, not a liability. Likelee builds the infrastructure for creators to own, control, and profit from their digital likeness.",
+  "aboutPageDescription": "Im Zeitalter der KI sollte menschliche Identitaet ein Vermoegenswert sein, kein Risiko. Likelee baut die Infrastruktur, mit der Creator ihr digitales Abbild besitzen, kontrollieren und monetarisieren koennen.",
   "terms": {
     "text": "By submitting, I agree to the",
     "link": "Terms and Conditions",
@@ -2100,16 +2100,16 @@
   },
   "success": {
     "title": "Profile reserved—welcome to the Likelee ecosystem",
-    "description": "[NEEDS TRANSLATION] We're onboarding talent in waves to keep demand and visibility balanced. Your profile is saved; we'll notify you when it's time to complete verification and go live.",
+    "description": "Wir nehmen Talente in Wellen auf, damit Nachfrage und Sichtbarkeit im Gleichgewicht bleiben. Ihr Profil ist gespeichert; wir benachrichtigen Sie, wenn es Zeit ist, die Verifizierung abzuschliessen und live zu gehen.",
     "dashboardButton": "Go to Dashboard"
   },
   "warning": {
-    "limitedBatches": "[NEEDS TRANSLATION] We're launching in limited batches to make sure every Creator gets visibility and campaign opportunities. Reserve your profile to join the first creator cohort."
+    "limitedBatches": "Wir starten in begrenzten Gruppen, damit jeder Creator Sichtbarkeit und Kampagnenchancen erhaelt. Reservieren Sie Ihr Profil, um zur ersten Creator-Kohorte zu gehoeren."
   },
   "skipModal": {
     "title": "Skip Verification?",
-    "description": "[NEEDS TRANSLATION] Your profile will be saved, but you won't be visible to brands until you verify your identity.",
-    "note": "[NEEDS TRANSLATION] Note: You can return to your dashboard at any time to complete verification.",
+    "description": "Ihr Profil wird gespeichert, aber Sie sind fuer Marken erst sichtbar, wenn Sie Ihre Identitaet verifizieren.",
+    "note": "Hinweis: Sie koennen jederzeit zu Ihrem Dashboard zurueckkehren, um die Verifizierung abzuschliessen.",
     "actions": {
       "back": "Go Back",
       "confirm": "Skip & Finish"
@@ -2127,13 +2127,13 @@
     "quickActions": "Quick Actions",
     "priority": "PRIORITY",
     "completeProfile": "Complete Your Profile",
-    "completeProfileInfo": "[NEEDS TRANSLATION] You're missing X sections. Complete them to get verified.",
+    "completeProfileInfo": "Ihnen fehlen X Abschnitte. Vervollstaendigen Sie sie, um verifiziert zu werden.",
     "uploadVoiceTone": "Upload Voice Tone",
     "uploadVoiceToneInfo": "Add voice samples to enable audio campaigns",
     "recentActivity": "Recent Activity",
     "previewExamples": {
       "title": "Preview Examples:",
-      "message": "[NEEDS TRANSLATION] These are example campaigns to show you what your dashboard will look like."
+      "message": "Dies sind Beispielkampagnen, damit Sie sehen, wie Ihr Dashboard aussehen wird."
     },
     "active": "ACTIVE",
     "noCampaigns": "No Active Campaigns",
@@ -2176,6 +2176,11 @@
         }
       },
       "note": "Note"
+    },
+    "usageRightsPage": {
+      "stats": {
+        "expiring15d": "Laeuft in 15 Tagen ab"
+      }
     }
   },
   "content": {
@@ -2183,21 +2188,21 @@
     "subtitle": "Track content created with your likeness",
     "welcome": {
       "title": "Welcome to your Content page!",
-      "message": "[NEEDS TRANSLATION] This is an example of what brand content and detections will look like. You don't have any content yet — but when brands create content with your likeness, it will appear here!"
+      "message": "Dies ist ein Beispiel dafuer, wie Markeninhalte und Erkennungen aussehen werden. Sie haben noch keine Inhalte - sobald Marken Inhalte mit Ihrem Abbild erstellen, erscheinen sie hier!"
     },
     "tabs": {
       "brandContent": "Brand Content",
       "detections": "Detections"
     },
     "brandContent": {
-      "info": "[NEEDS TRANSLATION] This feed shows all authorized content that brands have published using your likeness.",
+      "info": "Dieser Feed zeigt alle autorisierten Inhalte, die Marken mit Ihrem Abbild veroeffentlicht haben.",
       "views": "Views",
       "engagement": "Engagement",
       "published": "Published {{date}}",
       "noContent": "No brand content found."
     },
     "detections": {
-      "info": "[NEEDS TRANSLATION] Likeness Protection Active. We continuously scan the web for unauthorized use of your likeness. Review detected content below.",
+      "info": "Abbildschutz aktiv. Wir durchsuchen das Web fortlaufend nach unautorisierter Nutzung Ihres Abbilds. Pruefen Sie die erkannten Inhalte unten.",
       "needsReview": "Needs Review",
       "takedownRequested": "Takedown Requested",
       "resolved": "Resolved",
@@ -2206,12 +2211,12 @@
       "viewOriginal": "View Original Content",
       "requestTakedown": "Request Takedown",
       "dismiss": "Dismiss (It's Authorized)",
-      "takedownSent": "[NEEDS TRANSLATION] Takedown request sent. Platforms typically respond within 24-72 hours.",
-      "contentRemoved": "[NEEDS TRANSLATION] Content has been removed or verified as authorized.",
+      "takedownSent": "Takedown-Anfrage gesendet. Plattformen antworten normalerweise innerhalb von 24-72 Stunden.",
+      "contentRemoved": "Der Inhalt wurde entfernt oder als autorisiert verifiziert.",
       "noDetections": "No detections found.",
       "howItWorks": {
         "title": "How This Works:",
-        "text": "[NEEDS TRANSLATION] Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."
+        "text": "Laden Sie Fotos in 15 verschiedenen Kategorien hoch. Marken nutzen diese, um Bilder von Ihnen zu generieren, die konsistent und fotorealistisch wirken. Mehr Vielfalt = bessere Inhaltsqualitaet = hoehere Preise."
       },
       "uploaded": "UPLOADED",
       "missing": "MISSING",
@@ -2227,12 +2232,12 @@
         "saving": "Saving...",
         "contentTitle": "Customize Content Type Rates",
         "industryTitle": "Customize Industry Rates",
-        "contentDesc": "[NEEDS TRANSLATION] Set specific monthly rates for different content types. If left blank, your base rate ({rate}) will apply.",
-        "industryDesc": "[NEEDS TRANSLATION] Set specific monthly rates for different industries. If left blank, your base rate ({rate}) will apply.",
+        "contentDesc": "Legen Sie spezifische monatliche Preise fuer verschiedene Inhaltstypen fest. Wenn das Feld leer bleibt, gilt Ihr Basispreis ({rate}).",
+        "industryDesc": "Legen Sie spezifische monatliche Preise fuer verschiedene Branchen fest. Wenn das Feld leer bleibt, gilt Ihr Basispreis ({rate}).",
         "noContentTitle": "No content types selected.",
-        "noContentMsg": "[NEEDS TRANSLATION] Please go back to \"My Rules\" and select the content types you re open to first.",
+        "noContentMsg": "Bitte gehen Sie zurueck zu \"Meine Regeln\" und waehlen Sie zuerst die Inhaltstypen aus, fuer die Sie offen sind.",
         "noIndustryTitle": "No industries selected.",
-        "noIndustryMsg": "[NEEDS TRANSLATION] Please go back to \"My Rules\" and select the industries you work with first.",
+        "noIndustryMsg": "Bitte gehen Sie zurueck zu \"Meine Regeln\" und waehlen Sie zuerst die Branchen aus, mit denen Sie arbeiten.",
         "contentHeader": "Content Types",
         "industryHeader": "Industries"
       }
@@ -2265,9 +2270,9 @@
       "voiceErrorTitle": "Voice error",
       "voiceErrorDesc": "Failed to create voice profile: {{error}}",
       "micErrorTitle": "Microphone error",
-      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micErrorDesc": "Wir konnten nicht auf Ihr Mikrofon zugreifen. Bitte erlauben Sie den Mikrofonzugriff und versuchen Sie es erneut.",
       "micNoDataTitle": "No audio captured",
-      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "micNoDataDesc": "Es wurden keine Audiodaten empfangen. Bitte pruefen Sie Ihr Mikrofon und versuchen Sie es erneut.",
       "avatarGenerating": "Generating avatar...",
       "avatarGenerated": "Avatar generated successfully!",
       "avatarGenerationFailed": "Failed to generate avatar",
@@ -2280,12 +2285,12 @@
     }
   },
   "voiceScripts": {
-    "happy": "[NEEDS TRANSLATION] I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
-    "emotional": "[NEEDS TRANSLATION] There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
-    "excited": "[NEEDS TRANSLATION] Oh my goodness, this is incredible! I can barely contain my enthusiasm right now! There's so much energy and potential in this moment. I'm buzzing with anticipation for what's coming next. Can you feel that electricity in the air? This is going to be absolutely amazing! I'm ready to jump in with both feet and make things happen. The future is bright and I'm here for it!",
-    "mellow": "[NEEDS TRANSLATION] Sometimes it's nice to just slow down and take things easy. There's no rush, no pressure. Just a calm, steady presence in the moment. Life doesn't always have to be intense or dramatic. These quiet moments have their own beauty and purpose. Let's just breathe and appreciate the stillness. Everything unfolds in its own time, and that's perfectly okay.",
-    "relaxed": "[NEEDS TRANSLATION] Hey there, just taking it easy today. No stress, no worries. Everything's flowing naturally and smoothly. I'm in a really good headspace right now, just enjoying the present moment. Life feels balanced and comfortable. There's something peaceful about not overthinking things. Just being here, being present, and letting things happen naturally. It's all good.",
-    "angry": "[NEEDS TRANSLATION] I cannot believe this is happening. This is completely unacceptable and frankly, I'm fed up. There are limits to what anyone should have to tolerate. This situation needs to change, and it needs to change now. I'm tired of excuses and empty promises. Actions speak louder than words, and I'm ready to demand what's right. This ends here."
+    "happy": "Ich freue mich unglaublich, heute hier zu sein! Das Leben steckt voller schoener Ueberraschungen und spannender Chancen. Jeder Morgen bringt einen frischen Start und neue Moeglichkeiten. Ich liebe es, mit Menschen in Kontakt zu treten und positive Energie zu teilen. Die Welt ist ein wunderbarer Ort, wenn man sie optimistisch betrachtet. Lasst uns die kleinen Erfolge feiern und jeden Moment der Freude schaetzen. Glueck ist ansteckend, also lasst es uns weitergeben!",
+    "emotional": "Es gibt Momente im Leben, die uns tief beruehren. Manchmal ueberwaeltigt uns die Schoenheit menschlicher Verbindung. Diese Erfahrungen praegen uns und erinnern uns daran, was wirklich zaehlt. Ich habe gelernt, dass Verletzlichkeit keine Schwaeche ist, sondern Mut. Jeder Mensch, dem wir begegnen, traegt seine eigene Geschichte, seine eigenen Kaempfe und Triumphe. Lasst uns diese Momente achten und Raum fuer echte Gefuehle schaffen.",
+    "excited": "Oh mein Gott, das ist unglaublich! Ich kann meine Begeisterung gerade kaum zurueckhalten! In diesem Moment steckt so viel Energie und Potenzial. Ich bin voller Vorfreude auf das, was als Naechstes kommt. Spuert ihr diese Spannung in der Luft? Das wird absolut grossartig! Ich bin bereit, voll einzusteigen und Dinge in Bewegung zu bringen. Die Zukunft sieht hell aus, und ich bin dabei!",
+    "mellow": "Manchmal ist es schoen, einfach langsamer zu werden und die Dinge ruhig anzugehen. Kein Stress, kein Druck. Nur eine ruhige, bestaendige Praesenz im Moment. Das Leben muss nicht immer intensiv oder dramatisch sein. Diese stillen Momente haben ihre eigene Schoenheit und ihren eigenen Sinn. Lasst uns einfach atmen und die Ruhe schaetzen. Alles entfaltet sich zu seiner Zeit, und das ist vollkommen in Ordnung.",
+    "relaxed": "Hey, ich lasse es heute einfach ruhig angehen. Kein Stress, keine Sorgen. Alles fliesst natuerlich und angenehm. Ich bin gerade wirklich in einer guten Stimmung und geniesse den Augenblick. Das Leben fuehlt sich ausgeglichen und angenehm an. Es hat etwas Friedliches, nicht alles zu zerdenken. Einfach hier sein, praesent sein und die Dinge natuerlich geschehen lassen. Alles ist gut.",
+    "angry": "Ich kann nicht glauben, dass das passiert. Das ist voellig inakzeptabel, und ehrlich gesagt habe ich genug. Es gibt Grenzen dafuer, was irgendjemand hinnehmen sollte. Diese Situation muss sich aendern, und zwar jetzt. Ich habe genug von Ausreden und leeren Versprechen. Taten sagen mehr als Worte, und ich bin bereit, fuer das Richtige einzustehen. Das endet hier."
   },
   "campaigns": {
     "inbox": {
@@ -2555,6 +2560,13 @@
     },
     "labels": {
       "verified": "Verified"
+    },
+    "scouting": {
+      "title": "Titel",
+      "subtitle": "Untertitel",
+      "addProspect": "Prospect hinzufuegen",
+      "createEvent": "Event erstellen",
+      "planScoutingTrip": "Scouting-Reise planen"
     }
   },
   "creatorDashboard": {
@@ -2588,6 +2600,19 @@
       "followUpReasonLabel": "Follow Up Reason Label",
       "rejectedReasonLabel": "Rejected Reason Label",
       "refreshCta": "Refresh Cta"
+    },
+    "earnings": {
+      "bankConnection": {
+        "back": "Zurueck",
+        "title": "Titel",
+        "subtitle": "Untertitel",
+        "securityTitle": "Sicherheitstitel",
+        "securityMessage": "Sicherheitsnachricht",
+        "privateTitle": "Privater Titel",
+        "privateMessage": "Private Nachricht",
+        "button": "Button",
+        "comingSoon": "Demnaechst verfuegbar"
+      }
     }
   },
   "error": "Fehler"
