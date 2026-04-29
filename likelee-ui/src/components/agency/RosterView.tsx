@@ -92,6 +92,7 @@ interface RosterViewProps {
   onRosterChanged?: () => void;
   isSportsAgency?: boolean;
   initialOpenTalentId?: string;
+  onInitialTalentOpened?: () => void;
 }
 
 const RosterView = ({
@@ -120,6 +121,7 @@ const RosterView = ({
   onRosterChanged,
   isSportsAgency = false,
   initialOpenTalentId,
+  onInitialTalentOpened,
 }: RosterViewProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -308,7 +310,10 @@ const RosterView = ({
         String(t?.id || "") === initialOpenTalentId ||
         String(t?.creator_id || "") === initialOpenTalentId,
     );
-    if (match) setSelectedTalent(match);
+    if (match) {
+      setSelectedTalent(match);
+      onInitialTalentOpened?.();
+    }
   }, [initialOpenTalentId, safeRosterData]);
   const activeTalentCount = safeRosterData.filter(
     (t) => t.status === "active",

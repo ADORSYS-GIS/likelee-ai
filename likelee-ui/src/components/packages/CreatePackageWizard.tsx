@@ -74,6 +74,10 @@ interface CreatePackageWizardProps {
   mode?: CreatePackageWizardMode;
   isSportsAgency?: boolean;
   offerContext?: { offerId: string; offerBrandId?: string } | null;
+  // Called when the agency tries to select a talent who hasn't completed portal
+  // onboarding. The parent should navigate to the roster and open that talent's
+  // invite flow.
+  onInviteTalent?: (talent: any) => void;
 }
 
 export function CreatePackageWizard({
@@ -84,6 +88,7 @@ export function CreatePackageWizard({
   mode = "package",
   isSportsAgency = false,
   offerContext = null,
+  onInviteTalent,
 }: CreatePackageWizardProps) {
   const { user } = useAuth();
   const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
@@ -102,6 +107,8 @@ export function CreatePackageWizard({
   const [step, setStep] = useState(0);
   const [showTalentSelector, setShowTalentSelector] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  // Invite-required modal: shown when agency tries to select a talent without a creator_id
+  const [inviteRequiredTalent, setInviteRequiredTalent] = useState<any>(null);
   const [activeTalentForAssets, setActiveTalentForAssets] = useState<{
     id: string;
     name: string;
@@ -1652,14 +1659,32 @@ export function CreatePackageWizard({
                   const isConnectedCreator = Boolean(
                     (talent as any)?.is_connected_creator,
                   );
+                  // A talent is fully onboarded when they have a creator_id —
+                  // meaning they accepted their portal invite and have a creators record.
+                  const isOnboarded = Boolean(
+                    String(talent?.creator_id || "").trim(),
+                  );
                   const photo = String(talent?.profile_photo_url || "").trim();
                   return (
                     <Card
                       key={talent.id}
-                      onClick={() => toggleTalentSelection(talent)}
-                      className={`p-5 cursor-pointer rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${isSelected ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20" : "border-gray-50 hover:border-gray-100 bg-white"}`}
+                      onClick={() => {
+                        if (!isOnboarded) {
+                          // Block selection — show invite-required modal instead
+                          setInviteRequiredTalent(talent);
+                          return;
+                        }
+                        toggleTalentSelection(talent);
+                      }}
+                      className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
+                        !isOnboarded
+                          ? "cursor-not-allowed opacity-60 border-gray-100 bg-gray-50"
+                          : isSelected
+                            ? "cursor-pointer border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
+                            : "cursor-pointer border-gray-50 hover:border-gray-100 bg-white"
+                      }`}
                     >
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner relative">
                         {photo ? (
                           <img
                             src={photo}
@@ -1670,6 +1695,11 @@ export function CreatePackageWizard({
                             <User className="w-7 h-7" />
                           </div>
                         )}
+                        {!isOnboarded && (
+                          <div className="absolute inset-0 bg-gray-900/40 flex items-center justify-center rounded-2xl">
+                            <Lock className="w-5 h-5 text-white/90" />
+                          </div>
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
@@ -1678,15 +1708,21 @@ export function CreatePackageWizard({
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
                           {talent.categories?.[0] || "Member"}
                         </p>
-                        {isConnectedCreator && (
+                        {!isOnboarded ? (
+                          <div className="mt-2">
+                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 text-[10px] font-black tracking-widest uppercase">
+                              Invite Required
+                            </Badge>
+                          </div>
+                        ) : isConnectedCreator ? (
                           <div className="mt-2">
                             <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 border border-sky-200 px-2 py-0.5 text-[10px] font-black tracking-widest uppercase">
                               Connected
                             </Badge>
                           </div>
-                        )}
+                        ) : null}
                       </div>
-                      {isSelected && (
+                      {isSelected && isOnboarded && (
                         <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
                           <Check className="w-4 h-4 text-white" />
                         </div>
@@ -1729,6 +1765,83 @@ export function CreatePackageWizard({
           updateTalentAssets(activeTalentForAssets?.id!, assets)
         }
       />
+
+      {/* Invite Required Modal — shown when agency tries to select a talent
+          who hasn't accepted their portal invite yet (no creator_id). */}
+      <Dialog
+        open={!!inviteRequiredTalent}
+        onOpenChange={(open) => !open && setInviteRequiredTalent(null)}
+      >
+        <DialogContent className="max-w-sm rounded-3xl p-8 border-none bg-white shadow-2xl">
+          <div className="flex flex-col items-center gap-5 text-center">
+            {/* Avatar with lock overlay */}
+            <div className="relative w-20 h-20">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-100">
+                {inviteRequiredTalent?.profile_photo_url ? (
+                  <img
+                    src={inviteRequiredTalent.profile_photo_url}
+                    alt={inviteRequiredTalent.full_name}
+                    className="w-full h-full object-cover grayscale"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                    <User className="w-8 h-8" />
+                  </div>
+                )}
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shadow-md">
+                <Mail className="w-4 h-4 text-white" />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                Invite Required
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                <span className="font-bold text-gray-700">
+                  {inviteRequiredTalent?.full_name || "This talent"}
+                </span>{" "}
+                hasn't accepted their portal invite yet. They need to complete
+                onboarding before they can be added to a package or assigned to
+                a contract.
+              </p>
+            </div>
+
+            <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left">
+              <p className="text-xs font-black text-amber-800 uppercase tracking-widest mb-1">
+                Why this matters
+              </p>
+              <p className="text-xs text-amber-700 leading-relaxed">
+                Without portal access, this {entitySingularLower} can't receive
+                payments, sign contracts, or communicate through the platform.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full mt-1">
+              <Button
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-12 font-bold"
+                onClick={() => {
+                  setInviteRequiredTalent(null);
+                  if (onInviteTalent) {
+                    onInviteTalent(inviteRequiredTalent);
+                  }
+                }}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Go to Roster &amp; Invite
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
+                onClick={() => setInviteRequiredTalent(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

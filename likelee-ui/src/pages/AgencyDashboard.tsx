@@ -17541,6 +17541,10 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
+  // openTalentId: when set, RosterView auto-opens that talent's side modal
+  const [openTalentId, setOpenTalentId] = useState<string | undefined>(
+    searchParams.get("openTalentId") || undefined,
+  );
   const normalizeSubTab = (value: string | null | undefined) => {
     const cleaned = String(value || "")
       .trim()
@@ -20900,6 +20904,19 @@ export default function AgencyDashboard() {
                   isLoading={rosterQuery.isLoading}
                   onRosterChanged={() => rosterQuery.refetch()}
                   isSportsAgency={isSportsAgency}
+                  initialOpenTalentId={openTalentId}
+                  onInitialTalentOpened={() => {
+                    setOpenTalentId(undefined);
+                    // Remove openTalentId from URL without triggering a re-render loop
+                    setSearchParams(
+                      (prev) => {
+                        const next = new URLSearchParams(prev);
+                        next.delete("openTalentId");
+                        return next;
+                      },
+                      { replace: true, preventScrollReset: true },
+                    );
+                  }}
                 />
               )}
               {activeTab === "roster" &&

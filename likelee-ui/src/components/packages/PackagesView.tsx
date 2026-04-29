@@ -24,7 +24,7 @@ import {
   Activity,
   MessageSquare,
 } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +63,7 @@ export function PackagesView({
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"templates" | "sent">("templates");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -638,6 +639,16 @@ export function PackagesView({
         onSuccess={() => {
           setShowWizard(false);
           setEditingPackage(null);
+        }}
+        onInviteTalent={(talent) => {
+          // Close the wizard and navigate to the roster with this talent's profile open
+          setShowWizard(false);
+          setEditingPackage(null);
+          const talentId = String(talent?.id || talent?.agency_user_id || "").trim();
+          const subTab = isSportsAgency ? "All Athletes" : "All Talent";
+          navigate(
+            `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent(subTab)}${talentId ? `&openTalentId=${encodeURIComponent(talentId)}` : ""}`,
+          );
         }}
       />
 
