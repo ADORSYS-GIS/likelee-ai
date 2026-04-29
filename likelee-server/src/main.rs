@@ -112,6 +112,9 @@ async fn main() {
         Duration::from_secs(60),
     ));
 
+    // Initialize JWKS cache for Supabase JWT Signing Keys
+    let jwks_cache = Arc::new(likelee_server::auth::JwksCache::new());
+
     info!(
         l2_ttl_secs = cfg.cache_l2_ttl_secs,
         l3_ttl_secs = cfg.cache_l3_ttl_secs,
@@ -314,7 +317,14 @@ async fn main() {
 
         // Brand trial configuration
         brand_trial_days: cfg.brand_trial_days,
+
+        // JWKS cache for JWT Signing Keys
+        jwks_cache: jwks_cache.clone(),
     };
+
+    // Initialize JWKS cache on startup
+    jwks_cache.refresh(&state).await;
+    info!("JWKS cache initialized on startup");
 
     // Start background jobs
     tokio::spawn(likelee_server::jobs::start_payment_reminders(state.clone()));

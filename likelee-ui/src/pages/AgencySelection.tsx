@@ -81,14 +81,16 @@ export default function AgencySelection() {
           {items.map(({ title, desc, icon: Icon, to }) => (
             <Card
               key={title}
-              className="p-8 border-2 border-black rounded-none bg-white"
+              className="p-8 border-2 border-black rounded-none bg-white flex flex-col"
             >
-              <div className="flex flex-col items-center text-center gap-4">
+              <div className="flex flex-col items-center text-center gap-4 flex-1">
                 <div className="w-14 h-14 bg-gray-900 text-white flex items-center justify-center">
                   <Icon className="w-7 h-7" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-                <p className="text-gray-600 text-sm md:text-base">{desc}</p>
+                <p className="text-gray-600 text-sm md:text-base flex-1">
+                  {desc}
+                </p>
                 <Button
                   onClick={() => navigate(to)}
                   className="mt-4 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-2 border-black rounded-none w-full font-bold h-12"

@@ -47,7 +47,7 @@ function AvatarPlaceholder({
   size?: number;
 }) {
   const dimRem = `${size * 0.25}rem`;
-  const initials = name
+  const initials = (name || "?")
     .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
@@ -109,8 +109,8 @@ export function ThreadList({
 
   const filteredConversations = conversations.filter((conv) => {
     const participant = getParticipant(conv, currentUserId);
-    const matchesSearch = participant.name
-      ?.toLowerCase()
+    const matchesSearch = (participant.name || "")
+      .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchesFilter =
       filter === "all" || (conv.unread_count && conv.unread_count > 0);
@@ -118,8 +118,8 @@ export function ThreadList({
   });
 
   const filteredContacts = contactsWithoutConversation.filter((contact) => {
-    const matchesSearch = contact.display_name
-      ?.toLowerCase()
+    const matchesSearch = (contact.display_name || "")
+      .toLowerCase()
       .includes(searchQuery.toLowerCase());
     return filter === "all" && matchesSearch; // Only show new contacts in "All" view
   });

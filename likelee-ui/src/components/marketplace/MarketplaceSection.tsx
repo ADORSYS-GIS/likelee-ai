@@ -261,6 +261,9 @@ export function MarketplaceSection({
   const [sortBy, setSortBy] = useState<"recent" | "name" | "followers">(
     entityType === "agency" ? "recent" : "followers",
   );
+  const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const formatCampaignStatus = (status: string) => {
     const statusLower = status.toLowerCase();
@@ -973,7 +976,7 @@ export function MarketplaceSection({
               return (
                 <Card
                   key={profile.id}
-                  className="group w-full overflow-hidden border border-slate-200 rounded-lg bg-white hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer"
+                  className="group w-full overflow-hidden border-0 sm:border border-slate-200 sm:rounded-lg rounded-none bg-white hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer border-b border-slate-100 flex flex-col"
                   onClick={() => setSelectedProfile(profile)}
                 >
                   <div className="relative">
@@ -1042,68 +1045,156 @@ export function MarketplaceSection({
                     </div>
                   </div>
 
-                  <div className="p-2.5">
-                    {(profile.tagline || profile.bio) && (
-                      <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
-                        {profile.tagline || profile.bio}
-                      </p>
-                    )}
-                    {!(profile.tagline || profile.bio) && (
-                      <p className="text-xs text-slate-400 min-h-[32px]">
-                        {t(`${translationPrefix}.states.noBio`, {
-                          defaultValue: "No bio available yet.",
-                        })}
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                      {(profile.skills || []).slice(0, 2).map((skill) => (
-                        <Badge
-                          key={skill}
-                          variant="secondary"
-                          className="text-[11px] bg-slate-100 text-slate-700 border-0"
-                        >
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <div
-                      className={`grid gap-1.5 mt-2 ${
-                        entityType === "agency" ? "grid-cols-2" : "grid-cols-1"
-                      }`}
+                  <div className="p-2.5 flex flex-col flex-1">
+                    {/* Mobile collapse toggle */}
+                    <button
+                      className="w-full flex items-center justify-between sm:hidden mb-2 py-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedCardIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(profile.id)) {
+                            next.delete(profile.id);
+                          } else {
+                            next.add(profile.id);
+                          }
+                          return next;
+                        });
+                      }}
                     >
-                      <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
-                        <p className="text-slate-500 text-[11px] font-medium">
-                          {entityType === "agency"
-                            ? t(`${translationPrefix}.card.agencyType`, {
-                                defaultValue: "Agency Type",
-                              })
-                            : t(`${translationPrefix}.card.followers`, {
-                                defaultValue: "Followers",
-                              })}
-                        </p>
-                        <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                          {entityType === "agency"
-                            ? profile.creator_type || "N/A"
-                            : followers > 0
-                              ? followers.toLocaleString()
-                              : "N/A"}
-                        </p>
-                      </div>
-                      {entityType === "agency" && (
-                        <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
-                          <p className="text-slate-500 text-[11px] font-medium">
-                            {t(`${translationPrefix}.card.services`, {
-                              defaultValue: "Services",
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        {expandedCardIds.has(profile.id)
+                          ? t(`${translationPrefix}.card.lessInfo`, {
+                              defaultValue: "Less info",
+                            })
+                          : t(`${translationPrefix}.card.moreInfo`, {
+                              defaultValue: "More info",
+                            })}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                          expandedCardIds.has(profile.id) ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {/* Body — always visible on sm+, collapsible on mobile */}
+                    <div
+                      className={`${expandedCardIds.has(profile.id) ? "block" : "hidden"} sm:flex flex-1 flex flex-col`}
+                    >
+                      <div className="flex-1">
+                        {(profile.tagline || profile.bio) && (
+                          <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
+                            {profile.tagline || profile.bio}
+                          </p>
+                        )}
+                        {!(profile.tagline || profile.bio) && (
+                          <p className="text-xs text-slate-400 min-h-[32px]">
+                            {t(`${translationPrefix}.states.noBio`, {
+                              defaultValue: "No bio available yet.",
                             })}
                           </p>
-                          <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                            {(profile.skills || []).length || "N/A"}
-                          </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                          {(profile.skills || []).slice(0, 2).map((skill) => (
+                            <Badge
+                              key={skill}
+                              variant="secondary"
+                              className="text-[11px] bg-slate-100 text-slate-700 border-0"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
                         </div>
-                      )}
-                    </div>
+
+                        <div
+                          className={`grid gap-1.5 mt-2 ${
+                            entityType === "agency"
+                              ? "grid-cols-2"
+                              : "grid-cols-1"
+                          }`}
+                        >
+                          <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
+                            <p className="text-slate-500 text-[11px] font-medium">
+                              {entityType === "agency"
+                                ? t(`${translationPrefix}.card.agencyType`, {
+                                    defaultValue: "Agency Type",
+                                  })
+                                : t(`${translationPrefix}.card.followers`, {
+                                    defaultValue: "Followers",
+                                  })}
+                            </p>
+                            <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
+                              {entityType === "agency"
+                                ? profile.creator_type || "N/A"
+                                : followers > 0
+                                  ? followers.toLocaleString()
+                                  : "N/A"}
+                            </p>
+                          </div>
+                          {entityType === "agency" && (
+                            <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
+                              <p className="text-slate-500 text-[11px] font-medium">
+                                {t(`${translationPrefix}.card.services`, {
+                                  defaultValue: "Services",
+                                })}
+                              </p>
+                              <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
+                                {(profile.skills || []).length || "N/A"}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Connect button — pushed to bottom */}
+                      {connectionStatus !== "connected" && (
+                        <div className="mt-2.5 flex items-center justify-end gap-2">
+                          <Button
+                            className={`h-6 px-2 text-xs rounded-md ${
+                              actionsLocked
+                                ? "bg-slate-900 hover:bg-slate-800 text-white"
+                                : connectionStatus === "waiting" ||
+                                    connectionStatus === "pending"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
+                                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                            }`}
+                            disabled={
+                              actionsLocked
+                                ? !onLockedAction ||
+                                  connectionStatus === "waiting" ||
+                                  connectionStatus === "pending"
+                                : disableConnectAction
+                            }
+                            onClick={async (e) => {
+                              // Prevent card click from opening details when pressing connect.
+                              e.stopPropagation();
+                              if (actionsLocked) {
+                                onLockedAction?.();
+                                return;
+                              }
+                              if (connectLocked) {
+                                onConnectLocked?.();
+                                return;
+                              }
+                              if (isRequestingConnect) return;
+                              setRequestingConnectKeys((prev) =>
+                                new Set(prev).add(profileKey),
+                              );
+                              try {
+                                if (
+                                  enableAgencyContractConnect &&
+                                  profile.profile_type === "creator"
+                                ) {
+                                  setRequestingConnectKeys((prev) => {
+                                    const next = new Set(prev);
+                                    next.delete(profileKey);
+                                    return next;
+                                  });
+                                  setContractConnectProfile(profile);
+                                  return;
+                                }
 
                     {connectionStatus !== "connected" && (
                       <div className="mt-2.5 flex items-center gap-2">
