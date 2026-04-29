@@ -17666,26 +17666,9 @@ export default function AgencyDashboard() {
       ? brandReqs.filter((r: any) => r?.status === "pending").length
       : 0;
 
-    const totalCount = regPending + brandPending;
-
-    // Check if user has seen this count on the licensing tab
-    const seenKey = `agency_licensing_seen_${user?.id}`;
-    const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
-
-    // If on licensing tab, mark current count as seen
-    if (activeTab === "licensing" && totalCount > 0) {
-      localStorage.setItem(seenKey, totalCount.toString());
-      return 0; // Hide badge when viewing the tab
-    }
-
-    // Show badge only if there are new items since last view
-    return totalCount > seenCount ? totalCount : 0;
-  }, [
-    licensingRequestsCountQuery.data,
-    brandLicenseRequestsQuery.data,
-    activeTab,
-    user?.id,
-  ]);
+    // Always show total count - notifications persist until requests are handled
+    return regPending + brandPending;
+  }, [licensingRequestsCountQuery.data, brandLicenseRequestsQuery.data]);
 
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -17782,44 +17765,17 @@ export default function AgencyDashboard() {
 
   const pendingBrandConnectionCount = useMemo(() => {
     const { numRequests, numOffers, numFeedback } = brandCounts;
-    const totalCount = numRequests + numOffers + numFeedback;
 
-    // Check if user has seen this count on the jobs tab
-    const seenKey = `agency_brand_connections_seen_${user?.id}`;
-    const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
-
-    // If on jobs tab, mark current count as seen
-    if (activeTab === "jobs" && totalCount > 0) {
-      localStorage.setItem(seenKey, totalCount.toString());
-      return 0; // Hide badge when viewing the tab
-    }
-
-    // Show badge only if there are new items since last view
-    return totalCount > seenCount ? totalCount : 0;
-  }, [brandCounts, activeTab, user?.id]);
+    // Always show total count - notifications persist until requests are handled
+    return numRequests + numOffers + numFeedback;
+  }, [brandCounts]);
 
   const pendingJobInvitesCount = useMemo(() => {
-    const totalCount = Array.isArray(brandConnectionJobInvitesQuery.data)
+    // Always show total count - notifications persist until invites are handled
+    return Array.isArray(brandConnectionJobInvitesQuery.data)
       ? brandConnectionJobInvitesQuery.data.length
       : 0;
-
-    // Check if user has seen this count on the jobs tab (Job Invites subtab)
-    const seenKey = `agency_job_invites_seen_${user?.id}`;
-    const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
-
-    // If on jobs tab with Job Invites subtab, mark current count as seen
-    if (
-      activeTab === "jobs" &&
-      activeSubTab === "Job Invites" &&
-      totalCount > 0
-    ) {
-      localStorage.setItem(seenKey, totalCount.toString());
-      return 0; // Hide badge when viewing the tab
-    }
-
-    // Show badge only if there are new items since last view
-    return totalCount > seenCount ? totalCount : 0;
-  }, [brandConnectionJobInvitesQuery.data, activeTab, activeSubTab, user?.id]);
+  }, [brandConnectionJobInvitesQuery.data]);
 
   const rosterTalents = useMemo(() => {
     const d: any = rosterQuery.data;
@@ -18995,8 +18951,17 @@ export default function AgencyDashboard() {
 
   // Handler for notification clicks with navigation
   const handleNotificationClick = (notif: any) => {
-    // Mark as read
-    markAsRead(notif.id);
+    // Only dismiss immediately for messages and system alerts
+    // Action-required notifications (brand connections, licensing, job invites)
+    // should only disappear when user accepts/declines the request
+    const shouldDismissImmediately =
+      notif.navigateTo === "messages" ||
+      notif.id === "welcome" ||
+      notif.id?.startsWith("system_");
+
+    if (shouldDismissImmediately) {
+      markAsRead(notif.id);
+    }
 
     // Navigate to the appropriate tab/page
     if (notif.navigateTo) {
@@ -19021,7 +18986,7 @@ export default function AgencyDashboard() {
         time: "Action required",
         color: "indigo",
         isSummary: true,
-        navigateTo: "brand_connections", // Add navigation target
+        navigateTo: "jobs", // Fixed: Navigate to jobs tab for brand connections
       });
     }
     if (pendingLicensingRequestsCount > 0) {
@@ -19046,21 +19011,28 @@ export default function AgencyDashboard() {
         navigateTo: "jobs", // Add navigation target
       });
     }
-    alerts.push({
-      id: "welcome",
-      title: "System Alert",
-      message:
-        "Your verification was successfully processed. Welcome to Likelee!",
-      time: "Just now",
-      color: "blue",
-      navigateTo: null, // No navigation for welcome message
-    });
+
+    // Only show welcome message if not dismissed
+    const welcomeDismissed = dismissedNotificationIds.includes("welcome");
+    if (!welcomeDismissed) {
+      alerts.push({
+        id: "welcome",
+        title: "System Alert",
+        message:
+          "Your verification was successfully processed. Welcome to Likelee!",
+        time: "Just now",
+        color: "blue",
+        navigateTo: null, // No navigation for welcome message
+      });
+    }
+
     return alerts;
   }, [
     pendingBrandConnectionCount,
     pendingLicensingRequestsCount,
     pendingJobInvitesCount,
     brandCounts,
+    dismissedNotificationIds,
   ]);
 
   const notifications = useMemo(() => {
@@ -19070,25 +19042,28 @@ export default function AgencyDashboard() {
     }));
   }, [systemNotifications, dismissedNotificationIds]);
 
+  // Clean up old dismissed notification IDs that are no longer relevant
+  useEffect(() => {
+    const currentNotificationIds = systemNotifications.map((n) => n.id);
+    const relevantDismissedIds = dismissedNotificationIds.filter(
+      (id) =>
+        // Keep welcome and system alerts dismissals
+        id === "welcome" ||
+        id.startsWith("system_") ||
+        // Keep if still in current notifications
+        currentNotificationIds.includes(id),
+    );
+
+    // Update if we removed any old IDs
+    if (relevantDismissedIds.length !== dismissedNotificationIds.length) {
+      setDismissedNotificationIds(relevantDismissedIds);
+    }
+  }, [systemNotifications, dismissedNotificationIds]);
+
   const chatUnreadCount = useUnreadMessages(profile?.id);
 
-  // Track and clear chat unread count when viewing messages tab
-  const displayChatUnreadCount = useMemo(() => {
-    const totalCount = chatUnreadCount || 0;
-
-    // Check if user has seen this count on the messages tab
-    const seenKey = `agency_messages_seen_${user?.id}`;
-    const seenCount = parseInt(localStorage.getItem(seenKey) || "0", 10);
-
-    // If on messages tab, mark current count as seen
-    if (activeTab === "messages" && totalCount > 0) {
-      localStorage.setItem(seenKey, totalCount.toString());
-      return 0; // Hide badge when viewing the tab
-    }
-
-    // Show badge only if there are new items since last view
-    return totalCount > seenCount ? totalCount : 0;
-  }, [chatUnreadCount, activeTab, user?.id]);
+  // Use chat unread count directly - will be dismissed when clicked
+  const displayChatUnreadCount = chatUnreadCount || 0;
 
   const allNotifications = useMemo(() => {
     const chatNotification =
