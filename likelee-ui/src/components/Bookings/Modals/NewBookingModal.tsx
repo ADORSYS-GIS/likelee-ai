@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 import {
   Building2,
   Calendar as CalendarIcon,
@@ -69,6 +70,7 @@ export const NewBookingModal = ({
   isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation("agency");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
 
