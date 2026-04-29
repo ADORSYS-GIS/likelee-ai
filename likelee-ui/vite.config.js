@@ -14,32 +14,32 @@ export default async ({ mode }) => {
         "[vite] skipping vite-plugin-pwa on Node < 20 to avoid build incompatibilities.",
       );
     } else {
-    const { VitePWA } = await import("vite-plugin-pwa");
-    pwaPlugin = VitePWA({
-      strategies: "injectManifest",
-      srcDir: "src",
-      filename: "sw.js",
-      injectManifest: {
-        minify: false,
-        maximumFileSizeToCacheInBytes: 15000000,
-      },
-      registerType: "autoUpdate",
-      injectRegister: "auto",
-      integration: {
-        configureCustomSWViteBuild: (inlineConfig) => {
-          inlineConfig.build = inlineConfig.build || {};
-          inlineConfig.build.minify = false;
+      const { VitePWA } = await import("vite-plugin-pwa");
+      pwaPlugin = VitePWA({
+        strategies: "injectManifest",
+        srcDir: "src",
+        filename: "sw.js",
+        injectManifest: {
+          minify: false,
+          maximumFileSizeToCacheInBytes: 15000000,
         },
-      },
-      manifest: {
-        name: "Likelee - Agency Dashboard",
-        short_name: "Likelee",
-        description: "Likelee Agency Operations Dashboard",
-        theme_color: "#ffffff",
-        background_color: "#ffffff",
-        display: "standalone",
-      },
-    });
+        registerType: "autoUpdate",
+        injectRegister: "auto",
+        integration: {
+          configureCustomSWViteBuild: (inlineConfig) => {
+            inlineConfig.build = inlineConfig.build || {};
+            inlineConfig.build.minify = false;
+          },
+        },
+        manifest: {
+          name: "Likelee - Agency Dashboard",
+          short_name: "Likelee",
+          description: "Likelee Agency Operations Dashboard",
+          theme_color: "#ffffff",
+          background_color: "#ffffff",
+          display: "standalone",
+        },
+      });
     }
   } catch {
     console.warn(
