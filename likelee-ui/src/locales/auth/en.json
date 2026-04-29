@@ -320,7 +320,7 @@
   },
   "unauthorized": {
     "title": "Access Denied",
-    "description": "Oops! You don't have the required permissions to view this page. This area is restricted to {role} only.",
+    "description": "Oops! You don't have the required permissions to view this page. This area is restricted to {{role}} only.",
     "roles": {
       "brandsAndAgencies": "Brands and Agencies",
       "authorizedUsers": "authorized users"

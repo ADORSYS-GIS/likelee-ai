@@ -274,7 +274,7 @@
   "faces.hero.signUpButton": "Regístrate",
   "unauthorized": {
     "title": "Acceso Denegado",
-    "description": "¡Ups! No tienes los permisos necesarios para ver esta página. Esta área está restringida solo para {role}.",
+    "description": "¡Ups! No tienes los permisos necesarios para ver esta página. Esta área está restringida solo para {{role}}.",
     "roles": {
       "brandsAndAgencies": "Marcas y Agencias",
       "authorizedUsers": "usuarios autorizados"
