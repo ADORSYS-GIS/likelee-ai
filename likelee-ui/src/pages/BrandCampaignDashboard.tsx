@@ -142,6 +142,15 @@ export default function BrandCampaignDashboard({
   const { user, supabase, profile } = useAuth();
 
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
+  const [step1FieldErrors, setStep1FieldErrors] = useState<
+    Record<string, string>
+  >({});
+  const [step2FieldErrors, setStep2FieldErrors] = useState<
+    Record<string, string>
+  >({});
+  const [wizardErrorBanner, setWizardErrorBanner] = useState<string | null>(
+    null,
+  );
   const [showInviteAgencyModal, setShowInviteAgencyModal] = useState(false);
   const [showInviteCreatorModal, setShowInviteCreatorModal] = useState(false);
   const [showInviteSeatModal, setShowInviteSeatModal] = useState(false);
@@ -161,6 +170,7 @@ export default function BrandCampaignDashboard({
   const [loadingSelectedCampaignDetails, setLoadingSelectedCampaignDetails] =
     useState(false);
   const [brandCampaignId, setBrandCampaignId] = useState<string>("");
+  const [isExistingCampaign, setIsExistingCampaign] = useState(false);
   const [campaignCards, setCampaignCards] = useState<any[]>([]);
   const [loadingCampaignCards, setLoadingCampaignCards] = useState(false);
   const [showEscrowReleaseModal, setShowEscrowReleaseModal] = useState(false);
@@ -300,6 +310,7 @@ export default function BrandCampaignDashboard({
       const brandCampaignId = String(context?.brandCampaignId || "").trim();
 
       setBrandCampaignId(brandCampaignId);
+      setIsExistingCampaign(true);
       setCampaignForm((prev) => ({
         ...prev,
         name: String(context?.name || prev.name || "").trim(),
@@ -342,7 +353,79 @@ export default function BrandCampaignDashboard({
 
       setNewCampaignStep(safeStep);
     } else {
+      // Full reset — reuse resetCampaignBuilder logic to clear all wizard state
+      // (form, brief, collaborator selections, contract draft, validation errors, etc.)
+      // then re-open the modal for a fresh new campaign.
+      setShowCampaignDocuSealBuilder(false);
+      setBrandSignOpen(false);
+      setBrandSignUrl("");
+      setAwaitingBrandSignature(false);
       setNewCampaignStep(1);
+      setBrandCampaignId("");
+      setIsExistingCampaign(false);
+      setStep1FieldErrors({});
+      setStep2FieldErrors({});
+      setWizardErrorBanner(null);
+      setExistingCampaignAgencyIds(new Set());
+      setExistingCampaignCreatorIds(new Set());
+      setLoadingExistingCollaborators(false);
+      setCampaignForm({
+        name: "",
+        objective: "",
+        brief_file: null,
+        category: "",
+        description: "",
+        usage_scope: "",
+        duration_days: "30",
+        territory: "Global",
+        exclusivity: "Non-exclusive",
+        budget_range: "",
+        start_date: "",
+        custom_terms: "",
+        collaborator_type: "",
+        collaborators: [],
+      });
+      setCampaignBrief({
+        voice: "",
+        tone: "",
+        personality: "",
+        key_messages: "",
+        script_opening: "",
+        script_middle: "",
+        script_closing: "",
+        dos: "",
+        donts: "",
+        required_deliverables: "",
+        total_expected_deliverables: "",
+        deliverables_reels: "",
+        deliverables_hero_image: "",
+        visual_color_palette: "",
+        visual_setting: "",
+        visual_framing: "",
+        visual_editing: "",
+        reference_images: [],
+        brand_assets: [],
+        overview_objective: "",
+        overview_target_audience: "",
+        overview_campaign_duration: "",
+        overview_launch_date: "",
+        budget_total: "",
+        budget_creator_payment: "",
+        budget_submission_deadline: "",
+        budget_renewal_terms: "",
+        revision_included: "",
+        revision_major_changes: "",
+        revision_turnaround: "",
+        approval_process: "",
+        watermark_protection: "",
+        legal_terms: "",
+      });
+      setOfferByCreatorId({});
+      setContractDraft({ title: "", file_url: "", docuseal_template_id: "" });
+      setSelectedCreatorsById({});
+      setSelectedTalentCreatorIds(new Set());
+      setMarketplaceCreators([]);
+      setCreatorSearch("");
     }
 
     setShowNewCampaignModal(true);
@@ -781,6 +864,16 @@ export default function BrandCampaignDashboard({
       deliverables: totalDeliverables,
       approved: Number(deliverableStats?.approved || 0),
       start_date: String(campaign?.start_date || "N/A"),
+      duration_days: Number(campaign?.duration_days || 0),
+      due_date: (() => {
+        const start = String(campaign?.start_date || "").trim();
+        const days = Number(campaign?.duration_days || 0);
+        if (!start || !days || !/^\d{4}-\d{2}-\d{2}$/.test(start)) return null;
+        const d = new Date(`${start}T00:00:00`);
+        d.setDate(d.getDate() + days - 1);
+        return d.toISOString().slice(0, 10);
+      })(),
+      budget_range: String(campaign?.budget_range || ""),
       has_signed_offer: hasSignedOffer,
       start_reached: isStartDateReached(campaign?.start_date),
       brief_snapshot:
@@ -1435,6 +1528,10 @@ export default function BrandCampaignDashboard({
     setAwaitingBrandSignature(false);
     setNewCampaignStep(1);
     setBrandCampaignId("");
+    setIsExistingCampaign(false);
+    setStep1FieldErrors({});
+    setStep2FieldErrors({});
+    setWizardErrorBanner(null);
     setExistingCampaignAgencyIds(new Set());
     setExistingCampaignCreatorIds(new Set());
     setLoadingExistingCollaborators(false);
@@ -1561,30 +1658,99 @@ export default function BrandCampaignDashboard({
   };
 
   const handleStep1Next = async () => {
-    const validation = validateStep1Form();
-    if (!validation.ok) {
-      toast({
-        title: "Please correct the form",
-        description: validation.message || "Some fields are invalid.",
-        variant: "destructive" as any,
-      });
+    const errors: Record<string, string> = {};
+    if (!campaignForm.name.trim()) errors.name = "Campaign name is required.";
+    if (!campaignForm.objective.trim())
+      errors.objective = "Please select a campaign objective.";
+    if (!campaignForm.category.trim())
+      errors.category = "Please select a category.";
+    if (!campaignForm.description.trim())
+      errors.description = "Description is required.";
+    if (!campaignForm.start_date.trim())
+      errors.start_date = "Start date is required.";
+    else if (!/^\d{4}-\d{2}-\d{2}$/.test(campaignForm.start_date.trim()))
+      errors.start_date = "Please enter a valid date.";
+    const min = Number.parseInt(budgetParts.min, 10);
+    const max = Number.parseInt(budgetParts.max, 10);
+    if (!Number.isFinite(min) || min <= 0)
+      errors.budget_min = "Budget min must be greater than zero.";
+    if (!Number.isFinite(max) || max <= 0)
+      errors.budget_max = "Budget max must be greater than zero.";
+    else if (Number.isFinite(min) && min > 0 && max < min)
+      errors.budget_max = "Budget max must be ≥ budget min.";
+    const duration = Number.parseInt(
+      String(campaignForm.duration_days || "").trim(),
+      10,
+    );
+    if (!Number.isFinite(duration) || duration <= 0)
+      errors.duration_days = "Duration must be at least 1 day.";
+
+    setStep1FieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      const firstKey = Object.keys(errors)[0];
+      setWizardErrorBanner(errors[firstKey]);
+      // Auto-focus first invalid field
+      setTimeout(() => {
+        const el = document.getElementById(`step1-${firstKey}`);
+        if (el) {
+          el.focus();
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
       return;
     }
+
+    setWizardErrorBanner(null);
     const id = await ensureCampaignDraft();
     if (!id) return;
     setNewCampaignStep(2);
   };
 
   const handleStep2Next = async () => {
-    const validation = validateStep2Brief();
-    if (!validation.ok) {
-      toast({
-        title: "Please correct the campaign brief",
-        description: validation.message || "Some brief fields are invalid.",
-        variant: "destructive" as any,
-      });
+    const errors: Record<string, string> = {};
+    const expectedTotal = Number.parseInt(
+      String(campaignBrief.total_expected_deliverables || "").trim(),
+      10,
+    );
+    if (!Number.isFinite(expectedTotal) || expectedTotal <= 0)
+      errors.total_expected_deliverables =
+        "Total expected deliverables must be greater than 0.";
+    const duration = Number.parseInt(
+      String(campaignBrief.overview_campaign_duration || "").trim(),
+      10,
+    );
+    if (!Number.isFinite(duration) || duration <= 0)
+      errors.overview_campaign_duration =
+        "Campaign duration must be a valid number of days.";
+    if (!isValidDateString(String(campaignBrief.overview_launch_date || "")))
+      errors.overview_launch_date = "Please enter a valid launch date.";
+    if (
+      !isValidDateString(String(campaignBrief.budget_submission_deadline || ""))
+    )
+      errors.budget_submission_deadline =
+        "Please enter a valid submission deadline.";
+    if (!parsePositiveNumber(campaignBrief.budget_total))
+      errors.budget_total = "Total budget must be a valid amount.";
+    if (!parsePositiveNumber(campaignBrief.budget_creator_payment))
+      errors.budget_creator_payment = "Creator payment must be a valid amount.";
+
+    setStep2FieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      const firstKey = Object.keys(errors)[0];
+      setWizardErrorBanner(errors[firstKey]);
+      setTimeout(() => {
+        const el = document.getElementById(`step2-${firstKey}`);
+        if (el) {
+          el.focus();
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
       return;
     }
+
+    setWizardErrorBanner(null);
     const id = await ensureCampaignDraft();
     if (!id) return;
     try {
@@ -2411,11 +2577,44 @@ export default function BrandCampaignDashboard({
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-600">
-                      <span>Budget: ${campaign.budget.toLocaleString()}</span>
-                      <span>
-                        {t("campaignsDashboard.overview.start")}:{" "}
-                        {campaign.start_date}
-                      </span>
+                      {(() => {
+                        const parts = String(campaign.budget_range || "").match(
+                          /(\d[\d,]*)\s*-\s*(\d[\d,]*)/,
+                        );
+                        if (parts) {
+                          const min = Number(
+                            parts[1].replace(/[^\d]/g, ""),
+                          ).toLocaleString();
+                          const max = Number(
+                            parts[2].replace(/[^\d]/g, ""),
+                          ).toLocaleString();
+                          return (
+                            <span>
+                              {t("campaigns.myOffers.budget")}: ${min} – ${max}
+                            </span>
+                          );
+                        }
+                        if (campaign.budget > 0)
+                          return (
+                            <span>
+                              {t("campaigns.myOffers.budget")}: $
+                              {campaign.budget.toLocaleString()}
+                            </span>
+                          );
+                        return null;
+                      })()}
+                      {campaign.start_date && campaign.start_date !== "N/A" && (
+                        <span>
+                          {t("campaignsDashboard.overview.start")}:{" "}
+                          {campaign.start_date}
+                        </span>
+                      )}
+                      {campaign.due_date && (
+                        <span>
+                          {t("campaignsDashboard.campaignDetails.due")}:{" "}
+                          {campaign.due_date}
+                        </span>
+                      )}
                       <span>
                         {t("campaignsDashboard.overview.collaboratorsCount", {
                           count: campaign.collaborators.length,
@@ -2594,37 +2793,76 @@ export default function BrandCampaignDashboard({
               )}
 
               {newCampaignStep === 1 && (
-                <div className="space-y-4 sm:space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] sm:max-h-none pr-1">
+                <div className="space-y-4 sm:space-y-5 overflow-y-auto max-h-[calc(100vh-200px)] sm:max-h-none pr-1">
+                  {/* Error banner */}
+                  {wizardErrorBanner && (
+                    <div className="animate-shake flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3">
+                      <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-900">
+                          Almost there — just a few fields need attention
+                        </p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          {wizardErrorBanner}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setWizardErrorBanner(null)}
+                        className="ml-auto text-amber-500 hover:text-amber-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Campaign Name */}
                   <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">
-                      {t("campaignsDashboard.builder.fields.campaignName")}
+                    <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                      {t("campaignsDashboard.builder.fields.campaignName")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Input
+                      id="step1-name"
                       value={campaignForm.name}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setCampaignForm({
                           ...campaignForm,
                           name: e.target.value,
-                        })
-                      }
+                        });
+                        if (step1FieldErrors.name)
+                          setStep1FieldErrors((p) => ({ ...p, name: "" }));
+                      }}
                       placeholder={t(
                         "campaignsDashboard.builder.placeholders.campaignName",
                       )}
-                      className="border-2 border-gray-300 rounded-none"
+                      className={`rounded-none transition-colors ${step1FieldErrors.name ? "border-2 border-amber-400 bg-amber-50 focus:border-amber-500" : "border-2 border-gray-200 focus:border-black"}`}
                     />
+                    {step1FieldErrors.name && (
+                      <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {step1FieldErrors.name}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Objective */}
                   <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">
-                      {t("campaignsDashboard.builder.fields.campaignObjective")}
+                    <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                      {t("campaignsDashboard.builder.fields.campaignObjective")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Select
                       value={campaignForm.objective}
-                      onValueChange={(v) =>
-                        setCampaignForm({ ...campaignForm, objective: v })
-                      }
+                      onValueChange={(v) => {
+                        setCampaignForm({ ...campaignForm, objective: v });
+                        if (step1FieldErrors.objective)
+                          setStep1FieldErrors((p) => ({ ...p, objective: "" }));
+                      }}
                     >
-                      <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                      <SelectTrigger
+                        id="step1-objective"
+                        className={`rounded-none transition-colors ${step1FieldErrors.objective ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
+                      >
                         <SelectValue
                           placeholder={t(
                             "campaignsDashboard.builder.placeholders.selectObjective",
@@ -2653,19 +2891,32 @@ export default function BrandCampaignDashboard({
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                    {step1FieldErrors.objective && (
+                      <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {step1FieldErrors.objective}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Category */}
                   <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">
-                      {t("campaignsDashboard.builder.fields.category")}
+                    <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                      {t("campaignsDashboard.builder.fields.category")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Select
                       value={campaignForm.category}
-                      onValueChange={(v) =>
-                        setCampaignForm({ ...campaignForm, category: v })
-                      }
+                      onValueChange={(v) => {
+                        setCampaignForm({ ...campaignForm, category: v });
+                        if (step1FieldErrors.category)
+                          setStep1FieldErrors((p) => ({ ...p, category: "" }));
+                      }}
                     >
-                      <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                      <SelectTrigger
+                        id="step1-category"
+                        className={`rounded-none transition-colors ${step1FieldErrors.category ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
+                      >
                         <SelectValue
                           placeholder={t(
                             "campaignsDashboard.builder.placeholders.selectCategory",
@@ -2683,79 +2934,175 @@ export default function BrandCampaignDashboard({
                         <SelectItem value="Custom">Custom</SelectItem>
                       </SelectContent>
                     </Select>
+                    {step1FieldErrors.category && (
+                      <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {step1FieldErrors.category}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Description */}
                   <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">
-                      {t("campaignsDashboard.builder.fields.description")}
+                    <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                      {t("campaignsDashboard.builder.fields.description")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Textarea
+                      id="step1-description"
                       value={campaignForm.description}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setCampaignForm({
                           ...campaignForm,
                           description: e.target.value,
-                        })
-                      }
+                        });
+                        if (step1FieldErrors.description)
+                          setStep1FieldErrors((p) => ({
+                            ...p,
+                            description: "",
+                          }));
+                      }}
                       placeholder={t(
                         "campaignsDashboard.builder.placeholders.description",
                       )}
-                      className="border-2 border-gray-300 rounded-none min-h-[90px]"
+                      className={`rounded-none min-h-[90px] transition-colors ${step1FieldErrors.description ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
                     />
+                    {step1FieldErrors.description && (
+                      <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {step1FieldErrors.description}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Budget + Start Date */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        {t("campaignsDashboard.builder.fields.budgetMin")}
+                      <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                        {t("campaignsDashboard.builder.fields.budgetMin")}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <Input
+                        id="step1-budget_min"
                         type="number"
                         min={1}
                         step={1}
                         inputMode="numeric"
                         value={budgetParts.min}
-                        onChange={(e) => setBudgetPart("min", e.target.value)}
+                        onChange={(e) => {
+                          setBudgetPart("min", e.target.value);
+                          if (step1FieldErrors.budget_min)
+                            setStep1FieldErrors((p) => ({
+                              ...p,
+                              budget_min: "",
+                            }));
+                        }}
                         placeholder="5000"
-                        className="border-2 border-gray-300 rounded-none"
+                        className={`rounded-none transition-colors ${step1FieldErrors.budget_min ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
                       />
+                      {step1FieldErrors.budget_min && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {step1FieldErrors.budget_min}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        {t("campaignsDashboard.builder.fields.budgetMax")}
+                      <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                        {t("campaignsDashboard.builder.fields.budgetMax")}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <Input
+                        id="step1-budget_max"
                         type="number"
                         min={1}
                         step={1}
                         inputMode="numeric"
                         value={budgetParts.max}
-                        onChange={(e) => setBudgetPart("max", e.target.value)}
+                        onChange={(e) => {
+                          setBudgetPart("max", e.target.value);
+                          if (step1FieldErrors.budget_max)
+                            setStep1FieldErrors((p) => ({
+                              ...p,
+                              budget_max: "",
+                            }));
+                        }}
                         placeholder="10000"
-                        className="border-2 border-gray-300 rounded-none"
+                        className={`rounded-none transition-colors ${step1FieldErrors.budget_max ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
                       />
+                      {step1FieldErrors.budget_max && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {step1FieldErrors.budget_max}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        {t("campaignsDashboard.builder.fields.startDate")}
+                      <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                        {t("campaignsDashboard.builder.fields.startDate")}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <Input
+                        id="step1-start_date"
                         type="date"
                         value={campaignForm.start_date}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setCampaignForm({
                             ...campaignForm,
                             start_date: e.target.value,
-                          })
-                        }
-                        className="border-2 border-gray-300 rounded-none"
+                          });
+                          if (step1FieldErrors.start_date)
+                            setStep1FieldErrors((p) => ({
+                              ...p,
+                              start_date: "",
+                            }));
+                        }}
+                        className={`rounded-none transition-colors ${step1FieldErrors.start_date ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
                       />
+                      {step1FieldErrors.start_date && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {step1FieldErrors.start_date}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-gray-700 block mb-1.5">
+                        {t("campaignsDashboard.builder.fields.durationDays")}{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        id="step1-duration_days"
+                        type="number"
+                        min={1}
+                        value={campaignForm.duration_days}
+                        onChange={(e) => {
+                          setCampaignForm({
+                            ...campaignForm,
+                            duration_days: e.target.value,
+                          });
+                          if (step1FieldErrors.duration_days)
+                            setStep1FieldErrors((p) => ({
+                              ...p,
+                              duration_days: "",
+                            }));
+                        }}
+                        placeholder="30"
+                        className={`rounded-none transition-colors ${step1FieldErrors.duration_days ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
+                      />
+                      {step1FieldErrors.duration_days && (
+                        <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {step1FieldErrors.duration_days}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Optional fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                      <label className="text-sm font-medium text-gray-600 block mb-1.5">
                         {t("campaignsDashboard.builder.fields.usageScope")}
                       </label>
                       <Input
@@ -2769,29 +3116,11 @@ export default function BrandCampaignDashboard({
                         placeholder={t(
                           "campaignsDashboard.builder.placeholders.usageScope",
                         )}
-                        className="border-2 border-gray-300 rounded-none"
+                        className="border-2 border-gray-200 rounded-none"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        {t("campaignsDashboard.builder.fields.durationDays")}
-                      </label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={campaignForm.duration_days}
-                        onChange={(e) =>
-                          setCampaignForm({
-                            ...campaignForm,
-                            duration_days: e.target.value,
-                          })
-                        }
-                        placeholder="30"
-                        className="border-2 border-gray-300 rounded-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                      <label className="text-sm font-medium text-gray-600 block mb-1.5">
                         {t("campaignsDashboard.builder.fields.territory")}
                       </label>
                       <Input
@@ -2805,23 +3134,20 @@ export default function BrandCampaignDashboard({
                         placeholder={t(
                           "campaignsDashboard.builder.placeholders.territory",
                         )}
-                        className="border-2 border-gray-300 rounded-none"
+                        className="border-2 border-gray-200 rounded-none"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                      <label className="text-sm font-medium text-gray-600 block mb-1.5">
                         {t("campaignsDashboard.builder.fields.exclusivity")}
                       </label>
                       <Select
                         value={campaignForm.exclusivity}
                         onValueChange={(v) =>
-                          setCampaignForm({
-                            ...campaignForm,
-                            exclusivity: v,
-                          })
+                          setCampaignForm({ ...campaignForm, exclusivity: v })
                         }
                       >
-                        <SelectTrigger className="border-2 border-gray-300 rounded-none">
+                        <SelectTrigger className="border-2 border-gray-200 rounded-none">
                           <SelectValue
                             placeholder={t(
                               "campaignsDashboard.builder.placeholders.selectExclusivity",
@@ -2850,7 +3176,7 @@ export default function BrandCampaignDashboard({
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                    <label className="text-sm font-medium text-gray-600 block mb-1.5">
                       {t("campaignsDashboard.builder.fields.customTerms")}
                     </label>
                     <Textarea
@@ -2864,11 +3190,11 @@ export default function BrandCampaignDashboard({
                       placeholder={t(
                         "campaignsDashboard.builder.placeholders.customTerms",
                       )}
-                      className="border-2 border-gray-300 rounded-none min-h-[90px]"
+                      className="border-2 border-gray-200 rounded-none min-h-[80px]"
                     />
                   </div>
 
-                  <div className="flex justify-end gap-3">
+                  <div className="flex justify-end gap-3 pt-2">
                     <Button
                       variant="outline"
                       onClick={resetCampaignBuilder}
@@ -2878,16 +3204,7 @@ export default function BrandCampaignDashboard({
                     </Button>
                     <Button
                       onClick={handleStep1Next}
-                      disabled={
-                        savingCampaign ||
-                        !campaignForm.name ||
-                        !campaignForm.objective ||
-                        !campaignForm.category ||
-                        !campaignForm.description.trim() ||
-                        !campaignForm.start_date ||
-                        !budgetParts.min ||
-                        !budgetParts.max
-                      }
+                      disabled={savingCampaign}
                       className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                     >
                       {savingCampaign
@@ -2899,22 +3216,45 @@ export default function BrandCampaignDashboard({
               )}
 
               {newCampaignStep === 2 && (
-                <CampaignBriefStep
-                  campaignBrief={campaignBrief}
-                  setCampaignBrief={setCampaignBrief}
-                  onReferenceImagesUpload={handleReferenceImageUpload}
-                  onBrandAssetsUpload={handleBrandAssetsUpload}
-                  onBack={() => {
-                    if (brandCampaignId) {
-                      // Do nothing or optionally show a toast.
-                      // Since the user says step 1 shouldn't change, we stay at step 2.
-                      return;
-                    }
-                    setNewCampaignStep(1);
-                  }}
-                  onNext={handleStep2Next}
-                  uploading={uploadingImages}
-                />
+                <>
+                  {wizardErrorBanner && (
+                    <div className="animate-shake flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-4">
+                      <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-900">
+                          Please review the campaign brief
+                        </p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          {wizardErrorBanner}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setWizardErrorBanner(null)}
+                        className="ml-auto text-amber-500 hover:text-amber-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  <CampaignBriefStep
+                    campaignBrief={campaignBrief}
+                    setCampaignBrief={setCampaignBrief}
+                    onReferenceImagesUpload={handleReferenceImageUpload}
+                    onBrandAssetsUpload={handleBrandAssetsUpload}
+                    fieldErrors={step2FieldErrors}
+                    onFieldChange={(field: string) => {
+                      if (step2FieldErrors[field])
+                        setStep2FieldErrors((p) => ({ ...p, [field]: "" }));
+                    }}
+                    onBack={() => {
+                      if (isExistingCampaign) return;
+                      setNewCampaignStep(1);
+                    }}
+                    hideBack={isExistingCampaign}
+                    onNext={handleStep2Next}
+                    uploading={uploadingImages}
+                  />
+                </>
               )}
 
               {newCampaignStep === 3 && (

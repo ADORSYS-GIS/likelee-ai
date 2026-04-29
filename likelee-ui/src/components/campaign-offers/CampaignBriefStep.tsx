@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 type CampaignBrief = {
@@ -19,6 +19,9 @@ type Props = {
   onReferenceImagesUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBrandAssetsUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   uploading?: boolean;
+  fieldErrors?: Record<string, string>;
+  onFieldChange?: (field: string) => void;
+  hideBack?: boolean;
 };
 
 export default function CampaignBriefStep({
@@ -29,10 +32,26 @@ export default function CampaignBriefStep({
   onReferenceImagesUpload,
   onBrandAssetsUpload,
   uploading = false,
+  fieldErrors = {},
+  onFieldChange,
+  hideBack = false,
 }: Props) {
   const { t } = useTranslation();
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const assetInputRef = useRef<HTMLInputElement | null>(null);
+
+  const fieldClass = (field: string) =>
+    fieldErrors[field]
+      ? "border-2 border-amber-400 bg-amber-50 rounded-none"
+      : "border-2 border-gray-300 rounded-none";
+
+  const FieldError = ({ field }: { field: string }) =>
+    fieldErrors[field] ? (
+      <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3 shrink-0" />
+        {fieldErrors[field]}
+      </p>
+    ) : null;
 
   return (
     <div className="space-y-6">
@@ -243,21 +262,24 @@ export default function CampaignBriefStep({
             <span className="text-red-600">*</span>
           </p>
           <Input
+            id="step2-total_expected_deliverables"
             type="number"
             min={1}
             step={1}
             value={campaignBrief.total_expected_deliverables || ""}
-            onChange={(e) =>
+            onChange={(e) => {
               setCampaignBrief((prev) => ({
                 ...prev,
                 total_expected_deliverables: e.target.value,
-              }))
-            }
+              }));
+              onFieldChange?.("total_expected_deliverables");
+            }}
             placeholder={t(
               "campaignsDashboard.builder.brief.placeholders.totalExpectedDeliverables",
             )}
-            className="border-2 border-gray-300 rounded-none"
+            className={fieldClass("total_expected_deliverables")}
           />
+          <FieldError field="total_expected_deliverables" />
           <p className="text-xs text-gray-500">
             {t(
               "campaignsDashboard.builder.brief.totalExpectedDeliverablesHelp",
@@ -522,42 +544,50 @@ export default function CampaignBriefStep({
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              {t("campaignsDashboard.builder.brief.campaignDuration")}
+              {t("campaignsDashboard.builder.brief.campaignDuration")}{" "}
+              <span className="text-red-600">*</span>
             </p>
             <Input
+              id="step2-overview_campaign_duration"
               type="number"
               min={1}
               step={1}
               inputMode="numeric"
               value={campaignBrief.overview_campaign_duration}
-              onChange={(e) =>
+              onChange={(e) => {
                 setCampaignBrief((prev) => ({
                   ...prev,
                   overview_campaign_duration: e.target.value,
-                }))
-              }
+                }));
+                onFieldChange?.("overview_campaign_duration");
+              }}
               placeholder={t(
                 "campaignsDashboard.builder.brief.placeholders.campaignDuration",
               )}
-              className="border-2 border-gray-300 rounded-none"
+              className={fieldClass("overview_campaign_duration")}
             />
+            <FieldError field="overview_campaign_duration" />
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              {t("campaignsDashboard.builder.brief.launchDate")}
+              {t("campaignsDashboard.builder.brief.launchDate")}{" "}
+              <span className="text-red-600">*</span>
             </p>
             <Input
+              id="step2-overview_launch_date"
               type="date"
               value={campaignBrief.overview_launch_date}
-              onChange={(e) =>
+              onChange={(e) => {
                 setCampaignBrief((prev) => ({
                   ...prev,
                   overview_launch_date: e.target.value,
-                }))
-              }
+                }));
+                onFieldChange?.("overview_launch_date");
+              }}
               placeholder="2025-02-15"
-              className="border-2 border-gray-300 rounded-none"
+              className={fieldClass("overview_launch_date")}
             />
+            <FieldError field="overview_launch_date" />
           </div>
         </div>
 
@@ -567,9 +597,11 @@ export default function CampaignBriefStep({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              {t("campaignsDashboard.builder.brief.collaboratorPayout")}
+              {t("campaignsDashboard.builder.brief.collaboratorPayout")}{" "}
+              <span className="text-red-600">*</span>
             </p>
             <Input
+              id="step2-budget_creator_payment"
               type="number"
               min={1}
               step={1}
@@ -583,26 +615,31 @@ export default function CampaignBriefStep({
                   budget_creator_payment: e.target.value,
                   budget_total: total,
                 }));
+                onFieldChange?.("budget_creator_payment");
               }}
               placeholder={t(
                 "campaignsDashboard.builder.brief.placeholders.collaboratorPayout",
               )}
-              className="border-2 border-gray-300 rounded-none"
+              className={fieldClass("budget_creator_payment")}
             />
+            <FieldError field="budget_creator_payment" />
             <p className="text-[10px] text-gray-500">
               {t("campaignsDashboard.builder.brief.collaboratorPayoutHelp")}
             </p>
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              {t("campaignsDashboard.builder.brief.offerAmount")}
+              {t("campaignsDashboard.builder.brief.offerAmount")}{" "}
+              <span className="text-red-600">*</span>
             </p>
             <Input
+              id="step2-budget_total"
               type="number"
               readOnly
               value={campaignBrief.budget_total}
-              className="border-2 border-gray-300 rounded-none bg-gray-50 font-bold"
+              className={`${fieldClass("budget_total")} bg-gray-50 font-bold`}
             />
+            <FieldError field="budget_total" />
             <p className="text-[10px] text-blue-600 font-medium">
               {t("campaignsDashboard.builder.brief.platformFeePrefix")} ($
               {(
@@ -614,20 +651,24 @@ export default function CampaignBriefStep({
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              {t("campaignsDashboard.builder.brief.submissionDeadline")}
+              {t("campaignsDashboard.builder.brief.submissionDeadline")}{" "}
+              <span className="text-red-600">*</span>
             </p>
             <Input
+              id="step2-budget_submission_deadline"
               type="date"
               value={campaignBrief.budget_submission_deadline}
-              onChange={(e) =>
+              onChange={(e) => {
                 setCampaignBrief((prev) => ({
                   ...prev,
                   budget_submission_deadline: e.target.value,
-                }))
-              }
+                }));
+                onFieldChange?.("budget_submission_deadline");
+              }}
               placeholder="12/20/2025"
-              className="border-2 border-gray-300 rounded-none"
+              className={fieldClass("budget_submission_deadline")}
             />
+            <FieldError field="budget_submission_deadline" />
           </div>
         </div>
         <div className="space-y-2">
@@ -758,14 +799,18 @@ export default function CampaignBriefStep({
       </div>
 
       <div className="flex justify-between gap-3">
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          {t("campaignsDashboard.builder.actions.back")}
-        </Button>
+        {!hideBack ? (
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t("campaignsDashboard.builder.actions.back")}
+          </Button>
+        ) : (
+          <div />
+        )}
         <Button
           onClick={onNext}
           disabled={uploading}
