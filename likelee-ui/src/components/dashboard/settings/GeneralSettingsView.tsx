@@ -561,15 +561,38 @@ const ActivityLogModal = ({
         };
       case "team_invite_declined":
         return {
-          label: "Invitation declined",
-          details: `${log.target_email || "A member"} declined the invitation`,
+          label: t(
+            "agencyDashboard.settings.team.activity.invitationDeclined",
+            {
+              defaultValue: "Invitation declined",
+            },
+          ),
+          details: t(
+            "agencyDashboard.settings.team.activity.invitationDeclinedDetails",
+            {
+              defaultValue: "{{member}} declined the invitation",
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+            },
+          ),
           icon: XCircle,
           color: "text-red-600 bg-red-50",
         };
       case "member_removed":
         return {
-          label: "Member removed",
-          details: `${log.target_email || "A member"} was removed from the team`,
+          label: t("agencyDashboard.settings.team.activity.memberRemoved", {
+            defaultValue: "Member removed",
+          }),
+          details: t(
+            "agencyDashboard.settings.team.activity.memberRemovedDetails",
+            {
+              defaultValue: "{{member}} was removed from the team",
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+            },
+          ),
           icon: User,
           color: "text-red-600 bg-red-50",
         };
@@ -588,16 +611,22 @@ const ActivityLogModal = ({
       <DialogContent className="max-w-lg rounded-2xl max-h-[80vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Team Activity Log
+            {t("agencyDashboard.settings.team.activity.logTitle", {
+              defaultValue: "Team Activity Log",
+            })}
           </DialogTitle>
           <DialogDescription className="text-sm text-gray-500 font-medium">
-            Recent invite, role, and membership events
+            {t("agencyDashboard.settings.team.activity.logDescription", {
+              defaultValue: "Recent invite, role, and membership events",
+            })}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
           {logs.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
-              No team activity recorded yet.
+              {t("agencyDashboard.settings.team.activity.empty", {
+                defaultValue: "No team activity recorded yet.",
+              })}
             </div>
           ) : (
             logs.map((log) => {
@@ -634,7 +663,7 @@ const ActivityLogModal = ({
             onClick={() => onOpenChange(false)}
             className="w-full font-bold rounded-xl h-11"
           >
-            Close
+            {t("common.close", { defaultValue: "Close" })}
           </Button>
         </DialogFooter>
       </DialogContent>
