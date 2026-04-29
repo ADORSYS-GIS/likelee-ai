@@ -60,6 +60,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { DocusealForm } from "@docuseal/react";
+import { MandatoryHint } from "@/components/ui/field-hint";
 
 interface SubmissionWizardProps {
   isOpen: boolean;
@@ -364,7 +365,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         toast({
           title: "Missing Information",
           description: "Please fill in all required fields marked with *",
-          variant: "destructive",
+          variant: "warning",
         });
         return;
       }
@@ -569,15 +570,15 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
       <DialogContent
-        className={`max-w-5xl h-[92vh] p-0 border-none bg-slate-50 rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-all duration-300 ${step === 3 ? "translate-y-full opacity-0 pointer-events-none" : ""}`}
+        className={`max-w-6xl w-[98vw] sm:w-[95vw] h-[95vh] sm:h-[92vh] p-0 border-none bg-slate-50 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-all duration-300 ${step === 3 ? "translate-y-full opacity-0 pointer-events-none" : ""}`}
       >
         <DialogDescription className="sr-only">
           Fill in deal details, select talent, and finalize the contract.
         </DialogDescription>
         <div className="flex flex-col h-full overflow-hidden">
           {/* Wizard Header / Progress */}
-          <div className="bg-white p-8 border-b border-slate-100 rounded-t-3xl shrink-0">
-            <div className="flex items-center justify-between gap-8 mb-8">
+          <div className="bg-white p-4 sm:p-8 border-b border-slate-100 rounded-t-3xl shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-8 mb-6 sm:mb-8">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <div className="bg-indigo-50 p-1.5 rounded-lg">
@@ -587,7 +588,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     Step {step} of 3
                   </span>
                 </div>
-                <DialogTitle className="text-2xl font-bold text-slate-900">
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900">
                   {step === 1 ? "Deal Specifics" : "Content Review"}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium">
@@ -596,11 +597,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     : "Review and personalize the contract content"}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <Button
                   variant="ghost"
                   onClick={onClose}
-                  className="rounded-xl font-bold text-slate-500 px-6 h-10"
+                  className="rounded-xl font-bold text-slate-500 px-4 sm:px-6 h-9 sm:h-10 text-sm"
                 >
                   Cancel
                 </Button>
@@ -608,23 +609,20 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   <Button
                     variant="outline"
                     onClick={() => setStep(step - 1)}
-                    className="rounded-xl font-bold border-slate-200 h-10"
+                    className="rounded-xl font-bold border-slate-200 h-9 sm:h-10 text-sm px-3 sm:px-4"
                   >
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                    <ArrowLeft className="w-4 h-4 sm:mr-2" />{" "}
+                    <span className="hidden sm:inline">Back</span>
                   </Button>
                 )}
                 <Button
                   onClick={handleNext}
                   disabled={isSyncing}
-                  className="bg-indigo-500 hover:bg-indigo-500 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm"
                 >
-                  {isSyncing
-                    ? "Preparing..."
-                    : step === 3
-                      ? "Finalize"
-                      : "Next Step"}
+                  {isSyncing ? "..." : step === 3 ? "Finalize" : "Next"}
                   {!isSyncing && step < 3 && (
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    <ArrowRight className="w-4 h-4 ml-1.5 sm:ml-2" />
                   )}
                 </Button>
               </div>
@@ -657,9 +655,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8 scrollbar-hide">
             {step === 1 && (
-              <div className="max-w-3xl mx-auto space-y-8 pb-10">
+              <div className="max-w-full lg:max-w-4xl mx-auto space-y-6 sm:space-y-8 pb-10">
                 {isRenewalPrefill && (
                   <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
                     <div className="flex items-start gap-3">
@@ -690,19 +688,30 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Brand Name *
-                        </Label>
+                        <div className="flex items-center justify-between gap-2 ml-1">
+                          <Label className="text-sm font-bold text-slate-800">
+                            Brand Name *
+                          </Label>
+                          <MandatoryHint />
+                        </div>
                         <Input
                           {...register("client_name", { required: true })}
                           placeholder="e.g. Nike, Spotify"
                           className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                         />
+                        {errors.client_name && (
+                          <p className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                            This field is mandatory.
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800 ml-1">
-                          {`${entitySingularTitle} Name *`}
-                        </Label>
+                        <div className="flex items-center justify-between gap-2 ml-1">
+                          <Label className="text-sm font-bold text-slate-800">
+                            {`${entitySingularTitle} Name *`}
+                          </Label>
+                          <MandatoryHint />
+                        </div>
                         <input
                           type="hidden"
                           {...register("talent_name", { required: true })}
@@ -894,16 +903,19 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           </PopoverContent>
                         </Popover>
                         {errors.talent_name && (
-                          <span className="text-red-500 text-xs font-bold px-1">
-                            {`Please select a ${entitySingularLower}`}
+                          <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                            {`This ${entitySingularLower} is mandatory.`}
                           </span>
                         )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-start justify-between ml-1 gap-2">
-                          <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
-                            Client Email*
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
+                              Client Email*
+                            </Label>
+                            <MandatoryHint />
+                          </div>
                           {brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
                               <Label
@@ -985,6 +997,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             )}
                           </>
                         )}
+                        <p className="text-[11px] font-medium text-amber-700 ml-1 dark:text-amber-400">
+                          This field is mandatory.
+                        </p>
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-center justify-between">

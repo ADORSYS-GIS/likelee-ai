@@ -18,6 +18,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { CreateTemplateRequest, LicenseTemplate } from "@/api/licenseTemplates";
 import { ContractEditor } from "./ContractEditor";
+import { MandatoryHint } from "@/components/ui/field-hint";
 import {
   FileSignature,
   Calendar,
@@ -175,16 +176,16 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col p-0 border-none bg-slate-50 rounded-3xl shadow-2xl">
+      <DialogContent className="max-w-6xl w-[98vw] sm:w-[95vw] h-[95vh] sm:h-[90vh] max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col p-0 border-none bg-slate-50 rounded-2xl sm:rounded-3xl shadow-2xl">
         <form
           id="license-template-form"
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col h-full"
         >
-          <DialogHeader className="p-8 bg-white border-b border-slate-100 rounded-t-3xl shrink-0">
-            <div className="flex items-center justify-between">
+          <DialogHeader className="p-4 sm:p-8 bg-white border-b border-slate-100 rounded-t-3xl shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
               <div>
-                <DialogTitle className="text-2xl font-bold text-slate-900 mb-1">
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">
                   {readOnly
                     ? "License Template Details"
                     : initialData
@@ -197,39 +198,40 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     : "Standardize your agency terms with dynamic placeholders"}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={onClose}
-                  className="text-slate-500 font-bold hover:bg-slate-50 rounded-xl px-6 h-10"
+                  className="text-slate-500 font-bold hover:bg-slate-50 rounded-xl px-4 sm:px-6 h-9 sm:h-10 text-sm"
                 >
                   {readOnly ? "Close" : "Cancel"}
                 </Button>
                 {!readOnly && (
                   <Button
                     type="submit"
+                    form="license-template-form"
                     disabled={isSubmitting}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm"
                   >
                     {isSubmitting
                       ? "Saving..."
                       : initialData
-                        ? "Update Template"
-                        : "Create Template"}
+                        ? "Update"
+                        : "Create"}
                   </Button>
                 )}
               </div>
             </div>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto p-8">
-            <div className="max-w-3xl mx-auto space-y-8">
+          <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+            <div className="max-w-full lg:max-w-4xl mx-auto space-y-6 sm:space-y-8">
               {/* Template Identity */}
-              <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
+              <div className="p-4 sm:p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
-                    <FileSignature className="w-6 h-6 text-indigo-600" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-50 rounded-2xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform shrink-0">
+                    <FileSignature className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
                   </div>
                   <h3 className="font-bold text-slate-900">
                     Template Identity
@@ -237,9 +239,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800 ml-1">
-                      Template Name *
-                    </Label>
+                    <div className="flex items-center justify-between gap-2 ml-1">
+                      <Label className="text-sm font-bold text-slate-800">
+                        Template Name *
+                      </Label>
+                      <MandatoryHint />
+                    </div>
                     <Input
                       {...register("template_name", { required: true })}
                       placeholder="e.g. Standard Social Media"
@@ -247,15 +252,18 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                     />
                     {errors.template_name && (
-                      <span className="text-red-500 text-xs font-bold px-1">
-                        This field is required
+                      <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                        This field is mandatory.
                       </span>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800 ml-1">
-                      Category *
-                    </Label>
+                    <div className="flex items-center justify-between gap-2 ml-1">
+                      <Label className="text-sm font-bold text-slate-800">
+                        Category *
+                      </Label>
+                      <MandatoryHint />
+                    </div>
                     <Select
                       value={categoryValue}
                       onValueChange={(val) => setValue("category", val)}
@@ -277,8 +285,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       </SelectContent>
                     </Select>
                     {errors.category && (
-                      <span className="text-red-500 text-xs font-bold px-1">
-                        This field is required
+                      <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                        This field is mandatory.
                       </span>
                     )}
                   </div>
@@ -335,9 +343,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">
-                  Exclusivity *
-                </Label>
+                <div className="flex items-center justify-between gap-2 ml-1">
+                  <Label className="text-sm font-bold text-slate-800">
+                    Exclusivity *
+                  </Label>
+                  <MandatoryHint />
+                </div>
                 <Select
                   onValueChange={(val) => setValue("exclusivity", val)}
                   defaultValue={initialData?.exclusivity || "Non-exclusive"}
@@ -428,8 +439,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
             </div>
 
             {/* Contract Editor */}
-            <div className="pt-8">
-              <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-8">
+            <div className="pt-4 sm:pt-8 pb-10">
+              <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-4 sm:p-8">
                 <ContractEditor
                   body={contractBodyValue}
                   format={contractFormatValue as any}

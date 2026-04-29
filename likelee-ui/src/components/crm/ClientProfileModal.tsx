@@ -222,64 +222,54 @@ const ClientProfileModal = ({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none max-h-[90vh] flex flex-col">
-          <div className="p-8 pb-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-gray-400" />
+        <DialogContent className="w-[95vw] sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none max-h-[90vh] flex flex-col">
+          <div className="p-4 sm:p-8 pb-3 sm:pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center flex-shrink-0">
+                <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
               </div>
-              <div className="flex items-center gap-3">
-                <DialogTitle className="text-2xl font-bold text-gray-900">
+              <div className="flex items-center gap-2 min-w-0">
+                <DialogTitle className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
                   {client.name}
                 </DialogTitle>
-                <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
+                <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px] flex-shrink-0">
                   {client.status}
                 </Badge>
               </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden flex flex-col px-8">
+          <div className="flex-1 overflow-hidden flex flex-col px-4 sm:px-8">
             <Tabs
               defaultValue="overview"
               className="flex-1 flex flex-col overflow-hidden"
             >
-              <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6 shrink-0">
-                <TabsTrigger
-                  value="overview"
-                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
-                >
-                  Overview
-                </TabsTrigger>
-                <TabsTrigger
-                  value="contacts"
-                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
-                >
-                  Contacts
-                </TabsTrigger>
-                <TabsTrigger
-                  value="communications"
-                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
-                >
-                  Communications
-                </TabsTrigger>
-                <TabsTrigger
-                  value="bookings"
-                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
-                >
-                  Bookings
-                </TabsTrigger>
-                <TabsTrigger
-                  value="files"
-                  className="flex-1 rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-sm transition-all"
-                >
-                  Files & Notes
-                </TabsTrigger>
-              </TabsList>
+              {/* Scrollable tab bar on mobile */}
+              <div className="overflow-x-auto -mx-1 px-1 mb-4 sm:mb-6 shrink-0">
+                <TabsList className="inline-flex w-max sm:w-full justify-start bg-gray-50/50 p-1 rounded-xl h-10 sm:h-12 gap-0.5">
+                  {[
+                    "overview",
+                    "contacts",
+                    "communications",
+                    "bookings",
+                    "files",
+                  ].map((tab) => (
+                    <TabsTrigger
+                      key={tab}
+                      value={tab}
+                      className="rounded-lg data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-sm font-bold text-xs sm:text-sm transition-all px-3 sm:px-4 capitalize whitespace-nowrap"
+                    >
+                      {tab === "files"
+                        ? "Files & Notes"
+                        : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
 
               <div className="flex-1 overflow-y-auto pr-2 -mr-2 pb-8">
                 <TabsContent value="overview" className="space-y-6 mt-0">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
                       <div className="flex items-center gap-2 mb-4">
                         <Building2 className="w-5 h-5 text-gray-400" />
@@ -369,7 +359,7 @@ const ClientProfileModal = ({
 
                   <div className="space-y-4">
                     <h4 className="font-bold text-gray-900">Client Metrics</h4>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                       <Card className="p-4 bg-white border-gray-100 rounded-2xl text-center shadow-sm">
                         <span className="text-2xl font-bold text-indigo-600 block">
                           {totalRevenue}
@@ -435,10 +425,10 @@ const ClientProfileModal = ({
                       contacts.map((contact) => (
                         <Card
                           key={contact.id}
-                          className="p-4 border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex justify-between items-center bg-white group"
+                          className="p-4 border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white group"
                         >
                           <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-lg group-hover:bg-indigo-100 transition-colors">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-lg group-hover:bg-indigo-100 transition-colors flex-shrink-0">
                               {contact.name.charAt(0)}
                             </div>
                             <div>
@@ -457,15 +447,17 @@ const ClientProfileModal = ({
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-6 text-xs font-bold">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs font-bold pl-14 sm:pl-0">
                             <div className="flex items-center gap-2 text-gray-600">
-                              <div className="p-1.5 bg-gray-50 rounded-lg">
+                              <div className="p-1.5 bg-gray-50 rounded-lg flex-shrink-0">
                                 <Mail className="w-3.5 h-3.5 text-gray-400" />
                               </div>
-                              {contact.email || "—"}
+                              <span className="truncate">
+                                {contact.email || "—"}
+                              </span>
                             </div>
                             <div className="flex items-center gap-2 text-gray-600">
-                              <div className="p-1.5 bg-gray-50 rounded-lg">
+                              <div className="p-1.5 bg-gray-50 rounded-lg flex-shrink-0">
                                 <Phone className="w-3.5 h-3.5 text-gray-400" />
                               </div>
                               {contact.phone || "—"}
@@ -746,29 +738,29 @@ const ClientProfileModal = ({
             </Tabs>
           </div>
 
-          <div className="p-8 pt-6 border-t border-gray-100 bg-white shrink-0">
-            <div className="flex justify-between items-center">
-              <div className="flex gap-3">
+          <div className="p-4 sm:p-8 pt-4 sm:pt-6 border-t border-gray-100 bg-white shrink-0">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <div className="flex gap-2 sm:gap-3">
                 <Button
                   variant="outline"
                   onClick={onEdit}
-                  className="h-11 px-6 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors"
+                  className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-xs sm:text-sm"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
+                  <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                   Edit Client
                 </Button>
                 <Button
                   variant="outline"
                   onClick={onDelete}
-                  className="h-11 px-6 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold transition-colors"
+                  className="h-9 sm:h-11 px-4 sm:px-6 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold transition-colors text-xs sm:text-sm"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
                   Delete Client
                 </Button>
               </div>
               <Button
                 onClick={onClose}
-                className="h-11 px-10 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl shadow-lg shadow-gray-200 transition-all active:scale-95"
+                className="h-9 sm:h-11 px-6 sm:px-10 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl shadow-lg shadow-gray-200 transition-all active:scale-95 text-xs sm:text-sm"
               >
                 Close
               </Button>

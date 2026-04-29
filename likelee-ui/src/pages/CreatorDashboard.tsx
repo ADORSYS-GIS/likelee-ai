@@ -1565,9 +1565,11 @@ export default function CreatorDashboard() {
           source_id: String(req?.id || req?.licensing_request_id || ""),
         };
       });
-    return [...activeOffers, ...activeLicenses, ...activeRequests].map(
-      withStatus,
+    const combined = [...activeOffers, ...activeLicenses, ...activeRequests];
+    const deduped = Array.from(
+      new Map(combined.map((item) => [item.id, item])).values(),
     );
+    return deduped.map(withStatus);
   }, [
     normalizedOfferCampaigns,
     normalizedLicenseCampaigns,
@@ -1625,7 +1627,11 @@ export default function CreatorDashboard() {
         total_earned: license.total_earned || 0,
         show_on_portfolio: Boolean(license.show_on_portfolio),
       }));
-    return [...fromOffers, ...fromLicenses];
+    const combined = [...fromOffers, ...fromLicenses];
+    const deduped = Array.from(
+      new Map(combined.map((item) => [item.id, item])).values(),
+    );
+    return deduped;
   }, [normalizedOfferCampaigns, normalizedLicenseCampaigns, t]);
 
   useEffect(() => {
@@ -2157,7 +2163,13 @@ export default function CreatorDashboard() {
           params: { limit: 300 },
         },
       );
-      return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+      const offers = Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+      const deduped = Array.from(
+        new Map(
+          offers.map((offer) => [String(offer?.id || ""), offer]),
+        ).values(),
+      );
+      return deduped;
     } finally {
       if (!silent) setLoadingBrandOffers(false);
     }
@@ -6196,19 +6208,17 @@ export default function CreatorDashboard() {
     ).length;
     const imagesTotal = IMAGE_SECTIONS.length;
     return (
-      <div className="space-y-8">
+      <div className="space-y-5 sm:space-y-8">
         {showTrialGift && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="overflow-hidden rounded-[32px] border border-emerald-200/30 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#042f2e] text-white shadow-[0_32px_64px_-16px_rgba(4,47,46,0.5)]"
+            className="overflow-hidden rounded-[24px] sm:rounded-[32px] border border-emerald-200/30 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#042f2e] text-white shadow-[0_32px_64px_-16px_rgba(4,47,46,0.5)]"
           >
-            <div className="flex flex-col gap-8 p-8 md:p-12 lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
-              {/* Decorative background elements */}
+            <div className="flex flex-col gap-6 p-5 sm:p-8 md:p-12 lg:flex-row lg:items-center lg:justify-between relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-32 -mt-32" />
               <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -ml-32 -mb-32" />
-
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-8 relative z-10">
                 <motion.div
                   animate={{
                     y: [0, -12, 0],
@@ -6220,33 +6230,31 @@ export default function CreatorDashboard() {
                     repeat: Infinity,
                     ease: "easeInOut",
                   }}
-                  className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[24px] bg-white/10 ring-1 ring-white/20 backdrop-blur-xl shadow-2xl"
+                  className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-[20px] sm:rounded-[24px] bg-white/10 ring-1 ring-white/20 backdrop-blur-xl shadow-2xl"
                 >
-                  <Gift className="h-10 w-10 text-[#5eead4]" />
+                  <Gift className="h-8 w-8 sm:h-10 sm:w-10 text-[#5eead4]" />
                 </motion.div>
-
                 <div className="max-w-xl">
-                  <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-6">
+                  <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-4">
                     Exclusive Creator Offer
                   </div>
-                  <h2 className="text-3xl font-black tracking-tight sm:text-4xl leading-tight">
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight sm:text-4xl leading-tight">
                     Experience Likelee{" "}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">
                       Pro
                     </span>{" "}
                     for 30 Days
                   </h2>
-                  <p className="mt-4 text-lg text-slate-300 leading-relaxed font-medium">
+                  <p className="mt-3 text-sm sm:text-lg text-slate-300 leading-relaxed font-medium">
                     Unlock professional features including AI Voice profiles,
                     advanced analytics, content monitoring, and premium campaign
                     opportunities.
                   </p>
                 </div>
               </div>
-
-              <div className="w-full lg:w-auto min-w-[320px] relative z-10">
-                <div className="rounded-[28px] border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-                  <div className="space-y-4 mb-8">
+              <div className="w-full lg:w-auto lg:min-w-[300px] relative z-10">
+                <div className="rounded-[20px] sm:rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-6 backdrop-blur-md">
+                  <div className="space-y-3 mb-5 sm:mb-8">
                     {[
                       "30 Days of Premium Access",
                       "Cancel anytime during trial",
@@ -6256,7 +6264,7 @@ export default function CreatorDashboard() {
                         key={i}
                         className="flex items-center gap-3 text-slate-200"
                       >
-                        <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                        <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
                         <span className="text-sm font-semibold">{item}</span>
                       </div>
                     ))}
@@ -6264,137 +6272,139 @@ export default function CreatorDashboard() {
                   <Button
                     type="button"
                     onClick={() => navigate("/CreatorSubscribe")}
-                    className="w-full h-14 rounded-2xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-lg shadow-xl hover:shadow-emerald-500/20 group"
+                    className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-base sm:text-lg shadow-xl group"
                   >
                     Explore Plans & Unlock Trial
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </div>
               </div>
             </div>
           </motion.div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="p-6 bg-white border border-gray-200">
+
+        {/* Stats — 2 cols on mobile, 3 on lg */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+          <Card className="p-4 sm:p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 leading-tight">
                 {t("creatorDashboard.dashboard.totalMonthlyRevenue")}
               </p>
-              <DollarSign className="w-5 h-5 text-[#32C8D1]" />
+              <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-[#32C8D1] shrink-0" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">
+            <p className="text-2xl sm:text-4xl font-bold text-gray-900">
               ${totalMonthlyRevenue.toLocaleString()}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               {t("creatorDashboard.dashboard.revenueInfo")}
             </p>
           </Card>
-          <Card className="p-6 bg-white border border-gray-200">
+          <Card className="p-4 sm:p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 leading-tight">
                 {t("creatorDashboard.dashboard.activeCampaigns")}
               </p>
-              <Target className="w-5 h-5 text-[#32C8D1]" />
+              <Target className="w-4 h-4 sm:w-5 sm:h-5 text-[#32C8D1] shrink-0" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">
+            <p className="text-2xl sm:text-4xl font-bold text-gray-900">
               {activeCampaigns.length}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               {t("creatorDashboard.dashboard.activeCampaignsInfo")}
             </p>
           </Card>
-          <Card className="p-6 bg-white border border-gray-200">
+          <Card className="p-4 sm:p-6 bg-white border border-gray-200 col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 leading-tight">
                 {t("creatorDashboard.dashboard.annualRunRate")}
               </p>
-              <TrendingUp className="w-5 h-5 text-[#32C8D1]" />
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[#32C8D1] shrink-0" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">
+            <p className="text-2xl sm:text-4xl font-bold text-gray-900">
               ${annualRunRate.toLocaleString()}
             </p>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               {t("creatorDashboard.dashboard.annualRunRateInfo")}
             </p>
           </Card>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900">
+        <h3 className="text-base sm:text-lg font-bold text-gray-900">
           {t("creatorDashboard.dashboard.quickActions")}
         </h3>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <Card
-            className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
+            className="p-4 sm:p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
             onClick={() => setActiveSection("likeness")}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
-                <ImageIcon className="w-6 h-6 text-[#32C8D1]" />
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#32C8D1]" />
               </div>
-              <Badge className="bg-cyan-100 text-cyan-700 border border-cyan-300">
+              <Badge className="bg-cyan-100 text-cyan-700 border border-cyan-300 text-xs">
                 {t("creatorDashboard.dashboard.priority")}
               </Badge>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">
               {t("creatorDashboard.dashboard.completeProfile")}
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               {t("creatorDashboard.dashboard.completeProfileInfo")}
             </p>
           </Card>
           <Card
-            className="p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
+            className="p-4 sm:p-6 bg-white border border-gray-200 cursor-pointer hover:shadow-lg transition-all"
             onClick={() =>
               creatorCanUseVoice
                 ? setActiveSection("voice")
                 : navigate("/CreatorSubscribe")
             }
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Mic className="w-6 h-6 text-purple-600" />
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               </div>
-              <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
+              <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs">
                 {creatorCanUseVoice
                   ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}`
                   : "Pro"}
               </Badge>
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1 sm:mb-2">
               {t("creatorDashboard.dashboard.uploadVoiceTone")}
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               {t("creatorDashboard.dashboard.uploadVoiceToneInfo")}
             </p>
           </Card>
         </div>
 
-        <h3 className="text-lg font-bold text-gray-900">
+        <h3 className="text-base sm:text-lg font-bold text-gray-900">
           {t("creatorDashboard.dashboard.recentActivity")}
         </h3>
         {activeCampaigns.length === 0 ? (
-          <Card className="p-10 bg-white border border-gray-200 text-center text-gray-600">
+          <Card className="p-8 sm:p-10 bg-white border border-gray-200 text-center text-gray-600">
             <p>{t("creatorDashboard.dashboard.noCampaigns")}</p>
             <p className="text-sm text-gray-500 mt-1">
               {t("creatorDashboard.dashboard.noCampaignsInfo")}
             </p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
             {activeCampaigns.slice(0, 3).map((campaign) => (
               <Card
                 key={campaign.id}
-                className="p-5 bg-white border border-gray-200 shadow-sm"
+                className="p-4 sm:p-5 bg-white border border-gray-200 shadow-sm"
               >
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-3 sm:mb-4">
                   {campaign.brand_logo ? (
                     <img
                       src={campaign.brand_logo}
                       alt={campaign.brand}
-                      className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover border border-gray-200 shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700 shrink-0">
                       {String(campaign.brand || "B")
                         .trim()
                         .charAt(0)
@@ -6402,7 +6412,7 @@ export default function CreatorDashboard() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">
+                    <p className="font-semibold text-gray-900 truncate text-sm sm:text-base">
                       {campaign.brand}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
@@ -6410,13 +6420,13 @@ export default function CreatorDashboard() {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <Badge className="bg-green-100 text-green-700 border border-green-300">
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-green-100 text-green-700 border border-green-300 text-xs">
                     {campaign.status === "expiring_soon"
                       ? t("creatorDashboard.campaigns.status.expiringSoon")
                       : t("creatorDashboard.campaigns.status.active")}
                   </Badge>
-                  <span className="font-bold text-gray-900">
+                  <span className="font-bold text-gray-900 text-xs sm:text-sm">
                     ${campaign.rate.toLocaleString()}/mo
                   </span>
                 </div>
@@ -6425,23 +6435,22 @@ export default function CreatorDashboard() {
           </div>
         )}
 
-        <Card className="p-4 md:p-5 bg-white border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">
+        <Card className="p-4 sm:p-5 bg-white border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">
               {t("creatorDashboard.dashboard.profileStatus")}
             </h3>
-            <Badge className="bg-[#32C8D1] text-white">
+            <Badge className="bg-[#32C8D1] text-white text-xs w-fit">
               {t("creatorDashboard.dashboard.completeToGetDiscovered")}
             </Badge>
           </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* Reference Images */}
-            <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-cyan-600" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="p-4 sm:p-5 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-xs sm:text-sm text-gray-600 mb-2 flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-cyan-600 shrink-0" />
                 <span>{t("creatorDashboard.dashboard.referenceImages")}</span>
               </div>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {imagesFilled}/{imagesTotal}
               </div>
               <Progress
@@ -6449,14 +6458,12 @@ export default function CreatorDashboard() {
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
-
-            {/* Voice Recordings */}
-            <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="text-sm text-gray-600 mb-2 flex items-center gap-2">
-                <Mic className="w-4 h-4 text-purple-600" />
+            <div className="p-4 sm:p-5 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-xs sm:text-sm text-gray-600 mb-2 flex items-center gap-2">
+                <Mic className="w-4 h-4 text-purple-600 shrink-0" />
                 <span>{t("creatorDashboard.dashboard.voiceRecordings")}</span>
               </div>
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {creatorCanUseVoice
                   ? `${voiceLibrary.length}/${Math.max(creatorVoiceLimit, 6)}`
                   : "Pro only"}
@@ -7099,21 +7106,21 @@ export default function CreatorDashboard() {
   };
 
   const renderVoice = () => (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {!creatorCanUseVoice ? (
-        <Card className="p-8 bg-white border border-[#C7B8FF]">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <Card className="p-5 sm:p-8 bg-white border border-[#C7B8FF]">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Voice Profiles
               </h2>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 mt-2 text-sm sm:text-base">
                 Upgrade to Pro to unlock ElevenLabs voice profile creation for
                 up to {Math.max(creatorVoiceLimit, 6)} tones.
               </p>
             </div>
             <Button
-              className="bg-[#4B4AE6] hover:bg-[#3F3EE0]"
+              className="bg-[#4B4AE6] hover:bg-[#3F3EE0] shrink-0"
               onClick={() => navigate("/CreatorSubscribe")}
             >
               Upgrade to Pro
@@ -7122,18 +7129,19 @@ export default function CreatorDashboard() {
         </Card>
       ) : (
         <>
-          <div className="flex items-center justify-between">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {t("creatorDashboard.voice.title")}
               </h2>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 {t("creatorDashboard.voice.subtitle")}
               </p>
             </div>
             <Badge
               variant="outline"
-              className="bg-purple-100 text-purple-700 border border-purple-300 px-4 py-2 text-lg"
+              className="bg-purple-100 text-purple-700 border border-purple-300 px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-lg w-fit"
             >
               {voiceLibrary.length}{" "}
               {t(
@@ -7146,32 +7154,32 @@ export default function CreatorDashboard() {
 
           {/* Voice Overview Card */}
           {voiceLibrary.length > 0 && (
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
                 {t("creatorDashboard.voice.overview.title")}
               </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
+              <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">
                     {t("creatorDashboard.voice.overview.totalRecordings")}
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {voiceLibrary.length}
                   </p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">
                     {t("creatorDashboard.voice.overview.elevenLabsProfiles")}
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {voiceLibrary.filter((v) => v.voiceProfileCreated).length}
                   </p>
                 </div>
-                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <p className="text-sm text-gray-600 mb-1">
+                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">
                     {t("creatorDashboard.voice.overview.totalUsage")}
                   </p>
-                  <p className="text-3xl font-bold text-gray-900">
+                  <p className="text-2xl sm:text-3xl font-bold text-gray-900">
                     {voiceLibrary.reduce(
                       (sum, v) => sum + (v.usageCount || 0),
                       0,
@@ -7183,15 +7191,15 @@ export default function CreatorDashboard() {
           )}
 
           {/* Record New Voice Sample */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+          <Card className="p-4 sm:p-6 bg-white border border-gray-200">
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4">
               {t("creatorDashboard.voice.record.title")}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
               {t("creatorDashboard.voice.record.subtitle")}
             </p>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
               {Object.keys(VOICE_SCRIPTS).map((emotion) => {
                 const hasRecording = voiceLibrary.find(
                   (r) => r.emotion === emotion,
@@ -7199,32 +7207,32 @@ export default function CreatorDashboard() {
                 return (
                   <Card
                     key={emotion}
-                    className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                    className={`p-4 sm:p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
                       hasRecording
                         ? "border-green-300 bg-green-50"
                         : "border-gray-200 hover:border-[#32C8D1]"
                     }`}
                     onClick={() => handleEmotionSelect(emotion)}
                   >
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                       <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center shrink-0 ${
                           hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
                         }`}
                       >
-                        <Mic className="w-6 h-6 text-white" />
+                        <Mic className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                       </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 capitalize text-lg">
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-gray-900 capitalize text-sm sm:text-lg leading-tight">
                           {t(`creatorDashboard.voice.emotionNames.${emotion}`)}
                         </h4>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 hidden sm:block">
                           {t("creatorDashboard.voice.record.duration")}
                         </p>
                       </div>
                     </div>
                     {hasRecording && (
-                      <Badge className="bg-green-500 text-white">
+                      <Badge className="bg-green-500 text-white text-xs">
                         <CheckCircle2 className="w-3 h-3 mr-1" />
                         {t("creatorDashboard.voice.record.recorded")}
                       </Badge>
@@ -7237,35 +7245,36 @@ export default function CreatorDashboard() {
 
           {/* Voice Library */}
           {voiceLibrary.length > 0 && (
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
                 {t("creatorDashboard.voice.library.title")}
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {voiceLibrary.map((recording) => (
                   <div
                     key={recording.id}
-                    className="p-6 bg-gray-50 border-2 border-gray-200 rounded-lg"
+                    className="p-4 sm:p-6 bg-gray-50 border-2 border-gray-200 rounded-lg"
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-4">
+                    {/* Recording header — stacks on mobile */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-3">
                         <div
-                          className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                          className={`w-11 h-11 sm:w-14 sm:h-14 rounded-full flex items-center justify-center shrink-0 ${
                             recording.accessible
                               ? "bg-green-500"
                               : "bg-gray-400"
                           }`}
                         >
-                          <Mic className="w-7 h-7 text-white" />
+                          <Mic className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                         </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 capitalize text-xl">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-gray-900 capitalize text-base sm:text-xl">
                             {t(
                               `creatorDashboard.voice.emotionNames.${recording.emotion.toLowerCase()}`,
                               recording.emotion,
                             )}
                           </h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs sm:text-sm text-gray-600">
                             {new Date(recording.date).toLocaleDateString()} •{" "}
                             {recording.duration}s •{" "}
                             {t("creatorDashboard.voice.library.used", {
@@ -7274,9 +7283,10 @@ export default function CreatorDashboard() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      {/* Action buttons — wrap on mobile */}
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
                         {recording.voiceProfileCreated && (
-                          <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
+                          <Badge className="bg-purple-100 text-purple-700 border border-purple-300 text-xs">
                             {t(
                               "creatorDashboard.voice.library.elevenLabsReady",
                             )}
@@ -7297,6 +7307,7 @@ export default function CreatorDashboard() {
                           onClick={() => handleEmotionSelect(recording.emotion)}
                           variant="outline"
                           size="sm"
+                          className="text-xs sm:text-sm"
                         >
                           {t("creatorDashboard.voice.library.reRecord")}
                         </Button>
@@ -7343,22 +7354,14 @@ export default function CreatorDashboard() {
                     )}
                   </div>
                 ))}
-                {!recording.voiceProfileCreated && recording.accessible && (
-                  <Button
-                    disabled={true}
-                    className="w-full bg-gray-400 cursor-not-allowed text-white"
-                  >
-                    <PlayCircle className="w-4 h-4 mr-2" />
-                    Coming Soon
-                  </Button>
-                )}
               </div>
             </Card>
           )}
+
           {/* Voice Training Tips */}
-          <div className="bg-purple-50 border border-purple-200">
-            <Volume2 className="h-5 w-5 text-purple-600" />
-            <p className="text-purple-900">
+          <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <Volume2 className="h-5 w-5 text-purple-600 shrink-0 mt-0.5" />
+            <p className="text-purple-900 text-sm sm:text-base">
               <strong>{t("creatorDashboard.voice.tips.title")}</strong>{" "}
               {t("creatorDashboard.voice.tips.message")}
             </p>
@@ -9518,14 +9521,14 @@ export default function CreatorDashboard() {
       : activeCampaigns;
 
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 {t("creatorDashboard.campaigns.title")}
               </h2>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 {t("creatorDashboard.campaigns.subtitle")}
               </p>
             </div>
@@ -9534,7 +9537,7 @@ export default function CreatorDashboard() {
                 activeCampaigns.length === 0
                   ? "bg-orange-100 text-orange-700 border border-orange-300"
                   : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg w-fit`}
+              } px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-lg w-fit`}
             >
               {t("creatorDashboard.campaigns.activeCount", {
                 count: activeCampaigns.length,
@@ -9852,48 +9855,56 @@ export default function CreatorDashboard() {
     };
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Approval Queue</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Approval Queue
+          </h2>
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             Review brand requests, contract actions, and deliverable feedback.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Pending requests</div>
-            <div className="mt-2 text-3xl font-bold text-gray-900">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
+            <div className="text-xs text-gray-500 h-8 sm:h-10">
+              Pending requests
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pending.length}
             </div>
             <Button
-              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("requests")}
             >
               Open requests
             </Button>
           </Card>
 
-          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Offer actions</div>
-            <div className="mt-2 text-3xl font-bold text-gray-900">
+          <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
+            <div className="text-xs text-gray-500 h-8 sm:h-10">
+              Offer actions
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {actionableOffers.length}
             </div>
             <Button
-              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("offers")}
             >
               Review offers
             </Button>
           </Card>
 
-          <Card className="p-5 border border-[#DDE5EF] shadow-sm">
-            <div className="text-sm text-gray-500">Deliverable feedback</div>
-            <div className="mt-2 text-3xl font-bold text-gray-900">
+          <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
+            <div className="text-xs text-gray-500 h-8 sm:h-10">
+              Deliverable feedback
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pendingDeliverables.length}
             </div>
             <Button
-              className="mt-4 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("deliverables")}
             >
               View feedback
@@ -9901,17 +9912,17 @@ export default function CreatorDashboard() {
           </Card>
         </div>
 
-        <Card className="p-6 border border-[#DDE5EF] shadow-sm">
-          <div className="flex items-center justify-between gap-4">
+        <Card className="p-4 sm:p-6 border border-[#DDE5EF] shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <div className="text-lg font-semibold text-gray-900">
+              <div className="text-base sm:text-lg font-semibold text-gray-900">
                 Needs your attention
               </div>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className="text-xs sm:text-sm text-gray-600 mt-1">
                 The latest items that still need a response from you.
               </div>
             </div>
-            <Badge className="bg-[#1A2140] text-white">
+            <Badge className="bg-[#1A2140] text-white w-fit">
               {pending.length +
                 actionableOffers.length +
                 pendingDeliverables.length}
@@ -12245,8 +12256,8 @@ export default function CreatorDashboard() {
         className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed z-40 ${
           isSmallScreen
             ? sidebarOpen
-              ? "w-64 h-screen top-0"
-              : "-translate-x-full w-64 h-screen top-0"
+              ? "w-72 h-screen top-0 translate-x-0"
+              : "w-72 h-screen top-0 -translate-x-full"
             : sidebarOpen
               ? "w-64 h-[calc(100vh-5rem)] top-20"
               : "w-20 h-[calc(100vh-5rem)] top-20"
@@ -12576,104 +12587,111 @@ export default function CreatorDashboard() {
         )}
       </aside>
 
-      {/* Mobile Header */}
-      {isSmallScreen && (
-        <>
-          <header
-            className={`fixed ${isSmallScreen ? "top-20" : "top-0"} left-0 right-0 bg-white border-b border-gray-200 z-50 flex items-center justify-between p-4 lg:hidden`}
-          >
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-            <h1 className="font-bold text-lg">
-              {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-            </h1>
-            <button
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
-              aria-label="More options"
-            >
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <circle cx="5" cy="12" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="19" cy="12" r="2" />
-              </svg>
-            </button>
-          </header>
-
-          {/* Mobile Menu Dropdown */}
-          {showMobileMenu && (
-            <>
-              {/* Backdrop to close menu when clicking outside */}
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setShowMobileMenu(false)}
-              />
-              <div className="fixed top-16 right-4 bg-white border-2 border-gray-200 shadow-xl rounded-lg z-[60] w-64">
-                <div className="p-2">
-                  <button
-                    onClick={() => {
-                      navigate("/BrandCompany");
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                  >
-                    <Building2 className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Brands
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/AgencySelection");
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                  >
-                    <Users className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Agencies
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/AboutUs");
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                  >
-                    <AlertCircle className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm font-medium text-gray-900">
-                      About Us
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/Contact");
-                      setShowMobileMenu(false);
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-100 active:bg-gray-200 rounded-lg text-left transition-colors duration-150"
-                  >
-                    <MessageSquare className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Contact
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </>
+      {/* Mobile sidebar overlay */}
+      {isSmallScreen && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* Main Content */}
       <main
-        className={`flex-1 ${isSmallScreen ? "mt-16 pt-0" : sidebarOpen ? "lg:ml-64 pt-0" : "lg:ml-20 pt-0"} transition-all duration-300 overflow-y-auto`}
+        className={`flex-1 ${isSmallScreen ? "" : sidebarOpen ? "lg:ml-64 pt-0" : "lg:ml-20 pt-0"} transition-all duration-300 overflow-y-auto`}
       >
+        {/* Mobile top bar — sticky inside main, same as brand dashboard */}
+        {isSmallScreen && (
+          <div className="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 sticky top-0 z-20">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5 text-gray-600" />
+            </button>
+            <span className="flex-1 text-sm font-bold text-gray-900 truncate">
+              {navigationItems.find((n) => n.id === activeSection)?.label ||
+                activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+            </span>
+            {/* Profile avatar */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center"
+              aria-label="Open profile"
+            >
+              {creator?.kyc_status === "approved" ? (
+                <Avatar className="w-8 h-8 border-2 border-green-500">
+                  {creator?.profile_photo ? (
+                    <AvatarImage
+                      src={creator.profile_photo}
+                      alt={creator.name || "User"}
+                    />
+                  ) : null}
+                  <AvatarFallback className="bg-gray-200 text-gray-800 text-xs font-semibold">
+                    {(() => {
+                      const base = (
+                        creator?.name ||
+                        creator?.email ||
+                        ""
+                      ).trim();
+                      if (!base) return "U";
+                      const parts = base.includes(" ")
+                        ? base.split(/\s+/)
+                        : base.split("@")[0].split(/\.|_/);
+                      return (
+                        parts
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((p) => p[0]?.toUpperCase())
+                          .join("") || "U"
+                      );
+                    })()}
+                  </AvatarFallback>
+                </Avatar>
+              ) : (
+                <div
+                  className="w-8 h-8 rounded-full p-[2px]"
+                  style={{
+                    background:
+                      "conic-gradient(from 0deg, #ef4444, #f59e0b, #22c55e)",
+                  }}
+                >
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                    <Avatar className="w-6 h-6">
+                      {creator?.profile_photo ? (
+                        <AvatarImage
+                          src={creator.profile_photo}
+                          alt={creator.name || "User"}
+                        />
+                      ) : null}
+                      <AvatarFallback className="bg-gray-200 text-gray-800 text-xs font-semibold">
+                        {(() => {
+                          const base = (
+                            creator?.name ||
+                            creator?.email ||
+                            ""
+                          ).trim();
+                          if (!base) return "U";
+                          const parts = base.includes(" ")
+                            ? base.split(/\s+/)
+                            : base.split("@")[0].split(/\.|_/);
+                          return (
+                            parts
+                              .filter(Boolean)
+                              .slice(0, 2)
+                              .map((p) => p[0]?.toUpperCase())
+                              .join("") || "U"
+                          );
+                        })()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                </div>
+              )}
+            </button>
+          </div>
+        )}
+
         <div className={`${isSmallScreen ? "p-4" : "p-8"}`}>
           {activeSection !== "settings" &&
             activeSection !== "talent-portal" && (

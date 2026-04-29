@@ -422,18 +422,18 @@ export default function CreatorSubscribe() {
 
   return (
     <div className="min-h-screen bg-[#F6F3EF] text-[#1B1C23]">
-      <div className="max-w-6xl mx-auto px-6 pt-12 pb-24">
-        <div className="rounded-[36px] border border-[#D9E4F1] bg-[linear-gradient(180deg,#F3F8FF_0%,#F8FBFF_100%)] px-8 py-14 text-center shadow-[0_18px_60px_rgba(15,34,71,0.08)]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-16 sm:pb-24">
+        <div className="rounded-[24px] sm:rounded-[36px] border border-[#D9E4F1] bg-[linear-gradient(180deg,#F3F8FF_0%,#F8FBFF_100%)] px-4 sm:px-8 py-8 sm:py-14 text-center shadow-[0_18px_60px_rgba(15,34,71,0.08)]">
           <Badge className="rounded-full border border-[#9EE4E6] bg-[#E9FBFB] px-5 py-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[#0B9DA2] shadow-none">
             Creator Plans
           </Badge>
-          <h1 className="mt-6 text-5xl font-black tracking-tight text-[#17315F]">
+          <h1 className="mt-6 text-3xl sm:text-5xl font-black tracking-tight text-[#17315F]">
             Own your likeness.
             <span className="mt-2 block font-serif italic font-medium text-[#0FA8AE]">
               Earn from it forever.
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-[#56708F]">
+          <p className="mx-auto mt-4 sm:mt-6 max-w-3xl text-base sm:text-lg leading-7 sm:leading-8 text-[#56708F]">
             Simple, affordable plans so creators can protect, license, and
             monetize their identity in the AI era with the right level of
             access.
@@ -643,7 +643,7 @@ export default function CreatorSubscribe() {
           </motion.div>
         )}
 
-        <div className="mt-10 flex flex-wrap justify-center gap-6 items-stretch">
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch max-w-2xl mx-auto sm:max-w-none">
           <Card
             role="button"
             tabIndex={0}
@@ -658,7 +658,7 @@ export default function CreatorSubscribe() {
                 handlePlanSelection("basic");
               }
             }}
-            className={`flex-1 min-w-[320px] max-w-[380px] flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-white p-5 lg:p-6 shadow-[0_10px_30px_rgba(20,37,66,0.04)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15A9AD]/40 ${
+            className={`flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-white p-5 lg:p-6 shadow-[0_10px_30px_rgba(20,37,66,0.04)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15A9AD]/40 ${
               canSelectBasicUi
                 ? "cursor-pointer hover:shadow-[0_14px_40px_rgba(20,37,66,0.06)]"
                 : "cursor-default border-[#15A9AD]/30 bg-emerald-50/20"
@@ -814,7 +814,7 @@ export default function CreatorSubscribe() {
                 }
               }
             }}
-            className={`flex-1 min-w-[320px] max-w-[380px] flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-[linear-gradient(180deg,#173664_0%,#122C55_100%)] p-5 lg:p-6 text-white shadow-[0_14px_40px_rgba(20,37,66,0.1)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
+            className={`flex flex-col rounded-[28px] border border-[#D8E1EC]/60 bg-[linear-gradient(180deg,#173664_0%,#122C55_100%)] p-5 lg:p-6 text-white shadow-[0_14px_40px_rgba(20,37,66,0.1)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 ${
               canSelectPro
                 ? "cursor-pointer hover:shadow-[0_18px_48px_rgba(20,37,66,0.15)]"
                 : "cursor-default border-white/20"
@@ -952,17 +952,17 @@ export default function CreatorSubscribe() {
           </Card>
         </div>
 
-        <div className="mt-14 rounded-[32px] border border-[#DDE6F0] bg-white px-6 py-8 shadow-[0_18px_50px_rgba(20,37,66,0.06)] lg:px-10">
+        <div className="mt-14 rounded-[32px] border border-[#DDE6F0] bg-white px-4 sm:px-6 py-6 sm:py-8 shadow-[0_18px_50px_rgba(20,37,66,0.06)] lg:px-10">
           <div>
-            <div className="text-3xl font-black text-[#17315F]">
+            <div className="text-2xl sm:text-3xl font-black text-[#17315F]">
               Full comparison
             </div>
             <div className="mt-2 text-[#7A8CA4]">
               Every feature, side by side.
             </div>
           </div>
-          <div className="mt-8 overflow-hidden rounded-[24px] border border-[#E3EAF2]">
-            <table className="w-full border-collapse text-left">
+          <div className="mt-8 overflow-x-auto rounded-[24px] border border-[#E3EAF2]">
+            <table className="w-full min-w-[480px] border-collapse text-left">
               <thead>
                 <tr className="bg-[#F6FAFD] text-[#17315F]">
                   <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.24em] text-[#89A0B9]">

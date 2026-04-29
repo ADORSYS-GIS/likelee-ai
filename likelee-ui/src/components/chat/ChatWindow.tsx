@@ -24,6 +24,8 @@ interface ChatWindowProps {
   sending: boolean;
   otherParticipant: Participant;
   selfParticipant: Participant;
+  showBackButton?: boolean;
+  onBack?: () => void;
   onSend: (content: string) => void;
   onEdit: (id: string, content: string) => void;
   onDelete: (id: string) => void;
@@ -35,6 +37,8 @@ export function ChatWindow({
   sending,
   otherParticipant,
   selfParticipant,
+  showBackButton = false,
+  onBack,
   onSend,
   onEdit,
   onDelete,
@@ -101,6 +105,28 @@ export function ChatWindow({
 
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-white shadow-sm">
+        {showBackButton && onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50"
+            aria-label="Back to conversations"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        ) : null}
         <Avatar
           url={otherParticipant.avatarUrl}
           name={otherParticipant.name}

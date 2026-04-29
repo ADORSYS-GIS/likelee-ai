@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
+  ChevronDown,
   Search,
   Filter,
   X,
@@ -226,6 +227,9 @@ export function MarketplaceSection({
   const entityLabelTitle = entityType === "agency" ? "Agency" : "Creator";
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [pendingConnectKeys, setPendingConnectKeys] = useState<Set<string>>(
     new Set(),
   );
@@ -479,8 +483,8 @@ export function MarketplaceSection({
   }, [marketplaceQuery.data, categoryFilter, profileType, sortBy, entityType]);
 
   return (
-    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <Card className="px-0 sm:px-8 py-4 sm:py-8 bg-white border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 sm:mb-8 px-4 sm:px-0">
         <div>
           <h2 className="text-xl font-bold text-gray-900">{title}</h2>
           <p className="text-sm text-gray-500 font-medium">{subtitle}</p>
@@ -493,7 +497,7 @@ export function MarketplaceSection({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 px-4 sm:px-0">
         {actionsLocked && (
           <div className="relative overflow-hidden rounded-[28px] border border-[#F3C46B] bg-[linear-gradient(135deg,#FFF8E6_0%,#FFF2D8_40%,#FFE2B3_100%)] px-5 py-5 shadow-[0_22px_55px_rgba(247,183,80,0.18)] ring-1 ring-[#FFE7BA]">
             <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#F7B750]/20 blur-3xl" />
@@ -785,7 +789,7 @@ export function MarketplaceSection({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-6 gap-x-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0 sm:gap-y-6 sm:gap-x-4 mt-2 -mx-4 sm:mx-0">
             {profiles.map((profile) => {
               const profileKey = `${profile.profile_type}:${profile.id}`;
               const isPendingConnect = pendingConnectKeys.has(profileKey);
@@ -834,7 +838,7 @@ export function MarketplaceSection({
               return (
                 <Card
                   key={profile.id}
-                  className="group w-full overflow-hidden border border-slate-200 rounded-lg bg-white hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer"
+                  className="group w-full overflow-hidden border-0 sm:border border-slate-200 sm:rounded-lg rounded-none bg-white hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer border-b border-slate-100"
                   onClick={() => setSelectedProfile(profile)}
                 >
                   <div className="relative">
@@ -898,197 +902,237 @@ export function MarketplaceSection({
                   </div>
 
                   <div className="p-2.5">
-                    {(profile.tagline || profile.bio) && (
-                      <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
-                        {profile.tagline || profile.bio}
-                      </p>
-                    )}
-                    {!(profile.tagline || profile.bio) && (
-                      <p className="text-xs text-slate-400 min-h-[32px]">
-                        No bio available yet.
-                      </p>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                      {(profile.skills || []).slice(0, 2).map((skill) => (
-                        <Badge
-                          key={skill}
-                          variant="secondary"
-                          className="text-[11px] bg-slate-100 text-slate-700 border-0"
-                        >
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <div
-                      className={`grid gap-1.5 mt-2 ${
-                        entityType === "agency" ? "grid-cols-2" : "grid-cols-1"
-                      }`}
+                    {/* Mobile collapse toggle */}
+                    <button
+                      className="w-full flex items-center justify-between sm:hidden mb-2 py-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedCardIds((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(profile.id)) {
+                            next.delete(profile.id);
+                          } else {
+                            next.add(profile.id);
+                          }
+                          return next;
+                        });
+                      }}
                     >
-                      <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
-                        <p className="text-slate-500 text-[11px] font-medium">
-                          {entityType === "agency"
-                            ? "Agency Type"
-                            : "Followers"}
+                      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        {expandedCardIds.has(profile.id)
+                          ? "Less info"
+                          : "More info"}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                          expandedCardIds.has(profile.id) ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {/* Body — always visible on sm+, collapsible on mobile */}
+                    <div
+                      className={`${expandedCardIds.has(profile.id) ? "block" : "hidden"} sm:block`}
+                    >
+                      {(profile.tagline || profile.bio) && (
+                        <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
+                          {profile.tagline || profile.bio}
                         </p>
-                        <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                          {entityType === "agency"
-                            ? profile.creator_type || "N/A"
-                            : followers > 0
-                              ? followers.toLocaleString()
-                              : "N/A"}
+                      )}
+                      {!(profile.tagline || profile.bio) && (
+                        <p className="text-xs text-slate-400 min-h-[32px]">
+                          No bio available yet.
                         </p>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        {(profile.skills || []).slice(0, 2).map((skill) => (
+                          <Badge
+                            key={skill}
+                            variant="secondary"
+                            className="text-[11px] bg-slate-100 text-slate-700 border-0"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
                       </div>
-                      {entityType === "agency" && (
+
+                      <div
+                        className={`grid gap-1.5 mt-2 ${
+                          entityType === "agency"
+                            ? "grid-cols-2"
+                            : "grid-cols-1"
+                        }`}
+                      >
                         <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                           <p className="text-slate-500 text-[11px] font-medium">
-                            Services
+                            {entityType === "agency"
+                              ? "Agency Type"
+                              : "Followers"}
                           </p>
                           <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                            {(profile.skills || []).length || "N/A"}
+                            {entityType === "agency"
+                              ? profile.creator_type || "N/A"
+                              : followers > 0
+                                ? followers.toLocaleString()
+                                : "N/A"}
                           </p>
                         </div>
-                      )}
+                        {entityType === "agency" && (
+                          <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
+                            <p className="text-slate-500 text-[11px] font-medium">
+                              Services
+                            </p>
+                            <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
+                              {(profile.skills || []).length || "N/A"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {connectionStatus !== "connected" && (
-                      <div className="mt-2.5 flex items-center gap-2">
-                        <Button
-                          className={`h-6 px-2 text-xs rounded-md ${
-                            actionsLocked
-                              ? "bg-slate-900 hover:bg-slate-800 text-white"
-                              : connectionStatus === "waiting" ||
+                    {/* Connect button — also inside collapsible on mobile */}
+                    <div
+                      className={`${expandedCardIds.has(profile.id) ? "block" : "hidden"} sm:block`}
+                    >
+                      {connectionStatus !== "connected" && (
+                        <div className="mt-2.5 flex items-center justify-end gap-2">
+                          <Button
+                            className={`h-6 px-2 text-xs rounded-md ${
+                              actionsLocked
+                                ? "bg-slate-900 hover:bg-slate-800 text-white"
+                                : connectionStatus === "waiting" ||
+                                    connectionStatus === "pending"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
+                                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                            }`}
+                            disabled={
+                              actionsLocked
+                                ? !onLockedAction ||
+                                  connectionStatus === "waiting" ||
                                   connectionStatus === "pending"
-                                ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
-                                : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                          }`}
-                          disabled={
-                            actionsLocked
-                              ? !onLockedAction ||
-                                connectionStatus === "waiting" ||
-                                connectionStatus === "pending"
-                              : disableConnectAction
-                          }
-                          onClick={async (e) => {
-                            // Prevent card click from opening details when pressing connect.
-                            e.stopPropagation();
-                            if (actionsLocked) {
-                              onLockedAction?.();
-                              return;
+                                : disableConnectAction
                             }
-                            if (connectLocked) {
-                              onConnectLocked?.();
-                              return;
-                            }
-                            if (isRequestingConnect) return;
-                            setRequestingConnectKeys((prev) =>
-                              new Set(prev).add(profileKey),
-                            );
-                            try {
-                              if (
-                                enableAgencyContractConnect &&
-                                profile.profile_type === "creator"
-                              ) {
+                            onClick={async (e) => {
+                              // Prevent card click from opening details when pressing connect.
+                              e.stopPropagation();
+                              if (actionsLocked) {
+                                onLockedAction?.();
+                                return;
+                              }
+                              if (connectLocked) {
+                                onConnectLocked?.();
+                                return;
+                              }
+                              if (isRequestingConnect) return;
+                              setRequestingConnectKeys((prev) =>
+                                new Set(prev).add(profileKey),
+                              );
+                              try {
+                                if (
+                                  enableAgencyContractConnect &&
+                                  profile.profile_type === "creator"
+                                ) {
+                                  setRequestingConnectKeys((prev) => {
+                                    const next = new Set(prev);
+                                    next.delete(profileKey);
+                                    return next;
+                                  });
+                                  setContractConnectProfile(profile);
+                                  return;
+                                }
+
+                                const result: any = await base44.post(
+                                  connectEndpoint,
+                                  {
+                                    profile_type: profile.profile_type,
+                                    target_id: profile.id,
+                                  },
+                                );
+                                const status = String(
+                                  result?.status || "waiting",
+                                );
+                                if (status === "declined") {
+                                  toast({
+                                    title: "Request already declined",
+                                    description: `This connection was declined previously. You can re-invite this ${entityLabel}.`,
+                                  });
+                                } else if (status === "connected") {
+                                  toast({
+                                    title: "Already connected",
+                                    description:
+                                      "This profile is already in your network.",
+                                  });
+                                } else {
+                                  toast({
+                                    title: "Connection request sent",
+                                    description: `Waiting for ${entityLabel} response. You will be notified after they accept or decline.`,
+                                  });
+                                  setPendingConnectKeys((prev) =>
+                                    new Set(prev).add(profileKey),
+                                  );
+                                }
+                                await queryClient.invalidateQueries({
+                                  queryKey: [queryScope],
+                                });
+                                if (selectedProfile?.id === profile.id) {
+                                  await detailsQuery.refetch();
+                                }
+                              } catch (e: any) {
+                                const parsed = parseApiErrorPayload(e);
+                                const isDuplicate =
+                                  parsed.code === "23505" ||
+                                  /already exists/i.test(
+                                    parsed.message || parsed.raw,
+                                  );
+                                if (isDuplicate) {
+                                  setPendingConnectKeys((prev) =>
+                                    new Set(prev).add(profileKey),
+                                  );
+                                  toast({
+                                    title: "Request already pending",
+                                    description: `Waiting for ${entityLabel} response.`,
+                                  });
+                                  await queryClient.invalidateQueries({
+                                    queryKey: [queryScope],
+                                  });
+                                  return;
+                                }
+                                toast({
+                                  title: "Failed to send connection request",
+                                  description: parseApiErrorMessage(
+                                    e,
+                                    "Unable to send connection request right now.",
+                                    entityLabel,
+                                  ),
+                                  variant: "destructive" as any,
+                                });
+                              } finally {
                                 setRequestingConnectKeys((prev) => {
                                   const next = new Set(prev);
                                   next.delete(profileKey);
                                   return next;
                                 });
-                                setContractConnectProfile(profile);
-                                return;
                               }
-
-                              const result: any = await base44.post(
-                                connectEndpoint,
-                                {
-                                  profile_type: profile.profile_type,
-                                  target_id: profile.id,
-                                },
-                              );
-                              const status = String(
-                                result?.status || "waiting",
-                              );
-                              if (status === "declined") {
-                                toast({
-                                  title: "Request already declined",
-                                  description: `This connection was declined previously. You can re-invite this ${entityLabel}.`,
-                                });
-                              } else if (status === "connected") {
-                                toast({
-                                  title: "Already connected",
-                                  description:
-                                    "This profile is already in your network.",
-                                });
-                              } else {
-                                toast({
-                                  title: "Connection request sent",
-                                  description: `Waiting for ${entityLabel} response. You will be notified after they accept or decline.`,
-                                });
-                                setPendingConnectKeys((prev) =>
-                                  new Set(prev).add(profileKey),
-                                );
-                              }
-                              await queryClient.invalidateQueries({
-                                queryKey: [queryScope],
-                              });
-                              if (selectedProfile?.id === profile.id) {
-                                await detailsQuery.refetch();
-                              }
-                            } catch (e: any) {
-                              const parsed = parseApiErrorPayload(e);
-                              const isDuplicate =
-                                parsed.code === "23505" ||
-                                /already exists/i.test(
-                                  parsed.message || parsed.raw,
-                                );
-                              if (isDuplicate) {
-                                setPendingConnectKeys((prev) =>
-                                  new Set(prev).add(profileKey),
-                                );
-                                toast({
-                                  title: "Request already pending",
-                                  description: `Waiting for ${entityLabel} response.`,
-                                });
-                                await queryClient.invalidateQueries({
-                                  queryKey: [queryScope],
-                                });
-                                return;
-                              }
-                              toast({
-                                title: "Failed to send connection request",
-                                description: parseApiErrorMessage(
-                                  e,
-                                  "Unable to send connection request right now.",
-                                  entityLabel,
-                                ),
-                                variant: "destructive" as any,
-                              });
-                            } finally {
-                              setRequestingConnectKeys((prev) => {
-                                const next = new Set(prev);
-                                next.delete(profileKey);
-                                return next;
-                              });
-                            }
-                          }}
-                        >
-                          {isRequestingConnect
-                            ? "Sending..."
-                            : actionsLocked || connectLocked
-                              ? "Upgrade to Connect"
-                              : connectionStatus === "pending" ||
-                                  connectionStatus === "waiting"
-                                ? `Waiting for ${entityLabel} response`
-                                : "Connect"}
-                        </Button>
-                        {connectLockedReason ? (
-                          <span className="text-[10px] font-semibold text-amber-700">
-                            {connectLockedReason}
-                          </span>
-                        ) : null}
-                      </div>
-                    )}
+                            }}
+                          >
+                            {isRequestingConnect
+                              ? "Sending..."
+                              : actionsLocked || connectLocked
+                                ? "Upgrade to Connect"
+                                : connectionStatus === "pending" ||
+                                    connectionStatus === "waiting"
+                                  ? `Waiting for ${entityLabel} response`
+                                  : "Connect"}
+                          </Button>
+                          {connectLockedReason ? (
+                            <span className="text-[10px] font-semibold text-amber-700">
+                              {connectLockedReason}
+                            </span>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </Card>
               );

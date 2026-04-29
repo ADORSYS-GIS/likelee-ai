@@ -76,6 +76,13 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import {
+  DashboardActionBar,
+  DashboardPageShell,
+  DashboardSectionHeader,
+  DashboardTabRail,
+  DashboardTableSurface,
+} from "@/components/dashboard/DashboardResponsive";
 
 // Mock sports agency data
 const mockAgency = {
@@ -344,13 +351,22 @@ export default function SportsAgencyDashboard() {
     return daysUntilExpiry < 60 && daysUntilExpiry > 0;
   };
 
+  const navItems = [
+    { id: "roster", label: "Roster" },
+    { id: "campaigns", label: "Campaigns" },
+    { id: "royalties", label: "Royalties" },
+    { id: "compliance", label: "Compliance" },
+    { id: "analytics", label: "Analytics" },
+    { id: "settings", label: "Settings" },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 py-3">
+            <div className="flex min-w-0 items-center gap-4 lg:gap-8">
               <div className="flex items-center gap-3">
                 <Trophy className="w-8 h-8 text-emerald-600" />
                 <span className="text-xl font-bold text-gray-900">
@@ -358,7 +374,7 @@ export default function SportsAgencyDashboard() {
                 </span>
               </div>
 
-              <div className="hidden md:flex items-center gap-1">
+              <div className="hidden xl:flex items-center gap-1">
                 <Button
                   variant={activeTab === "roster" ? "default" : "ghost"}
                   onClick={() => setActiveTab("roster")}
@@ -411,7 +427,7 @@ export default function SportsAgencyDashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex w-full items-center justify-end gap-2 md:w-auto md:gap-4">
               <Button variant="ghost" size="icon">
                 <Search className="w-5 h-5" />
               </Button>
@@ -484,10 +500,27 @@ export default function SportsAgencyDashboard() {
               </div>
             </div>
           </div>
+          <DashboardTabRail
+            className="pb-4 xl:hidden"
+            items={[
+              ...navItems.map((item) => ({
+                id: item.id,
+                label: item.label,
+                active: activeTab === item.id,
+                onClick: () => setActiveTab(item.id),
+              })),
+              {
+                id: "jobs-link",
+                label: "Jobs",
+                active: false,
+                onClick: () => navigate(createPageUrl("Jobs")),
+              },
+            ]}
+          />
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <DashboardPageShell>
         {/* Demo Alert */}
         <Alert className="mb-6 py-2 px-4 bg-blue-50 border border-blue-300 rounded-none">
           <AlertDescription className="text-blue-900 text-sm font-medium">
@@ -499,9 +532,9 @@ export default function SportsAgencyDashboard() {
         {activeTab === "roster" && (
           <div className="space-y-6">
             {/* Agency Overview */}
-            <Card className="p-6 bg-white border-2 border-gray-200">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex gap-6">
+            <Card className="bg-white border-2 border-gray-200 p-4 sm:p-6">
+              <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
                   <div className="w-20 h-20 bg-emerald-100 border-2 border-emerald-600 flex items-center justify-center">
                     <Trophy className="w-12 h-12 text-emerald-600" />
                   </div>
@@ -509,7 +542,7 @@ export default function SportsAgencyDashboard() {
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">
                       {mockAgency.name}
                     </h1>
-                    <div className="flex items-center gap-3 mb-3">
+                    <div className="mb-3 flex flex-wrap items-center gap-3">
                       <Badge className="bg-emerald-500 text-white">
                         <Shield className="w-3 h-3 mr-1" />
                         Verified Agency
@@ -518,7 +551,7 @@ export default function SportsAgencyDashboard() {
                         NIL Compliant
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex flex-col gap-2 text-sm text-gray-600 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
                         {mockAgency.location}
@@ -530,10 +563,10 @@ export default function SportsAgencyDashboard() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                   <Button
                     variant="outline"
-                    className="border-2 border-gray-300"
+                    className="w-full border-2 border-gray-300 sm:w-auto"
                   >
                     <Edit className="w-4 h-4 mr-2" />
                     Edit Profile
@@ -543,7 +576,7 @@ export default function SportsAgencyDashboard() {
             </Card>
 
             {/* Key Metrics */}
-            <div className="grid md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
               <Card className="p-6 bg-white border-2 border-gray-300 rounded-none">
                 <div className="flex items-center justify-between">
                   <div>
@@ -615,28 +648,28 @@ export default function SportsAgencyDashboard() {
             </div>
 
             {/* Athlete Roster */}
-            <Card className="p-6 bg-white border-2 border-gray-200">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Athlete Roster
-                </h2>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="border-2 border-gray-300"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export CSV
-                  </Button>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Athlete
-                  </Button>
-                </div>
-              </div>
+            <Card className="bg-white border-2 border-gray-200 p-4 sm:p-6">
+              <DashboardSectionHeader
+                title="Athlete Roster"
+                actions={
+                  <>
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 border-gray-300 sm:w-auto"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export CSV
+                    </Button>
+                    <Button className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Athlete
+                    </Button>
+                  </>
+                }
+              />
 
               {/* Filters */}
-              <div className="flex flex-wrap gap-4 mb-6 pb-6 border-b border-gray-200">
+              <DashboardActionBar className="mb-6 mt-6 rounded-none border-x-0 border-t-0 px-0 pb-6 pt-0 shadow-none">
                 <div className="flex-1 min-w-[200px]">
                   <Input
                     placeholder="Search athletes..."
@@ -647,7 +680,7 @@ export default function SportsAgencyDashboard() {
                 </div>
 
                 <Select value={sportFilter} onValueChange={setSportFilter}>
-                  <SelectTrigger className="w-40 border-2 border-gray-300">
+                  <SelectTrigger className="w-full border-2 border-gray-300 sm:w-40">
                     <SelectValue placeholder="Sport" />
                   </SelectTrigger>
                   <SelectContent>
@@ -660,7 +693,7 @@ export default function SportsAgencyDashboard() {
                 </Select>
 
                 <Select value={consentFilter} onValueChange={setConsentFilter}>
-                  <SelectTrigger className="w-40 border-2 border-gray-300">
+                  <SelectTrigger className="w-full border-2 border-gray-300 sm:w-40">
                     <SelectValue placeholder="Consent" />
                   </SelectTrigger>
                   <SelectContent>
@@ -686,11 +719,61 @@ export default function SportsAgencyDashboard() {
                     Clear
                   </Button>
                 )}
+              </DashboardActionBar>
+
+              <div className="space-y-3 md:hidden">
+                {filteredAthletes.map((athlete) => (
+                  <button
+                    key={athlete.id}
+                    type="button"
+                    onClick={() => setSelectedAthlete(athlete)}
+                    className="w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm"
+                  >
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={athlete.headshot}
+                        alt={athlete.name}
+                        className="h-14 w-14 rounded-full object-cover"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-semibold text-gray-900">
+                            {athlete.name}
+                          </span>
+                          {athlete.verified ? (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
+                          ) : null}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {athlete.school} • {athlete.sport}
+                        </p>
+                        <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              Followers
+                            </div>
+                            <div className="font-semibold text-gray-900">
+                              {athlete.social_followers.toLocaleString()}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              30D earnings
+                            </div>
+                            <div className="font-semibold text-gray-900">
+                              ${athlete.earnings_30d.toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <DashboardTableSurface className="hidden md:block">
+                <table className="min-w-[1100px] w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-4 py-3 text-left">
@@ -850,22 +933,22 @@ export default function SportsAgencyDashboard() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </DashboardTableSurface>
             </Card>
           </div>
         )}
 
         {activeTab === "campaigns" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
-                NIL Campaigns
-              </h2>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                New Campaign
-              </Button>
-            </div>
+            <DashboardSectionHeader
+              title="NIL Campaigns"
+              actions={
+                <Button className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Campaign
+                </Button>
+              }
+            />
 
             <div className="grid gap-6">
               {mockCampaigns.map((campaign) => (
@@ -873,7 +956,7 @@ export default function SportsAgencyDashboard() {
                   key={campaign.id}
                   className="p-6 bg-white border-2 border-black rounded-none hover:shadow-lg transition-shadow"
                 >
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900 mb-2">
                         {campaign.name}
@@ -903,7 +986,7 @@ export default function SportsAgencyDashboard() {
                     </Badge>
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">Type</p>
                       <p className="text-base font-medium text-gray-900">
@@ -937,17 +1020,20 @@ export default function SportsAgencyDashboard() {
 
         {activeTab === "royalties" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">
-                NIL Royalties
-              </h2>
-              <Button variant="outline" className="border-2 border-gray-300">
-                <Download className="w-4 h-4 mr-2" />
-                Export Report
-              </Button>
-            </div>
+            <DashboardSectionHeader
+              title="NIL Royalties"
+              actions={
+                <Button
+                  variant="outline"
+                  className="w-full border-2 border-gray-300 sm:w-auto"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export Report
+                </Button>
+              }
+            />
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <Card className="p-6 bg-white border-2 border-gray-200">
                 <p className="text-sm text-gray-600 mb-2">Total This Month</p>
                 <p className="text-4xl font-bold text-gray-900">
@@ -1006,9 +1092,9 @@ export default function SportsAgencyDashboard() {
 
         {activeTab === "compliance" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">NIL Compliance</h2>
+            <DashboardSectionHeader title="NIL Compliance" />
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <Card className="p-6 bg-white border-2 border-gray-200">
                 <div className="flex items-center gap-3 mb-4">
                   <Shield className="w-8 h-8 text-green-600" />
@@ -1087,11 +1173,9 @@ export default function SportsAgencyDashboard() {
 
         {activeTab === "analytics" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Analytics Dashboard
-            </h2>
+            <DashboardSectionHeader title="Analytics Dashboard" />
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <Card className="p-6 bg-white border-2 border-black rounded-none">
                 <h3 className="text-lg font-bold text-gray-900 mb-6">
                   Monthly Performance
@@ -1149,7 +1233,7 @@ export default function SportsAgencyDashboard() {
 
         {activeTab === "settings" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
+            <DashboardSectionHeader title="Settings" />
             <Card className="p-6 bg-white border-2 border-gray-200">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 Agency Information
@@ -1177,16 +1261,16 @@ export default function SportsAgencyDashboard() {
             </Card>
           </div>
         )}
-      </div>
+      </DashboardPageShell>
 
       {/* Athlete Detail Panel */}
       {selectedAthlete && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-end"
+          className="fixed inset-0 z-50 flex items-center justify-end bg-black/50"
           onClick={() => setSelectedAthlete(null)}
         >
           <div
-            className="bg-white h-full w-full md:w-[600px] shadow-2xl overflow-y-auto"
+            className="h-full w-full overflow-y-auto bg-white shadow-2xl md:w-[600px]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
@@ -1203,7 +1287,7 @@ export default function SportsAgencyDashboard() {
             </div>
 
             <div className="p-6 space-y-6">
-              <div className="flex gap-6">
+              <div className="flex flex-col gap-6 sm:flex-row">
                 <img
                   src={selectedAthlete.headshot}
                   alt={selectedAthlete.name}
@@ -1221,7 +1305,7 @@ export default function SportsAgencyDashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Card className="p-4 bg-gray-50">
                   <p className="text-xs text-gray-600 mb-1">Followers</p>
                   <p className="text-2xl font-bold text-gray-900">

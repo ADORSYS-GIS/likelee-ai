@@ -325,11 +325,20 @@ export default function Login() {
     } catch (err: any) {
       sessionStorage.removeItem(MFA_PENDING_STORAGE_KEY);
       const msg = getFriendlyErrorMessage(err, t);
+      const lower = String(err?.message || msg || "").toLowerCase();
+      const isUserFixableAuthError =
+        lower.includes("invalid login credentials") ||
+        lower.includes("incorrect email or password") ||
+        lower.includes("email not confirmed") ||
+        lower.includes("password should be at least") ||
+        lower.includes("invalid token") ||
+        lower.includes("otp") ||
+        lower.includes("rate limit exceeded");
       setError(msg);
       toast({
-        title: t("common.error"),
+        title: isUserFixableAuthError ? t("common.warning") : t("common.error"),
         description: msg,
-        variant: "destructive",
+        variant: isUserFixableAuthError ? "warning" : "destructive",
       });
     } finally {
       setLoading(false);
@@ -560,7 +569,7 @@ export default function Login() {
                     </div>
 
                     {error && (
-                      <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-medium animate-in fade-in zoom-in duration-300">
+                      <div className="p-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 text-sm font-medium animate-in fade-in zoom-in duration-300 dark:bg-amber-950/40 dark:border-amber-900/60 dark:text-amber-200">
                         {error}
                       </div>
                     )}

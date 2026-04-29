@@ -95,9 +95,11 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_SECRET_KEY", default = "")]
     pub stripe_secret_key: String,
 
+    #[envconfig(from = "STRIPE_PUBLISHABLE_KEY", default = "")]
+    pub stripe_publishable_key: String,
+
     #[envconfig(from = "STRIPE_CLIENT_ID", default = "")]
     pub stripe_client_id: String,
-
     #[envconfig(from = "STRIPE_RETURN_URL", default = "")]
     pub stripe_return_url: String,
 
@@ -331,6 +333,7 @@ pub struct AppState {
     pub elevenlabs_api_key: String,
 
     pub stripe_secret_key: String,
+    pub stripe_publishable_key: String,
     pub stripe_client_id: String,
     pub stripe_return_url: String,
     pub stripe_refresh_url: String,

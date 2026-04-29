@@ -10,13 +10,13 @@ Current checkpoint commit: `TBD` (`PR 5 backfill implementation complete`)
 
 ## Progress Overview
 
-| Phase | Status | Completion | Notes |
-|-------|--------|------------|-------|
-| PR 1 - Foundation | ✅ Complete | 100% | Shared storage module and registry created |
-| PR 2 - Agency Files | ✅ Core Done | 90% | Minor cleanup tasks remain |
-| PR 3 - Creator Media | ✅ Complete | 100% | All creator and talent media migrated |
-| PR 4 - Deliverables | ✅ Complete | 100% | All normalization tasks finished |
-| PR 5 - Backfill | ✅ Implementation Complete | 100% | Ready for execution |
+| Phase                | Status                     | Completion | Notes                                      |
+| -------------------- | -------------------------- | ---------- | ------------------------------------------ |
+| PR 1 - Foundation    | ✅ Complete                | 100%       | Shared storage module and registry created |
+| PR 2 - Agency Files  | ✅ Core Done               | 90%        | Minor cleanup tasks remain                 |
+| PR 3 - Creator Media | ✅ Complete                | 100%       | All creator and talent media migrated      |
+| PR 4 - Deliverables  | ✅ Complete                | 100%       | All normalization tasks finished           |
+| PR 5 - Backfill      | ✅ Implementation Complete | 100%       | Ready for execution                        |
 
 **Overall Progress**: ~90% complete (27/30 major tasks)
 
@@ -38,23 +38,27 @@ Current checkpoint commit: `TBD` (`PR 5 backfill implementation complete`)
 ### ✅ Completed Items (27/30)
 
 **PR 1 - Foundation (4/4)**
+
 - ✅ Storage architecture documentation
 - ✅ `storage_assets` migration
 - ✅ Shared storage module (`likelee-server/src/storage/mod.rs`)
 - ✅ Signed URL logic extraction
 
 **PR 2 - Agency Files (3/5)**
+
 - ✅ Agency storage, client file, private file flows migrated
 - ✅ Agency ownership resolution via `organization_id`
 - ✅ Dual-write to `storage_assets` with soft-delete
 
 **PR 3 - Creator Media (4/4)** ← **COMPLETE**
+
 - ✅ Reference image uploads/deletes migrated
 - ✅ Voice recording uploads/deletes/signed URLs migrated (2026-04-15)
 - ✅ Talent portfolio uploads/deletes migrated (2026-04-15)
 - ✅ Fixed ownership and quota attribution
 
 **PR 4 - Deliverables (5/5)** ← **COMPLETE**
+
 - ✅ Booking files migrated
 - ✅ Booking deliverables migrated
 - ✅ Campaign-offer deliverables migrated
@@ -62,6 +66,7 @@ Current checkpoint commit: `TBD` (`PR 5 backfill implementation complete`)
 - ✅ Removed asset_url fallback logic (2026-04-15)
 
 **PR 5 - Backfill (5/5)** ← **IMPLEMENTATION COMPLETE**
+
 - ✅ Backfill module created (`likelee-server/src/storage/backfill.rs`)
 - ✅ Admin endpoints for backfill and verification
 - ✅ Dry-run mode for validation
@@ -69,6 +74,7 @@ Current checkpoint commit: `TBD` (`PR 5 backfill implementation complete`)
 - ✅ Comprehensive documentation (`docs/pr5-backfill-guide.md`)
 
 **Testing (11/12)**
+
 - ✅ `cargo check` passing
 - ✅ Unit tests for path generation (16 tests)
 - ✅ Unit tests for voice recordings (8 tests)
@@ -87,13 +93,16 @@ All active tasks completed!
 ### ⏳ Pending (3/30)
 
 **PR 2 - Agency Files (2)**
+
 - ⏳ Folder handler cleanup
 - ⏳ Verify all talent asset paths use shared helpers
 
 **PR 5 - Backfill Execution (1)**
+
 - ⏳ Execute backfill in production (implementation complete, awaiting execution)
 
 **Testing (1)**
+
 - ⏳ Integration tests for all migrated flows
 
 ## Checklist
@@ -236,16 +245,12 @@ All active tasks completed!
 
 1. ✅ ~~Finish the remaining PR 2 cleanup items around agency folder handlers and talent-asset edge cases.~~
    - Core migration complete, minor cleanup tasks remain
-   
 2. ✅ ~~Migrate creator-owned media flows in `reference_images.rs`, `voice.rs`, and talent portfolio handling.~~
    - **COMPLETE** - All creator and talent media migrated
-   
 3. ✅ ~~Complete PR 4 normalization tasks for deliverable responses.~~
    - **COMPLETE** - All normalization finished
-   
 4. ✅ ~~Begin PR 5 backfill implementation~~
    - **COMPLETE** - Implementation finished with comprehensive testing
-   
 5. 🎯 **CURRENT PRIORITY**: Execute PR 5 backfill in production
    - Implementation complete and tested
    - Dry-run validation ready
@@ -257,11 +262,9 @@ All active tasks completed!
      3. Execute production backfill
      4. Verify parity between source tables and registry
      5. Monitor for 24-48 hours
-   
 6. ⏳ Complete PR 2 cleanup tasks
    - Folder handler cleanup
    - Verify talent asset paths
-   
 7. ⏳ Add integration tests for all migrated flows
    - Agency uploads and ownership attribution
    - Creator media visibility
@@ -273,6 +276,7 @@ All active tasks completed!
 ### PR 5 Backfill Implementation Completed
 
 **Implementation:**
+
 - Created backfill module (`likelee-server/src/storage/backfill.rs`)
 - Created admin endpoints module (`likelee-server/src/admin.rs`)
 - Added routes to router for backfill operations
@@ -282,6 +286,7 @@ All active tasks completed!
 - Created detailed backfill guide (`docs/pr5-backfill-guide.md`)
 
 **Features:**
+
 - **Idempotent**: Skips already-backfilled records automatically
 - **Dry-run mode**: Validates without making changes
 - **Parity verification**: Compares source tables with registry
@@ -290,15 +295,18 @@ All active tasks completed!
 - **Rollback support**: Safe rollback procedures documented
 
 **Endpoints:**
+
 - `POST /api/admin/storage/backfill?dry_run=true|false` - Execute backfill
 - `GET /api/admin/storage/verify-parity` - Verify data integrity
 
 **Testing:**
+
 - 10 unit tests for backfill module (all passing)
 - 3 unit tests for admin module (all passing)
 - Total: 80 unit tests passing across codebase
 
 **Documentation:**
+
 - Comprehensive backfill guide with step-by-step instructions
 - Error handling procedures and solutions
 - Rollback procedures for failure scenarios
@@ -306,6 +314,7 @@ All active tasks completed!
 - Performance considerations and recommendations
 
 **Tables Covered:**
+
 1. `reference_images` (Creator-owned, Public, No Quota)
 2. `voice_recordings` (User-owned, Private, No Quota)
 3. `talent_portfolio_items` (Agency-owned, Public, Counts Quota)
@@ -317,12 +326,14 @@ All active tasks completed!
 9. `studio_campaign_documents` (User-owned, Private, No Quota)
 
 **Quota Attribution:**
+
 - ✅ Agency-owned assets count toward quota
 - ✅ Brand-owned assets count toward quota
 - ❌ Creator-owned source assets do NOT count
 - ❌ User-owned assets do NOT count
 
 **Next Steps:**
+
 1. Run dry-run backfill to validate
 2. Review dry-run report for errors
 3. Execute production backfill
@@ -330,6 +341,7 @@ All active tasks completed!
 5. Monitor for 24-48 hours
 
 ### PR 4 Deliverable Normalization Completed
+
 - Normalized booking deliverable list responses to return secure endpoint URLs
 - Normalized campaign offer deliverable list responses to return secure endpoint URLs
 - Removed asset_url fallback logic in serve_deliverable_file
@@ -338,52 +350,61 @@ All active tasks completed!
 - All 67 unit tests now passing across the codebase
 
 ### Files Modified
+
 - `likelee-server/src/booking_deliverables.rs` - Normalized responses and removed fallback
 - `likelee-server/src/brand_campaigns.rs` - Normalized offer deliverable responses
 - `docs/ticket-499-implementation-checklist.md` - Updated progress tracking
 
 ### API Changes
+
 **Booking Deliverables:**
+
 - `GET /api/bookings-campaigns/:campaign_id/deliverables` now returns:
   - `asset_url`: `/api/bookings-campaigns/{campaign_id}/deliverables/{id}/file` (secure endpoint)
   - Previously returned storage path directly
 
 **Campaign Offer Deliverables:**
+
 - `GET /api/campaign-offers/:offer_id/deliverables` now returns:
   - `asset_url`: `/api/campaign-offers/{offer_id}/deliverables/{id}/file` (secure endpoint)
   - Previously returned storage path directly
 
 ### Breaking Changes
+
 - `serve_deliverable_file()` now requires `storage_path` field
 - No longer falls back to `asset_url` for storage path
 - Returns `500 Internal Server Error` if `storage_path` is missing
 
 ### Benefits
+
 - **Consistency**: All deliverable endpoints now return secure URLs
 - **Security**: Storage paths no longer exposed in API responses
 - **Clarity**: Clear separation between API URLs and storage paths
 - **Maintainability**: Single source of truth for storage paths
 
 ### Next Immediate Steps
+
 1. Begin PR 5 backfill planning
 2. Add integration tests for deliverable flows
 3. Complete PR 2 cleanup tasks
 4. Verify quota attribution rules
-
 
 ---
 
 ## Quick Reference Card
 
 ### 🎯 Current Focus
+
 **Execute PR 5 backfill in production** - Implementation complete, ready for execution
 
 ### 📊 Progress Summary
+
 - **Completed**: 27/30 tasks (90%)
 - **In Progress**: 0 tasks
 - **Pending**: 3 tasks (PR 2 cleanup, PR 5 execution, integration tests)
 
 ### ✅ Recent Completions (2026-04-15)
+
 - PR 5 backfill implementation complete
 - Backfill module with dry-run support
 - Admin endpoints for backfill and verification
@@ -393,6 +414,7 @@ All active tasks completed!
 - Total: 80 unit tests passing
 
 ### 🔜 Next Actions
+
 1. Run dry-run backfill: `POST /api/admin/storage/backfill?dry_run=true`
 2. Review dry-run report for errors
 3. Execute production backfill: `POST /api/admin/storage/backfill?dry_run=false`
@@ -400,6 +422,7 @@ All active tasks completed!
 5. Monitor for 24-48 hours
 
 ### 📁 Key Files
+
 - `likelee-server/src/storage/mod.rs` - Shared storage module
 - `likelee-server/src/storage/backfill.rs` - Backfill implementation
 - `likelee-server/src/admin.rs` - Admin endpoints
@@ -408,6 +431,7 @@ All active tasks completed!
 - `docs/ticket-499-implementation-checklist.md` - This file
 
 ### 🧪 Testing Status
+
 - Unit tests: ✅ 80 passing
   - Storage module: 16 tests
   - Voice recordings: 8 tests
@@ -420,6 +444,7 @@ All active tasks completed!
 - Compilation: ✅ Clean
 
 ### 📝 Documentation
+
 - `docs/storage-architecture.md` - Architecture spec
 - `docs/pr5-backfill-guide.md` - Backfill execution guide
 - `docs/voice-recording-migration-summary.md` - Voice migration details
@@ -427,6 +452,7 @@ All active tasks completed!
 - `docs/ticket-499-implementation-checklist.md` - This file
 
 ### 🔗 Related Resources
+
 - Storage Asset Matrix: See `docs/storage-architecture.md`
 - Migration Pattern: Upload → Registry Mirror → Soft-Delete on Remove
 - Path Format: `{owner_type}/{owner_id}/{context}/{timestamp}_{filename}`
@@ -437,7 +463,8 @@ All active tasks completed!
 ---
 
 **Legend**:
+
 - ✅ Complete
-- 🔄 In Progress  
+- 🔄 In Progress
 - ⏳ Pending
 - ℹ️ Informational
