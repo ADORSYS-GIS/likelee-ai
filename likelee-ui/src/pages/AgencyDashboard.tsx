@@ -22160,7 +22160,7 @@ export default function AgencyDashboard() {
                   hasIrlBookingAddon={hasIrlBookingAddon}
                   hasProAccess={hasProAccess}
                   agencyDisplayPlanLabel={agencyDisplayPlanLabel}
-                  kycStatus={kycStatus}
+                  kycStatus={agencyKycStatus}
                 />
               )}
             {activeTab === "settings" && activeSubTab === "File Storage" && (
