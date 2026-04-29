@@ -88,7 +88,9 @@ export default function AgencySelection() {
                   <Icon className="w-7 h-7" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-                <p className="text-gray-600 text-sm md:text-base flex-1">{desc}</p>
+                <p className="text-gray-600 text-sm md:text-base flex-1">
+                  {desc}
+                </p>
                 <Button
                   onClick={() => navigate(to)}
                   className="mt-4 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-2 border-black rounded-none w-full font-bold h-12"
