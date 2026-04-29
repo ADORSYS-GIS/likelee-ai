@@ -1196,221 +1196,176 @@ export function MarketplaceSection({
                                   return;
                                 }
 
-                    {connectionStatus !== "connected" && (
-                      <div className="mt-2.5 flex items-center gap-2">
-                        <Button
-                          className={`h-6 px-2 text-xs rounded-md ${
-                            actionsLocked
-                              ? "bg-slate-900 hover:bg-slate-800 text-white"
-                              : connectionStatus === "waiting" ||
-                                  connectionStatus === "pending"
-                                ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
-                                : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                          }`}
-                          disabled={
-                            actionsLocked
-                              ? !onLockedAction ||
-                                connectionStatus === "waiting" ||
-                                connectionStatus === "pending"
-                              : disableConnectAction
-                          }
-                          onClick={async (e) => {
-                            // Prevent card click from opening details when pressing connect.
-                            e.stopPropagation();
-                            if (actionsLocked) {
-                              onLockedAction?.();
-                              return;
-                            }
-                            if (connectLocked) {
-                              onConnectLocked?.();
-                              return;
-                            }
-                            if (isRequestingConnect) return;
-                            setRequestingConnectKeys((prev) =>
-                              new Set(prev).add(profileKey),
-                            );
-                            try {
-                              if (
-                                enableAgencyContractConnect &&
-                                profile.profile_type === "creator"
-                              ) {
+                                const result: any = await base44.post(
+                                  connectEndpoint,
+                                  {
+                                    profile_type: profile.profile_type,
+                                    target_id: profile.id,
+                                  },
+                                );
+                                const status = String(
+                                  result?.status || "waiting",
+                                );
+                                if (status === "declined") {
+                                  toast({
+                                    title: t(
+                                      `${translationPrefix}.toasts.requestAlreadyDeclinedTitle`,
+                                      {
+                                        defaultValue:
+                                          "Request already declined",
+                                      },
+                                    ),
+                                    description: t(
+                                      `${translationPrefix}.toasts.requestAlreadyDeclinedDescription`,
+                                      {
+                                        entityLabel:
+                                          entityLabelTranslated.toLowerCase(),
+                                        defaultValue:
+                                          "This connection was declined previously. You can re-invite this {{entityLabel}}.",
+                                      },
+                                    ),
+                                  });
+                                } else if (status === "connected") {
+                                  toast({
+                                    title: t(
+                                      `${translationPrefix}.toasts.alreadyConnectedTitle`,
+                                      {
+                                        defaultValue: "Already connected",
+                                      },
+                                    ),
+                                    description: t(
+                                      `${translationPrefix}.toasts.alreadyConnectedDescription`,
+                                      {
+                                        defaultValue:
+                                          "This profile is already in your network.",
+                                      },
+                                    ),
+                                  });
+                                } else {
+                                  toast({
+                                    title: t(
+                                      `${translationPrefix}.toasts.connectionRequestSentTitle`,
+                                      {
+                                        defaultValue: "Connection request sent",
+                                      },
+                                    ),
+                                    description: t(
+                                      `${translationPrefix}.toasts.connectionRequestSentDescription`,
+                                      {
+                                        entityLabel:
+                                          entityLabelTranslated.toLowerCase(),
+                                        defaultValue:
+                                          "Waiting for {{entityLabel}} response. You will be notified after they accept or decline.",
+                                      },
+                                    ),
+                                  });
+                                  setPendingConnectKeys((prev) =>
+                                    new Set(prev).add(profileKey),
+                                  );
+                                }
+                                await queryClient.invalidateQueries({
+                                  queryKey: [queryScope],
+                                });
+                                if (selectedProfile?.id === profile.id) {
+                                  await detailsQuery.refetch();
+                                }
+                              } catch (e: any) {
+                                const parsed = parseApiErrorPayload(e);
+                                const isDuplicate =
+                                  parsed.code === "23505" ||
+                                  /already exists/i.test(
+                                    parsed.message || parsed.raw,
+                                  );
+                                if (isDuplicate) {
+                                  setPendingConnectKeys((prev) =>
+                                    new Set(prev).add(profileKey),
+                                  );
+                                  toast({
+                                    title: t(
+                                      `${translationPrefix}.toasts.requestPendingTitle`,
+                                      {
+                                        defaultValue: "Request already pending",
+                                      },
+                                    ),
+                                    description: t(
+                                      `${translationPrefix}.toasts.requestPendingDescription`,
+                                      {
+                                        entityLabel:
+                                          entityLabelTranslated.toLowerCase(),
+                                        defaultValue:
+                                          "Waiting for {{entityLabel}} response.",
+                                      },
+                                    ),
+                                  });
+                                  await queryClient.invalidateQueries({
+                                    queryKey: [queryScope],
+                                  });
+                                  return;
+                                }
+                                toast({
+                                  title: t(
+                                    `${translationPrefix}.toasts.failedConnectionRequestTitle`,
+                                    {
+                                      defaultValue:
+                                        "Failed to send connection request",
+                                    },
+                                  ),
+                                  description: parseApiErrorMessage(
+                                    e,
+                                    t(
+                                      `${translationPrefix}.toasts.failedConnectionRequestDescription`,
+                                      {
+                                        defaultValue:
+                                          "Unable to send connection request right now.",
+                                      },
+                                    ),
+                                    entityLabelTranslated.toLowerCase(),
+                                  ),
+                                  variant: "destructive" as any,
+                                });
+                              } finally {
                                 setRequestingConnectKeys((prev) => {
                                   const next = new Set(prev);
                                   next.delete(profileKey);
                                   return next;
                                 });
-                                setContractConnectProfile(profile);
-                                return;
                               }
-
-                              const result: any = await base44.post(
-                                connectEndpoint,
-                                {
-                                  profile_type: profile.profile_type,
-                                  target_id: profile.id,
-                                },
-                              );
-                              const status = String(
-                                result?.status || "waiting",
-                              );
-                              if (status === "declined") {
-                                toast({
-                                  title: t(
-                                    `${translationPrefix}.toasts.requestAlreadyDeclinedTitle`,
-                                    {
-                                      defaultValue: "Request already declined",
-                                    },
-                                  ),
-                                  description: t(
-                                    `${translationPrefix}.toasts.requestAlreadyDeclinedDescription`,
-                                    {
-                                      entityLabel:
-                                        entityLabelTranslated.toLowerCase(),
-                                      defaultValue:
-                                        "This connection was declined previously. You can re-invite this {{entityLabel}}.",
-                                    },
-                                  ),
-                                });
-                              } else if (status === "connected") {
-                                toast({
-                                  title: t(
-                                    `${translationPrefix}.toasts.alreadyConnectedTitle`,
-                                    {
-                                      defaultValue: "Already connected",
-                                    },
-                                  ),
-                                  description: t(
-                                    `${translationPrefix}.toasts.alreadyConnectedDescription`,
-                                    {
-                                      defaultValue:
-                                        "This profile is already in your network.",
-                                    },
-                                  ),
-                                });
-                              } else {
-                                toast({
-                                  title: t(
-                                    `${translationPrefix}.toasts.connectionRequestSentTitle`,
-                                    {
-                                      defaultValue: "Connection request sent",
-                                    },
-                                  ),
-                                  description: t(
-                                    `${translationPrefix}.toasts.connectionRequestSentDescription`,
-                                    {
-                                      entityLabel:
-                                        entityLabelTranslated.toLowerCase(),
-                                      defaultValue:
-                                        "Waiting for {{entityLabel}} response. You will be notified after they accept or decline.",
-                                    },
-                                  ),
-                                });
-                                setPendingConnectKeys((prev) =>
-                                  new Set(prev).add(profileKey),
-                                );
-                              }
-                              await queryClient.invalidateQueries({
-                                queryKey: [queryScope],
-                              });
-                              if (selectedProfile?.id === profile.id) {
-                                await detailsQuery.refetch();
-                              }
-                            } catch (e: any) {
-                              const parsed = parseApiErrorPayload(e);
-                              const isDuplicate =
-                                parsed.code === "23505" ||
-                                /already exists/i.test(
-                                  parsed.message || parsed.raw,
-                                );
-                              if (isDuplicate) {
-                                setPendingConnectKeys((prev) =>
-                                  new Set(prev).add(profileKey),
-                                );
-                                toast({
-                                  title: t(
-                                    `${translationPrefix}.toasts.requestPendingTitle`,
-                                    {
-                                      defaultValue: "Request already pending",
-                                    },
-                                  ),
-                                  description: t(
-                                    `${translationPrefix}.toasts.requestPendingDescription`,
-                                    {
-                                      entityLabel:
-                                        entityLabelTranslated.toLowerCase(),
-                                      defaultValue:
-                                        "Waiting for {{entityLabel}} response.",
-                                    },
-                                  ),
-                                });
-                                await queryClient.invalidateQueries({
-                                  queryKey: [queryScope],
-                                });
-                                return;
-                              }
-                              toast({
-                                title: t(
-                                  `${translationPrefix}.toasts.failedConnectionRequestTitle`,
-                                  {
-                                    defaultValue:
-                                      "Failed to send connection request",
-                                  },
-                                ),
-                                description: parseApiErrorMessage(
-                                  e,
-                                  t(
-                                    `${translationPrefix}.toasts.failedConnectionRequestDescription`,
-                                    {
-                                      defaultValue:
-                                        "Unable to send connection request right now.",
-                                    },
-                                  ),
-                                  entityLabelTranslated.toLowerCase(),
-                                ),
-                                variant: "destructive" as any,
-                              });
-                            } finally {
-                              setRequestingConnectKeys((prev) => {
-                                const next = new Set(prev);
-                                next.delete(profileKey);
-                                return next;
-                              });
-                            }
-                          }}
-                        >
-                          {isRequestingConnect
-                            ? t(`${translationPrefix}.actions.sending`, {
-                                defaultValue: "Sending...",
-                              })
-                            : actionsLocked || connectLocked
-                              ? t(
-                                  `${translationPrefix}.actions.upgradeToConnect`,
-                                  {
-                                    defaultValue: "Upgrade to Connect",
-                                  },
-                                )
-                              : connectionStatus === "pending" ||
-                                  connectionStatus === "waiting"
+                            }}
+                          >
+                            {isRequestingConnect
+                              ? t(`${translationPrefix}.actions.sending`, {
+                                  defaultValue: "Sending...",
+                                })
+                              : actionsLocked || connectLocked
                                 ? t(
-                                    `${translationPrefix}.actions.waitingForResponse`,
+                                    `${translationPrefix}.actions.upgradeToConnect`,
                                     {
-                                      entityLabel:
-                                        entityLabelTranslated.toLowerCase(),
-                                      defaultValue:
-                                        "Waiting for {{entityLabel}} response",
+                                      defaultValue: "Upgrade to Connect",
                                     },
                                   )
-                                : t(`${translationPrefix}.actions.connect`, {
-                                    defaultValue: "Connect",
-                                  })}
-                        </Button>
-                        {connectLockedReason ? (
-                          <span className="text-[10px] font-semibold text-amber-700">
-                            {connectLockedReason}
-                          </span>
-                        ) : null}
-                      </div>
-                    )}
+                                : connectionStatus === "pending" ||
+                                    connectionStatus === "waiting"
+                                  ? t(
+                                      `${translationPrefix}.actions.waitingForResponse`,
+                                      {
+                                        entityLabel:
+                                          entityLabelTranslated.toLowerCase(),
+                                        defaultValue:
+                                          "Waiting for {{entityLabel}} response",
+                                      },
+                                    )
+                                  : t(`${translationPrefix}.actions.connect`, {
+                                      defaultValue: "Connect",
+                                    })}
+                          </Button>
+                          {connectLockedReason ? (
+                            <span className="text-[10px] font-semibold text-amber-700">
+                              {connectLockedReason}
+                            </span>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </Card>
               );
