@@ -97,6 +97,11 @@ type StorageUsage = {
   limit_bytes: number;
 };
 
+type TextTranslator = (key: string, options?: Record<string, any>) => string;
+
+const asTranslationText = (value: unknown, fallback: string): string =>
+  typeof value === "string" ? value : fallback;
+
 const RenameFolderModal = ({
   isOpen,
   onClose,
@@ -966,19 +971,22 @@ const ShareFileModal = ({
 
 const FileStorageView = () => {
   const { t: rawT } = useTranslation();
-  const t = (key: string, options?: Record<string, any>) => {
+  const t: TextTranslator = (key, options) => {
     if (!key.startsWith("agencyDashboard.settings.fileStorage.")) {
-      return rawT(key, options);
+      return asTranslationText(rawT(key, options), key);
     }
     const suffix = key.replace("agencyDashboard.settings.fileStorage.", "");
-    const fallback = rawT(
-      `agencyDashboard.analytics.settings.fileStorage.${suffix}`,
-      options,
+    const fallback = asTranslationText(
+      rawT(`agencyDashboard.analytics.settings.fileStorage.${suffix}`, options),
+      key,
     );
-    return rawT(key, {
-      ...(options || {}),
-      defaultValue: fallback,
-    });
+    return asTranslationText(
+      rawT(key, {
+        ...(options || {}),
+        defaultValue: fallback,
+      }),
+      fallback,
+    );
   };
   const { toast } = useToast();
   const navigate = useNavigate();

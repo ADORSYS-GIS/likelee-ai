@@ -90,6 +90,17 @@ type GeneralSettingsViewProps = {
   kycStatus?: string;
 };
 
+type TextTranslator = (key: string, options?: Record<string, any>) => string;
+
+const asTranslationText = (value: unknown, fallback: string): string =>
+  typeof value === "string" ? value : fallback;
+
+const createTextTranslator = (
+  rawT: (key: string, options?: Record<string, any>) => unknown,
+): TextTranslator => {
+  return (key, options) => asTranslationText(rawT(key, options), key);
+};
+
 const CALENDLY_USE_DEFAULT_VALUE = "__use_default_mapping__";
 const CALENDLY_EVENT_TYPE_URI_PREFIX = "https://api.calendly.com/event_types/";
 const CALENDLY_BOOKING_TYPE_OPTIONS = [
@@ -262,7 +273,7 @@ type TeamAuditLogRecord = {
 };
 
 const getTeamRoleOptions = (
-  t: (key: string) => string,
+  t: TextTranslator,
 ): Array<{
   value: Exclude<TeamRoleValue, "owner">;
   label: string;
@@ -287,10 +298,7 @@ const getTeamRoleOptions = (
   },
 ];
 
-const formatTeamRoleLabel = (
-  role: string | undefined,
-  t: (key: string) => string,
-) => {
+const formatTeamRoleLabel = (role: string | undefined, t: TextTranslator) => {
   switch (role) {
     case "owner":
       return t("agencyDashboard.settings.team.roles.owner");
@@ -324,7 +332,8 @@ const InviteTeamMemberModal = ({
   onSubmit: () => void;
   submitting: boolean;
 }) => {
-  const { t } = useTranslation();
+  const { t: rawT } = useTranslation();
+  const t = createTextTranslator(rawT);
   const teamRoleOptions = getTeamRoleOptions(t);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -430,7 +439,8 @@ const EditPermissionsModal = ({
   onSubmit: () => void;
   submitting: boolean;
 }) => {
-  const { t } = useTranslation();
+  const { t: rawT } = useTranslation();
+  const t = createTextTranslator(rawT);
   const teamRoleOptions = getTeamRoleOptions(t);
   if (!member) return null;
 
@@ -510,7 +520,8 @@ const ActivityLogModal = ({
   onOpenChange: (open: boolean) => void;
   logs: TeamAuditLogRecord[];
 }) => {
-  const { t } = useTranslation();
+  const { t: rawT } = useTranslation();
+  const t = createTextTranslator(rawT);
   const decorateActivity = (log: TeamAuditLogRecord) => {
     switch (log.action) {
       case "team_invite_created":
@@ -673,19 +684,22 @@ const ActivityLogModal = ({
 
 const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
   const { t: rawT } = useTranslation();
-  const t = (key: string, options?: Record<string, any>) => {
+  const t: TextTranslator = (key, options) => {
     if (!key.startsWith("agencyDashboard.settings.")) {
-      return rawT(key, options);
+      return asTranslationText(rawT(key, options), key);
     }
     const suffix = key.replace("agencyDashboard.settings.", "");
-    const fallback = rawT(
-      `agencyDashboard.analytics.settings.${suffix}`,
-      options,
+    const fallback = asTranslationText(
+      rawT(`agencyDashboard.analytics.settings.${suffix}`, options),
+      key,
     );
-    return rawT(key, {
-      ...(options || {}),
-      defaultValue: fallback,
-    });
+    return asTranslationText(
+      rawT(key, {
+        ...(options || {}),
+        defaultValue: fallback,
+      }),
+      fallback,
+    );
   };
   const {
     hasIrlBookingAddon,

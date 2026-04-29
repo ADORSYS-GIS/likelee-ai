@@ -5,6 +5,12 @@ import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
 
 export default function PrivacyPolicy() {
   const { t } = useTranslation();
+  const section2List = t("privacyPolicy.sections.2.list", {
+    returnObjects: true,
+  });
+  const section5List = t("privacyPolicy.sections.5.list", {
+    returnObjects: true,
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-16 px-6">
@@ -61,11 +67,11 @@ export default function PrivacyPolicy() {
                 {t("privacyPolicy.sections.2.title")}
               </h2>
               <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                {t("privacyPolicy.sections.2.list", {
-                  returnObjects: true,
-                }).map((item: string, index: number) => (
-                  <li key={index}>{item}</li>
-                ))}
+                {(Array.isArray(section2List) ? section2List : []).map(
+                  (item, index) => (
+                    <li key={index}>{item}</li>
+                  ),
+                )}
               </ul>
             </section>
 
@@ -109,11 +115,11 @@ export default function PrivacyPolicy() {
                 {t("privacyPolicy.sections.5.p2")}
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-700">
-                {t("privacyPolicy.sections.5.list", {
-                  returnObjects: true,
-                }).map((item: string, index: number) => (
-                  <li key={index}>{item}</li>
-                ))}
+                {(Array.isArray(section5List) ? section5List : []).map(
+                  (item, index) => (
+                    <li key={index}>{item}</li>
+                  ),
+                )}
               </ul>
             </section>
 

@@ -7261,7 +7261,7 @@ export default function CreatorDashboard() {
                           <h4 className="font-bold text-gray-900 capitalize text-base sm:text-xl">
                             {t(
                               `creatorDashboard.voice.emotionNames.${recording.emotion.toLowerCase()}`,
-                              recording.emotion,
+                              { defaultValue: recording.emotion },
                             )}
                           </h4>
                           <p className="text-xs sm:text-sm text-gray-600">
