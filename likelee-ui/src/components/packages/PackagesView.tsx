@@ -644,7 +644,9 @@ export function PackagesView({
           // Close the wizard and navigate to the roster with this talent's profile open
           setShowWizard(false);
           setEditingPackage(null);
-          const talentId = String(talent?.id || talent?.agency_user_id || "").trim();
+          const talentId = String(
+            talent?.id || talent?.agency_user_id || "",
+          ).trim();
           const subTab = isSportsAgency ? "All Athletes" : "All Talent";
           navigate(
             `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent(subTab)}${talentId ? `&openTalentId=${encodeURIComponent(talentId)}` : ""}`,

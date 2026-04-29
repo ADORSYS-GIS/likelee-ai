@@ -335,9 +335,10 @@ const BrandConnectionsView = ({
     queryKey: ["agency", "offer-assignments", selectedOfferId],
     enabled: !!selectedOfferId,
     queryFn: async () => {
-      const resp = await base44.get<{ assignments?: any[]; is_locked?: boolean }>(
-        `/api/campaign-offers/${selectedOfferId}/assignments`,
-      );
+      const resp = await base44.get<{
+        assignments?: any[];
+        is_locked?: boolean;
+      }>(`/api/campaign-offers/${selectedOfferId}/assignments`);
       return {
         assignments: Array.isArray(resp?.assignments) ? resp.assignments : [],
         // is_locked is true when the brand has finalized their package selection.
@@ -384,7 +385,8 @@ const BrandConnectionsView = ({
   );
   const selectedOfferLockInfo = useMemo(() => {
     const offerId = String(selectedOfferId || "").trim();
-    if (!offerId) return { locked: false, contractSigned: false, packageFinalized: false };
+    if (!offerId)
+      return { locked: false, contractSigned: false, packageFinalized: false };
     const offer = (offers || []).find(
       (o: any) => String(o?.id || "") === offerId,
     );
@@ -1693,73 +1695,82 @@ const BrandConnectionsView = ({
                               <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-200 rounded-lg">
                                 <Lock className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
                                 <p className="text-xs font-semibold text-indigo-800">
-                                  The brand has reviewed your package and finalized their talent selection. These talents are automatically assigned to the contract.
+                                  The brand has reviewed your package and
+                                  finalized their talent selection. These
+                                  talents are automatically assigned to the
+                                  contract.
                                 </p>
                               </div>
-                              {(offerAssignmentsQuery.data?.assignments || []).length === 0 ? (
+                              {(offerAssignmentsQuery.data?.assignments || [])
+                                .length === 0 ? (
                                 <p className="text-xs text-gray-500">
-                                  No talents were auto-assigned. Contact support if this is unexpected.
+                                  No talents were auto-assigned. Contact support
+                                  if this is unexpected.
                                 </p>
                               ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  {(offerAssignmentsQuery.data?.assignments || []).map(
-                                    (a: any) => {
-                                      const talent = a?.agency_users || {};
-                                      const tid = String(a?.talent_id || "");
-                                      const assignmentId = String(a?.id || "");
-                                      const creatorId = String(
-                                        a?.creator_id ||
-                                          a?.agency_users?.creator_id ||
-                                          "",
-                                      ).trim();
-                                      return (
-                                        <div
-                                          key={String(a?.id)}
-                                          className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                              <User className="h-4 w-4 text-gray-500" />
-                                            </div>
-                                            <div>
-                                              <p className="text-sm font-semibold text-gray-900">
-                                                {talent?.stage_name ||
-                                                  talent?.full_legal_name ||
-                                                  "Talent"}
-                                              </p>
-                                              <p className="text-xs text-green-600 font-medium">
-                                                Selected by brand
-                                              </p>
-                                            </div>
+                                  {(
+                                    offerAssignmentsQuery.data?.assignments ||
+                                    []
+                                  ).map((a: any) => {
+                                    const talent = a?.agency_users || {};
+                                    const tid = String(a?.talent_id || "");
+                                    const assignmentId = String(a?.id || "");
+                                    const creatorId = String(
+                                      a?.creator_id ||
+                                        a?.agency_users?.creator_id ||
+                                        "",
+                                    ).trim();
+                                    return (
+                                      <div
+                                        key={String(a?.id)}
+                                        className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
+                                      >
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <User className="h-4 w-4 text-gray-500" />
                                           </div>
-                                          <div className="flex items-center gap-2">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              onClick={() => {
-                                                if (creatorId && onMessageTalent) {
-                                                  onMessageTalent(creatorId);
-                                                } else {
-                                                  // Fallback: open asset request dialog
-                                                  setMessageDialog({
-                                                    open: true,
-                                                    offerId: selectedOfferId,
-                                                    talentId: tid,
-                                                    title: "",
-                                                    message: "",
-                                                    file: null,
-                                                    sending: false,
-                                                  });
-                                                }
-                                              }}
-                                            >
-                                              Send Message
-                                            </Button>
+                                          <div>
+                                            <p className="text-sm font-semibold text-gray-900">
+                                              {talent?.stage_name ||
+                                                talent?.full_legal_name ||
+                                                "Talent"}
+                                            </p>
+                                            <p className="text-xs text-green-600 font-medium">
+                                              Selected by brand
+                                            </p>
                                           </div>
                                         </div>
-                                      );
-                                    },
-                                  )}
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                              if (
+                                                creatorId &&
+                                                onMessageTalent
+                                              ) {
+                                                onMessageTalent(creatorId);
+                                              } else {
+                                                // Fallback: open asset request dialog
+                                                setMessageDialog({
+                                                  open: true,
+                                                  offerId: selectedOfferId,
+                                                  talentId: tid,
+                                                  title: "",
+                                                  message: "",
+                                                  file: null,
+                                                  sending: false,
+                                                });
+                                              }
+                                            }}
+                                          >
+                                            Send Message
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </>
@@ -1774,7 +1785,11 @@ const BrandConnectionsView = ({
                                   Waiting for brand to select talents
                                 </p>
                                 <p className="text-xs text-amber-700 mt-1">
-                                  The brand will review your package and choose which talents they want. Once they confirm their selection, the talents will be automatically assigned here and you can proceed to create the contract.
+                                  The brand will review your package and choose
+                                  which talents they want. Once they confirm
+                                  their selection, the talents will be
+                                  automatically assigned here and you can
+                                  proceed to create the contract.
                                 </p>
                               </div>
                             </div>
@@ -1985,9 +2000,11 @@ const BrandConnectionsView = ({
                                   const selectedIds: string[] = Array.isArray(
                                     offerPkg.meta?.selected_talent_ids,
                                   )
-                                    ? offerPkg.meta.selected_talent_ids.map(
-                                        (id: any) => String(id || "").trim(),
-                                      ).filter(Boolean)
+                                    ? offerPkg.meta.selected_talent_ids
+                                        .map((id: any) =>
+                                          String(id || "").trim(),
+                                        )
+                                        .filter(Boolean)
                                     : [];
                                   const pkgItems: any[] = Array.isArray(
                                     offerPkg.package_snapshot?.items,
@@ -2978,7 +2995,6 @@ const BrandConnectionsView = ({
           })}
         </Card>
       )}
-
 
       <Dialog
         open={messageDialog.open}

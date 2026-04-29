@@ -810,8 +810,12 @@ export default function BrandDashboard() {
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
-  const [confirmingDonePkgPublicData, setConfirmingDonePkgPublicData] = useState<any>(null);
-  const [loadingConfirmingDonePkgPublicData, setLoadingConfirmingDonePkgPublicData] = useState(false);
+  const [confirmingDonePkgPublicData, setConfirmingDonePkgPublicData] =
+    useState<any>(null);
+  const [
+    loadingConfirmingDonePkgPublicData,
+    setLoadingConfirmingDonePkgPublicData,
+  ] = useState(false);
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [expandedInboxPackageId, setExpandedInboxPackageId] =
     useState<string>("");
@@ -4531,7 +4535,8 @@ export default function BrandDashboard() {
                             const resp = await base44.get<any>(
                               `/api/public/packages/${encodeURIComponent(token)}`,
                             );
-                            const publicPkg = resp?.package || resp?.data || resp;
+                            const publicPkg =
+                              resp?.package || resp?.data || resp;
                             setConfirmingDonePkgPublicData(publicPkg);
                           } catch {
                             // non-fatal — dialog will show empty selection
@@ -12636,7 +12641,12 @@ export default function BrandDashboard() {
       {/* Confirmation Dialog for Mark Done */}
       <AlertDialog
         open={!!confirmingDonePkg}
-        onOpenChange={(open) => { if (!open) { setConfirmingDonePkg(null); setConfirmingDonePkgPublicData(null); } }}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmingDonePkg(null);
+            setConfirmingDonePkgPublicData(null);
+          }
+        }}
       >
         <AlertDialogContent className="bg-white rounded-none border border-gray-300 shadow-2xl">
           <AlertDialogHeader>
@@ -12653,56 +12663,62 @@ export default function BrandDashboard() {
                   Selected Talents:
                 </p>
                 {loadingConfirmingDonePkgPublicData ? (
-                  <p className="text-sm text-gray-500 italic">Loading selections...</p>
+                  <p className="text-sm text-gray-500 italic">
+                    Loading selections...
+                  </p>
                 ) : (
-                <ul className="space-y-1">
-                  {(() => {
-                    // Selections are stored as interactions (type "selected") on the
-                    // linked agency_talent_packages record, fetched via the public token.
-                    const publicPkg = confirmingDonePkgPublicData;
-                    const selectedIds = (publicPkg?.interactions || [])
-                      .filter((i: any) => i?.type === "selected")
-                      .map((i: any) => String(i?.talent_id || "").trim())
-                      .filter(Boolean);
+                  <ul className="space-y-1">
+                    {(() => {
+                      // Selections are stored as interactions (type "selected") on the
+                      // linked agency_talent_packages record, fetched via the public token.
+                      const publicPkg = confirmingDonePkgPublicData;
+                      const selectedIds = (publicPkg?.interactions || [])
+                        .filter((i: any) => i?.type === "selected")
+                        .map((i: any) => String(i?.talent_id || "").trim())
+                        .filter(Boolean);
 
-                    const items: any[] = Array.isArray(publicPkg?.items)
-                      ? publicPkg.items
-                      : Array.isArray(confirmingDonePkg?.package_snapshot?.items)
-                        ? confirmingDonePkg.package_snapshot.items
-                        : [];
+                      const items: any[] = Array.isArray(publicPkg?.items)
+                        ? publicPkg.items
+                        : Array.isArray(
+                              confirmingDonePkg?.package_snapshot?.items,
+                            )
+                          ? confirmingDonePkg.package_snapshot.items
+                          : [];
 
-                    const selectedNames = items
-                      .filter((item: any) => {
-                        const id = String(item?.talent_id || item?.id || "").trim();
-                        return id && selectedIds.includes(id);
-                      })
-                      .map(
-                        (item: any) =>
-                          item?.talent_name ||
-                          item?.talent?.stage_name ||
-                          item?.talent?.full_legal_name ||
-                          item?.talent?.full_name ||
-                          "Unnamed Talent",
-                      );
+                      const selectedNames = items
+                        .filter((item: any) => {
+                          const id = String(
+                            item?.talent_id || item?.id || "",
+                          ).trim();
+                          return id && selectedIds.includes(id);
+                        })
+                        .map(
+                          (item: any) =>
+                            item?.talent_name ||
+                            item?.talent?.stage_name ||
+                            item?.talent?.full_legal_name ||
+                            item?.talent?.full_name ||
+                            "Unnamed Talent",
+                        );
 
-                    if (selectedIds.length === 0)
-                      return (
-                        <li className="text-sm italic text-gray-500">
-                          No talent selected yet. Open the package and select
-                          talents before confirming.
+                      if (selectedIds.length === 0)
+                        return (
+                          <li className="text-sm italic text-gray-500">
+                            No talent selected yet. Open the package and select
+                            talents before confirming.
+                          </li>
+                        );
+                      return selectedNames.map((name: string, idx: number) => (
+                        <li
+                          key={idx}
+                          className="text-sm font-medium text-gray-900 flex items-center gap-2"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-green-600" />
+                          {name}
                         </li>
-                      );
-                    return selectedNames.map((name: string, idx: number) => (
-                      <li
-                        key={idx}
-                        className="text-sm font-medium text-gray-900 flex items-center gap-2"
-                      >
-                        <CheckCircle2 className="w-3 h-3 text-green-600" />
-                        {name}
-                      </li>
-                    ));
-                  })()}
-                </ul>
+                      ));
+                    })()}
+                  </ul>
                 )}
               </div>
               <p className="text-sm font-medium text-red-600 bg-red-50 p-3 border border-red-100 italic">
@@ -12735,7 +12751,9 @@ export default function BrandDashboard() {
                       feedback_note: "Brand completed package selection.",
                       // Derive selected_talent_ids from the public package interactions
                       // (type "selected") — these are set by the brand in PublicPackageView.
-                      selected_talent_ids: (confirmingDonePkgPublicData?.interactions || [])
+                      selected_talent_ids: (
+                        confirmingDonePkgPublicData?.interactions || []
+                      )
                         .filter((i: any) => i?.type === "selected")
                         .map((i: any) => String(i?.talent_id || "").trim())
                         .filter(Boolean),

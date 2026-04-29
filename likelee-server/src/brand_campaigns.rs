@@ -5326,7 +5326,10 @@ pub async fn mark_brand_package_done(
 
     if let Some(obj) = current_meta.as_object_mut() {
         if !selected_talent_ids.is_empty() {
-            obj.insert("selected_talent_ids".to_string(), json!(selected_talent_ids));
+            obj.insert(
+                "selected_talent_ids".to_string(),
+                json!(selected_talent_ids),
+            );
         }
         if let Some(note) = payload
             .feedback_note
@@ -5378,13 +5381,8 @@ pub async fn mark_brand_package_done(
 
     if !agency_id.is_empty() && !selected_talent_ids.is_empty() {
         for talent_id in &selected_talent_ids {
-            match insert_offer_talent_assignment_internal(
-                &state,
-                &agency_id,
-                &offer_id,
-                talent_id,
-            )
-            .await
+            match insert_offer_talent_assignment_internal(&state, &agency_id, &offer_id, talent_id)
+                .await
             {
                 Ok(assignment) => assignments.push(assignment),
                 Err((_, reason)) => {
@@ -5568,8 +5566,7 @@ pub async fn list_offer_talent_assignments(
         match pkg_resp {
             Ok(r) if r.status().is_success() => {
                 let text = r.text().await.unwrap_or_default();
-                let rows: Vec<serde_json::Value> =
-                    serde_json::from_str(&text).unwrap_or_default();
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
                 !rows.is_empty()
             }
             _ => false,
