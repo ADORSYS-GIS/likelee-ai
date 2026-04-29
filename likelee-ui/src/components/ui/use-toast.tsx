@@ -18,6 +18,10 @@ const VALIDATION_MESSAGE_PATTERN =
   /(missing information|validation error|please (fill|select|provide)|required fields?|is required|at least one|does not match|cannot proceed|enter.*required|select a valid|invalid login credentials|incorrect email or password|email not confirmed|password should be at least|rate limit exceeded)/i;
 
 function inferToastVariant(props) {
+  if (props?.variant === "destructive") {
+    return "destructive";
+  }
+
   const title = String(props?.title || "");
   const description = String(props?.description || "");
   const combined = `${title} ${description}`;
@@ -26,7 +30,7 @@ function inferToastVariant(props) {
     return "warning";
   }
 
-  return props?.variant;
+  return props?.variant || "default";
 }
 
 function genId() {
