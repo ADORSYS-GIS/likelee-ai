@@ -806,11 +806,12 @@ pub async fn create_public_package_full_assets_request(
     Path(token): Path<String>,
     Json(payload): Json<PublicPackageFullAssetsRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // Resolve package by token.
+    // Resolve package by token — also fetch stored client identity so we can
+    // use it as a fallback when the public request doesn't carry those fields.
     let meta_resp = state
         .pg
         .from("agency_talent_packages")
-        .select("id,agency_id,title")
+        .select("id,agency_id,title,client_name,client_email")
         .eq("access_token", &token)
         .single()
         .execute()
@@ -854,18 +855,38 @@ pub async fn create_public_package_full_assets_request(
         .unwrap_or("")
         .to_string();
 
-    let client_name = payload
+    // The stored package client identity is the authoritative source.
+    // Use the payload values if provided, otherwise fall back to what the
+    // agency set when they created/sent the package.
+    let stored_client_name = meta
+        .get("client_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let stored_client_email = meta
+        .get("client_email")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let payload_name = payload
         .client_name
         .as_deref()
         .unwrap_or("")
         .trim()
         .to_string();
-    let client_email = payload
+    let payload_email = payload
         .client_email
         .as_deref()
         .unwrap_or("")
         .trim()
         .to_string();
+
+    // Prefer payload values; fall back to the package's stored recipient details.
+    let client_name = if payload_name.is_empty() { stored_client_name } else { payload_name };
+    let client_email = if payload_email.is_empty() { stored_client_email } else { payload_email };
     let message = payload.message.as_deref().unwrap_or("").trim().to_string();
 
     let notes = format!(
@@ -901,9 +922,9 @@ pub async fn create_public_package_full_assets_request(
     let interaction_row = serde_json::json!({
         "package_id": package_id,
         "type": "asset_request",
-        "content": message,
-        "client_name": client_name,
-        "client_email": client_email,
+        "content": if message.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(message.clone()) },
+        "client_name": if client_name.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(client_name.clone()) },
+        "client_email": if client_email.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(client_email.clone()) },
     });
 
     if let Err(e) = state
