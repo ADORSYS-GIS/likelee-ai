@@ -1236,6 +1236,20 @@
           "failed": "failed",
           "processing": "processing",
           "approved": "approved"
+        },
+        "errors": {
+          "failedToLoadStatus": "Failed to load bank connection status",
+          "failedToStartStripeOnboarding": "Failed to start Stripe onboarding",
+          "failedToStartStripeOnboardingDesc": "Please try again.",
+          "invalidAmount": "Invalid amount",
+          "invalidAmountDesc": "Please enter a valid payout amount",
+          "insufficientFunds": "Insufficient funds",
+          "cashoutInStripe": "Cashout in Stripe:",
+          "failedToRequestPayout": "Failed to request payout"
+        },
+        "toasts": {
+          "payoutRequested": "Payout requested",
+          "payoutRequestedDesc": "Your payout request was submitted."
         }
       },
       "actions": {
@@ -2824,6 +2838,7 @@
           "expenseTrackingView": {
             "searchPlaceholder": "Search expenses...",
             "totalExpenses": "Total Expenses",
+            "loading": "Loading...",
             "filters": {
               "allCategories": "All Categories"
             },
@@ -2860,7 +2875,8 @@
             },
             "toasts": {
               "expenseAdded": "Expense added",
-              "failedToAddExpense": "Failed to add expense"
+              "failedToAddExpense": "Failed to add expense",
+              "failedToLoadExpenses": "Failed to load expenses"
             }
           },
           "talentStatementsView": {

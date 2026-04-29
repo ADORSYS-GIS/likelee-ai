@@ -411,7 +411,12 @@ const ConnectBankView = ({
         setPayoutHistory((historyData as any)?.items || []);
       } catch (e: any) {
         toast({
-          title: "Failed to load bank connection status",
+          title: t(
+            "agencyDashboard.payouts.connectBank.errors.failedToLoadStatus",
+            {
+              defaultValue: "Bankverbindungsstatus konnte nicht geladen werden",
+            },
+          ),
           description: parseBackendError(e),
           variant: "destructive" as any,
         });
@@ -436,8 +441,14 @@ const ConnectBankView = ({
       window.location.href = url;
     } catch (e: any) {
       toast({
-        title: "Failed to start Stripe onboarding",
-        description: String(e?.message || e),
+        title: t(
+          "agencyDashboard.payouts.connectBank.errors.failedToStartStripeOnboarding",
+          { defaultValue: "Stripe-Onboarding konnte nicht gestartet werden" },
+        ),
+        description: t(
+          "agencyDashboard.payouts.connectBank.errors.failedToStartStripeOnboardingDesc",
+          { defaultValue: "Bitte versuchen Sie es erneut." },
+        ),
         variant: "destructive" as any,
       });
     } finally {
@@ -450,8 +461,16 @@ const ConnectBankView = ({
     const amountDollars = parseFloat(payoutAmount);
     if (!isFinite(amountDollars) || amountDollars <= 0) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid payout amount",
+        title: t("agencyDashboard.payouts.connectBank.errors.invalidAmount", {
+          defaultValue: "Ungültiger Betrag",
+        }),
+        description: t(
+          "agencyDashboard.payouts.connectBank.errors.invalidAmountDesc",
+          {
+            defaultValue:
+              "Bitte geben Sie einen gültigen Auszahlungsbetrag ein",
+          },
+        ),
         variant: "destructive" as any,
       });
       return;
@@ -462,8 +481,14 @@ const ConnectBankView = ({
         ?.available_cents || 0;
     if (amountCents > stripecashoutCents) {
       toast({
-        title: "Insufficient funds",
-        description: `cashout in Stripe: $${(stripecashoutCents / 100).toFixed(2)}`,
+        title: t(
+          "agencyDashboard.payouts.connectBank.errors.insufficientFunds",
+          { defaultValue: "Unzureichende Mittel" },
+        ),
+        description: `${t(
+          "agencyDashboard.payouts.connectBank.errors.cashoutInStripe",
+          { defaultValue: "Cashout in Stripe:" },
+        )} $${(stripecashoutCents / 100).toFixed(2)}`,
         variant: "destructive" as any,
       });
       return;
@@ -498,12 +523,20 @@ const ConnectBankView = ({
       setPayoutAmount("");
 
       toast({
-        title: "Payout requested",
-        description: "Your payout request was submitted.",
+        title: t("agencyDashboard.payouts.connectBank.toasts.payoutRequested", {
+          defaultValue: "Auszahlung angefragt",
+        }),
+        description: t(
+          "agencyDashboard.payouts.connectBank.toasts.payoutRequestedDesc",
+          { defaultValue: "Ihre Auszahlungsanfrage wurde übermittelt." },
+        ),
       });
     } catch (e: any) {
       toast({
-        title: "Failed to request payout",
+        title: t(
+          "agencyDashboard.payouts.connectBank.errors.failedToRequestPayout",
+          { defaultValue: "Auszahlungsanfrage fehlgeschlagen" },
+        ),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -3132,7 +3165,7 @@ const ExpenseTrackingView = () => {
   const [expenseRows, setExpenseRows] = useState<any[]>([]);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [newExpenseName, setNewExpenseName] = useState("");
-  const [newExpenseCategory, setNewExpenseCategory] = useState("Travel");
+  const [newExpenseCategory, setNewExpenseCategory] = useState("travel");
   const [newExpenseDate, setNewExpenseDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
   );
@@ -3179,7 +3212,10 @@ const ExpenseTrackingView = () => {
       setExpenseRows(asArray(resp));
     } catch (e: any) {
       toast({
-        title: "Failed to load expenses",
+        title: t(
+          "agencyDashboard.brandConnections.accounting.expenseTrackingView.toasts.failedToLoadExpenses",
+          { defaultValue: "Ausgaben konnten nicht geladen werden" },
+        ),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -3194,7 +3230,7 @@ const ExpenseTrackingView = () => {
   }, []);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (String(status || "").toLowerCase()) {
       case "approved":
         return "bg-green-50 text-green-700 border-green-200";
       case "pending":
@@ -3207,23 +3243,39 @@ const ExpenseTrackingView = () => {
   };
 
   const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "Travel":
+    switch (String(category || "").toLowerCase()) {
+      case "travel":
         return <Calendar className="w-5 h-5 text-orange-600" />;
-      case "Equipment":
+      case "equipment":
         return <Package className="w-5 h-5 text-blue-600" />;
-      case "Marketing":
+      case "marketing":
         return <Megaphone className="w-5 h-5 text-purple-600" />;
       default:
         return <Receipt className="w-5 h-5 text-gray-600" />;
     }
   };
 
+  const translateExpenseCategory = (category: string) => {
+    const key = String(category || "other").toLowerCase();
+    return t(
+      `agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.${key}`,
+      { defaultValue: category },
+    );
+  };
+
+  const translateExpenseStatus = (status: string) => {
+    const key = String(status || "approved").toLowerCase();
+    return t(
+      `agencyDashboard.brandConnections.accounting.expenseTrackingView.statuses.${key}`,
+      { defaultValue: status },
+    );
+  };
+
   const normalizedExpenses = useMemo(() => {
     return expenseRows.map((ex) => ({
       id: String((ex as any)?.id || ""),
       name: String((ex as any)?.name || ""),
-      category: String((ex as any)?.category || "Other"),
+      category: String((ex as any)?.category || "other"),
       date: formatDate((ex as any)?.expense_date),
       status: String((ex as any)?.status || "approved"),
       submitter: String((ex as any)?.submitter || ""),
@@ -3386,7 +3438,14 @@ const ExpenseTrackingView = () => {
 
       <div className="space-y-3">
         {loading ? (
-          <div className="text-sm text-gray-600 font-medium">Loading…</div>
+          <div className="text-sm text-gray-600 font-medium">
+            {t(
+              "agencyDashboard.brandConnections.accounting.expenseTrackingView.loading",
+              {
+                defaultValue: "Wird geladen...",
+              },
+            )}
+          </div>
         ) : (
           filteredExpenses.map((expense) => (
             <Card
@@ -3403,7 +3462,8 @@ const ExpenseTrackingView = () => {
                       {expense.name}
                     </h4>
                     <p className="text-sm text-gray-600 font-bold">
-                      {expense.category} • {expense.date}
+                      {translateExpenseCategory(expense.category)} •{" "}
+                      {expense.date}
                       {expense.submitter && ` • ${expense.submitter}`}
                     </p>
                   </div>
@@ -3411,9 +3471,9 @@ const ExpenseTrackingView = () => {
                 <div className="flex items-center justify-between sm:justify-end gap-4">
                   <Badge
                     variant="outline"
-                    className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
+                    className={`text-xs font-bold px-3 py-1 rounded-lg ${getStatusColor(expense.status)}`}
                   >
-                    {expense.status}
+                    {translateExpenseStatus(expense.status)}
                   </Badge>
                   <span className="text-lg font-bold text-gray-900">
                     {money(expense.amountCents, expense.currency)}

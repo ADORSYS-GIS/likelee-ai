@@ -1710,6 +1710,20 @@
           "failed": "échoué",
           "processing": "en cours",
           "approved": "approuvé"
+        },
+        "errors": {
+          "failedToLoadStatus": "Impossible de charger l’état de la connexion bancaire",
+          "failedToStartStripeOnboarding": "Impossible de démarrer l’onboarding Stripe",
+          "failedToStartStripeOnboardingDesc": "Veuillez réessayer.",
+          "invalidAmount": "Montant invalide",
+          "invalidAmountDesc": "Veuillez saisir un montant de paiement valide",
+          "insufficientFunds": "Fonds insuffisants",
+          "cashoutInStripe": "Retrait via Stripe :",
+          "failedToRequestPayout": "Échec de la demande de retrait"
+        },
+        "toasts": {
+          "payoutRequested": "Retrait demandé",
+          "payoutRequestedDesc": "Votre demande de retrait a été envoyée."
         }
       },
       "actions": {
@@ -3272,6 +3286,7 @@
           "expenseTrackingView": {
             "searchPlaceholder": "Rechercher des dépenses...",
             "totalExpenses": "Dépenses totales",
+            "loading": "Chargement...",
             "filters": {
               "allCategories": "Toutes les catégories"
             },
@@ -3308,7 +3323,8 @@
             },
             "toasts": {
               "expenseAdded": "Dépense ajoutée",
-              "failedToAddExpense": "Échec de l'ajout de la dépense"
+              "failedToAddExpense": "Échec de l'ajout de la dépense",
+              "failedToLoadExpenses": "Impossible de charger les dépenses"
             }
           },
           "talentStatementsView": {

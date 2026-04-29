@@ -1747,6 +1747,20 @@
           "failed": "fehlgeschlagen",
           "processing": "in Bearbeitung",
           "approved": "genehmigt"
+        },
+        "errors": {
+          "failedToLoadStatus": "Bankverbindungsstatus konnte nicht geladen werden",
+          "failedToStartStripeOnboarding": "Stripe-Onboarding konnte nicht gestartet werden",
+          "failedToStartStripeOnboardingDesc": "Bitte versuchen Sie es erneut.",
+          "invalidAmount": "Ungültiger Betrag",
+          "invalidAmountDesc": "Bitte geben Sie einen gültigen Auszahlungsbetrag ein",
+          "insufficientFunds": "Unzureichende Mittel",
+          "cashoutInStripe": "Cashout in Stripe:",
+          "failedToRequestPayout": "Auszahlungsanfrage fehlgeschlagen"
+        },
+        "toasts": {
+          "payoutRequested": "Auszahlung angefragt",
+          "payoutRequestedDesc": "Ihre Auszahlungsanfrage wurde übermittelt."
         }
       },
       "actions": {
@@ -3309,6 +3323,7 @@
           "expenseTrackingView": {
             "searchPlaceholder": "Ausgaben suchen...",
             "totalExpenses": "Gesamtausgaben",
+            "loading": "Wird geladen...",
             "filters": {
               "allCategories": "Alle Kategorien"
             },
@@ -3345,7 +3360,8 @@
             },
             "toasts": {
               "expenseAdded": "Ausgabe hinzugefügt",
-              "failedToAddExpense": "Ausgabe konnte nicht hinzugefügt werden"
+              "failedToAddExpense": "Ausgabe konnte nicht hinzugefügt werden",
+              "failedToLoadExpenses": "Ausgaben konnten nicht geladen werden"
             }
           },
           "talentStatementsView": {
