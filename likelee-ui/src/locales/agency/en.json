@@ -2554,6 +2554,10 @@
         "assignmentsLockedTitle": "Assignments locked",
         "assignmentsLockedDescription": "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can't be changed.",
         "offerStates": {
+          "contractFullySigned": "Contract Fully Signed",
+          "contractSent": "Contract Sent",
+          "sent": "Sent",
+          "accepted": "Accepted",
           "signed": "Signed",
           "notSigned": "Not signed",
           "paid": "Paid",
@@ -2599,6 +2603,10 @@
         "submit": "Submit",
         "submitAll": "Submit All",
         "status": {
+          "draft": "Draft",
+          "brandReview": "Sent to Brand",
+          "brandApproved": "Brand Approved",
+          "new": "New",
           "pending": "Pending",
           "submitted": "Submitted",
           "approved": "Approved",

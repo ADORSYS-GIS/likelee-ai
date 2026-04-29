@@ -2964,6 +2964,10 @@
         "assignmentsLockedTitle": "Asignaciones bloqueadas",
         "assignmentsLockedDescription": "Puedes cambiar los talentos asignados antes de enviar el contrato. Esta oferta ya fue enviada, por lo que las asignaciones no se pueden cambiar.",
         "offerStates": {
+          "contractFullySigned": "Contrato completamente firmado",
+          "contractSent": "Contrato enviado",
+          "sent": "Enviado",
+          "accepted": "Aceptado",
           "signed": "Firmado",
           "notSigned": "No firmado",
           "paid": "Pagado",
@@ -3009,6 +3013,10 @@
         "submit": "Enviar",
         "submitAll": "Enviar todo",
         "status": {
+          "draft": "Borrador",
+          "brandReview": "Enviado a la marca",
+          "brandApproved": "Aprobado por la marca",
+          "new": "Nuevo",
           "pending": "Pendiente",
           "submitted": "Enviado",
           "approved": "Aprobado",

@@ -3065,6 +3065,10 @@
         "assignmentsLockedTitle": "Zuweisungen gesperrt",
         "assignmentsLockedDescription": "Sie können zugewiesene Talente ändern, bevor der Vertrag gesendet wird. Dieses Angebot wurde bereits gesendet, daher können Zuweisungen nicht mehr geändert werden.",
         "offerStates": {
+          "contractFullySigned": "Vertrag vollständig unterzeichnet",
+          "contractSent": "Vertrag gesendet",
+          "sent": "Gesendet",
+          "accepted": "Akzeptiert",
           "signed": "Signiert",
           "notSigned": "Nicht signiert",
           "paid": "Bezahlt",
@@ -3110,6 +3114,10 @@
         "submit": "Einreichen",
         "submitAll": "Alle einreichen",
         "status": {
+          "draft": "Entwurf",
+          "brandReview": "An Marke gesendet",
+          "brandApproved": "Von Marke genehmigt",
+          "new": "Neu",
           "pending": "Ausstehend",
           "submitted": "Eingereicht",
           "approved": "Genehmigt",

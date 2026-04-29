@@ -3012,7 +3012,7 @@
         }
       },
       "deliverables": {
-        "title": "Livraison",
+        "title": "Livrables",
         "subtitle": "Attribuez des talents, demandez des assets et examinez les livrables pour les offres de marque.",
         "collapseAll": "Tout réduire",
         "noBrandOffers": "Aucune offre de marque disponible.",
@@ -3028,6 +3028,10 @@
         "assignmentsLockedTitle": "Affectations verrouillées",
         "assignmentsLockedDescription": "Vous pouvez modifier les talents attribués avant l'envoi du contrat. Cette offre a déjà été envoyée, les affectations ne peuvent donc plus être modifiées.",
         "offerStates": {
+          "contractFullySigned": "Contrat entièrement signé",
+          "contractSent": "Contrat envoyé",
+          "sent": "Envoyé",
+          "accepted": "Accepté",
           "signed": "Signé",
           "notSigned": "Non signé",
           "paid": "Payé",
@@ -3073,6 +3077,10 @@
         "submit": "Soumettre",
         "submitAll": "Tout soumettre",
         "status": {
+          "draft": "Brouillon",
+          "brandReview": "Envoyé à la marque",
+          "brandApproved": "Approuvé par la marque",
+          "new": "Nouveau",
           "pending": "En attente",
           "submitted": "Soumis",
           "approved": "Approuvé",

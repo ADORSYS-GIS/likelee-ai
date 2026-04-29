@@ -59,6 +59,20 @@ function deepMerge(...sources: Record<string, any>[]): Record<string, any> {
   return result;
 }
 
+function withAgencyAliases(source: Record<string, any>): Record<string, any> {
+  const result = deepMerge(source);
+  const deliverables = result.agencyDashboard?.analytics?.deliverables;
+  if (deliverables && !result.agencyDashboard.deliverables) {
+    result.agencyDashboard.deliverables = deliverables;
+  }
+  return result;
+}
+
+const enAgencyAliased = withAgencyAliases(enAgency);
+const esAgencyAliased = withAgencyAliases(esAgency);
+const deAgencyAliased = withAgencyAliases(deAgency);
+const frAgencyAliased = withAgencyAliases(frAgency);
+
 // Merge all modules into single translation object for backward compatibility
 // This allows existing components to work without changes
 const resources = {
@@ -66,7 +80,7 @@ const resources = {
     common: enCommon,
     creator: enCreator,
     brand: enBrand,
-    agency: enAgency,
+    agency: enAgencyAliased,
     auth: enAuth,
     creatorTerms: enCreatorTerms,
     brandAgencyTerms: enBrandAgencyTerms,
@@ -74,7 +88,7 @@ const resources = {
       enCommon,
       enCreator,
       enBrand,
-      enAgency,
+      enAgencyAliased,
       enAuth,
       enCreatorTerms,
       enBrandAgencyTerms,
@@ -84,7 +98,7 @@ const resources = {
     common: esCommon,
     creator: esCreator,
     brand: esBrand,
-    agency: esAgency,
+    agency: esAgencyAliased,
     auth: esAuth,
     creatorTerms: esCreatorTerms,
     brandAgencyTerms: esBrandAgencyTerms,
@@ -92,7 +106,7 @@ const resources = {
       esCommon,
       esCreator,
       esBrand,
-      esAgency,
+      esAgencyAliased,
       esAuth,
       esCreatorTerms,
       esBrandAgencyTerms,
@@ -102,7 +116,7 @@ const resources = {
     common: deCommon,
     creator: deCreator,
     brand: deBrand,
-    agency: deAgency,
+    agency: deAgencyAliased,
     auth: deAuth,
     creatorTerms: deCreatorTerms,
     brandAgencyTerms: deBrandAgencyTerms,
@@ -110,7 +124,7 @@ const resources = {
       deCommon,
       deCreator,
       deBrand,
-      deAgency,
+      deAgencyAliased,
       deAuth,
       deCreatorTerms,
       deBrandAgencyTerms,
@@ -120,7 +134,7 @@ const resources = {
     common: frCommon,
     creator: frCreator,
     brand: frBrand,
-    agency: frAgency,
+    agency: frAgencyAliased,
     auth: frAuth,
     creatorTerms: frCreatorTerms,
     brandAgencyTerms: frBrandAgencyTerms,
@@ -128,7 +142,7 @@ const resources = {
       frCommon,
       frCreator,
       frBrand,
-      frAgency,
+      frAgencyAliased,
       frAuth,
       frCreatorTerms,
       frBrandAgencyTerms,

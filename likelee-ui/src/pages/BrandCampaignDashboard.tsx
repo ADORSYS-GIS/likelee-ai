@@ -2274,7 +2274,7 @@ export default function BrandCampaignDashboard({
                 className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                {t("campaigns.newCampaign")}
+                {t("campaignsDashboard.newCampaign")}
               </Button>
             </div>
           </div>
@@ -2289,7 +2289,7 @@ export default function BrandCampaignDashboard({
               className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
             >
               <Plus className="w-4 h-4 mr-2" />
-              {t("campaigns.newCampaign")}
+              {t("campaignsDashboard.newCampaign")}
             </Button>
           </div>
         )}

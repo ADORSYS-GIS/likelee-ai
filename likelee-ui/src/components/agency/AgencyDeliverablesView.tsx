@@ -484,13 +484,21 @@ export function AgencyDeliverablesView() {
   const deliverableStatusLabel = (statusRaw: unknown) => {
     const status = String(statusRaw || "submitted").toLowerCase();
     if (status === "draft")
-      return t("statuses.draft", { defaultValue: "Draft" });
+      return t("agencyDashboard.deliverables.status.draft", {
+        defaultValue: "Draft",
+      });
     if (status === "brand_review")
-      return t("statuses.sentToBrand", { defaultValue: "Sent to Brand" });
+      return t("agencyDashboard.deliverables.status.brandReview", {
+        defaultValue: "Sent to Brand",
+      });
     if (status === "brand_approved")
-      return t("statuses.brandApproved", { defaultValue: "Brand Approved" });
+      return t("agencyDashboard.deliverables.status.brandApproved", {
+        defaultValue: "Brand Approved",
+      });
     if (status === "submitted")
-      return t("statuses.new", { defaultValue: "New" });
+      return t("agencyDashboard.deliverables.status.new", {
+        defaultValue: "New",
+      });
     return status.replace(/_/g, " ");
   };
 
@@ -500,15 +508,25 @@ export function AgencyDeliverablesView() {
       .trim();
     if (!status) return "";
     if (status === "contract_fully_signed")
-      return t("statuses.contractFullySigned", {
+      return t("agencyDashboard.deliverables.offerStates.contractFullySigned", {
         defaultValue: "Contract Fully Signed",
       });
     if (status === "contract_sent")
-      return t("statuses.contractSent", { defaultValue: "Contract Sent" });
-    if (status === "sent") return t("statuses.sent", { defaultValue: "Sent" });
+      return t("agencyDashboard.deliverables.offerStates.contractSent", {
+        defaultValue: "Contract Sent",
+      });
+    if (status === "sent")
+      return t("agencyDashboard.deliverables.offerStates.sent", {
+        defaultValue: "Sent",
+      });
     if (status === "accepted")
-      return t("statuses.accepted", { defaultValue: "Accepted" });
-    if (status === "open") return "Open";
+      return t("agencyDashboard.deliverables.offerStates.accepted", {
+        defaultValue: "Accepted",
+      });
+    if (status === "open")
+      return t("agencyDashboard.deliverables.actions.open", {
+        defaultValue: "Open",
+      });
     return status.replace(/_/g, " ");
   };
 
