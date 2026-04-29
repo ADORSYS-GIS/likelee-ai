@@ -19433,7 +19433,7 @@ export default function AgencyDashboard() {
               : "p-6 flex items-center gap-3"
           }`}
           onClick={() => {
-            setActiveView("settings", "General Settings");
+            setActiveView("settings", "Subscription");
             setSidebarOpen(false);
           }}
           title={

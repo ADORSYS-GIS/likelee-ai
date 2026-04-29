@@ -11,6 +11,7 @@ This directory contains comprehensive documentation about how storage is organiz
 ### 🎯 Start Here
 
 **[storage-architecture.md](storage-architecture.md)** - Main Documentation
+
 - Complete storage architecture guide
 - Bucket descriptions and usage
 - Storage registry schema
@@ -28,6 +29,7 @@ This directory contains comprehensive documentation about how storage is organiz
 ### 📊 Visual Reference
 
 **[storage-organization-diagram.md](storage-organization-diagram.md)** - Visual Guide
+
 - Storage hierarchy diagrams
 - Upload/access sequence flows
 - Deletion flow with audit trail
@@ -45,6 +47,7 @@ This directory contains comprehensive documentation about how storage is organiz
 ### 📋 Implementation Tracking
 
 **[ticket-499-implementation-checklist.md](ticket-499-implementation-checklist.md)** - Progress Tracking
+
 - Migration progress (63% complete)
 - Task completion status
 - Testing status
@@ -58,6 +61,7 @@ This directory contains comprehensive documentation about how storage is organiz
 ### 🎤 Specific Asset Documentation
 
 **[voice-recording-migration-summary.md](voice-recording-migration-summary.md)** - Voice Recordings
+
 - Detailed voice recording migration
 - Before/after comparisons
 - Architecture compliance
@@ -66,6 +70,7 @@ This directory contains comprehensive documentation about how storage is organiz
 **Best for**: Understanding voice recording storage specifics.
 
 **[pr3-implementation-summary.md](pr3-implementation-summary.md)** - PR 3 Status
+
 - Creator and talent media migration
 - Testing results
 - Benefits achieved
@@ -80,22 +85,26 @@ This directory contains comprehensive documentation about how storage is organiz
 ### By Role
 
 **👨‍💻 Developers**
+
 1. Read [storage-architecture.md](storage-architecture.md) - Implementation Guidelines section
 2. Review [storage-organization-diagram.md](storage-organization-diagram.md) - Sequence diagrams
 3. Check [ticket-499-implementation-checklist.md](ticket-499-implementation-checklist.md) - Migration status
 4. Reference code: `likelee-server/src/storage/mod.rs`
 
 **📊 Product Managers**
+
 1. Read [storage-architecture.md](storage-architecture.md) - Overview and Asset Matrix
 2. Review [storage-organization-diagram.md](storage-organization-diagram.md) - Asset comparison table
 3. Understand quota rules in [storage-architecture.md](storage-architecture.md) - Quota Attribution section
 
 **🔧 Operations**
+
 1. Review [storage-organization-diagram.md](storage-organization-diagram.md) - Directory tree structure
 2. Read [storage-architecture.md](storage-architecture.md) - Storage Buckets section
 3. Check [storage-architecture.md](storage-architecture.md) - FAQ for common queries
 
 **💼 Business**
+
 1. Read [storage-architecture.md](storage-architecture.md) - Quota Attribution section
 2. Review [storage-organization-diagram.md](storage-organization-diagram.md) - Quota decision tree
 3. Understand costs via [storage-architecture.md](storage-architecture.md) - Asset Matrix
@@ -130,28 +139,28 @@ See the **Voice Recordings** section in [storage-architecture.md](storage-archit
 
 ### Three Buckets
 
-| Bucket | Purpose | Access | Examples |
-|--------|---------|--------|----------|
-| **likelee-public** | Public media | Direct URL | Reference images, portfolios |
+| Bucket              | Purpose        | Access     | Examples                       |
+| ------------------- | -------------- | ---------- | ------------------------------ |
+| **likelee-public**  | Public media   | Direct URL | Reference images, portfolios   |
 | **likelee-private** | Private assets | Signed URL | Voice recordings, agency files |
-| **likelee-temp** | Temporary | Internal | Staged uploads, processing |
+| **likelee-temp**    | Temporary      | Internal   | Staged uploads, processing     |
 
 ### Twelve Asset Types
 
-| Asset Type | Owner | Bucket | Quota |
-|------------|-------|--------|-------|
-| Agency Storage | Agency | Private | ✅ Yes |
-| Client Files | Agency | Private | ✅ Yes |
-| Talent Assets | Agency | Public | ✅ Yes |
-| Talent Portfolio | Agency | Public | ✅ Yes |
-| Booking Files | Agency | Private | ✅ Yes |
-| Deliverables | Agency | Private | ✅ Yes |
-| Reference Images | Creator | Public | ❌ No |
-| Voice Recordings | User | Private | ❌ No |
-| Tax Documents | Agency | Private | ✅ Yes |
-| Brand Voice Assets | Brand | Private | ✅ Yes |
-| Studio Docs | User | Private | ❌ No |
-| Campaign Offer Deliverables | Agency | Private | ✅ Yes |
+| Asset Type                  | Owner   | Bucket  | Quota  |
+| --------------------------- | ------- | ------- | ------ |
+| Agency Storage              | Agency  | Private | ✅ Yes |
+| Client Files                | Agency  | Private | ✅ Yes |
+| Talent Assets               | Agency  | Public  | ✅ Yes |
+| Talent Portfolio            | Agency  | Public  | ✅ Yes |
+| Booking Files               | Agency  | Private | ✅ Yes |
+| Deliverables                | Agency  | Private | ✅ Yes |
+| Reference Images            | Creator | Public  | ❌ No  |
+| Voice Recordings            | User    | Private | ❌ No  |
+| Tax Documents               | Agency  | Private | ✅ Yes |
+| Brand Voice Assets          | Brand   | Private | ✅ Yes |
+| Studio Docs                 | User    | Private | ❌ No  |
+| Campaign Offer Deliverables | Agency  | Private | ✅ Yes |
 
 ### Path Pattern
 
@@ -168,13 +177,13 @@ users/550e8400/voice-recordings/1234567890123_sample.webm
 
 **Overall Progress**: 63% complete (19/30 tasks)
 
-| Phase | Status | Completion |
-|-------|--------|------------|
-| PR 1 - Foundation | ✅ Complete | 100% |
-| PR 2 - Agency Files | ✅ Core Done | 90% |
-| PR 3 - Creator Media | 🔄 In Progress | 50% |
-| PR 4 - Deliverables | ✅ Core Done | 75% |
-| PR 5 - Backfill | ⏳ Not Started | 0% |
+| Phase                | Status         | Completion |
+| -------------------- | -------------- | ---------- |
+| PR 1 - Foundation    | ✅ Complete    | 100%       |
+| PR 2 - Agency Files  | ✅ Core Done   | 90%        |
+| PR 3 - Creator Media | 🔄 In Progress | 50%        |
+| PR 4 - Deliverables  | ✅ Core Done   | 75%        |
+| PR 5 - Backfill      | ⏳ Not Started | 0%         |
 
 **Recently Completed**: Voice recording migration (2026-04-15)
 
@@ -212,6 +221,7 @@ users/550e8400/voice-recordings/1234567890123_sample.webm
 ### Dual-Write Architecture
 
 Every storage operation writes to **two** places:
+
 1. **Business Table** - Domain-specific fields and relationships
 2. **Storage Registry** - Centralized storage metadata
 
@@ -258,6 +268,7 @@ Registry rows are soft-deleted (set `deleted_at`) rather than hard-deleted. This
 ## 📞 Support
 
 For questions or clarifications:
+
 1. Check the [FAQ section](storage-architecture.md#frequently-asked-questions)
 2. Review the [visual diagrams](storage-organization-diagram.md)
 3. Consult the implementation team
@@ -272,13 +283,13 @@ For questions or clarifications:
 
 ## 📄 Document Versions
 
-| Document | Version | Last Updated | Status |
-|----------|---------|--------------|--------|
-| storage-architecture.md | 2.0 | 2026-04-15 | ✅ Current |
-| storage-organization-diagram.md | 1.0 | 2026-04-15 | ✅ Current |
-| ticket-499-implementation-checklist.md | 1.2 | 2026-04-15 | ✅ Current |
-| voice-recording-migration-summary.md | 1.0 | 2026-04-15 | ✅ Current |
-| pr3-implementation-summary.md | 1.0 | 2026-04-15 | ✅ Current |
+| Document                               | Version | Last Updated | Status     |
+| -------------------------------------- | ------- | ------------ | ---------- |
+| storage-architecture.md                | 2.0     | 2026-04-15   | ✅ Current |
+| storage-organization-diagram.md        | 1.0     | 2026-04-15   | ✅ Current |
+| ticket-499-implementation-checklist.md | 1.2     | 2026-04-15   | ✅ Current |
+| voice-recording-migration-summary.md   | 1.0     | 2026-04-15   | ✅ Current |
+| pr3-implementation-summary.md          | 1.0     | 2026-04-15   | ✅ Current |
 
 ---
 
