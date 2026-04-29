@@ -1182,7 +1182,17 @@
       "noOffers": "No offers yet.",
       "viewDetails": "View Details",
       "acceptRequest": "Accept",
-      "declineRequest": "Decline"
+      "declineRequest": "Decline",
+      "chooseFiles": "Choose Files",
+      "noFileChosen": "No file chosen",
+      "filesSelected": "{{count}} file selected",
+      "filesSelected_other": "{{count}} files selected",
+      "brandReview": "Brand review",
+      "viewPDF": "View PDF",
+      "yourDeliverables": "Your deliverables",
+      "noDeliverablesSubmitted": "No deliverables submitted yet.",
+      "loadingDeliverables": "Loading deliverables...",
+      "openFile": "Open file"
     },
     "agencyConnections": {
       "title": "Agency Connection",
@@ -1198,6 +1208,9 @@
       "noAssetRequests": "No asset requests yet.",
       "invitations": "Invitations",
       "noPendingInvitations": "No pending invitations right now.",
+      "connectedAgency": "Connected agency",
+      "loadingRequests": "Loading requests...",
+      "agencyFeedback": "Agency feedback",
       "disconnectConfirm": "Are you sure you want to disconnect from this agency?",
       "disconnectReason": "Reason for disconnecting (optional)",
       "disconnected": "Successfully disconnected from agency",

@@ -580,6 +580,7 @@ export default function CreatorDashboard() {
   const [sendDeliverablePreviewUrls, setSendDeliverablePreviewUrls] = useState<
     string[]
   >([]);
+  const sendDeliverableInputRef = useRef<HTMLInputElement | null>(null);
   const [seenBrandRequestIds, setSeenBrandRequestIds] = useState<Set<string>>(
     new Set(),
   );
@@ -722,6 +723,7 @@ export default function CreatorDashboard() {
       changes_requested: "common.changesRequested",
       viewed: "common.viewed",
       fulfilled: "common.fulfilled",
+      brand_review: "creatorDashboard.brandConnections.brandReview",
     };
     const mappedKey = statusKeyMap[normalized];
     if (mappedKey) {
@@ -13325,7 +13327,11 @@ export default function CreatorDashboard() {
         >
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-              <DialogTitle>Send deliverable</DialogTitle>
+              <DialogTitle>
+                {t("creatorDashboard.brandConnections.sendDeliverable", {
+                  defaultValue: "Send deliverable",
+                })}
+              </DialogTitle>
               <DialogDescription>
                 {sendDeliverableRequestId
                   ? t(
@@ -13335,7 +13341,13 @@ export default function CreatorDashboard() {
                           "Upload deliverables for the agency request.",
                       },
                     )
-                  : "Upload a deliverable, choose the connected brand, and select the campaign offer."}
+                  : t(
+                      "creatorDashboard.brandConnections.uploadDeliverableDescription",
+                      {
+                        defaultValue:
+                          "Upload a deliverable, choose the connected brand, and select the campaign offer.",
+                      },
+                    )}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -13397,9 +13409,11 @@ export default function CreatorDashboard() {
                   })}
                 </Label>
                 <Input
+                  ref={sendDeliverableInputRef}
                   id="deliverable-upload"
                   type="file"
                   multiple
+                  className="sr-only"
                   onChange={(e) => {
                     const selectedFiles = Array.from(e.target.files || []);
                     if (selectedFiles.length === 0) return;
@@ -13423,6 +13437,31 @@ export default function CreatorDashboard() {
                     e.target.value = "";
                   }}
                 />
+                <div className="flex items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-gray-300"
+                    onClick={() => sendDeliverableInputRef.current?.click()}
+                  >
+                    {t("creatorDashboard.brandConnections.chooseFiles", {
+                      defaultValue: "Choose Files",
+                    })}
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    {sendDeliverableFiles.length === 0
+                      ? t("creatorDashboard.brandConnections.noFileChosen", {
+                          defaultValue: "No file chosen",
+                        })
+                      : t("creatorDashboard.brandConnections.filesSelected", {
+                          count: sendDeliverableFiles.length,
+                          defaultValue:
+                            sendDeliverableFiles.length === 1
+                              ? "{{count}} file selected"
+                              : "{{count}} files selected",
+                        })}
+                  </span>
+                </div>
                 <p className="text-xs text-gray-500">
                   {t("creatorDashboard.brandConnections.uploadedAssetsNotice", {
                     defaultValue:

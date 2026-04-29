@@ -1048,7 +1048,17 @@
       "noOffers": "Aún no hay ofertas.",
       "viewDetails": "Ver detalles",
       "acceptRequest": "Aceptar",
-      "declineRequest": "Rechazar"
+      "declineRequest": "Rechazar",
+      "chooseFiles": "Elegir archivos",
+      "noFileChosen": "Ningún archivo seleccionado",
+      "filesSelected": "{{count}} archivo seleccionado",
+      "filesSelected_other": "{{count}} archivos seleccionados",
+      "brandReview": "Revisión de marca",
+      "viewPDF": "Ver PDF",
+      "yourDeliverables": "Tus entregables",
+      "noDeliverablesSubmitted": "Aún no se han enviado entregables.",
+      "loadingDeliverables": "Cargando entregables...",
+      "openFile": "Abrir archivo"
     },
     "agencyConnections": {
       "title": "Conexión de agencia",
@@ -1064,6 +1074,9 @@
       "noAssetRequests": "Aún no hay solicitudes de activos.",
       "invitations": "Invitaciones",
       "noPendingInvitations": "No hay invitaciones pendientes en este momento.",
+      "connectedAgency": "Agencia conectada",
+      "loadingRequests": "Cargando solicitudes...",
+      "agencyFeedback": "Comentarios de la agencia",
       "disconnectConfirm": "¿Estás seguro de que quieres desconectarte de esta agencia?",
       "disconnectReason": "Motivo de la desconexión (opcional)",
       "disconnected": "Desconectado correctamente de la agencia",
