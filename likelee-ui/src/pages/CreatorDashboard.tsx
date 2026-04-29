@@ -1565,9 +1565,11 @@ export default function CreatorDashboard() {
           source_id: String(req?.id || req?.licensing_request_id || ""),
         };
       });
-    return [...activeOffers, ...activeLicenses, ...activeRequests].map(
-      withStatus,
+    const combined = [...activeOffers, ...activeLicenses, ...activeRequests];
+    const deduped = Array.from(
+      new Map(combined.map((item) => [item.id, item])).values(),
     );
+    return deduped.map(withStatus);
   }, [
     normalizedOfferCampaigns,
     normalizedLicenseCampaigns,
@@ -1625,7 +1627,11 @@ export default function CreatorDashboard() {
         total_earned: license.total_earned || 0,
         show_on_portfolio: Boolean(license.show_on_portfolio),
       }));
-    return [...fromOffers, ...fromLicenses];
+    const combined = [...fromOffers, ...fromLicenses];
+    const deduped = Array.from(
+      new Map(combined.map((item) => [item.id, item])).values(),
+    );
+    return deduped;
   }, [normalizedOfferCampaigns, normalizedLicenseCampaigns, t]);
 
   useEffect(() => {
@@ -2157,7 +2163,13 @@ export default function CreatorDashboard() {
           params: { limit: 300 },
         },
       );
-      return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+      const offers = Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+      const deduped = Array.from(
+        new Map(
+          offers.map((offer) => [String(offer?.id || ""), offer]),
+        ).values(),
+      );
+      return deduped;
     } finally {
       if (!silent) setLoadingBrandOffers(false);
     }

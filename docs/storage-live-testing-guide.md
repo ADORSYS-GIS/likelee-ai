@@ -60,6 +60,7 @@ curl -X POST http://localhost:8080/api/reference-images/upload \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "id": "ref-img-abc-123",
@@ -81,7 +82,7 @@ FROM reference_images
 WHERE id = 'ref-img-abc-123';
 
 -- Check the storage_assets registry
-SELECT 
+SELECT
   id,
   owner_type,
   owner_id,
@@ -102,6 +103,7 @@ WHERE source_table = 'reference_images'
 ```
 
 **Expected Registry Entry:**
+
 ```
 owner_type: creator
 owner_id: creator-456
@@ -145,6 +147,7 @@ WHERE source_table = 'reference_images'
 ```
 
 **✅ Success Criteria:**
+
 - Image uploaded to public bucket
 - Registry entry created with `counts_toward_quota = false`
 - Image accessible via public URL
@@ -168,6 +171,7 @@ curl -X POST http://localhost:8080/api/voice/recordings \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "id": "voice-rec-xyz-789",
@@ -189,7 +193,7 @@ FROM voice_recordings
 WHERE id = 'voice-rec-xyz-789';
 
 -- Check storage_assets registry
-SELECT 
+SELECT
   owner_type,
   owner_id,
   context_type,
@@ -203,6 +207,7 @@ WHERE source_table = 'voice_recordings'
 ```
 
 **Expected Registry Entry:**
+
 ```
 owner_type: user
 owner_id: user-123
@@ -221,6 +226,7 @@ curl -X GET "http://localhost:8080/api/voice/recordings/signed-url?recording_id=
 ```
 
 **Expected Response:**
+
 ```json
 {
   "signed_url": "https://your-supabase-url/storage/v1/object/sign/likelee-private/users/user-123/voice-recordings/1234567890123_sample.webm?token=...",
@@ -260,6 +266,7 @@ WHERE source_table = 'voice_recordings'
 ```
 
 **✅ Success Criteria:**
+
 - Recording uploaded to private bucket
 - Registry entry created with `counts_toward_quota = false`
 - Signed URL generated and works
@@ -285,6 +292,7 @@ curl -X POST http://localhost:8080/api/talent/portfolio-items/upload \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "id": "portfolio-item-def-456",
@@ -306,7 +314,7 @@ FROM talent_portfolio_items
 WHERE id = 'portfolio-item-def-456';
 
 -- Check storage_assets registry
-SELECT 
+SELECT
   owner_type,
   owner_id,
   context_type,
@@ -319,6 +327,7 @@ WHERE source_table = 'talent_portfolio_items'
 ```
 
 **Expected Registry Entry:**
+
 ```
 owner_type: agency
 owner_id: agency-789
@@ -331,7 +340,7 @@ counts_toward_quota: true  ← DOES count toward quota
 
 ```sql
 -- Calculate agency's total storage usage
-SELECT 
+SELECT
   owner_id as agency_id,
   COUNT(*) as total_files,
   SUM(size_bytes) as total_bytes,
@@ -345,6 +354,7 @@ GROUP BY owner_id;
 ```
 
 **Expected Result:**
+
 ```
 agency_id: agency-789
 total_files: 15
@@ -371,7 +381,7 @@ curl -X DELETE http://localhost:8080/api/talent/portfolio-items/portfolio-item-d
 
 ```sql
 -- Check quota after deletion
-SELECT 
+SELECT
   COUNT(*) as total_files,
   SUM(size_bytes) as total_bytes
 FROM storage_assets
@@ -383,6 +393,7 @@ WHERE owner_type = 'agency'
 ```
 
 **✅ Success Criteria:**
+
 - Portfolio item uploaded to public bucket
 - Registry entry created with `counts_toward_quota = true`
 - Agency quota calculation includes this file
@@ -408,6 +419,7 @@ curl -X POST http://localhost:8080/api/bookings-campaigns/campaign-123/deliverab
 ```
 
 **Expected Response:**
+
 ```json
 {
   "id": "deliverable-ghi-789",
@@ -431,7 +443,7 @@ FROM booking_deliverables
 WHERE id = 'deliverable-ghi-789';
 
 -- Check storage_assets registry
-SELECT 
+SELECT
   owner_type,
   owner_id,
   context_type,
@@ -444,6 +456,7 @@ WHERE source_table = 'booking_deliverables'
 ```
 
 **Expected Registry Entry:**
+
 ```
 owner_type: agency
 owner_id: agency-789
@@ -483,6 +496,7 @@ curl -X GET http://localhost:8080/api/bookings-campaigns/campaign-123/deliverabl
 ```
 
 **Expected Response:**
+
 ```json
 {
   "deliverables": [
@@ -508,6 +522,7 @@ curl -X DELETE http://localhost:8080/api/bookings-campaigns/campaign-123/deliver
 ```
 
 **✅ Success Criteria:**
+
 - Deliverable uploaded to private bucket
 - Registry entry created with `counts_toward_quota = true`
 - Access requires authentication
@@ -550,6 +565,7 @@ curl -X POST "http://localhost:8080/api/admin/storage/backfill?dry_run=true" \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -583,6 +599,7 @@ curl -X POST "http://localhost:8080/api/admin/storage/backfill?dry_run=true" \
 ### Step 3: Review Dry-Run Results
 
 **Check for errors:**
+
 - `total_errors` should be 0
 - Review `error_messages` if any
 - Verify `total_inserted` matches expected count
@@ -604,6 +621,7 @@ curl -X GET "http://localhost:8080/api/admin/storage/verify-parity" \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "all_tables_match": true,
@@ -630,7 +648,7 @@ GROUP BY bucket_id, object_path
 HAVING COUNT(*) > 1;
 
 -- Verify quota attribution
-SELECT 
+SELECT
   owner_type,
   counts_toward_quota,
   COUNT(*) as count,
@@ -641,6 +659,7 @@ GROUP BY owner_type, counts_toward_quota;
 ```
 
 **✅ Success Criteria:**
+
 - Dry-run completes with 0 errors
 - Production backfill inserts all records
 - Parity check shows 100% match
@@ -657,7 +676,7 @@ GROUP BY owner_type, counts_toward_quota;
 
 ```sql
 -- Agency's total storage usage (should count toward quota)
-SELECT 
+SELECT
   owner_id as agency_id,
   COUNT(*) as total_files,
   SUM(size_bytes) as total_bytes,
@@ -674,7 +693,7 @@ GROUP BY owner_id;
 
 ```sql
 -- Creator assets should NOT count toward agency quota
-SELECT 
+SELECT
   context_type,
   COUNT(*) as count,
   counts_toward_quota
@@ -685,6 +704,7 @@ GROUP BY context_type, counts_toward_quota;
 ```
 
 **Expected Result:**
+
 ```
 context_type: reference_image
 counts_toward_quota: false  ← Correct
@@ -694,7 +714,7 @@ counts_toward_quota: false  ← Correct
 
 ```sql
 -- Breakdown of agency storage by context type
-SELECT 
+SELECT
   context_type,
   COUNT(*) as file_count,
   SUM(size_bytes) as total_bytes,
@@ -709,6 +729,7 @@ ORDER BY total_bytes DESC;
 ```
 
 **Expected Result:**
+
 ```
 context_type          | file_count | total_bytes | total_mb
 ----------------------|------------|-------------|----------
@@ -718,6 +739,7 @@ booking_file          | 20         | 5000000     | 4.77
 ```
 
 **✅ Success Criteria:**
+
 - Agency quota includes only agency-owned assets
 - Creator/user assets excluded from agency quota
 - Breakdown shows correct context types
@@ -774,7 +796,7 @@ LIMIT 10;
 
 ```sql
 -- Watch for new uploads in real-time
-SELECT 
+SELECT
   source_table,
   context_type,
   owner_type,
@@ -794,6 +816,7 @@ ORDER BY created_at DESC;
 **Cause**: Storage bucket doesn't exist or permissions incorrect
 
 **Solution**:
+
 ```sql
 -- Check if buckets exist
 SELECT id, name, public FROM storage.buckets;
@@ -807,6 +830,7 @@ SELECT id, name, public FROM storage.buckets;
 **Cause**: Error in registry insertion (check logs)
 
 **Solution**:
+
 ```bash
 # Check server logs for errors
 tail -f likelee-server/logs/app.log | grep storage_assets
@@ -819,6 +843,7 @@ tail -f likelee-server/logs/app.log | grep storage_assets
 **Cause**: URL expired or incorrect bucket
 
 **Solution**:
+
 - Check URL expiration (default 5 minutes)
 - Verify bucket is `likelee-private`
 - Request new signed URL
@@ -828,9 +853,10 @@ tail -f likelee-server/logs/app.log | grep storage_assets
 **Cause**: `counts_toward_quota` flag incorrect
 
 **Solution**:
+
 ```sql
 -- Check quota flags
-SELECT 
+SELECT
   owner_type,
   context_type,
   counts_toward_quota,
