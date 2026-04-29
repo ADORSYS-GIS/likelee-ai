@@ -19137,6 +19137,7 @@ export default function AgencyDashboard() {
     agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
   const agencyCanUseBrandConnections =
     agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
+  const agencySubscriptionLocked = !agencyHasPaidAccess;
   const agencyDisplayPlanLabel = (() => {
     const raw = String(agencyBilling?.display_plan_label || "").trim();
     const normalized = raw
