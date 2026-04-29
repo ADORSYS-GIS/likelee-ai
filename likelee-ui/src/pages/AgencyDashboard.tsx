@@ -19148,6 +19148,14 @@ export default function AgencyDashboard() {
     if (normalized) return normalized;
     return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
   })();
+  const agencyPlanIntervalLabel = (() => {
+    const raw = String(agencyBilling?.display_plan_label || "")
+      .trim()
+      .toLowerCase();
+    if (raw.includes("annual")) return "Annual";
+    if (raw.includes("monthly")) return "Monthly";
+    return "";
+  })();
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
 
   useEffect(() => {
@@ -22152,7 +22160,7 @@ export default function AgencyDashboard() {
                   hasIrlBookingAddon={hasIrlBookingAddon}
                   hasProAccess={hasProAccess}
                   agencyDisplayPlanLabel={agencyDisplayPlanLabel}
-                  agencyPlanIntervalLabel={agencyPlanIntervalLabel}
+                  kycStatus={kycStatus}
                 />
               )}
             {activeTab === "settings" && activeSubTab === "File Storage" && (
