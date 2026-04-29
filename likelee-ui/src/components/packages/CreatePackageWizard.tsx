@@ -310,6 +310,26 @@ export function CreatePackageWizard({
     enabled: open && isOfferMode,
   });
 
+  // When a brand is selected (or the brand list loads with a pre-selected brand),
+  // always sync the brand's name and email into formData — these are the
+  // authoritative recipient details for offer packages.
+  useEffect(() => {
+    if (!isOfferMode || !selectedBrandId) return;
+    const list = Array.isArray(connectedBrands) ? connectedBrands : [];
+    const match = list.find(
+      (c: any) => String(c?.brand_id || "").trim() === selectedBrandId,
+    );
+    if (!match) return;
+    const brandName = String(match?.brands?.company_name || "").trim();
+    const brandEmail = String(match?.brands?.email || "").trim();
+    // Always overwrite with brand values — the brand is the recipient
+    setFormData((prev) => ({
+      ...prev,
+      client_name: brandName || brandEmail || prev.client_name,
+      client_email: brandEmail || prev.client_email,
+    }));
+  }, [selectedBrandId, connectedBrands, isOfferMode]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -610,7 +630,20 @@ export function CreatePackageWizard({
       .filter(Boolean);
 
     if (isOfferMode) {
-      const selectedTalentIds = itemsArray
+      const connectedBrandRows = Array.isArray(connectedBrands)
+        ? connectedBrands
+        : [];
+      const selectedBrand = connectedBrandRows.find(
+        (connection: any) =>
+          String(connection?.brand_id || "").trim() ===
+          String(selectedBrandId || "").trim(),
+      );
+      const selectedBrandName = String(
+        selectedBrand?.brands?.company_name || "",
+      ).trim();
+      const selectedBrandEmail = String(
+        selectedBrand?.brands?.email || "",
+      ).trim();      const selectedTalentIds = itemsArray
         .map((it: any) => String(it?.talent_id || it?.id || "").trim())
         .filter(Boolean);
 
@@ -628,12 +661,17 @@ export function CreatePackageWizard({
         meta: {
           selected_talent_ids: selectedTalentIds,
           selected_brand_id: selectedBrandId,
+          selected_brand_name: selectedBrandName || undefined,
+          selected_brand_email: selectedBrandEmail || undefined,
+          skip_client_email_notification: true,
           wizard_source: "talent_packages",
           offer_id: offerContext.offerId,
         },
-        // Offer mode: bypass legacy email system and set neutral client name for logs
-        client_email: "",
-        client_name: "Brand Portal",
+        // Persist the real recipient identity on the package so downstream
+        // public-package actions can reuse it without prompting again.
+        // Prefer formData values (editable by agency) over brand-derived values.
+        client_email: selectedBrandEmail || formData.client_email,
+        client_name: selectedBrandName || selectedBrandEmail || formData.client_name || "Brand Portal",
       };
 
       const offerPayload = {
@@ -1294,9 +1332,9 @@ export function CreatePackageWizard({
                           {canViewConnections ? (
                             <select
                               value={selectedBrandId}
-                              onChange={(e) =>
-                                setSelectedBrandId(e.target.value)
-                              }
+                              onChange={(e) => {
+                                setSelectedBrandId(e.target.value);
+                              }}
                               className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                             >
                               <option value="">Select a brand…</option>
@@ -1337,60 +1375,42 @@ export function CreatePackageWizard({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {isOfferMode ? (
-                          <>
-                            <div className="space-y-3">
-                              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                Client Contact
-                              </Label>
-                              <Input
-                                readOnly
-                                value={(() => {
-                                  const list = Array.isArray(connectedBrands)
-                                    ? connectedBrands
-                                    : [];
-                                  const match = list.find(
-                                    (c: any) =>
-                                      String(c?.brand_id || "").trim() ===
-                                      String(selectedBrandId || "").trim(),
-                                  );
-                                  return (
-                                    String(
-                                      match?.brands?.company_name || "",
-                                    ).trim() ||
-                                    String(match?.brands?.email || "").trim() ||
-                                    ""
-                                  );
-                                })()}
-                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
-                              />
-                            </div>
-                            <div className="space-y-3">
-                              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                Delivery Email
-                              </Label>
-                              <Input
-                                readOnly
-                                type="email"
-                                value={(() => {
-                                  const list = Array.isArray(connectedBrands)
-                                    ? connectedBrands
-                                    : [];
-                                  const match = list.find(
-                                    (c: any) =>
-                                      String(c?.brand_id || "").trim() ===
-                                      String(selectedBrandId || "").trim(),
-                                  );
-                                  return String(
-                                    match?.brands?.email || "",
-                                  ).trim();
-                                })()}
-                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
-                              />
-                              <p className="text-xs text-gray-500 font-medium">
-                                Delivered via inbox (email is informational).
-                              </p>
-                            </div>
-                          </>
+                          (() => {
+                            const list = Array.isArray(connectedBrands) ? connectedBrands : [];
+                            const match = list.find(
+                              (c: any) => String(c?.brand_id || "").trim() === String(selectedBrandId || "").trim(),
+                            );
+                            const displayName = String(match?.brands?.company_name || "").trim() || String(match?.brands?.email || "").trim() || formData.client_name;
+                            const displayEmail = String(match?.brands?.email || "").trim() || formData.client_email;
+                            return (
+                              <>
+                                <div className="space-y-3">
+                                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                    Client Contact
+                                  </Label>
+                                  <Input
+                                    readOnly
+                                    value={displayName}
+                                    className="h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium text-gray-700 cursor-default"
+                                  />
+                                </div>
+                                <div className="space-y-3">
+                                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                    Delivery Email
+                                  </Label>
+                                  <Input
+                                    readOnly
+                                    type="email"
+                                    value={displayEmail}
+                                    className="h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium text-gray-700 cursor-default"
+                                  />
+                                  <p className="text-xs text-gray-500 font-medium">
+                                    Delivered via inbox (email is informational).
+                                  </p>
+                                </div>
+                              </>
+                            );
+                          })()
                         ) : (
                           <>
                             <div className="space-y-3">
