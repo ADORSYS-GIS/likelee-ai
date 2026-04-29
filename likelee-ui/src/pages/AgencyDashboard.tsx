@@ -18982,6 +18982,18 @@ export default function AgencyDashboard() {
     );
   }, [dismissedNotificationIds]);
 
+  // Handler for notification clicks with navigation
+  const handleNotificationClick = (notif: any) => {
+    // Mark as read
+    markAsRead(notif.id);
+    
+    // Navigate to the appropriate tab/page
+    if (notif.navigateTo) {
+      setActiveTab(notif.navigateTo);
+      setShowNotifications(false);
+    }
+  };
+
   const systemNotifications = useMemo(() => {
     const alerts = [];
     if (pendingBrandConnectionCount > 0) {
@@ -18998,6 +19010,7 @@ export default function AgencyDashboard() {
         time: "Action required",
         color: "indigo",
         isSummary: true,
+        navigateTo: "brand_connections", // Add navigation target
       });
     }
     if (pendingLicensingRequestsCount > 0) {
@@ -19008,6 +19021,7 @@ export default function AgencyDashboard() {
         time: "Action required",
         color: "indigo",
         isSummary: true,
+        navigateTo: "licensing", // Add navigation target
       });
     }
     if (pendingJobInvitesCount > 0) {
@@ -19018,6 +19032,7 @@ export default function AgencyDashboard() {
         time: "New message",
         color: "blue",
         isSummary: true,
+        navigateTo: "jobs", // Add navigation target
       });
     }
     alerts.push({
@@ -19027,12 +19042,14 @@ export default function AgencyDashboard() {
         "Your verification was successfully processed. Welcome to Likelee!",
       time: "Just now",
       color: "blue",
+      navigateTo: null, // No navigation for welcome message
     });
     return alerts;
   }, [
     pendingBrandConnectionCount,
     pendingLicensingRequestsCount,
     pendingJobInvitesCount,
+    brandCounts,
   ]);
 
   const notifications = useMemo(() => {
@@ -19055,6 +19072,7 @@ export default function AgencyDashboard() {
             color: "blue",
             isSummary: true,
             read: false,
+            navigateTo: "messages", // Add navigation target for messages
           }
         : null;
 
@@ -19994,7 +20012,7 @@ export default function AgencyDashboard() {
                       filteredNotifications.map((notif: any) => (
                         <button
                           key={notif.id}
-                          onClick={() => markAsRead(notif.id as string)}
+                          onClick={() => handleNotificationClick(notif)}
                           className={`w-full text-left p-4 hover:bg-gray-50 transition-colors group flex items-start gap-4 ${!notif.read ? "bg-indigo-50/30" : ""}`}
                         >
                           <div
@@ -20025,21 +20043,6 @@ export default function AgencyDashboard() {
                         </button>
                       ))
                     )}
-                  </div>
-                  <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
-                    <button
-                      onClick={() => {
-                        toast({
-                          title: "View all notifications",
-                          description:
-                            "Navigating to full notifications page...",
-                        });
-                        setShowNotifications(false);
-                      }}
-                      className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                      View all notifications
-                    </button>
                   </div>
                 </div>
               )}
