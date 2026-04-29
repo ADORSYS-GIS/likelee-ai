@@ -78,6 +78,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "react-i18next";
 
 import {
   acceptCreatorAgencyInvite,
@@ -106,6 +107,7 @@ export default function TalentPortal({
   initialSettingsTab?: string;
   initialMode?: "ai" | "irl";
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useQueryParams();
@@ -1300,8 +1302,13 @@ export default function TalentPortal({
               </div>
               <div className="text-xs sm:text-sm text-gray-600 mt-0.5">
                 {mode === "irl"
-                  ? "Track your bookings and earnings"
-                  : "Manage your AI licensing deals and earnings"}
+                  ? t("talentPortal.mode.irlSubtitle", {
+                      defaultValue: "Track your bookings and earnings",
+                    })
+                  : t("talentPortal.mode.aiSubtitle", {
+                      defaultValue:
+                        "Manage your AI licensing deals and earnings",
+                    })}
               </div>
             </div>
           </div>
@@ -1312,12 +1319,16 @@ export default function TalentPortal({
             {mode === "irl" ? (
               <>
                 <Briefcase className="h-4 w-4 text-blue-500" />
-                AI Mode
+                {t("talentPortal.mode.aiButton", {
+                  defaultValue: "AI Mode",
+                })}
               </>
             ) : (
               <>
                 <Briefcase className="h-4 w-4 text-blue-500" />
-                IRL Mode
+                {t("talentPortal.mode.irlButton", {
+                  defaultValue: "IRL Mode",
+                })}
               </>
             )}
           </button>
@@ -1327,59 +1338,139 @@ export default function TalentPortal({
           <div className="flex items-center gap-6 min-w-max pb-3">
             {(mode === "irl"
               ? [
-                  { id: "overview", label: "Overview", icon: LayoutGrid },
+                  {
+                    id: "overview",
+                    label: t("talentPortal.tabs.overview", {
+                      defaultValue: "Overview",
+                    }),
+                    icon: LayoutGrid,
+                  },
                   {
                     id: "calendar",
-                    label: "Booking Calendar",
+                    label: t("talentPortal.tabs.bookingCalendar", {
+                      defaultValue: "Booking Calendar",
+                    }),
                     icon: Calendar,
                     badge: 0,
                   },
                   {
                     id: "active_projects",
-                    label: "Active Projects",
+                    label: t("talentPortal.tabs.activeProjects", {
+                      defaultValue: "Active Projects",
+                    }),
                     icon: Briefcase,
                   },
-                  { id: "history", label: "Job History", icon: FileText },
+                  {
+                    id: "history",
+                    label: t("talentPortal.tabs.jobHistory", {
+                      defaultValue: "Job History",
+                    }),
+                    icon: FileText,
+                  },
                   {
                     id: "availability",
-                    label: "Availability",
+                    label: t("talentPortal.tabs.availability", {
+                      defaultValue: "Availability",
+                    }),
                     icon: CheckCircle2,
                   },
-                  { id: "portfolio", label: "Portfolio", icon: LucideImage },
-                  { id: "earnings", label: "Earnings", icon: DollarSign },
+                  {
+                    id: "portfolio",
+                    label: t("talentPortal.tabs.portfolio", {
+                      defaultValue: "Portfolio",
+                    }),
+                    icon: LucideImage,
+                  },
+                  {
+                    id: "earnings",
+                    label: t("talentPortal.tabs.earnings", {
+                      defaultValue: "Earnings",
+                    }),
+                    icon: DollarSign,
+                  },
                   {
                     id: "messages",
-                    label: "Messages",
+                    label: t("talentPortal.tabs.messages", {
+                      defaultValue: "Messages",
+                    }),
                     icon: MessageSquare,
                     badge: totalUnreadMessages || undefined,
                   },
-                  { id: "settings", label: "Settings", icon: Settings },
+                  {
+                    id: "settings",
+                    label: t("talentPortal.tabs.settings", {
+                      defaultValue: "Settings",
+                    }),
+                    icon: Settings,
+                  },
                   {
                     id: "agency_connection",
-                    label: "Agency Connection",
+                    label: t("talentPortal.tabs.agencyConnection", {
+                      defaultValue: "Agency Connection",
+                    }),
                     icon: Building2,
                     badge: pendingAgencyInvitesCount || undefined,
                   },
                 ]
               : [
-                  { id: "overview", label: "Overview", icon: LayoutGrid },
-                  { id: "likeness", label: "My Likeness", icon: Sparkles },
+                  {
+                    id: "overview",
+                    label: t("talentPortal.tabs.overview", {
+                      defaultValue: "Overview",
+                    }),
+                    icon: LayoutGrid,
+                  },
+                  {
+                    id: "likeness",
+                    label: t("talentPortal.tabs.myLikeness", {
+                      defaultValue: "My Likeness",
+                    }),
+                    icon: Sparkles,
+                  },
                   {
                     id: "campaigns",
-                    label: "Active Campaigns",
+                    label: t("talentPortal.tabs.activeCampaigns", {
+                      defaultValue: "Active Campaigns",
+                    }),
                     icon: Briefcase,
                     badge: activeCampaignRows.length,
                   },
-                  { id: "archive", label: "Archive", icon: FolderArchive },
-                  { id: "earnings", label: "Earnings", icon: DollarSign },
-                  { id: "analytics", label: "Analytics", icon: BarChart3 },
+                  {
+                    id: "archive",
+                    label: t("talentPortal.tabs.archive", {
+                      defaultValue: "Archive",
+                    }),
+                    icon: FolderArchive,
+                  },
+                  {
+                    id: "earnings",
+                    label: t("talentPortal.tabs.earnings", {
+                      defaultValue: "Earnings",
+                    }),
+                    icon: DollarSign,
+                  },
+                  {
+                    id: "analytics",
+                    label: t("talentPortal.tabs.analytics", {
+                      defaultValue: "Analytics",
+                    }),
+                    icon: BarChart3,
+                  },
                   {
                     id: "messages",
-                    label: "Messages",
+                    label: t("talentPortal.tabs.messages", {
+                      defaultValue: "Messages",
+                    }),
                     icon: MessageSquare,
                     badge: totalUnreadMessages || undefined,
                   },
-                  { id: "settings", label: "Settings", icon: Settings },
+                  {
+                    id: "settings",
+                    label: t("talentPortal.tabs.settings", {
+                      defaultValue: "Settings",
+                    }),
+                    icon: Settings,
+                  },
                 ]
             ).map((item) => {
               const Icon = item.icon as any;
@@ -2494,10 +2585,15 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  Agency Connection
+                  {t("agencyConnections.title", {
+                    defaultValue: "Agency Connections",
+                  })}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Manage agency invitations and your connected agencies.
+                  {t("agencyConnections.subtitle", {
+                    defaultValue:
+                      "Manage agency invitations and your connected agencies.",
+                  })}
                 </div>
               </div>
 
@@ -2505,19 +2601,29 @@ export default function TalentPortal({
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      Connected Agencies
+                      {t("agencyConnections.connectedAgencies", {
+                        defaultValue: "Connected Agencies",
+                      })}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
                       {agencyConnections.length > 0
-                        ? "You can be connected to multiple agencies at once."
-                        : "You are not connected to any agencies yet."}
+                        ? t("agencyConnections.connectedAgenciesDescription", {
+                            defaultValue:
+                              "You can be connected to multiple agencies at once.",
+                          })
+                        : t("agencyConnections.noConnectionsDescription", {
+                            defaultValue:
+                              "You are not connected to any agencies yet.",
+                          })}
                     </div>
                   </div>
                   {(agencyConnectionsLoading ||
                     disconnectAgencyMutation.isPending) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading
+                      {t("agencyConnections.loading", {
+                        defaultValue: "Loading",
+                      })}
                     </div>
                   )}
                 </div>
@@ -2618,8 +2724,12 @@ export default function TalentPortal({
                           {String(
                             c?.marketplace_contract?.status || "",
                           ).toLowerCase() === "active"
-                            ? "Request disconnect"
-                            : "Disconnect"}
+                            ? t("agencyConnections.disconnect", {
+                                defaultValue: "Request disconnect",
+                              })
+                            : t("agencyConnections.disconnectNow", {
+                                defaultValue: "Disconnect",
+                              })}
                         </Button>
                       </div>
                     ))}
@@ -2631,16 +2741,23 @@ export default function TalentPortal({
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      Invitations
+                      {t("agencyConnections.invitations", {
+                        defaultValue: "Invitations",
+                      })}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      Respond to pending invitations from agencies.
+                      {t("agencyConnections.pendingInvitationsDescription", {
+                        defaultValue:
+                          "Respond to pending invitations from agencies.",
+                      })}
                     </div>
                   </div>
                   {agencyInvitesLoading && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading
+                      {t("agencyConnections.loading", {
+                        defaultValue: "Loading",
+                      })}
                     </div>
                   )}
                 </div>
@@ -2895,7 +3012,9 @@ export default function TalentPortal({
                   </div>
                 ) : (
                   <div className="mt-6 text-sm text-gray-500">
-                    No pending invitations.
+                    {t("agencyConnections.noPendingInvitations", {
+                      defaultValue: "No pending invitations right now.",
+                    })}
                   </div>
                 )}
               </Card>

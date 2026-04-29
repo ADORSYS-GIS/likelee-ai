@@ -7746,7 +7746,12 @@ export default function CreatorDashboard() {
                             {String(
                               c.marketplace_contract?.disconnect_status || "",
                             ).toLowerCase() === "pending"
-                              ? "Disconnect request pending"
+                              ? t(
+                                  "creatorDashboard.agencyConnections.disconnectPending",
+                                  {
+                                    defaultValue: "Disconnect request pending",
+                                  },
+                                )
                               : t(
                                   "creatorDashboard.agencyConnections.connectedAgency",
                                   {
@@ -7815,7 +7820,13 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {pending.length > 0
-                      ? "Respond to pending invitations from agencies."
+                      ? t(
+                          "creatorDashboard.agencyConnections.pendingInvitationsDescription",
+                          {
+                            defaultValue:
+                              "Respond to pending invitations from agencies.",
+                          },
+                        )
                       : t(
                           "creatorDashboard.agencyConnections.noPendingInvitations",
                           {
@@ -8091,7 +8102,11 @@ export default function CreatorDashboard() {
                 </p>
               )}
               {!loadingAssetRequests && assetRequests.length === 0 && (
-                <p className="text-sm text-gray-600">No asset requests yet.</p>
+                <p className="text-sm text-gray-600">
+                  {t("creatorDashboard.agencyConnections.noAssetRequests", {
+                    defaultValue: "No asset requests yet.",
+                  })}
+                </p>
               )}
               {assetRequests.map((req: any) => {
                 const offer = req?.campaign_offers || {};
@@ -8251,7 +8266,12 @@ export default function CreatorDashboard() {
                           </div>
                           {loadingOfferDeliverablesById[offerId] && (
                             <p className="text-xs text-gray-500">
-                              Loading deliverables...
+                              {t(
+                                "creatorDashboard.brandConnections.loadingDeliverables",
+                                {
+                                  defaultValue: "Loading deliverables...",
+                                },
+                              )}
                             </p>
                           )}
                           {!loadingOfferDeliverablesById[offerId] &&
@@ -8310,8 +8330,10 @@ export default function CreatorDashboard() {
                                         {String(
                                           deliverable?.status || "submitted",
                                         ).toLowerCase() === "brand_approved"
-                                          ? "approved"
-                                          : String(
+                                          ? t("common.approved", {
+                                              defaultValue: "approved",
+                                            })
+                                          : formatStatus(
                                               deliverable?.status ||
                                                 "submitted",
                                             )}
@@ -8324,7 +8346,15 @@ export default function CreatorDashboard() {
                                     </div>
                                     {agencyNote && (
                                       <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded p-2">
-                                        <strong>Agency Feedback:</strong>{" "}
+                                        <strong>
+                                          {t(
+                                            "creatorDashboard.agencyConnections.agencyFeedback",
+                                            {
+                                              defaultValue: "Agency feedback",
+                                            },
+                                          )}
+                                          :
+                                        </strong>{" "}
                                         {agencyNote}
                                       </div>
                                     )}
@@ -8337,7 +8367,9 @@ export default function CreatorDashboard() {
                                           rel="noreferrer"
                                           className="text-xs text-blue-600 underline"
                                         >
-                                          Open file
+                                          {t("brandConnections.openFile", {
+                                            defaultValue: "Open file",
+                                          })}
                                         </a>
                                       )}
                                   </div>
