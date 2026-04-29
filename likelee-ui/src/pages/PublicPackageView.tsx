@@ -1257,7 +1257,8 @@ export function PublicPackageView() {
               Request the complete package
             </h2>
             <p className="text-white/75 text-sm mt-1">
-              You're about to request access to all high-resolution assets in this package.
+              You're about to request access to all high-resolution assets in
+              this package.
             </p>
           </div>
 
@@ -1284,7 +1285,9 @@ export function PublicPackageView() {
                 <span className="text-xl mt-0.5">{icon}</span>
                 <div>
                   <p className="text-sm font-bold text-gray-900">{title}</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">{body}</p>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    {body}
+                  </p>
                 </div>
               </div>
             ))}
