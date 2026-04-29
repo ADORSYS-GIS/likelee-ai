@@ -1003,6 +1003,10 @@
       "states": {
         "deleting": "Deleting..."
       },
+      "common": {
+        "unknown": "Unknown",
+        "none": "None"
+      },
       "deleteDialog": {
         "title": "Delete Client?",
         "description": "Are you sure you want to delete {{clientName}}? This action cannot be undone and will remove all associated data."
@@ -1012,6 +1016,153 @@
         "errorTitle": "Error",
         "clientDeleted": "Client deleted successfully",
         "deleteFailed": "Failed to delete client"
+      },
+      "status": {
+        "Lead": "Lead",
+        "Prospect": "Prospect",
+        "Active Client": "Active Client",
+        "lead": "Lead",
+        "prospect": "Prospect",
+        "activeClient": "Active Client"
+      },
+      "tags": {
+        "High Budget": "High Budget",
+        "VIP": "VIP",
+        "Long-term": "Long-term",
+        "New": "New",
+        "Referral": "Referral",
+        "Urgent": "Urgent",
+        "Local": "Local",
+        "International": "International",
+        "Corporate": "Corporate",
+        "Start-up": "Start-up"
+      },
+      "industries": {
+        "Fashion": "Fashion",
+        "Technology": "Technology",
+        "Media": "Media",
+        "Retail": "Retail",
+        "Healthcare": "Healthcare",
+        "Finance": "Finance",
+        "Entertainment": "Entertainment",
+        "Automotive": "Automotive",
+        "Real Estate": "Real Estate",
+        "Education": "Education"
+      },
+      "card": {
+        "email": "Email",
+        "viewProfile": "View Profile",
+        "sendPackage": "Send Package",
+        "noWebsite": "No website",
+        "contactsCount": "{{count}} contact",
+        "contactsCount_other": "{{count}} contacts",
+        "bookings": "Bookings",
+        "mailAppTitle": "No mail app configured",
+        "mailAppDescription": "Set Thunderbird as your default mail app to open email.",
+        "noEmailTitle": "No email on file",
+        "noEmailDescription": "Add a contact email to send an email.",
+        "openEmailErrorTitle": "Unable to open email",
+        "openEmailErrorDescription": "No contact email found for this client."
+      },
+      "modal": {
+        "addClient": {
+          "title": "Add New Client",
+          "fields": {
+            "companyName": "Company Name *",
+            "industry": "Industry",
+            "website": "Website",
+            "pipelineStage": "Pipeline Stage",
+            "tags": "Tags",
+            "nextFollowUp": "Next Follow-up Date",
+            "notes": "Notes"
+          },
+          "placeholders": {
+            "companyName": "Company Inc.",
+            "selectIndustry": "Select Industry",
+            "website": "company.com",
+            "selectStage": "Select stage",
+            "notes": "Add notes about this client..."
+          },
+          "actions": {
+            "adding": "Adding..."
+          },
+          "errors": {
+            "companyRequired": "Company name is required"
+          },
+          "toasts": {
+            "created": "Client added successfully",
+            "failed": "Failed to add client"
+          }
+        },
+        "profile": {
+          "tabs": {
+            "overview": "Overview",
+            "contacts": "Contacts",
+            "communications": "Communications",
+            "bookings": "Bookings",
+            "filesNotes": "Files & Notes"
+          },
+          "sections": {
+            "companyInformation": "Company Information",
+            "clientPreferences": "Client Preferences",
+            "clientMetrics": "Client Metrics",
+            "contactList": "Contact List",
+            "communicationHistory": "Communication History",
+            "bookingsHistory": "Bookings History",
+            "notes": "Notes",
+            "filesDocuments": "Files & Documents"
+          },
+          "fields": {
+            "industry": "Industry",
+            "website": "Website",
+            "nextFollowUp": "Next Follow-up",
+            "tags": "Tags",
+            "preferredTalentTypes": "Preferred Talent Types",
+            "budgetRange": "Budget Range",
+            "bookingLeadTime": "Booking Lead Time"
+          },
+          "metrics": {
+            "totalBookings": "Total Bookings",
+            "packagesSent": "Packages Sent"
+          },
+          "actions": {
+            "addContact": "Add Contact",
+            "logCommunication": "Log Communication",
+            "saveNotes": "Save Notes",
+            "uploadFile": "Upload File",
+            "viewFile": "View",
+            "editClient": "Edit Client",
+            "close": "Close"
+          },
+          "states": {
+            "loadingContacts": "Loading contacts...",
+            "noContacts": "No contacts added yet",
+            "loadingHistory": "Loading history...",
+            "noCommunications": "No communications logged yet",
+            "loadingBookings": "Loading bookings...",
+            "noBookings": "No bookings found for this client",
+            "loadingDocuments": "Loading documents...",
+            "noFiles": "No files uploaded yet"
+          },
+          "placeholders": {
+            "notes": "Enter client notes, preferences, or internal details..."
+          },
+          "common": {
+            "primary": "Primary",
+            "noRole": "No role specified",
+            "unknownTalent": "Unknown Talent",
+            "noLocation": "No location",
+            "added": "Added",
+            "never": "Never"
+          },
+          "toasts": {
+            "notesSavedTitle": "Notes Saved",
+            "notesSavedDescription": "The client notes have been updated successfully.",
+            "fileUploadedTitle": "File Uploaded",
+            "fileUploadedDescription": "The document has been uploaded successfully.",
+            "uploadFailedTitle": "Upload Failed"
+          }
+        }
       }
     },
     "packages": {
@@ -2396,6 +2547,7 @@
         "sectionTitle": "Deliverables",
         "submitToBrand": "Submit to Brand",
         "creatorUploads": "Creator uploads",
+        "agencyUploads": "Agency uploads",
         "noneYet": "None yet.",
         "unassignTalentButton": "Unassign talent",
         "paymentPendingBanner": "Brand payment is still pending. You can upload and submit deliverables now, but you'll need to confirm the unpaid status before submitting.",
@@ -3116,6 +3268,19 @@
           "integrations": "Integrations"
         },
         "emailTemplates": {
+          "title": "Email Templates",
+          "subtitle": "Customize automated email messages",
+          "newTemplate": "New Template",
+          "save": "Save Email Templates",
+          "availableVariables": "Available Variables:",
+          "editTemplate": "Edit Template",
+          "templateName": "Template Name",
+          "subject": "Subject:",
+          "body": "Body:",
+          "subjectLabel": "Subject",
+          "bodyLabel": "Body",
+          "active": "Active",
+          "enableTemplateHint": "Enable this template for automated emails",
           "templateNames": {
             "bookingConfirmation": "Booking Confirmation",
             "invoiceEmail": "Invoice Email",

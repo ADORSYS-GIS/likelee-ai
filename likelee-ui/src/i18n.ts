@@ -63,6 +63,13 @@ function deepMerge(...sources: Record<string, any>[]): Record<string, any> {
 // This allows existing components to work without changes
 const resources = {
   en: {
+    common: enCommon,
+    creator: enCreator,
+    brand: enBrand,
+    agency: enAgency,
+    auth: enAuth,
+    creatorTerms: enCreatorTerms,
+    brandAgencyTerms: enBrandAgencyTerms,
     translation: deepMerge(
       enCommon,
       enCreator,
@@ -74,6 +81,13 @@ const resources = {
     ),
   },
   es: {
+    common: esCommon,
+    creator: esCreator,
+    brand: esBrand,
+    agency: esAgency,
+    auth: esAuth,
+    creatorTerms: esCreatorTerms,
+    brandAgencyTerms: esBrandAgencyTerms,
     translation: deepMerge(
       esCommon,
       esCreator,
@@ -85,6 +99,13 @@ const resources = {
     ),
   },
   de: {
+    common: deCommon,
+    creator: deCreator,
+    brand: deBrand,
+    agency: deAgency,
+    auth: deAuth,
+    creatorTerms: deCreatorTerms,
+    brandAgencyTerms: deBrandAgencyTerms,
     translation: deepMerge(
       deCommon,
       deCreator,
@@ -96,6 +117,13 @@ const resources = {
     ),
   },
   fr: {
+    common: frCommon,
+    creator: frCreator,
+    brand: frBrand,
+    agency: frAgency,
+    auth: frAuth,
+    creatorTerms: frCreatorTerms,
+    brandAgencyTerms: frBrandAgencyTerms,
     translation: deepMerge(
       frCommon,
       frCreator,
@@ -114,6 +142,17 @@ i18n
   .init({
     resources,
     fallbackLng: "en",
+    defaultNS: "translation",
+    ns: [
+      "translation",
+      "common",
+      "creator",
+      "brand",
+      "agency",
+      "auth",
+      "creatorTerms",
+      "brandAgencyTerms",
+    ],
     interpolation: {
       escapeValue: false,
     },

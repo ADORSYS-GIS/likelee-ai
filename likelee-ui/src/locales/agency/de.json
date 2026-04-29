@@ -1550,6 +1550,10 @@
       "states": {
         "deleting": "Wird gelöscht..."
       },
+      "common": {
+        "unknown": "Unbekannt",
+        "none": "Keine"
+      },
       "deleteDialog": {
         "title": "Kunden löschen?",
         "description": "Möchten Sie {{clientName}} wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden und entfernt alle zugehörigen Daten."
@@ -1559,6 +1563,153 @@
         "errorTitle": "Fehler",
         "clientDeleted": "Kunde erfolgreich gelöscht",
         "deleteFailed": "Kunde konnte nicht gelöscht werden"
+      },
+      "status": {
+        "Lead": "Lead",
+        "Prospect": "Interessent",
+        "Active Client": "Aktiver Kunde",
+        "lead": "Lead",
+        "prospect": "Interessent",
+        "activeClient": "Aktiver Kunde"
+      },
+      "tags": {
+        "High Budget": "Hohes Budget",
+        "VIP": "VIP",
+        "Long-term": "Langfristig",
+        "New": "Neu",
+        "Referral": "Empfehlung",
+        "Urgent": "Dringend",
+        "Local": "Lokal",
+        "International": "International",
+        "Corporate": "Unternehmen",
+        "Start-up": "Start-up"
+      },
+      "industries": {
+        "Fashion": "Mode",
+        "Technology": "Technologie",
+        "Media": "Medien",
+        "Retail": "Einzelhandel",
+        "Healthcare": "Gesundheitswesen",
+        "Finance": "Finanzen",
+        "Entertainment": "Unterhaltung",
+        "Automotive": "Automobil",
+        "Real Estate": "Immobilien",
+        "Education": "Bildung"
+      },
+      "card": {
+        "email": "E-Mail",
+        "viewProfile": "Profil ansehen",
+        "sendPackage": "Paket senden",
+        "noWebsite": "Keine Website",
+        "contactsCount": "{{count}} Kontakt",
+        "contactsCount_other": "{{count}} Kontakte",
+        "bookings": "Buchungen",
+        "mailAppTitle": "Keine E-Mail-App konfiguriert",
+        "mailAppDescription": "Legen Sie Thunderbird als Standard-E-Mail-App fest, um E-Mails zu öffnen.",
+        "noEmailTitle": "Keine E-Mail hinterlegt",
+        "noEmailDescription": "Fügen Sie eine Kontakt-E-Mail hinzu, um eine E-Mail zu senden.",
+        "openEmailErrorTitle": "E-Mail konnte nicht geöffnet werden",
+        "openEmailErrorDescription": "Für diesen Kunden wurde keine Kontakt-E-Mail gefunden."
+      },
+      "modal": {
+        "addClient": {
+          "title": "Neuen Kunden hinzufügen",
+          "fields": {
+            "companyName": "Firmenname *",
+            "industry": "Branche",
+            "website": "Website",
+            "pipelineStage": "Pipeline-Phase",
+            "tags": "Tags",
+            "nextFollowUp": "Datum des nächsten Follow-ups",
+            "notes": "Notizen"
+          },
+          "placeholders": {
+            "companyName": "Firma GmbH",
+            "selectIndustry": "Branche auswählen",
+            "website": "firma.de",
+            "selectStage": "Phase auswählen",
+            "notes": "Notizen zu diesem Kunden hinzufügen..."
+          },
+          "actions": {
+            "adding": "Wird hinzugefügt..."
+          },
+          "errors": {
+            "companyRequired": "Firmenname ist erforderlich"
+          },
+          "toasts": {
+            "created": "Kunde erfolgreich hinzugefügt",
+            "failed": "Kunde konnte nicht hinzugefügt werden"
+          }
+        },
+        "profile": {
+          "tabs": {
+            "overview": "Übersicht",
+            "contacts": "Kontakte",
+            "communications": "Kommunikation",
+            "bookings": "Buchungen",
+            "filesNotes": "Dateien & Notizen"
+          },
+          "sections": {
+            "companyInformation": "Unternehmensinformationen",
+            "clientPreferences": "Kundenpräferenzen",
+            "clientMetrics": "Kundenmetriken",
+            "contactList": "Kontaktliste",
+            "communicationHistory": "Kommunikationsverlauf",
+            "bookingsHistory": "Buchungsverlauf",
+            "notes": "Notizen",
+            "filesDocuments": "Dateien & Dokumente"
+          },
+          "fields": {
+            "industry": "Branche",
+            "website": "Website",
+            "nextFollowUp": "Nächstes Follow-up",
+            "tags": "Tags",
+            "preferredTalentTypes": "Bevorzugte Talenttypen",
+            "budgetRange": "Budgetrahmen",
+            "bookingLeadTime": "Buchungsvorlauf"
+          },
+          "metrics": {
+            "totalBookings": "Buchungen gesamt",
+            "packagesSent": "Gesendete Pakete"
+          },
+          "actions": {
+            "addContact": "Kontakt hinzufügen",
+            "logCommunication": "Kommunikation protokollieren",
+            "saveNotes": "Notizen speichern",
+            "uploadFile": "Datei hochladen",
+            "viewFile": "Ansehen",
+            "editClient": "Kunden bearbeiten",
+            "close": "Schließen"
+          },
+          "states": {
+            "loadingContacts": "Kontakte werden geladen...",
+            "noContacts": "Noch keine Kontakte hinzugefügt",
+            "loadingHistory": "Verlauf wird geladen...",
+            "noCommunications": "Noch keine Kommunikation protokolliert",
+            "loadingBookings": "Buchungen werden geladen...",
+            "noBookings": "Keine Buchungen für diesen Kunden gefunden",
+            "loadingDocuments": "Dokumente werden geladen...",
+            "noFiles": "Noch keine Dateien hochgeladen"
+          },
+          "placeholders": {
+            "notes": "Kundennotizen, Präferenzen oder interne Details eingeben..."
+          },
+          "common": {
+            "primary": "Primär",
+            "noRole": "Keine Rolle angegeben",
+            "unknownTalent": "Unbekanntes Talent",
+            "noLocation": "Kein Standort",
+            "added": "Hinzugefügt",
+            "never": "Nie"
+          },
+          "toasts": {
+            "notesSavedTitle": "Notizen gespeichert",
+            "notesSavedDescription": "Die Kundennotizen wurden erfolgreich aktualisiert.",
+            "fileUploadedTitle": "Datei hochgeladen",
+            "fileUploadedDescription": "Das Dokument wurde erfolgreich hochgeladen.",
+            "uploadFailedTitle": "Upload fehlgeschlagen"
+          }
+        }
       }
     },
     "packages": {
@@ -2907,6 +3058,7 @@
         "sectionTitle": "Lieferungen",
         "submitToBrand": "An Marke senden",
         "creatorUploads": "Uploads des Creators",
+        "agencyUploads": "Uploads der Agentur",
         "noneYet": "Noch keine.",
         "unassignTalentButton": "Talentzuweisung entfernen",
         "paymentPendingBanner": "Die Zahlung der Marke steht noch aus. Sie können Lieferungen jetzt hochladen und einreichen, müssen den unbezahlten Status jedoch vor der Einreichung bestätigen.",
@@ -3596,6 +3748,26 @@
           "team": "Team",
           "fileStorage": "Dateispeicher",
           "integrations": "Integrationen"
+        },
+        "emailTemplates": {
+          "title": "E-Mail-Vorlagen",
+          "subtitle": "Automatisierte E-Mail-Nachrichten anpassen",
+          "newTemplate": "Neue Vorlage",
+          "save": "E-Mail-Vorlagen speichern",
+          "availableVariables": "Verfügbare Variablen:",
+          "editTemplate": "Vorlage bearbeiten",
+          "templateName": "Vorlagenname",
+          "subject": "Betreff:",
+          "body": "Text:",
+          "subjectLabel": "Betreff",
+          "bodyLabel": "Text",
+          "active": "Aktiv",
+          "enableTemplateHint": "Diese Vorlage für automatisierte E-Mails aktivieren",
+          "templateNames": {
+            "bookingConfirmation": "Buchungsbestätigung",
+            "invoiceEmail": "Rechnungs-E-Mail",
+            "paymentReminder": "Zahlungserinnerung"
+          }
         },
         "fileStorage": {
           "title": "Dateispeicher",

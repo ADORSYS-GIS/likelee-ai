@@ -529,10 +529,17 @@ export default function BrandCampaignDashboard({
     const status = String(campaign?.status || "").toLowerCase();
     if (status === "completed") {
       const label = campaign?.completed_at ? "completed" : "incomplete";
-      return label.charAt(0).toUpperCase() + label.slice(1);
+      return t(`campaigns.status.${label}`, {
+        defaultValue: label.charAt(0).toUpperCase() + label.slice(1),
+      });
     }
+    const key = status.replace(/_([a-z])/g, (_, letter) =>
+      letter.toUpperCase(),
+    );
     const cleaned = status.replace("_", " ");
-    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    return t(`campaigns.status.${key}`, {
+      defaultValue: cleaned.charAt(0).toUpperCase() + cleaned.slice(1),
+    });
   };
 
   const budgetParts = parseBudgetRange(campaignForm.budget_range);
@@ -2267,7 +2274,7 @@ export default function BrandCampaignDashboard({
                 className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Campaign
+                {t("campaigns.newCampaign")}
               </Button>
             </div>
           </div>
@@ -2282,7 +2289,7 @@ export default function BrandCampaignDashboard({
               className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Campaign
+              {t("campaigns.newCampaign")}
             </Button>
           </div>
         )}
@@ -2613,7 +2620,8 @@ export default function BrandCampaignDashboard({
                       )}
                       {campaign.due_date && (
                         <span>
-                          {t("campaignDetails.due")}: {campaign.due_date}
+                          {t("campaigns.campaignDetails.due")}:{" "}
+                          {campaign.due_date}
                         </span>
                       )}
                       <span>

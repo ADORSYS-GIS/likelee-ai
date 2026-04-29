@@ -3104,7 +3104,9 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                     <div>
                       <p className="text-sm font-bold text-gray-900">
-                        {t("agencyDashboard.settings.team.active")}
+                        {t("agencyDashboard.settings.emailTemplates.active", {
+                          defaultValue: "Active",
+                        })}
                       </p>
                       <p className="text-xs text-gray-500 font-medium">
                         {t(

@@ -1513,6 +1513,10 @@
       "states": {
         "deleting": "Suppression..."
       },
+      "common": {
+        "unknown": "Inconnu",
+        "none": "Aucun"
+      },
       "deleteDialog": {
         "title": "Supprimer le client ?",
         "description": "Voulez-vous vraiment supprimer {{clientName}} ? Cette action est irréversible et supprimera toutes les données associées."
@@ -1522,6 +1526,153 @@
         "errorTitle": "Erreur",
         "clientDeleted": "Client supprimé avec succès",
         "deleteFailed": "Impossible de supprimer le client"
+      },
+      "status": {
+        "Lead": "Lead",
+        "Prospect": "Prospect",
+        "Active Client": "Client actif",
+        "lead": "Lead",
+        "prospect": "Prospect",
+        "activeClient": "Client actif"
+      },
+      "tags": {
+        "High Budget": "Budget élevé",
+        "VIP": "VIP",
+        "Long-term": "Long terme",
+        "New": "Nouveau",
+        "Referral": "Recommandation",
+        "Urgent": "Urgent",
+        "Local": "Local",
+        "International": "International",
+        "Corporate": "Entreprise",
+        "Start-up": "Start-up"
+      },
+      "industries": {
+        "Fashion": "Mode",
+        "Technology": "Technologie",
+        "Media": "Médias",
+        "Retail": "Retail",
+        "Healthcare": "Santé",
+        "Finance": "Finance",
+        "Entertainment": "Divertissement",
+        "Automotive": "Automobile",
+        "Real Estate": "Immobilier",
+        "Education": "Éducation"
+      },
+      "card": {
+        "email": "E-mail",
+        "viewProfile": "Voir le profil",
+        "sendPackage": "Envoyer un package",
+        "noWebsite": "Aucun site web",
+        "contactsCount": "{{count}} contact",
+        "contactsCount_other": "{{count}} contacts",
+        "bookings": "Réservations",
+        "mailAppTitle": "Aucune application e-mail configurée",
+        "mailAppDescription": "Définissez Thunderbird comme application e-mail par défaut pour ouvrir les e-mails.",
+        "noEmailTitle": "Aucun e-mail enregistré",
+        "noEmailDescription": "Ajoutez un e-mail de contact pour envoyer un e-mail.",
+        "openEmailErrorTitle": "Impossible d'ouvrir l'e-mail",
+        "openEmailErrorDescription": "Aucun e-mail de contact trouvé pour ce client."
+      },
+      "modal": {
+        "addClient": {
+          "title": "Ajouter un nouveau client",
+          "fields": {
+            "companyName": "Nom de l'entreprise *",
+            "industry": "Secteur",
+            "website": "Site web",
+            "pipelineStage": "Étape du pipeline",
+            "tags": "Tags",
+            "nextFollowUp": "Date de prochaine relance",
+            "notes": "Notes"
+          },
+          "placeholders": {
+            "companyName": "Entreprise SAS",
+            "selectIndustry": "Sélectionner un secteur",
+            "website": "entreprise.com",
+            "selectStage": "Sélectionner une étape",
+            "notes": "Ajoutez des notes sur ce client..."
+          },
+          "actions": {
+            "adding": "Ajout..."
+          },
+          "errors": {
+            "companyRequired": "Le nom de l'entreprise est obligatoire"
+          },
+          "toasts": {
+            "created": "Client ajouté avec succès",
+            "failed": "Impossible d'ajouter le client"
+          }
+        },
+        "profile": {
+          "tabs": {
+            "overview": "Aperçu",
+            "contacts": "Contacts",
+            "communications": "Communications",
+            "bookings": "Réservations",
+            "filesNotes": "Fichiers et notes"
+          },
+          "sections": {
+            "companyInformation": "Informations de l'entreprise",
+            "clientPreferences": "Préférences du client",
+            "clientMetrics": "Métriques du client",
+            "contactList": "Liste des contacts",
+            "communicationHistory": "Historique des communications",
+            "bookingsHistory": "Historique des réservations",
+            "notes": "Notes",
+            "filesDocuments": "Fichiers et documents"
+          },
+          "fields": {
+            "industry": "Secteur",
+            "website": "Site web",
+            "nextFollowUp": "Prochaine relance",
+            "tags": "Tags",
+            "preferredTalentTypes": "Types de talents préférés",
+            "budgetRange": "Fourchette de budget",
+            "bookingLeadTime": "Délai de réservation"
+          },
+          "metrics": {
+            "totalBookings": "Réservations totales",
+            "packagesSent": "Packages envoyés"
+          },
+          "actions": {
+            "addContact": "Ajouter un contact",
+            "logCommunication": "Journaliser une communication",
+            "saveNotes": "Enregistrer les notes",
+            "uploadFile": "Téléverser un fichier",
+            "viewFile": "Voir",
+            "editClient": "Modifier le client",
+            "close": "Fermer"
+          },
+          "states": {
+            "loadingContacts": "Chargement des contacts...",
+            "noContacts": "Aucun contact ajouté pour le moment",
+            "loadingHistory": "Chargement de l'historique...",
+            "noCommunications": "Aucune communication journalisée pour le moment",
+            "loadingBookings": "Chargement des réservations...",
+            "noBookings": "Aucune réservation trouvée pour ce client",
+            "loadingDocuments": "Chargement des documents...",
+            "noFiles": "Aucun fichier téléversé pour le moment"
+          },
+          "placeholders": {
+            "notes": "Saisissez les notes client, préférences ou détails internes..."
+          },
+          "common": {
+            "primary": "Principal",
+            "noRole": "Aucun rôle indiqué",
+            "unknownTalent": "Talent inconnu",
+            "noLocation": "Aucun lieu",
+            "added": "Ajouté",
+            "never": "Jamais"
+          },
+          "toasts": {
+            "notesSavedTitle": "Notes enregistrées",
+            "notesSavedDescription": "Les notes du client ont été mises à jour avec succès.",
+            "fileUploadedTitle": "Fichier téléversé",
+            "fileUploadedDescription": "Le document a été téléversé avec succès.",
+            "uploadFailedTitle": "Échec du téléversement"
+          }
+        }
       }
     },
     "packages": {
@@ -2870,6 +3021,7 @@
         "sectionTitle": "Livrables",
         "submitToBrand": "Soumettre à la marque",
         "creatorUploads": "Téléversements du créateur",
+        "agencyUploads": "Téléversements de l'agence",
         "noneYet": "Aucun pour le moment.",
         "unassignTalentButton": "Retirer le talent",
         "paymentPendingBanner": "Le paiement de la marque est toujours en attente. Vous pouvez téléverser et soumettre les livrables maintenant, mais vous devrez confirmer le statut impayé avant la soumission.",
@@ -3561,6 +3713,19 @@
           "integrations": "Intégrations"
         },
         "emailTemplates": {
+          "title": "Modèles d'e-mail",
+          "subtitle": "Personnalisez les messages e-mail automatisés",
+          "newTemplate": "Nouveau modèle",
+          "save": "Enregistrer les modèles d'e-mail",
+          "availableVariables": "Variables disponibles :",
+          "editTemplate": "Modifier le modèle",
+          "templateName": "Nom du modèle",
+          "subject": "Objet :",
+          "body": "Corps :",
+          "subjectLabel": "Objet",
+          "bodyLabel": "Corps",
+          "active": "Actif",
+          "enableTemplateHint": "Activer ce modèle pour les e-mails automatisés",
           "templateNames": {
             "bookingConfirmation": "Confirmation de réservation",
             "invoiceEmail": "E-mail de facture",

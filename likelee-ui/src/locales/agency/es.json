@@ -1452,6 +1452,10 @@
       "states": {
         "deleting": "Eliminando..."
       },
+      "common": {
+        "unknown": "Desconocido",
+        "none": "Ninguno"
+      },
       "deleteDialog": {
         "title": "¿Eliminar cliente?",
         "description": "¿Seguro que quieres eliminar a {{clientName}}? Esta acción no se puede deshacer y eliminará todos los datos asociados."
@@ -1462,9 +1466,46 @@
         "clientDeleted": "Cliente eliminado correctamente",
         "deleteFailed": "No se pudo eliminar el cliente"
       },
+      "status": {
+        "Lead": "Lead",
+        "Prospect": "Prospecto",
+        "Active Client": "Cliente activo",
+        "lead": "Lead",
+        "prospect": "Prospecto",
+        "activeClient": "Cliente activo"
+      },
+      "tags": {
+        "High Budget": "Alto presupuesto",
+        "VIP": "VIP",
+        "Long-term": "Largo plazo",
+        "New": "Nuevo",
+        "Referral": "Referencia",
+        "Urgent": "Urgente",
+        "Local": "Local",
+        "International": "Internacional",
+        "Corporate": "Corporativo",
+        "Start-up": "Start-up"
+      },
+      "industries": {
+        "Fashion": "Moda",
+        "Technology": "Tecnología",
+        "Media": "Medios",
+        "Retail": "Retail",
+        "Healthcare": "Salud",
+        "Finance": "Finanzas",
+        "Entertainment": "Entretenimiento",
+        "Automotive": "Automotriz",
+        "Real Estate": "Bienes raíces",
+        "Education": "Educación"
+      },
       "card": {
+        "email": "Email",
         "viewProfile": "Ver perfil",
         "sendPackage": "Enviar paquete",
+        "noWebsite": "Sin sitio web",
+        "contactsCount": "{{count}} contacto",
+        "contactsCount_other": "{{count}} contactos",
+        "bookings": "Reservas",
         "mailAppTitle": "No hay aplicación de correo configurada",
         "mailAppDescription": "Configura Thunderbird como tu aplicación de correo predeterminada para abrir el correo.",
         "noEmailTitle": "No hay correo registrado",
@@ -1571,7 +1612,8 @@
             "notesSavedTitle": "Notas guardadas",
             "notesSavedDescription": "Las notas del cliente se actualizaron correctamente.",
             "fileUploadedTitle": "Archivo subido",
-            "fileUploadedDescription": "El documento se ha subido correctamente."
+            "fileUploadedDescription": "El documento se ha subido correctamente.",
+            "uploadFailedTitle": "Error al subir"
           }
         }
       }
@@ -2915,6 +2957,7 @@
         "sectionTitle": "Entregables",
         "submitToBrand": "Enviar a la marca",
         "creatorUploads": "Cargas del creador",
+        "agencyUploads": "Cargas de la agencia",
         "noneYet": "Aún no hay.",
         "unassignTalentButton": "Desasignar talento",
         "paymentPendingBanner": "El pago de la marca sigue pendiente. Puedes subir y enviar entregables ahora, pero tendrás que confirmar el estado impago antes de enviarlos.",
@@ -3556,6 +3599,26 @@
           "team": "Equipo",
           "fileStorage": "Almacenamiento de archivos",
           "integrations": "Integraciones"
+        },
+        "emailTemplates": {
+          "title": "Plantillas de correo",
+          "subtitle": "Personaliza los mensajes de correo automáticos",
+          "newTemplate": "Nueva plantilla",
+          "save": "Guardar plantillas de correo",
+          "availableVariables": "Variables disponibles:",
+          "editTemplate": "Editar plantilla",
+          "templateName": "Nombre de la plantilla",
+          "subject": "Asunto:",
+          "body": "Cuerpo:",
+          "subjectLabel": "Asunto",
+          "bodyLabel": "Cuerpo",
+          "active": "Activo",
+          "enableTemplateHint": "Activar esta plantilla para correos automáticos",
+          "templateNames": {
+            "bookingConfirmation": "Confirmación de reserva",
+            "invoiceEmail": "Correo de factura",
+            "paymentReminder": "Recordatorio de pago"
+          }
         },
         "fileStorage": {
           "title": "Almacenamiento de archivos",

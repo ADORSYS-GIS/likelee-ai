@@ -87,15 +87,17 @@ const ClientCRMView = () => {
         id: c.id,
         name: c.company,
         status: c.status,
-        industry: c.industry || "Unknown",
+        industry: c.industry || t("agencyDashboard.clientCRM.common.unknown"),
         website: c.website || "",
         contacts: c.metrics?.contacts || 0,
         totalRevenue: c.metrics?.revenue || "$0",
         bookings: c.metrics?.bookings || 0,
-        lastBooking: c.metrics?.lastBookingDate || "Never",
+        lastBooking:
+          c.metrics?.lastBookingDate ||
+          t("agencyDashboard.clientCRM.modal.profile.common.never"),
         nextFollowUp: c.next_follow_up_date
           ? new Date(c.next_follow_up_date).toLocaleDateString()
-          : "None",
+          : t("agencyDashboard.clientCRM.common.none"),
         next_follow_up_date: c.next_follow_up_date,
         email:
           c.email ||
@@ -117,7 +119,9 @@ const ClientCRMView = () => {
           revenue_cents: c.metrics?.revenue_cents || 0,
           bookings: c.metrics?.bookings || 0,
           packagesSent: c.metrics?.packagesSent || 0,
-          lastBookingDate: c.metrics?.lastBookingDate || "Never",
+          lastBookingDate:
+            c.metrics?.lastBookingDate ||
+            t("agencyDashboard.clientCRM.modal.profile.common.never"),
           contacts: c.metrics?.contacts || 0,
         },
       }));

@@ -1485,12 +1485,9 @@ export function AgencyDeliverablesView() {
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {assignments.length === 0
-                        ? t(
-                            "agencyDashboard.brandConnections.contractHub.assignTalent",
-                            {
-                              defaultValue: "Assign Talent",
-                            },
-                          )
+                        ? t("agencyDashboard.deliverables.assignTalent.title", {
+                            defaultValue: "Assign Talent",
+                          })
                         : t("agencyDashboard.deliverables.addTalent", {
                             defaultValue: "Add Talent",
                           })}
@@ -2108,11 +2105,21 @@ export function AgencyDeliverablesView() {
                                 </div>
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
                                   <p className="text-sm font-semibold text-gray-900 mb-3">
-                                    Agency uploads
+                                    {t(
+                                      "agencyDashboard.deliverables.agencyUploads",
+                                      {
+                                        defaultValue: "Agency uploads",
+                                      },
+                                    )}
                                   </p>
                                   {agencyDeliverables.length === 0 ? (
                                     <p className="text-xs text-gray-400">
-                                      None yet.
+                                      {t(
+                                        "agencyDashboard.deliverables.noneYet",
+                                        {
+                                          defaultValue: "None yet.",
+                                        },
+                                      )}
                                     </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -2158,7 +2165,7 @@ export function AgencyDeliverablesView() {
         <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-              {t("agencyDashboard.brandConnections.contractHub.assignTalent", {
+              {t("agencyDashboard.deliverables.assignTalent.title", {
                 defaultValue: "Assign Talent",
               })}
             </DialogTitle>
