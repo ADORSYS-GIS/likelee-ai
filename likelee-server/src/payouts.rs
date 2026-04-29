@@ -2225,10 +2225,131 @@ pub async fn stripe_webhook(
                     .await;
             }
         }
+        // Brand payment method setup completion
+        "setup_intent.succeeded" => {
+            let _ = handle_brand_setup_intent_succeeded(&state, &payload_json).await;
+        }
         _ => {}
     }
 
     (StatusCode::OK, Json(json!({"status":"ok"})))
+}
+
+async fn handle_brand_setup_intent_succeeded(
+    state: &AppState,
+    payload: &serde_json::Value,
+) -> Result<(), String> {
+    let obj = payload
+        .get("data")
+        .and_then(|d| d.get("object"))
+        .ok_or("missing setup_intent object")?;
+
+    let customer_id = obj
+        .get("customer")
+        .and_then(|v| v.as_str())
+        .ok_or("missing customer id")?;
+
+    let payment_method_id = obj
+        .get("payment_method")
+        .and_then(|v| v.as_str())
+        .ok_or("missing payment_method id")?;
+
+    let billing_domain = obj
+        .get("metadata")
+        .and_then(|m| m.get("billing_domain"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+
+    if billing_domain != "brand" {
+        return Ok(());
+    }
+
+    // Look up brand by stripe_customer_id
+    let brand_resp = state
+        .pg
+        .from("brands")
+        .eq("stripe_customer_id", customer_id)
+        .select("id")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| format!("failed to lookup brand: {}", e))?;
+
+    let brand_text = brand_resp
+        .text()
+        .await
+        .map_err(|e| format!("failed to read brand response: {}", e))?;
+    let brand_row: serde_json::Value = serde_json::from_str(&brand_text).unwrap_or(json!({}));
+    let brand_id = brand_row
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or("brand not found for customer")?;
+
+    // Retrieve payment method details from Stripe
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let pm_id = payment_method_id
+        .parse::<stripe_sdk::PaymentMethodId>()
+        .map_err(|e| format!("invalid payment method id: {}", e))?;
+    let pm = stripe_sdk::PaymentMethod::retrieve(&client, &pm_id, &[])
+        .await
+        .map_err(|e| format!("failed to retrieve payment method: {}", e))?;
+
+    let card = pm.card.ok_or("payment method is not a card")?;
+
+    let last_four = card.last4.clone();
+    let card_brand = card.brand.clone();
+    let exp_month = card.exp_month as i32;
+    let exp_year = card.exp_year as i32;
+
+    // Insert into brand_payment_methods
+    state
+        .pg
+        .from("brand_payment_methods")
+        .insert(
+            json!({
+                "brand_id": brand_id,
+                "stripe_payment_method_id": payment_method_id,
+                "card_last_four": last_four,
+                "card_brand": card_brand,
+                "card_exp_month": exp_month,
+                "card_exp_year": exp_year,
+                "is_active": true
+            })
+            .to_string(),
+        )
+        .execute()
+        .await
+        .map_err(|e| format!("failed to insert payment method: {}", e))?;
+
+    // Update brands table with primary payment method
+    state
+        .pg
+        .from("brands")
+        .eq("id", brand_id)
+        .update(
+            json!({
+                "stripe_payment_method_id": payment_method_id,
+                "payment_method_last_four": last_four,
+                "payment_method_brand": card_brand,
+                "payment_method_exp_month": exp_month,
+                "payment_method_exp_year": exp_year,
+                "payment_method_updated_at": chrono::Utc::now().to_rfc3339()
+            })
+            .to_string(),
+        )
+        .execute()
+        .await
+        .map_err(|e| format!("failed to update brand: {}", e))?;
+
+    tracing::info!(
+        brand_id = %brand_id,
+        payment_method_id = %payment_method_id,
+        card_brand = %card_brand,
+        last_four = %last_four,
+        "Brand payment method saved successfully"
+    );
+
+    Ok(())
 }
 
 async fn handle_studio_checkout_session_completed(
