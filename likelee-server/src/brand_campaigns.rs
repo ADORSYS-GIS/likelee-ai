@@ -5341,13 +5341,8 @@ pub async fn mark_brand_package_done(
 
     if !agency_id.is_empty() && !selected_talent_ids.is_empty() {
         for talent_id in &selected_talent_ids {
-            match insert_offer_talent_assignment_internal(
-                &state,
-                &agency_id,
-                &offer_id,
-                talent_id,
-            )
-            .await
+            match insert_offer_talent_assignment_internal(&state, &agency_id, &offer_id, talent_id)
+                .await
             {
                 Ok(assignment) => assignments.push(assignment),
                 Err((_, reason)) => {

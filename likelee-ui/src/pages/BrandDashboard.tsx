@@ -12607,7 +12607,9 @@ export default function BrandDashboard() {
                   Selected Talents:
                 </p>
                 {loadingConfirmingDonePkgPublicData ? (
-                  <p className="text-sm text-gray-500 italic">Loading selections...</p>
+                  <p className="text-sm text-gray-500 italic">
+                    Loading selections...
+                  </p>
                 ) : (
                   <ul className="space-y-1">
                     {(() => {
@@ -12625,9 +12627,9 @@ export default function BrandDashboard() {
                       const fromMeta: string[] = Array.isArray(
                         confirmingDonePkg?.meta?.selected_talent_ids,
                       )
-                        ? confirmingDonePkg.meta.selected_talent_ids.map((id: any) =>
-                            String(id || "").trim(),
-                          ).filter(Boolean)
+                        ? confirmingDonePkg.meta.selected_talent_ids
+                            .map((id: any) => String(id || "").trim())
+                            .filter(Boolean)
                         : [];
 
                       // Use whichever source has data, in priority order
@@ -12640,7 +12642,9 @@ export default function BrandDashboard() {
 
                       const pkgItems: any[] = Array.isArray(publicPkg?.items)
                         ? publicPkg.items
-                        : Array.isArray(confirmingDonePkg?.package_snapshot?.items)
+                        : Array.isArray(
+                              confirmingDonePkg?.package_snapshot?.items,
+                            )
                           ? confirmingDonePkg.package_snapshot.items
                           : [];
 
@@ -12650,7 +12654,9 @@ export default function BrandDashboard() {
                       const itemsToShow =
                         selectedIds.length > 0
                           ? pkgItems.filter((item: any) => {
-                              const id = String(item?.talent_id || item?.id || "").trim();
+                              const id = String(
+                                item?.talent_id || item?.id || "",
+                              ).trim();
                               return id && selectedIds.includes(id);
                             })
                           : pkgItems;
@@ -12711,9 +12717,9 @@ export default function BrandDashboard() {
                   const fromMeta: string[] = Array.isArray(
                     pkg?.meta?.selected_talent_ids,
                   )
-                    ? pkg.meta.selected_talent_ids.map((id: any) =>
-                        String(id || "").trim(),
-                      ).filter(Boolean)
+                    ? pkg.meta.selected_talent_ids
+                        .map((id: any) => String(id || "").trim())
+                        .filter(Boolean)
                     : [];
                   const fromSnapshot: string[] = Array.isArray(
                     pkg?.package_snapshot?.items,
