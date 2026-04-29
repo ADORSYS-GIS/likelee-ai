@@ -5118,6 +5118,13 @@ pub async fn create_offer_package(
             "packages are only available for agency offers".to_string(),
         ));
     }
+
+    // Normalise package_snapshot.items at write time: resolve talent_name from
+    // agency_users so that the stored snapshot is always correct regardless of
+    // which UI path created the package.
+    let package_snapshot =
+        normalize_package_snapshot_talent_names(&state, &user.id, payload.package_snapshot).await;
+
     let insert_payload = json!({
         "offer_id": offer_id,
         "brand_campaign_id": offer.get("brand_campaign_id").cloned().unwrap_or(serde_json::Value::Null),
@@ -5126,7 +5133,7 @@ pub async fn create_offer_package(
         "status": "draft",
         "title": payload.title.as_deref().map(str::trim).filter(|s| !s.is_empty()),
         "message": payload.message.as_deref().map(str::trim).filter(|s| !s.is_empty()),
-        "package_snapshot": payload.package_snapshot.unwrap_or_else(|| json!({})),
+        "package_snapshot": package_snapshot,
         "expires_at": payload.expires_at,
         "meta": payload.meta.unwrap_or_else(|| json!({})),
         "created_by": user.id,

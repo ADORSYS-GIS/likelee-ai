@@ -60,6 +60,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { DocusealForm } from "@docuseal/react";
+import { MandatoryHint } from "@/components/ui/field-hint";
 
 interface SubmissionWizardProps {
   isOpen: boolean;
@@ -364,7 +365,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         toast({
           title: "Missing Information",
           description: "Please fill in all required fields marked with *",
-          variant: "destructive",
+          variant: "warning",
         });
         return;
       }
@@ -687,19 +688,30 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Brand Name *
-                        </Label>
+                        <div className="flex items-center justify-between gap-2 ml-1">
+                          <Label className="text-sm font-bold text-slate-800">
+                            Brand Name *
+                          </Label>
+                          <MandatoryHint />
+                        </div>
                         <Input
                           {...register("client_name", { required: true })}
                           placeholder="e.g. Nike, Spotify"
                           className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                         />
+                        {errors.client_name && (
+                          <p className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                            This field is mandatory.
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800 ml-1">
-                          {`${entitySingularTitle} Name *`}
-                        </Label>
+                        <div className="flex items-center justify-between gap-2 ml-1">
+                          <Label className="text-sm font-bold text-slate-800">
+                            {`${entitySingularTitle} Name *`}
+                          </Label>
+                          <MandatoryHint />
+                        </div>
                         <input
                           type="hidden"
                           {...register("talent_name", { required: true })}
@@ -891,16 +903,19 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           </PopoverContent>
                         </Popover>
                         {errors.talent_name && (
-                          <span className="text-red-500 text-xs font-bold px-1">
-                            {`Please select a ${entitySingularLower}`}
+                          <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                            {`This ${entitySingularLower} is mandatory.`}
                           </span>
                         )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-start justify-between ml-1 gap-2">
-                          <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
-                            Client Email*
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
+                              Client Email*
+                            </Label>
+                            <MandatoryHint />
+                          </div>
                           {brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
                               <Label
@@ -982,6 +997,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             )}
                           </>
                         )}
+                        <p className="text-[11px] font-medium text-amber-700 ml-1 dark:text-amber-400">
+                          This field is mandatory.
+                        </p>
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-center justify-between">

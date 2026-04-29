@@ -167,7 +167,11 @@ export default function Register() {
               </button>
             </div>
           </div>
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {error && (
+            <p className="text-amber-700 text-sm dark:text-amber-400">
+              {error}
+            </p>
+          )}
           <button
             type="submit"
             disabled={loading}

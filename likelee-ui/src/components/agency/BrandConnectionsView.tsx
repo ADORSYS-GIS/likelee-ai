@@ -972,12 +972,27 @@ const BrandConnectionsView = ({
     const draft = packageDraftByOffer[offerId] || { title: "", message: "" };
     setBusyIds((prev) => new Set(prev).add(offerId));
     try {
+      // Build snapshot items from the offer's assigned talent IDs so the
+      // backend can resolve their names via normalize_package_snapshot_talent_names.
+      const offer = (offersQuery.data || []).find(
+        (o: any) => String(o?.id || "") === offerId,
+      );
+      const selectedTalentIds: string[] = Array.isArray(
+        offer?.meta?.selected_talent_ids,
+      )
+        ? offer.meta.selected_talent_ids
+        : [];
+      const snapshotItems = selectedTalentIds.map((tid: string) => ({
+        talent_id: tid,
+        talent_name: "", // backend will resolve this
+      }));
+
       const createResp = await base44.post<{ package?: any }>(
         `/api/campaign-offers/${offerId}/packages`,
         {
           title: draft.title || "Talent Package",
           message: draft.message || "",
-          package_snapshot: { talents: [] },
+          package_snapshot: { items: snapshotItems },
         },
       );
       const packageId = String(createResp?.package?.id || "").trim();
