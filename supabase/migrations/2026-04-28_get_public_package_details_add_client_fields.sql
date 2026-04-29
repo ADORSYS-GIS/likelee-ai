@@ -7,7 +7,10 @@ BEGIN;
 DROP FUNCTION IF EXISTS get_public_package_details(TEXT);
 
 CREATE OR REPLACE FUNCTION get_public_package_details(p_access_token TEXT)
-RETURNS JSONB AS $
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
 DECLARE
   result JSONB;
 BEGIN
@@ -120,6 +123,6 @@ BEGIN
 
   RETURN result;
 END;
-$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 COMMIT;
