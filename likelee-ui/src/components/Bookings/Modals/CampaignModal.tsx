@@ -101,7 +101,7 @@ export const CampaignModal = ({
     if (!formData.name) {
       toast({
         title: "Please fill in the campaign name",
-        variant: "destructive",
+        variant: "warning",
       });
       return;
     }

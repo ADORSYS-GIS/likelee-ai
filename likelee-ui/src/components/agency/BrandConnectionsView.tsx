@@ -662,7 +662,7 @@ const BrandConnectionsView = () => {
         title: "Assignments locked",
         description:
           "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
-        variant: "destructive",
+        variant: "warning",
       });
       return;
     }
@@ -726,14 +726,17 @@ const BrandConnectionsView = () => {
       });
     } catch (e: any) {
       const msg = String(e?.message || "");
+      const isLockedAssignmentError =
+        msg.includes("cannot_change_assignments_after_contract_sent") ||
+        msg.includes("cannot_change_assignments_after_payment_started");
       toast({
-        title: "Assignment failed",
-        description: msg.includes(
-          "cannot_change_assignments_after_contract_sent",
-        )
-          ? "You can’t change assigned talents after the contract is sent."
+        title: isLockedAssignmentError
+          ? "Assignments locked"
+          : "Assignment failed",
+        description: isLockedAssignmentError
+          ? "This offer is already in progress, so talent assignments can’t be changed anymore."
           : msg || "Please try again.",
-        variant: "destructive",
+        variant: isLockedAssignmentError ? "warning" : "destructive",
       });
     } finally {
       setAssignSubmitting(false);
@@ -750,7 +753,7 @@ const BrandConnectionsView = () => {
         description: selectedOfferContractSigned
           ? "Contract is already signed and you can’t change assigned talents."
           : "You can’t unassign talent after the contract is sent.",
-        variant: "destructive",
+        variant: "warning",
       });
       return;
     }
