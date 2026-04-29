@@ -80,6 +80,7 @@ import {
 import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
+import { AgencySettingsSubscription } from "./AgencySettingsSubscription";
 import {
   DashboardSectionHeader,
   DashboardTabRail,
@@ -2035,23 +2036,35 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
           description="Configure your agency profile and preferences"
         />
 
-        <DashboardTabRail
-          items={[
-            "Profile",
-            "Commissions",
-            "Email Templates",
-            "Notifications",
-            "Tax & Currency",
-            "Team",
-            "File Storage",
-            "Integrations",
-          ].map((tab) => ({
-            id: tab,
-            label: tab,
-            active: activeTab === tab,
-            onClick: () => setActiveTab(tab),
-          }))}
-        />
+        <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
+          {(
+            [
+              "Profile",
+              ...(teamContext?.permissions?.includes("manage_billing")
+                ? ["Subscription"]
+                : []),
+              "Commissions",
+              "Email Templates",
+              "Notifications",
+              "Tax & Currency",
+              "Team",
+              "File Storage",
+              "Integrations",
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
+                activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
         {activeTab === "Profile" && (
           <div className="space-y-6">
@@ -2092,29 +2105,46 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                 </div>
                 {(!teamContext ||
                   teamContext.permissions?.includes("manage_billing")) && (
-                  <Button
-                    asChild
-                    variant={
-                      planTier === "pro" ||
-                      planTier === "basic" ||
-                      planTier === "enterprise"
-                        ? "default"
-                        : "outline"
-                    }
-                    className={`rounded-xl font-bold ${
-                      planTier === "pro"
-                        ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
-                        : planTier === "basic" || planTier === "agency"
-                          ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
-                          : planTier === "enterprise"
-                            ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
-                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <a href={createPageUrl("AgencySubscribe")}>
-                      Billing & Subscription
-                    </a>
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className={`rounded-xl font-bold ${
+                        planTier === "pro"
+                          ? "border-indigo-400/30 text-indigo-200 hover:bg-indigo-500/20"
+                          : planTier === "basic" || planTier === "agency"
+                            ? "border-emerald-400/30 text-emerald-700 hover:bg-emerald-100"
+                            : planTier === "enterprise"
+                              ? "border-amber-400/30 text-amber-700 hover:bg-amber-100"
+                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <a href={createPageUrl("AgencySubscribe")}>View Plans</a>
+                    </Button>
+                    <Button
+                      asChild
+                      variant={
+                        planTier === "pro" ||
+                        planTier === "basic" ||
+                        planTier === "enterprise"
+                          ? "default"
+                          : "outline"
+                      }
+                      className={`rounded-xl font-bold ${
+                        planTier === "pro"
+                          ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
+                          : planTier === "basic" || planTier === "agency"
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                            : planTier === "enterprise"
+                              ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
+                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <a href={createPageUrl("AgencySubscribe")}>
+                        Billing & Subscription
+                      </a>
+                    </Button>
+                  </div>
                 )}
               </div>
             </Card>
@@ -2382,6 +2412,8 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
             </div>
           </div>
         )}
+
+        {activeTab === "Subscription" && <AgencySettingsSubscription />}
 
         {activeTab === "Commissions" && (
           <div className="space-y-6">

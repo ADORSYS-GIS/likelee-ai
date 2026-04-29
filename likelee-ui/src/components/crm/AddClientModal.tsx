@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { MandatoryHint } from "@/components/ui/field-hint";
 import {
   Select,
   SelectContent,
@@ -112,9 +113,9 @@ const AddClientModal = ({
   const handleSubmit = () => {
     if (!formData.company) {
       toast({
-        title: "Error",
+        title: "Missing Information",
         description: "Company name is required",
-        variant: "destructive",
+        variant: "warning",
       });
       return;
     }
@@ -143,9 +144,12 @@ const AddClientModal = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Company Name *
-              </Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Company Name *
+                </Label>
+                <MandatoryHint />
+              </div>
               <Input
                 placeholder="Company Inc."
                 className="h-11 bg-gray-50 border-gray-200 rounded-xl"
@@ -154,6 +158,9 @@ const AddClientModal = ({
                   setFormData({ ...formData, company: e.target.value })
                 }
               />
+              <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                This field is mandatory.
+              </p>
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
