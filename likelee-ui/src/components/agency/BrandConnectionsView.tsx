@@ -112,7 +112,17 @@ const extractDeliverableCount = (value: unknown): number => {
   return counted > 0 ? counted : lines.length;
 };
 
-const BrandConnectionsView = () => {
+interface BrandConnectionsViewProps {
+  requestsCount?: number;
+  offersCount?: number;
+  feedbackCount?: number;
+}
+
+const BrandConnectionsView = ({
+  requestsCount = 0,
+  offersCount = 0,
+  feedbackCount = 0,
+}: BrandConnectionsViewProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -1206,44 +1216,19 @@ const BrandConnectionsView = () => {
     }
   };
 
-  const pendingRequests = requests.length;
-  const pendingOffers = offers.filter((o) =>
-    ["sent", "viewed"].includes(o.status),
-  ).length;
-  const pendingFeedback = feedbackItems.length;
+  // Use props if provided, otherwise calculate from queries
+  const pendingRequests = requestsCount > 0 ? requestsCount : requests.length;
+  const pendingOffers =
+    offersCount > 0
+      ? offersCount
+      : offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
+  const pendingFeedback =
+    feedbackCount > 0 ? feedbackCount : feedbackItems.length;
 
-  React.useEffect(() => {
-    setSeenCounts((prev) => {
-      const next = { ...prev };
-      let changed = false;
-
-      if (activeTab === "requests" && prev.requests !== pendingRequests) {
-        next.requests = pendingRequests;
-        changed = true;
-      }
-      if (activeTab === "offers" && prev.offers !== pendingOffers) {
-        next.offers = pendingOffers;
-        changed = true;
-      }
-      if (activeTab === "feedback" && prev.feedback !== pendingFeedback) {
-        next.feedback = pendingFeedback;
-        changed = true;
-      }
-
-      if (changed) {
-        localStorage.setItem(
-          "brand_connections_seen_counts",
-          JSON.stringify(next),
-        );
-        return next;
-      }
-      return prev;
-    });
-  }, [activeTab, pendingRequests, pendingOffers, pendingFeedback]);
-
-  const showRequestsBadge = pendingRequests > (seenCounts.requests || 0);
-  const showOffersBadge = pendingOffers > (seenCounts.offers || 0);
-  const showFeedbackBadge = pendingFeedback > (seenCounts.feedback || 0);
+  // Always show badges - they disappear when count reaches 0
+  const showRequestsBadge = pendingRequests > 0;
+  const showOffersBadge = pendingOffers > 0;
+  const showFeedbackBadge = pendingFeedback > 0;
 
   if (accessLoading) {
     return (
@@ -1304,34 +1289,35 @@ const BrandConnectionsView = () => {
           {
             id: "connections",
             label: "Brands",
+            badge: null,
             active: activeTab === "connections",
             onClick: () => setActiveTab("connections"),
           },
           {
             id: "requests",
-            label: showRequestsBadge
-              ? `Requests (${pendingRequests - (seenCounts.requests || 0)})`
-              : "Requests",
+            label: "Requests",
+            badge: showRequestsBadge ? pendingRequests : null,
             active: activeTab === "requests",
             onClick: () => setActiveTab("requests"),
           },
           {
             id: "offers",
-            label: showOffersBadge
-              ? `Offers (${pendingOffers - (seenCounts.offers || 0)})`
-              : "Offers",
+            label: "Offers",
+            badge: showOffersBadge ? pendingOffers : null,
             active: activeTab === "offers",
             onClick: () => setActiveTab("offers"),
           },
           {
             id: "contract_hub",
             label: "Contracts",
+            badge: null,
             active: activeTab === "contract_hub",
             onClick: () => setActiveTab("contract_hub"),
           },
           {
             id: "deliverables",
             label: "Deliverables",
+            badge: null,
             active: false,
             onClick: () => {
               navigate("/AgencyDashboard?tab=deliverables");
@@ -1340,9 +1326,8 @@ const BrandConnectionsView = () => {
           },
           {
             id: "feedback",
-            label: showFeedbackBadge
-              ? `Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
-              : "Feedback",
+            label: "Feedback",
+            badge: showFeedbackBadge ? pendingFeedback : null,
             active: activeTab === "feedback",
             onClick: () => setActiveTab("feedback"),
           },
@@ -1351,13 +1336,18 @@ const BrandConnectionsView = () => {
             key={item.id}
             type="button"
             onClick={item.onClick}
-            className={`min-h-[40px] rounded-xl px-4 py-2 text-center text-[13px] font-bold transition-all whitespace-nowrap ${
+            className={`min-h-[40px] rounded-xl px-4 py-2 text-center text-[13px] font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
               item.active
                 ? "bg-indigo-50/70 text-indigo-700 shadow-sm ring-1 ring-indigo-700/10"
                 : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent"
             }`}
           >
             {item.label}
+            {item.badge !== null && (
+              <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-indigo-600 rounded-full min-w-[20px]">
+                {item.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -1372,17 +1362,31 @@ const BrandConnectionsView = () => {
             },
             {
               id: "requests",
-              label: showRequestsBadge
-                ? `Requests (${pendingRequests - (seenCounts.requests || 0)})`
-                : "Requests",
+              label: (
+                <span className="flex items-center gap-2">
+                  Requests
+                  {showRequestsBadge && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-indigo-600 rounded-full min-w-[20px]">
+                      {pendingRequests}
+                    </span>
+                  )}
+                </span>
+              ),
               active: activeTab === "requests",
               onClick: () => setActiveTab("requests"),
             },
             {
               id: "offers",
-              label: showOffersBadge
-                ? `Brand Offers (${pendingOffers - (seenCounts.offers || 0)})`
-                : "Brand Offers",
+              label: (
+                <span className="flex items-center gap-2">
+                  Brand Offers
+                  {showOffersBadge && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-indigo-600 rounded-full min-w-[20px]">
+                      {pendingOffers}
+                    </span>
+                  )}
+                </span>
+              ),
               active: activeTab === "offers",
               onClick: () => setActiveTab("offers"),
             },
@@ -1403,9 +1407,16 @@ const BrandConnectionsView = () => {
             },
             {
               id: "feedback",
-              label: showFeedbackBadge
-                ? `Package Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
-                : "Package Feedback",
+              label: (
+                <span className="flex items-center gap-2">
+                  Package Feedback
+                  {showFeedbackBadge && (
+                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-indigo-600 rounded-full min-w-[20px]">
+                      {pendingFeedback}
+                    </span>
+                  )}
+                </span>
+              ),
               active: activeTab === "feedback",
               onClick: () => setActiveTab("feedback"),
             },

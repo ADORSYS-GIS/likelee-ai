@@ -19243,6 +19243,10 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            badges: {
+              "Job Invites":
+                pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            },
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
@@ -19329,6 +19333,10 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            badges: {
+              "Job Invites":
+                pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            },
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
@@ -20533,7 +20541,11 @@ export default function AgencyDashboard() {
               {activeTab === "licensing" &&
                 activeSubTab === "Brand Connections" &&
                 (agencyCanUseBrandConnections ? (
-                  <BrandConnectionsView />
+                  <BrandConnectionsView
+                    requestsCount={brandCounts.numRequests}
+                    offersCount={brandCounts.numOffers}
+                    feedbackCount={brandCounts.numFeedback}
+                  />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                     <div className="text-lg font-black text-gray-900">
@@ -20554,7 +20566,11 @@ export default function AgencyDashboard() {
                 ))}
               {activeTab === "brand-connections" &&
                 (agencyCanUseBrandConnections ? (
-                  <BrandConnectionsView />
+                  <BrandConnectionsView
+                    requestsCount={brandCounts.numRequests}
+                    offersCount={brandCounts.numOffers}
+                    feedbackCount={brandCounts.numFeedback}
+                  />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                     <div className="text-lg font-black text-gray-900">
