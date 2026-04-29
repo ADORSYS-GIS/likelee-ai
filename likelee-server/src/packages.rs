@@ -885,8 +885,16 @@ pub async fn create_public_package_full_assets_request(
         .to_string();
 
     // Prefer payload values; fall back to the package's stored recipient details.
-    let client_name = if payload_name.is_empty() { stored_client_name } else { payload_name };
-    let client_email = if payload_email.is_empty() { stored_client_email } else { payload_email };
+    let client_name = if payload_name.is_empty() {
+        stored_client_name
+    } else {
+        payload_name
+    };
+    let client_email = if payload_email.is_empty() {
+        stored_client_email
+    } else {
+        payload_email
+    };
     let message = payload.message.as_deref().unwrap_or("").trim().to_string();
 
     let notes = format!(
