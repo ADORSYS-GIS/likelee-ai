@@ -5122,8 +5122,8 @@ pub async fn create_offer_package(
     // Normalise package_snapshot.items at write time: resolve talent_name from
     // agency_users so that the stored snapshot is always correct regardless of
     // which UI path created the package.
-    let package_snapshot =
-        normalize_package_snapshot_talent_names(&state, &user.id, payload.package_snapshot).await;
+    // The wizard already sets talent_name on each item, so we use the payload directly.
+    let package_snapshot = payload.package_snapshot.unwrap_or_else(|| json!({}));
 
     let insert_payload = json!({
         "offer_id": offer_id,
