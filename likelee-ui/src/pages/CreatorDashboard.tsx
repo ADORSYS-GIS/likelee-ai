@@ -6209,19 +6209,28 @@ export default function CreatorDashboard() {
                 </motion.div>
                 <div className="max-w-xl">
                   <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-4">
-                    Exclusive Creator Offer
+                    {t("creatorDashboard.trialOffer.badge", {
+                      defaultValue: "Exclusive Creator Offer",
+                    })}
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black tracking-tight sm:text-4xl leading-tight">
-                    Experience Likelee{" "}
+                    {t("creatorDashboard.trialOffer.titlePrefix", {
+                      defaultValue: "Experience Likelee",
+                    })}{" "}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">
-                      Pro
+                      {t("creatorDashboard.trialOffer.pro", {
+                        defaultValue: "Pro",
+                      })}
                     </span>{" "}
-                    for 30 Days
+                    {t("creatorDashboard.trialOffer.titleSuffix", {
+                      defaultValue: "for 30 Days",
+                    })}
                   </h2>
                   <p className="mt-3 text-sm sm:text-lg text-slate-300 leading-relaxed font-medium">
-                    Unlock professional features including AI Voice profiles,
-                    advanced analytics, content monitoring, and premium campaign
-                    opportunities.
+                    {t("creatorDashboard.trialOffer.description", {
+                      defaultValue:
+                        "Unlock professional features including AI Voice profiles, advanced analytics, content monitoring, and premium campaign opportunities.",
+                    })}
                   </p>
                 </div>
               </div>
@@ -6229,9 +6238,15 @@ export default function CreatorDashboard() {
                 <div className="rounded-[20px] sm:rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-6 backdrop-blur-md">
                   <div className="space-y-3 mb-5 sm:mb-8">
                     {[
-                      "30 Days of Premium Access",
-                      "Cancel anytime during trial",
-                      "Automatic billing after 30 days",
+                      t("creatorDashboard.trialOffer.bullets.premiumAccess", {
+                        defaultValue: "30 Days of Premium Access",
+                      }),
+                      t("creatorDashboard.trialOffer.bullets.cancelAnytime", {
+                        defaultValue: "Cancel anytime during trial",
+                      }),
+                      t("creatorDashboard.trialOffer.bullets.autoBilling", {
+                        defaultValue: "Automatic billing after 30 days",
+                      }),
                     ].map((item, i) => (
                       <div
                         key={i}
@@ -6247,7 +6262,9 @@ export default function CreatorDashboard() {
                     onClick={() => navigate("/CreatorSubscribe")}
                     className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-base sm:text-lg shadow-xl group"
                   >
-                    Explore Plans & Unlock Trial
+                    {t("creatorDashboard.trialOffer.cta", {
+                      defaultValue: "Explore Plans & Unlock Trial",
+                    })}
                     <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </div>
