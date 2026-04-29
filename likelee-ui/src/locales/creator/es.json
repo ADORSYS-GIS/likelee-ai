@@ -110,7 +110,17 @@
           "notAllowed": "Transferencias no permitidas en su cuenta Stripe.",
           "noStripeAccount": "No hay ninguna cuenta de Stripe conectada. Complete la incorporación de Stripe para recibir fondos."
         }
-      }
+      },
+      "pendingTransfers": "Transferencias pendientes",
+      "refresh": "Actualizar",
+      "retrying": "retrying...",
+      "failed": "failed",
+      "pending": "pending",
+      "retry": "retry",
+      "retries": "retries",
+      "actionRequired": "Action required",
+      "actionRequiredDescription": "One or more transfers failed because your Stripe account is not fully set up. Complete your Stripe onboarding to receive these funds. The agency will retry the transfer once your account is ready.",
+      "completeStripeSetup": "Complete Stripe setup"
     },
     "settings": {
       "myRules": "My Rules",
@@ -464,7 +474,69 @@
       "offerActions": "Acciones de oferta",
       "reviewOffers": "Revisar ofertas",
       "deliverableFeedback": "Comentarios entregables",
-      "viewFeedback": "Ver comentarios"
+      "viewFeedback": "Ver comentarios",
+      "backToQueue": "Volver a la cola",
+      "contractReviewTitle": "{{brand}} - Revision del contrato",
+      "contractReviewSubtitle": "Revisa los terminos antes de aprobar",
+      "whatYouWillEarn": "Lo que ganaras",
+      "yourMonthlyPayment": "Tu pago mensual:",
+      "ifYouKeepThisFor": "Si mantienes esto durante {{term}}:",
+      "totalEstimatedEarnings": "Ganancias estimadas totales",
+      "contractTerms": "Terminos del contrato",
+      "duration": "Duracion:",
+      "territory": "Territorio:",
+      "usageType": "Tipo de uso:",
+      "industries": "Industrias:",
+      "yourRightsAndProtections": "Tus derechos y protecciones",
+      "canPause": "You can pause this license anytime (temporarily stop usage)",
+      "canRevoke": "You can revoke with 30 days notice (permanently end)",
+      "licenseExpires": "License expires on a specific date (not forever)",
+      "paymentProtected": "Payment protected in escrow until brand approves deliverables",
+      "perpetualUseWarning": {
+        "title": "⚠️ Perpetual Use Warning:",
+        "message": "This brand wants to use your likeness forever. You should negotiate for time-limited terms (6 months, 1 year) instead."
+      },
+      "decline": "Rechazar",
+      "counterOffer": "Contraoferta",
+      "acceptAndSign": "Aceptar y firmar",
+      "title": "Cola de aprobaciones",
+      "pendingCount": "{{count}} pendientes",
+      "welcome": {
+        "title": "Welcome to your Approval Queue!",
+        "message": "This is an example of what brand requests will look like. You don't have any pending approvals yet — but when brands want to work with you, their requests will appear here!"
+      },
+      "requestedOn": "Solicitado el {{date}}",
+      "perpetualRequest": "Solicitud perpetua",
+      "proposedRate": "Tarifa propuesta:",
+      "termLength": "Duracion:",
+      "estimatedMonthly": "Estimado mensual:",
+      "regions": "Regiones:",
+      "warning": {
+        "title": "Advertencia:",
+        "message": "This is a perpetual-use request. You would give up long-term control of your likeness for this campaign. Consider negotiating for time-limited terms instead."
+      },
+      "viewContract": "Ver contrato",
+      "labels": {
+        "industries": "Industrias:",
+        "regions": "Regiones:",
+        "estimatedMonthly": "Estimado mensual:",
+        "termLength": "Duracion:",
+        "proposedRate": "Tarifa propuesta:",
+        "requestedOn": "Solicitado el {{date}}",
+        "pricePerMonth": "${{price}}/mes",
+        "months": "{{count}} meses"
+      },
+      "actions": {
+        "viewContract": "Ver contrato",
+        "decline": "Rechazar",
+        "counterOffer": "Contraoferta",
+        "acceptAndSign": "Aceptar y firmar",
+        "backToQueue": "Volver a la cola"
+      },
+      "contractReview": {
+        "title": "Review Contract from {{brand}}",
+        "subtitle": "Carefully review all terms below before accepting."
+      }
     },
     "campaigns": {
       "title": "Campañas Activas",
@@ -732,7 +804,7 @@
         "months": "{{count}} meses"
       },
       "verifyBannerTitle": "Verify your account",
-      "verifyBannerDesc": "[NEEDS TRANSLATION] Complete identity verification to become visible to brands.",
+      "verifyBannerDesc": "Completa la verificacion de identidad para ser visible para las marcas.",
       "verifyBannerCta": "Verify now",
       "verifyBannerPending": "Verification pending"
     },
@@ -899,9 +971,9 @@
       "voiceErrorTitle": "Voice error",
       "voiceErrorDesc": "Failed to create voice profile: {{error}}",
       "micErrorTitle": "Microphone error",
-      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micErrorDesc": "No pudimos acceder a tu microfono. Permite el acceso al microfono e intentalo de nuevo.",
       "micNoDataTitle": "No audio captured",
-      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "micNoDataDesc": "No se recibieron datos de audio. Revisa tu microfono e intentalo de nuevo.",
       "campaignApproved": "Campaign approved",
       "campaignDeclined": "Campaign declined",
       "campaignPaused": "Campaign paused",
@@ -1090,7 +1162,8 @@
       "requests": "Solicitudes",
       "noBookings": "Aún no hay reservas.",
       "noLicenses": "Aún no hay licencias.",
-      "noRequests": "Aún no hay solicitudes."
+      "noRequests": "Aún no hay solicitudes.",
+      "connectAgencyHint": "Connect to an agency to access Talent Portal."
     },
     "payouts": {
       "title": "Payouts",
@@ -1797,7 +1870,7 @@
         "minimumDayRate": "Tarifa mínima por día",
         "minimumRateDescription": "Tu tarifa mínima aceptable",
         "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "[NEEDS TRANSLATION] Please choose the agency for this book-out using the Agency filter dropdown."
+        "selectAgencyDescription": "Elige la agencia para este bloqueo usando el menu desplegable de filtro Agencia."
       },
       "portfolio": {
         "title": "Portafolio",
@@ -2159,7 +2232,7 @@
     "backToDashboard": "Volver al panel"
   },
   "sportsAgencyHowItWorksStep3Title": "Activate your Clone",
-  "sportsAgencyHowItWorksStep3Description": "[NEEDS TRANSLATION] Deploy your AI clone across platforms to engage with fans, create content, and secure brand deals.",
+  "sportsAgencyHowItWorksStep3Description": "Despliega tu clon de IA en todas las plataformas para interactuar con fans, crear contenido y conseguir acuerdos con marcas.",
   "sportsAgencyJoinWaitlist": "Join the Waitlist",
   "howItWorksSportsStep1Title": "Roster Integration",
   "howItWorksSportsStep2Title": "Brand Discovery & Request Submission",

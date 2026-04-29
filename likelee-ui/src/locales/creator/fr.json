@@ -406,7 +406,69 @@
       "offerActions": "Proposer des actions",
       "reviewOffers": "Consulter les offres",
       "deliverableFeedback": "Commentaires livrables",
-      "viewFeedback": "Afficher les commentaires"
+      "viewFeedback": "Afficher les commentaires",
+      "backToQueue": "Retour a la file",
+      "contractReviewTitle": "{{brand}} - Revue du contrat",
+      "contractReviewSubtitle": "Examinez les conditions avant d'approuver",
+      "whatYouWillEarn": "Ce que vous gagnerez",
+      "yourMonthlyPayment": "Votre paiement mensuel :",
+      "ifYouKeepThisFor": "Si vous conservez ceci pendant {{term}} :",
+      "totalEstimatedEarnings": "Gains totaux estimes",
+      "contractTerms": "Conditions du contrat",
+      "duration": "Duree :",
+      "territory": "Territoire :",
+      "usageType": "Type d'utilisation :",
+      "industries": "Industries :",
+      "yourRightsAndProtections": "Vos droits et protections",
+      "canPause": "You can pause this license anytime (temporarily stop usage)",
+      "canRevoke": "You can revoke with 30 days notice (permanently end)",
+      "licenseExpires": "License expires on a specific date (not forever)",
+      "paymentProtected": "Payment protected in escrow until brand approves deliverables",
+      "perpetualUseWarning": {
+        "title": "⚠️ Perpetual Use Warning:",
+        "message": "This brand wants to use your likeness forever. You should negotiate for time-limited terms (6 months, 1 year) instead."
+      },
+      "decline": "Refuser",
+      "counterOffer": "Contre-offre",
+      "acceptAndSign": "Accepter et signer",
+      "title": "File d'approbation",
+      "pendingCount": "{{count}} en attente",
+      "welcome": {
+        "title": "Bienvenue dans votre file d'approbation !",
+        "message": "This is an example of what brand requests will look like. You don't have any pending approvals yet — but when brands want to work with you, their requests will appear here!"
+      },
+      "requestedOn": "Demande le {{date}}",
+      "perpetualRequest": "Demande perpetuelle",
+      "proposedRate": "Tarif propose :",
+      "termLength": "Duree :",
+      "estimatedMonthly": "Estime mensuel :",
+      "regions": "Regions :",
+      "warning": {
+        "title": "Avertissement :",
+        "message": "This is a perpetual-use request. You would give up long-term control of your likeness for this campaign. Consider negotiating for time-limited terms instead."
+      },
+      "viewContract": "Voir le contrat",
+      "labels": {
+        "industries": "Industries :",
+        "regions": "Regions :",
+        "estimatedMonthly": "Estime mensuel :",
+        "termLength": "Duree :",
+        "proposedRate": "Tarif propose :",
+        "requestedOn": "Demande le {{date}}",
+        "pricePerMonth": "${{price}}/mois",
+        "months": "{{count}} mois"
+      },
+      "actions": {
+        "viewContract": "Voir le contrat",
+        "decline": "Refuser",
+        "counterOffer": "Contre-offre",
+        "acceptAndSign": "Accepter et signer",
+        "backToQueue": "Retour a la file"
+      },
+      "contractReview": {
+        "title": "Examiner le contrat de {{brand}}",
+        "subtitle": "Examinez attentivement toutes les conditions ci-dessous avant d'accepter."
+      }
     },
     "archive": {
       "title": "Archives des Campagnes",
@@ -895,9 +957,9 @@
       "voiceErrorTitle": "Voice error",
       "voiceErrorDesc": "Failed to create voice profile: {{error}}",
       "micErrorTitle": "Microphone error",
-      "micErrorDesc": "[NEEDS TRANSLATION] We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micErrorDesc": "Nous n'avons pas pu acceder a votre microphone. Autorisez l'acces au microphone puis reessayez.",
       "micNoDataTitle": "No audio captured",
-      "micNoDataDesc": "[NEEDS TRANSLATION] No audio data was received. Please check your microphone and try again.",
+      "micNoDataDesc": "Aucune donnee audio n'a ete recue. Verifiez votre microphone puis reessayez.",
       "campaignApproved": "Campaign approved",
       "campaignDeclined": "Campaign declined",
       "campaignPaused": "Campaign paused",
@@ -1038,7 +1100,7 @@
         "months": "{{count}} mois"
       },
       "verifyBannerTitle": "Verify your account",
-      "verifyBannerDesc": "[NEEDS TRANSLATION] Complete identity verification to become visible to brands.",
+      "verifyBannerDesc": "Terminez la verification d'identite pour devenir visible aupres des marques.",
       "verifyBannerCta": "Verify now",
       "verifyBannerPending": "Verification pending"
     },
@@ -1158,17 +1220,17 @@
     "imageSections": {
       "headshot_neutral": {
         "title": "Headshots - Neutral Expression",
-        "description": "[NEEDS TRANSLATION] Face front-facing, neutral expression (not smiling or frowning). Good lighting on face. Professional clothing or plain background. 1080x1080 minimum.",
+        "description": "Visage de face, expression neutre (sans sourire ni froncer les sourcils). Bon eclairage du visage. Tenue professionnelle ou fond uni. 1080x1080 minimum.",
         "bestFor": "Brands need a clean face reference"
       },
       "headshot_smiling": {
         "title": "Headshots - Smiling",
-        "description": "[NEEDS TRANSLATION] Face front-facing, natural smile (genuine, not forced). Good lighting. Professional setting. 1080x1080 minimum.",
+        "description": "Visage de face, sourire naturel (sincere, non force). Bon eclairage. Cadre professionnel. 1080x1080 minimum.",
         "bestFor": "Brands want to show you happy/approachable"
       },
       "fullbody_casual": {
         "title": "Full Body - Casual Outfit",
-        "description": "[NEEDS TRANSLATION] Full body shot in casual everyday clothing. Natural pose.",
+        "description": "Photo en pied avec des vetements de tous les jours. Pose naturelle.",
         "bestFor": "Everyday casual look"
       },
       "fullbody_formal": {
@@ -1183,7 +1245,7 @@
       },
       "three_quarter": {
         "title": "3/4 Angle",
-        "description": "[NEEDS TRANSLATION] Face turned at a 45-degree angle, natural expression.",
+        "description": "Visage tourne a un angle de 45 degres, expression naturelle.",
         "bestFor": "Natural conversational angle"
       },
       "hair_down": {
@@ -1203,7 +1265,7 @@
       },
       "upper_body": {
         "title": "Upper Body Close-Up",
-        "description": "[NEEDS TRANSLATION] Shoulders and up, detailed facial features visible.",
+        "description": "Buste et visage, avec les traits du visage clairement visibles.",
         "bestFor": "Close-up shots, detailed facial features"
       },
       "outdoors": {
@@ -1218,7 +1280,7 @@
       },
       "makeup_variation": {
         "title": "Different Makeup Style",
-        "description": "[NEEDS TRANSLATION] If you vary your makeup style, show different looks.",
+        "description": "Si votre style de maquillage varie, montrez differents looks.",
         "bestFor": "If you vary makeup, brands should know"
       },
       "seasonal": {
@@ -1228,7 +1290,7 @@
       },
       "signature": {
         "title": "Your Choice - Signature Moment",
-        "description": "[NEEDS TRANSLATION] A photo that really represents YOU and how people recognize you.",
+        "description": "Une photo qui vous represente vraiment et montre comment les gens vous reconnaissent.",
         "bestFor": "A photo that really represents YOU"
       }
     },
@@ -1537,7 +1599,7 @@
         "minimumDayRate": "Tarif journalier minimum",
         "minimumRateDescription": "Votre tarif minimum acceptable",
         "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "[NEEDS TRANSLATION] Please choose the agency for this book-out using the Agency filter dropdown."
+        "selectAgencyDescription": "Veuillez choisir l'agence pour cette indisponibilite avec le menu deroulant du filtre Agence."
       },
       "portfolio": {
         "title": "Portfolio",
@@ -2098,16 +2160,16 @@
   "talentAgencyLabel": "Talent / Modeling Agency",
   "talentAgencySub": "Talent representation",
   "forCreators": "For Creators",
-  "forCreatorsMessage": "[NEEDS TRANSLATION] License your digital likeness, set your rates, and earn royalties automatically",
+  "forCreatorsMessage": "Licencez votre image numerique, fixez vos tarifs et gagnez automatiquement des royalties",
   "forAiArtists": "For AI Artists",
-  "forAiArtistsMessage": "[NEEDS TRANSLATION] Build your portfolio and connect with studios for campaigns and projects",
+  "forAiArtistsMessage": "Construisez votre portfolio et connectez-vous avec des studios pour des campagnes et des projets",
   "forCreatorsAndAthletes": "👤 For Creators & Athletes",
-  "forCreatorsAndAthletesMessage1": "[NEEDS TRANSLATION] License your digital likeness and earn passive income",
+  "forCreatorsAndAthletesMessage1": "Licencez votre image numerique et gagnez des revenus passifs",
   "forCreatorsAndAthletesMessage2": "Set your own rates and approval parameters",
   "forCreatorsAndAthletesMessage3": "Track every usage with automated royalty payments",
   "forCreatorsAndAthletesMessage4": "Full control over who uses your image and where",
   "forAiArtistsAndFilmmakers": "🎨 For AI Artists & Filmmakers",
-  "forAiArtistsAndFilmmakersMessage1": "[NEEDS TRANSLATION] Build professional portfolio showcasing AI creative work",
+  "forAiArtistsAndFilmmakersMessage1": "Construisez un portfolio professionnel presentant votre travail creatif en IA",
   "forAiArtistsAndFilmmakersMessage2": "Connect directly with brands and studios",
   "forAiArtistsAndFilmmakersMessage3": "Access exclusive AI filmmaking opportunities",
   "forAiArtistsAndFilmmakersMessage4": "Browse curated job board for AI creative roles",
@@ -2120,5 +2182,29 @@
     "digitalTalentOwner": {
       "comparison": {}
     }
-  }
+  },
+  "faces.featuredCreator.title": "Createur mis en avant",
+  "faces.featuredCreator.royaltiesEarned": "Royalties gagnees",
+  "faces.featuredCreator.royaltiesDescription": "Grace aux licences avec 5 marques",
+  "faces.featuredCreator.usageRequests": "Demandes d'utilisation",
+  "faces.featuredCreator.controlSettings": "Parametres de controle",
+  "faces.featuredCreator.allowCommercialUse": "Autoriser l'utilisation commerciale",
+  "faces.featuredCreator.allowFilmUse": "Autoriser l'utilisation dans les films",
+  "faces.featuredCreator.viewUsageReportButton": "Voir le rapport d'utilisation",
+  "faces.featuredCreator.updateSettingsButton": "Mettre a jour les parametres",
+  "faces.digitalTalentOwner.title": "De createur → proprietaire de talent numerique",
+  "faces.digitalTalentOwner.subtitle": "Vous avez deja construit votre image — faites-la maintenant travailler pour vous.",
+  "faces.digitalTalentOwner.mainContent": "Licencier votre image, ce n'est pas vous vendre ; c'est passer a l'echelle. Pendant que vous tournez votre prochain projet, votre double numerique peut generer des revenus dans dix autres.",
+  "faces.digitalTalentOwner.comparison.title": "Modele traditionnel vs modele d'image Likelee",
+  "faces.digitalTalentOwner.comparison.traditionalPath": "Parcours traditionnel",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription1": "Vous jouez ou tournez manuellement",
+  "faces.digitalTalentOwner.comparison.likeleeModel": "Modele Likelee",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription1": "Vous passez automatiquement a l'echelle",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription2": "Vous etes paye une fois par projet",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription2": "Vous gagnez des retainers mensuels tant que les marques utilisent votre image",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription3": "Vous perdez souvent la propriete intellectuelle",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription3": "Vous conservez la propriete intellectuelle",
+  "faces.digitalTalentOwner.comparison.traditionalPathDescription4": "Vous ne pouvez pas reutiliser ni adapter",
+  "faces.digitalTalentOwner.comparison.likeleeModelDescription4": "Vous approuvez chaque reutilisation",
+  "faces.digitalTalentOwner.footer": "Vous n'etes pas un simple prestataire. Vous etes proprietaire."
 }
