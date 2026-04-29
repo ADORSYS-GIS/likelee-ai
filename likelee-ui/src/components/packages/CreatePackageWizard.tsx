@@ -643,7 +643,8 @@ export function CreatePackageWizard({
       ).trim();
       const selectedBrandEmail = String(
         selectedBrand?.brands?.email || "",
-      ).trim();      const selectedTalentIds = itemsArray
+      ).trim();
+      const selectedTalentIds = itemsArray
         .map((it: any) => String(it?.talent_id || it?.id || "").trim())
         .filter(Boolean);
 
@@ -671,7 +672,11 @@ export function CreatePackageWizard({
         // public-package actions can reuse it without prompting again.
         // Prefer formData values (editable by agency) over brand-derived values.
         client_email: selectedBrandEmail || formData.client_email,
-        client_name: selectedBrandName || selectedBrandEmail || formData.client_name || "Brand Portal",
+        client_name:
+          selectedBrandName ||
+          selectedBrandEmail ||
+          formData.client_name ||
+          "Brand Portal",
       };
 
       const offerPayload = {
@@ -698,9 +703,7 @@ export function CreatePackageWizard({
           consent_items: normalizedConsentItems,
           items: itemsArray.map((item: any) => ({
             talent_id: item.talent_id || item.id,
-            talent_name:
-              item?.talent?.full_name ||
-              item?.talent_name,
+            talent_name: item?.talent?.full_name || item?.talent_name,
             asset_ids: (item.assets || []).map((asset: any) => ({
               asset_id: asset.asset_id || asset.id,
               asset_type: asset.asset_type || asset.type || "image",
@@ -1376,12 +1379,23 @@ export function CreatePackageWizard({
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {isOfferMode ? (
                           (() => {
-                            const list = Array.isArray(connectedBrands) ? connectedBrands : [];
+                            const list = Array.isArray(connectedBrands)
+                              ? connectedBrands
+                              : [];
                             const match = list.find(
-                              (c: any) => String(c?.brand_id || "").trim() === String(selectedBrandId || "").trim(),
+                              (c: any) =>
+                                String(c?.brand_id || "").trim() ===
+                                String(selectedBrandId || "").trim(),
                             );
-                            const displayName = String(match?.brands?.company_name || "").trim() || String(match?.brands?.email || "").trim() || formData.client_name;
-                            const displayEmail = String(match?.brands?.email || "").trim() || formData.client_email;
+                            const displayName =
+                              String(
+                                match?.brands?.company_name || "",
+                              ).trim() ||
+                              String(match?.brands?.email || "").trim() ||
+                              formData.client_name;
+                            const displayEmail =
+                              String(match?.brands?.email || "").trim() ||
+                              formData.client_email;
                             return (
                               <>
                                 <div className="space-y-3">
@@ -1405,7 +1419,8 @@ export function CreatePackageWizard({
                                     className="h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium text-gray-700 cursor-default"
                                   />
                                   <p className="text-xs text-gray-500 font-medium">
-                                    Delivered via inbox (email is informational).
+                                    Delivered via inbox (email is
+                                    informational).
                                   </p>
                                 </div>
                               </>
