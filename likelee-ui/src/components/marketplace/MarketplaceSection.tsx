@@ -838,7 +838,7 @@ export function MarketplaceSection({
               return (
                 <Card
                   key={profile.id}
-                  className="group w-full overflow-hidden border-0 sm:border border-slate-200 sm:rounded-lg rounded-none bg-white hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer border-b border-slate-100"
+                  className="group w-full overflow-hidden border-0 sm:border border-slate-200 sm:rounded-lg rounded-none bg-white hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer border-b border-slate-100 flex flex-col"
                   onClick={() => setSelectedProfile(profile)}
                 >
                   <div className="relative">
@@ -901,7 +901,7 @@ export function MarketplaceSection({
                     </div>
                   </div>
 
-                  <div className="p-2.5">
+                  <div className="p-2.5 flex flex-col flex-1">
                     {/* Mobile collapse toggle */}
                     <button
                       className="w-full flex items-center justify-between sm:hidden mb-2 py-1"
@@ -932,69 +932,67 @@ export function MarketplaceSection({
 
                     {/* Body — always visible on sm+, collapsible on mobile */}
                     <div
-                      className={`${expandedCardIds.has(profile.id) ? "block" : "hidden"} sm:block`}
+                      className={`${expandedCardIds.has(profile.id) ? "block" : "hidden"} sm:block flex-1 flex flex-col`}
                     >
-                      {(profile.tagline || profile.bio) && (
-                        <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
-                          {profile.tagline || profile.bio}
-                        </p>
-                      )}
-                      {!(profile.tagline || profile.bio) && (
-                        <p className="text-xs text-slate-400 min-h-[32px]">
-                          No bio available yet.
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap items-center gap-2 mt-3">
-                        {(profile.skills || []).slice(0, 2).map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="secondary"
-                            className="text-[11px] bg-slate-100 text-slate-700 border-0"
-                          >
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      <div
-                        className={`grid gap-1.5 mt-2 ${
-                          entityType === "agency"
-                            ? "grid-cols-2"
-                            : "grid-cols-1"
-                        }`}
-                      >
-                        <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
-                          <p className="text-slate-500 text-[11px] font-medium">
-                            {entityType === "agency"
-                              ? "Agency Type"
-                              : "Followers"}
+                      <div className="flex-1">
+                        {(profile.tagline || profile.bio) && (
+                          <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
+                            {profile.tagline || profile.bio}
                           </p>
-                          <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                            {entityType === "agency"
-                              ? profile.creator_type || "N/A"
-                              : followers > 0
-                                ? followers.toLocaleString()
-                                : "N/A"}
+                        )}
+                        {!(profile.tagline || profile.bio) && (
+                          <p className="text-xs text-slate-400 min-h-[32px]">
+                            No bio available yet.
                           </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-2 mt-3">
+                          {(profile.skills || []).slice(0, 2).map((skill) => (
+                            <Badge
+                              key={skill}
+                              variant="secondary"
+                              className="text-[11px] bg-slate-100 text-slate-700 border-0"
+                            >
+                              {skill}
+                            </Badge>
+                          ))}
                         </div>
-                        {entityType === "agency" && (
+
+                        <div
+                          className={`grid gap-1.5 mt-2 ${
+                            entityType === "agency"
+                              ? "grid-cols-2"
+                              : "grid-cols-1"
+                          }`}
+                        >
                           <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                             <p className="text-slate-500 text-[11px] font-medium">
-                              Services
+                              {entityType === "agency"
+                                ? "Agency Type"
+                                : "Followers"}
                             </p>
                             <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                              {(profile.skills || []).length || "N/A"}
+                              {entityType === "agency"
+                                ? profile.creator_type || "N/A"
+                                : followers > 0
+                                  ? followers.toLocaleString()
+                                  : "N/A"}
                             </p>
                           </div>
-                        )}
+                          {entityType === "agency" && (
+                            <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
+                              <p className="text-slate-500 text-[11px] font-medium">
+                                Services
+                              </p>
+                              <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
+                                {(profile.skills || []).length || "N/A"}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Connect button — also inside collapsible on mobile */}
-                    <div
-                      className={`${expandedCardIds.has(profile.id) ? "block" : "hidden"} sm:block`}
-                    >
+                      {/* Connect button — pushed to bottom */}
                       {connectionStatus !== "connected" && (
                         <div className="mt-2.5 flex items-center justify-end gap-2">
                           <Button
