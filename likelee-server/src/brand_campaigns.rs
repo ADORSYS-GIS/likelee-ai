@@ -5294,8 +5294,6 @@ pub async fn mark_brand_package_done(
     let current_row: serde_json::Value = serde_json::from_str(&current_text).unwrap_or_default();
 
     // Idempotency guard: if the package is already finalized, reject re-submission.
-    // This prevents the brand from changing their selection after the agency has
-    // already seen it and started preparing the contract.
     let current_status = current_row
         .get("status")
         .and_then(|v| v.as_str())
@@ -5316,11 +5314,6 @@ pub async fn mark_brand_package_done(
         .trim()
         .to_string();
 
-    let mut current_meta = current_row
-        .get("meta")
-        .cloned()
-        .unwrap_or_else(|| json!({}));
-
     // Collect selected_talent_ids before consuming payload.
     let selected_talent_ids: Vec<String> = payload
         .selected_talent_ids
@@ -5330,6 +5323,73 @@ pub async fn mark_brand_package_done(
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .collect();
+
+    // -----------------------------------------------------------------------
+    // STEP 1: Run auto-assignments BEFORE finalizing the package.
+    //
+    // This is the critical ordering fix. Previously the package was finalized
+    // first and assignments ran after — if any assignment failed the offer was
+    // stuck: status = feedback_received, no offer_talent_assignments rows, no
+    // manual assignment route to repair it, and the contract gate blocked forever.
+    //
+    // Now: attempt all assignments first. If any fail, return the errors without
+    // touching the package status so the brand can correct the selection and retry.
+    // Only when all assignments succeed do we finalize the package.
+    // -----------------------------------------------------------------------
+    let mut assignments: Vec<serde_json::Value> = Vec::new();
+    let mut assignment_errors: Vec<serde_json::Value> = Vec::new();
+
+    if !agency_id.is_empty() && !selected_talent_ids.is_empty() {
+        for talent_id in &selected_talent_ids {
+            match insert_offer_talent_assignment_internal(
+                &state,
+                &agency_id,
+                &offer_id,
+                talent_id,
+            )
+            .await
+            {
+                Ok(assignment) => assignments.push(assignment),
+                Err((_, reason)) => {
+                    warn!(
+                        offer_id = %offer_id,
+                        agency_id = %agency_id,
+                        talent_id = %talent_id,
+                        reason = %reason,
+                        "Auto-assignment failed for talent during package finalization"
+                    );
+                    assignment_errors.push(json!({
+                        "talent_id": talent_id,
+                        "reason": reason,
+                    }));
+                }
+            }
+        }
+
+        // If any assignment failed, abort before finalizing the package.
+        // The package remains in its current status so the brand can retry
+        // after correcting the selection (e.g. removing un-onboarded talents).
+        if !assignment_errors.is_empty() {
+            return Err((
+                StatusCode::UNPROCESSABLE_ENTITY,
+                serde_json::to_string(&json!({
+                    "error": "assignment_errors",
+                    "message": "One or more talents could not be assigned. The package was not finalized. Please review the errors and retry.",
+                    "assignment_errors": assignment_errors,
+                    "assignments_succeeded": assignments,
+                }))
+                .unwrap_or_else(|_| "assignment_errors".to_string()),
+            ));
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // STEP 2: All assignments succeeded — now finalize the package.
+    // -----------------------------------------------------------------------
+    let mut current_meta = current_row
+        .get("meta")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
 
     if let Some(obj) = current_meta.as_object_mut() {
         if !selected_talent_ids.is_empty() {
@@ -5379,41 +5439,11 @@ pub async fn mark_brand_package_done(
     }
     let package_row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
 
-    // Auto-assign selected talents to the offer.
-    // This eliminates the redundant manual assignment step for the agency.
-    // Individual failures are non-fatal: we collect errors and continue so that
-    // a single unresolvable talent ID doesn't block the entire finalization.
-    let mut assignments: Vec<serde_json::Value> = Vec::new();
-    let mut assignment_errors: Vec<serde_json::Value> = Vec::new();
-
-    if !agency_id.is_empty() && !selected_talent_ids.is_empty() {
-        for talent_id in &selected_talent_ids {
-            match insert_offer_talent_assignment_internal(&state, &agency_id, &offer_id, talent_id)
-                .await
-            {
-                Ok(assignment) => assignments.push(assignment),
-                Err((_, reason)) => {
-                    warn!(
-                        offer_id = %offer_id,
-                        agency_id = %agency_id,
-                        talent_id = %talent_id,
-                        reason = %reason,
-                        "Auto-assignment failed for talent during package finalization"
-                    );
-                    assignment_errors.push(json!({
-                        "talent_id": talent_id,
-                        "reason": reason,
-                    }));
-                }
-            }
-        }
-    }
-
     Ok(Json(json!({
         "status": "ok",
         "package": package_row,
         "assignments": assignments,
-        "assignment_errors": assignment_errors,
+        "assignment_errors": [],
     })))
 }
 
