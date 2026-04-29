@@ -2410,7 +2410,9 @@ export default function BrandCampaignDashboard({
                   ? t("dashboard.quickActions.seatLimitReached", {
                       defaultValue: "Seat limit reached",
                     })
-                  : `Up to ${brandSeatLimitLabel} seats`}
+                  : t("dashboard.quickActions.upToSeats", {
+                      count: brandSeatLimitLabel,
+                    })}
             </Button>
           </Card>
 
@@ -2611,8 +2613,7 @@ export default function BrandCampaignDashboard({
                       )}
                       {campaign.due_date && (
                         <span>
-                          {t("campaignsDashboard.campaignDetails.due")}:{" "}
-                          {campaign.due_date}
+                          {t("campaignDetails.due")}: {campaign.due_date}
                         </span>
                       )}
                       <span>

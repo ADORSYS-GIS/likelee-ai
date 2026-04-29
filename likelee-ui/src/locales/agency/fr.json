@@ -3560,6 +3560,13 @@
           "fileStorage": "Stockage de fichiers",
           "integrations": "Intégrations"
         },
+        "emailTemplates": {
+          "templateNames": {
+            "bookingConfirmation": "Confirmation de réservation",
+            "invoiceEmail": "E-mail de facture",
+            "paymentReminder": "Rappel de paiement"
+          }
+        },
         "fileStorage": {
           "title": "Stockage de fichiers",
           "subtitle": "Organisez et gérez les fichiers de votre agence",

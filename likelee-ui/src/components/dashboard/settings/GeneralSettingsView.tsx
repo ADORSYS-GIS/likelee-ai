@@ -807,6 +807,30 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
     useState(false);
   const [isSavingCalendlySettings, setIsSavingCalendlySettings] =
     useState(false);
+  const getEmailTemplateDisplayName = (
+    templateKey: string,
+    fallback: string,
+  ) => {
+    if (templateKey.startsWith("booking_confirmation")) {
+      return t(
+        "agencyDashboard.settings.emailTemplates.templateNames.bookingConfirmation",
+        { defaultValue: "Booking Confirmation" },
+      );
+    }
+    if (templateKey.startsWith("invoice_email")) {
+      return t(
+        "agencyDashboard.settings.emailTemplates.templateNames.invoiceEmail",
+        { defaultValue: "Invoice Email" },
+      );
+    }
+    if (templateKey.startsWith("payment_reminder")) {
+      return t(
+        "agencyDashboard.settings.emailTemplates.templateNames.paymentReminder",
+        { defaultValue: "Payment Reminder" },
+      );
+    }
+    return fallback;
+  };
   const [isFetchingCalendlySettings, setIsFetchingCalendlySettings] =
     useState(false);
   const hasCalendlyAccess = hasIrlBookingAddon && hasProAccess;
@@ -2907,7 +2931,10 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
                           <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate">
-                            {template.name}
+                            {getEmailTemplateDisplayName(
+                              template.template_key,
+                              template.name,
+                            )}
                           </h4>
                           <Badge
                             className={`border font-bold text-[10px] h-5 shrink-0 ${template.is_active ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-100 text-gray-600 border-gray-200"}`}

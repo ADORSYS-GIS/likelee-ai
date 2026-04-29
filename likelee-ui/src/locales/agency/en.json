@@ -3115,6 +3115,13 @@
           "fileStorage": "File Storage",
           "integrations": "Integrations"
         },
+        "emailTemplates": {
+          "templateNames": {
+            "bookingConfirmation": "Booking Confirmation",
+            "invoiceEmail": "Invoice Email",
+            "paymentReminder": "Payment Reminder"
+          }
+        },
         "fileStorage": {
           "title": "File Storage",
           "subtitle": "Organize and manage your agency files",
