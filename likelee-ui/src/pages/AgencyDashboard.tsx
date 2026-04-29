@@ -17666,25 +17666,8 @@ export default function AgencyDashboard() {
       ? brandReqs.filter((r: any) => r?.status === "pending").length
       : 0;
 
-    // seen counts from localStorage
-    const regSeen = parseInt(
-      localStorage.getItem("regular_licensing_seen_count") || "0",
-      10,
-    );
-    const brandSeen = parseInt(
-      localStorage.getItem("brand_licensing_seen_count") || "0",
-      10,
-    );
-
-    // If currently on the licensing requests tab, we clear it visually
-    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
-      return 0;
-    }
-
-    const regUnseen = Math.max(0, regPending - regSeen);
-    const brandUnseen = Math.max(0, brandPending - brandSeen);
-
-    return regUnseen + brandUnseen;
+    // Total pending count (always show, even when on the tab)
+    return regPending + brandPending;
   }, [
     licensingRequestsCountQuery.data,
     brandLicenseRequestsQuery.data,
@@ -17788,21 +17771,9 @@ export default function AgencyDashboard() {
   const pendingBrandConnectionCount = useMemo(() => {
     const { numRequests, numOffers, numFeedback } = brandCounts;
 
-    // Subtract seen counts
-    const saved = localStorage.getItem("brand_connections_seen_counts");
-    const seen = saved ? JSON.parse(saved) : {};
-
-    const diffRequests = Math.max(0, numRequests - (seen.requests || 0));
-    const diffOffers = Math.max(0, numOffers - (seen.offers || 0));
-    const diffFeedback = Math.max(0, numFeedback - (seen.feedback || 0));
-
-    // If currently on the brand-connections tab, we don't want the badge to persist if viewed
-    if (activeTab === "brand-connections") {
-      return 0;
-    }
-
-    return diffRequests + diffOffers + diffFeedback;
-  }, [brandCounts, activeTab]);
+    // Always show the total count (don't hide when on the tab)
+    return numRequests + numOffers + numFeedback;
+  }, [brandCounts]);
 
   const pendingJobInvitesCount = useMemo(() => {
     return Array.isArray(brandConnectionJobInvitesQuery.data)
