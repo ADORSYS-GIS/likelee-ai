@@ -18986,7 +18986,7 @@ export default function AgencyDashboard() {
   const handleNotificationClick = (notif: any) => {
     // Mark as read
     markAsRead(notif.id);
-    
+
     // Navigate to the appropriate tab/page
     if (notif.navigateTo) {
       setActiveTab(notif.navigateTo);
