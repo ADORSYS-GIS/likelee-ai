@@ -1636,6 +1636,51 @@
       "collaborationPreferences": "Collaboration Preferences",
       "previewPublish": "Preview & Publish"
     },
+    "categories": {
+      "0": "Marketing Campaign",
+      "1": "Film Production",
+      "2": "Advertising Creative",
+      "3": "Brand Content",
+      "4": "UGC Campaign",
+      "5": "AI Video Production",
+      "6": "Product Launch",
+      "7": "Social Media Content",
+      "8": "Other"
+    },
+    "workTypes": {
+      "0": "UGC Campaign",
+      "1": "Ad Creative",
+      "2": "Likeness Licensing",
+      "3": "Full Project Management",
+      "4": "Video Editing",
+      "5": "Voice Synthesis",
+      "6": "AI Generation",
+      "7": "Brand Partnership"
+    },
+    "talentTypes": {
+      "0": "AI Talent (Virtual)",
+      "1": "Creator (Licensing Call)",
+      "2": "Model (Licensing Call)",
+      "3": "Production Studio",
+      "4": "Marketing Agency"
+    },
+    "skills": {
+      "0": "Video Editing",
+      "1": "Sora Generation",
+      "2": "Runway ML",
+      "3": "Voice Synthesis",
+      "4": "ElevenLabs",
+      "5": "Lip Sync",
+      "6": "Face Swap",
+      "7": "Content Strategy",
+      "8": "Campaign Management"
+    },
+    "callType": {
+      "creator": "Creator call",
+      "agency": "Agency call",
+      "athlete": "Athlete call",
+      "aiArtist": "AI artist call"
+    },
     "fields": {
       "jobTitle": "Job Title / Campaign Title *",
       "companyName": "Company Name",

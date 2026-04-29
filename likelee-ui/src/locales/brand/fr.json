@@ -1646,6 +1646,51 @@
       "collaborationPreferences": "Préférences de collaboration",
       "previewPublish": "Aperçu et publication"
     },
+    "categories": {
+      "0": "Campagne marketing",
+      "1": "Production cinématographique",
+      "2": "Création publicitaire",
+      "3": "Contenu de marque",
+      "4": "Campagne UGC",
+      "5": "Production vidéo IA",
+      "6": "Lancement de produit",
+      "7": "Contenu pour les réseaux sociaux",
+      "8": "Autre"
+    },
+    "workTypes": {
+      "0": "Campagne UGC",
+      "1": "Création publicitaire",
+      "2": "Licence d'image",
+      "3": "Gestion complète de projet",
+      "4": "Montage vidéo",
+      "5": "Synthèse vocale",
+      "6": "Génération IA",
+      "7": "Partenariat de marque"
+    },
+    "talentTypes": {
+      "0": "Talent IA (virtuel)",
+      "1": "Créateur (appel de licence)",
+      "2": "Modèle (appel de licence)",
+      "3": "Studio de production",
+      "4": "Agence marketing"
+    },
+    "skills": {
+      "0": "Montage vidéo",
+      "1": "Génération Sora",
+      "2": "Runway ML",
+      "3": "Synthèse vocale",
+      "4": "ElevenLabs",
+      "5": "Synchronisation labiale",
+      "6": "Face swap",
+      "7": "Stratégie de contenu",
+      "8": "Gestion de campagne"
+    },
+    "callType": {
+      "creator": "Appel créateur",
+      "agency": "Appel agence",
+      "athlete": "Appel athlète",
+      "aiArtist": "Appel artiste IA"
+    },
     "fields": {
       "jobTitle": "Titre du poste / de la campagne *",
       "companyName": "Nom de l'entreprise",

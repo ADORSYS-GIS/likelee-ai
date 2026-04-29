@@ -1635,6 +1635,51 @@
       "collaborationPreferences": "Preferencias de colaboración",
       "previewPublish": "Vista previa y publicación"
     },
+    "categories": {
+      "0": "Campaña de marketing",
+      "1": "Producción cinematográfica",
+      "2": "Creatividad publicitaria",
+      "3": "Contenido de marca",
+      "4": "Campaña UGC",
+      "5": "Producción de video con IA",
+      "6": "Lanzamiento de producto",
+      "7": "Contenido para redes sociales",
+      "8": "Otro"
+    },
+    "workTypes": {
+      "0": "Campaña UGC",
+      "1": "Creatividad publicitaria",
+      "2": "Licencia de imagen",
+      "3": "Gestión completa del proyecto",
+      "4": "Edición de video",
+      "5": "Síntesis de voz",
+      "6": "Generación con IA",
+      "7": "Asociación de marca"
+    },
+    "talentTypes": {
+      "0": "Talento IA (virtual)",
+      "1": "Creador (llamada de licencia)",
+      "2": "Modelo (llamada de licencia)",
+      "3": "Estudio de producción",
+      "4": "Agencia de marketing"
+    },
+    "skills": {
+      "0": "Edición de video",
+      "1": "Generación con Sora",
+      "2": "Runway ML",
+      "3": "Síntesis de voz",
+      "4": "ElevenLabs",
+      "5": "Sincronización labial",
+      "6": "Intercambio de rostros",
+      "7": "Estrategia de contenido",
+      "8": "Gestión de campañas"
+    },
+    "callType": {
+      "creator": "Llamada con creador",
+      "agency": "Llamada con agencia",
+      "athlete": "Llamada con atleta",
+      "aiArtist": "Llamada con artista de IA"
+    },
     "fields": {
       "jobTitle": "Título del trabajo / campaña *",
       "companyName": "Nombre de la empresa",

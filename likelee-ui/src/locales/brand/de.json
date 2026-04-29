@@ -1690,6 +1690,51 @@
       "collaborationPreferences": "Zusammenarbeitspräferenzen",
       "previewPublish": "Vorschau & Veröffentlichen"
     },
+    "categories": {
+      "0": "Marketingkampagne",
+      "1": "Filmproduktion",
+      "2": "Werbekreation",
+      "3": "Markeninhalt",
+      "4": "UGC-Kampagne",
+      "5": "KI-Videoproduktion",
+      "6": "Produkteinführung",
+      "7": "Social-Media-Inhalte",
+      "8": "Sonstiges"
+    },
+    "workTypes": {
+      "0": "UGC-Kampagne",
+      "1": "Werbekreation",
+      "2": "Likeness-Lizenzierung",
+      "3": "Komplettes Projektmanagement",
+      "4": "Videobearbeitung",
+      "5": "Sprachsynthese",
+      "6": "KI-Generierung",
+      "7": "Markenpartnerschaft"
+    },
+    "talentTypes": {
+      "0": "KI-Talent (virtuell)",
+      "1": "Creator (Lizenzanruf)",
+      "2": "Model (Lizenzanruf)",
+      "3": "Produktionsstudio",
+      "4": "Marketingagentur"
+    },
+    "skills": {
+      "0": "Videobearbeitung",
+      "1": "Sora-Generierung",
+      "2": "Runway ML",
+      "3": "Sprachsynthese",
+      "4": "ElevenLabs",
+      "5": "Lippensynchronisation",
+      "6": "Face Swap",
+      "7": "Content-Strategie",
+      "8": "Kampagnenmanagement"
+    },
+    "callType": {
+      "creator": "Creator-Anruf",
+      "agency": "Agentur-Anruf",
+      "athlete": "Athleten-Anruf",
+      "aiArtist": "KI-Künstler-Anruf"
+    },
     "fields": {
       "jobTitle": "Jobtitel / Kampagnentitel *",
       "companyName": "Unternehmensname",
