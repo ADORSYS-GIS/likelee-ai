@@ -21158,20 +21158,24 @@ export default function AgencyDashboard() {
                     {item.disabled && (
                       <span
                         className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold transition-opacity duration-150 shrink-0 ${
-                          item.disabledReason === "Choose a plan" || item.disabledReason === "Requires a paid plan"
-                            ? "bg-blue-50 text-blue-700" 
-                            : item.disabledReason === "Requires IRL Booking add-on"
+                          item.disabledReason === "Choose a plan" ||
+                          item.disabledReason === "Requires a paid plan"
+                            ? "bg-blue-50 text-blue-700"
+                            : item.disabledReason ===
+                                "Requires IRL Booking add-on"
                               ? "bg-emerald-50 text-emerald-700"
                               : "bg-amber-100 text-amber-700"
                         }`}
                         style={{ opacity: labelOpacity }}
                       >
-                        {item.disabledReason === "Choose a plan" || item.disabledReason === "Requires a paid plan" ? (
+                        {item.disabledReason === "Choose a plan" ||
+                        item.disabledReason === "Requires a paid plan" ? (
                           <>
                             <Briefcase className="w-3 h-3" strokeWidth={2.5} />
                             Basic
                           </>
-                        ) : item.disabledReason === "Requires IRL Booking add-on" ? (
+                        ) : item.disabledReason ===
+                          "Requires IRL Booking add-on" ? (
                           <>
                             <Crown className="w-3 h-3" strokeWidth={2.5} />
                             IRL
