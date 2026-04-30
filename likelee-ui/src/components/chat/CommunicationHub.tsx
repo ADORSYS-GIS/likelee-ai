@@ -3,17 +3,16 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useChat } from "@/hooks/useChat";
 import { ThreadList } from "./ThreadList";
 import { ChatWindow } from "./ChatWindow";
-import { useTranslation } from "react-i18next";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function CommunicationHub({
   initialCreatorId,
-  translationPrefix = "talentPortal.chat",
 }: {
   initialCreatorId?: string;
-  translationPrefix?: string;
 }) {
-  const { t } = useTranslation();
   const { profile } = useAuth();
+  const isMobile = useIsMobile();
+  const [mobileListVisible, setMobileListVisible] = React.useState(true);
   const {
     conversations,
     contacts,
@@ -68,11 +67,7 @@ export function CommunicationHub({
     activeConversation && profile?.id
       ? {
           id: profile.id,
-          name:
-            profile?.full_name ||
-            t(`${translationPrefix}.you`, {
-              defaultValue: "You",
-            }),
+          name: profile?.full_name || "You",
           avatarUrl: profile?.profile_photo_url || null,
           role: (activeConversation.agency_id === profile.id
             ? "agency"
@@ -82,10 +77,32 @@ export function CommunicationHub({
 
   const isCreator = profile?.role === "creator" || profile?.role === "talent";
 
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileListVisible(true);
+      return;
+    }
+    if (!activeConversation) {
+      setMobileListVisible(true);
+    }
+  }, [isMobile, activeConversation]);
+
+  const handleSelectConversation = (conversationId: string) => {
+    openConversation(conversationId);
+    if (isMobile) setMobileListVisible(false);
+  };
+
+  const handleStartConversation = (contactId: string) => {
+    startConversation(contactId);
+    if (isMobile) setMobileListVisible(false);
+  };
+
   return (
     <div className="flex h-[calc(100vh-10rem)] min-h-[500px] rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-white">
       {/* Thread list */}
-      <aside className="w-72 flex-shrink-0 border-r border-gray-100 flex flex-col">
+      <aside
+        className={`flex flex-col ${isMobile ? "w-full" : "w-72 flex-shrink-0 border-r border-gray-100"} ${isMobile && !mobileListVisible ? "hidden" : ""}`}
+      >
         {loadingConversations || loadingContacts ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
@@ -98,17 +115,18 @@ export function CommunicationHub({
               activeConversationId={activeConversationId}
               currentUserId={profile?.id ?? ""}
               isCreator={isCreator}
-              onSelect={openConversation}
-              onStartChat={startConversation}
+              onSelect={handleSelectConversation}
+              onStartChat={handleStartConversation}
               getParticipant={(conv, uid) => getParticipant(conv, uid)}
-              translationPrefix={translationPrefix}
             />
           </div>
         )}
       </aside>
 
       {/* Chat area */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main
+        className={`flex-1 flex flex-col overflow-hidden ${isMobile && mobileListVisible ? "hidden" : ""}`}
+      >
         {activeConversation && otherParticipant && selfParticipant ? (
           loadingMessages ? (
             <div className="flex-1 flex items-center justify-center">
@@ -121,10 +139,11 @@ export function CommunicationHub({
               sending={sending}
               otherParticipant={otherParticipant}
               selfParticipant={selfParticipant}
+              showBackButton={isMobile}
+              onBack={isMobile ? () => setMobileListVisible(true) : undefined}
               onSend={sendMessage}
               onEdit={editMessage}
               onDelete={deleteMessage}
-              translationPrefix={translationPrefix}
             />
           )
         ) : (
@@ -147,22 +166,11 @@ export function CommunicationHub({
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-700">
-                  {t(`${translationPrefix}.selectConversation`, {
-                    defaultValue: "Select a conversation",
-                  })}
+                  Select a conversation
                 </p>
                 <p className="text-xs text-gray-400 mt-1 max-w-xs">
-                  {t(`${translationPrefix}.chooseThread`, {
-                    role: isCreator
-                      ? t(`${translationPrefix}.roleAgency`, {
-                          defaultValue: "an agency",
-                        })
-                      : t(`${translationPrefix}.roleCreator`, {
-                          defaultValue: "a creator",
-                        }),
-                    defaultValue:
-                      "Choose a thread on the left, or initiate a new conversation with {{role}}.",
-                  })}
+                  Choose a thread on the left, or initiate a new conversation
+                  with {isCreator ? "an agency" : "a creator"}.
                 </p>
               </div>
             </div>
@@ -173,9 +181,7 @@ export function CommunicationHub({
                 <textarea
                   rows={1}
                   disabled
-                  placeholder={t(`${translationPrefix}.selectChatToType`, {
-                    defaultValue: "Select a chat to start typing…",
-                  })}
+                  placeholder="Select a chat to start typing…"
                   className="flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none max-h-36 overflow-y-auto cursor-not-allowed"
                 />
                 <button

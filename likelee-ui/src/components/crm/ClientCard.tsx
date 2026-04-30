@@ -8,7 +8,6 @@ import { Client } from "@/types/crm";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import * as crmApi from "@/api/crm";
-import { useTranslation } from "react-i18next";
 
 const ClientCard = ({
   client,
@@ -19,7 +18,6 @@ const ClientCard = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useTranslation("agency");
 
   const extractEmail = (value: unknown) => {
     const raw = String(value || "").trim();
@@ -41,8 +39,9 @@ const ClientCard = ({
     window.setTimeout(() => {
       if (document.hasFocus() && !document.hidden) {
         toast({
-          title: t("agencyDashboard.clientCRM.card.mailAppTitle"),
-          description: t("agencyDashboard.clientCRM.card.mailAppDescription"),
+          title: "No mail app configured",
+          description:
+            "Set Thunderbird as your default mail app to open email.",
         });
       }
     }, 800);
@@ -91,9 +90,7 @@ const ClientCard = ({
               <Badge
                 className={`${getStatusColor(client.status)} border-none font-bold text-[9px] px-2 py-0.5 uppercase tracking-wider rounded-md`}
               >
-                {t(`agencyDashboard.clientCRM.status.${client.status}`, {
-                  defaultValue: client.status,
-                })}
+                {client.status}
               </Badge>
               <div className="flex flex-wrap gap-1.5">
                 {client.tags.map((tag) => (
@@ -111,9 +108,7 @@ const ClientCard = ({
             <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-[11px] text-gray-500 font-bold">
               <div className="flex items-center gap-2">
                 <Building2 className="w-3.5 h-3.5 text-gray-400" />
-                {t(`agencyDashboard.clientCRM.industries.${client.industry}`, {
-                  defaultValue: client.industry,
-                })}
+                {client.industry}
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="w-3.5 h-3.5 text-gray-400" />
@@ -124,49 +119,35 @@ const ClientCard = ({
                       : ""
                   }
                 >
-                  {client.website ||
-                    t("agencyDashboard.clientCRM.card.noWebsite")}
+                  {client.website || "No website"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <Users className="w-3.5 h-3.5 text-gray-400" />
-                {t("agencyDashboard.clientCRM.card.contactsCount", {
-                  count: client.contacts,
-                })}
+                {client.contacts} contacts
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4 text-sm mt-4">
               <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-bold">
-                  {t("agencyDashboard.clientCRM.stats.totalRevenue")}:
-                </span>
+                <span className="text-gray-500 font-bold">Total Revenue:</span>
                 <span className="text-gray-900 font-extrabold text-lg">
                   {client.metrics?.revenue || client.totalRevenue}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-bold">
-                  {t("agencyDashboard.clientCRM.card.bookings")}:
-                </span>
+                <span className="text-gray-500 font-bold">Bookings:</span>
                 <span className="text-gray-900 font-extrabold text-lg">
                   {client.metrics?.bookings || client.bookings}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-bold">
-                  {t("agencyDashboard.clientCRM.filters.lastBooking")}:
-                </span>
+                <span className="text-gray-500 font-bold">Last Booking:</span>
                 <span className="text-gray-900 font-bold text-base">
                   {client.metrics?.lastBookingDate || client.lastBooking}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-500 font-bold">
-                  {t(
-                    "agencyDashboard.clientCRM.modal.profile.fields.nextFollowUp",
-                  )}
-                  :
-                </span>
+                <span className="text-gray-500 font-bold">Next Follow-up:</span>
                 <span
                   className={`${getFollowUpColor(client.next_follow_up_date)} text-base`}
                 >
@@ -216,28 +197,21 @@ const ClientCard = ({
                   return;
                 }
                 toast({
-                  title: t("agencyDashboard.clientCRM.card.noEmailTitle"),
-                  description: t(
-                    "agencyDashboard.clientCRM.card.noEmailDescription",
-                  ),
+                  title: "No email on file",
+                  description: "Add a contact email to send an email.",
                 });
               } catch (error: any) {
                 toast({
-                  title: t(
-                    "agencyDashboard.clientCRM.card.openEmailErrorTitle",
-                  ),
+                  title: "Unable to open email",
                   description:
-                    error?.message ||
-                    t(
-                      "agencyDashboard.clientCRM.card.openEmailErrorDescription",
-                    ),
+                    error?.message || "No contact email found for this client.",
                   variant: "destructive",
                 });
               }
             }}
           >
             <Mail className="w-3.5 h-3.5 mr-2" />
-            {t("agencyDashboard.clientCRM.card.email")}
+            Email
           </Button>
           <Button
             variant="outline"
@@ -247,13 +221,13 @@ const ClientCard = ({
             }}
           >
             <Package className="w-3.5 h-3.5 mr-2" />
-            {t("agencyDashboard.clientCRM.card.sendPackage")}
+            Send Package
           </Button>
           <Button
             onClick={onViewProfile}
             className="h-9 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs w-full sm:w-auto"
           >
-            {t("agencyDashboard.clientCRM.card.viewProfile")}
+            View Profile
           </Button>
         </div>
       </div>

@@ -29,7 +29,6 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
-import { useTranslation } from "react-i18next";
 
 const TIER_CONFIG: Record<string, any> = {
   Premium: {
@@ -147,7 +146,6 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
   isSportsAgency = false,
 }) => {
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const entitySingular = isSportsAgency ? "athlete" : "talent";
@@ -209,15 +207,12 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
     onSuccess: () => {
       // Close modal immediately for better UX
       setIsConfigModalOpen(false);
-      toast.success(t("agencyDashboard.performanceTiers.toasts.configSaved"));
+      toast.success("Tier thresholds updated successfully");
       // Refetch in background to get updated tier assignments
       queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
     },
     onError: (err: any) => {
-      toast.error(
-        err.message ||
-          t("agencyDashboard.performanceTiers.errors.updateFailed"),
-      );
+      toast.error(err.message || "Failed to update configuration");
     },
   });
 
@@ -225,9 +220,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-3">
         <div className="w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-500 text-[13px] font-medium">
-          {t("agencyDashboard.performanceTiers.states.loading")}
-        </p>
+        <p className="text-gray-500 text-[13px] font-medium">Loading...</p>
       </div>
     );
   }
@@ -242,7 +235,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
             </div>
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-gray-900">
-                {t("agencyDashboard.performanceTiers.errors.unableToLoad")}
+                Unable to load Performance Dashboard
               </h3>
               <p className="text-sm text-red-600 font-medium">
                 {(error as Error).message}
@@ -257,7 +250,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
               }
               className="mt-2 border-red-200 text-red-700 hover:bg-red-100 font-bold px-8 rounded-xl"
             >
-              {t("agencyDashboard.performanceTiers.actions.tryAgain")}
+              Try Again
             </Button>
           </CardContent>
         </Card>
@@ -291,10 +284,10 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-              {t("agencyDashboard.performanceTiers.title")}
+              Performance Tiers
             </h1>
             <p className="text-gray-500 font-medium text-sm mt-1">
-              {t("agencyDashboard.performanceTiers.subtitle")}
+              {`${entityPlural} segmented by earnings and activity levels`}
             </p>
           </div>
           <Button
@@ -302,8 +295,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
             onClick={() => setIsConfigModalOpen(true)}
             className="w-full sm:w-auto flex items-center gap-2 border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-none shadow-sm"
           >
-            <Settings className="w-4 h-4 text-gray-400" />{" "}
-            {t("agencyDashboard.performanceTiers.actions.configure")}
+            <Settings className="w-4 h-4 text-gray-400" /> Configure Tiers
           </Button>
         </div>
 
@@ -364,18 +356,10 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
           let thresholdStr = cfg.thresholds;
           if (data?.config && data.config[group.name]) {
             const c = data.config[group.name];
-            thresholdStr = t(
-              "agencyDashboard.performanceTiers.thresholds.dynamic",
-              {
-                earnings: currencyFormatter.format(c.min_earnings),
-                bookings: c.min_bookings,
-                defaultValue: `≥ ${currencyFormatter.format(c.min_earnings)}/mo • ≥ ${c.min_bookings} bookings`,
-              },
-            );
+            thresholdStr = `≥ ${currencyFormatter.format(c.min_earnings)}/mo • ≥ ${c.min_bookings} bookings`;
           } else if (group.name === "Inactive") {
-            thresholdStr = t(
-              "agencyDashboard.performanceTiers.thresholds.inactive",
-            );
+            thresholdStr =
+              "Includes all roster profiles that don't meet Tier 3 requirements";
           }
 
           return (
@@ -420,9 +404,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                       <DollarSign className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      {t(
-                        "agencyDashboard.performanceTiers.metrics.avgMonthlyEarnings",
-                      )}
+                      Avg Monthly Earnings
                     </span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
@@ -445,17 +427,13 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                       <Calendar className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      {t(
-                        "agencyDashboard.performanceTiers.metrics.avgBookingFrequency",
-                      )}
+                      Avg Booking Frequency
                     </span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
                     {avgBookings.toFixed(1)}{" "}
                     <span className="text-sm font-medium text-gray-500">
-                      {t(
-                        "agencyDashboard.performanceTiers.metrics.campaignsPerMonth",
-                      )}
+                      campaigns/month
                     </span>
                   </div>
                 </div>
@@ -475,21 +453,13 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                       <Users className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      {t(
-                        "agencyDashboard.performanceTiers.metrics.totalEntities",
-                        {
-                          entityPlural,
-                        },
-                      )}
+                      {`Total ${entityPlural}`}
                     </span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
                     {group.talents.length}{" "}
                     <span className="text-sm font-medium text-gray-500">
-                      {percentOfRoster}
-                      {t(
-                        "agencyDashboard.performanceTiers.metrics.percentOfRoster",
-                      )}
+                      {percentOfRoster}% of roster
                     </span>
                   </div>
                 </div>
@@ -501,7 +471,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-gray-900 mb-1">
-                    {t("agencyDashboard.performanceTiers.recommendationTitle")}
+                    Agency Recommendation
                   </h4>
                   <p className="text-[13px] text-blue-600 font-semibold leading-snug">
                     {cfg.recommendation}
@@ -512,9 +482,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="text-sm font-bold text-gray-900 font-bold">
-                    {t("agencyDashboard.performanceTiers.entitiesInTier", {
-                      entityPlural,
-                    })}
+                    {`${entityPlural} in This Tier`}
                   </h4>
                 </div>
                 <div className="space-y-3">
@@ -571,7 +539,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                           size="sm"
                           className="w-full sm:w-auto h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                         >
-                          {t("agencyDashboard.roster.actions.view")}
+                          View
                         </Button>
                       </div>
                     ))
@@ -581,16 +549,9 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                         <Users className="w-12 h-12 text-gray-100" />
                       </div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
-                        {t(
-                          "agencyDashboard.performanceTiers.empty.noneAssigned",
-                          {
-                            entitySingular,
-                          },
-                        )}
+                        {`No ${entitySingular} assigned to`}
                         <br />
-                        {t(
-                          "agencyDashboard.performanceTiers.empty.thisTierYet",
-                        )}
+                        this performance tier yet
                       </p>
                     </div>
                   )}
@@ -606,10 +567,10 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
         <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl max-h-[95vh] flex flex-col">
           <DialogHeader className="p-10 pb-4 flex-shrink-0">
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              {t("agencyDashboard.performanceTiers.modal.title")}
+              Configure Performance Tier Thresholds
             </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium pt-1">
-              {t("agencyDashboard.performanceTiers.modal.description")}
+              Set minimum earnings and booking requirements for each tier
             </DialogDescription>
           </DialogHeader>
 
@@ -633,9 +594,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                      {t(
-                        "agencyDashboard.performanceTiers.modal.minMonthlyEarnings",
-                      )}
+                      Min Monthly Earnings ($)
                     </Label>
                     <Input
                       type="number"
@@ -657,9 +616,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                   </div>
                   <div className="space-y-3">
                     <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                      {t(
-                        "agencyDashboard.performanceTiers.modal.minBookingsPerMonth",
-                      )}
+                      Min Bookings/Month
                     </Label>
                     <Input
                       type="number"
@@ -683,10 +640,8 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
               </div>
             ))}
             <p className="text-[13px] text-gray-500 font-medium pl-1 py-2">
-              <span className="font-bold">
-                {t("agencyDashboard.performanceTiers.modal.noteLabel")}
-              </span>{" "}
-              {t("agencyDashboard.performanceTiers.modal.noteBody")}
+              <span className="font-bold">Note:</span> Tier 4 includes all
+              roster profiles that don't meet Tier 3 requirements.
             </p>
           </div>
 
@@ -696,16 +651,14 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
               onClick={() => setIsConfigModalOpen(false)}
               className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 order-2 sm:order-1"
             >
-              {t("agencyDashboard.roster.actions.cancel")}
+              Cancel
             </Button>
             <Button
               onClick={handleSaveConfig}
               disabled={configMutation.isPending}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-10 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95 disabled:opacity-70 order-1 sm:order-2 min-w-[160px] border-none"
             >
-              {configMutation.isPending
-                ? t("agencyDashboard.performanceTiers.states.saving")
-                : t("agencyDashboard.performanceTiers.actions.saveChanges")}
+              {configMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </DialogContent>

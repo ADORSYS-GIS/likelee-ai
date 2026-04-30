@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -79,7 +78,6 @@ import { useIndexedDbQuery } from "@/lib/useIndexedDbCache";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 
 export function AgencyDeliverablesView() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { hasPermission } = useTeamAccess("agency");
@@ -247,7 +245,7 @@ export function AgencyDeliverablesView() {
           status === "contract_fully_signed"
             ? "Contract is already signed and you can’t change assigned talents."
             : "You can’t change assigned talents after the contract is sent.",
-        variant: "destructive",
+        variant: "warning",
       });
       setUnassignDialog((prev) => ({ ...prev, open: false }));
       return;
@@ -262,15 +260,8 @@ export function AgencyDeliverablesView() {
       }
       await loadAssignments(offerId);
       toast({
-        title: t("agencyDashboard.brandConnections.toasts.talentUnassigned", {
-          defaultValue: "Talent unassigned",
-        }),
-        description: t(
-          "agencyDashboard.brandConnections.toasts.talentRemovedFromOffer",
-          {
-            defaultValue: "Talent was removed from this offer.",
-          },
-        ),
+        title: "Talent unassigned",
+        description: "Talent was removed from this offer.",
       });
       setUnassignDialog({
         open: false,
@@ -483,22 +474,10 @@ export function AgencyDeliverablesView() {
 
   const deliverableStatusLabel = (statusRaw: unknown) => {
     const status = String(statusRaw || "submitted").toLowerCase();
-    if (status === "draft")
-      return t("agencyDashboard.deliverables.status.draft", {
-        defaultValue: "Draft",
-      });
-    if (status === "brand_review")
-      return t("agencyDashboard.deliverables.status.brandReview", {
-        defaultValue: "Sent to Brand",
-      });
-    if (status === "brand_approved")
-      return t("agencyDashboard.deliverables.status.brandApproved", {
-        defaultValue: "Brand Approved",
-      });
-    if (status === "submitted")
-      return t("agencyDashboard.deliverables.status.new", {
-        defaultValue: "New",
-      });
+    if (status === "draft") return "Draft";
+    if (status === "brand_review") return "Sent to Brand";
+    if (status === "brand_approved") return "Brand Approved";
+    if (status === "submitted") return "New";
     return status.replace(/_/g, " ");
   };
 
@@ -507,26 +486,11 @@ export function AgencyDeliverablesView() {
       .toLowerCase()
       .trim();
     if (!status) return "";
-    if (status === "contract_fully_signed")
-      return t("agencyDashboard.deliverables.offerStates.contractFullySigned", {
-        defaultValue: "Contract Fully Signed",
-      });
-    if (status === "contract_sent")
-      return t("agencyDashboard.deliverables.offerStates.contractSent", {
-        defaultValue: "Contract Sent",
-      });
-    if (status === "sent")
-      return t("agencyDashboard.deliverables.offerStates.sent", {
-        defaultValue: "Sent",
-      });
-    if (status === "accepted")
-      return t("agencyDashboard.deliverables.offerStates.accepted", {
-        defaultValue: "Accepted",
-      });
-    if (status === "open")
-      return t("agencyDashboard.deliverables.actions.open", {
-        defaultValue: "Open",
-      });
+    if (status === "contract_fully_signed") return "Contract Signed";
+    if (status === "contract_sent") return "Contract Sent";
+    if (status === "sent") return "Sent";
+    if (status === "accepted") return "Accepted";
+    if (status === "open") return "Open";
     return status.replace(/_/g, " ");
   };
 
@@ -739,35 +703,18 @@ export function AgencyDeliverablesView() {
         <div className="p-4 space-y-3">
           <p className="text-xs text-gray-700 font-medium leading-relaxed line-clamp-2">
             {caption || (
-              <span className="text-gray-300 italic">
-                {t("agencyDashboard.deliverables.noCaption", {
-                  defaultValue: "No caption",
-                })}
-              </span>
+              <span className="text-gray-300 italic">No caption</span>
             )}
           </p>
 
           {agencyFeedback && (
             <div className="p-2 bg-amber-50 border border-amber-100 text-[10px] text-amber-800 rounded-xl">
-              <strong>
-                {t("agencyDashboard.deliverables.feedbackLabels.yourFeedback", {
-                  defaultValue: "Your Feedback:",
-                })}
-              </strong>{" "}
-              {agencyFeedback}
+              <strong>Your Feedback:</strong> {agencyFeedback}
             </div>
           )}
           {brandFeedback && (
             <div className="p-2 bg-blue-50 border border-blue-100 text-[10px] text-blue-800 rounded-xl">
-              <strong>
-                {t(
-                  "agencyDashboard.deliverables.feedbackLabels.brandFeedback",
-                  {
-                    defaultValue: "Brand Feedback:",
-                  },
-                )}
-              </strong>{" "}
-              {brandFeedback}
+              <strong>Brand Feedback:</strong> {brandFeedback}
             </div>
           )}
 
@@ -800,15 +747,7 @@ export function AgencyDeliverablesView() {
                     </TooltipTrigger>
                     {!canApproveDeliverables && (
                       <TooltipContent>
-                        <p>
-                          {t(
-                            "agencyDashboard.deliverables.permissions.cannotApprove",
-                            {
-                              defaultValue:
-                                "Your role cannot approve deliverables",
-                            },
-                          )}
-                        </p>
+                        <p>Your role cannot approve deliverables</p>
                       </TooltipContent>
                     )}
                   </Tooltip>
@@ -843,15 +782,7 @@ export function AgencyDeliverablesView() {
                   </TooltipTrigger>
                   {!canApproveDeliverables && (
                     <TooltipContent>
-                      <p>
-                        {t(
-                          "agencyDashboard.deliverables.permissions.cannotRevise",
-                          {
-                            defaultValue:
-                              "Your role cannot revise deliverables",
-                          },
-                        )}
-                      </p>
+                      <p>Your role cannot revise deliverables</p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -883,15 +814,7 @@ export function AgencyDeliverablesView() {
                   </TooltipTrigger>
                   {!canApproveDeliverables && (
                     <TooltipContent>
-                      <p>
-                        {t(
-                          "agencyDashboard.deliverables.permissions.cannotReject",
-                          {
-                            defaultValue:
-                              "Your role cannot reject deliverables",
-                          },
-                        )}
-                      </p>
+                      <p>Your role cannot reject deliverables</p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -993,7 +916,7 @@ export function AgencyDeliverablesView() {
         title: "Assignments locked",
         description:
           "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
-        variant: "destructive",
+        variant: "warning",
       });
       return;
     }
@@ -1013,16 +936,17 @@ export function AgencyDeliverablesView() {
       toast({ title: "Talent assigned" });
     } catch (e: any) {
       const msg = String(e?.message || "");
+      const isLockedAssignmentError =
+        msg.includes("cannot_change_assignments_after_contract_sent") ||
+        msg.includes("cannot_change_assignments_after_payment_started");
       toast({
-        title: t("agencyDashboard.brandConnections.toasts.assignmentFailed", {
-          defaultValue: "Assignment failed",
-        }),
-        description: msg.includes(
-          "cannot_change_assignments_after_contract_sent",
-        )
-          ? "You can’t change assigned talents after the contract is sent."
+        title: isLockedAssignmentError
+          ? "Assignments locked"
+          : "Assignment failed",
+        description: isLockedAssignmentError
+          ? "This offer is already in progress, so talent assignments can’t be changed anymore."
           : msg || "Please try again.",
-        variant: "destructive",
+        variant: isLockedAssignmentError ? "warning" : "destructive",
       });
     } finally {
       setAssignSubmitting(false);
@@ -1250,48 +1174,36 @@ export function AgencyDeliverablesView() {
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
-            <p className="font-bold text-amber-800">
-              {t("agencyDashboard.deliverables.viewOnly.title", {
-                defaultValue: "View Only Mode",
-              })}
-            </p>
+            <p className="font-bold text-amber-800">View Only Mode</p>
             <p className="text-sm text-amber-700">
-              {t("agencyDashboard.deliverables.viewOnly.description", {
-                defaultValue:
-                  "Your role allows viewing deliverables but not approving or managing them.",
-              })}
+              Your role allows viewing deliverables but not approving or
+              managing them.
             </p>
           </div>
         </div>
       )}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white shadow-xl">
-        <div className="relative z-10 flex items-center justify-between">
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
-              {t("agencyDashboard.deliverables.title", {
-                defaultValue: "Offer Deliverables",
-              })}
+              Offer Deliverables
             </h2>
             <p className="mt-2 text-gray-400 text-sm">
-              {t("agencyDashboard.deliverables.subtitle", {
-                defaultValue:
-                  "Assign talents, request assets, and review deliverables for brand offers.",
-              })}
+              Assign talents, request assets, and review deliverables for brand
+              offers.
             </p>
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="border-purple-300/50 text-white bg-white/10 hover:bg-white/20"
+            className="w-full border-purple-300/50 text-white bg-white/10 hover:bg-white/20 sm:w-auto"
             onClick={() => {
               setExpandedOfferId("");
               setSelectedCreatorId("");
             }}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            {t("agencyDashboard.deliverables.collapseAll", {
-              defaultValue: "Collapse All",
-            })}
+            Collapse All
           </Button>
         </div>
         <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
@@ -1299,11 +1211,7 @@ export function AgencyDeliverablesView() {
 
       {offers.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-2 bg-white/50 rounded-2xl">
-          <p className="text-gray-500 text-sm">
-            {t("agencyDashboard.deliverables.noBrandOffers", {
-              defaultValue: "No brand offers available.",
-            })}
-          </p>
+          <p className="text-gray-500 text-sm">No brand offers available.</p>
         </Card>
       ) : (
         offers.map((offer, idx) => {
@@ -1390,26 +1298,26 @@ export function AgencyDeliverablesView() {
                 className={`overflow-hidden border-gray-200 shadow-sm hover:shadow-md ${expanded ? "ring-2 ring-primary/10" : ""}`}
               >
                 <div
-                  className={`p-5 flex items-center justify-between cursor-pointer transition-colors ${expanded ? "bg-primary/5" : "bg-white hover:bg-gray-50"}`}
+                  className={`p-4 sm:p-5 flex flex-col gap-4 cursor-pointer transition-colors ${expanded ? "bg-primary/5" : "bg-white hover:bg-gray-50"}`}
                   onClick={() => openOffer(offerId)}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-start gap-4">
                     <div
                       className={`p-3 rounded-xl ${expanded ? "bg-primary text-white" : "bg-gray-100 text-gray-600"}`}
                     >
                       <Briefcase className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-lg font-bold text-gray-900">
                         {offer?.offer_title ||
                           offer?.brand_campaigns?.name ||
                           "Offer"}
                       </h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-400">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-gray-400 break-words">
                           {offer?.brands?.company_name || "Brand"}
                         </span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                        <span className="hidden sm:block w-1 h-1 rounded-full bg-gray-300" />
                         <Badge
                           className={`text-[10px] py-0 ${offerStatusClass(offer?.status)}`}
                         >
@@ -1419,59 +1327,29 @@ export function AgencyDeliverablesView() {
                         <Badge
                           className={`text-[10px] py-0 ${isOfferSigned ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}
                         >
-                          {isOfferSigned
-                            ? t(
-                                "agencyDashboard.deliverables.offerStates.signed",
-                                {
-                                  defaultValue: "Signed",
-                                },
-                              )
-                            : t(
-                                "agencyDashboard.deliverables.offerStates.notSigned",
-                                {
-                                  defaultValue: "Not signed",
-                                },
-                              )}
+                          {isOfferSigned ? "Signed" : "Not signed"}
                         </Badge>
                         {isOfferSigned ? (
                           <Badge
                             className={`text-[10px] py-0 ${isOfferPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
                           >
-                            {isOfferPaid
-                              ? t(
-                                  "agencyDashboard.deliverables.offerStates.paid",
-                                  {
-                                    defaultValue: "Paid",
-                                  },
-                                )
-                              : t(
-                                  "agencyDashboard.deliverables.offerStates.awaitingPayment",
-                                  {
-                                    defaultValue: "Awaiting Payment",
-                                  },
-                                )}
+                            {isOfferPaid ? "Paid" : "Awaiting Payment"}
                           </Badge>
                         ) : null}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
+                      className="w-full border-blue-400/70 text-blue-700 hover:bg-blue-50 sm:w-auto"
                       onClick={(e) => {
                         e.stopPropagation();
                         openOffer(offerId);
                       }}
                     >
-                      {expanded
-                        ? t("agencyDashboard.deliverables.actions.hide", {
-                            defaultValue: "Hide",
-                          })
-                        : t("agencyDashboard.deliverables.actions.open", {
-                            defaultValue: "Open",
-                          })}
+                      {expanded ? "Hide" : "Open"}
                     </Button>
                     <Button
                       size="sm"
@@ -1480,20 +1358,10 @@ export function AgencyDeliverablesView() {
                         e.stopPropagation();
                         if (offerAssignmentsLocked) {
                           toast({
-                            title: t(
-                              "agencyDashboard.deliverables.assignmentsLockedTitle",
-                              {
-                                defaultValue: "Assignments locked",
-                              },
-                            ),
-                            description: t(
-                              "agencyDashboard.deliverables.assignmentsLockedDescription",
-                              {
-                                defaultValue:
-                                  "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
-                              },
-                            ),
-                            variant: "destructive",
+                            title: "Assignments locked",
+                            description:
+                              "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+                            variant: "warning",
                           });
                           return;
                         }
@@ -1503,12 +1371,8 @@ export function AgencyDeliverablesView() {
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       {assignments.length === 0
-                        ? t("agencyDashboard.deliverables.assignTalent.title", {
-                            defaultValue: "Assign Talent",
-                          })
-                        : t("agencyDashboard.deliverables.addTalent", {
-                            defaultValue: "Add Talent",
-                          })}
+                        ? "Assign Talent"
+                        : "Add Talent"}
                     </Button>
                   </div>
                 </div>
@@ -1517,10 +1381,9 @@ export function AgencyDeliverablesView() {
                 {offer?.status === "contract_fully_signed" && !isOfferPaid && (
                   <div className="mx-5 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                     <span className="text-amber-700 text-xs font-semibold">
-                      {t("agencyDashboard.deliverables.paymentPendingBanner", {
-                        defaultValue:
-                          "⏳ Brand payment is still pending. You can upload and submit deliverables now, but you’ll need to confirm the unpaid status before submitting.",
-                      })}
+                      ⏳ Brand payment is still pending. You can upload and
+                      submit deliverables now, but you’ll need to confirm the
+                      unpaid status before submitting.
                     </span>
                   </div>
                 )}
@@ -1597,27 +1460,16 @@ export function AgencyDeliverablesView() {
                         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-gray-800">
-                              {t(
-                                "agencyDashboard.deliverables.payoutStatus.title",
-                                {
-                                  defaultValue: "Payout Status",
-                                },
-                              )}
+                              Payout Status
                             </span>
                             {allSucceeded && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                {t(
-                                  "agencyDashboard.deliverables.payoutStatus.allTransferred",
-                                  { defaultValue: "all transferred" },
-                                )}
+                                all transferred
                               </span>
                             )}
                             {hasFailedTransfers && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                {t(
-                                  "agencyDashboard.deliverables.payoutStatus.actionRequired",
-                                  { defaultValue: "action required" },
-                                )}
+                                action required
                               </span>
                             )}
                           </div>
@@ -1632,12 +1484,7 @@ export function AgencyDeliverablesView() {
                               <RefreshCw
                                 className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`}
                               />
-                              {t(
-                                "agencyDashboard.deliverables.payoutStatus.refresh",
-                                {
-                                  defaultValue: "Refresh",
-                                },
-                              )}
+                              Refresh
                             </Button>
                             {hasFailedTransfers && (
                               <Button
@@ -1651,12 +1498,7 @@ export function AgencyDeliverablesView() {
                                 ) : (
                                   <RotateCcw className="w-3 h-3" />
                                 )}
-                                {t(
-                                  "agencyDashboard.deliverables.payoutStatus.retryFailed",
-                                  {
-                                    defaultValue: "Retry failed",
-                                  },
-                                )}
+                                Retry failed
                               </Button>
                             )}
                           </div>
@@ -1667,23 +1509,12 @@ export function AgencyDeliverablesView() {
                           <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             <span className="text-xs">
-                              {t(
-                                "agencyDashboard.deliverables.payoutStatus.loading",
-                                {
-                                  defaultValue: "Loading payout status...",
-                                },
-                              )}
+                              Loading payout status\u2026
                             </span>
                           </div>
                         ) : !ts ? (
                           <div className="px-4 py-4 text-xs text-gray-400 text-center">
-                            {t(
-                              "agencyDashboard.deliverables.payoutStatus.clickRefresh",
-                              {
-                                defaultValue:
-                                  "Click refresh to load payout status.",
-                              },
-                            )}
+                            Click refresh to load payout status.
                           </div>
                         ) : (
                           <div className="divide-y divide-gray-100">
@@ -1702,58 +1533,31 @@ export function AgencyDeliverablesView() {
                                         </span>
                                         <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
                                           {r.recipient_type === "agency"
-                                            ? t(
-                                                "agencyDashboard.deliverables.payoutStatus.agency",
-                                                { defaultValue: "agency" },
-                                              )
-                                            : t(
-                                                "agencyDashboard.deliverables.payoutStatus.talent",
-                                                { defaultValue: "talent" },
-                                              )}
+                                            ? "agency"
+                                            : "talent"}
                                         </span>
                                       </div>
                                       {/* Stripe health */}
                                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                         {!r.stripe_connected ? (
                                           <span className="text-[10px] text-red-600 font-semibold">
-                                            {t(
-                                              "agencyDashboard.deliverables.payoutStatus.noStripeAccount",
-                                              {
-                                                defaultValue:
-                                                  "No Stripe account",
-                                              },
-                                            )}
+                                            No Stripe account
                                           </span>
                                         ) : !r.stripe_transfers_enabled ? (
                                           <span className="text-[10px] text-amber-600 font-semibold">
-                                            {t(
-                                              "agencyDashboard.deliverables.payoutStatus.transfersNotEnabled",
-                                              {
-                                                defaultValue:
-                                                  "Transfers not enabled",
-                                              },
-                                            )}
+                                            Transfers not enabled
                                           </span>
                                         ) : (
                                           <span className="text-[10px] text-emerald-600 font-semibold">
-                                            {t(
-                                              "agencyDashboard.deliverables.payoutStatus.stripeReady",
-                                              { defaultValue: "Stripe ready" },
-                                            )}
+                                            Stripe ready
                                           </span>
                                         )}
                                         {r.retry_count > 0 && (
                                           <span className="text-[10px] text-gray-400">
                                             {r.retry_count}{" "}
                                             {r.retry_count === 1
-                                              ? t(
-                                                  "agencyDashboard.deliverables.payoutStatus.retry",
-                                                  { defaultValue: "retry" },
-                                                )
-                                              : t(
-                                                  "agencyDashboard.deliverables.payoutStatus.retries",
-                                                  { defaultValue: "retries" },
-                                                )}
+                                              ? "retry"
+                                              : "retries"}
                                           </span>
                                         )}
                                       </div>
@@ -1778,25 +1582,15 @@ export function AgencyDeliverablesView() {
                                                 }
                                               >
                                                 <ArrowRight className="w-3 h-3" />
-                                                {t(
-                                                  "agencyDashboard.deliverables.payoutStatus.fixStripeAccount",
-                                                  {
-                                                    defaultValue:
-                                                      "Fix your Stripe account",
-                                                  },
-                                                )}
+                                                Fix your Stripe account
                                               </button>
                                             ) : (
                                               // Creator = talent's account → agency can't fix it, show guidance + message button
                                               <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                                                 <p className="text-[11px] text-gray-500 leading-snug">
-                                                  {t(
-                                                    "agencyDashboard.deliverables.payoutStatus.askTalentStripe",
-                                                    {
-                                                      defaultValue:
-                                                        "Ask this talent to complete their Stripe onboarding in their portal.",
-                                                    },
-                                                  )}
+                                                  Ask this talent to complete
+                                                  their Stripe onboarding in
+                                                  their portal.
                                                 </p>
                                                 <button
                                                   className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1 flex-shrink-0"
@@ -1807,13 +1601,7 @@ export function AgencyDeliverablesView() {
                                                   }
                                                 >
                                                   <Mail className="w-3 h-3" />
-                                                  {t(
-                                                    "agencyDashboard.deliverables.payoutStatus.messageTalent",
-                                                    {
-                                                      defaultValue:
-                                                        "Message talent",
-                                                    },
-                                                  )}
+                                                  Message talent
                                                 </button>
                                               </div>
                                             )}
@@ -1862,21 +1650,11 @@ export function AgencyDeliverablesView() {
                       <div className="p-4 space-y-4 bg-gray-50/50">
                         {loadingAssignments[offerId] ? (
                           <p className="text-xs text-gray-500">
-                            {t(
-                              "agencyDashboard.deliverables.states.loadingAssignments",
-                              {
-                                defaultValue: "Loading assignments...",
-                              },
-                            )}
+                            Loading assignments...
                           </p>
                         ) : assignments.length === 0 ? (
                           <p className="text-xs text-gray-500">
-                            {t(
-                              "agencyDashboard.deliverables.states.noTalentsAssigned",
-                              {
-                                defaultValue: "No talents assigned yet.",
-                              },
-                            )}
+                            No talents assigned yet.
                           </p>
                         ) : (
                           <div className="space-y-2">
@@ -1916,12 +1694,7 @@ export function AgencyDeliverablesView() {
                                           "Talent"}
                                       </p>
                                       <p className="text-xs text-gray-500">
-                                        {t(
-                                          "agencyDashboard.deliverables.assigned",
-                                          {
-                                            defaultValue: "Assigned",
-                                          },
-                                        )}
+                                        Assigned
                                       </p>
                                     </div>
                                   </div>
@@ -1931,12 +1704,7 @@ export function AgencyDeliverablesView() {
                                         size="icon"
                                         variant="outline"
                                         className="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50"
-                                        title={t(
-                                          "agencyDashboard.deliverables.unassignTalentButton",
-                                          {
-                                            defaultValue: "Unassign talent",
-                                          },
-                                        )}
+                                        title="Unassign talent"
                                         onClick={async (e) => {
                                           e.stopPropagation();
                                           if (!assignment?.id) return;
@@ -1999,12 +1767,7 @@ export function AgencyDeliverablesView() {
                                         })
                                       }
                                     >
-                                      {t(
-                                        "agencyDashboard.deliverables.requestAsset",
-                                        {
-                                          defaultValue: "Request Asset",
-                                        },
-                                      )}
+                                      Request Asset
                                     </Button>
                                   </div>
                                 </div>
@@ -2018,12 +1781,7 @@ export function AgencyDeliverablesView() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-sm font-semibold text-gray-900">
-                                  {t(
-                                    "agencyDashboard.deliverables.sectionTitle",
-                                    {
-                                      defaultValue: "Deliverables",
-                                    },
-                                  )}
+                                  Deliverables
                                 </p>
                                 <p className="text-xs text-gray-500">
                                   {selectedAssignment?.creators?.full_name ||
@@ -2049,12 +1807,7 @@ export function AgencyDeliverablesView() {
                                   {submittingDrafts[offerId] ? (
                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                                   ) : null}
-                                  {t(
-                                    "agencyDashboard.deliverables.submitToBrand",
-                                    {
-                                      defaultValue: "Submit to Brand",
-                                    },
-                                  )}
+                                  Submit to Brand
                                 </Button>
                                 <Button
                                   size="sm"
@@ -2070,39 +1823,24 @@ export function AgencyDeliverablesView() {
                                     })
                                   }
                                 >
-                                  <Upload className="w-4 h-4 mr-2" />{" "}
-                                  {t("agencyDashboard.deliverables.upload", {
-                                    defaultValue: "Upload",
-                                  })}
+                                  <Upload className="w-4 h-4 mr-2" /> Upload
                                 </Button>
                               </div>
                             </div>
 
                             {loadingDeliverables[offerId] ? (
                               <p className="text-xs text-gray-500">
-                                {t("agencyDashboard.deliverables.loading", {
-                                  defaultValue: "Loading deliverables...",
-                                })}
+                                Loading deliverables...
                               </p>
                             ) : (
                               <div className="space-y-6">
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
                                   <p className="text-sm font-semibold text-gray-900 mb-3">
-                                    {t(
-                                      "agencyDashboard.deliverables.creatorUploads",
-                                      {
-                                        defaultValue: "Creator uploads",
-                                      },
-                                    )}
+                                    Creator uploads
                                   </p>
                                   {creatorDeliverables.length === 0 ? (
                                     <p className="text-xs text-gray-400">
-                                      {t(
-                                        "agencyDashboard.deliverables.noneYet",
-                                        {
-                                          defaultValue: "None yet.",
-                                        },
-                                      )}
+                                      None yet.
                                     </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -2123,21 +1861,11 @@ export function AgencyDeliverablesView() {
                                 </div>
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
                                   <p className="text-sm font-semibold text-gray-900 mb-3">
-                                    {t(
-                                      "agencyDashboard.deliverables.agencyUploads",
-                                      {
-                                        defaultValue: "Agency uploads",
-                                      },
-                                    )}
+                                    Agency uploads
                                   </p>
                                   {agencyDeliverables.length === 0 ? (
                                     <p className="text-xs text-gray-400">
-                                      {t(
-                                        "agencyDashboard.deliverables.noneYet",
-                                        {
-                                          defaultValue: "None yet.",
-                                        },
-                                      )}
+                                      None yet.
                                     </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -2180,40 +1908,29 @@ export function AgencyDeliverablesView() {
           }
         }}
       >
-        <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
+        <DialogContent className="w-[96vw] max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl max-h-[90vh] overflow-hidden">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-              {t("agencyDashboard.deliverables.assignTalent.title", {
-                defaultValue: "Assign Talent",
-              })}
+              Assign Talent
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium mt-1">
-              {t("agencyDashboard.deliverables.assignTalent.subtitle", {
-                defaultValue:
-                  "Select one or more talents from your roster to assign to this offer.",
-              })}
+              Select one or more talents from your roster to assign to this
+              offer.
             </p>
           </DialogHeader>
 
           <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
             <AlertDescription className="text-sm text-blue-900 font-medium">
-              {t(
-                "agencyDashboard.deliverables.assignTalent.changeBeforeContract",
-                {
-                  defaultValue:
-                    "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
-                },
-              )}
+              You can change assigned talents any time before the contract is
+              sent. Once you send the contract, assignments are locked.
             </AlertDescription>
           </Alert>
 
           {assignmentLockedForOffer ? (
             <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
               <AlertDescription className="text-sm text-amber-900 font-semibold">
-                {t("agencyDashboard.deliverables.assignTalent.contractSent", {
-                  defaultValue:
-                    "This offer's contract has already been sent. Talent assignments are locked.",
-                })}
+                This offer’s contract has already been sent. Talent assignments
+                are locked.
               </AlertDescription>
             </Alert>
           ) : null}
@@ -2221,37 +1938,22 @@ export function AgencyDeliverablesView() {
           <div className="relative mb-8">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder={t(
-                "agencyDashboard.deliverables.assignTalent.filterPlaceholder",
-                {
-                  defaultValue: "Filter by name or email...",
-                },
-              )}
+              placeholder="Filter by name or email..."
               value={assignSearch}
               onChange={(e) => setAssignSearch(e.target.value)}
               className="h-12 pl-10 bg-gray-100 border-none rounded-xl"
             />
           </div>
 
-          <ScrollArea className="h-[450px] pr-2 sm:pr-4">
+          <ScrollArea className="h-[55vh] sm:h-[450px] pr-2 sm:pr-4">
             {loadingRoster ? (
               <div className="h-[420px] flex flex-col items-center justify-center text-center">
                 <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
                 <p className="text-sm font-bold text-gray-500">
-                  {t(
-                    "agencyDashboard.deliverables.assignTalent.loadingTalents",
-                    {
-                      defaultValue: "Loading talents...",
-                    },
-                  )}
+                  Loading talents…
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  {t(
-                    "agencyDashboard.deliverables.assignTalent.fetchingRoster",
-                    {
-                      defaultValue: "Fetching your agency roster.",
-                    },
-                  )}
+                  Fetching your agency roster.
                 </p>
               </div>
             ) : (
@@ -2270,12 +1972,7 @@ export function AgencyDeliverablesView() {
                     talent?.stage_name ||
                     talent?.name ||
                     talent?.full_legal_name ||
-                    t(
-                      "agencyDashboard.deliverables.assignTalent.talentFallback",
-                      {
-                        defaultValue: "Talent",
-                      },
-                    );
+                    "Talent";
                   return (
                     <Card
                       key={
@@ -2331,23 +2028,13 @@ export function AgencyDeliverablesView() {
                         <div className="mt-1 flex items-center gap-2 flex-wrap">
                           {alreadyAssigned && (
                             <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] tracking-widest font-black px-2 py-0.5">
-                              {t(
-                                "agencyDashboard.deliverables.assignTalent.assigned",
-                                {
-                                  defaultValue: "assigned",
-                                },
-                              )}
+                              assigned
                             </Badge>
                           )}
                           {needsInvite && (
                             <Badge className="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] tracking-widest font-black px-2 py-0.5 flex items-center gap-1">
                               <Mail className="w-2.5 h-2.5" />
-                              {t(
-                                "agencyDashboard.deliverables.assignTalent.inviteRequired",
-                                {
-                                  defaultValue: "invite required",
-                                },
-                              )}
+                              invite required
                             </Badge>
                           )}
                         </div>
@@ -2379,10 +2066,7 @@ export function AgencyDeliverablesView() {
             {assignSubmitting ? (
               <Loader2 className="w-5 h-5 animate-spin mr-3" />
             ) : null}
-            {t("agencyDashboard.deliverables.assignTalent.confirmSelection", {
-              defaultValue: "Confirm Selection",
-            })}{" "}
-            ({assignSelectedIds.length})
+            Confirm Selection ({assignSelectedIds.length})
           </Button>
         </DialogContent>
       </Dialog>
@@ -2401,19 +2085,14 @@ export function AgencyDeliverablesView() {
             </div>
             <div>
               <h3 className="text-lg font-black text-gray-900 tracking-tight">
-                {t("agencyDashboard.deliverables.inviteRequired.title", {
-                  defaultValue: "Onboarding not completed",
-                })}
+                Onboarding not completed
               </h3>
               <p className="text-sm text-gray-500 mt-2 leading-relaxed">
                 <span className="font-semibold text-gray-700">
                   {inviteRequiredDialog.talentName}
                 </span>{" "}
-                {t("agencyDashboard.deliverables.inviteRequired.description", {
-                  defaultValue:
-                    "{{name}} hasn't accepted their portal invite yet. They need to complete onboarding before they can be assigned to a contract.",
-                  name: inviteRequiredDialog.talentName,
-                })}
+                hasn't accepted their portal invite yet. They need to complete
+                onboarding before they can be assigned to a contract.
               </p>
             </div>
             <div className="flex flex-col gap-2 w-full mt-2">
@@ -2432,9 +2111,7 @@ export function AgencyDeliverablesView() {
                 className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold text-sm flex items-center justify-center gap-2"
               >
                 <Mail className="w-4 h-4" />
-                {t("agencyDashboard.deliverables.inviteRequired.goToRoster", {
-                  defaultValue: "Go to Roster & Invite",
-                })}
+                Go to Roster &amp; Invite
               </Button>
               <Button
                 variant="ghost"
@@ -2447,9 +2124,7 @@ export function AgencyDeliverablesView() {
                 }
                 className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
               >
-                {t("agencyDashboard.analytics.createPackage.common.cancel", {
-                  defaultValue: "Cancel",
-                })}
+                Cancel
               </Button>
             </div>
           </div>
@@ -2660,16 +2335,11 @@ export function AgencyDeliverablesView() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("agencyDashboard.deliverables.notSignedDialog.title", {
-                defaultValue: "Offer not signed yet",
-              })}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Offer not signed yet</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("agencyDashboard.deliverables.notSignedDialog.description", {
-                defaultValue:
-                  "The offer must be fully signed before you can submit deliverables. Once signed, you can submit even if payment is still pending (with confirmation).",
-              })}
+              The offer must be fully signed before you can submit deliverables.
+              Once signed, you can submit even if payment is still pending (with
+              confirmation).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2692,25 +2362,16 @@ export function AgencyDeliverablesView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {t("agencyDashboard.deliverables.unpaidSubmitDialog.title", {
-                defaultValue: "Submit deliverables before payment?",
-              })}
+              Submit deliverables before payment?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                "agencyDashboard.deliverables.unpaidSubmitDialog.description",
-                {
-                  defaultValue:
-                    "The brand has not paid for this offer yet. You can still submit deliverables now, but payment is required before escrow release.",
-                },
-              )}
+              The brand has not paid for this offer yet. You can still submit
+              deliverables now, but payment is required before escrow release.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={unpaidSubmitDialog.submitting}>
-              {t("agencyDashboard.analytics.createPackage.common.cancel", {
-                defaultValue: "Cancel",
-              })}
+              Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={unpaidSubmitDialog.submitting}
@@ -2754,11 +2415,7 @@ export function AgencyDeliverablesView() {
                     confirm_unpaid: true,
                   });
                   await loadDeliverables(offerId);
-                  toast({
-                    title: t("agencyDashboard.deliverables.submittedToBrand", {
-                      defaultValue: "Submitted to brand",
-                    }),
-                  });
+                  toast({ title: "Submitted to brand" });
                   setUnpaidSubmitDialog({
                     open: false,
                     offerId: "",
@@ -2766,17 +2423,8 @@ export function AgencyDeliverablesView() {
                   });
                 } catch (e: any) {
                   toast({
-                    title: t("agencyDashboard.deliverables.submitFailed", {
-                      defaultValue: "Submit failed",
-                    }),
-                    description:
-                      e?.message ||
-                      t(
-                        "agencyDashboard.brandConnections.toasts.pleaseTryAgain",
-                        {
-                          defaultValue: "Please try again.",
-                        },
-                      ),
+                    title: "Submit failed",
+                    description: e?.message || "Please try again.",
                     variant: "destructive",
                   });
                   setUnpaidSubmitDialog((prev) => ({
@@ -2786,9 +2434,7 @@ export function AgencyDeliverablesView() {
                 }
               }}
             >
-              {t("agencyDashboard.deliverables.unpaidSubmitDialog.confirm", {
-                defaultValue: "Submit anyway",
-              })}
+              Submit anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2803,29 +2449,15 @@ export function AgencyDeliverablesView() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t(
-                "agencyDashboard.deliverables.assignTalent.confirmDialogTitle",
-                {
-                  defaultValue: "Confirm talent assignment?",
-                },
-              )}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Confirm talent assignment?</AlertDialogTitle>
             <AlertDialogDescription>
-              {t(
-                "agencyDashboard.deliverables.assignTalent.changeBeforeContract",
-                {
-                  defaultValue:
-                    "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
-                },
-              )}
+              You can update assigned talents before the contract is sent. After
+              you send the contract, assignments are locked.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={assignSubmitting}>
-              {t("agencyDashboard.analytics.createPackage.common.cancel", {
-                defaultValue: "Cancel",
-              })}
+              Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={assignSubmitting}
@@ -2834,12 +2466,7 @@ export function AgencyDeliverablesView() {
                 setAssignConfirmOpen(false);
               }}
             >
-              {t(
-                "agencyDashboard.deliverables.assignTalent.confirmAssignment",
-                {
-                  defaultValue: "Confirm assignment",
-                },
-              )}
+              Confirm assignment
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2854,36 +2481,22 @@ export function AgencyDeliverablesView() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("agencyDashboard.deliverables.unassignTalent.title", {
-                defaultValue: "Unassign talent?",
-              })}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Unassign talent?</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("agencyDashboard.deliverables.unassignTalent.description", {
-                defaultValue:
-                  "Remove {talentName} from this offer. You can change assigned talents before the contract is sent. After you send the contract, assignments are locked.",
-                talentName: unassignDialog.talentName,
-              })}
+              Remove <strong>{unassignDialog.talentName}</strong> from this
+              offer. You can change assigned talents before the contract is
+              sent. After you send the contract, assignments are locked.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={unassignDialog.submitting}>
-              {t("agencyDashboard.deliverables.unassignTalent.cancel", {
-                defaultValue: "Cancel",
-              })}
+              Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={unassignDialog.submitting}
               onClick={confirmUnassign}
             >
-              {unassignDialog.submitting
-                ? t("agencyDashboard.deliverables.unassignTalent.unassigning", {
-                    defaultValue: "Unassigning...",
-                  })
-                : t("agencyDashboard.deliverables.unassignTalent.unassign", {
-                    defaultValue: "Unassign",
-                  })}
+              {unassignDialog.submitting ? "Unassigning..." : "Unassign"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2893,7 +2506,7 @@ export function AgencyDeliverablesView() {
         open={requestDialog.open}
         onOpenChange={(open) => setRequestDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl flex flex-col max-h-[85vh]">
+        <DialogContent className="w-[95vw] sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl flex flex-col max-h-[85vh]">
           {(() => {
             const assigned = assignmentsByOffer[requestDialog.offerId] || [];
             const assignment = assigned.find(
@@ -2918,21 +2531,10 @@ export function AgencyDeliverablesView() {
                       <FileText className="w-6 h-6 text-white" />
                     </div>
                     <DialogTitle className="text-2xl font-bold text-white">
-                      {t(
-                        "agencyDashboard.deliverables.requestAssetModal.title",
-                        {
-                          defaultValue: "Request Asset",
-                        },
-                      )}
+                      Request Asset
                     </DialogTitle>
                     <p className="text-gray-400 text-sm">
-                      {t(
-                        "agencyDashboard.deliverables.requestAssetModal.subtitle",
-                        {
-                          defaultValue:
-                            "Send a clear brief and optional PDF to guide the talent.",
-                        },
-                      )}
+                      Send a clear brief and optional PDF to guide the talent.
                     </p>
                   </DialogHeader>
                 </div>
@@ -2954,34 +2556,17 @@ export function AgencyDeliverablesView() {
                             "Talent"}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
-                          {requestTalent?.email ||
-                            t(
-                              "agencyDashboard.deliverables.requestAssetModal.selectedTalent",
-                              {
-                                defaultValue: "Selected talent",
-                              },
-                            )}
+                          {requestTalent?.email || "Selected talent"}
                         </div>
                       </div>
                     </div>
                   )}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      {t(
-                        "agencyDashboard.deliverables.requestAssetModal.titleLabel",
-                        {
-                          defaultValue: "Title",
-                        },
-                      )}
+                      Title
                     </label>
                     <Input
-                      placeholder={t(
-                        "agencyDashboard.deliverables.requestAssetModal.titlePlaceholder",
-                        {
-                          defaultValue:
-                            "Short title (e.g., Product shots for May)",
-                        },
-                      )}
+                      placeholder="Short title (e.g., Product shots for May)"
                       value={requestDialog.title}
                       onChange={(e) =>
                         setRequestDialog((prev) => ({
@@ -2994,21 +2579,10 @@ export function AgencyDeliverablesView() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      {t(
-                        "agencyDashboard.deliverables.requestAssetModal.detailsLabel",
-                        {
-                          defaultValue: "Details",
-                        },
-                      )}
+                      Details
                     </label>
                     <Textarea
-                      placeholder={t(
-                        "agencyDashboard.deliverables.requestAssetModal.detailsPlaceholder",
-                        {
-                          defaultValue:
-                            "Describe exactly what you need, delivery format, and deadline.",
-                        },
-                      )}
+                      placeholder="Describe exactly what you need, delivery format, and deadline."
                       value={requestDialog.message}
                       onChange={(e) =>
                         setRequestDialog((prev) => ({
@@ -3021,12 +2595,7 @@ export function AgencyDeliverablesView() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      {t(
-                        "agencyDashboard.deliverables.requestAssetModal.briefPdfLabel",
-                        {
-                          defaultValue: "Brief PDF (optional)",
-                        },
-                      )}
+                      Brief PDF (optional)
                     </label>
                     <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                       <input
@@ -3046,21 +2615,10 @@ export function AgencyDeliverablesView() {
                         className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer"
                       >
                         <Upload className="w-4 h-4" />
-                        {t(
-                          "agencyDashboard.deliverables.requestAssetModal.chooseFile",
-                          {
-                            defaultValue: "Choose File",
-                          },
-                        )}
+                        Choose File
                       </label>
                       <span className="text-xs text-gray-500 truncate">
-                        {requestDialog.file?.name ||
-                          t(
-                            "agencyDashboard.deliverables.requestAssetModal.noFileSelected",
-                            {
-                              defaultValue: "No file selected",
-                            },
-                          )}
+                        {requestDialog.file?.name || "No file selected"}
                       </span>
                     </div>
                   </div>
@@ -3074,12 +2632,7 @@ export function AgencyDeliverablesView() {
                     {requestDialog.sending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      t(
-                        "agencyDashboard.deliverables.requestAssetModal.sendRequest",
-                        {
-                          defaultValue: "Send Request",
-                        },
-                      )
+                      "Send Request"
                     )}
                   </Button>
                 </div>
@@ -3093,30 +2646,16 @@ export function AgencyDeliverablesView() {
         open={uploadDialog.open}
         onOpenChange={(open) => setUploadDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[520px] w-full rounded-lg p-6">
+        <DialogContent className="w-[95vw] sm:max-w-[520px] rounded-lg p-4 sm:p-6">
           <DialogHeader className="space-y-1">
-            <DialogTitle>
-              {t("agencyDashboard.deliverables.uploadDeliverableModal.title", {
-                defaultValue: "Upload Deliverable",
-              })}
-            </DialogTitle>
+            <DialogTitle>Upload Deliverable</DialogTitle>
             <p className="text-xs text-gray-500">
-              {t(
-                "agencyDashboard.deliverables.uploadDeliverableModal.subtitle",
-                {
-                  defaultValue: "Add a caption and upload one or more files.",
-                },
-              )}
+              Add a caption and upload one or more files.
             </p>
           </DialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder={t(
-                "agencyDashboard.deliverables.uploadDeliverableModal.captionPlaceholder",
-                {
-                  defaultValue: "Caption",
-                },
-              )}
+              placeholder="Caption"
               value={uploadDialog.caption}
               onChange={(e) =>
                 setUploadDialog((prev) => ({
@@ -3145,28 +2684,12 @@ export function AgencyDeliverablesView() {
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer"
               >
                 <Upload className="w-4 h-4" />
-                {t(
-                  "agencyDashboard.deliverables.uploadDeliverableModal.chooseFiles",
-                  {
-                    defaultValue: "Choose Files",
-                  },
-                )}
+                Choose Files
               </label>
               <span className="text-xs text-gray-500 truncate">
                 {uploadDialog.files?.length
-                  ? t(
-                      "agencyDashboard.deliverables.uploadDeliverableModal.filesSelected",
-                      {
-                        defaultValue: "{count} file(s) selected",
-                        count: uploadDialog.files.length,
-                      },
-                    )
-                  : t(
-                      "agencyDashboard.deliverables.uploadDeliverableModal.noFilesSelected",
-                      {
-                        defaultValue: "No files selected",
-                      },
-                    )}
+                  ? `${uploadDialog.files.length} file(s) selected`
+                  : "No files selected"}
               </span>
             </div>
             <Button
@@ -3181,12 +2704,7 @@ export function AgencyDeliverablesView() {
               {uploadDialog.sending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                t(
-                  "agencyDashboard.deliverables.uploadDeliverableModal.upload",
-                  {
-                    defaultValue: "Upload",
-                  },
-                )
+                <>Upload</>
               )}
             </Button>
           </div>
@@ -3197,7 +2715,7 @@ export function AgencyDeliverablesView() {
         open={reviewDialog.open}
         onOpenChange={(open) => setReviewDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           <div className="bg-gray-900 p-8 text-white relative">
             <DialogHeader className="space-y-1 relative z-10">
               <div className="w-12 h-12 bg-white/10 rounded-none flex items-center justify-center mb-4 border border-white/20">
@@ -3205,46 +2723,17 @@ export function AgencyDeliverablesView() {
               </div>
               <DialogTitle className="text-2xl font-bold text-white">
                 {reviewDialog.action === "final_approve"
-                  ? t("agencyDashboard.deliverables.reviewModal.approveTitle", {
-                      defaultValue: "Approve Deliverable",
-                    })
+                  ? "Approve Deliverable"
                   : reviewDialog.action === "reject"
-                    ? t(
-                        "agencyDashboard.deliverables.reviewModal.rejectTitle",
-                        {
-                          defaultValue: "Reject Deliverable",
-                        },
-                      )
-                    : t(
-                        "agencyDashboard.deliverables.reviewModal.requestChangesTitle",
-                        {
-                          defaultValue: "Request Changes",
-                        },
-                      )}
+                    ? "Reject Deliverable"
+                    : "Request Changes"}
               </DialogTitle>
               <p className="text-gray-400 text-sm">
                 {reviewDialog.action === "final_approve"
-                  ? t(
-                      "agencyDashboard.deliverables.reviewModal.approveDescription",
-                      {
-                        defaultValue:
-                          "Mark this deliverable as approved after brand sign-off.",
-                      },
-                    )
+                  ? "Mark this deliverable as approved after brand sign-off."
                   : reviewDialog.action === "reject"
-                    ? t(
-                        "agencyDashboard.deliverables.reviewModal.rejectDescription",
-                        {
-                          defaultValue:
-                            "Reject this deliverable and notify the creator.",
-                        },
-                      )
-                    : t(
-                        "agencyDashboard.deliverables.reviewModal.requestChangesDescription",
-                        {
-                          defaultValue: "Request revisions from the creator.",
-                        },
-                      )}
+                    ? "Reject this deliverable and notify the creator."
+                    : "Request revisions from the creator."}
               </p>
             </DialogHeader>
           </div>
@@ -3253,34 +2742,14 @@ export function AgencyDeliverablesView() {
             <div className="space-y-3">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                 {reviewDialog.action === "final_approve"
-                  ? t(
-                      "agencyDashboard.deliverables.reviewModal.optionalNoteLabel",
-                      {
-                        defaultValue: "Optional note for the creator.",
-                      },
-                    )
-                  : t(
-                      "agencyDashboard.deliverables.reviewModal.feedbackLabel",
-                      {
-                        defaultValue: "Feedback for creator",
-                      },
-                    )}
+                  ? "Optional note for the creator."
+                  : "Feedback for creator"}
               </label>
               <Textarea
                 placeholder={
                   reviewDialog.action === "final_approve"
-                    ? t(
-                        "agencyDashboard.deliverables.reviewModal.optionalNotePlaceholder",
-                        {
-                          defaultValue: "Optional note for the creator.",
-                        },
-                      )
-                    : t(
-                        "agencyDashboard.deliverables.reviewModal.feedbackPlaceholder",
-                        {
-                          defaultValue: "What exactly should be changed?",
-                        },
-                      )
+                    ? "Optional note for the creator."
+                    : "What exactly should be changed?"
                 }
                 className="min-h-[150px] resize-none rounded-none border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
                 value={reviewDialog.note}
@@ -3301,9 +2770,7 @@ export function AgencyDeliverablesView() {
                   setReviewDialog((prev) => ({ ...prev, open: false }))
                 }
               >
-                {t("agencyDashboard.analytics.createPackage.common.cancel", {
-                  defaultValue: "Cancel",
-                })}
+                Cancel
               </Button>
               <Button
                 className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
@@ -3317,20 +2784,11 @@ export function AgencyDeliverablesView() {
                 {reviewDialog.submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : reviewDialog.action === "final_approve" ? (
-                  t("agencyDashboard.deliverables.reviewModal.approveAction", {
-                    defaultValue: "Approve",
-                  })
+                  "Approve"
                 ) : reviewDialog.action === "reject" ? (
-                  t("agencyDashboard.deliverables.reviewModal.rejectAction", {
-                    defaultValue: "Reject",
-                  })
+                  "Reject"
                 ) : (
-                  t(
-                    "agencyDashboard.deliverables.reviewModal.sendFeedbackAction",
-                    {
-                      defaultValue: "Send Feedback",
-                    },
-                  )
+                  "Send Feedback"
                 )}
               </Button>
             </div>
@@ -3342,19 +2800,14 @@ export function AgencyDeliverablesView() {
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((prev) => ({ ...prev, open }))}
       >
-        <DialogContent className="sm:max-w-[420px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
+        <DialogContent className="w-[95vw] sm:max-w-[420px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           <div className="bg-gray-900 p-6 text-white">
             <DialogHeader className="space-y-1">
               <DialogTitle className="text-xl font-bold text-white">
-                {t("agencyDashboard.deliverables.deleteDialog.title", {
-                  defaultValue: "Delete Deliverable",
-                })}
+                Delete Deliverable
               </DialogTitle>
               <p className="text-gray-400 text-sm">
-                {t("agencyDashboard.deliverables.confirmDelete", {
-                  defaultValue:
-                    "This will permanently remove the deliverable. Continue?",
-                })}
+                This will permanently remove the deliverable. Continue?
               </p>
             </DialogHeader>
           </div>
@@ -3367,9 +2820,7 @@ export function AgencyDeliverablesView() {
                   setDeleteDialog((prev) => ({ ...prev, open: false }))
                 }
               >
-                {t("agencyDashboard.analytics.createPackage.common.cancel", {
-                  defaultValue: "Cancel",
-                })}
+                Cancel
               </Button>
               <Button
                 className="flex-1 h-11 rounded-none bg-rose-600 hover:bg-rose-700 text-white font-bold"
@@ -3379,9 +2830,7 @@ export function AgencyDeliverablesView() {
                 {deleteDialog.submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  t("agencyDashboard.catalogs.actions.delete", {
-                    defaultValue: "Delete",
-                  })
+                  "Delete"
                 )}
               </Button>
             </div>
@@ -3390,14 +2839,14 @@ export function AgencyDeliverablesView() {
       </Dialog>
 
       <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden border border-gray-900 bg-black text-white">
+        <DialogContent className="h-[100dvh] w-screen max-w-none rounded-none border-0 bg-black p-0 text-white sm:h-auto sm:w-[95vw] sm:max-w-5xl sm:rounded-xl sm:border sm:border-gray-900">
           {galleryItems[galleryIndex] ? (
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 pr-16">
-                <div className="text-sm font-semibold truncate">
+            <div className="flex min-h-[100dvh] flex-col sm:min-h-0">
+              <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-3 pr-16 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm font-semibold truncate pr-10 sm:pr-0">
                   {galleryItems[galleryIndex].caption}
                 </div>
-                <div className="flex items-center gap-2 mr-4">
+                <div className="mr-4 flex items-center gap-2 self-end sm:self-auto">
                   <button
                     type="button"
                     className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
@@ -3412,10 +2861,10 @@ export function AgencyDeliverablesView() {
                   </button>
                 </div>
               </div>
-              <div className="bg-black flex items-center justify-center min-h-[60vh] relative">
+              <div className="relative flex flex-1 items-center justify-center bg-black min-h-[60vh] sm:min-h-[60vh]">
                 <button
                   type="button"
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                  className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 sm:left-4"
                   onClick={() =>
                     setGalleryIndex((idx) =>
                       idx <= 0 ? galleryItems.length - 1 : idx - 1,
@@ -3429,13 +2878,13 @@ export function AgencyDeliverablesView() {
                   <img
                     src={galleryItems[galleryIndex].url}
                     alt={galleryItems[galleryIndex].caption}
-                    className="max-h-[75vh] w-auto object-contain"
+                    className="max-h-[72vh] w-auto object-contain sm:max-h-[75vh]"
                   />
                 ) : galleryItems[galleryIndex].type === "video" ? (
                   <video
                     src={galleryItems[galleryIndex].url}
                     controls
-                    className="max-h-[75vh] w-auto bg-black"
+                    className="max-h-[72vh] w-auto bg-black sm:max-h-[75vh]"
                   />
                 ) : (
                   <div className="text-sm text-white/70">
@@ -3444,7 +2893,7 @@ export function AgencyDeliverablesView() {
                 )}
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                  className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 sm:right-4"
                   onClick={() =>
                     setGalleryIndex((idx) =>
                       idx >= galleryItems.length - 1 ? 0 : idx + 1,

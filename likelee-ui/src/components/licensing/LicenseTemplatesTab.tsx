@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -55,6 +54,16 @@ import {
 } from "@/api/licenseTemplates";
 import { RenewalLaunchContext } from "@/types/licensing";
 
+const CATEGORIES = [
+  "All Categories",
+  "Social Media",
+  "E-commerce",
+  "Advertising",
+  "Editorial",
+  "Film & TV",
+  "Custom",
+];
+
 interface LicenseTemplatesTabProps {
   renewalLaunchContext?: RenewalLaunchContext | null;
   onRenewalLaunchHandled?: () => void;
@@ -77,21 +86,11 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   onBrandRequestContextHandled,
   isSportsAgency = false,
 }) => {
-  const { t } = useTranslation();
-  const categories = [
-    t("agencyDashboard.licenseTemplates.categories.all"),
-    t("agencyDashboard.licenseTemplates.categories.socialMedia"),
-    t("agencyDashboard.licenseTemplates.categories.ecommerce"),
-    t("agencyDashboard.licenseTemplates.categories.advertising"),
-    t("agencyDashboard.licenseTemplates.categories.editorial"),
-    t("agencyDashboard.licenseTemplates.categories.filmTv"),
-    t("agencyDashboard.licenseTemplates.categories.custom"),
-  ];
   const [topTab, setTopTab] = useState<
     "requests" | "templates" | "submissions"
   >("templates");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(categories[0]);
+  const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hideContractInModal, setHideContractInModal] = useState(false);
   const [editingTemplate, setEditingTemplate] =
@@ -161,12 +160,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     onSuccess: (data: LicenseTemplate) => {
       queryClient.invalidateQueries({ queryKey: ["license-templates"] });
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
-      toast({
-        title: t("agencyDashboard.licenseTemplates.toast.success"),
-        description: t(
-          "agencyDashboard.licenseTemplates.toast.templateCreated",
-        ),
-      });
+      toast({ title: "Success", description: "Template created successfully" });
       // Automatically open builder for the new template
       if (data.docuseal_template_id) {
         setBuilderTarget({
@@ -179,8 +173,8 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     },
     onError: () => {
       toast({
-        title: t("agencyDashboard.licenseTemplates.toast.error"),
-        description: t("agencyDashboard.licenseTemplates.toast.failedToCreate"),
+        title: "Error",
+        description: "Failed to create template",
         variant: "destructive",
       });
     },
@@ -192,12 +186,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     onSuccess: (data: LicenseTemplate) => {
       queryClient.invalidateQueries({ queryKey: ["license-templates"] });
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
-      toast({
-        title: t("agencyDashboard.licenseTemplates.toast.success"),
-        description: t(
-          "agencyDashboard.licenseTemplates.toast.templateUpdated",
-        ),
-      });
+      toast({ title: "Success", description: "Template updated successfully" });
       // Automatically open builder after update
       if (data.docuseal_template_id) {
         setBuilderTarget({
@@ -210,8 +199,8 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     },
     onError: () => {
       toast({
-        title: t("agencyDashboard.licenseTemplates.toast.error"),
-        description: t("agencyDashboard.licenseTemplates.toast.failedToUpdate"),
+        title: "Error",
+        description: "Failed to update template",
         variant: "destructive",
       });
     },
@@ -222,17 +211,12 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["license-templates"] });
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
-      toast({
-        title: t("agencyDashboard.licenseTemplates.toast.success"),
-        description: t(
-          "agencyDashboard.licenseTemplates.toast.templateDeleted",
-        ),
-      });
+      toast({ title: "Success", description: "Template deleted successfully" });
     },
     onError: () => {
       toast({
-        title: t("agencyDashboard.licenseTemplates.toast.error"),
-        description: t("agencyDashboard.licenseTemplates.toast.failedToDelete"),
+        title: "Error",
+        description: "Failed to delete template",
         variant: "destructive",
       });
     },
@@ -244,16 +228,14 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       queryClient.invalidateQueries({ queryKey: ["license-templates"] });
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
       toast({
-        title: t("agencyDashboard.licenseTemplates.toast.success"),
-        description: t(
-          "agencyDashboard.licenseTemplates.toast.templateDuplicated",
-        ),
+        title: "Success",
+        description: "Template duplicated successfully",
       });
     },
     onError: () => {
       toast({
-        title: t("agencyDashboard.licenseTemplates.toast.error"),
-        description: t("agencyDashboard.licenseTemplates.toast.failedToCopy"),
+        title: "Error",
+        description: "Failed to copy template",
         variant: "destructive",
       });
     },
@@ -295,12 +277,9 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     );
     if (!linkedTemplate) {
       toast({
-        title: t(
-          "agencyDashboard.licenseTemplates.toast.linkedTemplateNotFound",
-        ),
-        description: t(
-          "agencyDashboard.licenseTemplates.toast.linkedTemplateNotFoundDescription",
-        ),
+        title: "Linked template not found",
+        description:
+          "The expired license is not linked to an available template.",
         variant: "destructive",
       });
       onRenewalLaunchHandled?.();
@@ -409,13 +388,12 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     const matchesCategory =
-      selectedCategory === categories[0] || t.category === selectedCategory;
+      selectedCategory === "All Categories" || t.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const formatPrice = (amount?: number) => {
-    if (amount === undefined)
-      return t("agencyDashboard.licenseTemplates.notSet");
+    if (amount === undefined) return "Not set";
     return (amount / 100).toLocaleString("en-US", {
       style: "currency",
       currency: "USD",
@@ -440,9 +418,8 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       {brandRequestContext && (
         <Card className="p-4 bg-amber-50 border border-amber-200">
           <div className="text-sm font-semibold text-amber-900">
-            {t("agencyDashboard.licenseTemplates.brandContext", {
-              brand: brandRequestContext.brand_name || "the brand",
-            })}
+            Any contract submission created will be sent to{" "}
+            {brandRequestContext.brand_name || "the brand"}.
           </div>
         </Card>
       )}
@@ -453,19 +430,19 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               value="templates"
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
             >
-              {t("agencyDashboard.licenseTemplates.tabs.templates")}
+              Templates
             </TabsTrigger>
             <TabsTrigger
               value="submissions"
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
             >
-              {t("agencyDashboard.licenseTemplates.tabs.submissions")}
+              Submissions
             </TabsTrigger>
             <TabsTrigger
               value="requests"
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
             >
-              {t("agencyDashboard.licenseTemplates.tabs.requests")}
+              Requests
             </TabsTrigger>
           </TabsList>
         </div>
@@ -473,11 +450,9 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
         <TabsContent value="templates" className="space-y-6 mt-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">
-                {t("agencyDashboard.licenseTemplates.title")}
-              </h2>
+              <h2 className="text-2xl font-bold tracking-tight">Templates</h2>
               <p className="text-muted-foreground">
-                {t("agencyDashboard.licenseTemplates.description")}
+                Manage your agency license agreements and contract templates
               </p>
             </div>
             <div className="flex w-full sm:w-auto items-center gap-2">
@@ -485,22 +460,21 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                 onClick={openNewTemplateModal}
                 className="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-indigo-100/50"
               >
-                <Plus className="mr-2 h-4 w-4" />{" "}
-                {t("agencyDashboard.licenseTemplates.actions.createTemplate")}
+                <Plus className="mr-2 h-4 w-4" /> New Contract Template
               </Button>
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {loadingTemplates ? (
               <p className="text-muted-foreground col-span-3 text-center py-20">
-                {t("agencyDashboard.licenseTemplates.loadingTemplates")}
+                Loading templates...
               </p>
             ) : filteredTemplates.length === 0 ? (
               <p className="text-muted-foreground col-span-3 text-center py-20">
-                {searchTerm || selectedCategory !== categories[0]
-                  ? t("agencyDashboard.licenseTemplates.noTemplatesMatch")
-                  : t("agencyDashboard.licenseTemplates.noTemplatesYet")}
+                {searchTerm || selectedCategory !== "All Categories"
+                  ? "No templates match your criteria."
+                  : "No templates yet. Create your first one to get started!"}
               </p>
             ) : (
               filteredTemplates.map((template) => (
@@ -536,10 +510,8 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                             onClick={() => openEditModal(template)}
                             className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
                           >
-                            <Edit className="h-4 w-4 text-slate-500" />{" "}
-                            {t(
-                              "agencyDashboard.licenseTemplates.actions.editTemplate",
-                            )}
+                            <Edit className="h-4 w-4 text-slate-500" /> Edit
+                            Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -553,19 +525,15 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                             }}
                             className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
                           >
-                            <Layout className="h-4 w-4 text-slate-500" />{" "}
-                            {t(
-                              "agencyDashboard.licenseTemplates.actions.editInBuilder",
-                            )}
+                            <Layout className="h-4 w-4 text-slate-500" /> Edit
+                            Layout
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleCopy(template.id)}
                             className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
                           >
                             <Copy className="h-4 w-4 text-slate-500" />{" "}
-                            {t(
-                              "agencyDashboard.licenseTemplates.actions.copyTemplate",
-                            )}
+                            Duplicate
                           </DropdownMenuItem>
                           <div className="h-px bg-slate-100 my-1" />
                           <DropdownMenuItem
@@ -574,10 +542,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                             }
                             className="rounded-lg gap-2 cursor-pointer font-semibold text-red-600 py-2.5 hover:bg-red-50 focus:bg-red-50"
                           >
-                            <Trash2 className="h-4 w-4" />{" "}
-                            {t(
-                              "agencyDashboard.licenseTemplates.actions.deleteTemplate",
-                            )}
+                            <Trash2 className="h-4 w-4" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -612,9 +577,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                           handleUseTemplate(template);
                         }}
                       >
-                        {t(
-                          "agencyDashboard.licenseTemplates.actions.useTemplate",
-                        )}
+                        Use Contract
                       </Button>
                     </div>
                   </CardContent>
@@ -703,12 +666,15 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               <Trash2 className="w-6 h-6 text-red-600" />
             </div>
             <DialogTitle className="text-xl font-bold text-slate-900">
-              {t("agencyDashboard.licenseTemplates.deleteModal.title")}
+              Delete Template
             </DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
-              {t("agencyDashboard.licenseTemplates.deleteModal.description", {
-                name: templateToDelete?.name,
-              })}
+              Are you sure you want to delete{" "}
+              <span className="text-slate-900 font-bold">
+                "{templateToDelete?.name}"
+              </span>
+              ? This action cannot be undone and will remove the template from
+              your library.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-8 sm:justify-start gap-3">
@@ -717,14 +683,14 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
               onClick={() => setTemplateToDelete(null)}
               className="px-6 font-bold text-slate-500 rounded-xl h-10"
             >
-              {t("agencyDashboard.licenseTemplates.deleteModal.cancel")}
+              Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700 font-bold px-8 rounded-xl h-10 shadow-lg shadow-red-100"
             >
-              {t("agencyDashboard.licenseTemplates.deleteModal.confirm")}
+              Delete Template
             </Button>
           </DialogFooter>
         </DialogContent>

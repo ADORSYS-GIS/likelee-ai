@@ -1,27 +1,11 @@
 import React from "react";
+import { formatDistanceToNow } from "date-fns";
 import type { Conversation, Participant, Contact } from "@/hooks/useChat";
-import { useTranslation } from "react-i18next";
 
-function formatTime(
-  dateString: string,
-  t: (key: string, opts?: any) => string,
-  translationPrefix: string,
-) {
+function formatTime(dateString: string) {
   try {
-    const date = new Date(dateString).getTime();
-    const now = Date.now();
-    const diffMs = Math.max(0, now - date);
-    const minutes = Math.floor(diffMs / (60 * 1000));
-    const hours = Math.floor(diffMs / (60 * 60 * 1000));
-    const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-    if (days > 0)
-      return t(`${translationPrefix}.time.daysAgo`, { count: days });
-    if (hours > 0)
-      return t(`${translationPrefix}.time.hoursAgo`, { count: hours });
-    if (minutes > 0) {
-      return t(`${translationPrefix}.time.minutesAgo`, { count: minutes });
-    }
-    return t(`${translationPrefix}.time.justNow`);
+    const date = new Date(dateString);
+    return formatDistanceToNow(date, { addSuffix: true });
   } catch (e) {
     return "";
   }
@@ -36,7 +20,6 @@ interface ThreadListProps {
   onSelect: (conversationId: string) => void;
   onStartChat: (contactId: string) => void;
   getParticipant: (conversation: Conversation, userId: string) => Participant;
-  translationPrefix?: string;
 }
 
 function AvatarPlaceholder({
@@ -94,9 +77,7 @@ export function ThreadList({
   onSelect,
   onStartChat,
   getParticipant,
-  translationPrefix = "talentPortal.chat",
 }: ThreadListProps) {
-  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filter, setFilter] = React.useState<"all" | "unread">("all");
 
@@ -143,21 +124,10 @@ export function ThreadList({
           </svg>
         </div>
         <p className="text-sm font-semibold text-gray-500">
-          {t(`${translationPrefix}.noActiveConnections`, {
-            defaultValue: "No active connections",
-          })}
+          No active connections
         </p>
         <p className="text-xs text-gray-400 mt-1">
-          {t(`${translationPrefix}.connectToChat`, {
-            role: isCreator
-              ? t(`${translationPrefix}.roleAgency`, {
-                  defaultValue: "an agency",
-                })
-              : t(`${translationPrefix}.roleCreator`, {
-                  defaultValue: "a creator",
-                }),
-            defaultValue: "Connect with {{role}} to chat.",
-          })}
+          Connect with {isCreator ? "an agency" : "a creator"} to chat.
         </p>
       </div>
     );
@@ -165,20 +135,18 @@ export function ThreadList({
 
   const countLabel = isCreator
     ? conversations.length === 1
-      ? t(`${translationPrefix}.agencySingular`, { defaultValue: "Agency" })
-      : t(`${translationPrefix}.agencyPlural`, { defaultValue: "Agencies" })
+      ? "Agency"
+      : "Agencies"
     : conversations.length === 1
-      ? t(`${translationPrefix}.creatorSingular`, { defaultValue: "Creator" })
-      : t(`${translationPrefix}.creatorPlural`, { defaultValue: "Creators" });
+      ? "Creator"
+      : "Creators";
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 bg-white">
         <h2 className="text-xl font-black text-gray-900 tracking-tight">
-          {t(`${translationPrefix}.messagesTitle`, {
-            defaultValue: "Messages",
-          })}
+          Messages
         </h2>
         <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mt-0.5">
           {conversations.length} {countLabel}
@@ -189,9 +157,7 @@ export function ThreadList({
         <div className="relative">
           <input
             type="text"
-            placeholder={t(`${translationPrefix}.searchConversations`, {
-              defaultValue: "Search conversations…",
-            })}
+            placeholder="Search conversations…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
@@ -219,7 +185,7 @@ export function ThreadList({
                 : "bg-gray-50 text-gray-500 hover:bg-gray-100"
             }`}
           >
-            {t(`${translationPrefix}.filterAll`, { defaultValue: "All" })}
+            All
           </button>
           <button
             onClick={() => setFilter("unread")}
@@ -229,9 +195,7 @@ export function ThreadList({
                 : "bg-gray-50 text-gray-500 hover:bg-gray-100"
             }`}
           >
-            {t(`${translationPrefix}.filterUnread`, {
-              defaultValue: "Unread",
-            })}
+            Unread
             {conversations.some((c) => (c.unread_count || 0) > 0) && (
               <span
                 className={`w-2 h-2 rounded-full ${filter === "unread" ? "bg-white" : "bg-indigo-500"}`}
@@ -247,11 +211,7 @@ export function ThreadList({
           const participant = getParticipant(conv, currentUserId);
           const isActive = conv.id === activeConversationId;
           const preview = (conv.last_message_content || "").trim();
-          const previewText =
-            preview ||
-            t(`${translationPrefix}.noMessagesYet`, {
-              defaultValue: "No messages yet",
-            });
+          const previewText = preview || "No messages yet";
 
           return (
             <li
@@ -270,7 +230,7 @@ export function ThreadList({
                     {participant.name}
                   </span>
                   <span className="text-[10px] text-gray-400 font-medium flex-shrink-0">
-                    {formatTime(conv.updated_at, t, translationPrefix)}
+                    {formatTime(conv.updated_at)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -309,9 +269,7 @@ export function ThreadList({
                 </div>
                 <button
                   className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 shadow-sm"
-                  title={t(`${translationPrefix}.startConversation`, {
-                    defaultValue: "Start Conversation",
-                  })}
+                  title="Start Conversation"
                 >
                   <svg
                     className="w-4 h-4"
@@ -334,11 +292,7 @@ export function ThreadList({
         {filteredConversations.length === 0 &&
           filteredContacts.length === 0 && (
             <div className="py-8 px-4 text-center">
-              <p className="text-xs text-gray-400">
-                {t(`${translationPrefix}.noResults`, {
-                  defaultValue: "No results found",
-                })}
-              </p>
+              <p className="text-xs text-gray-400">No results found</p>
             </div>
           )}
       </ul>

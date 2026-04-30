@@ -40,7 +40,6 @@ import { createAgencyTalent } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
 import { DobInput } from "@/components/ui/DobInput";
-import { useTranslation } from "react-i18next";
 
 const ethnicities = [
   "Asian",
@@ -67,7 +66,6 @@ const skinTones = [
 ];
 
 export default function AddTalent() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -310,10 +308,8 @@ export default function AddTalent() {
 
       if (!isAtLeast18(formData.birthdate)) {
         toast({
-          title: t("agencyDashboard.addTalent.toast.invalidDob"),
-          description: t("agencyDashboard.addTalent.toast.mustBe18", {
-            entityTitle,
-          }),
+          title: "Invalid date of birth",
+          description: `${entityTitle} must be at least 18 years old.`,
           variant: "destructive",
         });
         return;
@@ -551,10 +547,8 @@ export default function AddTalent() {
       }
 
       toast({
-        title: t("agencyDashboard.addTalent.toast.success"),
-        description: t("agencyDashboard.addTalent.toast.addedSuccessfully", {
-          entityTitle,
-        }),
+        title: "Success",
+        description: `${entityTitle} added successfully!`,
       });
       {
         const rosterSubTab = isSportsAgency ? "All Athletes" : "All Talent";
@@ -588,10 +582,8 @@ export default function AddTalent() {
         });
       } else {
         toast({
-          title: t("agencyDashboard.addTalent.toast.error"),
-          description: t("agencyDashboard.addTalent.toast.failedToCreate", {
-            entityLower,
-          }),
+          title: "Error",
+          description: `Failed to create ${entityLower}. Please try again.`,
           variant: "destructive",
         });
       }
@@ -633,14 +625,14 @@ export default function AddTalent() {
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            {t("agencyDashboard.addTalent.backToAll", { entityTitlePlural })}
+            {`Back to All ${entityTitlePlural}`}
           </Button>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t("agencyDashboard.addTalent.title", { entityTitle })}
+            {`Add New ${entityTitle}`}
           </h1>
           <p className="text-gray-600">
-            {t("agencyDashboard.addTalent.subtitle", { entityLower })}
+            {`Add a new ${entityLower} to your agency roster`}
           </p>
         </div>
 
@@ -656,9 +648,7 @@ export default function AddTalent() {
                 >
                   1
                 </div>
-                <span className="font-medium">
-                  {t("agencyDashboard.addTalent.steps.basicInfo")}
-                </span>
+                <span className="font-medium">Basic Info</span>
               </div>
               <div
                 className={`flex items-center gap-2 ${step >= 2 ? "text-indigo-600" : "text-gray-400"}`}
@@ -668,9 +658,7 @@ export default function AddTalent() {
                 >
                   2
                 </div>
-                <span className="font-medium">
-                  {t("agencyDashboard.addTalent.steps.attributes")}
-                </span>
+                <span className="font-medium">Attributes</span>
               </div>
               <div
                 className={`flex items-center gap-2 ${step >= 3 ? "text-indigo-600" : "text-gray-400"}`}
@@ -680,9 +668,7 @@ export default function AddTalent() {
                 >
                   3
                 </div>
-                <span className="font-medium">
-                  {t("agencyDashboard.addTalent.steps.mediaSocial")}
-                </span>
+                <span className="font-medium">Media & Social</span>
               </div>
             </div>
           </div>
@@ -695,10 +681,10 @@ export default function AddTalent() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {t("agencyDashboard.addTalent.basicInfo.title")}
+                  Basic Information
                 </h3>
                 <p className="text-gray-600">
-                  {t("agencyDashboard.addTalent.basicInfo.description")}
+                  Let's start with the essential details
                 </p>
               </div>
 

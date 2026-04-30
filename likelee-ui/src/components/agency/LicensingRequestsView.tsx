@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Filter, CheckCircle2, Send, RefreshCw, Eye, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,7 +39,6 @@ const LicensingRequestsView = ({
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -110,6 +108,33 @@ const LicensingRequestsView = ({
     });
   };
 
+  const DetailMetric = ({
+    label,
+    value,
+    compact = false,
+  }: {
+    label: string;
+    value: React.ReactNode;
+    compact?: boolean;
+  }) => (
+    <div
+      className={`rounded-xl border border-slate-200 bg-slate-50/70 ${
+        compact ? "p-2.5" : "p-3"
+      }`}
+    >
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+        {label}
+      </p>
+      <p
+        className={`font-bold text-slate-900 ${
+          compact ? "text-xs leading-4" : "text-sm leading-5"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+
   const updateGroupStatus = async (
     group: any,
     status:
@@ -151,20 +176,14 @@ const LicensingRequestsView = ({
         setCounterOfferMessage("");
         setGroupToCounter(null);
         toast({
-          title: t("agencyDashboard.licensingRequests.toast.counterOfferSent"),
-          description: t(
-            "agencyDashboard.licensingRequests.toast.counterOfferSentDescription",
-          ),
+          title: "Counter offer sent",
+          description: "The client has been notified.",
         });
       }
     } catch (e: any) {
       toast({
-        title: t("agencyDashboard.licensingRequests.toast.updateFailed"),
-        description:
-          e?.message ||
-          t(
-            "agencyDashboard.licensingRequests.toast.couldNotUpdateLicensingRequest",
-          ),
+        title: "Update failed",
+        description: e?.message || "Could not update licensing request",
         variant: "destructive" as any,
       });
     }
@@ -204,20 +223,14 @@ const LicensingRequestsView = ({
         setDeclineReason("");
         setGroupToDecline(null);
         toast({
-          title: t("agencyDashboard.licensingRequests.toast.requestDeclined"),
-          description: t(
-            "agencyDashboard.licensingRequests.toast.requestDeclinedDescription",
-          ),
+          title: "Request declined",
+          description: "The brand has been notified.",
         });
       }
     } catch (e: any) {
       toast({
-        title: t("agencyDashboard.licensingRequests.toast.updateFailed"),
-        description:
-          e?.message ||
-          t(
-            "agencyDashboard.licensingRequests.toast.couldNotUpdateBrandLicenseRequest",
-          ),
+        title: "Update failed",
+        description: e?.message || "Could not update brand license request",
         variant: "destructive" as any,
       });
     }
@@ -244,20 +257,14 @@ const LicensingRequestsView = ({
       });
 
       toast({
-        title: t("agencyDashboard.licensingRequests.toast.paymentLinkSent"),
+        title: "Payment link sent",
         description: paymentLinkUrl
-          ? t("agencyDashboard.licensingRequests.toast.paymentLinkGenerated")
-          : t("agencyDashboard.licensingRequests.toast.paymentLinkSentSimple"),
+          ? "Payment link generated and sent."
+          : "Payment link sent.",
       });
     } catch (e: any) {
-      let friendlyTitle = t(
-        "agencyDashboard.licensingRequests.toast.sendPaymentLinkFailed",
-      );
-      let friendlyDesc =
-        e?.message ||
-        t(
-          "agencyDashboard.licensingRequests.toast.couldNotGenerateSendPaymentLink",
-        );
+      let friendlyTitle = "Send payment link failed";
+      let friendlyDesc = e?.message || "Could not generate/send payment link";
       try {
         const parsed = JSON.parse(String(e?.message || ""));
         if (
@@ -265,15 +272,12 @@ const LicensingRequestsView = ({
           typeof parsed === "object" &&
           parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
         ) {
-          friendlyTitle = t(
-            "agencyDashboard.licensingRequests.toast.actionRequiredConnectPayouts",
-            { entityPluralLower },
-          );
+          friendlyTitle = `Action required: connect ${entityPluralLower} payouts`;
           const missingList = Array.isArray(parsed.missing)
             ? parsed.missing
             : [];
           const missingText = missingList.length
-            ? `${t("agencyDashboard.licensingRequests.toast.missing")} ${missingList.join(", ")}`
+            ? `Missing: ${missingList.join(", ")}`
             : "";
           const actionText = parsed.action ? String(parsed.action) : "";
           friendlyDesc = [String(parsed.message || ""), actionText, missingText]
@@ -334,30 +338,15 @@ const LicensingRequestsView = ({
   return (
     <>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
           <div className="flex flex-col gap-1">
             <h2 className="text-2xl font-bold text-gray-900">
-              {t("agencyDashboard.licensingRequests.title")}
+              Licensing Requests
             </h2>
-            <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
-              {[
-                {
-                  value: "Active",
-                  label: t("agencyDashboard.licensingRequests.tabs.active"),
-                },
-                {
-                  value: "Archive",
-                  label: t("agencyDashboard.licensingRequests.tabs.archive"),
-                },
-                {
-                  value: "Brand Requests",
-                  label: t(
-                    "agencyDashboard.licensingRequests.tabs.brandRequests",
-                  ),
-                },
-              ].map((tab) => {
+            <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-gray-100 p-1 sm:flex sm:w-fit">
+              {["Active", "Archive", "Brand Requests"].map((tab) => {
                 let badgeCount = 0;
-                if (tab.value === "Active") {
+                if (tab === "Active") {
                   const pending = (data || []).filter(
                     (r: any) => r.status === "pending",
                   ).length;
@@ -370,7 +359,7 @@ const LicensingRequestsView = ({
                     activeRequestTab === "Active"
                       ? 0
                       : Math.max(0, pending - seen);
-                } else if (tab.value === "Brand Requests") {
+                } else if (tab === "Brand Requests") {
                   const pending = brandLicenseData.filter(
                     (r: any) => r.status === "pending",
                   ).length;
@@ -387,11 +376,11 @@ const LicensingRequestsView = ({
 
                 return (
                   <button
-                    key={tab.value}
-                    onClick={() => setActiveRequestTab(tab.value as any)}
-                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-2 ${activeRequestTab === tab.value ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                    key={tab}
+                    onClick={() => setActiveRequestTab(tab as any)}
+                    className={`min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-2 text-center ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                   >
-                    {tab.label}
+                    {tab}
                     {badgeCount > 0 && (
                       <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                         {badgeCount}
@@ -404,26 +393,23 @@ const LicensingRequestsView = ({
           </div>
           <Button
             variant="outline"
-            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white"
+            className="flex w-full items-center justify-center gap-2 border-gray-300 font-bold text-gray-700 bg-white sm:w-auto"
           >
-            <Filter className="w-4 h-4" />{" "}
-            {t("agencyDashboard.licensingRequests.filter")}
+            <Filter className="w-4 h-4" /> Filter
           </Button>
         </div>
 
         <div className="space-y-6">
           {isLoading && (
             <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-              <div className="text-gray-500 font-medium">
-                {t("agencyDashboard.licensingRequests.loading")}
-              </div>
+              <div className="text-gray-500 font-medium">Loading...</div>
             </Card>
           )}
 
           {!isLoading && error && (
             <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
               <div className="text-red-600 font-medium">
-                {t("agencyDashboard.licensingRequests.loadFailed")}
+                Failed to load licensing requests
               </div>
             </Card>
           )}
@@ -435,8 +421,8 @@ const LicensingRequestsView = ({
               <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
                 <div className="text-gray-500 font-medium">
                   {activeRequestTab === "Active"
-                    ? t("agencyDashboard.licensingRequests.noActiveRequests")
-                    : t("agencyDashboard.licensingRequests.noArchivedRequests")}
+                    ? "No active licensing requests"
+                    : "No archived licensing requests"}
                 </div>
               </Card>
             )}
@@ -450,8 +436,7 @@ const LicensingRequestsView = ({
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {group.brand_name ||
-                        t("agencyDashboard.licensingRequests.unknownBrand")}
+                      {group.brand_name || "Unknown brand"}
                     </h3>
                     <p className="text-gray-500 font-medium">
                       {(group.campaign_title || "").trim() || "\u2014"}
@@ -460,14 +445,7 @@ const LicensingRequestsView = ({
                   <span
                     className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
                   >
-                    {t(
-                      `agencyDashboard.licensingRequests.status.${String(group.status || "").toLowerCase()}`,
-                      {
-                        defaultValue: String(group.status || "")
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (m) => m.toUpperCase()),
-                      },
-                    )}
+                    {group.status}
                   </span>
                 </div>
 
@@ -488,66 +466,43 @@ const LicensingRequestsView = ({
                   })}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t("agencyDashboard.licensingRequests.licenseFee")}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {formatLicenseFee(group.license_fee)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t("agencyDashboard.licensingRequests.regions")}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {group.regions || "\u2014"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t("agencyDashboard.licensingRequests.usageScope")}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {(() => {
-                          const details = getRequestDetails(group);
-                          const territory = String(
-                            details?.territory || "",
-                          ).trim();
-                          if (territory) return territory;
-                          return (group.usage_scope || "").trim() || "\u2014";
-                        })()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {group.license_start_date
-                          ? t("agencyDashboard.licensingRequests.duration")
-                          : t("agencyDashboard.licensingRequests.deadline")}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {group.license_start_date && group.license_end_date
-                          ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
-                          : group.license_start_date
-                            ? `${t("agencyDashboard.licensingRequests.brandRequests.from")} ${new Date(group.license_start_date).toLocaleDateString()}`
-                            : group.deadline
-                              ? new Date(group.deadline).toLocaleDateString()
-                              : "\u2014"}
-                      </p>
-                    </div>
-                  </div>
+                <div className="mb-8 grid grid-cols-2 gap-3">
+                  <DetailMetric
+                    label="License Fee"
+                    value={formatLicenseFee(group.license_fee)}
+                  />
+                  <DetailMetric
+                    label="Regions"
+                    value={group.regions || "\u2014"}
+                  />
+                  <DetailMetric
+                    label="Usage Scope"
+                    value={(() => {
+                      const details = getRequestDetails(group);
+                      const territory = String(details?.territory || "").trim();
+                      if (territory) return territory;
+                      return (group.usage_scope || "").trim() || "\u2014";
+                    })()}
+                  />
+                  <DetailMetric
+                    label={group.license_start_date ? "Duration" : "Deadline"}
+                    value={
+                      group.license_start_date && group.license_end_date
+                        ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
+                        : group.license_start_date
+                          ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
+                          : group.deadline
+                            ? new Date(group.deadline).toLocaleDateString()
+                            : "\u2014"
+                    }
+                  />
                 </div>
 
                 {group.status === "approved" ? (
                   <div className="space-y-4">
                     <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
                       <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" />{" "}
-                        {t("agencyDashboard.licensingRequests.status.approved")}
+                        <CheckCircle2 className="w-4 h-4" /> Approved
                       </p>
                     </div>
                     {group.payment_link_id || group.payment_link_url ? (
@@ -561,12 +516,8 @@ const LicensingRequestsView = ({
                       >
                         <Send className="w-4 h-4" />
                         {sendPaymentBusyKey === String(group?.group_key || "")
-                          ? t(
-                              "agencyDashboard.licensingRequests.buttons.sending",
-                            )
-                          : t(
-                              "agencyDashboard.licensingRequests.buttons.resendPaymentLink",
-                            )}
+                          ? "Sending..."
+                          : "Resend payment link"}
                       </Button>
                     ) : (
                       <Button
@@ -579,12 +530,8 @@ const LicensingRequestsView = ({
                       >
                         <Send className="w-4 h-4" />
                         {sendPaymentBusyKey === String(group?.group_key || "")
-                          ? t(
-                              "agencyDashboard.licensingRequests.buttons.sending",
-                            )
-                          : t(
-                              "agencyDashboard.licensingRequests.buttons.sendPaymentLink",
-                            )}
+                          ? "Sending..."
+                          : "Send payment link"}
                       </Button>
                     )}
                   </div>
@@ -596,10 +543,7 @@ const LicensingRequestsView = ({
                       className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      {t(
-                        "agencyDashboard.licensingRequests.buttons.recoverToActive",
-                        { defaultValue: "Recover to Active" },
-                      )}
+                      Recover to Active
                     </Button>
                   </div>
                 ) : (
@@ -611,7 +555,7 @@ const LicensingRequestsView = ({
                       <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
                         <span className="text-[10px] font-bold">✓</span>
                       </div>
-                      {t("agencyDashboard.licensingRequests.buttons.approve")}
+                      Approve
                     </Button>
                     <Button
                       variant="outline"
@@ -621,9 +565,7 @@ const LicensingRequestsView = ({
                       }}
                       className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
                     >
-                      {t(
-                        "agencyDashboard.licensingRequests.buttons.counterOffer",
-                      )}
+                      Counter Offer
                     </Button>
                     <Button
                       variant="outline"
@@ -633,7 +575,7 @@ const LicensingRequestsView = ({
                       <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
                         <X className="w-3 h-3" />
                       </div>
-                      {t("agencyDashboard.licensingRequests.buttons.decline")}
+                      Decline
                     </Button>
                   </div>
                 )}
@@ -645,7 +587,7 @@ const LicensingRequestsView = ({
             brandLicenseData.length === 0 && (
               <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
                 <div className="text-gray-500 font-medium">
-                  {t("agencyDashboard.licensingRequests.noActiveBrandRequests")}
+                  No active brand requests
                 </div>
               </Card>
             )}
@@ -659,29 +601,16 @@ const LicensingRequestsView = ({
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {req.brands?.company_name ||
-                        t(
-                          "agencyDashboard.licensingRequests.brandRequests.unknownBrand",
-                        )}
+                      {req.brands?.company_name || "Unknown Brand"}
                     </h3>
                     <p className="text-gray-500 font-medium text-sm">
-                      {req.description ||
-                        t(
-                          "agencyDashboard.licensingRequests.brandRequests.noDescription",
-                        )}
+                      {req.description || "No description provided"}
                     </p>
                   </div>
                   <span
                     className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(req.status)}`}
                   >
-                    {t(
-                      `agencyDashboard.licensingRequests.status.${String(req.status || "").toLowerCase()}`,
-                      {
-                        defaultValue: String(req.status || "")
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (m) => m.toUpperCase()),
-                      },
-                    )}
+                    {req.status}
                   </span>
                 </div>
 
@@ -690,93 +619,59 @@ const LicensingRequestsView = ({
                     {req.talent_name ||
                       req.creators?.full_legal_name ||
                       req.creators?.stage_name ||
-                      t(
-                        "agencyDashboard.licensingRequests.brandRequests.unknownBrand",
-                      )}
+                      "Unknown"}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t(
-                          "agencyDashboard.licensingRequests.brandRequests.licenseFee",
-                        )}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.license_fee
-                          ? `$${Number(req.license_fee).toLocaleString()}`
-                          : "\u2014"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t(
-                          "agencyDashboard.licensingRequests.brandRequests.territory",
-                        )}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.territory || req.usage_scope || "\u2014"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t(
-                          "agencyDashboard.licensingRequests.brandRequests.exclusivity",
-                        )}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.exclusivity || "\u2014"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t(
-                          "agencyDashboard.licensingRequests.brandRequests.duration",
-                        )}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.duration_days
-                          ? `${req.duration_days} ${t("agencyDashboard.licensingRequests.brandRequests.days")}`
-                          : "\u2014"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t(
-                          "agencyDashboard.licensingRequests.brandRequests.timeline",
-                        )}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.license_start_date && req.license_end_date
-                          ? `${new Date(req.license_start_date).toLocaleDateString()} - ${new Date(req.license_end_date).toLocaleDateString()}`
-                          : req.license_start_date
-                            ? `${t("agencyDashboard.licensingRequests.brandRequests.from")} ${new Date(req.license_start_date).toLocaleDateString()}`
-                            : "\u2014"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                        {t(
-                          "agencyDashboard.licensingRequests.brandRequests.modificationsAllowed",
-                        )}
-                      </p>
-                      <p className="text-sm font-bold text-gray-900">
-                        {req.modifications_allowed || "\u2014"}
-                      </p>
-                    </div>
-                  </div>
+                <div className="mb-8 grid grid-cols-3 gap-2 sm:gap-3">
+                  <DetailMetric
+                    compact
+                    label="License Fee"
+                    value={
+                      req.license_fee
+                        ? `$${Number(req.license_fee).toLocaleString()}`
+                        : "\u2014"
+                    }
+                  />
+                  <DetailMetric
+                    compact
+                    label="Territory"
+                    value={req.territory || req.usage_scope || "\u2014"}
+                  />
+                  <DetailMetric
+                    compact
+                    label="Exclusivity"
+                    value={req.exclusivity || "\u2014"}
+                  />
+                  <DetailMetric
+                    compact
+                    label="Duration"
+                    value={
+                      req.duration_days ? `${req.duration_days} Days` : "\u2014"
+                    }
+                  />
+                  <DetailMetric
+                    compact
+                    label="Timeline"
+                    value={
+                      req.license_start_date && req.license_end_date
+                        ? `${new Date(req.license_start_date).toLocaleDateString()} - ${new Date(req.license_end_date).toLocaleDateString()}`
+                        : req.license_start_date
+                          ? `From ${new Date(req.license_start_date).toLocaleDateString()}`
+                          : "\u2014"
+                    }
+                  />
+                  <DetailMetric
+                    compact
+                    label="Mods Allowed"
+                    value={req.modifications_allowed || "\u2014"}
+                  />
                 </div>
 
                 {req.custom_terms && (
                   <div className="mb-8">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      {t(
-                        "agencyDashboard.licensingRequests.brandRequests.customTerms",
-                      )}
+                      Custom Terms
                     </p>
                     <p className="text-sm font-medium text-gray-900 whitespace-pre-wrap">
                       {req.custom_terms}
@@ -788,10 +683,7 @@ const LicensingRequestsView = ({
                   <div className="space-y-4">
                     <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
                       <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" />{" "}
-                        {t(
-                          "agencyDashboard.licensingRequests.brandRequests.contractPhase",
-                        )}
+                        <CheckCircle2 className="w-4 h-4" /> Contract Phase
                       </p>
                     </div>
                   </div>
@@ -800,9 +692,7 @@ const LicensingRequestsView = ({
                     <div className="flex items-center justify-center h-11 bg-red-50 rounded-md border border-red-200">
                       <p className="text-xs font-black text-red-700 uppercase tracking-widest flex items-center gap-2">
                         <X className="w-4 h-4" />
-                        {t(
-                          "agencyDashboard.licensingRequests.brandRequests.declined",
-                        )}
+                        Declined
                       </p>
                     </div>
                   </div>
@@ -815,9 +705,7 @@ const LicensingRequestsView = ({
                       <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
                         <span className="text-[10px] font-bold">✓</span>
                       </div>
-                      {t(
-                        "agencyDashboard.licensingRequests.buttons.acceptWriteContract",
-                      )}
+                      Accept & Write Contract
                     </Button>
                     <Button
                       variant="outline"
@@ -830,7 +718,7 @@ const LicensingRequestsView = ({
                       <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
                         <X className="w-3 h-3" />
                       </div>
-                      {t("agencyDashboard.licensingRequests.buttons.decline")}
+                      Decline
                     </Button>
                   </div>
                 )}
@@ -844,29 +732,20 @@ const LicensingRequestsView = ({
         >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>
-                {t("agencyDashboard.licensingRequests.counterOfferModal.title")}
-              </DialogTitle>
+              <DialogTitle>Send Counter Offer</DialogTitle>
               <DialogDescription>
-                {t(
-                  "agencyDashboard.licensingRequests.counterOfferModal.description",
-                )}
+                Explain your proposed terms to the client. They will be notified
+                by email.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>
-                  {t(
-                    "agencyDashboard.licensingRequests.counterOfferModal.messagePlaceholder",
-                  )}
-                </Label>
+                <Label>Message to Client</Label>
                 <Textarea
                   value={counterOfferMessage}
                   onChange={(e) => setCounterOfferMessage(e.target.value)}
-                  placeholder={t(
-                    "agencyDashboard.licensingRequests.counterOfferModal.messagePlaceholder",
-                  )}
+                  placeholder="Describe your counter offer terms..."
                   rows={5}
                   className="resize-none"
                 />
@@ -879,9 +758,7 @@ const LicensingRequestsView = ({
                 onClick={() => setCounterOfferModalOpen(false)}
                 className="font-bold"
               >
-                {t(
-                  "agencyDashboard.licensingRequests.counterOfferModal.cancel",
-                )}
+                Cancel
               </Button>
               <Button
                 onClick={() =>
@@ -894,7 +771,7 @@ const LicensingRequestsView = ({
                 disabled={!counterOfferMessage.trim()}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
               >
-                {t("agencyDashboard.licensingRequests.counterOfferModal.send")}
+                Send Counter Offer
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -912,29 +789,19 @@ const LicensingRequestsView = ({
         >
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>
-                {t("agencyDashboard.licensingRequests.declineModal.title")}
-              </DialogTitle>
+              <DialogTitle>Decline Brand Request</DialogTitle>
               <DialogDescription>
-                {t(
-                  "agencyDashboard.licensingRequests.declineModal.description",
-                )}
+                Share a brief reason so the brand understands your decision.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>
-                  {t(
-                    "agencyDashboard.licensingRequests.declineModal.reasonPlaceholder",
-                  )}
-                </Label>
+                <Label>Reason</Label>
                 <Textarea
                   value={declineReason}
                   onChange={(e) => setDeclineReason(e.target.value)}
-                  placeholder={t(
-                    "agencyDashboard.licensingRequests.declineModal.reasonPlaceholder",
-                  )}
+                  placeholder="Tell the brand why you are declining..."
                   rows={5}
                   className="resize-none"
                 />
@@ -951,7 +818,7 @@ const LicensingRequestsView = ({
                 }}
                 className="font-bold"
               >
-                {t("agencyDashboard.licensingRequests.declineModal.cancel")}
+                Cancel
               </Button>
               <Button
                 onClick={() => {
@@ -974,7 +841,7 @@ const LicensingRequestsView = ({
                 disabled={!declineReason.trim()}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold"
               >
-                {t("agencyDashboard.licensingRequests.declineModal.decline")}
+                Decline Request
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -988,13 +855,9 @@ const LicensingRequestsView = ({
         >
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>
-                {t("agencyDashboard.licensingRequests.detailsModal.title")}
-              </DialogTitle>
+              <DialogTitle>Licensing Request Details</DialogTitle>
               <DialogDescription>
-                {t(
-                  "agencyDashboard.licensingRequests.detailsModal.description",
-                )}
+                Additional campaign context for contract preparation.
               </DialogDescription>
             </DialogHeader>
 
@@ -1005,41 +868,25 @@ const LicensingRequestsView = ({
                   return (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-500">
-                          {t(
-                            "agencyDashboard.licensingRequests.detailsModal.campaign",
-                          )}
-                        </p>
+                        <p className="text-gray-500">Campaign</p>
                         <p className="font-semibold text-gray-900">
                           {selectedGroup?.campaign_title || "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-500">
-                          {t(
-                            "agencyDashboard.licensingRequests.detailsModal.category",
-                          )}
-                        </p>
+                        <p className="text-gray-500">Category</p>
                         <p className="font-semibold text-gray-900">
                           {String(details?.category || "—")}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-500">
-                          {t(
-                            "agencyDashboard.licensingRequests.detailsModal.exclusivity",
-                          )}
-                        </p>
+                        <p className="text-gray-500">Exclusivity</p>
                         <p className="font-semibold text-gray-900">
                           {String(details?.exclusivity || "—")}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-500">
-                          {t(
-                            "agencyDashboard.licensingRequests.detailsModal.offerAmount",
-                          )}
-                        </p>
+                        <p className="text-gray-500">Offer Amount</p>
                         <p className="font-semibold text-gray-900">
                           {typeof details?.offer_amount === "number"
                             ? `$${details.offer_amount.toLocaleString()}`
@@ -1047,31 +894,19 @@ const LicensingRequestsView = ({
                         </p>
                       </div>
                       <div className="md:col-span-2">
-                        <p className="text-gray-500">
-                          {t(
-                            "agencyDashboard.licensingRequests.detailsModal.description",
-                          )}
-                        </p>
+                        <p className="text-gray-500">Description</p>
                         <p className="font-medium text-gray-900 whitespace-pre-wrap">
                           {String(details?.description || "—")}
                         </p>
                       </div>
                       <div className="md:col-span-2">
-                        <p className="text-gray-500">
-                          {t(
-                            "agencyDashboard.licensingRequests.detailsModal.customTerms",
-                          )}
-                        </p>
+                        <p className="text-gray-500">Custom Terms</p>
                         <p className="font-medium text-gray-900 whitespace-pre-wrap">
                           {String(details?.custom_terms || "—")}
                         </p>
                       </div>
                       <div className="md:col-span-2">
-                        <p className="text-gray-500">
-                          {t(
-                            "agencyDashboard.licensingRequests.detailsModal.modificationsAllowed",
-                          )}
-                        </p>
+                        <p className="text-gray-500">Modifications Allowed</p>
                         <p className="font-medium text-gray-900">
                           {String(details?.modifications_allowed || "—")}
                         </p>

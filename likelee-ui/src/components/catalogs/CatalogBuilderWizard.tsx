@@ -26,36 +26,15 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { catalogApi } from "@/api/catalogs";
-import { useTranslation } from "react-i18next";
 
 type Step = "info" | "select-request" | "assets" | "voice" | "review";
 
-const STEPS: { id: Step; labelKey: string; fallback: string }[] = [
-  {
-    id: "select-request",
-    labelKey: "agencyDashboard.catalogs.builder.steps.select-request",
-    fallback: "Source",
-  },
-  {
-    id: "info",
-    labelKey: "agencyDashboard.catalogs.builder.steps.info",
-    fallback: "Details",
-  },
-  {
-    id: "assets",
-    labelKey: "agencyDashboard.catalogs.builder.steps.assets",
-    fallback: "Assets",
-  },
-  {
-    id: "voice",
-    labelKey: "agencyDashboard.catalogs.builder.steps.voice",
-    fallback: "Voice",
-  },
-  {
-    id: "review",
-    labelKey: "agencyDashboard.catalogs.builder.steps.review",
-    fallback: "Send",
-  },
+const STEPS: { id: Step; label: string }[] = [
+  { id: "select-request", label: "Source" },
+  { id: "info", label: "Details" },
+  { id: "assets", label: "Assets" },
+  { id: "voice", label: "Voice" },
+  { id: "review", label: "Send" },
 ];
 
 type CatalogItem = {
@@ -84,7 +63,6 @@ export function CatalogBuilderWizard({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const { t } = useTranslation();
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("select-request");
   const [sourceId, setSourceId] = useState<string>("");
@@ -92,7 +70,6 @@ export function CatalogBuilderWizard({
     title: "",
     client_name: "",
     client_email: "",
-    notes: "",
     licensing_request_id: "",
     expires_at: "",
     items: {},
@@ -190,21 +167,11 @@ export function CatalogBuilderWizard({
         ...prev,
         [talentId]: (res as any)?.data ?? res ?? [],
       }));
-      toast({
-        title: t("agencyDashboard.catalogs.builder.toasts.assetUploaded", {
-          defaultValue: "Asset uploaded",
-        }),
-      });
+      toast({ title: "Asset uploaded successfully" });
     } catch (e: any) {
       toast({
-        title: t("agencyDashboard.catalogs.builder.toasts.uploadFailed", {
-          defaultValue: "Upload failed",
-        }),
-        description:
-          e.message ||
-          t("agencyDashboard.catalogs.builder.toasts.genericError", {
-            defaultValue: "Something went wrong. Please try again.",
-          }),
+        title: "Upload failed",
+        description: e.message || "Something went wrong",
         variant: "destructive",
       });
     } finally {
@@ -250,21 +217,11 @@ export function CatalogBuilderWizard({
         ...prev,
         [talentId]: recs,
       }));
-      toast({
-        title: t("agencyDashboard.catalogs.builder.toasts.recordingUploaded", {
-          defaultValue: "Recording uploaded",
-        }),
-      });
+      toast({ title: "Recording uploaded successfully" });
     } catch (e: any) {
       toast({
-        title: t("agencyDashboard.catalogs.builder.toasts.uploadFailed", {
-          defaultValue: "Upload failed",
-        }),
-        description:
-          e.message ||
-          t("agencyDashboard.catalogs.builder.toasts.genericError", {
-            defaultValue: "Something went wrong. Please try again.",
-          }),
+        title: "Upload failed",
+        description: e.message || "Something went wrong",
         variant: "destructive",
       });
     } finally {
@@ -278,25 +235,16 @@ export function CatalogBuilderWizard({
     onSuccess: (res: any) => {
       const email = form.client_email.trim();
       toast({
-        title: t("agencyDashboard.catalogs.builder.toasts.catalogCreated", {
-          defaultValue: "Catalog created",
-        }),
+        title: "Catalog created!",
         description: email
-          ? t("agencyDashboard.catalogs.builder.toasts.catalogSentTo", {
-              defaultValue: "Catalog sent to {{email}}",
-              email,
-            })
-          : t("agencyDashboard.catalogs.builder.toasts.catalogCreatedShare", {
-              defaultValue: "Catalog created. Copy the link to share it.",
-            }),
+          ? `Catalog sent to ${email}.`
+          : "Catalog created. Copy the link to share.",
       });
       onCreated();
     },
     onError: (e: any) => {
       toast({
-        title: t("agencyDashboard.catalogs.builder.toasts.createFailed", {
-          defaultValue: "Failed to create catalog",
-        }),
+        title: "Failed to create catalog",
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -423,15 +371,10 @@ export function CatalogBuilderWizard({
       <DialogContent className="max-w-4xl w-full h-[min(92vh,860px)] rounded-2xl p-0 overflow-hidden flex flex-col">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
           <DialogTitle className="text-xl font-bold text-gray-900">
-            {t("agencyDashboard.catalogs.builder.modalTitle", {
-              defaultValue: "Create Asset Catalog",
-            })}
+            Create Asset Catalog
           </DialogTitle>
           <DialogDescription className="text-gray-500 font-medium">
-            {t("agencyDashboard.catalogs.builder.modalDescription", {
-              defaultValue:
-                "Bundle approved assets and voice recordings for client delivery.",
-            })}
+            Bundle approved assets and voice recordings for client delivery.
           </DialogDescription>
         </DialogHeader>
 
@@ -459,9 +402,7 @@ export function CatalogBuilderWizard({
                 >
                   {i < stepIndex ? <Check className="w-3 h-3" /> : i + 1}
                 </div>
-                <span className="hidden sm:inline">
-                  {t(s.labelKey, { defaultValue: s.fallback })}
-                </span>
+                <span className="hidden sm:inline">{s.label}</span>
               </div>
               {i < STEPS.length - 1 && (
                 <div className="flex-1 h-px bg-gray-200 mx-1" />
@@ -477,18 +418,10 @@ export function CatalogBuilderWizard({
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label>
-                  {t("agencyDashboard.catalogs.builder.fields.catalogTitle", {
-                    defaultValue: "Catalog Title",
-                  })}{" "}
-                  <span className="text-red-500">*</span>
+                  Catalog Title <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  placeholder={t(
-                    "agencyDashboard.catalogs.builder.placeholders.catalogTitleDetailed",
-                    {
-                      defaultValue: "e.g. Spring Campaign - Voice Pack",
-                    },
-                  )}
+                  placeholder="e.g. Spring Campaign – Voice Pack"
                   value={form.title}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, title: e.target.value }))
@@ -496,18 +429,9 @@ export function CatalogBuilderWizard({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>
-                  {t("agencyDashboard.catalogs.builder.fields.notesOptional", {
-                    defaultValue: "Notes (optional)",
-                  })}
-                </Label>
+                <Label>Notes (optional)</Label>
                 <Textarea
-                  placeholder={t(
-                    "agencyDashboard.catalogs.builder.placeholders.notesDetailed",
-                    {
-                      defaultValue: "Internal notes about this catalog...",
-                    },
-                  )}
+                  placeholder="Internal notes about this catalog..."
                   value={form.notes}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, notes: e.target.value }))
@@ -517,13 +441,7 @@ export function CatalogBuilderWizard({
               </div>
               <div className="space-y-1.5">
                 <Label>
-                  {t(
-                    "agencyDashboard.catalogs.builder.fields.catalogExpiration",
-                    {
-                      defaultValue: "Catalog Expiration",
-                    },
-                  )}{" "}
-                  <span className="text-red-500">*</span>
+                  Catalog Expiration <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="datetime-local"
@@ -533,13 +451,7 @@ export function CatalogBuilderWizard({
                   }
                 />
                 <p className="text-[10px] text-gray-400">
-                  {t(
-                    "agencyDashboard.catalogs.builder.expirationHelpDetailed",
-                    {
-                      defaultValue:
-                        "Public link will become inaccessible after this date/time.",
-                    },
-                  )}
+                  Public link will become inaccessible after this date/time.
                 </p>
               </div>
             </div>
@@ -549,13 +461,9 @@ export function CatalogBuilderWizard({
           {step === "select-request" && (
             <div className="space-y-3">
               <p className="text-sm text-gray-600 font-medium">
-                {t(
-                  "agencyDashboard.catalogs.builder.selectRequestDescriptionDetailed",
-                  {
-                    defaultValue:
-                      "Select a signed licensing request to link this catalog to. Paid and unpaid requests are both allowed. We will show the payment status so you can decide whether to send the catalog yet.",
-                  },
-                )}
+                Select a signed licensing request to link this catalog to. Paid
+                and unpaid requests are both allowed. We will show the payment
+                status so you can decide whether to send the catalog yet.
               </p>
               {eligibleQuery.isLoading ? (
                 <div className="flex items-center justify-center py-10">
@@ -563,13 +471,8 @@ export function CatalogBuilderWizard({
                 </div>
               ) : eligibleRequests.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  {t(
-                    "agencyDashboard.catalogs.builder.empty.noSignedRequestsDetailed",
-                    {
-                      defaultValue:
-                        "No signed licensing requests available. You can still create a catalog without linking a request.",
-                    },
-                  )}
+                  No signed licensing requests available. You can still create a
+                  catalog without linking a request.
                 </div>
               ) : (
                 eligibleRequests.map((req: any) => {
@@ -590,13 +493,7 @@ export function CatalogBuilderWizard({
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="font-semibold text-gray-900 text-sm">
-                            {req.client_name ||
-                              t(
-                                "agencyDashboard.catalogs.builder.empty.unnamedClient",
-                                {
-                                  defaultValue: "Unnamed Client",
-                                },
-                              )}
+                            {req.client_name || "Unnamed Client"}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5">
                             {req.client_email}
@@ -613,13 +510,7 @@ export function CatalogBuilderWizard({
                               }
                             >
                               ${(req.total_amount_cents / 100).toFixed(2)}{" "}
-                              {isPaid
-                                ? t("agencyDashboard.catalogs.status.paid", {
-                                    defaultValue: "Paid",
-                                  })
-                                : t("agencyDashboard.catalogs.status.unpaid", {
-                                    defaultValue: "Unpaid",
-                                  })}
+                              {isPaid ? "Paid" : "Unpaid"}
                             </Badge>
                           )}
                           {!req.total_amount_cents && (
@@ -631,13 +522,7 @@ export function CatalogBuilderWizard({
                                   : "bg-amber-50 text-amber-700"
                               }
                             >
-                              {isPaid
-                                ? t("agencyDashboard.catalogs.status.paid", {
-                                    defaultValue: "Paid",
-                                  })
-                                : t("agencyDashboard.catalogs.status.unpaid", {
-                                    defaultValue: "Unpaid",
-                                  })}
+                              {isPaid ? "Paid" : "Unpaid"}
                             </Badge>
                           )}
                           {selected && (
@@ -649,19 +534,11 @@ export function CatalogBuilderWizard({
                       </div>
                       <div className="mt-1.5 space-y-1">
                         <p className="text-[11px] text-gray-400">
-                          {t(
-                            "agencyDashboard.catalogs.builder.selectRequestEligibleDetailed",
-                            {
-                              defaultValue:
-                                "Contract signed and eligible for catalog delivery.",
-                            },
-                          )}
+                          Contract signed and eligible for catalog delivery.
                         </p>
                         {req.paid_at ? (
                           <p className="text-[11px] text-green-600">
-                            {t("agencyDashboard.catalogs.status.paid", {
-                              defaultValue: "Paid",
-                            })}{" "}
+                            Paid{" "}
                             {new Date(req.paid_at).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -670,13 +547,8 @@ export function CatalogBuilderWizard({
                           </p>
                         ) : (
                           <p className="text-[11px] text-amber-600">
-                            {t(
-                              "agencyDashboard.catalogs.builder.unpaidRequestHelpDetailed",
-                              {
-                                defaultValue:
-                                  "Unpaid request. You can still create the catalog, but payment has not been recorded yet.",
-                              },
-                            )}
+                            Unpaid request. You can still create the catalog,
+                            but payment has not been recorded yet.
                           </p>
                         )}
                       </div>
@@ -694,20 +566,13 @@ export function CatalogBuilderWizard({
                 <div className="flex items-center justify-center py-10">
                   <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
                   <span className="ml-2 text-sm text-gray-500">
-                    {t("agencyDashboard.catalogs.builder.loadingAssets", {
-                      defaultValue: "Loading assets…",
-                    })}
+                    Loading assets…
                   </span>
                 </div>
               ) : selectedTalents.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  {t(
-                    "agencyDashboard.catalogs.builder.empty.noTalentsAssetsDetailed",
-                    {
-                      defaultValue:
-                        "No talents linked. Go back and select a source request - or skip to the Voice step.",
-                    },
-                  )}
+                  No talents linked. Go back and select a source request — or
+                  skip to the Voice step.
                 </div>
               ) : (
                 selectedTalents.map((talent) => {
@@ -721,22 +586,13 @@ export function CatalogBuilderWizard({
                           {talent.name}
                         </p>
                         <Badge variant="secondary" className="text-[10px]">
-                          {t("agencyDashboard.catalogs.builder.selectedCount", {
-                            defaultValue: "{{count}} selected",
-                            count: selectedAssets.length,
-                          })}
+                          {selectedAssets.length} selected
                         </Badge>
                       </div>
                       {assets.length === 0 ? (
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-gray-400 ml-6">
-                            {t(
-                              "agencyDashboard.catalogs.builder.empty.noAssetsForTalentDetailed",
-                              {
-                                defaultValue:
-                                  "No assets found for this talent.",
-                              },
-                            )}
+                            No assets found for this talent.
                           </p>
                           <label className="cursor-pointer">
                             <input
@@ -753,12 +609,7 @@ export function CatalogBuilderWizard({
                               ) : (
                                 <UploadCloud className="w-3.5 h-3.5" />
                               )}
-                              {t(
-                                "agencyDashboard.catalogs.builder.actions.upload",
-                                {
-                                  defaultValue: "Upload",
-                                },
-                              )}
+                              Upload
                             </div>
                           </label>
                         </div>
@@ -779,12 +630,7 @@ export function CatalogBuilderWizard({
                               <UploadCloud className="w-6 h-6 mb-1 text-gray-400 group-hover:text-indigo-500" />
                             )}
                             <span className="text-[10px] font-semibold">
-                              {t(
-                                "agencyDashboard.catalogs.builder.actions.upload",
-                                {
-                                  defaultValue: "Upload",
-                                },
-                              )}
+                              Upload
                             </span>
                           </label>
                           {assets.map((asset: any) => {
@@ -860,13 +706,7 @@ export function CatalogBuilderWizard({
                 </div>
               ) : selectedTalents.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  {t(
-                    "agencyDashboard.catalogs.builder.empty.noTalentsVoiceDetailed",
-                    {
-                      defaultValue:
-                        "No talents linked. Go back and select a source request.",
-                    },
-                  )}
+                  No talents linked. Go back and select a source request.
                 </div>
               ) : (
                 selectedTalents.map((talent) => {
@@ -881,22 +721,13 @@ export function CatalogBuilderWizard({
                           {talent.name}
                         </p>
                         <Badge variant="secondary" className="text-[10px]">
-                          {t("agencyDashboard.catalogs.builder.selectedCount", {
-                            defaultValue: "{{count}} selected",
-                            count: selectedRecs.length,
-                          })}
+                          {selectedRecs.length} selected
                         </Badge>
                       </div>
                       {recordings.length === 0 ? (
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-gray-400 ml-6">
-                            {t(
-                              "agencyDashboard.catalogs.builder.empty.noVoiceForTalentDetailed",
-                              {
-                                defaultValue:
-                                  "No voice recordings uploaded by this talent yet.",
-                              },
-                            )}
+                            No voice recordings uploaded by this talent yet.
                           </p>
                           <label className="cursor-pointer">
                             <input
@@ -915,12 +746,7 @@ export function CatalogBuilderWizard({
                               ) : (
                                 <UploadCloud className="w-3.5 h-3.5" />
                               )}
-                              {t(
-                                "agencyDashboard.catalogs.builder.actions.upload",
-                                {
-                                  defaultValue: "Upload",
-                                },
-                              )}
+                              Upload
                             </div>
                           </label>
                         </div>
@@ -945,12 +771,7 @@ export function CatalogBuilderWizard({
                               )}
                             </div>
                             <span className="text-sm font-semibold">
-                              {t(
-                                "agencyDashboard.catalogs.builder.actions.uploadNewRecording",
-                                {
-                                  defaultValue: "Upload New Recording",
-                                },
-                              )}
+                              Upload New Recording
                             </span>
                           </label>
                           {recordings.map((rec: any) => {
@@ -985,13 +806,7 @@ export function CatalogBuilderWizard({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-semibold text-gray-900 capitalize">
-                                    {rec.emotion_tag ??
-                                      t(
-                                        "agencyDashboard.catalogs.builder.defaults.recording",
-                                        {
-                                          defaultValue: "Recording",
-                                        },
-                                      )}
+                                    {rec.emotion_tag ?? "Recording"}
                                   </p>
                                   <p className="text-[11px] text-gray-400 truncate mb-2">
                                     {rec.mime_type ?? "audio"}
@@ -1029,51 +844,31 @@ export function CatalogBuilderWizard({
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">
-                    {t("agencyDashboard.catalogs.preview.fields.title", {
-                      defaultValue: "Title",
-                    })}
-                  </span>
+                  <span className="text-gray-500 font-medium">Title</span>
                   <span className="font-semibold text-gray-900">
                     {form.title}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">
-                    {t("agencyDashboard.catalogs.preview.fields.client", {
-                      defaultValue: "Client",
-                    })}
-                  </span>
+                  <span className="text-gray-500 font-medium">Client</span>
                   <span className="font-semibold text-gray-900">
                     {form.client_name || "—"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">
-                    {t("agencyDashboard.catalogs.builder.review.sendTo", {
-                      defaultValue: "Send to",
-                    })}
-                  </span>
+                  <span className="text-gray-500 font-medium">Send to</span>
                   <span className="font-semibold text-gray-900">
                     {form.client_email || "—"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">
-                    {t("agencyDashboard.catalogs.builder.review.talents", {
-                      defaultValue: "Talents",
-                    })}
-                  </span>
+                  <span className="text-gray-500 font-medium">Talents</span>
                   <span className="font-semibold text-gray-900">
                     {selectedTalents.length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">
-                    {t("agencyDashboard.catalogs.preview.fields.assets", {
-                      defaultValue: "Assets",
-                    })}
-                  </span>
+                  <span className="text-gray-500 font-medium">Assets</span>
                   <span className="font-semibold text-gray-900">
                     {Object.values(form.items).reduce(
                       (sum, item) => sum + item.asset_ids.length,
@@ -1082,11 +877,7 @@ export function CatalogBuilderWizard({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">
-                    {t("agencyDashboard.catalogs.builder.review.recordings", {
-                      defaultValue: "Recordings",
-                    })}
-                  </span>
+                  <span className="text-gray-500 font-medium">Recordings</span>
                   <span className="font-semibold text-gray-900">
                     {Object.values(form.items).reduce(
                       (sum, item) => sum + item.recording_ids.length,
@@ -1096,38 +887,23 @@ export function CatalogBuilderWizard({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500 font-medium">
-                    {t(
-                      "agencyDashboard.catalogs.builder.review.linkedRequest",
-                      {
-                        defaultValue: "Linked Request",
-                      },
-                    )}
+                    Linked Request
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {form.licensing_request_id
-                      ? t("agencyDashboard.catalogs.builder.review.yes", {
-                          defaultValue: "Yes",
-                        })
-                      : t("agencyDashboard.catalogs.builder.review.no", {
-                          defaultValue: "No",
-                        })}
+                    {form.licensing_request_id ? "Yes" : "No"}
                   </span>
                 </div>
               </div>
               {form.client_email ? (
                 <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-sm font-medium text-green-800 flex items-center gap-2">
                   <Send className="w-4 h-4" />
-                  {t("agencyDashboard.catalogs.builder.review.emailNotice", {
-                    defaultValue: "This catalog will be sent to",
-                  })}{" "}
+                  The catalog link will be emailed to{" "}
                   <strong>{form.client_email}</strong>.
                 </div>
               ) : (
                 <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-sm font-medium text-amber-800">
-                  {t("agencyDashboard.catalogs.builder.review.noClientEmail", {
-                    defaultValue:
-                      "No client email provided. You can still create and share manually.",
-                  })}
+                  No client email set — you'll need to copy and share the link
+                  manually.
                 </div>
               )}
             </div>
@@ -1142,15 +918,10 @@ export function CatalogBuilderWizard({
             className="h-10 px-5 rounded-xl font-semibold"
           >
             {stepIndex === 0 ? (
-              t("agencyDashboard.catalogs.actions.cancel", {
-                defaultValue: "Cancel",
-              })
+              "Cancel"
             ) : (
               <>
-                <ChevronLeft className="w-4 h-4 mr-1" />{" "}
-                {t("agencyDashboard.catalogs.builder.actions.back", {
-                  defaultValue: "Back",
-                })}
+                <ChevronLeft className="w-4 h-4 mr-1" /> Back
               </>
             )}
           </Button>
@@ -1161,10 +932,7 @@ export function CatalogBuilderWizard({
               disabled={!canNext()}
               className="h-10 px-5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700"
             >
-              {t("agencyDashboard.catalogs.builder.actions.next", {
-                defaultValue: "Next",
-              })}{" "}
-              <ChevronRight className="w-4 h-4 ml-1" />
+              Next <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
             <Button
@@ -1174,17 +942,11 @@ export function CatalogBuilderWizard({
             >
               {createMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />{" "}
-                  {t("agencyDashboard.catalogs.builder.actions.creating", {
-                    defaultValue: "Creating…",
-                  })}
+                  <Loader2 className="w-4 h-4 animate-spin" /> Creating…
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />{" "}
-                  {t("agencyDashboard.catalogs.builder.actions.createAndSend", {
-                    defaultValue: "Create & Send",
-                  })}
+                  <Send className="w-4 h-4" /> Create & Send
                 </>
               )}
             </Button>

@@ -30,7 +30,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { parseBackendError } from "@/utils/errorParser";
 import * as crmApi from "@/api/crm";
 import { Client } from "@/types/crm";
-import { useTranslation } from "react-i18next";
 import ClientCard from "./ClientCard";
 import AddClientModal from "./AddClientModal";
 import EditClientModal from "./EditClientModal";
@@ -49,25 +48,22 @@ const ClientCRMView = () => {
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation("agency");
 
   const deleteClientMutation = useMutation({
     mutationFn: (id: string) => crmApi.deleteClient(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency-clients"] });
       toast({
-        title: t("agencyDashboard.clientCRM.toasts.successTitle"),
-        description: t("agencyDashboard.clientCRM.toasts.clientDeleted"),
+        title: "Success",
+        description: "Client deleted successfully",
       });
       setIsDeleteClientOpen(false);
       setClientToDelete(null);
     },
     onError: (error: any) => {
       toast({
-        title: t("agencyDashboard.clientCRM.toasts.errorTitle"),
-        description:
-          parseBackendError(error) ||
-          t("agencyDashboard.clientCRM.toasts.deleteFailed"),
+        title: "Error",
+        description: parseBackendError(error) || "Failed to delete client",
         variant: "destructive",
       });
     },
@@ -87,17 +83,15 @@ const ClientCRMView = () => {
         id: c.id,
         name: c.company,
         status: c.status,
-        industry: c.industry || t("agencyDashboard.clientCRM.common.unknown"),
+        industry: c.industry || "Unknown",
         website: c.website || "",
         contacts: c.metrics?.contacts || 0,
         totalRevenue: c.metrics?.revenue || "$0",
         bookings: c.metrics?.bookings || 0,
-        lastBooking:
-          c.metrics?.lastBookingDate ||
-          t("agencyDashboard.clientCRM.modal.profile.common.never"),
+        lastBooking: c.metrics?.lastBookingDate || "Never",
         nextFollowUp: c.next_follow_up_date
           ? new Date(c.next_follow_up_date).toLocaleDateString()
-          : t("agencyDashboard.clientCRM.common.none"),
+          : "None",
         next_follow_up_date: c.next_follow_up_date,
         email:
           c.email ||
@@ -119,9 +113,7 @@ const ClientCRMView = () => {
           revenue_cents: c.metrics?.revenue_cents || 0,
           bookings: c.metrics?.bookings || 0,
           packagesSent: c.metrics?.packagesSent || 0,
-          lastBookingDate:
-            c.metrics?.lastBookingDate ||
-            t("agencyDashboard.clientCRM.modal.profile.common.never"),
+          lastBookingDate: c.metrics?.lastBookingDate || "Never",
           contacts: c.metrics?.contacts || 0,
         },
       }));
@@ -143,10 +135,11 @@ const ClientCRMView = () => {
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {t("agencyDashboard.clientCRM.title")}
+            Client Relationship Management
           </h1>
           <p className="text-gray-600 font-medium">
-            {t("agencyDashboard.clientCRM.subtitle")}
+            Manage client relationships, track communications, and monitor
+            pipeline
           </p>
         </div>
         <Button
@@ -154,7 +147,7 @@ const ClientCRMView = () => {
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2 w-full md:w-auto"
         >
           <Plus className="w-5 h-5" />
-          {t("agencyDashboard.clientCRM.actions.addClient")}
+          Add Client
         </Button>
       </div>
 
@@ -166,7 +159,7 @@ const ClientCRMView = () => {
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
             <span className="text-sm font-bold text-green-800 sm:text-base">
-              {t("agencyDashboard.clientCRM.stats.activeClients")}
+              Active Clients
             </span>
           </div>
           <span className="text-2xl font-bold text-green-900 sm:text-3xl">
@@ -179,7 +172,7 @@ const ClientCRMView = () => {
               <Users className="w-5 h-5 text-blue-600" />
             </div>
             <span className="text-sm font-bold text-blue-800 sm:text-base">
-              {t("agencyDashboard.clientCRM.stats.prospects")}
+              Prospects
             </span>
           </div>
           <span className="text-2xl font-bold text-blue-900 sm:text-3xl">
@@ -196,7 +189,7 @@ const ClientCRMView = () => {
               <DollarSign className="w-5 h-5 text-purple-600" />
             </div>
             <span className="text-sm font-bold text-purple-800 sm:text-base">
-              {t("agencyDashboard.clientCRM.stats.totalRevenue")}
+              Total Revenue
             </span>
           </div>
           <span className="text-2xl font-bold text-purple-900 sm:text-3xl">
@@ -219,7 +212,7 @@ const ClientCRMView = () => {
               <Clock className="w-5 h-5 text-orange-600" />
             </div>
             <span className="text-sm font-bold text-orange-800 sm:text-base">
-              {t("agencyDashboard.clientCRM.stats.followUpsDue")}
+              Follow-ups Due
             </span>
           </div>
           <span className="text-2xl font-bold text-orange-900 sm:text-3xl">
@@ -239,7 +232,7 @@ const ClientCRMView = () => {
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
-            placeholder={t("agencyDashboard.clientCRM.filters.search")}
+            placeholder="Search clients..."
             className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -247,44 +240,24 @@ const ClientCRMView = () => {
         </div>
         <Select value={stageFilter} onValueChange={setStageFilter}>
           <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue
-              placeholder={t("agencyDashboard.clientCRM.filters.allStages")}
-            />
+            <SelectValue placeholder="All Stages" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">
-              {t("agencyDashboard.clientCRM.filters.allStages")}
-            </SelectItem>
-            <SelectItem value="leads">
-              {t("agencyDashboard.clientCRM.filters.leads")}
-            </SelectItem>
-            <SelectItem value="prospects">
-              {t("agencyDashboard.clientCRM.filters.prospects")}
-            </SelectItem>
-            <SelectItem value="active">
-              {t("agencyDashboard.clientCRM.filters.activeClients")}
-            </SelectItem>
-            <SelectItem value="inactive">
-              {t("agencyDashboard.clientCRM.filters.inactive")}
-            </SelectItem>
+            <SelectItem value="all">All Stages</SelectItem>
+            <SelectItem value="leads">Leads</SelectItem>
+            <SelectItem value="prospects">Prospects</SelectItem>
+            <SelectItem value="active">Active Clients</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
-            <SelectValue
-              placeholder={t("agencyDashboard.clientCRM.filters.lastBooking")}
-            />
+            <SelectValue placeholder="Last Booking" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="last-booking">
-              {t("agencyDashboard.clientCRM.filters.lastBooking")}
-            </SelectItem>
-            <SelectItem value="revenue">
-              {t("agencyDashboard.clientCRM.stats.totalRevenue")}
-            </SelectItem>
-            <SelectItem value="name">
-              {t("agencyDashboard.clientCRM.filters.companyName")}
-            </SelectItem>
+            <SelectItem value="last-booking">Last Booking</SelectItem>
+            <SelectItem value="revenue">Total Revenue</SelectItem>
+            <SelectItem value="name">Company Name</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -335,12 +308,15 @@ const ClientCRMView = () => {
         <DialogContent className="sm:max-w-[425px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900">
-              {t("agencyDashboard.clientCRM.deleteDialog.title")}
+              Delete Client?
             </DialogTitle>
             <DialogDescription className="text-gray-500">
-              {t("agencyDashboard.clientCRM.deleteDialog.description", {
-                clientName: clientToDelete?.company || "",
-              })}
+              Are you sure you want to delete{" "}
+              <span className="font-bold text-gray-900">
+                {clientToDelete?.company}
+              </span>
+              ? This action cannot be undone and will remove all associated
+              data.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -349,7 +325,7 @@ const ClientCRMView = () => {
               onClick={() => setIsDeleteClientOpen(false)}
               className="rounded-xl font-bold border-gray-200"
             >
-              {t("agencyDashboard.clientCRM.actions.cancel")}
+              Cancel
             </Button>
             <Button
               variant="destructive"
@@ -357,9 +333,7 @@ const ClientCRMView = () => {
               disabled={deleteClientMutation.isPending}
               className="rounded-xl font-bold bg-red-600 hover:bg-red-700"
             >
-              {deleteClientMutation.isPending
-                ? t("agencyDashboard.clientCRM.states.deleting")
-                : t("agencyDashboard.clientCRM.actions.deleteClient")}
+              {deleteClientMutation.isPending ? "Deleting..." : "Delete Client"}
             </Button>
           </DialogFooter>
         </DialogContent>

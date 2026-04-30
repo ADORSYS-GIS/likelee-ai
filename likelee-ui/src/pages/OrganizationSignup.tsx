@@ -303,11 +303,9 @@ export default function OrganizationSignup() {
     setEmailVerificationPending(false);
     setStep(2);
     toast({
-      title: t("organizationSignup.kycVerifiedTitle", "Email verified"),
-      description: t(
-        "organizationSignup.kycVerifiedDescription",
+      title: "Email verified",
+      description:
         "Your organization account is verified. Continue setup below.",
-      ),
     });
   };
 
@@ -316,11 +314,8 @@ export default function OrganizationSignup() {
     await resendSignupEmailOtp(client, formData.email);
     if (showToast) {
       toast({
-        title: t("auth.emailOtp.resendCode", "Code sent"),
-        description: t(
-          "reserveProfile.otp.codeSentDescription",
-          "We sent a fresh 6-digit code to your inbox.",
-        ),
+        title: "Code sent",
+        description: "We sent a fresh 6-digit code to your inbox.",
       });
     }
   };
@@ -328,11 +323,9 @@ export default function OrganizationSignup() {
   const loginExistingAccount = async () => {
     await login(normalizeEmail(formData.email), formData.password);
     toast({
-      title: t("organizationSignup.profileNotFoundTitle", "Account found"),
-      description: t(
-        "organizationSignup.profileNotFoundDescription",
+      title: "Account found",
+      description:
         "This email already belongs to an existing account. Continuing there now.",
-      ),
     });
   };
 
@@ -837,25 +830,17 @@ export default function OrganizationSignup() {
       } catch (err) {
         console.error("Failed to send confirmation email:", err);
         toast({
-          title: t("common.error", "Error"),
-          description: t(
-            "organizationSignup.kycError",
+          title: "Code delivery failed",
+          description:
             "We created the account, but could not send the verification code yet. Please try resending it.",
-          ),
           variant: "destructive",
         });
       }
 
       setEmailVerificationPending(true);
       toast({
-        title: t(
-          "organizationSignup.onboardingInProgressTitle",
-          "Account Created",
-        ),
-        description: t(
-          "organizationSignup.kycRedirect",
-          "Enter the 6-digit code from your email to continue.",
-        ),
+        title: "Account Created",
+        description: "Enter the 6-digit code from your email to continue.",
       });
     },
     onError: async (error) => {
@@ -871,11 +856,9 @@ export default function OrganizationSignup() {
           await handleOrganizationOtpResend(false);
           setEmailVerificationPending(true);
           toast({
-            title: t("organizationSignup.continue", "Continue signup"),
-            description: t(
-              "organizationSignup.errors.emailNotConfirmed",
+            title: "Continue signup",
+            description:
               "We found an existing signup for this email. Enter the 6-digit code from your email to continue.",
-            ),
           });
           return;
         } catch (resendError) {
@@ -884,14 +867,9 @@ export default function OrganizationSignup() {
             resendError,
           );
           toast({
-            title: t(
-              "organizationSignup.passwordMismatchTitle",
-              "Account already exists",
-            ),
-            description: t(
-              "organizationSignup.errors.duplicate_email",
+            title: "Account already exists",
+            description:
               "This email already belongs to another account. Sign in instead to continue with that account.",
-            ),
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
@@ -2724,7 +2702,7 @@ export default function OrganizationSignup() {
                   className="flex-1 h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  {t("organizationSignup.back")}
+                  Back
                 </Button>
                 <Button
                   onClick={handleStep2Next}
@@ -2768,16 +2746,13 @@ export default function OrganizationSignup() {
                   type="button"
                   variant="outline"
                   className="border-2 border-black rounded-none"
-                  onClick={() =>
-                    window.open(
-                      "/agency_brand_terms_and-conditions.pdf",
-                      "_blank",
-                      "noopener,noreferrer",
-                    )
-                  }
+                  onClick={() => {
+                    const termsFile = "/agency_brand_terms_and-conditions.pdf";
+                    window.open(termsFile, "_blank");
+                  }}
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  {t("organizationSignup.terms.download", "Download")}
+                  Download
                 </Button>
               </div>
 
@@ -2795,23 +2770,16 @@ export default function OrganizationSignup() {
                     htmlFor="org-agree-terms"
                     className="text-sm text-gray-700 cursor-pointer leading-relaxed"
                   >
-                    {t("organizationSignup.terms.agreeTo", "I agree to the")}{" "}
+                    I agree to the{" "}
                     <a
                       href="https://likelee.ai/privacypolicy"
                       target="_blank"
                       rel="noreferrer"
                       className="font-semibold underline text-indigo-600"
                     >
-                      {t(
-                        "organizationSignup.terms.policyLink",
-                        "Privacy Policy",
-                      )}
+                      Privacy Policy
                     </a>{" "}
-                    {t(
-                      "organizationSignup.terms.andTerms",
-                      "and Terms of Service",
-                    )}
-                    .
+                    and Terms of Service.
                   </label>
                   <p className="text-sm text-gray-500">
                     {t(
@@ -2883,16 +2851,10 @@ export default function OrganizationSignup() {
           open={emailVerificationPending}
           onOpenChange={setEmailVerificationPending}
           email={normalizeEmail(formData.email)}
-          title={t("auth.emailOtp.title", "Verify your email")}
-          description={t(
-            "auth.emailOtp.description",
-            "Stay here, check your inbox, and enter the 6-digit code to keep onboarding on the same tab.",
-          )}
-          helperText={t(
-            "auth.emailOtp.helperText",
-            "If the code does not arrive right away, use resend and check your spam folder.",
-          )}
-          verifyLabel={t("auth.emailOtp.continueButton", "Continue")}
+          title="Verify your email"
+          description="Enter the 6-digit code from your inbox to keep setup on this tab."
+          helperText="Use resend if the email takes a moment to arrive."
+          verifyLabel="Continue"
           onVerify={handleOrganizationOtpVerify}
           onResend={handleOrganizationOtpResend}
           theme={colors.otpTheme}

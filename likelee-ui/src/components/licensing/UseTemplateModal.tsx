@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LicenseTemplate } from "@/api/licenseTemplates";
-import { useTranslation } from "react-i18next";
 
 interface UseTemplateModalProps {
   isOpen: boolean;
@@ -34,7 +33,6 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -54,42 +52,21 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {t("agencyDashboard.licenseTemplates.useModal.title", {
-              defaultValue: "Use Contract: {{name}}",
-              name: template.template_name,
-            })}
-          </DialogTitle>
+          <DialogTitle>Use Contract: {template.template_name}</DialogTitle>
           <DialogDescription>
-            {t("agencyDashboard.licenseTemplates.useModal.description", {
-              defaultValue:
-                "Enter the client's information to create a new contract from this template.",
-            })}
+            Enter the client's information to create a new contract from this
+            template.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="client_name">
-              {t("agencyDashboard.licenseTemplates.useModal.clientName", {
-                defaultValue: "Client Name",
-              })}
-            </Label>
+            <Label htmlFor="client_name">Client Name</Label>
             <Input
               id="client_name"
-              placeholder={t(
-                "agencyDashboard.licenseTemplates.useModal.clientNamePlaceholder",
-                {
-                  defaultValue: "e.g. Acme Corp",
-                },
-              )}
+              placeholder="e.g. Acme Corp"
               {...register("client_name", {
-                required: t(
-                  "agencyDashboard.licenseTemplates.useModal.clientNameRequired",
-                  {
-                    defaultValue: "Client name is required",
-                  },
-                ),
+                required: "Client name is required",
               })}
             />
             {errors.client_name && (
@@ -100,30 +77,16 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="client_email">
-              {t("agencyDashboard.licenseTemplates.useModal.clientEmail", {
-                defaultValue: "Client Email",
-              })}
-            </Label>
+            <Label htmlFor="client_email">Client Email</Label>
             <Input
               id="client_email"
               type="email"
               placeholder="client@example.com"
               {...register("client_email", {
-                required: t(
-                  "agencyDashboard.licenseTemplates.useModal.clientEmailRequired",
-                  {
-                    defaultValue: "Client email is required",
-                  },
-                ),
+                required: "Client email is required",
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                  message: t(
-                    "agencyDashboard.licenseTemplates.useModal.invalidEmail",
-                    {
-                      defaultValue: "Invalid email address",
-                    },
-                  ),
+                  message: "Invalid email address",
                 },
               })}
             />
@@ -141,20 +104,14 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
               onClick={onClose}
               disabled={isLoading}
             >
-              {t("agencyDashboard.licenseTemplates.deleteModal.cancel")}
+              Cancel
             </Button>
             <Button
               type="submit"
               className="bg-indigo-500 hover:bg-indigo-700"
               disabled={isLoading}
             >
-              {isLoading
-                ? t("agencyDashboard.catalogs.builder.actions.creating", {
-                    defaultValue: "Creating…",
-                  })
-                : t("agencyDashboard.licenseTemplates.useModal.createAndSign", {
-                    defaultValue: "Create & Sign",
-                  })}
+              {isLoading ? "Creating..." : "Create & Sign"}
             </Button>
           </DialogFooter>
         </form>

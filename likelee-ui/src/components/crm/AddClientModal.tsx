@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { MandatoryHint } from "@/components/ui/field-hint";
 import {
   Select,
   SelectContent,
@@ -15,7 +16,6 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import * as crmApi from "@/api/crm";
 import { parseBackendError } from "@/utils/errorParser";
-import { useTranslation } from "react-i18next";
 
 const INDUSTRY_OPTIONS = [
   "Fashion",
@@ -52,7 +52,6 @@ const AddClientModal = ({
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { t } = useTranslation("agency");
   const [formData, setFormData] = useState({
     company: "",
     industry: "",
@@ -68,10 +67,8 @@ const AddClientModal = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agency-clients"] });
       toast({
-        title: t("agencyDashboard.clientCRM.toasts.successTitle"),
-        description: t(
-          "agencyDashboard.clientCRM.modal.addClient.toasts.created",
-        ),
+        title: "Success",
+        description: "Client added successfully",
       });
       onClose();
       setFormData({
@@ -86,10 +83,8 @@ const AddClientModal = ({
     },
     onError: (error: any) => {
       toast({
-        title: t("agencyDashboard.clientCRM.toasts.errorTitle"),
-        description:
-          parseBackendError(error) ||
-          t("agencyDashboard.clientCRM.modal.addClient.toasts.failed"),
+        title: "Error",
+        description: parseBackendError(error) || "Failed to add client",
         variant: "destructive",
       });
     },
@@ -118,11 +113,9 @@ const AddClientModal = ({
   const handleSubmit = () => {
     if (!formData.company) {
       toast({
-        title: t("agencyDashboard.clientCRM.toasts.errorTitle"),
-        description: t(
-          "agencyDashboard.clientCRM.modal.addClient.errors.companyRequired",
-        ),
-        variant: "destructive",
+        title: "Missing Information",
+        description: "Company name is required",
+        variant: "warning",
       });
       return;
     }
@@ -145,31 +138,33 @@ const AddClientModal = ({
         <div className="p-8 space-y-6">
           <div className="flex justify-between items-center">
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              {t("agencyDashboard.clientCRM.modal.addClient.title")}
+              Add New Client
             </DialogTitle>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                {t(
-                  "agencyDashboard.clientCRM.modal.addClient.fields.companyName",
-                )}
-              </Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Company Name *
+                </Label>
+                <MandatoryHint />
+              </div>
               <Input
-                placeholder={t(
-                  "agencyDashboard.clientCRM.modal.addClient.placeholders.companyName",
-                )}
+                placeholder="Company Inc."
                 className="h-11 bg-gray-50 border-gray-200 rounded-xl"
                 value={formData.company}
                 onChange={(e) =>
                   setFormData({ ...formData, company: e.target.value })
                 }
               />
+              <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                This field is mandatory.
+              </p>
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                {t("agencyDashboard.clientCRM.modal.addClient.fields.industry")}
+                Industry
               </Label>
               <Select
                 value={formData.industry}
@@ -178,18 +173,12 @@ const AddClientModal = ({
                 }
               >
                 <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
-                  <SelectValue
-                    placeholder={t(
-                      "agencyDashboard.clientCRM.modal.addClient.placeholders.selectIndustry",
-                    )}
-                  />
+                  <SelectValue placeholder="Select Industry" />
                 </SelectTrigger>
                 <SelectContent>
                   {INDUSTRY_OPTIONS.map((ind) => (
                     <SelectItem key={ind} value={ind}>
-                      {t(`agencyDashboard.clientCRM.industries.${ind}`, {
-                        defaultValue: ind,
-                      })}
+                      {ind}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -198,13 +187,9 @@ const AddClientModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-700">
-              {t("agencyDashboard.clientCRM.modal.addClient.fields.website")}
-            </Label>
+            <Label className="text-sm font-bold text-gray-700">Website</Label>
             <Input
-              placeholder={t(
-                "agencyDashboard.clientCRM.modal.addClient.placeholders.website",
-              )}
+              placeholder="company.com"
               className="h-11 bg-gray-50 border-gray-200 rounded-xl"
               value={formData.website}
               onChange={(e) =>
@@ -215,39 +200,25 @@ const AddClientModal = ({
 
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-700">
-              {t(
-                "agencyDashboard.clientCRM.modal.addClient.fields.pipelineStage",
-              )}
+              Pipeline Stage
             </Label>
             <Select
               value={formData.status}
               onValueChange={(val) => setFormData({ ...formData, status: val })}
             >
               <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
-                <SelectValue
-                  placeholder={t(
-                    "agencyDashboard.clientCRM.modal.addClient.placeholders.selectStage",
-                  )}
-                />
+                <SelectValue placeholder="Select stage" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Lead">
-                  {t("agencyDashboard.clientCRM.status.lead")}
-                </SelectItem>
-                <SelectItem value="Prospect">
-                  {t("agencyDashboard.clientCRM.status.prospect")}
-                </SelectItem>
-                <SelectItem value="Active Client">
-                  {t("agencyDashboard.clientCRM.status.activeClient")}
-                </SelectItem>
+                <SelectItem value="Lead">Lead</SelectItem>
+                <SelectItem value="Prospect">Prospect</SelectItem>
+                <SelectItem value="Active Client">Active Client</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-3">
-            <Label className="text-sm font-bold text-gray-700">
-              {t("agencyDashboard.clientCRM.modal.addClient.fields.tags")}
-            </Label>
+            <Label className="text-sm font-bold text-gray-700">Tags</Label>
             <div className="flex flex-wrap gap-2">
               {TAG_OPTIONS.map((tag) => {
                 const isSelected = formData.tags
@@ -264,9 +235,7 @@ const AddClientModal = ({
                         : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    {t(`agencyDashboard.clientCRM.tags.${tag}`, {
-                      defaultValue: tag,
-                    })}
+                    {tag}
                   </button>
                 );
               })}
@@ -275,9 +244,7 @@ const AddClientModal = ({
 
           <div className="space-y-2">
             <Label className="text-sm font-bold text-gray-700">
-              {t(
-                "agencyDashboard.clientCRM.modal.addClient.fields.nextFollowUp",
-              )}
+              Next Follow-up Date
             </Label>
             <Input
               type="date"
@@ -293,13 +260,9 @@ const AddClientModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-bold text-gray-700">
-              {t("agencyDashboard.clientCRM.modal.addClient.fields.notes")}
-            </Label>
+            <Label className="text-sm font-bold text-gray-700">Notes</Label>
             <Textarea
-              placeholder={t(
-                "agencyDashboard.clientCRM.modal.addClient.placeholders.notes",
-              )}
+              placeholder="Add notes about this client..."
               className="min-h-[100px] bg-gray-50 border-gray-200 rounded-xl resize-none"
               value={formData.notes}
               onChange={(e) =>
@@ -314,16 +277,14 @@ const AddClientModal = ({
               onClick={onClose}
               className="h-11 px-8 rounded-xl border-gray-200 font-bold"
             >
-              {t("agencyDashboard.clientCRM.actions.cancel")}
+              Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={mutation.isPending}
               className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
             >
-              {mutation.isPending
-                ? t("agencyDashboard.clientCRM.modal.addClient.actions.adding")
-                : t("agencyDashboard.clientCRM.actions.addClient")}
+              {mutation.isPending ? "Adding..." : "Add Client"}
             </Button>
           </div>
         </div>

@@ -60,7 +60,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { DocusealForm } from "@docuseal/react";
-import { useTranslation } from "react-i18next";
+import { MandatoryHint } from "@/components/ui/field-hint";
 
 interface SubmissionWizardProps {
   isOpen: boolean;
@@ -160,7 +160,6 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const [allowBrandChange, setAllowBrandChange] = useState(false);
   const [talentPopoverOpen, setTalentPopoverOpen] = useState(false);
   const [talentSearchQuery, setTalentSearchQuery] = useState("");
-  const { t } = useTranslation();
   const { toast } = useToast();
 
   const { data: brandConnectionsData } = useQuery({
@@ -366,7 +365,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         toast({
           title: "Missing Information",
           description: "Please fill in all required fields marked with *",
-          variant: "destructive",
+          variant: "warning",
         });
         return;
       }
@@ -586,27 +585,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     <FileText className="w-4 h-4 text-indigo-600" />
                   </div>
                   <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
-                    {t("agencyDashboard.licenseTemplates.wizard.stepOf", {
-                      defaultValue: "Step {{step}} of 3",
-                      step,
-                    })}
+                    Step {step} of 3
                   </span>
                 </div>
                 <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900">
-                  {step === 1
-                    ? t("agencyDashboard.licenseTemplates.wizard.dealSpecifics")
-                    : t(
-                        "agencyDashboard.licenseTemplates.wizard.contentReview",
-                      )}
+                  {step === 1 ? "Deal Specifics" : "Content Review"}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium">
                   {step === 1
-                    ? t(
-                        "agencyDashboard.licenseTemplates.wizard.dealSpecificsSubtitle",
-                      )
-                    : t(
-                        "agencyDashboard.licenseTemplates.wizard.contentReviewSubtitle",
-                      )}
+                    ? "Enter the core details of this licensing deal"
+                    : "Review and personalize the contract content"}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -615,7 +603,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   onClick={onClose}
                   className="rounded-xl font-bold text-slate-500 px-4 sm:px-6 h-9 sm:h-10 text-sm"
                 >
-                  {t("agencyDashboard.licenseTemplates.deleteModal.cancel")}
+                  Cancel
                 </Button>
                 {step > 1 && (
                   <Button
@@ -624,9 +612,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     className="rounded-xl font-bold border-slate-200 h-9 sm:h-10 text-sm px-3 sm:px-4"
                   >
                     <ArrowLeft className="w-4 h-4 sm:mr-2" />{" "}
-                    <span className="hidden sm:inline">
-                      {t("agencyDashboard.addTalent.buttons.back")}
-                    </span>
+                    <span className="hidden sm:inline">Back</span>
                   </Button>
                 )}
                 <Button
@@ -634,11 +620,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   disabled={isSyncing}
                   className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm"
                 >
-                  {isSyncing
-                    ? "..."
-                    : step === 3
-                      ? t("agencyDashboard.licenseTemplates.wizard.finalize")
-                      : t("agencyDashboard.licenseTemplates.wizard.nextStep")}
+                  {isSyncing ? "..." : step === 3 ? "Finalize" : "Next"}
                   {!isSyncing && step < 3 && (
                     <ArrowRight className="w-4 h-4 ml-1.5 sm:ml-2" />
                   )}
@@ -701,34 +683,35 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <FileText className="w-5 h-5 text-indigo-600" />
                       </div>
                       <h3 className="font-bold text-slate-900">
-                        {t(
-                          "agencyDashboard.licenseTemplates.wizard.identification",
-                          {
-                            defaultValue: "Identification",
-                          },
-                        )}
+                        Identification
                       </h3>
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800 ml-1">
-                          {t(
-                            "agencyDashboard.licenseTemplates.wizard.brandName",
-                            {
-                              defaultValue: "Brand Name *",
-                            },
-                          )}
-                        </Label>
+                        <div className="flex items-center justify-between gap-2 ml-1">
+                          <Label className="text-sm font-bold text-slate-800">
+                            Brand Name *
+                          </Label>
+                          <MandatoryHint />
+                        </div>
                         <Input
                           {...register("client_name", { required: true })}
                           placeholder="e.g. Nike, Spotify"
                           className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                         />
+                        {errors.client_name && (
+                          <p className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                            This field is mandatory.
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-sm font-bold text-slate-800 ml-1">
-                          {`${entitySingularTitle} Name *`}
-                        </Label>
+                        <div className="flex items-center justify-between gap-2 ml-1">
+                          <Label className="text-sm font-bold text-slate-800">
+                            {`${entitySingularTitle} Name *`}
+                          </Label>
+                          <MandatoryHint />
+                        </div>
                         <input
                           type="hidden"
                           {...register("talent_name", { required: true })}
@@ -920,21 +903,19 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           </PopoverContent>
                         </Popover>
                         {errors.talent_name && (
-                          <span className="text-red-500 text-xs font-bold px-1">
-                            {`Please select a ${entitySingularLower}`}
+                          <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                            {`This ${entitySingularLower} is mandatory.`}
                           </span>
                         )}
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-start justify-between ml-1 gap-2">
-                          <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
-                            {t(
-                              "agencyDashboard.licenseTemplates.wizard.clientEmail",
-                              {
-                                defaultValue: "Client Email*",
-                              },
-                            )}
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
+                              Client Email*
+                            </Label>
+                            <MandatoryHint />
+                          </div>
                           {brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
                               <Label
@@ -1016,17 +997,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             )}
                           </>
                         )}
+                        <p className="text-[11px] font-medium text-amber-700 ml-1 dark:text-amber-400">
+                          This field is mandatory.
+                        </p>
                       </div>
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm font-bold text-slate-800">
-                            {t(
-                              "agencyDashboard.licenseTemplates.wizard.agencySignsFirst",
-                              {
-                                defaultValue:
-                                  "Agency signs first (on platform)",
-                              },
-                            )}
+                            Agency signs first (on platform)
                           </Label>
                           <Switch
                             checked={requiresAgencySignature}
@@ -1040,12 +1018,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          {t(
-                            "agencyDashboard.licenseTemplates.wizard.startDate",
-                            {
-                              defaultValue: "Start Date",
-                            },
-                          )}
+                          Start Date
                         </Label>
                         <Input
                           type="date"
@@ -1061,25 +1034,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       <div className="w-10 h-10 bg-amber-50 rounded-2xl flex items-center justify-center">
                         <Layout className="w-5 h-5 text-amber-600" />
                       </div>
-                      <h3 className="font-bold text-slate-900">
-                        {t(
-                          "agencyDashboard.licenseTemplates.wizard.commercials",
-                          {
-                            defaultValue: "Commercials",
-                          },
-                        )}
-                      </h3>
+                      <h3 className="font-bold text-slate-900">Commercials</h3>
                     </div>
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label className="text-sm font-bold text-slate-800 ml-1">
-                            {t(
-                              "agencyDashboard.licenseTemplates.form.durationDays",
-                              {
-                                defaultValue: "Duration (days)",
-                              },
-                            )}
+                            Duration (days)
                           </Label>
                           <Input
                             type="number"
@@ -1091,12 +1052,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         </div>
                         <div className="space-y-2">
                           <Label className="text-sm font-bold text-slate-800 ml-1">
-                            {t(
-                              "agencyDashboard.licenseTemplates.form.territory",
-                              {
-                                defaultValue: "Territory",
-                              },
-                            )}
+                            Territory
                           </Label>
                           <Input
                             {...register("territory")}
@@ -1106,12 +1062,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          {t(
-                            "agencyDashboard.licenseTemplates.form.exclusivity",
-                            {
-                              defaultValue: "Exclusivity",
-                            },
-                          )}
+                          Exclusivity
                         </Label>
                         <Select
                           value={formData.exclusivity}
@@ -1135,12 +1086,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          {t(
-                            "agencyDashboard.licenseTemplates.form.modificationsAllowed",
-                            {
-                              defaultValue: "Modifications Allowed",
-                            },
-                          )}
+                          Modifications Allowed
                         </Label>
                         <Input
                           {...register("modifications_allowed")}
@@ -1150,12 +1096,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          {t(
-                            "agencyDashboard.licenseTemplates.form.licenseFee",
-                            {
-                              defaultValue: "License Fee ($)",
-                            },
-                          )}
+                          License Fee ($)
                         </Label>
                         <Input
                           type="number"

@@ -13,13 +13,11 @@ import {
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/auth/AuthProvider";
-import { useTranslation } from "react-i18next";
 
 export default function CreatorSubscribe() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { t } = useTranslation();
   const { initialized, authenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const success = searchParams.get("success") === "1";
@@ -78,24 +76,14 @@ export default function CreatorSubscribe() {
         agreement_accepted: true,
       });
       const url = String(resp?.checkout_url || "");
-      if (!url)
-        throw new Error(
-          t("creatorSubscribe.errors.noCheckoutUrl", {
-            defaultValue: "No checkout URL returned.",
-          }),
-        );
+      if (!url) throw new Error("No checkout URL returned.");
       window.location.href = url;
     } catch (e: any) {
       toast({
         variant: "destructive",
-        title: t("creatorSubscribe.errors.couldNotStartTrial", {
-          defaultValue: "Could not start trial",
-        }),
+        title: "Could not start trial",
         description: e?.message?.includes("trial_already_used")
-          ? t("creatorSubscribe.errors.trialAlreadyUsed", {
-              defaultValue:
-                "You have already used your free trial. Please subscribe directly.",
-            })
+          ? "You have already used your free trial. Please subscribe directly."
           : e?.message || String(e),
       });
     } finally {
@@ -155,75 +143,63 @@ export default function CreatorSubscribe() {
 
   const basicGroups = [
     {
-      title: t("creatorSubscribe.groups.dashboardProfile"),
+      title: "Dashboard & Profile",
       items: [
-        t("creatorSubscribe.features.dashboardOverview"),
-        t("creatorSubscribe.features.likeness"),
-        t("creatorSubscribe.features.kyc"),
-        t("creatorSubscribe.features.visibilityUnlock"),
+        "Dashboard overview",
+        "My Likeness",
+        "Identity verification (KYC)",
+        "Creator visibility trust unlock",
       ],
     },
     {
-      title: t("creatorSubscribe.groups.connectionsPayouts"),
-      items: [
-        t("creatorSubscribe.features.agencyConnection"),
-        t("creatorSubscribe.features.brandConnection"),
-        t("creatorSubscribe.features.payouts"),
-      ],
+      title: "Connections & Payouts",
+      items: ["Agency connection", "Brand connection", "Payouts"],
     },
   ];
 
   const proGroups = [
     {
-      title: t("creatorSubscribe.groups.everythingInBasic"),
-      items: [
-        t("creatorSubscribe.features.cameoUploads"),
-        t("creatorSubscribe.features.jobs"),
-        t("creatorSubscribe.features.rules"),
-      ],
+      title: "Everything in Basic, plus",
+      items: ["Cameo video uploads", "Jobs", "Settings: My Rules"],
     },
     {
-      title: t("creatorSubscribe.groups.voiceTools"),
-      items: [
-        t("creatorSubscribe.features.voiceProfileCreation"),
-        t("creatorSubscribe.features.voiceTones"),
-        t("creatorSubscribe.features.talentPortal"),
-      ],
+      title: "Voice & Creator Tools",
+      items: ["Voice profile creation", "Up to 6 voice tones", "Talent Portal"],
     },
     {
-      title: t("creatorSubscribe.groups.campaignsAnalytics"),
+      title: "Campaigns & Analytics",
       items: [
-        t("creatorSubscribe.features.archives"),
-        t("creatorSubscribe.features.activeCampaigns"),
-        t("creatorSubscribe.features.analytics"),
+        "Campaign Archives",
+        "Active Campaigns",
+        "Advanced earnings analytics",
       ],
     },
   ];
 
   const comparisonSections = [
     {
-      title: t("creatorSubscribe.comparison.coreAccess"),
+      title: "Core access",
       rows: [
-        [t("creatorSubscribe.features.content"), true, true],
-        [t("creatorSubscribe.features.dashboard"), true, true],
-        [t("creatorSubscribe.features.likeness"), true, true],
-        [t("creatorSubscribe.features.kyc"), true, true],
-        [t("creatorSubscribe.features.agencyConnection"), true, true],
-        [t("creatorSubscribe.features.brandConnection"), true, true],
-        [t("creatorSubscribe.features.payouts"), true, true],
+        ["Content", true, true],
+        ["Dashboard", true, true],
+        ["My Likeness", true, true],
+        ["Identity verification (KYC)", true, true],
+        ["Agency connection", true, true],
+        ["Brand connection", true, true],
+        ["Payouts", true, true],
       ],
     },
     {
-      title: t("creatorSubscribe.comparison.premiumWorkflow"),
+      title: "Premium workflow",
       rows: [
-        [t("creatorSubscribe.features.cameoUploads"), false, true],
-        [t("creatorSubscribe.features.jobs"), false, true],
-        [t("creatorSubscribe.features.rules"), false, true],
-        [t("creatorSubscribe.features.voice"), false, true],
-        [t("creatorSubscribe.features.talentPortal"), false, true],
-        [t("creatorSubscribe.features.archives"), false, true],
-        [t("creatorSubscribe.features.activeCampaigns"), false, true],
-        [t("creatorSubscribe.features.analytics"), false, true],
+        ["Cameo video uploads", false, true],
+        ["Jobs", false, true],
+        ["Settings: My Rules", false, true],
+        ["Voice", false, true],
+        ["Talent Portal", false, true],
+        ["Campaign Archives", false, true],
+        ["Active Campaigns", false, true],
+        ["Advanced earnings analytics", false, true],
       ],
     },
   ] as const;
@@ -449,27 +425,24 @@ export default function CreatorSubscribe() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-16 sm:pb-24">
         <div className="rounded-[24px] sm:rounded-[36px] border border-[#D9E4F1] bg-[linear-gradient(180deg,#F3F8FF_0%,#F8FBFF_100%)] px-4 sm:px-8 py-8 sm:py-14 text-center shadow-[0_18px_60px_rgba(15,34,71,0.08)]">
           <Badge className="rounded-full border border-[#9EE4E6] bg-[#E9FBFB] px-5 py-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[#0B9DA2] shadow-none">
-            {t("creatorSubscribe.hero.badge")}
+            Creator Plans
           </Badge>
           <h1 className="mt-6 text-3xl sm:text-5xl font-black tracking-tight text-[#17315F]">
-            {t("creatorSubscribe.hero.title")}
+            Own your likeness.
             <span className="mt-2 block font-serif italic font-medium text-[#0FA8AE]">
-              {t("creatorSubscribe.hero.subtitle")}
+              Earn from it forever.
             </span>
           </h1>
           <p className="mx-auto mt-4 sm:mt-6 max-w-3xl text-base sm:text-lg leading-7 sm:leading-8 text-[#56708F]">
-            {t("creatorSubscribe.hero.description")}
+            Simple, affordable plans so creators can protect, license, and
+            monetize their identity in the AI era with the right level of
+            access.
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Badge className="rounded-full border border-[#D9E4F1] bg-white/80 px-4 py-2 text-xs font-semibold text-[#56708F] shadow-none">
               Plans are billed{" "}
-              {t("creatorSubscribe.billing.plansAreBilled", {
-                interval:
-                  billingInterval === "year"
-                    ? t("creatorSubscribe.billing.annually")
-                    : t("creatorSubscribe.billing.monthly"),
-              })}
+              {billingInterval === "year" ? "annually" : "monthly"}
             </Badge>
 
             <div className="flex items-center gap-2 rounded-full border border-[#D9E4F1] bg-white/90 px-3 py-1.5">
@@ -496,7 +469,7 @@ export default function CreatorSubscribe() {
                   navigate({ search: sp.toString() }, { replace: true });
                 }}
               >
-                {t("creatorSubscribe.billing.monthly")}
+                Monthly
               </button>
               <div
                 className={`h-5 w-10 rounded-full border border-[#D9E4F1] p-0.5 transition-colors ${
@@ -571,43 +544,39 @@ export default function CreatorSubscribe() {
                   navigate({ search: sp.toString() }, { replace: true });
                 }}
               >
-                {t("creatorSubscribe.billing.annual")}
+                Annual
               </button>
               <Badge className="ml-1 border border-emerald-200 bg-emerald-100 text-emerald-700">
-                {t("creatorSubscribe.billing.save20")}
+                SAVE 20%
               </Badge>
             </div>
             {success && (
               <Badge className="border border-emerald-200 bg-emerald-100 text-emerald-700">
-                {t("creatorSubscribe.billing.subscriptionStarted")}
+                Subscription started
               </Badge>
             )}
             {canceled && (
               <Badge variant="outline" className="bg-white/80">
-                {t("creatorSubscribe.billing.checkoutCanceled")}
+                Checkout canceled
               </Badge>
             )}
           </div>
           {currentPlanTier !== "free" && billingInfo.current_period_end && (
             <div className="mt-8 flex flex-col items-center gap-2">
               <div className="text-sm font-medium text-[#56708F]">
-                {t("creatorSubscribe.currentPlan.label")}{" "}
+                Current Plan:{" "}
                 <span className="font-bold text-[#17315F] uppercase">
                   {currentPlanTier}
                 </span>{" "}
-                (
-                {billingInfo.plan_interval === "year"
-                  ? t("creatorSubscribe.billing.annual")
-                  : t("creatorSubscribe.billing.monthly")}
-                )
+                ({billingInfo.plan_interval === "year" ? "Annual" : "Monthly"})
               </div>
               <Badge
                 variant="secondary"
                 className="bg-[#F0F4F8] text-[#56708F] border-[#D9E4F1]"
               >
                 {billingInfo.cancel_at_period_end
-                  ? t("creatorSubscribe.currentPlan.expiresOn")
-                  : t("creatorSubscribe.currentPlan.renewsOn")}
+                  ? "Expires on "
+                  : "Renews on "}
                 {new Date(billingInfo.current_period_end).toLocaleDateString(
                   undefined,
                   {
@@ -625,7 +594,7 @@ export default function CreatorSubscribe() {
                   }}
                   disabled={checkingOut || startingTrial}
                 >
-                  {t("creatorSubscribe.currentPlan.manageSubscription")}
+                  Manage Subscription
                 </Button>
               )}
             </div>
@@ -658,17 +627,15 @@ export default function CreatorSubscribe() {
                 </motion.div>
                 <div className="max-w-xl">
                   <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-3">
-                    {t("creatorSubscribe.trial.oneTimeOffer")}
+                    One-Time Offer
                   </div>
                   <h2 className="text-2xl font-black tracking-tight sm:text-3xl leading-tight">
-                    {t("creatorSubscribe.trial.startPrefix")}{" "}
-                    <span className="text-[#5eead4]">
-                      {t("creatorSubscribe.trial.free")}
-                    </span>{" "}
-                    {t("creatorSubscribe.trial.startSuffix")}
+                    Start Your 30-Day{" "}
+                    <span className="text-[#5eead4]">Free</span> Trial
                   </h2>
                   <p className="mt-2 text-sm text-white/60">
-                    {t("creatorSubscribe.trial.description")}
+                    Pick any plan below and enter your card — you won't be
+                    charged until the trial ends.
                   </p>
                 </div>
               </div>
@@ -700,7 +667,7 @@ export default function CreatorSubscribe() {
             <div className="flex flex-col h-full">
               <div className="flex justify-between items-start mb-4">
                 <Badge className="bg-[#DFF7F8] text-[#128C96] shadow-none hover:bg-[#DFF7F8] w-fit">
-                  {t("creatorSubscribe.plans.basic.badge")}
+                  ESSENTIAL
                 </Badge>
                 {!isPaidActive && !hasUsedBasicTrial && (
                   <motion.div
@@ -716,21 +683,16 @@ export default function CreatorSubscribe() {
                   </motion.div>
                 )}
               </div>
-              <div className="text-3xl font-black text-[#17315F]">
-                {t("creatorSubscribe.plans.basic.name")}
-              </div>
+              <div className="text-3xl font-black text-[#17315F]">Basic</div>
               <div className="mt-2 text-[15px] leading-6 text-[#6D7F97]">
-                {t("creatorSubscribe.plans.basic.description")}
+                Get verified and start earning.
               </div>
               <div className="mt-4 flex items-baseline gap-1 mb-6">
                 <div className="text-[40px] font-black leading-none tracking-[-0.06em] text-[#17315F]">
                   ${pricing.basic[billingInterval]}
                 </div>
                 <div className="text-sm font-bold text-[#A9B6C8]">
-                  {t("creatorSubscribe.billing.perMonth")}{" "}
-                  {billingInterval === "year"
-                    ? t("creatorSubscribe.billing.annualSuffix")
-                    : ""}
+                  /mo {billingInterval === "year" ? "(annual)" : ""}
                 </div>
               </div>
               <Button
@@ -743,16 +705,11 @@ export default function CreatorSubscribe() {
                 disabled={!canSelectBasicUi || checkingOut || startingTrial}
               >
                 {currentPlanTier === "basic" && !isIntervalChange("basic") ? (
-                  t("creatorSubscribe.actions.currentPlan")
+                  "Current Plan"
                 ) : currentPlanTier === "basic" && isIntervalChange("basic") ? (
-                  t("creatorSubscribe.actions.switchToInterval", {
-                    interval:
-                      billingInterval === "year"
-                        ? t("creatorSubscribe.billing.annual")
-                        : t("creatorSubscribe.billing.monthly"),
-                  })
+                  `Switch to ${billingInterval === "year" ? "Annual" : "Monthly"}`
                 ) : isPaidActive && currentPlanTier === "pro" ? (
-                  t("creatorSubscribe.actions.switchToBasic")
+                  "Switch to Basic"
                 ) : currentPlanTier === "pro" && !hasUsedBasicTrial ? (
                   <span className="flex items-center gap-2">
                     <motion.span
@@ -761,7 +718,7 @@ export default function CreatorSubscribe() {
                     >
                       <Gift className="h-4 w-4" />
                     </motion.span>
-                    {t("creatorSubscribe.actions.switchToBasicTrial")}
+                    Switch to Basic Trial
                   </span>
                 ) : !hasUsedBasicTrial ? (
                   <span className="flex items-center gap-2">
@@ -771,10 +728,10 @@ export default function CreatorSubscribe() {
                     >
                       <Gift className="h-4 w-4" />
                     </motion.span>
-                    {t("creatorSubscribe.actions.startFreeTrial")}
+                    Start 30-Day Free Trial
                   </span>
                 ) : (
-                  t("creatorSubscribe.actions.subscribeToBasic")
+                  "Subscribe to Basic"
                 )}
               </Button>
               {!isPaidActive &&
@@ -783,10 +740,11 @@ export default function CreatorSubscribe() {
                 trialInfo.endsAt && (
                   <div className="mt-3 text-center">
                     <p className="text-[11px] font-bold text-[#12A4A9]/70 uppercase tracking-wider">
-                      {t("creatorSubscribe.trial.continuation")}
+                      Trial Continuation
                     </p>
                     <p className="mt-1 text-[13px] text-[#26415F]/80 leading-snug">
-                      {t("creatorSubscribe.trial.basicCarryOver")}{" "}
+                      Downgrading to Basic trial. Your remaining trial days
+                      carry over. Basic billing begins automatically on{" "}
                       <span className="font-bold text-[#26415F]">
                         {new Date(trialInfo.endsAt).toLocaleDateString(
                           undefined,
@@ -823,7 +781,7 @@ export default function CreatorSubscribe() {
                       ))}
                       {group.items.length > 3 && (
                         <div className="text-[12px] font-bold text-[#12A4A9] pl-6">
-                          {t("creatorSubscribe.moreFeatures")}
+                          + More features
                         </div>
                       )}
                     </div>
@@ -865,11 +823,11 @@ export default function CreatorSubscribe() {
             <div className="flex flex-col h-full">
               <div className="flex justify-between items-start mb-4">
                 <Badge className="bg-[#1C5375] text-[#89F4F7] shadow-none hover:bg-[#1C5375]">
-                  {t("creatorSubscribe.plans.pro.badge")}
+                  MOST POPULAR
                 </Badge>
                 {currentPlanTier !== "pro" && (
                   <Badge className="bg-[#2E4DA4] text-white text-[10px]">
-                    {t("creatorSubscribe.plans.pro.recommended")}
+                    RECOM.
                   </Badge>
                 )}
                 {!isPaidActive && !hasUsedProTrial && (
@@ -886,21 +844,16 @@ export default function CreatorSubscribe() {
                   </motion.div>
                 )}
               </div>
-              <div className="text-3xl font-black">
-                {t("creatorSubscribe.plans.pro.name")}
-              </div>
+              <div className="text-3xl font-black">Pro</div>
               <div className="mt-2 text-[15px] leading-6 text-[#B8CAE3]">
-                {t("creatorSubscribe.plans.pro.description")}
+                The full premium creator suite.
               </div>
               <div className="mt-4 flex items-baseline gap-1 mb-6">
                 <div className="text-[40px] font-black leading-none tracking-[-0.06em] text-white">
                   ${pricing.pro[billingInterval]}
                 </div>
                 <div className="text-sm font-bold text-[#9EB2CA]">
-                  {t("creatorSubscribe.billing.perMonth")}{" "}
-                  {billingInterval === "year"
-                    ? t("creatorSubscribe.billing.annualSuffix")
-                    : ""}
+                  /mo {billingInterval === "year" ? "(annual)" : ""}
                 </div>
               </div>
               <Button
@@ -912,16 +865,11 @@ export default function CreatorSubscribe() {
                 disabled={!canSelectPro || checkingOut || startingTrial}
               >
                 {currentPlanTier === "pro" && !isIntervalChange("pro") ? (
-                  t("creatorSubscribe.actions.currentPlan")
+                  "Current Plan"
                 ) : currentPlanTier === "pro" && isIntervalChange("pro") ? (
-                  t("creatorSubscribe.actions.switchToInterval", {
-                    interval:
-                      billingInterval === "year"
-                        ? t("creatorSubscribe.billing.annual")
-                        : t("creatorSubscribe.billing.monthly"),
-                  })
+                  `Switch to ${billingInterval === "year" ? "Annual" : "Monthly"}`
                 ) : isPaidActive && currentPlanTier === "basic" ? (
-                  t("creatorSubscribe.actions.switchToPro")
+                  "Switch to Pro"
                 ) : currentPlanTier === "basic" && !hasUsedProTrial ? (
                   <span className="flex items-center gap-2">
                     <motion.span
@@ -930,7 +878,7 @@ export default function CreatorSubscribe() {
                     >
                       <Gift className="h-5 w-5" />
                     </motion.span>
-                    {t("creatorSubscribe.actions.switchToProTrial")}
+                    Switch to Pro Trial
                   </span>
                 ) : !hasUsedProTrial ? (
                   <span className="flex items-center gap-2">
@@ -940,10 +888,10 @@ export default function CreatorSubscribe() {
                     >
                       <Gift className="h-5 w-5" />
                     </motion.span>
-                    {t("creatorSubscribe.actions.startFreeTrial")}
+                    Start 30-Day Free Trial
                   </span>
                 ) : (
-                  t("creatorSubscribe.actions.subscribeToPro")
+                  "Subscribe to Pro"
                 )}
               </Button>
               {!isPaidActive &&
@@ -952,10 +900,11 @@ export default function CreatorSubscribe() {
                 trialInfo.endsAt && (
                   <div className="mt-3 text-center">
                     <p className="text-[11px] font-bold text-[#89F4F7]/70 uppercase tracking-wider">
-                      {t("creatorSubscribe.trial.continuation")}
+                      Trial Continuation
                     </p>
                     <p className="mt-1 text-[13px] text-white/80 leading-snug">
-                      {t("creatorSubscribe.trial.proCarryOver")}{" "}
+                      You'll keep your remaining trial days. Pro billing begins
+                      automatically on{" "}
                       <span className="font-bold text-white">
                         {new Date(trialInfo.endsAt).toLocaleDateString(
                           undefined,
@@ -992,7 +941,7 @@ export default function CreatorSubscribe() {
                       ))}
                       {group.items.length > 3 && (
                         <div className="text-[12px] font-bold text-[#89F4F7] pl-6">
-                          {t("creatorSubscribe.moreFeatures")}
+                          + More features
                         </div>
                       )}
                     </div>
@@ -1006,10 +955,10 @@ export default function CreatorSubscribe() {
         <div className="mt-14 rounded-[32px] border border-[#DDE6F0] bg-white px-4 sm:px-6 py-6 sm:py-8 shadow-[0_18px_50px_rgba(20,37,66,0.06)] lg:px-10">
           <div>
             <div className="text-2xl sm:text-3xl font-black text-[#17315F]">
-              {t("creatorSubscribe.comparison.title")}
+              Full comparison
             </div>
             <div className="mt-2 text-[#7A8CA4]">
-              {t("creatorSubscribe.comparison.subtitle")}
+              Every feature, side by side.
             </div>
           </div>
           <div className="mt-8 overflow-x-auto rounded-[24px] border border-[#E3EAF2]">
@@ -1017,17 +966,13 @@ export default function CreatorSubscribe() {
               <thead>
                 <tr className="bg-[#F6FAFD] text-[#17315F]">
                   <th className="px-6 py-4 text-[11px] font-bold uppercase tracking-[0.24em] text-[#89A0B9]">
-                    {t("creatorSubscribe.comparison.feature")}
+                    Feature
                   </th>
                   <th className="px-6 py-4 text-sm font-bold">
-                    {t("creatorSubscribe.plans.basic.name")} — $
-                    {pricing.basic[billingInterval]}
-                    {t("creatorSubscribe.billing.perMonth")}
+                    Basic — ${pricing.basic[billingInterval]}/mo
                   </th>
                   <th className="bg-[#173562] px-6 py-4 text-sm font-bold text-white">
-                    {t("creatorSubscribe.plans.pro.name")} — $
-                    {pricing.pro[billingInterval]}
-                    {t("creatorSubscribe.billing.perMonth")}
+                    Pro — ${pricing.pro[billingInterval]}/mo
                   </th>
                 </tr>
               </thead>
@@ -1082,7 +1027,7 @@ export default function CreatorSubscribe() {
             className="text-[#9DB0C2] hover:text-[#17315F] font-bold"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            {t("creatorSubscribe.backToDashboard")}
+            Back to Dashboard
           </Button>
         </div>
       </div>

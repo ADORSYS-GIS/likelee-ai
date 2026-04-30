@@ -78,7 +78,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { useTranslation } from "react-i18next";
 
 import {
   acceptCreatorAgencyInvite,
@@ -107,7 +106,6 @@ export default function TalentPortal({
   initialSettingsTab?: string;
   initialMode?: "ai" | "irl";
 }) {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const params = useQueryParams();
@@ -471,23 +469,6 @@ export default function TalentPortal({
   };
 
   const safeStr = (v: any) => (typeof v === "string" ? v : "");
-  const formatPortalStatus = React.useCallback(
-    (status: any) => {
-      const normalized = safeStr(status || "pending")
-        .toLowerCase()
-        .replace(/\s+/g, "_");
-      const keyMap: Record<string, string> = {
-        pending: "talentPortal.content.irl.shared.status.pending",
-        confirmed: "talentPortal.content.irl.shared.status.confirmed",
-        completed: "talentPortal.content.irl.shared.status.completed",
-        cancelled: "talentPortal.content.irl.shared.status.cancelled",
-      };
-      const key = keyMap[normalized];
-      if (!key) return normalized || "pending";
-      return t(key, { defaultValue: normalized || "pending" });
-    },
-    [safeStr, t],
-  );
   const getBrandKey = React.useCallback(
     (row: any) => {
       const id = safeStr(
@@ -1319,13 +1300,8 @@ export default function TalentPortal({
               </div>
               <div className="text-xs sm:text-sm text-gray-600 mt-0.5">
                 {mode === "irl"
-                  ? t("talentPortal.mode.irlSubtitle", {
-                      defaultValue: "Track your bookings and earnings",
-                    })
-                  : t("talentPortal.mode.aiSubtitle", {
-                      defaultValue:
-                        "Manage your AI licensing deals and earnings",
-                    })}
+                  ? "Track your bookings and earnings"
+                  : "Manage your AI licensing deals and earnings"}
               </div>
             </div>
           </div>
@@ -1336,16 +1312,12 @@ export default function TalentPortal({
             {mode === "irl" ? (
               <>
                 <Briefcase className="h-4 w-4 text-blue-500" />
-                {t("talentPortal.mode.aiButton", {
-                  defaultValue: "AI Mode",
-                })}
+                AI Mode
               </>
             ) : (
               <>
                 <Briefcase className="h-4 w-4 text-blue-500" />
-                {t("talentPortal.mode.irlButton", {
-                  defaultValue: "IRL Mode",
-                })}
+                IRL Mode
               </>
             )}
           </button>
@@ -1355,139 +1327,59 @@ export default function TalentPortal({
           <div className="flex items-center gap-6 min-w-max pb-3">
             {(mode === "irl"
               ? [
-                  {
-                    id: "overview",
-                    label: t("talentPortal.tabs.overview", {
-                      defaultValue: "Overview",
-                    }),
-                    icon: LayoutGrid,
-                  },
+                  { id: "overview", label: "Overview", icon: LayoutGrid },
                   {
                     id: "calendar",
-                    label: t("talentPortal.tabs.bookingCalendar", {
-                      defaultValue: "Booking Calendar",
-                    }),
+                    label: "Booking Calendar",
                     icon: Calendar,
                     badge: 0,
                   },
                   {
                     id: "active_projects",
-                    label: t("talentPortal.tabs.activeProjects", {
-                      defaultValue: "Active Projects",
-                    }),
+                    label: "Active Projects",
                     icon: Briefcase,
                   },
-                  {
-                    id: "history",
-                    label: t("talentPortal.tabs.jobHistory", {
-                      defaultValue: "Job History",
-                    }),
-                    icon: FileText,
-                  },
+                  { id: "history", label: "Job History", icon: FileText },
                   {
                     id: "availability",
-                    label: t("talentPortal.tabs.availability", {
-                      defaultValue: "Availability",
-                    }),
+                    label: "Availability",
                     icon: CheckCircle2,
                   },
-                  {
-                    id: "portfolio",
-                    label: t("talentPortal.tabs.portfolio", {
-                      defaultValue: "Portfolio",
-                    }),
-                    icon: LucideImage,
-                  },
-                  {
-                    id: "earnings",
-                    label: t("talentPortal.tabs.earnings", {
-                      defaultValue: "Earnings",
-                    }),
-                    icon: DollarSign,
-                  },
+                  { id: "portfolio", label: "Portfolio", icon: LucideImage },
+                  { id: "earnings", label: "Earnings", icon: DollarSign },
                   {
                     id: "messages",
-                    label: t("talentPortal.tabs.messages", {
-                      defaultValue: "Messages",
-                    }),
+                    label: "Messages",
                     icon: MessageSquare,
                     badge: totalUnreadMessages || undefined,
                   },
-                  {
-                    id: "settings",
-                    label: t("talentPortal.tabs.settings", {
-                      defaultValue: "Settings",
-                    }),
-                    icon: Settings,
-                  },
+                  { id: "settings", label: "Settings", icon: Settings },
                   {
                     id: "agency_connection",
-                    label: t("talentPortal.tabs.agencyConnection", {
-                      defaultValue: "Agency Connection",
-                    }),
+                    label: "Agency Connection",
                     icon: Building2,
                     badge: pendingAgencyInvitesCount || undefined,
                   },
                 ]
               : [
-                  {
-                    id: "overview",
-                    label: t("talentPortal.tabs.overview", {
-                      defaultValue: "Overview",
-                    }),
-                    icon: LayoutGrid,
-                  },
-                  {
-                    id: "likeness",
-                    label: t("talentPortal.tabs.myLikeness", {
-                      defaultValue: "My Likeness",
-                    }),
-                    icon: Sparkles,
-                  },
+                  { id: "overview", label: "Overview", icon: LayoutGrid },
+                  { id: "likeness", label: "My Likeness", icon: Sparkles },
                   {
                     id: "campaigns",
-                    label: t("talentPortal.tabs.activeCampaigns", {
-                      defaultValue: "Active Campaigns",
-                    }),
+                    label: "Active Campaigns",
                     icon: Briefcase,
                     badge: activeCampaignRows.length,
                   },
-                  {
-                    id: "archive",
-                    label: t("talentPortal.tabs.archive", {
-                      defaultValue: "Archive",
-                    }),
-                    icon: FolderArchive,
-                  },
-                  {
-                    id: "earnings",
-                    label: t("talentPortal.tabs.earnings", {
-                      defaultValue: "Earnings",
-                    }),
-                    icon: DollarSign,
-                  },
-                  {
-                    id: "analytics",
-                    label: t("talentPortal.tabs.analytics", {
-                      defaultValue: "Analytics",
-                    }),
-                    icon: BarChart3,
-                  },
+                  { id: "archive", label: "Archive", icon: FolderArchive },
+                  { id: "earnings", label: "Earnings", icon: DollarSign },
+                  { id: "analytics", label: "Analytics", icon: BarChart3 },
                   {
                     id: "messages",
-                    label: t("talentPortal.tabs.messages", {
-                      defaultValue: "Messages",
-                    }),
+                    label: "Messages",
                     icon: MessageSquare,
                     badge: totalUnreadMessages || undefined,
                   },
-                  {
-                    id: "settings",
-                    label: t("talentPortal.tabs.settings", {
-                      defaultValue: "Settings",
-                    }),
-                    icon: Settings,
-                  },
+                  { id: "settings", label: "Settings", icon: Settings },
                 ]
             ).map((item) => {
               const Icon = item.icon as any;
@@ -1531,12 +1423,7 @@ export default function TalentPortal({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs sm:text-sm font-medium text-gray-500">
-                        {t(
-                          "talentPortal.content.irl.overview.upcomingBookings",
-                          {
-                            defaultValue: "Upcoming Bookings",
-                          },
-                        )}
+                        Upcoming Bookings
                       </div>
                       <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {upcomingBookings.length}
@@ -1551,9 +1438,7 @@ export default function TalentPortal({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs sm:text-sm font-medium text-gray-500">
-                        {t("talentPortal.content.irl.overview.totalEarnings", {
-                          defaultValue: "Total Earnings",
-                        })}
+                        Total Earnings
                       </div>
                       <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {fmtCents(
@@ -1570,9 +1455,7 @@ export default function TalentPortal({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs sm:text-sm font-medium text-gray-500">
-                        {t("talentPortal.content.irl.overview.completedJobs", {
-                          defaultValue: "Completed Jobs",
-                        })}
+                        Completed Jobs
                       </div>
                       <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {completedBookingsCount}
@@ -1587,9 +1470,7 @@ export default function TalentPortal({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs sm:text-sm font-medium text-gray-500">
-                        {t("talentPortal.content.irl.overview.thisMonth", {
-                          defaultValue: "This Month",
-                        })}
+                        This Month
                       </div>
                       <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {thisMonthBookingsCount}
@@ -1604,9 +1485,7 @@ export default function TalentPortal({
 
               <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                 <div className="text-base sm:text-lg font-semibold text-gray-900">
-                  {t("talentPortal.content.irl.overview.upcomingBookings", {
-                    defaultValue: "Upcoming Bookings",
-                  })}
+                  Upcoming Bookings
                 </div>
                 <div className="mt-4 sm:mt-5 border rounded-xl border-dashed border-gray-200 p-6 sm:p-12 bg-gray-50/50">
                   {upcomingBookings.length === 0 ? (
@@ -1615,12 +1494,7 @@ export default function TalentPortal({
                         <Calendar className="h-8 w-8 text-gray-400" />
                       </div>
                       <div className="text-sm text-gray-500">
-                        {t(
-                          "talentPortal.content.irl.overview.noUpcomingBookings",
-                          {
-                            defaultValue: "No upcoming bookings yet.",
-                          },
-                        )}
+                        No upcoming bookings
                       </div>
                     </div>
                   ) : (
@@ -1632,21 +1506,15 @@ export default function TalentPortal({
                         >
                           <div>
                             <div className="text-sm font-semibold text-gray-900">
-                              {b.client_name ||
-                                b.clientName ||
-                                t(
-                                  "talentPortal.content.irl.overview.bookingFallback",
-                                  {
-                                    defaultValue: "Booking",
-                                  },
-                                )}
+                              {b.client_name || b.clientName || "Booking"}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
                               {b.date}
                             </div>
                           </div>
                           <Badge variant="secondary" className="capitalize">
-                            {formatPortalStatus(b.status || "pending")}
+                            {safeStr(b.status || "pending").toLowerCase() ||
+                              "pending"}
                           </Badge>
                         </div>
                       ))}
@@ -1657,20 +1525,12 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("talentPortal.content.irl.overview.earningsByAgency", {
-                    defaultValue: "Earnings by Agency",
-                  })}
+                  Earnings by Agency
                 </div>
                 <div className="mt-4 space-y-2">
                   {earningsByAgency.length === 0 ? (
                     <div className="text-sm text-gray-600 py-6 text-center">
-                      {t(
-                        "talentPortal.content.irl.overview.noEarningsByAgency",
-                        {
-                          defaultValue:
-                            "No earnings by agency for this month yet.",
-                        },
-                      )}
+                      No earnings by agency for this month yet.
                     </div>
                   ) : (
                     earningsByAgency.slice(0, 10).map((it: any) => (
@@ -1688,25 +1548,12 @@ export default function TalentPortal({
                           </div>
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-gray-900 truncate">
-                              {it.agency_name ||
-                                it.agency_id ||
-                                t(
-                                  "talentPortal.content.irl.overview.agencyFallback",
-                                  {
-                                    defaultValue: "Agency",
-                                  },
-                                )}
+                              {it.agency_name || it.agency_id || "Agency"}
                             </div>
                           </div>
                         </div>
                         <div className="text-sm font-semibold text-green-600">
-                          {fmtCents(it.monthly_cents)}
-                          {t(
-                            "talentPortal.content.irl.overview.monthlySuffix",
-                            {
-                              defaultValue: "/mo",
-                            },
-                          )}
+                          {fmtCents(it.monthly_cents)}/mo
                         </div>
                       </div>
                     ))
@@ -1730,35 +1577,20 @@ export default function TalentPortal({
                     </div>
                     <div className="min-w-0">
                       <div className="text-base font-semibold text-gray-900 truncate">
-                        {agencyName ||
-                          t("talentPortal.content.irl.overview.yourAgency", {
-                            defaultValue: "Your Agency",
-                          })}
+                        {agencyName || "Your Agency"}
                       </div>
                       <div className="text-sm text-gray-500 truncate">
-                        {t("talentPortal.content.irl.overview.connectedSince", {
-                          defaultValue: "Connected since {{date}}",
-                          date: new Date().toLocaleDateString(),
-                        })}
+                        Connected since {new Date().toLocaleDateString()}
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">
-                          {t("talentPortal.content.irl.overview.editProfile", {
-                            defaultValue: "Edit Profile",
-                          })}
+                          Edit Profile
                         </button>
                         <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
-                          {t(
-                            "talentPortal.content.irl.overview.manageCampaigns",
-                            {
-                              defaultValue: "Manage Campaigns",
-                            },
-                          )}
+                          Manage Campaigns
                         </button>
                         <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">
-                          {t("talentPortal.content.irl.overview.viewEarnings", {
-                            defaultValue: "View Earnings",
-                          })}
+                          View Earnings
                         </button>
                       </div>
                     </div>
@@ -1772,25 +1604,16 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.tabs.bookingCalendar", {
-                    defaultValue: "Booking Calendar",
-                  })}
+                  Booking Calendar
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.irl.calendar.subtitle", {
-                    defaultValue: "View and manage your upcoming bookings",
-                  })}
+                  View and manage your upcoming bookings
                 </div>
               </div>
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <BookingsView
-                  activeSubTab={t(
-                    "talentPortal.content.irl.calendar.scheduleTitle",
-                    {
-                      defaultValue: "Bookings & Schedule",
-                    },
-                  )}
+                  activeSubTab="Calendar & Schedule"
                   bookings={Array.isArray(bookings) ? (bookings as any[]) : []}
                   onAddBooking={() => {}}
                   onUpdateBooking={() => {}}
@@ -1825,14 +1648,10 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.tabs.activeProjects", {
-                    defaultValue: "Active Projects",
-                  })}
+                  Active Projects
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.irl.activeProjects.subtitle", {
-                    defaultValue: "Current ongoing projects and gigs",
-                  })}
+                  Current ongoing projects and gigs
                 </div>
               </div>
 
@@ -1844,21 +1663,10 @@ export default function TalentPortal({
                         <Briefcase className="h-8 w-8 text-gray-400" />
                       </div>
                       <div className="text-sm text-gray-500">
-                        {t(
-                          "talentPortal.content.irl.activeProjects.noneTitle",
-                          {
-                            defaultValue: "No active projects yet.",
-                          },
-                        )}
+                        No Active Projects
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {t(
-                          "talentPortal.content.irl.activeProjects.noneDescription",
-                          {
-                            defaultValue:
-                              "Current projects and gigs will appear here.",
-                          },
-                        )}
+                        Confirmed bookings will appear here
                       </div>
                     </div>
                   ) : (
@@ -1871,13 +1679,7 @@ export default function TalentPortal({
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
                               <div className="text-sm font-semibold text-gray-900 truncate">
-                                {b.client_name ||
-                                  t(
-                                    "talentPortal.content.irl.activeProjects.projectFallback",
-                                    {
-                                      defaultValue: "Project",
-                                    },
-                                  )}
+                                {b.client_name || "Project"}
                               </div>
                               <div className="text-xs text-gray-600 mt-1 truncate">
                                 {b.date}
@@ -1890,7 +1692,8 @@ export default function TalentPortal({
                               )}
                             </div>
                             <Badge variant="outline" className="capitalize">
-                              {formatPortalStatus(b.status || "pending")}
+                              {safeStr(b.status || "pending").toLowerCase() ||
+                                "pending"}
                             </Badge>
                           </div>
                         </div>
@@ -1906,14 +1709,10 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.tabs.jobHistory", {
-                    defaultValue: "Job History",
-                  })}
+                  Job History
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.irl.jobHistory.subtitle", {
-                    defaultValue: "View all completed bookings",
-                  })}
+                  View all completed bookings
                 </div>
               </div>
 
@@ -1925,18 +1724,10 @@ export default function TalentPortal({
                         <FileText className="h-8 w-8 text-gray-400" />
                       </div>
                       <div className="text-sm text-gray-500">
-                        {t("talentPortal.content.irl.jobHistory.noneTitle", {
-                          defaultValue: "No completed jobs yet.",
-                        })}
+                        No Completed Jobs
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {t(
-                          "talentPortal.content.irl.jobHistory.noneDescription",
-                          {
-                            defaultValue:
-                              "Your completed bookings will appear here.",
-                          },
-                        )}
+                        Completed bookings will appear here
                       </div>
                     </div>
                   ) : (
@@ -1948,13 +1739,7 @@ export default function TalentPortal({
                         >
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-gray-900 truncate">
-                              {b.client_name ||
-                                t(
-                                  "talentPortal.content.irl.jobHistory.jobFallback",
-                                  {
-                                    defaultValue: "Job",
-                                  },
-                                )}
+                              {b.client_name || "Job"}
                             </div>
                             <div className="text-xs text-gray-600 mt-1 truncate">
                               {b.date}
@@ -1963,12 +1748,7 @@ export default function TalentPortal({
                           </div>
                           <Badge variant="secondary" className="capitalize">
                             {safeStr(b.status || "completed").toLowerCase() ||
-                              t(
-                                "talentPortal.content.irl.jobHistory.completed",
-                                {
-                                  defaultValue: "completed",
-                                },
-                              )}
+                              "completed"}
                           </Badge>
                         </div>
                       ))}
@@ -1983,43 +1763,24 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.content.irl.availability.title", {
-                    defaultValue: "Availability Settings",
-                  })}
+                  Availability Settings
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.irl.availability.subtitle", {
-                    defaultValue:
-                      "Manage your booking availability and book-outs",
-                  })}
+                  Manage your booking availability and book-outs
                 </div>
               </div>
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("talentPortal.content.irl.availability.bookOutCalendar", {
-                    defaultValue: "Book-Out Calendar",
-                  })}
+                  Book-Out Calendar
                 </div>
                 <div className="text-xs text-gray-600 mt-1">
-                  {t(
-                    "talentPortal.content.irl.availability.bookOutCalendarDescription",
-                    {
-                      defaultValue:
-                        "Block dates when you're not available for bookings",
-                    },
-                  )}
+                  Block dates when you're not available for bookings
                 </div>
 
                 <div className="mt-5">
                   <BookingsView
-                    activeSubTab={t(
-                      "talentPortal.content.irl.availability.talentAvailabilityTitle",
-                      {
-                        defaultValue: "Talent Availability",
-                        entity: "talent",
-                      },
-                    )}
+                    activeSubTab="Talent Availability"
                     bookings={[]}
                     onAddBooking={() => {}}
                     onUpdateBooking={() => {}}
@@ -2031,19 +1792,9 @@ export default function TalentPortal({
                       if (!effectiveAgencyId && connectedAgencyIds.length > 1) {
                         toast({
                           variant: "destructive",
-                          title: t(
-                            "talentPortal.bookingPreferences.selectAgencyTitle",
-                            {
-                              defaultValue: "Select an agency",
-                            },
-                          ),
-                          description: t(
-                            "talentPortal.bookingPreferences.selectAgencyDescription",
-                            {
-                              defaultValue:
-                                "Please choose the agency for this book-out using the Agency filter dropdown.",
-                            },
-                          ),
+                          title: "Select an agency",
+                          description:
+                            "Please choose the agency for this book-out using the Agency filter dropdown.",
                         });
                         return;
                       }
@@ -2069,32 +1820,20 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("talentPortal.bookingPreferences.title", {
-                    defaultValue: "Booking Preferences",
-                  })}
+                  Booking Preferences
                 </div>
                 <div className="text-xs text-gray-600 mt-1">
-                  {t("talentPortal.bookingPreferences.subtitle", {
-                    defaultValue:
-                      "Set preferences your agency can use when booking you",
-                  })}
+                  Set preferences your agency can use when booking you
                 </div>
 
                 <div className="mt-5 space-y-4">
                   <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        {t("talentPortal.bookingPreferences.willingToTravel", {
-                          defaultValue: "Willing to Travel",
-                        })}
+                        Willing to Travel
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {t(
-                          "talentPortal.bookingPreferences.acceptOutsideLocalArea",
-                          {
-                            defaultValue: "Accept bookings outside local area",
-                          },
-                        )}
+                        Accept bookings outside local area
                       </div>
                     </div>
                     <Switch
@@ -2115,17 +1854,10 @@ export default function TalentPortal({
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="text-sm font-semibold text-gray-900">
-                          {t("talentPortal.bookingPreferences.minimumDayRate", {
-                            defaultValue: "Minimum Day Rate",
-                          })}
+                          Minimum Day Rate
                         </div>
                         <div className="text-xs text-gray-600 mt-1">
-                          {t(
-                            "talentPortal.bookingPreferences.minimumRateDescription",
-                            {
-                              defaultValue: "Your minimum acceptable rate",
-                            },
-                          )}
+                          Your minimum acceptable rate
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -2179,14 +1911,10 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.portfolio.title", {
-                    defaultValue: "Portfolio",
-                  })}
+                  Portfolio
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.portfolio.subtitle", {
-                    defaultValue: "Showcase your work and past projects",
-                  })}
+                  Showcase your work and past projects
                 </div>
               </div>
 
@@ -2194,14 +1922,10 @@ export default function TalentPortal({
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      {t("talentPortal.portfolio.imagesTitle", {
-                        defaultValue: "Portfolio Images",
-                      })}
+                      Portfolio Images
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      {t("talentPortal.portfolio.imagesSubtitle", {
-                        defaultValue: "Upload images to your IRL portfolio",
-                      })}
+                      Upload images to your IRL portfolio
                     </div>
                   </div>
                   <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#32C8D1] text-white text-sm font-semibold cursor-pointer hover:bg-[#2AB8C1]">
@@ -2218,19 +1942,9 @@ export default function TalentPortal({
                         ) {
                           toast({
                             variant: "destructive",
-                            title: t(
-                              "talentPortal.portfolio.selectAgencyTitle",
-                              {
-                                defaultValue: "Select an agency",
-                              },
-                            ),
-                            description: t(
-                              "talentPortal.portfolio.selectAgencyDescription",
-                              {
-                                defaultValue:
-                                  "Please choose the agency for this upload using the Agency filter dropdown.",
-                              },
-                            ),
+                            title: "Select an agency",
+                            description:
+                              "Please choose the agency for this upload using the Agency filter dropdown.",
                           });
                           e.target.value = "";
                           return;
@@ -2251,9 +1965,7 @@ export default function TalentPortal({
                           });
                       }}
                     />
-                    {t("talentPortal.portfolio.addImages", {
-                      defaultValue: "Add Images",
-                    })}
+                    Add Images
                   </label>
                 </div>
 
@@ -2284,9 +1996,7 @@ export default function TalentPortal({
                                 }
                                 disabled={deletePortfolioMutation.isPending}
                               >
-                                {t("talentPortal.portfolio.remove", {
-                                  defaultValue: "Remove",
-                                })}
+                                Remove
                               </button>
                             </div>
                           </div>
@@ -2309,15 +2019,10 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("talentPortal.portfolio.pastWorkHighlights", {
-                    defaultValue: "Past Work Highlights",
-                  })}
+                  Past Work Highlights
                 </div>
                 <div className="text-xs text-gray-600 mt-1">
-                  {t("talentPortal.portfolio.pastWorkHighlightsDescription", {
-                    defaultValue:
-                      "Add standout projects, collaborations, or press mentions",
-                  })}
+                  Add standout projects, collaborations, or press mentions
                 </div>
 
                 <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
@@ -2326,18 +2031,10 @@ export default function TalentPortal({
                       <Briefcase className="h-8 w-8 text-gray-400" />
                     </div>
                     <div className="text-sm text-gray-500">
-                      {t("talentPortal.portfolio.highlightsComingSoon", {
-                        defaultValue: "Highlights coming soon",
-                      })}
+                      Highlights coming soon
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {t(
-                        "talentPortal.portfolio.highlightsComingSoonDescription",
-                        {
-                          defaultValue:
-                            "Your agency can help curate portfolio highlights here",
-                        },
-                      )}
+                      Your agency can help curate portfolio highlights here
                     </div>
                   </div>
                 </div>
@@ -2348,24 +2045,16 @@ export default function TalentPortal({
           {tab === "earnings" && (
             <div className="space-y-6">
               <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.tabs.earnings", {
-                    defaultValue: "Earnings",
-                  })}
-                </div>
+                <div className="text-2xl font-bold text-gray-900">Earnings</div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.irl.earnings.subtitle", {
-                    defaultValue: "Track your booking earnings",
-                  })}
+                  Track your booking earnings
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                 <Card className="p-6 rounded-xl shadow-sm">
                   <div className="text-xs font-medium text-gray-500">
-                    {t("talentPortal.content.irl.earnings.totalEarnings", {
-                      defaultValue: "Total Earnings",
-                    })}
+                    Total Earnings
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mt-2">
                     {fmtCents((irlEarningsSummary as any)?.total_paid_cents)}
@@ -2373,9 +2062,7 @@ export default function TalentPortal({
                 </Card>
                 <Card className="p-6 rounded-xl shadow-sm">
                   <div className="text-xs font-medium text-gray-500">
-                    {t("talentPortal.content.irl.earnings.withdrawable", {
-                      defaultValue: "Withdrawable",
-                    })}
+                    Withdrawable
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mt-2">
                     {fmtCents((irlEarningsSummary as any)?.withdrawable_cents)}
@@ -2383,9 +2070,7 @@ export default function TalentPortal({
                 </Card>
                 <Card className="p-6 rounded-xl shadow-sm">
                   <div className="text-xs font-medium text-gray-500">
-                    {t("talentPortal.content.irl.earnings.completedJobs", {
-                      defaultValue: "Completed Jobs",
-                    })}
+                    Completed Jobs
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mt-2">
                     {completedBookingsCount}
@@ -2395,16 +2080,12 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("talentPortal.content.irl.earnings.recentPayments", {
-                    defaultValue: "Recent Payments",
-                  })}
+                  Recent Payments
                 </div>
                 <div className="mt-4 space-y-2">
                   {irlPayments.length === 0 ? (
                     <div className="text-sm text-gray-600">
-                      {t("talentPortal.content.irl.earnings.noPaymentsYet", {
-                        defaultValue: "No payments yet.",
-                      })}
+                      No payments yet.
                     </div>
                   ) : (
                     (irlPayments as any[]).slice(0, 20).map((p: any) => (
@@ -2414,13 +2095,7 @@ export default function TalentPortal({
                       >
                         <div className="min-w-0">
                           <div className="text-sm font-semibold text-gray-900 truncate">
-                            {p.source ||
-                              t(
-                                "talentPortal.content.irl.earnings.paymentFallback",
-                                {
-                                  defaultValue: "Payment",
-                                },
-                              )}
+                            {p.source || "Payment"}
                           </div>
                           <div className="text-xs text-gray-600 mt-0.5">
                             {p.paid_at
@@ -2455,12 +2130,8 @@ export default function TalentPortal({
                 }}
               >
                 {createIrlPayoutRequestMutation.isPending
-                  ? t("creatorDashboard.payouts.requesting", {
-                      defaultValue: "Requesting...",
-                    })
-                  : t("creatorDashboard.payouts.cashOutEarnings", {
-                      defaultValue: "Cash Out Earnings",
-                    })}
+                  ? "Requesting…"
+                  : "Cash Out Earnings"}
               </button>
             </div>
           )}
@@ -2471,37 +2142,18 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.portalSettings", {
-                    defaultValue: "Portal Settings",
-                  })}
+                  Portal Settings
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.portalSettingsDescription", {
-                    defaultValue: "Configure your talent portal preferences",
-                  })}
+                  Configure your talent portal preferences
                 </div>
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto">
                 {[
-                  {
-                    id: "profile",
-                    label: t("talentPortal.settingsTabs.profile", {
-                      defaultValue: "Profile",
-                    }),
-                  },
-                  {
-                    id: "payments",
-                    label: t("talentPortal.settingsTabs.payments", {
-                      defaultValue: "Payments",
-                    }),
-                  },
-                  {
-                    id: "privacy",
-                    label: t("talentPortal.settingsTabs.privacy", {
-                      defaultValue: "Privacy",
-                    }),
-                  },
+                  { id: "profile", label: "Profile" },
+                  { id: "payments", label: "Payments" },
+                  { id: "privacy", label: "Privacy" },
                 ].map((it) => {
                   const active = settingsTab === it.id;
                   return (
@@ -2525,15 +2177,10 @@ export default function TalentPortal({
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        {t("talentPortal.settings.profile.title", {
-                          defaultValue: "Profile",
-                        })}
+                        Profile
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {t("talentPortal.settings.profile.subtitle", {
-                          defaultValue:
-                            "This profile is specific to the selected agency.",
-                        })}
+                        This profile is specific to the selected agency.
                       </div>
                     </div>
                     {canSelectAgency && (
@@ -2543,24 +2190,10 @@ export default function TalentPortal({
                           onValueChange={setSelectedAgencyId}
                         >
                           <SelectTrigger className="h-10">
-                            <SelectValue
-                              placeholder={t(
-                                "talentPortal.settings.profile.allAgencies",
-                                {
-                                  defaultValue: "All agencies",
-                                },
-                              )}
-                            />
+                            <SelectValue placeholder="All agencies" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">
-                              {t(
-                                "talentPortal.settings.profile.defaultAgency",
-                                {
-                                  defaultValue: "Default agency",
-                                },
-                              )}
-                            </SelectItem>
+                            <SelectItem value="all">Default agency</SelectItem>
                             {connectedAgencyIds.map((id) => (
                               <SelectItem key={id} value={id}>
                                 {agencyNameById.get(id) || id}
@@ -2575,9 +2208,7 @@ export default function TalentPortal({
                   <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.stageName", {
-                          defaultValue: "Stage Name",
-                        })}
+                        Stage Name
                       </div>
                       <Input
                         value={profileForm.stage_name || ""}
@@ -2591,12 +2222,7 @@ export default function TalentPortal({
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t(
-                          "talentPortal.settings.profile.fields.fullLegalName",
-                          {
-                            defaultValue: "Full Legal Name",
-                          },
-                        )}
+                        Full Legal Name
                       </div>
                       <Input
                         value={profileForm.full_legal_name || ""}
@@ -2609,11 +2235,7 @@ export default function TalentPortal({
                       />
                     </div>
                     <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.email", {
-                          defaultValue: "Email",
-                        })}
-                      </div>
+                      <div className="text-xs text-gray-600 mb-1">Email</div>
                       <Input
                         value={profileForm.email || ""}
                         onChange={(e) =>
@@ -2625,11 +2247,7 @@ export default function TalentPortal({
                       />
                     </div>
                     <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.phone", {
-                          defaultValue: "Phone",
-                        })}
-                      </div>
+                      <div className="text-xs text-gray-600 mb-1">Phone</div>
                       <Input
                         value={profileForm.phone_number || ""}
                         onChange={(e) =>
@@ -2643,9 +2261,7 @@ export default function TalentPortal({
 
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.dateOfBirth", {
-                          defaultValue: "Date of Birth",
-                        })}
+                        Date of Birth
                       </div>
                       <Input
                         type="date"
@@ -2660,9 +2276,7 @@ export default function TalentPortal({
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.roleType", {
-                          defaultValue: "Role Type",
-                        })}
+                        Role Type
                       </div>
                       <Input
                         value={profileForm.role_type || ""}
@@ -2675,11 +2289,7 @@ export default function TalentPortal({
                       />
                     </div>
                     <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.status", {
-                          defaultValue: "Status",
-                        })}
-                      </div>
+                      <div className="text-xs text-gray-600 mb-1">Status</div>
                       <Input
                         value={profileForm.status || ""}
                         onChange={(e) =>
@@ -2692,9 +2302,7 @@ export default function TalentPortal({
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.skinTone", {
-                          defaultValue: "Skin Tone",
-                        })}
+                        Skin Tone
                       </div>
                       <Input
                         value={profileForm.skin_tone || ""}
@@ -2709,9 +2317,7 @@ export default function TalentPortal({
 
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.instagram", {
-                          defaultValue: "Instagram",
-                        })}
+                        Instagram
                       </div>
                       <Input
                         value={profileForm.instagram_handle || ""}
@@ -2725,12 +2331,7 @@ export default function TalentPortal({
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t(
-                          "talentPortal.settings.profile.fields.instagramFollowers",
-                          {
-                            defaultValue: "Instagram Followers",
-                          },
-                        )}
+                        Instagram Followers
                       </div>
                       <Input
                         value={String(profileForm.instagram_followers ?? "")}
@@ -2744,12 +2345,7 @@ export default function TalentPortal({
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t(
-                          "talentPortal.settings.profile.fields.engagementRate",
-                          {
-                            defaultValue: "Engagement Rate",
-                          },
-                        )}
+                        Engagement Rate
                       </div>
                       <Input
                         value={String(profileForm.engagement_rate ?? "")}
@@ -2762,11 +2358,7 @@ export default function TalentPortal({
                       />
                     </div>
                     <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.city", {
-                          defaultValue: "City",
-                        })}
-                      </div>
+                      <div className="text-xs text-gray-600 mb-1">City</div>
                       <Input
                         value={profileForm.city || ""}
                         onChange={(e) =>
@@ -2779,12 +2371,7 @@ export default function TalentPortal({
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
-                        {t(
-                          "talentPortal.settings.profile.fields.stateProvince",
-                          {
-                            defaultValue: "State / Province",
-                          },
-                        )}
+                        State / Province
                       </div>
                       <Input
                         value={profileForm.state_province || ""}
@@ -2797,11 +2384,7 @@ export default function TalentPortal({
                       />
                     </div>
                     <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        {t("talentPortal.settings.profile.fields.country", {
-                          defaultValue: "Country",
-                        })}
-                      </div>
+                      <div className="text-xs text-gray-600 mb-1">Country</div>
                       <Input
                         value={profileForm.country || ""}
                         onChange={(e) =>
@@ -2815,11 +2398,7 @@ export default function TalentPortal({
                   </div>
 
                   <div className="mt-4">
-                    <div className="text-xs text-gray-600 mb-1">
-                      {t("talentPortal.settings.profile.fields.bio", {
-                        defaultValue: "Bio",
-                      })}
-                    </div>
+                    <div className="text-xs text-gray-600 mb-1">Bio</div>
                     <Textarea
                       value={profileForm.bio_notes || ""}
                       onChange={(e) =>
@@ -2838,12 +2417,8 @@ export default function TalentPortal({
                     onClick={saveProfile}
                   >
                     {updateProfileMutation.isPending
-                      ? t("talentPortal.settings.profile.saving", {
-                          defaultValue: "Saving...",
-                        })
-                      : t("talentPortal.settings.profile.save", {
-                          defaultValue: "Save profile",
-                        })}
+                      ? "Saving..."
+                      : "Save profile"}
                   </Button>
                 </Card>
               )}
@@ -2852,31 +2427,19 @@ export default function TalentPortal({
                 <>
                   <Card className="p-6 rounded-xl shadow-sm">
                     <div className="text-sm font-semibold text-gray-900">
-                      {t("talentPortal.settingsTabs.payments", {
-                        defaultValue: "Payment Preferences",
-                      })}
+                      Payment Preferences
                     </div>
 
                     <div className="mt-4 space-y-3">
                       <div className="rounded-xl border border-gray-200 bg-white p-4">
                         <div>
                           <div className="text-sm font-semibold text-gray-900">
-                            {t("creatorDashboard.payouts.taxDocumentation", {
-                              defaultValue: "Tax Documentation",
-                            })}
+                            Tax Documentation
                           </div>
                           <div className="text-xs text-gray-600 mt-1">
                             {(w9Doc as any)?.id && (w9Doc as any)?.created_at
-                              ? t("creatorDashboard.payouts.w9OnFile", {
-                                  defaultValue:
-                                    "W-9 on file • Updated {{date}}",
-                                  date: new Date(
-                                    (w9Doc as any).created_at,
-                                  ).toLocaleDateString(),
-                                })
-                              : t("creatorDashboard.payouts.noW9OnFile", {
-                                  defaultValue: "No W-9 on file",
-                                })}
+                              ? `W-9 on file • Updated ${new Date((w9Doc as any).created_at).toLocaleDateString()}`
+                              : "No W-9 on file"}
                           </div>
                         </div>
 
@@ -2889,10 +2452,7 @@ export default function TalentPortal({
                             if (url) window.open(url, "_blank");
                           }}
                         >
-                          {t("creatorDashboard.payouts.download1099", {
-                            defaultValue: "Download 1099 ({{year}})",
-                            year: taxYear,
-                          })}
+                          Download 1099 ({taxYear})
                         </Button>
                       </div>
                     </div>
@@ -2900,27 +2460,17 @@ export default function TalentPortal({
 
                   <Card className="p-6 rounded-xl shadow-sm">
                     <div className="text-sm font-semibold text-gray-900">
-                      {t("talentPortal.settings.privacy.title", {
-                        defaultValue: "Privacy Controls",
-                      })}
+                      Privacy Controls
                     </div>
 
                     <div className="mt-4 space-y-3">
                       <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
                         <div>
                           <div className="text-sm font-semibold text-gray-900">
-                            {t("talentPortal.settings.privacy.dataUsageTitle", {
-                              defaultValue: "Data Usage for Training",
-                            })}
+                            Data Usage for Training
                           </div>
                           <div className="text-xs text-gray-600 mt-1">
-                            {t(
-                              "talentPortal.settings.privacy.dataUsageDescription",
-                              {
-                                defaultValue:
-                                  "Allow anonymized data for AI model improvement",
-                              },
-                            )}
+                            Allow anonymized data for AI model improvement
                           </div>
                         </div>
                         <Switch
@@ -2944,15 +2494,10 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("agencyConnections.title", {
-                    defaultValue: "Agency Connections",
-                  })}
+                  Agency Connection
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("agencyConnections.subtitle", {
-                    defaultValue:
-                      "Manage agency invitations and your connected agencies.",
-                  })}
+                  Manage agency invitations and your connected agencies.
                 </div>
               </div>
 
@@ -2960,29 +2505,19 @@ export default function TalentPortal({
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      {t("agencyConnections.connectedAgencies", {
-                        defaultValue: "Connected Agencies",
-                      })}
+                      Connected Agencies
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
                       {agencyConnections.length > 0
-                        ? t("agencyConnections.connectedAgenciesDescription", {
-                            defaultValue:
-                              "You can be connected to multiple agencies at once.",
-                          })
-                        : t("agencyConnections.noConnectionsDescription", {
-                            defaultValue:
-                              "You are not connected to any agencies yet.",
-                          })}
+                        ? "You can be connected to multiple agencies at once."
+                        : "You are not connected to any agencies yet."}
                     </div>
                   </div>
                   {(agencyConnectionsLoading ||
                     disconnectAgencyMutation.isPending) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {t("agencyConnections.loading", {
-                        defaultValue: "Loading",
-                      })}
+                      Loading
                     </div>
                   )}
                 </div>
@@ -3083,12 +2618,8 @@ export default function TalentPortal({
                           {String(
                             c?.marketplace_contract?.status || "",
                           ).toLowerCase() === "active"
-                            ? t("agencyConnections.disconnect", {
-                                defaultValue: "Request disconnect",
-                              })
-                            : t("agencyConnections.disconnectNow", {
-                                defaultValue: "Disconnect",
-                              })}
+                            ? "Request disconnect"
+                            : "Disconnect"}
                         </Button>
                       </div>
                     ))}
@@ -3100,23 +2631,16 @@ export default function TalentPortal({
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      {t("agencyConnections.invitations", {
-                        defaultValue: "Invitations",
-                      })}
+                      Invitations
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      {t("agencyConnections.pendingInvitationsDescription", {
-                        defaultValue:
-                          "Respond to pending invitations from agencies.",
-                      })}
+                      Respond to pending invitations from agencies.
                     </div>
                   </div>
                   {agencyInvitesLoading && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {t("agencyConnections.loading", {
-                        defaultValue: "Loading",
-                      })}
+                      Loading
                     </div>
                   )}
                 </div>
@@ -3371,9 +2895,7 @@ export default function TalentPortal({
                   </div>
                 ) : (
                   <div className="mt-6 text-sm text-gray-500">
-                    {t("agencyConnections.noPendingInvitations", {
-                      defaultValue: "No pending invitations right now.",
-                    })}
+                    No pending invitations.
                   </div>
                 )}
               </Card>
@@ -3389,9 +2911,7 @@ export default function TalentPortal({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs sm:text-sm font-medium text-gray-500">
-                        {t("talentPortal.content.ai.overview.activeCampaigns", {
-                          defaultValue: "Active Campaigns",
-                        })}
+                        Active Campaigns
                       </div>
                       <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2 sm:mt-3">
                         {activeDeals.length}
@@ -3407,9 +2927,7 @@ export default function TalentPortal({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs sm:text-sm font-medium text-gray-500">
-                        {t("talentPortal.content.ai.overview.monthlyRevenue", {
-                          defaultValue: "Monthly Revenue",
-                        })}
+                        Monthly Revenue
                       </div>
                       <div className="text-2xl sm:text-4xl font-bold text-gray-900 mt-2">
                         {fmtCents((licensingRevenue as any)?.total_cents)}
@@ -3424,22 +2942,12 @@ export default function TalentPortal({
 
               <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                 <div className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-5">
-                  {t(
-                    "talentPortal.content.ai.overview.latestLicensingRequests",
-                    {
-                      defaultValue: "Latest Licensing Requests",
-                    },
-                  )}
+                  Latest Licensing Requests
                 </div>
                 <div className="space-y-3">
                   {licensingRequests.length === 0 ? (
                     <div className="text-sm text-gray-600 py-8 text-center">
-                      {t(
-                        "talentPortal.content.ai.overview.noLicensingRequests",
-                        {
-                          defaultValue: "No licensing requests yet.",
-                        },
-                      )}
+                      No licensing requests yet.
                     </div>
                   ) : (
                     licensingRequests.slice(0, 8).map((r: any) => (
@@ -3449,29 +2957,17 @@ export default function TalentPortal({
                       >
                         <div className="min-w-0">
                           <div className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                            {r.brand_name ||
-                              t(
-                                "talentPortal.content.ai.overview.brandFallback",
-                                {
-                                  defaultValue: "Brand",
-                                },
-                              )}
+                            {r.brand_name || "Brand"}
                           </div>
                           <div className="text-xs sm:text-sm text-gray-500 truncate">
-                            {r.campaign_title ||
-                              t(
-                                "talentPortal.content.ai.overview.licensingRequestFallback",
-                                {
-                                  defaultValue: "Licensing request",
-                                },
-                              )}
+                            {r.campaign_title || "Licensing request"}
                           </div>
                         </div>
                         <Badge
                           variant="outline"
                           className="capitalize shrink-0 text-xs"
                         >
-                          {formatPortalStatus(r.status || "pending")}
+                          {safeStr(r.status || "pending") || "pending"}
                         </Badge>
                       </div>
                     ))
@@ -3485,15 +2981,11 @@ export default function TalentPortal({
             <div className="space-y-6">
               <Card className="p-4 sm:p-6 rounded-xl shadow-sm">
                 <div className="text-base sm:text-lg font-semibold text-gray-900">
-                  {t("talentPortal.content.ai.likeness.assetLibraryTitle", {
-                    defaultValue: "Likeness Asset Library",
-                  })}
+                  Likeness Asset Library
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.ai.likeness.assetLibrarySubtitle", {
-                    defaultValue:
-                      "Manage your photos, videos, and voice samples used for AI content generation",
-                  })}
+                  Manage your photos, videos, and voice samples used for AI
+                  content generation
                 </div>
 
                 <div className="mt-4 sm:mt-6 grid grid-cols-2 gap-3 sm:gap-6">
@@ -3501,12 +2993,7 @@ export default function TalentPortal({
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="text-xs font-semibold text-gray-500">
-                          {t(
-                            "talentPortal.content.ai.likeness.referencePhotos",
-                            {
-                              defaultValue: "Reference Photos",
-                            },
-                          )}
+                          Reference Photos
                         </div>
                         <div className="text-xl sm:text-2xl font-bold text-gray-900 mt-2">
                           {photoCount}/15
@@ -3532,9 +3019,7 @@ export default function TalentPortal({
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="text-xs font-semibold text-gray-500">
-                          {t("talentPortal.content.ai.likeness.voiceSamples", {
-                            defaultValue: "Voice Samples",
-                          })}
+                          Voice Samples
                         </div>
                         <div className="text-xl sm:text-2xl font-bold text-gray-900 mt-2">
                           {voiceCount}/6
@@ -3568,9 +3053,7 @@ export default function TalentPortal({
                     }
                   >
                     <LucideImage className="h-4 w-4 mr-2" />
-                    {t("talentPortal.content.ai.likeness.managePhotos", {
-                      defaultValue: "Manage Photos",
-                    })}
+                    Manage Photos
                   </Button>
                   <Button
                     className="h-12 rounded-xl bg-[#7C3AED] hover:bg-[#6D28D9] text-white"
@@ -3582,64 +3065,41 @@ export default function TalentPortal({
                     }
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    {t("talentPortal.content.ai.likeness.manageVoice", {
-                      defaultValue: "Manage Voice",
-                    })}
+                    Manage Voice
                   </Button>
                 </div>
               </Card>
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-lg font-semibold text-gray-900">
-                  {t("talentPortal.content.ai.likeness.assetUsageRights", {
-                    defaultValue: "Asset Usage Rights",
-                  })}
+                  Asset Usage Rights
                 </div>
                 <div className="mt-4 space-y-3">
                   <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        {t("talentPortal.content.ai.likeness.photosApproved", {
-                          defaultValue: "Photos: Approved",
-                        })}
+                        Photos: Approved
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {t(
-                          "talentPortal.content.ai.likeness.photosUsageDescription",
-                          {
-                            defaultValue:
-                              "Your photos can be used for AI image generation by licensed brands",
-                          },
-                        )}
+                        Your photos can be used for AI image generation by
+                        licensed brands
                       </div>
                     </div>
                     <Badge className="bg-green-600 text-white border-0">
-                      {t("talentPortal.content.ai.likeness.allBrands", {
-                        defaultValue: "All Brands",
-                      })}
+                      All Brands
                     </Badge>
                   </div>
                   <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 flex items-center justify-between">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        {t("talentPortal.content.ai.likeness.voiceApproved", {
-                          defaultValue: "Voice: Approved",
-                        })}
+                        Voice: Approved
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        {t(
-                          "talentPortal.content.ai.likeness.voiceUsageDescription",
-                          {
-                            defaultValue:
-                              "Voice cloning enabled for approved emotions",
-                          },
-                        )}
+                        Voice cloning enabled for approved emotions
                       </div>
                     </div>
                     <Badge className="bg-purple-600 text-white border-0">
-                      {t("talentPortal.content.ai.likeness.limitedUse", {
-                        defaultValue: "Limited Use",
-                      })}
+                      Limited Use
                     </Badge>
                   </div>
                 </div>
@@ -3647,27 +3107,17 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-lg font-semibold text-gray-900">
-                  {t("talentPortal.content.ai.likeness.portfolioShowcase", {
-                    defaultValue: "Portfolio Showcase",
-                  })}
+                  Portfolio Showcase
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.ai.likeness.portfolioSubtitle", {
-                    defaultValue:
-                      "Approved AI-generated content featuring your likeness",
-                  })}
+                  Approved AI-generated content featuring your likeness
                 </div>
 
                 <div className="mt-4 flex gap-2">
                   <Input
                     value={newPortfolioUrl}
                     onChange={(e) => setNewPortfolioUrl(e.target.value)}
-                    placeholder={t(
-                      "talentPortal.content.ai.likeness.portfolioUrlPlaceholder",
-                      {
-                        defaultValue: "Paste image/video URL",
-                      },
-                    )}
+                    placeholder="Paste image/video URL"
                   />
                   <Button
                     className="shrink-0"
@@ -3682,9 +3132,7 @@ export default function TalentPortal({
                       createPortfolioMutation.isPending
                     }
                   >
-                    {t("talentPortal.content.ai.likeness.add", {
-                      defaultValue: "Add",
-                    })}
+                    Add
                   </Button>
                 </div>
 
@@ -3704,9 +3152,7 @@ export default function TalentPortal({
                           />
                           <div className="absolute top-2 right-2">
                             <Badge className="bg-green-500 text-white border-0 text-[10px] h-5">
-                              {t("talentPortal.content.ai.likeness.live", {
-                                defaultValue: "Live",
-                              })}
+                              Live
                             </Badge>
                           </div>
                           <button
@@ -3716,29 +3162,19 @@ export default function TalentPortal({
                             }
                             disabled={deletePortfolioMutation.isPending}
                           >
-                            {t("talentPortal.content.ai.likeness.remove", {
-                              defaultValue: "Remove",
-                            })}
+                            Remove
                           </button>
                         </div>
                         <div className="p-4">
                           <div className="text-sm font-semibold text-gray-900 truncate">
-                            {it.title ||
-                              t(
-                                "talentPortal.content.ai.likeness.portfolioItemFallback",
-                                {
-                                  defaultValue: "Portfolio Item",
-                                },
-                              )}
+                            {it.title || "Portfolio Item"}
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-sm text-gray-600">
-                      {t("talentPortal.content.ai.likeness.noPortfolioItems", {
-                        defaultValue: "No portfolio items yet.",
-                      })}
+                      No portfolio items yet.
                     </div>
                   )}
                 </div>
@@ -3755,21 +3191,10 @@ export default function TalentPortal({
                     onValueChange={setSelectedBrandId}
                   >
                     <SelectTrigger className="h-10">
-                      <SelectValue
-                        placeholder={t(
-                          "talentPortal.content.ai.campaigns.allBrands",
-                          {
-                            defaultValue: "All brands",
-                          },
-                        )}
-                      />
+                      <SelectValue placeholder="All brands" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">
-                        {t("talentPortal.content.ai.campaigns.allBrands", {
-                          defaultValue: "All brands",
-                        })}
-                      </SelectItem>
+                      <SelectItem value="all">All brands</SelectItem>
                       {brandOptions.map((brand) => (
                         <SelectItem key={brand.id} value={brand.id}>
                           {brand.name}
@@ -3784,12 +3209,7 @@ export default function TalentPortal({
                     <Input
                       value={campaignSearch}
                       onChange={(e) => setCampaignSearch(e.target.value)}
-                      placeholder={t(
-                        "talentPortal.content.ai.campaigns.searchPlaceholder",
-                        {
-                          defaultValue: "Search by brand or campaign",
-                        },
-                      )}
+                      placeholder="Search by brand or campaign"
                       className="pl-10 pr-12"
                     />
                     {campaignSearch.trim() && (
@@ -3797,12 +3217,7 @@ export default function TalentPortal({
                         type="button"
                         onClick={() => setCampaignSearch("")}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-lg text-gray-500 hover:text-gray-700"
-                        aria-label={t(
-                          "talentPortal.content.ai.campaigns.clearSearchAria",
-                          {
-                            defaultValue: "Clear search",
-                          },
-                        )}
+                        aria-label="Clear search"
                       >
                         ×
                       </button>
@@ -3816,24 +3231,16 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-lg font-semibold text-gray-900">
-                  {t("talentPortal.content.ai.overview.activeCampaigns", {
-                    defaultValue: "Active Campaigns",
-                  })}
+                  Active Campaigns
                 </div>
                 <div className="mt-5 space-y-4">
                   {filteredActiveCampaignRowsBySearch.length === 0 ? (
                     <div className="text-sm text-gray-600">
                       {campaignSearch.trim()
-                        ? t("talentPortal.content.ai.campaigns.emptySearch", {
-                            defaultValue: "No campaigns match your search.",
-                          })
+                        ? "No campaigns match your search."
                         : isLoadingCampaignOffers
-                          ? t("talentPortal.content.ai.campaigns.loading", {
-                              defaultValue: "Loading active campaigns...",
-                            })
-                          : t("talentPortal.content.ai.campaigns.emptyNone", {
-                              defaultValue: "No active campaigns yet.",
-                            })}
+                          ? "Loading active campaigns..."
+                          : "No active campaigns yet."}
                     </div>
                   ) : (
                     filteredActiveCampaignRowsBySearch.map((it: any) => {
@@ -3848,12 +3255,7 @@ export default function TalentPortal({
                           : row.type ||
                             row.campaign_title ||
                             row.usage_scope ||
-                            t(
-                              "talentPortal.content.ai.campaigns.campaignFallback",
-                              {
-                                defaultValue: "Campaign",
-                              },
-                            );
+                            "Campaign";
 
                       const startRaw =
                         kind === "offer"
@@ -3898,33 +3300,16 @@ export default function TalentPortal({
                       const activeUntil =
                         derivedEnd && !isNaN(derivedEnd.getTime())
                           ? derivedEnd.toLocaleDateString()
-                          : t(
-                              "talentPortal.content.ai.campaigns.notAvailable",
-                              {
-                                defaultValue: "—",
-                              },
-                            );
+                          : "—";
 
                       const regions =
                         kind === "offer"
                           ? Array.isArray(campaign?.territory)
                             ? campaign.territory.join(", ")
-                            : safeStr(campaign?.territory) ||
-                              t(
-                                "talentPortal.content.ai.campaigns.notAvailable",
-                                {
-                                  defaultValue: "—",
-                                },
-                              )
+                            : safeStr(campaign?.territory) || "—"
                           : Array.isArray(row.regions)
                             ? row.regions.join(", ")
-                            : safeStr(row.regions) ||
-                              t(
-                                "talentPortal.content.ai.campaigns.notAvailable",
-                                {
-                                  defaultValue: "—",
-                                },
-                              );
+                            : safeStr(row.regions) || "—";
 
                       const impressionsWk = fmtCompact(
                         viewsByBrandId[brandId] || 0,
@@ -3961,18 +3346,14 @@ export default function TalentPortal({
                               </div>
                             </div>
                             <Badge className="bg-green-600 text-white border-0">
-                              {t("creatorDashboard.dashboard.active", {
-                                defaultValue: "Active",
-                              })}
+                              Active
                             </Badge>
                           </div>
 
                           <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                             <div className="rounded-xl border bg-white p-3">
                               <div className="text-[11px] text-gray-500">
-                                {t("talentPortal.content.ai.campaigns.amount", {
-                                  defaultValue: "Amount",
-                                })}
+                                Amount
                               </div>
                               <div className="text-sm font-semibold text-gray-900">
                                 {kind === "offer"
@@ -3982,12 +3363,7 @@ export default function TalentPortal({
                             </div>
                             <div className="rounded-xl border bg-white p-3">
                               <div className="text-[11px] text-gray-500">
-                                {t(
-                                  "talentPortal.content.ai.campaigns.activeUntil",
-                                  {
-                                    defaultValue: "Active Until",
-                                  },
-                                )}
+                                Active Until
                               </div>
                               <div className="text-sm font-semibold text-gray-900">
                                 {activeUntil}
@@ -3995,12 +3371,7 @@ export default function TalentPortal({
                             </div>
                             <div className="rounded-xl border bg-white p-3">
                               <div className="text-[11px] text-gray-500">
-                                {t(
-                                  "talentPortal.content.ai.campaigns.regions",
-                                  {
-                                    defaultValue: "Regions",
-                                  },
-                                )}
+                                Regions
                               </div>
                               <div className="text-sm font-semibold text-gray-900">
                                 {regions}
@@ -4017,15 +3388,9 @@ export default function TalentPortal({
           )}
           {tab === "archive" && (
             <Card className="p-6 rounded-xl shadow-sm">
-              <div className="text-xl font-semibold text-gray-900">
-                {t("talentPortal.tabs.archive", {
-                  defaultValue: "Archive",
-                })}
-              </div>
+              <div className="text-xl font-semibold text-gray-900">Archive</div>
               <div className="text-sm text-gray-600 mt-1">
-                {t("talentPortal.content.ai.archive.subtitle", {
-                  defaultValue: "Past campaigns (expired)",
-                })}
+                Past campaigns (expired)
               </div>
               <div className="mt-6 space-y-3">
                 {(() => {
@@ -4061,12 +3426,8 @@ export default function TalentPortal({
                     return (
                       <div className="text-sm text-gray-600">
                         {isLoadingCampaignOffers
-                          ? t("talentPortal.content.ai.archive.loading", {
-                              defaultValue: "Loading past campaigns...",
-                            })
-                          : t("talentPortal.content.ai.archive.empty", {
-                              defaultValue: "No past campaigns yet",
-                            })}
+                          ? "Loading past campaigns..."
+                          : "No past campaigns yet"}
                       </div>
                     );
                   }
@@ -4100,24 +3461,16 @@ export default function TalentPortal({
           {tab === "earnings" && (
             <div className="space-y-6">
               <div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.tabs.earnings", {
-                    defaultValue: "Earnings",
-                  })}
-                </div>
+                <div className="text-2xl font-bold text-gray-900">Earnings</div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.ai.earnings.subtitle", {
-                    defaultValue: "Track your licensing revenue",
-                  })}
+                  Track your licensing revenue
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 <Card className="p-6 rounded-xl shadow-sm">
                   <div className="text-xs font-medium text-gray-500">
-                    {t("talentPortal.content.ai.earnings.monthlyRecurring", {
-                      defaultValue: "Monthly Recurring",
-                    })}
+                    Monthly Recurring
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mt-2">
                     {fmtCents((licensingRevenue as any)?.total_cents)}
@@ -4125,9 +3478,7 @@ export default function TalentPortal({
                 </Card>
                 <Card className="p-6 rounded-xl shadow-sm">
                   <div className="text-xs font-medium text-gray-500">
-                    {t("talentPortal.content.ai.earnings.annualRunRate", {
-                      defaultValue: "Annual Run Rate",
-                    })}
+                    Annual Run Rate
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mt-2">
                     {fmtCents(
@@ -4137,9 +3488,7 @@ export default function TalentPortal({
                 </Card>
                 <Card className="p-6 rounded-xl shadow-sm">
                   <div className="text-xs font-medium text-gray-500">
-                    {t("talentPortal.content.ai.overview.activeCampaigns", {
-                      defaultValue: "Active Campaigns",
-                    })}
+                    Active Campaigns
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mt-2">
                     {activeDeals.length}
@@ -4149,19 +3498,12 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("talentPortal.content.ai.earnings.earningsByCampaign", {
-                    defaultValue: "Earnings by Campaign",
-                  })}
+                  Earnings by Campaign
                 </div>
                 <div className="mt-4 space-y-2">
                   {earningsByCampaign.length === 0 ? (
                     <div className="text-sm text-gray-600 py-6 text-center">
-                      {t(
-                        "talentPortal.content.ai.earnings.noEarningsThisMonth",
-                        {
-                          defaultValue: "No earnings for this month yet.",
-                        },
-                      )}
+                      No earnings for this month yet.
                     </div>
                   ) : (
                     earningsByCampaign.slice(0, 10).map((it: any) => (
@@ -4177,24 +3519,12 @@ export default function TalentPortal({
                           </div>
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-gray-900 truncate">
-                              {it.brand_name ||
-                                t(
-                                  "talentPortal.content.ai.overview.brandFallback",
-                                  {
-                                    defaultValue: "Brand",
-                                  },
-                                )}
+                              {it.brand_name || "Brand"}
                             </div>
                           </div>
                         </div>
                         <div className="text-sm font-semibold text-green-600">
-                          {fmtCents(it.monthly_cents)}
-                          {t(
-                            "talentPortal.content.irl.overview.monthlySuffix",
-                            {
-                              defaultValue: "/mo",
-                            },
-                          )}
+                          {fmtCents(it.monthly_cents)}/mo
                         </div>
                       </div>
                     ))
@@ -4218,43 +3548,26 @@ export default function TalentPortal({
                     </div>
                     <div className="min-w-0">
                       <div className="text-base font-semibold text-gray-900 truncate">
-                        {agencyName ||
-                          t("talentPortal.content.irl.overview.yourAgency", {
-                            defaultValue: "Your Agency",
-                          })}
+                        {agencyName || "Your Agency"}
                       </div>
                       <div className="text-sm text-gray-500 truncate">
-                        {t("talentPortal.content.irl.overview.connectedSince", {
-                          defaultValue: "Connected since {{date}}",
-                          date: new Date().toLocaleDateString(),
-                        })}
+                        Connected since {new Date().toLocaleDateString()}
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">
-                          {t("talentPortal.content.irl.overview.editProfile", {
-                            defaultValue: "Edit Profile",
-                          })}
+                          Edit Profile
                         </button>
                         <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
-                          {t(
-                            "talentPortal.content.irl.overview.manageCampaigns",
-                            {
-                              defaultValue: "Manage Campaigns",
-                            },
-                          )}
+                          Manage Campaigns
                         </button>
                         <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">
-                          {t("talentPortal.content.irl.overview.viewEarnings", {
-                            defaultValue: "View Earnings",
-                          })}
+                          View Earnings
                         </button>
                       </div>
                     </div>
                   </div>
                   <Button variant="outline" className="h-10 px-4 rounded-lg">
-                    {t("common.manage", {
-                      defaultValue: "Manage",
-                    })}
+                    Manage
                   </Button>
                 </div>
               </Card>
@@ -4265,14 +3578,10 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.tabs.analytics", {
-                    defaultValue: "Analytics",
-                  })}
+                  Analytics
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.content.irl.analytics.subtitle", {
-                    defaultValue: "Performance metrics across all campaigns",
-                  })}
+                  Performance metrics across all campaigns
                 </div>
               </div>
 
@@ -4281,9 +3590,7 @@ export default function TalentPortal({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs font-medium text-gray-500">
-                        {t("talentPortal.content.irl.analytics.totalViews", {
-                          defaultValue: "Total Views",
-                        })}
+                        Total Views
                       </div>
                       <div className="text-3xl font-bold text-gray-900 mt-2">
                         {(() => {
@@ -4300,13 +3607,7 @@ export default function TalentPortal({
                             (analytics as any)?.kpis?.views_change_pct ?? 0,
                           );
                           const sign = pct >= 0 ? "+" : "";
-                          return t(
-                            "talentPortal.content.irl.analytics.thisMonth",
-                            {
-                              defaultValue: "{{value}} this month",
-                              value: `${sign}${pct.toFixed(0)}%`,
-                            },
-                          );
+                          return `${sign}${pct.toFixed(0)}% this month`;
                         })()}
                       </div>
                     </div>
@@ -4320,9 +3621,7 @@ export default function TalentPortal({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs font-medium text-gray-500">
-                        {t("talentPortal.content.irl.analytics.totalRevenue", {
-                          defaultValue: "Total Revenue",
-                        })}
+                        Total Revenue
                       </div>
                       <div className="text-3xl font-bold text-gray-900 mt-2">
                         {fmtCents(
@@ -4330,12 +3629,7 @@ export default function TalentPortal({
                         )}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {t(
-                          "talentPortal.content.irl.analytics.monthlyRecurring",
-                          {
-                            defaultValue: "Monthly recurring",
-                          },
-                        )}
+                        Monthly recurring
                       </div>
                     </div>
                     <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
@@ -4347,9 +3641,7 @@ export default function TalentPortal({
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("talentPortal.content.irl.analytics.campaignPerformance", {
-                    defaultValue: "Campaign Performance",
-                  })}
+                  Campaign Performance
                 </div>
                 <div className="mt-4 space-y-3">
                   {Array.isArray((analytics as any)?.campaigns) &&
@@ -4368,21 +3660,10 @@ export default function TalentPortal({
                             </div>
                             <div className="min-w-0">
                               <div className="text-sm font-semibold text-gray-900 truncate">
-                                {c.brand_name ||
-                                  t(
-                                    "talentPortal.content.ai.overview.brandFallback",
-                                    {
-                                      defaultValue: "Brand",
-                                    },
-                                  )}
+                                {c.brand_name || "Brand"}
                               </div>
                               <div className="text-xs text-gray-500 truncate">
-                                {t(
-                                  "talentPortal.content.irl.analytics.aiLicensing",
-                                  {
-                                    defaultValue: "AI Licensing",
-                                  },
-                                )}
+                                AI Licensing
                               </div>
                             </div>
                           </div>
@@ -4390,12 +3671,7 @@ export default function TalentPortal({
                           <div className="flex items-center gap-10">
                             <div>
                               <div className="text-[11px] text-gray-500">
-                                {t(
-                                  "talentPortal.content.irl.analytics.viewsPerWeek",
-                                  {
-                                    defaultValue: "Views/Week",
-                                  },
-                                )}
+                                Views/Week
                               </div>
                               <div className="text-sm font-semibold text-gray-900">
                                 {Number(c.views_week || 0).toLocaleString()}
@@ -4403,12 +3679,7 @@ export default function TalentPortal({
                             </div>
                             <div className="text-right">
                               <div className="text-[11px] text-gray-500">
-                                {t(
-                                  "talentPortal.content.irl.analytics.revenue",
-                                  {
-                                    defaultValue: "Revenue",
-                                  },
-                                )}
+                                Revenue
                               </div>
                               <div className="text-sm font-semibold text-green-600">
                                 {fmtCents(c.revenue_cents)}/mo
@@ -4420,10 +3691,8 @@ export default function TalentPortal({
                     ))
                   ) : (
                     <div className="text-sm text-gray-600 py-8 text-center">
-                      {t("talentPortal.content.irl.analytics.empty", {
-                        defaultValue:
-                          "No analytics metrics yet. Ask your agency to add weekly view metrics.",
-                      })}
+                      No analytics metrics yet. Ask your agency to add weekly
+                      view metrics.
                     </div>
                   )}
                 </div>
@@ -4437,43 +3706,28 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {t("talentPortal.portalSettings", {
-                    defaultValue: "Portal Settings",
-                  })}
+                  Portal Settings
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t("talentPortal.portalSettingsDescription", {
-                    defaultValue: "Configure your talent portal preferences",
-                  })}
+                  Configure your talent portal preferences
                 </div>
               </div>
 
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
-                  {t("talentPortal.settingsTabs.payments", {
-                    defaultValue: "Payment Preferences",
-                  })}
+                  Payment Preferences
                 </div>
 
                 <div className="mt-4 space-y-3">
                   <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
-                        {t("creatorDashboard.payouts.taxDocumentation", {
-                          defaultValue: "Tax Documentation",
-                        })}
+                        Tax Documentation
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
                         {(w9Doc as any)?.id && (w9Doc as any)?.created_at
-                          ? t("creatorDashboard.payouts.w9OnFile", {
-                              defaultValue: "W-9 on file • Updated {{date}}",
-                              date: new Date(
-                                (w9Doc as any).created_at,
-                              ).toLocaleDateString(),
-                            })
-                          : t("creatorDashboard.payouts.noW9OnFile", {
-                              defaultValue: "No W-9 on file",
-                            })}
+                          ? `W-9 on file • Updated ${new Date((w9Doc as any).created_at).toLocaleDateString()}`
+                          : "No W-9 on file"}
                       </div>
                     </div>
 
@@ -4486,10 +3740,7 @@ export default function TalentPortal({
                         if (url) window.open(url, "_blank");
                       }}
                     >
-                      {t("creatorDashboard.payouts.download1099", {
-                        defaultValue: "Download 1099 ({{year}})",
-                        year: taxYear,
-                      })}
+                      Download 1099 ({taxYear})
                     </Button>
                   </div>
                 </div>

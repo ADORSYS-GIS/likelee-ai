@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { base44 } from "@/api/base44Client";
 import {
   StudioAssetPicker,
@@ -41,7 +40,6 @@ import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserFriendlyError } from "@/utils";
 import WalletTransactionsDialog from "@/components/WalletTransactionsDialog";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   generate as studioGenerate,
   getJobStatus,
@@ -253,7 +251,6 @@ const promptSuggestions = [
 ];
 
 const StudioVideo = () => {
-  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -719,7 +716,7 @@ const StudioVideo = () => {
                   fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                 }}
               >
-                {t("studio.video.title")}
+                StudioVideo
               </h1>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div
@@ -739,7 +736,7 @@ const StudioVideo = () => {
                     letterSpacing: "0.05em",
                   }}
                 >
-                  {t("studio.video.engineActive")}
+                  AI Engine Active
                 </span>
               </div>
             </div>
@@ -766,15 +763,9 @@ const StudioVideo = () => {
               <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
                 {credits}
               </span>
-              <span style={{ fontSize: 11, color: "#94A3B8" }}>
-                {t("studio.video.ui.estimatedCostValue", {
-                  count: "",
-                  defaultValue: "Credits",
-                }).replace("{{count}} ", "")}
-              </span>
+              <span style={{ fontSize: 11, color: "#94A3B8" }}>Credits</span>
             </button>
 
-            <LanguageSwitcher />
             <button
               onClick={() => navigate(createPageUrl("StudioSubscribe"))}
               style={{
@@ -790,7 +781,7 @@ const StudioVideo = () => {
                 transition: "all 0.2s",
               }}
             >
-              + {t("studio.video.addCredits")}
+              + Add Credits
             </button>
           </div>
         </div>
@@ -847,10 +838,10 @@ const StudioVideo = () => {
                   fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                 }}
               >
-                {t("studio.video.configuration")}
+                Configuration
               </h2>
               <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.5 }}>
-                {t("studio.video.ui.readyToCreateHint")}
+                Tweak parameters to perfect your AI generation.
               </p>
             </div>
 
@@ -868,7 +859,7 @@ const StudioVideo = () => {
                     letterSpacing: "0.05em",
                   }}
                 >
-                  {t("studio.video.status")}
+                  Select AI Model
                 </label>
                 <Select
                   value={selectedModel}
@@ -988,7 +979,7 @@ const StudioVideo = () => {
                       letterSpacing: "0.05em",
                     }}
                   >
-                    {t("studio.image.ui.visualPrompt")}
+                    Prompt
                   </label>
                   <span
                     style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}
@@ -1236,10 +1227,10 @@ const StudioVideo = () => {
                           color: "#fff",
                         }}
                       >
-                        {t("studio.video.ui.addMedia")}
+                        Add Media
                       </p>
                       <p style={{ margin: 0, fontSize: 11, color: "#94A3B8" }}>
-                        {t("studio.video.ui.addMediaSubtitle")}
+                        Upload or select legacy assets
                       </p>
                     </div>
                   </button>
@@ -1265,7 +1256,7 @@ const StudioVideo = () => {
                         letterSpacing: "0.05em",
                       }}
                     >
-                      {t("studio.video.ui.orientation")}
+                      Orientation
                     </label>
                     <Select value={aspectRatio} onValueChange={setAspectRatio}>
                       <SelectTrigger
@@ -1328,7 +1319,7 @@ const StudioVideo = () => {
                         letterSpacing: "0.05em",
                       }}
                     >
-                      {t("studio.video.ui.duration")}
+                      Duration
                     </label>
                     {selectedModelData?.duration &&
                     selectedModelData.duration.length > 2 ? (
@@ -1445,10 +1436,10 @@ const StudioVideo = () => {
                         cursor: "pointer",
                       }}
                     >
-                      {t("studio.video.ui.generateAudio")}
+                      Generate Audio
                     </Label>
                     <span style={{ fontSize: 11, color: "#94A3B8" }}>
-                      {t("studio.video.ui.generateAudioHint")}
+                      Model-generated synchronized sound
                     </span>
                   </div>
                   <Switch
@@ -1471,7 +1462,7 @@ const StudioVideo = () => {
                       letterSpacing: "0.05em",
                     }}
                   >
-                    {t("studio.video.ui.outputQuality")}
+                    Output Quality
                   </label>
                   <div style={{ display: "flex", gap: 8 }}>
                     {(
@@ -1533,12 +1524,10 @@ const StudioVideo = () => {
               }}
             >
               <span style={{ fontSize: 12, color: "#94A3B8" }}>
-                {t("studio.video.ui.estimatedCost")}
+                Estimated Cost
               </span>
               <span style={{ fontSize: 14, fontWeight: 800, color: "#8B5CF6" }}>
-                {t("studio.video.ui.estimatedCostValue", {
-                  count: currentCost,
-                })}
+                {currentCost} Credits
               </span>
             </div>
             <button
@@ -1572,12 +1561,12 @@ const StudioVideo = () => {
                     size={18}
                     style={{ animation: "spin 1s linear infinite" }}
                   />
-                  {t("studio.video.ui.generating")}
+                  Generating...
                 </>
               ) : (
                 <>
                   <Zap size={18} />
-                  {t("studio.video.ui.generateVideo")}
+                  Generate Video
                 </>
               )}
             </button>
