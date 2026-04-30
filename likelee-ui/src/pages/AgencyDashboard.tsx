@@ -18887,31 +18887,9 @@ export default function AgencyDashboard() {
       ? brandReqs.filter((r: any) => r?.status === "pending").length
       : 0;
 
-    // seen counts from localStorage
-    const regSeen = parseInt(
-      localStorage.getItem("regular_licensing_seen_count") || "0",
-      10,
-    );
-    const brandSeen = parseInt(
-      localStorage.getItem("brand_licensing_seen_count") || "0",
-      10,
-    );
-
-    // If currently on the licensing requests tab, we clear it visually
-    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
-      return 0;
-    }
-
-    const regUnseen = Math.max(0, regPending - regSeen);
-    const brandUnseen = Math.max(0, brandPending - brandSeen);
-
-    return regUnseen + brandUnseen;
-  }, [
-    licensingRequestsCountQuery.data,
-    brandLicenseRequestsQuery.data,
-    activeTab,
-    activeSubTab,
-  ]);
+    // Always show total count - notifications persist until requests are handled
+    return regPending + brandPending;
+  }, [licensingRequestsCountQuery.data, brandLicenseRequestsQuery.data]);
 
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -18995,37 +18973,47 @@ export default function AgencyDashboard() {
           ["sent", "viewed"].includes(o.status),
         ).length
       : 0;
-    const numFeedback = Array.isArray(brandConnectionFeedbackQuery.data)
-      ? brandConnectionFeedbackQuery.data.length
-      : 0;
+
+    // Calculate unviewed feedback count (keyed by user ID to avoid cross-account leakage)
+    const feedbackItems = Array.isArray(brandConnectionFeedbackQuery.data)
+      ? brandConnectionFeedbackQuery.data
+      : [];
+
+    let viewedFeedbackIds: Set<string>;
+    try {
+      if (typeof window !== "undefined") {
+        const userKey = user?.id || "anonymous";
+        const saved = localStorage.getItem(`viewed_feedback_ids_${userKey}`);
+        viewedFeedbackIds = saved ? new Set(JSON.parse(saved)) : new Set();
+      } else {
+        viewedFeedbackIds = new Set();
+      }
+    } catch {
+      viewedFeedbackIds = new Set();
+    }
+
+    const numFeedback = feedbackItems.filter((item: any) => {
+      const feedbackId = String(item?.id || "");
+      return feedbackId && !viewedFeedbackIds.has(feedbackId);
+    }).length;
 
     return { numRequests, numOffers, numFeedback };
   }, [
     brandConnectionRequestsCountQuery.data,
     brandConnectionOffersQuery.data,
     brandConnectionFeedbackQuery.data,
+    user?.id,
   ]);
 
   const pendingBrandConnectionCount = useMemo(() => {
     const { numRequests, numOffers, numFeedback } = brandCounts;
 
-    // Subtract seen counts
-    const saved = localStorage.getItem("brand_connections_seen_counts");
-    const seen = saved ? JSON.parse(saved) : {};
-
-    const diffRequests = Math.max(0, numRequests - (seen.requests || 0));
-    const diffOffers = Math.max(0, numOffers - (seen.offers || 0));
-    const diffFeedback = Math.max(0, numFeedback - (seen.feedback || 0));
-
-    // If currently on the brand-connections tab, we don't want the badge to persist if viewed
-    if (activeTab === "brand-connections") {
-      return 0;
-    }
-
-    return diffRequests + diffOffers + diffFeedback;
-  }, [brandCounts, activeTab]);
+    // Always show total count - notifications persist until requests are handled
+    return numRequests + numOffers + numFeedback;
+  }, [brandCounts]);
 
   const pendingJobInvitesCount = useMemo(() => {
+    // Always show total count - notifications persist until invites are handled
     return Array.isArray(brandConnectionJobInvitesQuery.data)
       ? brandConnectionJobInvitesQuery.data.length
       : 0;
@@ -20235,6 +20223,27 @@ export default function AgencyDashboard() {
     );
   }, [dismissedNotificationIds]);
 
+  // Handler for notification clicks with navigation
+  const handleNotificationClick = (notif: any) => {
+    // Only dismiss immediately for messages and system alerts
+    // Action-required notifications (brand connections, licensing, job invites)
+    // should only disappear when user accepts/declines the request
+    const shouldDismissImmediately =
+      notif.navigateTo === "messages" ||
+      notif.id === "welcome" ||
+      notif.id?.startsWith("system_");
+
+    if (shouldDismissImmediately) {
+      markAsRead(notif.id);
+    }
+
+    // Navigate to the appropriate tab/page
+    if (notif.navigateTo) {
+      setActiveTab(notif.navigateTo);
+      setShowNotifications(false);
+    }
+  };
+
   const systemNotifications = useMemo(() => {
     const alerts = [];
     if (pendingBrandConnectionCount > 0) {
@@ -20276,6 +20285,7 @@ export default function AgencyDashboard() {
         }),
         color: "indigo",
         isSummary: true,
+        navigateTo: "jobs", // Fixed: Navigate to jobs tab for brand connections
       });
     }
     if (pendingLicensingRequestsCount > 0) {
@@ -20296,6 +20306,7 @@ export default function AgencyDashboard() {
         }),
         color: "indigo",
         isSummary: true,
+        navigateTo: "licensing", // Add navigation target
       });
     }
     if (pendingJobInvitesCount > 0) {
@@ -20313,20 +20324,15 @@ export default function AgencyDashboard() {
         }),
         color: "blue",
         isSummary: true,
+        navigateTo: "jobs", // Add navigation target
       });
     }
     alerts.push({
       id: "welcome",
-      title: t("agencyDashboard.header.notifications.systemAlert", {
-        defaultValue: "System Alert",
-      }),
-      message: t("agencyDashboard.header.notifications.systemAlertMessage", {
-        defaultValue:
-          "Your verification was successfully processed. Welcome to Likelee!",
-      }),
-      time: t("agencyDashboard.header.notifications.justNow", {
-        defaultValue: "Just now",
-      }),
+      title: "System Alert",
+      message:
+        "Your verification was successfully processed. Welcome to Likelee!",
+      time: "Just now",
       color: "blue",
     });
     return alerts;
@@ -20334,6 +20340,8 @@ export default function AgencyDashboard() {
     pendingBrandConnectionCount,
     pendingLicensingRequestsCount,
     pendingJobInvitesCount,
+    brandCounts,
+    dismissedNotificationIds,
   ]);
 
   const notifications = useMemo(() => {
@@ -20343,36 +20351,52 @@ export default function AgencyDashboard() {
     }));
   }, [systemNotifications, dismissedNotificationIds]);
 
+  // Clean up old dismissed notification IDs that are no longer relevant
+  useEffect(() => {
+    const currentNotificationIds = systemNotifications.map((n) => n.id);
+    const relevantDismissedIds = dismissedNotificationIds.filter(
+      (id) =>
+        // Keep welcome and system alerts dismissals
+        id === "welcome" ||
+        id.startsWith("system_") ||
+        // Keep if still in current notifications
+        currentNotificationIds.includes(id),
+    );
+
+    // Update if we removed any old IDs
+    if (relevantDismissedIds.length !== dismissedNotificationIds.length) {
+      setDismissedNotificationIds(relevantDismissedIds);
+    }
+  }, [systemNotifications, dismissedNotificationIds]);
+
   const chatUnreadCount = useUnreadMessages(profile?.id);
+
+  // Use chat unread count directly - will be dismissed when clicked
+  const displayChatUnreadCount = chatUnreadCount || 0;
 
   const allNotifications = useMemo(() => {
     const chatNotification =
-      chatUnreadCount > 0
+      displayChatUnreadCount > 0
         ? {
             id: `chat_unread_${chatUnreadCount}`,
-            title: t("agencyDashboard.navigation.messages", {
-              defaultValue: "Messages",
-            }),
-            message: t("agencyDashboard.chat.notifications.unreadMessages", {
-              count: chatUnreadCount,
-              defaultValue: "You have {{count}} unread messages.",
-            }),
-            time: t("agencyDashboard.chat.notifications.newMessage", {
-              defaultValue: "New message",
-            }),
+            title: "Messages",
+            message: `You have ${chatUnreadCount} unread message(s).`,
+            time: "New message",
             color: "blue",
             isSummary: true,
             read: false,
+            navigateTo: "messages", // Add navigation target for messages
           }
         : null;
 
     return chatNotification
       ? [chatNotification, ...notifications]
       : notifications;
-  }, [chatUnreadCount, notifications, t]);
+  }, [chatUnreadCount, notifications]);
 
   const unreadCount =
-    notifications.filter((n: any) => !n.read).length + (chatUnreadCount || 0);
+    notifications.filter((n: any) => !n.read).length +
+    (displayChatUnreadCount || 0);
   const filteredNotifications = allNotifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
@@ -20528,6 +20552,10 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            badges: {
+              "Job Invites":
+                pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            },
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
@@ -20543,7 +20571,7 @@ export default function AgencyDashboard() {
               defaultValue: "Messages",
             }),
             icon: MessageSquare,
-            badge: chatUnreadCount || undefined,
+            badge: displayChatUnreadCount || undefined,
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
@@ -20622,6 +20650,10 @@ export default function AgencyDashboard() {
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            badges: {
+              "Job Invites":
+                pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            },
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
@@ -20638,10 +20670,8 @@ export default function AgencyDashboard() {
             }),
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
-            disabled: agencySubscriptionLocked || !hasProAccess,
-            disabledReason: agencySubscriptionLocked
-              ? "Choose a plan"
-              : "Requires Pro",
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "scouting",
@@ -21449,7 +21479,7 @@ export default function AgencyDashboard() {
                       filteredNotifications.map((notif: any) => (
                         <button
                           key={notif.id}
-                          onClick={() => markAsRead(notif.id as string)}
+                          onClick={() => handleNotificationClick(notif)}
                           className={`w-full text-left p-4 hover:bg-gray-50 transition-colors group flex items-start gap-4 ${!notif.read ? "bg-indigo-50/30" : ""}`}
                         >
                           <div
@@ -21485,25 +21515,15 @@ export default function AgencyDashboard() {
                     <button
                       onClick={() => {
                         toast({
-                          title: t(
-                            "agencyDashboard.header.notifications.viewAll",
-                            { defaultValue: "View all notifications" },
-                          ),
-                          description: t(
-                            "agencyDashboard.header.notifications.viewAllDesc",
-                            {
-                              defaultValue:
-                                "Navigating to full notifications page...",
-                            },
-                          ),
+                          title: "View all notifications",
+                          description:
+                            "Navigating to full notifications page...",
                         });
                         setShowNotifications(false);
                       }}
                       className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
                     >
-                      {t("agencyDashboard.header.notifications.viewAll", {
-                        defaultValue: "View all notifications",
-                      })}
+                      View all notifications
                     </button>
                   </div>
                 </div>
@@ -21897,14 +21917,14 @@ export default function AgencyDashboard() {
                   )}
 
                   {!agencyBillingLoading &&
-                    agencySubscriptionLocked &&
+                    agencyPlanTier === "free" &&
                     !agencyTrialActive && (
                       <Button
                         type="button"
                         className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
                         onClick={() => navigate("/agencysubscribe")}
                       >
-                        {t("agencyDashboard.navigation.choosePlan")}
+                        Upgrade
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     )}
@@ -21963,10 +21983,6 @@ export default function AgencyDashboard() {
                 isLoading={rosterQuery.isLoading}
                 onRosterChanged={() => rosterQuery.refetch()}
                 isSportsAgency={isSportsAgency}
-                initialOpenTalentId={
-                  String(searchParams.get("openTalentId") || "").trim() ||
-                  undefined
-                }
               />
             )}
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
@@ -22089,9 +22105,7 @@ export default function AgencyDashboard() {
             {activeTab === "protection" && (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                 <div className="text-lg font-black text-gray-900">
-                  {t("agencyDashboard.analytics.labels.comingSoon", {
-                    defaultValue: "Coming soon",
-                  })}
+                  Coming soon
                 </div>
                 <div className="text-gray-500 font-medium mt-1">
                   Protection & Usage is coming soon.
@@ -22103,15 +22117,10 @@ export default function AgencyDashboard() {
               (effectiveAgencyMode === "IRL" ? (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                   <div className="text-lg font-black text-gray-900">
-                    {t("agencyDashboard.analytics.labels.comingSoon", {
-                      defaultValue: "Coming soon",
-                    })}
+                    Coming soon
                   </div>
                   <div className="text-gray-500 font-medium mt-1">
-                    {t("agencyDashboard.analytics.irlComingSoonDescription", {
-                      defaultValue:
-                        "Analytics Dashboard for IRL Mode is coming soon.",
-                    })}
+                    Analytics Dashboard for IRL Mode is coming soon.
                   </div>
                 </Card>
               ) : hasProAccess ? (
