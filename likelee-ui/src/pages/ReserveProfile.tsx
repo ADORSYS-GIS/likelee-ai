@@ -1770,13 +1770,14 @@ export default function ReserveProfile() {
                   className="border-2 border-black rounded-none"
                   onClick={() =>
                     window.open(
-                      "/LIKELEE%20AI%20%E2%80%94%20Creator%20%26%20Talent%20Terms%20and%20Conditions.pdf",
+                      "/creator-talent-terms-and-conditions.html",
                       "_blank",
+                      "noopener,noreferrer",
                     )
                   }
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Download
+                  {t("reserveProfile.terms.download", "Download")}
                 </Button>
               </div>
 
@@ -1795,16 +1796,20 @@ export default function ReserveProfile() {
                       htmlFor="terms"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      I agree to the{" "}
+                      {t("reserveProfile.terms.agreeTo", "I agree to the")}{" "}
                       <a
                         href="https://likelee.ai/privacypolicy"
                         target="_blank"
                         rel="noreferrer"
                         className="text-indigo-600 underline"
                       >
-                        Privacy Policy
+                        {t("reserveProfile.terms.policyLink", "Privacy Policy")}
                       </a>{" "}
-                      and Terms of Service.
+                      {t(
+                        "reserveProfile.terms.andTerms",
+                        "and Terms of Service",
+                      )}
+                      .
                     </label>
                     <p className="text-sm text-gray-500">
                       {t(

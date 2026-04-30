@@ -157,7 +157,6 @@ import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
 import { TrialCountdownBanner } from "@/components/brand/TrialCountdownBanner";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { TeamManagementCard } from "@/features/team/TeamManagementCard";
-import { BrandSettingsBilling } from "@/components/brand-dashboard/settings/BrandSettingsBilling";
 import { currencyFormatter } from "@/lib/utils";
 import {
   LineChart,
@@ -170,6 +169,7 @@ import {
 } from "recharts";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ActiveSessionAudit } from "@/components/security/ActiveSessionAudit";
+import { useTranslation } from "react-i18next";
 
 const ensureProtocol = (url: string | null | undefined) => {
   if (!url) return "";
@@ -195,6 +195,7 @@ const formatBillingDate = (value: unknown) => {
 
 const brandPlanSummaryTheme = (
   tier: BrandPlanTier,
+  t: (key: string) => string,
 ): {
   eyebrow: string;
   containerClass: string;
@@ -213,7 +214,7 @@ const brandPlanSummaryTheme = (
   switch (tier) {
     case "basic":
       return {
-        eyebrow: "Starter",
+        eyebrow: t("dashboard.planLabels.starter"),
         containerClass: "border-[#D7E6ED] bg-white",
         bandClass: "bg-gradient-to-r from-[#6CE5E0] to-[#18B1AE]",
         badgeClass:
@@ -225,12 +226,12 @@ const brandPlanSummaryTheme = (
         statValueClass: "text-[#19305A]",
         statMetaClass: "text-[#6F8F99]",
         buttonClass: "bg-[#18B1AE] hover:bg-[#119693] text-white",
-        actionLabel: "Upgrade to Pro",
+        actionLabel: t("dashboard.planActions.upgradeToPro"),
         actionPath: "/brandpricing",
       };
     case "pro":
       return {
-        eyebrow: "Most popular",
+        eyebrow: t("dashboard.planLabels.mostPopular"),
         containerClass: "border-[#2B4B8A] bg-[#17315E]",
         bandClass: "bg-gradient-to-r from-[#1A4E74] to-[#17315E]",
         badgeClass:
@@ -242,12 +243,12 @@ const brandPlanSummaryTheme = (
         statValueClass: "text-white",
         statMetaClass: "text-[#9CB1D5]",
         buttonClass: "bg-white text-[#17315E] hover:bg-[#F4F8FD]",
-        actionLabel: "Talk to Sales",
+        actionLabel: t("dashboard.planActions.talkToSales"),
         actionPath: "/SalesInquiry",
       };
     case "enterprise":
       return {
-        eyebrow: "Full suite",
+        eyebrow: t("dashboard.planLabels.fullSuite"),
         containerClass: "border-[#D9E4FF] bg-white",
         bandClass: "bg-gradient-to-r from-[#89A7FF] to-[#4978FF]",
         badgeClass:
@@ -260,12 +261,12 @@ const brandPlanSummaryTheme = (
         statMetaClass: "text-[#7C88A5]",
         buttonClass:
           "border border-[#D5DDF1] bg-white text-[#253C67] hover:bg-[#F8FAFF]",
-        actionLabel: "Contact Sales",
+        actionLabel: t("dashboard.planActions.contactSales"),
         actionPath: "/SalesInquiry",
       };
     default:
       return {
-        eyebrow: "Free",
+        eyebrow: t("dashboard.planLabels.free"),
         containerClass: "border-slate-200 bg-white",
         bandClass: "bg-gradient-to-r from-slate-300 to-slate-200",
         badgeClass:
@@ -277,7 +278,7 @@ const brandPlanSummaryTheme = (
         statValueClass: "text-slate-900",
         statMetaClass: "text-slate-500",
         buttonClass: "bg-[#F7B750] hover:bg-[#E6A640] text-white",
-        actionLabel: "View Plans",
+        actionLabel: t("dashboard.planActions.viewPlans"),
         actionPath: "/brandpricing",
       };
   }
@@ -306,6 +307,7 @@ const getBrandInitials = (name: string) => {
 // Mock licenses removed - licenses are now loaded from real API data
 
 export default function BrandDashboard() {
+  const { t } = useTranslation();
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -479,9 +481,8 @@ export default function BrandDashboard() {
   const handleAgencyCollaborationEntry = () => {
     if (!brandCanUseCampaignCollaboration) {
       toast({
-        title: "Upgrade to Pro",
-        description:
-          "Agency collaboration, talent browsing, and campaign launch workflows start on the Pro plan.",
+        title: t("dashboard.toasts.upgradeToPro"),
+        description: t("dashboard.toasts.upgradeToProAgencyDesc"),
       });
       navigate("/brandpricing");
       return;
@@ -492,17 +493,18 @@ export default function BrandDashboard() {
   const handleCompanySeatEntry = () => {
     if ((brandSeatLimit ?? 0) === 0) {
       toast({
-        title: "Upgrade required",
-        description:
-          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
+        title: t("dashboard.toasts.upgradeRequired"),
+        description: t("dashboard.toasts.upgradeRequiredSeatsDesc"),
       });
       navigate("/brandpricing");
       return;
     }
     if (brandSeatLimitReached) {
       toast({
-        title: "Seat limit reached",
-        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
+        title: t("dashboard.toasts.seatLimitReached"),
+        description: t("dashboard.toasts.seatLimitReachedDesc", {
+          count: brandSeatLimitLabel,
+        }),
         variant: "destructive" as any,
       });
       return;
@@ -513,21 +515,30 @@ export default function BrandDashboard() {
   };
 
   const formatRelativeTime = (value?: string | null) => {
-    if (!value) return "Just now";
+    if (!value) return t("dashboard.time.justNow");
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "Just now";
+    if (Number.isNaN(date.getTime())) return t("dashboard.time.justNow");
     const diffMs = Date.now() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    if (diffMins < 1) return "Just now";
+    if (diffMins < 1) return t("dashboard.time.justNow");
     if (diffMins < 60)
-      return `${diffMins} minute${diffMins === 1 ? "" : "s"} ago`;
+      return diffMins === 1
+        ? t("dashboard.time.minuteAgo", { count: diffMins })
+        : t("dashboard.time.minutesAgo", { count: diffMins });
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24)
-      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+      return diffHours === 1
+        ? t("dashboard.time.hourAgo", { count: diffHours })
+        : t("dashboard.time.hoursAgo", { count: diffHours });
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+    if (diffDays < 7)
+      return diffDays === 1
+        ? t("dashboard.time.dayAgo", { count: diffDays })
+        : t("dashboard.time.daysAgo", { count: diffDays });
     const diffWeeks = Math.floor(diffDays / 7);
-    return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ago`;
+    return diffWeeks === 1
+      ? t("dashboard.time.weekAgo", { count: diffWeeks })
+      : t("dashboard.time.weeksAgo", { count: diffWeeks });
   };
 
   const resolveJobAssetUrl = (asset: any) => {
@@ -758,7 +769,7 @@ export default function BrandDashboard() {
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
   const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
-  const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
+  const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier, t);
   const brandPlanLabel = formatBrandPlanLabel(brandPlanTier);
   const brandHasStudioAddon = hasBrandStudioAccess(profile);
   const brandSubscriptionStatus = formatBrandSubscriptionStatus(profile);
@@ -2420,23 +2431,39 @@ export default function BrandDashboard() {
   const pendingApprovalCount = 0; // Now calculated from real campaign data
 
   const navigationItems = [
-    { id: "home", label: "Dashboard", icon: LayoutDashboard },
-    { id: "marketplace", label: "Find Creators", icon: Search },
-    { id: "marketplace-agencies", label: "Find Agencies", icon: Building2 },
+    {
+      id: "home",
+      label: t("dashboard.navigation.dashboard"),
+      icon: LayoutDashboard,
+    },
+    {
+      id: "marketplace",
+      label: t("dashboard.navigation.findCreators"),
+      icon: Search,
+    },
+    {
+      id: "marketplace-agencies",
+      label: t("dashboard.navigation.findAgencies"),
+      icon: Building2,
+    },
     {
       id: "campaigns",
-      label: "My Campaigns",
+      label: t("dashboard.navigation.myCampaigns"),
       icon: Target,
     },
     {
       id: "licensing-requests",
-      label: "Licensing Requests",
+      label: t("dashboard.navigation.licensingRequests"),
       icon: FileText,
     },
-    { id: "analytics", label: "Analytics", icon: BarChart3 },
+    {
+      id: "analytics",
+      label: t("dashboard.navigation.analytics"),
+      icon: BarChart3,
+    },
     {
       id: "usage",
-      label: "Usage Rights",
+      label: t("dashboard.navigation.usageRights"),
       icon: FileText,
       badge: (() => {
         const today = new Date();
@@ -2458,9 +2485,19 @@ export default function BrandDashboard() {
       })(),
     },
     ...(canViewSubscriptions
-      ? [{ id: "billing", label: "Billing", icon: CreditCard }]
+      ? [
+          {
+            id: "billing",
+            label: t("dashboard.navigation.billing"),
+            icon: CreditCard,
+          },
+        ]
       : []),
-    { id: "settings", label: "Settings", icon: Settings },
+    {
+      id: "settings",
+      label: t("dashboard.navigation.settings"),
+      icon: Settings,
+    },
   ];
 
   const handleLogoUpload = (e) => {
@@ -2496,7 +2533,7 @@ export default function BrandDashboard() {
   const getBrandTalentEntitlementMessage = (error: unknown) => {
     const message = String((error as any)?.message || error || "").trim();
     if (message.includes("brand_talent_browsing_requires_pro_plan")) {
-      return "Talent browsing, licensing, and creator outreach start on the Pro plan.";
+      return t("dashboard.toasts.upgradeToProTalentDesc");
     }
     return message || "Please try again.";
   };
@@ -2508,9 +2545,8 @@ export default function BrandDashboard() {
     if (!creator) return;
     if (!brandCanUseCampaignCollaboration) {
       toast({
-        title: "Upgrade to Pro",
-        description:
-          "Talent browsing, licensing, and creator outreach start on the Pro plan.",
+        title: t("dashboard.toasts.upgradeToPro"),
+        description: t("dashboard.toasts.upgradeToProTalentDesc"),
       });
       navigate("/brandpricing");
       return;
@@ -2575,11 +2611,13 @@ export default function BrandDashboard() {
 
   const formatLicenseStatus = (value: string) => {
     const normalized = String(value || "pending").toLowerCase();
-    if (normalized === "approved") return "Approved";
+    if (normalized === "approved")
+      return t("campaigns.licensingRequests.status.approved");
     if (normalized === "declined" || normalized === "rejected")
-      return "Declined";
-    if (normalized === "negotiating") return "Negotiating";
-    return "Pending";
+      return t("campaigns.licensingRequests.status.declined");
+    if (normalized === "negotiating")
+      return t("campaigns.licensingRequests.status.negotiating");
+    return t("campaigns.licensingRequests.status.pending");
   };
 
   const handleContractOption = (option) => {
@@ -2594,13 +2632,13 @@ export default function BrandDashboard() {
       });
     } else if (option === "agency") {
       toast({
-        title: "Coming Soon",
+        title: t("campaignsDashboard.quickActions.comingSoon"),
         description: "Agency invitation flow coming soon! (Demo mode)",
       });
       setShowHireModal(false);
     } else if (option === "browse") {
       toast({
-        title: "Coming Soon",
+        title: t("campaignsDashboard.quickActions.comingSoon"),
         description: "Browse agencies feature coming soon! (Demo mode)",
       });
       setShowHireModal(false);
@@ -2668,7 +2706,7 @@ export default function BrandDashboard() {
     if (option === "self") {
       setShowUpdateRequestModal(false);
       toast({
-        title: "Coming Soon",
+        title: t("campaignsDashboard.quickActions.comingSoon"),
         description:
           "Contract update form coming soon! (Demo mode)\nYou'll be able to modify terms, pricing, and deliverables.",
       });
@@ -2736,15 +2774,13 @@ export default function BrandDashboard() {
           onClick={() => setShowEscrowDetails(false)}
           className="border-2 border-gray-300 hover:bg-gray-100 transition-colors"
         >
-          ← Back to Dashboard
+          {t("dashboard.escrow.backToDashboard")}
         </Button>
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-            Escrow Details
+          <h1 className="text-3xl font-bold text-gray-900">
+            {t("dashboard.escrow.title")}
           </h1>
-          <p className="text-gray-600">
-            Securely held payments for your active projects
-          </p>
+          <p className="text-gray-600">{t("dashboard.escrow.subtitle")}</p>
         </div>
       </div>
 
@@ -2756,22 +2792,23 @@ export default function BrandDashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
           <div>
             <h3 className="text-lg font-semibold text-blue-900 uppercase tracking-wider mb-1">
-              Active Escrow
+              {t("dashboard.escrow.activeEscrow")}
             </h3>
             <p className="text-6xl font-black text-blue-600">
               ${(escrowTotal / 1000).toFixed(2)}K
             </p>
             <p className="text-blue-800 mt-2 font-medium">
-              Protecting {escrowProjects.length}{" "}
-              {escrowProjects.length === 1 ? "project" : "projects"}
+              {t("dashboard.escrow.protecting")} {escrowProjects.length}{" "}
+              {escrowProjects.length === 1
+                ? t("dashboard.escrow.project")
+                : t("dashboard.escrow.projects")}
             </p>
           </div>
           <Alert className="bg-white/80 backdrop-blur-sm border border-blue-200 max-w-md shadow-sm">
             <ShieldCheck className="h-5 w-5 text-blue-600" />
             <AlertDescription className="text-blue-900 leading-relaxed">
-              <strong>Guaranteed Payment:</strong> Funds are held in a neutral
-              balance. Approval triggers immediate transfer. All payments
-              require manual approval to ensure quality.
+              <strong>{t("dashboard.escrow.guaranteedPayment")}</strong>{" "}
+              {t("dashboard.escrow.guaranteedPaymentDesc")}
             </AlertDescription>
           </Alert>
         </div>
@@ -2780,26 +2817,28 @@ export default function BrandDashboard() {
       {/* Actionable Project List */}
       <Card className="p-0 bg-white border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="text-xl font-bold text-gray-900">Escrow Inventory</h3>
+          <h3 className="text-xl font-bold text-gray-900">
+            {t("dashboard.escrow.inventory")}
+          </h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 text-left bg-gray-50/30">
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Campaign / Project
+                  {t("dashboard.escrow.table.campaignProject")}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Partner
+                  {t("dashboard.escrow.table.partner")}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
-                  Held Amount
+                  {t("dashboard.escrow.table.heldAmount")}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Status
+                  {t("dashboard.escrow.table.status")}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
-                  Est. Release
+                  {t("dashboard.escrow.table.estRelease")}
                 </th>
               </tr>
             </thead>
@@ -2810,8 +2849,7 @@ export default function BrandDashboard() {
                     colSpan={5}
                     className="px-6 py-12 text-center text-gray-500 italic"
                   >
-                    No active escrow records found. All payments are either
-                    released or pending initial funding.
+                    {t("dashboard.escrow.table.noRecords")}
                   </td>
                 </tr>
               ) : (
@@ -2843,7 +2881,7 @@ export default function BrandDashboard() {
                         </div>
                         <span className="text-sm font-medium text-gray-700">
                           {project.creator === "Unknown"
-                            ? "Collaborator"
+                            ? t("dashboard.escrow.table.collaborator")
                             : project.creator}
                         </span>
                       </div>
@@ -2860,8 +2898,8 @@ export default function BrandDashboard() {
                         }
                       >
                         {project.status === "releasing"
-                          ? "Process Started"
-                          : "Protected"}
+                          ? t("dashboard.escrow.table.processStarted")
+                          : t("dashboard.escrow.table.protected")}
                       </Badge>
                     </td>
                     <td className="px-6 py-5 text-right">
@@ -2887,26 +2925,28 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Welcome back{brand?.name ? `, ${brand.name}` : ""}
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {t("dashboard.home.welcomeBack")}
+            {brand?.name ? `, ${brand.name}` : ""}
           </h1>
-          <p className="text-gray-600">Your creative workspace is ready.</p>
+          <p className="text-gray-600">{t("dashboard.home.workspaceReady")}</p>
         </div>
 
         {/* Top Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Active Projects
+                {t("dashboard.home.stats.activeProjects")}
               </p>
               <Target className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+            <p className="text-4xl font-bold text-gray-900">
               {campaignMetrics.active_projects_count}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              {campaignMetrics.pending_approvals_count} awaiting approval
+              {campaignMetrics.pending_approvals_count}{" "}
+              {t("dashboard.home.stats.awaitingApproval")}
             </p>
           </Card>
 
@@ -2915,30 +2955,32 @@ export default function BrandDashboard() {
             onClick={() => setShowEscrowDetails(true)}
           >
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">In Escrow</p>
+              <p className="text-sm font-medium text-gray-600">
+                {t("dashboard.home.stats.inEscrow")}
+              </p>
               <DollarSign className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+            <p className="text-4xl font-bold text-gray-900">
               ${(escrowTotal / 1000).toFixed(1)}K
             </p>
             <p className="text-sm text-blue-600 mt-1 font-medium">
-              Click for details →
+              {t("dashboard.home.stats.clickForDetails")}
             </p>
           </Card>
 
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Pending Approvals
+                {t("dashboard.home.stats.pendingApprovals")}
               </p>
               <AlertCircle className="w-5 h-5 text-yellow-600" />
             </div>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+            <p className="text-4xl font-bold text-gray-900">
               {campaignMetrics.pending_approvals_count}
             </p>
             {campaignMetrics.pending_approvals_count > 0 && (
               <Badge className="mt-1 bg-yellow-100 text-yellow-700 border border-yellow-300">
-                Action needed
+                {t("dashboard.home.stats.actionNeeded")}
               </Badge>
             )}
           </Card>
@@ -2946,11 +2988,11 @@ export default function BrandDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                This Month's Spend
+                {t("dashboard.home.stats.thisMonthSpend")}
               </p>
               <TrendingUp className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+            <p className="text-4xl font-bold text-gray-900">
               {homeCurrentMonthSpendLabel}
             </p>
             <p className={`text-sm mt-1 ${homeSpendGrowthClass}`}>
@@ -2961,11 +3003,11 @@ export default function BrandDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-600">
-                Avg. Turnaround
+                {t("dashboard.home.stats.avgTurnaround")}
               </p>
               <Clock className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+            <p className="text-4xl font-bold text-gray-900">
               {campaignMetrics.avg_turnaround_hours > 0
                 ? `${campaignMetrics.avg_turnaround_hours}h`
                 : "—"}
@@ -2976,64 +3018,66 @@ export default function BrandDashboard() {
         {/* Quick Actions */}
         <Card className="p-6 bg-white border border-gray-200">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
-            Quick Actions
+            {t("dashboard.home.quickActions.title")}
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid md:grid-cols-5 gap-4">
             <Button
               onClick={() => {
                 goToCampaignsSection();
               }}
-              className="h-20 sm:h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
+              className="h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
             >
-              <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="font-semibold text-xs sm:text-sm">
-                Start New Project
+              <Plus className="w-6 h-6" />
+              <span className="font-semibold">
+                {t("dashboard.home.quickActions.startNewProject")}
               </span>
             </Button>
             <Button
               onClick={() => navigateToSection("marketplace")}
-              className="h-20 sm:h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
-              <Search className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="text-xs sm:text-sm">Browse Creators</span>
+              <Search className="w-6 h-6" />
+              <span>{t("dashboard.home.quickActions.browseCreators")}</span>
             </Button>
             <Button
               onClick={() => {
                 goToCampaignsSection();
               }}
-              className="h-20 sm:h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
-              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="text-xs sm:text-sm">View Active Campaigns</span>
+              <CheckCircle2 className="w-6 h-6" />
+              <span>
+                {t("dashboard.home.quickActions.viewActiveCampaigns")}
+              </span>
             </Button>
             <Button
               onClick={handleAgencyCollaborationEntry}
-              className="h-20 sm:h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
-              <Users className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="text-xs sm:text-sm">Invite Agency</span>
+              <Users className="w-6 h-6" />
+              <span>{t("dashboard.home.quickActions.inviteAgency")}</span>
             </Button>
             <Button
               onClick={() => navigateToSection("marketplace-agencies")}
-              className="h-20 sm:h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
-              <Users className="w-5 h-5 sm:w-6 sm:h-6" />
-              <span className="text-xs sm:text-sm">Browse Agencies</span>
+              <Users className="w-6 h-6" />
+              <span>{t("dashboard.home.quickActions.browseAgencies")}</span>
             </Button>
           </div>
         </Card>
 
         {/* Recent Projects & Activity Feed */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Recent Projects
+              {t("dashboard.home.recentProjects.title")}
             </h3>
             <div className="space-y-3">
               {loadingBrandOfferItems && (
                 <Card className="p-4 bg-gray-50 border border-gray-200">
                   <p className="text-sm text-gray-600">
-                    Loading recent projects...
+                    {t("dashboard.home.recentProjects.loading")}
                   </p>
                 </Card>
               )}
@@ -3068,14 +3112,15 @@ export default function BrandDashboard() {
                         </Badge>
                         {campaign.completed_at && (
                           <Badge className="bg-green-100 text-green-700 border border-green-300">
-                            Done
+                            {t("dashboard.home.recentProjects.done")}
                           </Badge>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600">
-                        Due: {campaign.due_date.toLocaleDateString()}
+                        {t("dashboard.home.recentProjects.due")}:{" "}
+                        {campaign.due_date.toLocaleDateString()}
                       </span>
                       <Button
                         variant="link"
@@ -3095,7 +3140,7 @@ export default function BrandDashboard() {
                           });
                         }}
                       >
-                        View Project →
+                        {t("dashboard.home.recentProjects.viewProject")}
                       </Button>
                     </div>
                   </Card>
@@ -3103,7 +3148,7 @@ export default function BrandDashboard() {
               {!loadingBrandOfferItems && recentProjects.length === 0 && (
                 <Card className="p-4 bg-gray-50 border border-gray-200">
                   <p className="text-sm text-gray-600">
-                    No recent projects yet.
+                    {t("dashboard.home.recentProjects.noProjects")}
                   </p>
                 </Card>
               )}
@@ -3112,20 +3157,20 @@ export default function BrandDashboard() {
 
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
-              Activity Feed
+              {t("dashboard.home.activityFeed.title")}
             </h3>
             <div className="space-y-3">
               {loadingActivityEvents && (
                 <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
                   <p className="text-sm text-gray-600">
-                    Loading activity feed...
+                    {t("dashboard.home.activityFeed.loading")}
                   </p>
                 </div>
               )}
               {!loadingActivityEvents && activityEvents.length === 0 && (
                 <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
                   <p className="text-sm text-gray-600">
-                    No recent activity yet.
+                    {t("dashboard.home.activityFeed.noActivity")}
                   </p>
                 </div>
               )}
@@ -3146,46 +3191,76 @@ export default function BrandDashboard() {
                   const actorLabel =
                     actor ||
                     (actorTypeRaw === "agency"
-                      ? "Agency"
+                      ? t("dashboard.home.activityFeed.agency")
                       : actorTypeRaw === "creator"
-                        ? "Creator"
+                        ? t("dashboard.home.activityFeed.creator")
                         : actorTypeRaw === "brand"
-                          ? "You"
-                          : "Someone");
+                          ? t("dashboard.home.activityFeed.you")
+                          : t("dashboard.home.activityFeed.someone"));
                   const description = String(event?.description || "");
                   const createdAt = formatRelativeTime(event?.created_at);
                   const fallbackActionMap: Record<string, string> = {
-                    "campaign.created": "created a campaign",
-                    "campaign.completed": "marked a campaign as done",
-                    "offer.sent": "sent an offer",
-                    "deliverable.submitted": "submitted a deliverable",
-                    "deliverable.changes_requested":
-                      "requested edits on a deliverable",
-                    "deliverable.approved": "approved a deliverable",
-                    "deliverable.comment": "left feedback on a deliverable",
-                    "job.created": "created a job",
-                    "job.invite.sent": "sent a job invite",
-                    "job.invite.accepted": "accepted a job invite",
-                    "job.invite.declined": "declined a job invite",
-                    "job.application.submitted": "applied for a job",
-                    "connection.request.sent": "sent a connection request",
-                    "connection.request.accepted":
-                      "accepted a connection request",
-                    "connection.request.declined":
-                      "declined a connection request",
+                    "campaign.created": t(
+                      "dashboard.home.activityFeed.actions.campaignCreated",
+                    ),
+                    "campaign.completed": t(
+                      "dashboard.home.activityFeed.actions.campaignCompleted",
+                    ),
+                    "offer.sent": t(
+                      "dashboard.home.activityFeed.actions.offerSent",
+                    ),
+                    "deliverable.submitted": t(
+                      "dashboard.home.activityFeed.actions.deliverableSubmitted",
+                    ),
+                    "deliverable.changes_requested": t(
+                      "dashboard.home.activityFeed.actions.deliverableChangesRequested",
+                    ),
+                    "deliverable.approved": t(
+                      "dashboard.home.activityFeed.actions.deliverableApproved",
+                    ),
+                    "deliverable.comment": t(
+                      "dashboard.home.activityFeed.actions.deliverableComment",
+                    ),
+                    "job.created": t(
+                      "dashboard.home.activityFeed.actions.jobCreated",
+                    ),
+                    "job.invite.sent": t(
+                      "dashboard.home.activityFeed.actions.jobInviteSent",
+                    ),
+                    "job.invite.accepted": t(
+                      "dashboard.home.activityFeed.actions.jobInviteAccepted",
+                    ),
+                    "job.invite.declined": t(
+                      "dashboard.home.activityFeed.actions.jobInviteDeclined",
+                    ),
+                    "job.application.submitted": t(
+                      "dashboard.home.activityFeed.actions.jobApplicationSubmitted",
+                    ),
+                    "connection.request.sent": t(
+                      "dashboard.home.activityFeed.actions.connectionRequestSent",
+                    ),
+                    "connection.request.accepted": t(
+                      "dashboard.home.activityFeed.actions.connectionRequestAccepted",
+                    ),
+                    "connection.request.declined": t(
+                      "dashboard.home.activityFeed.actions.connectionRequestDeclined",
+                    ),
                   };
                   const fallbackAction =
                     fallbackActionMap[eventType] ||
                     (eventType
                       ? eventType.replace(/_/g, " ").replace(/\./g, " ")
-                      : "performed an action");
+                      : t(
+                          "dashboard.home.activityFeed.actions.performedAction",
+                        ));
                   const fallbackDescription = `${actorLabel} ${fallbackAction}.`;
                   let message = description || fallbackDescription;
                   if (actorTypeRaw === "brand" && message) {
+                    const youLabel = t("dashboard.home.activityFeed.you");
                     if (actor && message.startsWith(actor)) {
-                      message = `You${message.slice(actor.length)}`;
+                      message = `${youLabel}${message.slice(actor.length)}`;
                     } else if (message.startsWith("Brand")) {
-                      message = `You${message.slice("Brand".length)}`;
+                      message = `${youLabel}${message.slice("Brand".length)}`;
                     }
                   }
                   return (
@@ -3222,7 +3297,7 @@ export default function BrandDashboard() {
         {/* Spend Chart */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-6">
-            Monthly Spend Trend
+            {t("dashboard.home.monthlySpendTrend")}
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart
@@ -3267,7 +3342,7 @@ export default function BrandDashboard() {
             ← Back to Marketplace
           </Button>
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900">
               {selectedCreator.name}'s Profile
             </h1>
             <p className="text-gray-600">Verified Creator</p>
@@ -3610,7 +3685,7 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Verified Creators Marketplace
           </h1>
           <p className="text-gray-600">
@@ -4097,19 +4172,30 @@ export default function BrandDashboard() {
   const renderCreatorMarketplace = () => {
     return (
       <MarketplaceSection
-        title="Likelee Marketplace"
-        subtitle="Verified creators only"
+        title={t("dashboard.marketplace.search.creatorMarketplaceTitle", {
+          defaultValue: "Creator Marketplace",
+        })}
+        subtitle={t("dashboard.marketplace.search.verifiedCreatorsOnly", {
+          defaultValue: "Verified creators only",
+        })}
         verifiedBadgeLabel=""
+        searchPlaceholder={t(
+          "dashboard.marketplace.search.creatorPlaceholder",
+          {
+            defaultValue: "Search by name, role, bio, or skills...",
+          },
+        )}
         queryScope="brand-creator-marketplace"
         showRequestLicense
         onRequestLicense={(profile, details) =>
           handleOpenLicenseRequest(profile, details)
         }
         actionsLocked={!brandCanUseCampaignCollaboration}
-        lockedTitle="Pro feature preview"
-        lockedDescription="Browse verified creators now. Upgrade to Pro to connect, request licenses, and move from the brief into collaborator selection."
-        lockedCtaLabel="Upgrade to Pro"
+        lockedTitle={t("dashboard.locked.proFeaturePreview")}
+        lockedDescription={t("dashboard.locked.creatorsLockedDesc")}
+        lockedCtaLabel={t("dashboard.locked.upgradeToProCta")}
         onLockedAction={() => navigate("/brandpricing")}
+        translationPrefix="dashboard.marketplace"
       />
     );
   };
@@ -4118,44 +4204,53 @@ export default function BrandDashboard() {
     return (
       <MarketplaceSection
         entityType="agency"
-        title="Agency Marketplace"
-        subtitle="Verified agencies only"
+        title={t("dashboard.marketplace.search.agencyMarketplaceTitle", {
+          defaultValue: "Agency Marketplace",
+        })}
+        subtitle={t("dashboard.marketplace.search.verifiedAgenciesOnly", {
+          defaultValue: "Verified agencies only",
+        })}
         verifiedBadgeLabel=""
-        searchPlaceholder="Search by agency name, type, service, or location..."
+        searchPlaceholder={t("dashboard.marketplace.search.agencyPlaceholder", {
+          defaultValue: "Search by agency name, type, service, or location...",
+        })}
         resultLimit={60}
         queryScope="brand-agency-marketplace"
         actionsLocked={!brandCanUseCampaignCollaboration}
-        lockedTitle="Pro feature preview"
-        lockedDescription="Browse agencies now. Upgrade to Pro to connect with them and unlock campaign collaboration workflows."
-        lockedCtaLabel="Upgrade to Pro"
+        lockedTitle={t("dashboard.locked.proFeaturePreview")}
+        lockedDescription={t("dashboard.locked.agenciesLockedDesc")}
+        lockedCtaLabel={t("dashboard.locked.upgradeToProCta")}
         onLockedAction={() => navigate("/brandpricing")}
+        translationPrefix="dashboard.marketplace"
       />
     );
   };
 
   const renderBrandLicensingRequests = () => (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+      <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-            Licensing Requests
+          <h2 className="text-3xl font-bold text-gray-900">
+            {t("campaigns.licensingRequests.title")}
           </h2>
           <p className="text-gray-600">
-            Track licensing requests you have sent to agencies.
+            {t("campaigns.licensingRequests.subtitle")}
           </p>
         </div>
       </div>
 
       {loadingBrandLicensingRequests && (
         <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600">Loading licensing requests...</p>
+          <p className="text-sm text-gray-600">
+            {t("campaigns.licensingRequests.loading")}
+          </p>
         </Card>
       )}
 
       {!loadingBrandLicensingRequests &&
         brandLicensingRequests.length === 0 && (
-          <Card className="p-4 sm:p-8 text-center text-sm text-gray-600">
-            No licensing requests yet.
+          <Card className="p-8 text-center text-sm text-gray-600">
+            {t("campaigns.licensingRequests.empty")}
           </Card>
         )}
 
@@ -4250,19 +4345,24 @@ export default function BrandDashboard() {
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">
-                      {req?.campaign_title || "Licensing Request"}
+                      {req?.campaign_title ||
+                        t("campaigns.licensingRequests.requestFallback")}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      Agency: {agencyName}
-                      {req?.talent_name ? ` • Talent: ${req.talent_name}` : ""}
+                      {t("campaigns.licensingRequests.agency")}: {agencyName}
+                      {req?.talent_name
+                        ? ` • ${t("campaigns.licensingRequests.talent")}: ${req.talent_name}`
+                        : ""}
                     </p>
                   </div>
                   <Badge className={`border ${statusClass}`}>{status}</Badge>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
+                <div className="grid md:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <p className="text-gray-500">Start Date</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.startDate")}
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {req?.license_start_date
                         ? new Date(req.license_start_date).toLocaleDateString()
@@ -4270,7 +4370,9 @@ export default function BrandDashboard() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500">End Date</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.endDate")}
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {req?.license_end_date
                         ? new Date(req.license_end_date).toLocaleDateString()
@@ -4278,29 +4380,39 @@ export default function BrandDashboard() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Duration (Days)</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.durationDays")}
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {req?.duration_days || "\u2014"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500">License Fee</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.licenseFee")}
+                    </p>
                     <p className="font-semibold text-gray-900">{licenseFee}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Territory</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.territory")}
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {req?.territory || req?.regions || "\u2014"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Exclusivity</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.exclusivity")}
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {req?.exclusivity || req?.usage_scope || "\u2014"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Modifications Allowed</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.modificationsAllowed")}
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {req?.modifications_allowed || "\u2014"}
                     </p>
@@ -4309,7 +4421,9 @@ export default function BrandDashboard() {
 
                 {req?.custom_terms && (
                   <div className="text-sm">
-                    <p className="text-gray-500">Additional Terms</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.additionalTerms")}
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {String(req.custom_terms)}
                     </p>
@@ -4318,19 +4432,25 @@ export default function BrandDashboard() {
 
                 {req?.description && (
                   <div className="text-sm">
-                    <p className="text-gray-500">Description</p>
+                    <p className="text-gray-500">
+                      {t("campaigns.licensingRequests.description")}
+                    </p>
                     <p className="font-semibold text-gray-900">
                       {String(req.description)}
                     </p>
                   </div>
                 )}
 
-                {declineReason && status === "Declined" && (
-                  <div className="text-sm bg-red-50 border border-red-100 rounded-lg p-3 text-red-700 mt-2">
-                    <span className="font-semibold">Decline reason: </span>
-                    {declineReason}
-                  </div>
-                )}
+                {declineReason &&
+                  status ===
+                    t("campaigns.licensingRequests.status.declined") && (
+                    <div className="text-sm bg-red-50 border border-red-100 rounded-lg p-3 text-red-700 mt-2">
+                      <span className="font-semibold">
+                        {t("campaigns.licensingRequests.declineReason")}:{" "}
+                      </span>
+                      {declineReason}
+                    </div>
+                  )}
 
                 <div className="flex flex-wrap gap-3 mt-2">
                   {signingUrl && submission?.status !== "completed" ? (
@@ -4348,7 +4468,7 @@ export default function BrandDashboard() {
                         setBrandSignOpen(true);
                       }}
                     >
-                      Sign Contract
+                      {t("campaigns.licensingRequests.signContract")}
                     </Button>
                   ) : submission?.status === "completed" ? (
                     <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
@@ -4364,12 +4484,12 @@ export default function BrandDashboard() {
                             clipRule="evenodd"
                           />
                         </svg>
-                        Contract Signed
+                        {t("campaigns.licensingRequests.contractSigned")}
                       </p>
                     </div>
                   ) : (
                     <div className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-2 rounded-md text-xs font-medium">
-                      Awaiting contract from agency
+                      {t("campaigns.licensingRequests.awaitingAgencyContract")}
                     </div>
                   )}
                 </div>
@@ -4386,14 +4506,12 @@ export default function BrandDashboard() {
         <div className="space-y-5">
           <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
             <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              Access Restricted
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              {t("campaigns.inbox.accessRestricted")}
             </h2>
-            <p className="text-gray-600">
-              You do not have permission to view the inbox.
-            </p>
+            <p className="text-gray-600">{t("campaigns.inbox.noPermission")}</p>
             <p className="text-sm text-gray-500 mt-2">
-              Contact your team administrator to request access.
+              {t("campaigns.inbox.contactAdmin")}
             </p>
           </Card>
         </div>
@@ -4403,11 +4521,11 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-5">
         <div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">
-            Inbox
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">
+            {t("campaigns.inbox.title")}
           </h2>
           <p className="text-gray-600">
-            View packages and licensing proposals from agencies
+            {t("campaigns.inbox.packagesSubtitle")}
           </p>
         </div>
 
@@ -4420,7 +4538,7 @@ export default function BrandDashboard() {
                 : "text-gray-500"
             }`}
           >
-            Talent Packages ({inboxPackages.length})
+            {t("campaigns.inbox.tabs.talentPackages")} ({inboxPackages.length})
           </button>
           <button
             onClick={() => setInboxSubTab("direct_requests")}
@@ -4430,7 +4548,7 @@ export default function BrandDashboard() {
                 : "text-gray-500"
             }`}
           >
-            Direct Requests
+            {t("campaigns.inbox.tabs.directRequests")}
           </button>
         </div>
 
@@ -4438,13 +4556,15 @@ export default function BrandDashboard() {
           <div className="space-y-4">
             {loadingInboxPackages && (
               <Card className="p-6 bg-white border border-gray-300 rounded-none">
-                <p className="text-sm text-gray-500">Loading packages...</p>
+                <p className="text-sm text-gray-500">
+                  {t("campaigns.inbox.loadingPackages")}
+                </p>
               </Card>
             )}
             {!loadingInboxPackages && inboxPackages.length === 0 && (
               <Card className="p-6 bg-white border border-gray-300 rounded-none">
                 <p className="text-sm text-gray-500">
-                  No packages received yet.
+                  {t("campaigns.inbox.noPackagesReceived")}
                 </p>
               </Card>
             )}
@@ -4476,22 +4596,22 @@ export default function BrandDashboard() {
                           {pkg.title ||
                             pkg.campaign_offers?.offer_title ||
                             pkg.campaign_offers?.brand_campaigns?.name ||
-                            "Talent package"}
+                            t("campaigns.inbox.packageFallbackTitle")}
                         </h3>
                         {String(pkg?.status || "") === "sent" && (
                           <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
-                            New
+                            {t("campaigns.inbox.new")}
                           </Badge>
                         )}
                       </div>
                       <p className="text-sm text-gray-700 font-medium">
-                        From:{" "}
+                        {t("campaigns.inbox.from")}:{" "}
                         {pkg?.agencies?.agency_name ||
                           pkg?.agency_id ||
                           "Agency"}
                       </p>
                       <p className="text-sm text-gray-500">
-                        Sent:{" "}
+                        {t("campaigns.inbox.sent")}:{" "}
                         {pkg?.sent_at
                           ? new Date(String(pkg.sent_at)).toLocaleString()
                           : "—"}
@@ -4504,14 +4624,18 @@ export default function BrandDashboard() {
                               : "text-gray-500"
                           }`}
                         >
-                          Expires:{" "}
+                          {t("campaigns.inbox.expires")}:{" "}
                           {new Date(pkg.expires_at).toLocaleDateString()}
-                          {isExpired && " (Expired)"}
+                          {isExpired
+                            ? ` (${t("campaigns.inbox.expired")})`
+                            : ""}
                         </p>
                       )}
                     </div>
                     <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
-                      {selectedTalentCount} talent
+                      {t("campaigns.inbox.talentCount", {
+                        count: selectedTalentCount,
+                      })}
                     </Badge>
                   </div>
 
@@ -4521,9 +4645,9 @@ export default function BrandDashboard() {
                     </p>
                   )}
 
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex gap-2">
                     <Button
-                      className={`flex-1 min-w-[120px] rounded-none text-sm ${
+                      className={`flex-1 rounded-none ${
                         isExpired || !canManagePayOffers
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-black hover:bg-gray-800 text-white"
@@ -4559,11 +4683,15 @@ export default function BrandDashboard() {
                       }
                     >
                       <CheckCircle2 className="w-4 h-4 mr-2" />
-                      {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
+                      {isDone
+                        ? t("campaigns.inbox.done")
+                        : isExpired
+                          ? t("campaigns.inbox.expired")
+                          : t("campaigns.inbox.markDone")}
                     </Button>
                     <Button
                       variant="outline"
-                      className="flex-1 min-w-[120px] border border-gray-300 rounded-none text-sm"
+                      className="border border-gray-300 rounded-none"
                       disabled={isDone || isExpired}
                       onClick={() => {
                         const token = pkg?.meta?.agency_package_token;
@@ -4611,6 +4739,14 @@ export default function BrandDashboard() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
+                    {canManagePayOffers && (
+                      <Button
+                        variant="outline"
+                        className="border border-gray-300 rounded-none"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </Card>
               );
@@ -4620,11 +4756,10 @@ export default function BrandDashboard() {
           <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
             <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              No direct requests yet
+              {t("campaigns.inbox.noRequests")}
             </h3>
             <p className="text-lg text-gray-600">
-              Agencies can send you direct licensing requests for specific
-              campaigns
+              {t("campaigns.inbox.noRequestsDescription")}
             </p>
           </Card>
         )}
@@ -4786,15 +4921,41 @@ export default function BrandDashboard() {
   };
   const formatHubDate = (value: unknown) => {
     const raw = String(value || "").trim();
-    if (!raw) return "N/A";
+    if (!raw) {
+      return t("campaigns.campaignDetails.notAvailable", {
+        defaultValue: "N/A",
+      });
+    }
     const dt = new Date(raw);
-    if (Number.isNaN(dt.getTime())) return raw;
-    return dt.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    if (Number.isNaN(dt.getTime())) {
+      return t("campaigns.campaignDetails.invalidDate", {
+        defaultValue: "Invalid Date",
+      });
+    }
+    return dt.toLocaleDateString();
   };
+  const formatHubDateTime = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) {
+      return t("campaigns.campaignDetails.notAvailable", {
+        defaultValue: "N/A",
+      });
+    }
+    const dt = new Date(raw);
+    if (Number.isNaN(dt.getTime())) {
+      return t("campaigns.campaignDetails.invalidDate", {
+        defaultValue: "Invalid Date",
+      });
+    }
+    return dt.toLocaleString();
+  };
+  const formatCampaignProgressStatus = (statusRaw: unknown) =>
+    t(
+      `campaigns.campaignDetails.status.${String(statusRaw || "in_progress").toLowerCase()}`,
+      {
+        defaultValue: String(statusRaw || "in_progress").replace(/_/g, " "),
+      },
+    );
   const contractStatusBadgeClass = (statusRaw: unknown) => {
     const status = String(statusRaw || "").toLowerCase();
     if (status === "signed") {
@@ -4812,9 +4973,14 @@ export default function BrandDashboard() {
     return "inline-flex min-w-28 items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-gray-700 font-semibold";
   };
   const formatContractStatusLabel = (statusRaw: unknown) =>
-    String(statusRaw || "sent")
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (m) => m.toUpperCase());
+    t(
+      `campaigns.contractHub.status.${String(statusRaw || "sent").toLowerCase()}`,
+      {
+        defaultValue: String(statusRaw || "sent")
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (m) => m.toUpperCase()),
+      },
+    );
 
   const handleDeliverableReview = async (
     offerId: string,
@@ -4951,23 +5117,27 @@ export default function BrandDashboard() {
   const renderCampaignContractHub = () => (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">
-          Contract Hub
+        <h2 className="text-3xl font-bold text-gray-900 mb-1">
+          {t("campaigns.contractHub.title")}
         </h2>
-        <p className="text-gray-600">Campaign contracts and signing status.</p>
+        <p className="text-gray-600">
+          {t("campaigns.contractHub.campaignContractsStatus")}
+        </p>
       </div>
       <div className="space-y-3">
         {loadingBrandOfferItems ? (
           <Card className="p-6 bg-white border border-gray-300 rounded-none">
             <div className="flex items-center gap-3">
               <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
-              <p className="text-sm text-gray-500">Loading offers...</p>
+              <p className="text-sm text-gray-500">
+                {t("campaigns.contractHub.loadingOffers")}
+              </p>
             </div>
           </Card>
         ) : brandOfferItems.length === 0 ? (
           <Card className="p-6 bg-white border border-gray-300 rounded-none">
             <p className="text-sm text-gray-500">
-              No offer contracts available yet.
+              {t("campaigns.contractHub.noOfferContracts")}
             </p>
           </Card>
         ) : null}
@@ -5009,8 +5179,7 @@ export default function BrandDashboard() {
               {isFullySigned && offer?.payment_status !== "paid" && (
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                   <span className="text-amber-700 text-xs font-semibold">
-                    ⏳ Contract signed. Payment required before deliverables can
-                    start.
+                    ⏳ {t("campaigns.contractHub.paymentRequiredBanner")}
                   </span>
                   {canManagePayOffers ? (
                     <Button
@@ -5028,9 +5197,10 @@ export default function BrandDashboard() {
                             window.location.href = data.url;
                           } else {
                             toast({
-                              title: "Payment Error",
+                              title: t("campaigns.contractHub.paymentError"),
                               description:
-                                data?.message || "Could not start checkout.",
+                                data?.message ||
+                                t("campaigns.contractHub.paymentError"),
                               variant: "destructive",
                             });
                           }
@@ -5038,11 +5208,15 @@ export default function BrandDashboard() {
                           const msg = String(e?.message || "");
                           toast({
                             title: msg.includes("no_talents_assigned")
-                              ? "Talent assignment required"
-                              : "Payment Error",
+                              ? t(
+                                  "campaigns.contractHub.talentAssignmentRequired",
+                                )
+                              : t("campaigns.contractHub.paymentError"),
                             description: msg.includes("no_talents_assigned")
-                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                              : msg || "Could not start checkout.",
+                              ? t(
+                                  "campaigns.contractHub.talentAssignmentRequiredDescription",
+                                )
+                              : msg || t("campaigns.contractHub.paymentError"),
                             variant: "destructive" as any,
                           });
                         } finally {
@@ -5051,12 +5225,12 @@ export default function BrandDashboard() {
                       }}
                     >
                       {payingOfferId === offerId
-                        ? "Redirecting…"
-                        : "💳 Pay Offer"}
+                        ? t("campaigns.contractHub.redirecting")
+                        : `💳 ${t("campaigns.contractHub.payOffer")}`}
                     </Button>
                   ) : (
                     <span className="ml-auto text-xs text-amber-600 italic">
-                      View only - payment requires admin or project manager role
+                      {t("campaigns.contractHub.viewOnlyRequiresRole")}
                     </span>
                   )}
                 </div>
@@ -5064,14 +5238,15 @@ export default function BrandDashboard() {
               {isFullySigned && offer?.payment_status === "paid" && (
                 <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
                   <span className="text-emerald-700 text-xs font-semibold">
-                    ✅ Payment confirmed — deliverables can be submitted.
+                    ✅ {t("campaigns.deliverables.status.paymentConfirmed")}
                   </span>
                 </div>
               )}
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <p className="font-semibold text-gray-900">
-                    {offer?.brand_campaigns?.name || "Campaign offer"}
+                    {offer?.brand_campaigns?.name ||
+                      t("campaigns.contractHub.campaignOfferFallback")}
                   </p>
                   <p className="text-xs text-gray-500">
                     {String(offer?.status || "sent").replace(/_/g, " ")}
@@ -5086,7 +5261,9 @@ export default function BrandDashboard() {
                     await loadOfferHubDetails(next);
                   }}
                 >
-                  {expanded ? "Hide" : "View Contracts"}
+                  {expanded
+                    ? t("campaigns.contractHub.hide")
+                    : t("campaigns.contractHub.viewContracts")}
                 </Button>
               </div>
               {expanded && (
@@ -5095,7 +5272,7 @@ export default function BrandDashboard() {
                     <div className="p-8 text-center bg-white">
                       <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
                       <p className="text-sm text-gray-500 font-medium">
-                        Loading contracts...
+                        {t("campaigns.contractHub.loading")}
                       </p>
                     </div>
                   ) : selectedOfferHubContracts.filter(
@@ -5105,10 +5282,10 @@ export default function BrandDashboard() {
                     <div className="p-8 text-center bg-white">
                       <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
                       <p className="text-sm text-gray-500 font-medium">
-                        No active contracts
+                        {t("campaigns.contractHub.noActiveContracts")}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        Contracts requiring your attention will appear here.
+                        {t("campaigns.contractHub.contractsAttentionHere")}
                       </p>
                     </div>
                   ) : (
@@ -5132,7 +5309,7 @@ export default function BrandDashboard() {
                         return (
                           <div
                             key={String(contract?.id)}
-                            className="bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50/50 transition-colors"
+                            className="bg-white p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
                           >
                             <div className="flex items-center gap-4">
                               <div
@@ -5168,7 +5345,7 @@ export default function BrandDashboard() {
                                   </span>
                                   {contract?.updated_at && (
                                     <span className="text-xs text-gray-500">
-                                      Updated{" "}
+                                      {t("campaigns.contractHub.updatedLabel")}{" "}
                                       {new Date(
                                         contract.updated_at,
                                       ).toLocaleDateString()}
@@ -5242,19 +5419,33 @@ export default function BrandDashboard() {
       </div>
       <Card className="p-4 bg-white border border-gray-300 rounded-none">
         {loadingContractHubRows ? (
-          <p className="text-sm text-gray-500">Loading submissions</p>
+          <p className="text-sm text-gray-500">
+            {t("campaigns.contractHub.loading")}
+          </p>
         ) : contractHubRows.length === 0 ? (
-          <p className="text-sm text-gray-500">No contract submissions yet.</p>
+          <p className="text-sm text-gray-500">
+            {t("campaigns.contractHub.noContractSubmissions")}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm text-left text-gray-700">
               <thead className="border-b border-gray-200 text-gray-800">
                 <tr>
-                  <th className="px-2 py-2">Campaign Name</th>
-                  <th className="px-2 py-2">Template</th>
-                  <th className="px-2 py-2">Status</th>
-                  <th className="px-2 py-2">Sent Date</th>
-                  <th className="px-2 py-2">Actions</th>
+                  <th className="px-2 py-2">
+                    {t("campaigns.contractHub.table.campaignName")}
+                  </th>
+                  <th className="px-2 py-2">
+                    {t("campaigns.contractHub.table.template")}
+                  </th>
+                  <th className="px-2 py-2">
+                    {t("campaigns.contractHub.table.status")}
+                  </th>
+                  <th className="px-2 py-2">
+                    {t("campaigns.contractHub.table.sentDate")}
+                  </th>
+                  <th className="px-2 py-2">
+                    {t("campaigns.contractHub.table.actions")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -5296,8 +5487,8 @@ export default function BrandDashboard() {
                       <div className="flex items-center gap-3">
                         <button
                           className="text-blue-600 hover:text-blue-700"
-                          title="Resend"
-                          aria-label="Resend"
+                          title={t("campaigns.contractHub.actions.resend")}
+                          aria-label={t("campaigns.contractHub.actions.resend")}
                           type="button"
                           onClick={async () => {
                             try {
@@ -5350,8 +5541,10 @@ export default function BrandDashboard() {
                         </button>
                         <button
                           className="text-red-600 hover:text-red-700"
-                          title="Archive"
-                          aria-label="Archive"
+                          title={t("campaigns.contractHub.actions.archive")}
+                          aria-label={t(
+                            "campaigns.contractHub.actions.archive",
+                          )}
                           type="button"
                           onClick={async () => {
                             try {
@@ -5386,8 +5579,10 @@ export default function BrandDashboard() {
                             target="_blank"
                             rel="noreferrer"
                             download
-                            title="Download"
-                            aria-label="Download"
+                            title={t("campaigns.contractHub.actions.download")}
+                            aria-label={t(
+                              "campaigns.contractHub.actions.download",
+                            )}
                             className="text-blue-700 hover:text-blue-800"
                           >
                             <Download className="h-4 w-4" />
@@ -5408,23 +5603,25 @@ export default function BrandDashboard() {
   const renderCampaignDeliverablesHub = () => (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 font-syne tracking-tight">
-          Deliverables
+        <h2 className="text-3xl font-black text-gray-900 font-syne tracking-tight">
+          {t("campaigns.deliverables.title")}
         </h2>
         <p className="text-gray-500 font-medium mt-1">
-          Review and approve content from your campaign creators.
+          {t("campaigns.deliverables.subtitle")}
         </p>
       </div>
       <div className="space-y-4">
         {loadingBrandOfferItems ? (
           <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
             <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
-            <p className="text-sm text-gray-500">Loading campaigns...</p>
+            <p className="text-sm text-gray-500">
+              {t("campaigns.campaignDetails.loadingCampaigns")}
+            </p>
           </Card>
         ) : brandOfferItems.length === 0 ? (
           <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
             <p className="text-sm text-gray-500">
-              No active campaigns available.
+              {t("campaigns.campaignDetails.noActiveCampaigns")}
             </p>
           </Card>
         ) : null}
@@ -5439,7 +5636,7 @@ export default function BrandDashboard() {
               const name =
                 offer?.brand_campaigns?.name ||
                 offer?.campaign_name ||
-                "Campaign Asset Submission";
+                t("campaigns.campaignDetails.campaignAssetSubmission");
               if (!acc[key]) {
                 acc[key] = {
                   campaignId: key,
@@ -5516,40 +5713,44 @@ export default function BrandDashboard() {
                 className="rounded-2xl border-2 border-sky-300/80 bg-white/70 backdrop-blur-xl shadow-sm ring-1 ring-sky-100/70 overflow-hidden transition-shadow hover:shadow-md"
               >
                 <div
-                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer hover:bg-white/80 transition-colors"
+                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
                   onClick={() => {
                     setExpandedCampaignHubId(
                       campaignExpanded ? "" : campaignId,
                     );
                   }}
                 >
-                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <div className="p-2 sm:p-3 rounded-xl bg-gray-100 text-gray-600 flex-shrink-0">
-                      <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-gray-100 text-gray-600">
+                      <Briefcase className="w-5 h-5" />
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-gray-900 truncate">
-                        {group?.campaignName || "Campaign"}
+                    <div>
+                      <h3 className="font-bold text-gray-900">
+                        {group?.campaignName ||
+                          t("campaigns.campaignDetails.campaign")}
                       </h3>
                       <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
-                        {group?.offers?.length || 0} collaborators
+                        {group?.offers?.length || 0}{" "}
+                        {t("campaigns.deliverables.badges.collaborators")}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
-                      {aggregate.reviewed} reviewed
+                  <div className="flex items-center gap-4">
+                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
+                      {aggregate.reviewed}{" "}
+                      {t("campaigns.deliverables.badges.reviewed")}
                     </Badge>
-                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
-                      {aggregate.approved} approved
+                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                      {aggregate.approved}{" "}
+                      {t("campaigns.deliverables.badges.approved")}
                     </Badge>
-                    <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                       {completionPct}%
                     </Badge>
                     {campaignExpanded ? (
-                      <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
                     )}
                   </div>
                 </div>
@@ -5631,7 +5832,7 @@ export default function BrandDashboard() {
                             className="rounded-xl border border-sky-200/60 bg-white/60 backdrop-blur-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md"
                           >
                             <div
-                              className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 cursor-pointer hover:bg-white/80 transition-colors"
+                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
                               onClick={async (event) => {
                                 event.stopPropagation();
                                 const next = expanded ? "" : offerId;
@@ -5639,15 +5840,15 @@ export default function BrandDashboard() {
                                 await loadOfferHubDetails(next);
                               }}
                             >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <Avatar className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-9 h-9">
                                   <AvatarImage src={collaboratorAvatar} />
                                   <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
                                     {collaboratorInitial}
                                   </AvatarFallback>
                                 </Avatar>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-bold text-gray-900 truncate">
+                                <div>
+                                  <p className="text-sm font-bold text-gray-900">
                                     {collaboratorName}
                                   </p>
                                   <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
@@ -5656,21 +5857,27 @@ export default function BrandDashboard() {
                                         offer?.target_type || "",
                                       ).toLowerCase();
                                       if (targetType === "agency") {
-                                        return "Creator • Agency";
+                                        return t(
+                                          "campaigns.campaignDetails.creatorAgency",
+                                        );
                                       }
-                                      return "Creator • Creator";
+                                      return t(
+                                        "campaigns.campaignDetails.creatorCreator",
+                                      );
                                     })()}
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
-                                  {reviewedCount} reviewed
+                              <div className="flex items-center gap-3">
+                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
+                                  {reviewedCount}{" "}
+                                  {t("campaigns.deliverables.badges.reviewed")}
                                 </Badge>
-                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
-                                  {approvedCount} approved
+                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                                  {approvedCount}{" "}
+                                  {t("campaigns.deliverables.badges.approved")}
                                 </Badge>
-                                <Badge className="rounded-full px-2 sm:px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                                   {completionPct}%
                                 </Badge>
                                 {expanded ? (
@@ -5686,15 +5893,16 @@ export default function BrandDashboard() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
                                   <div className="bg-white border border-gray-200 p-4">
                                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                                      Campaign
+                                      {t("campaigns.campaignDetails.campaign")}
                                     </p>
                                     <p className="text-sm font-bold text-gray-900 mt-1">
-                                      {group?.campaignName || "Campaign"}
+                                      {group?.campaignName ||
+                                        t("campaigns.campaignDetails.campaign")}
                                     </p>
                                   </div>
                                   <div className="bg-white border border-gray-200 p-4">
                                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                                      Progress
+                                      {t("campaigns.campaignDetails.progress")}
                                     </p>
                                     <p className="text-sm font-bold text-gray-900 mt-1">
                                       {approvedCount}/
@@ -5703,7 +5911,9 @@ export default function BrandDashboard() {
                                   </div>
                                   <div className="bg-white border border-gray-200 p-4">
                                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                                      Completion
+                                      {t(
+                                        "campaigns.campaignDetails.completion",
+                                      )}
                                     </p>
                                     <p className="text-sm font-bold text-gray-900 mt-1">
                                       {completionPct}%
@@ -5712,7 +5922,7 @@ export default function BrandDashboard() {
                                 </div>
                                 <div className="bg-white border border-gray-200 p-4 mb-5">
                                   <p className="text-xs font-semibold text-gray-700 mb-2">
-                                    Progress
+                                    {t("campaigns.campaignDetails.progress")}
                                   </p>
                                   <Progress
                                     value={completionPct}
@@ -5720,18 +5930,21 @@ export default function BrandDashboard() {
                                   />
                                   <p className="text-[11px] text-gray-500 mt-2">
                                     {approvedCount}/{expectedDeliverables || 0}{" "}
-                                    deliverables approved
+                                    {t(
+                                      "campaigns.campaignDetails.deliverablesApproved",
+                                    )}
                                   </p>
                                 </div>
                                 <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
                                   <p className="text-sm font-semibold text-amber-900">
-                                    Approving any 1 deliverable triggers escrow
-                                    payout (once).
+                                    {t(
+                                      "campaigns.campaignDetails.approvingDeliverableTriggers",
+                                    )}
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
-                                    After you approve a deliverable, Downloading
-                                    will be enabled. Approvals are final and
-                                    can’t be undone.
+                                    {t(
+                                      "campaigns.campaignDetails.approvalsAreFinal",
+                                    )}
                                   </p>
                                 </div>
                                 {loadingOfferHubDetails &&
@@ -5739,7 +5952,9 @@ export default function BrandDashboard() {
                                   <div className="py-12 text-center">
                                     <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
                                     <p className="text-sm text-gray-500 font-medium">
-                                      Loading deliverables...
+                                      {t(
+                                        "campaigns.campaignDetails.loadingDeliverables",
+                                      )}
                                     </p>
                                   </div>
                                 ) : selectedOfferHubDeliverables.length ===
@@ -5747,7 +5962,9 @@ export default function BrandDashboard() {
                                   <div className="py-12 text-center">
                                     <ImageIcon className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                                     <p className="text-sm text-gray-400 font-medium italic">
-                                      No content has been submitted yet.
+                                      {t(
+                                        "campaigns.campaignDetails.noContentSubmitted",
+                                      )}
                                     </p>
                                   </div>
                                 ) : (
@@ -5859,13 +6076,28 @@ export default function BrandDashboard() {
                                                   }`}
                                                 >
                                                   {del.status === "submitted"
-                                                    ? "New"
+                                                    ? t(
+                                                        "campaigns.deliverables.tags.new",
+                                                      )
                                                     : del.status ===
                                                         "brand_approved"
-                                                      ? "approved"
-                                                      : del.status.replace(
-                                                          /_/g,
-                                                          " ",
+                                                      ? t(
+                                                          "campaigns.deliverables.tags.approved",
+                                                        )
+                                                      : t(
+                                                          `campaigns.deliverables.tags.${String(
+                                                            del.status || "",
+                                                          ).toLowerCase()}`,
+                                                          {
+                                                            defaultValue:
+                                                              String(
+                                                                del.status ||
+                                                                  "",
+                                                              ).replace(
+                                                                /_/g,
+                                                                " ",
+                                                              ),
+                                                          },
                                                         )}
                                                 </Badge>
                                               </div>
@@ -5898,8 +6130,12 @@ export default function BrandDashboard() {
                                                   }}
                                                 >
                                                   {isApproved
-                                                    ? "Approved"
-                                                    : "Approve"}
+                                                    ? t(
+                                                        "campaigns.campaignDetails.approved",
+                                                      )
+                                                    : t(
+                                                        "campaigns.campaignDetails.approve",
+                                                      )}
                                                 </Button>
                                                 <Button
                                                   size="sm"
@@ -5919,7 +6155,9 @@ export default function BrandDashboard() {
                                                     );
                                                   }}
                                                 >
-                                                  Request changes
+                                                  {t(
+                                                    "campaigns.campaignDetails.requestChanges",
+                                                  )}
                                                 </Button>
                                               </div>
                                             </div>
@@ -5950,9 +6188,8 @@ export default function BrandDashboard() {
       const campaignId = String(campaign?.brand_campaign_id || "").trim();
       if (!campaignId) {
         toast({
-          title: "Campaign ID missing",
-          description:
-            "This offer is not linked to a campaign yet. Please create a campaign first.",
+          title: t("dashboard.toasts.campaignIdMissing"),
+          description: t("dashboard.toasts.campaignIdMissingDesc"),
           variant: "destructive" as any,
         });
         return;
@@ -6208,11 +6445,13 @@ export default function BrandDashboard() {
               onClick={() => setSelectedCampaign(null)}
               className="border-2 border-gray-300"
             >
-              ← Back to Campaigns
+              {t("campaigns.campaignDetails.backToCampaigns")}
             </Button>
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>Campaign not found.</AlertDescription>
+              <AlertDescription>
+                {t("campaigns.campaignDetails.campaignNotFound")}
+              </AlertDescription>
             </Alert>
           </div>
         );
@@ -6264,13 +6503,16 @@ export default function BrandDashboard() {
                 onClick={() => setShowBriefDetails(false)}
                 className="border-2 border-gray-300"
               >
-                ← Back to Project
+                {t("campaigns.campaignDetails.backToProject")}
               </Button>
               <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-                  {campaign.name} - Brief & Contract
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {campaign.name} -{" "}
+                  {t("campaigns.campaignDetails.briefAndContract")}
                 </h1>
-                <p className="text-gray-600">Detailed scope and requirements</p>
+                <p className="text-gray-600">
+                  {t("campaigns.campaignDetails.detailedScope")}
+                </p>
               </div>
             </div>
 
@@ -6596,7 +6838,9 @@ export default function BrandDashboard() {
                 className="border-2 border-gray-300 h-12"
                 onClick={() => setShowBriefDetails(false)}
               >
-                Close
+                {t("campaigns.campaignDetails.close", {
+                  defaultValue: "Close",
+                })}
               </Button>
             </div>
           </div>
@@ -6659,13 +6903,16 @@ export default function BrandDashboard() {
               onClick={() => setSelectedCampaign(null)}
               className="border-2 border-gray-300"
             >
-              ← Back to Campaigns
+              {t("campaigns.campaignDetails.backToCampaigns")}
             </Button>
             <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900">
                 {campaign.name}
               </h1>
-              <p className="text-gray-600">Created {campaign.last_update}</p>
+              <p className="text-gray-600">
+                {t("campaigns.campaignDetails.created")}{" "}
+                {formatHubDateTime(campaign.last_update)}
+              </p>
             </div>
           </div>
 
@@ -6684,7 +6931,7 @@ export default function BrandDashboard() {
                           : "bg-gray-100 text-gray-700 border border-gray-300"
                   }
                 >
-                  {campaign.status.replace("_", " ")}
+                  {formatCampaignProgressStatus(campaign.status)}
                 </Badge>
                 {campaign.completed_at && (
                   <Badge className="bg-green-100 text-green-700 border border-green-300">
@@ -6694,9 +6941,11 @@ export default function BrandDashboard() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">Due Date</p>
+                  <p className="text-sm text-gray-600">
+                    {t("campaigns.campaignDetails.dueDate")}
+                  </p>
                   <p className="font-bold text-gray-900">
-                    {new Date(campaign.due_date).toLocaleDateString()}
+                    {formatHubDate(campaign.due_date)}
                   </p>
                 </div>
               </div>
@@ -6712,14 +6961,14 @@ export default function BrandDashboard() {
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold text-gray-900">
-                  Brief & Scope
+                  {t("campaigns.campaignDetails.briefAndScope")}
                 </h3>
                 <Button
                   variant="outline"
                   size="sm"
                   className="border-2 border-blue-300 text-blue-600"
                 >
-                  View Full Details →
+                  {t("campaigns.campaignDetails.viewFullDetails")}
                 </Button>
               </div>
               <div className="space-y-4">
@@ -6737,10 +6986,12 @@ export default function BrandDashboard() {
                       Timeline
                     </Label>
                     <p className="text-gray-900">
-                      Start: {(campaign as any)?.go_live || "—"}
+                      {t("campaigns.campaignDetails.start")}:{" "}
+                      {(campaign as any)?.go_live || "—"}
                     </p>
                     <p className="text-gray-900">
-                      Due: {new Date(campaign.due_date).toLocaleDateString()}
+                      {t("campaigns.campaignDetails.due")}:{" "}
+                      {formatHubDate(campaign.due_date)}
                     </p>
                   </div>
                   <div>
@@ -6748,14 +6999,15 @@ export default function BrandDashboard() {
                       Budget
                     </Label>
                     <p className="text-gray-900">
-                      Total: {selectedBriefValue("budget_total", "N/A")}
+                      {t("campaigns.campaignDetails.totalBudget")}:{" "}
+                      {selectedBriefValue("budget_total", "N/A")}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Creator:{" "}
+                      {t("campaigns.campaignDetails.creatorPayment")}:{" "}
                       {selectedBriefValue("budget_creator_payment", "N/A")}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Submission Deadline:{" "}
+                      {t("campaigns.campaignDetails.submissionDeadline")}:{" "}
                       {selectedBriefValue("budget_submission_deadline", "N/A")}
                     </p>
                   </div>
@@ -6764,8 +7016,7 @@ export default function BrandDashboard() {
               <Alert className="mt-4 bg-blue-50 border border-blue-200">
                 <AlertCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-900 text-sm">
-                  Click to view complete brief with dialogue, visuals, and
-                  contract details
+                  {t("campaigns.campaignDetails.viewCompleteBrief")}
                 </AlertDescription>
               </Alert>
             </Card>
@@ -6773,10 +7024,12 @@ export default function BrandDashboard() {
             {/* Talent Info */}
             <Card className="p-6 bg-white border border-gray-200">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Assigned Collaborators
+                {t("campaigns.campaignDetails.assignedCollaborators")}
               </h3>
               {campaign.creators.length === 0 ? (
-                <p className="text-sm text-gray-500">No collaborators yet.</p>
+                <p className="text-sm text-gray-500">
+                  {t("campaignsDashboard.overview.noCollaboratorsYet")}
+                </p>
               ) : (
                 <div className="space-y-3">
                   {campaign.creators.map((creator: string, idx: number) => (
@@ -6802,10 +7055,10 @@ export default function BrandDashboard() {
           {/* Contract Update Section */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Contract Management
+              {t("campaigns.campaignDetails.contractManagement")}
             </h3>
             <p className="text-gray-600 mb-6">
-              Need to modify the contract terms? Request changes or updates.
+              {t("campaigns.campaignDetails.contractManagementDesc")}
             </p>
             <div className="flex gap-3">
               <Button
@@ -6830,12 +7083,10 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            My Offers
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {t("campaigns.myOffers.title")}
           </h1>
-          <p className="text-gray-600">
-            Review and manage campaign offers and ongoing collaborations
-          </p>
+          <p className="text-gray-600">{t("campaigns.myOffers.subtitle")}</p>
         </div>
 
         {/* Campaign Tabs */}
@@ -6848,7 +7099,7 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Active (
+            {t("campaigns.myOffers.tabs.active")} (
             {
               groupedCampaigns.filter((c: any) => c.status === "in_progress")
                 .length
@@ -6863,7 +7114,7 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Pending Approval (
+            {t("campaigns.myOffers.tabs.pendingApproval")} (
             {
               groupedCampaigns.filter(
                 (c: any) => c.status === "pending_approval",
@@ -6879,14 +7130,17 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Expired ({groupedCampaigns.filter((c: any) => c.is_expired).length})
+            {t("campaigns.myOffers.tabs.expired")} (
+            {groupedCampaigns.filter((c: any) => c.is_expired).length})
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-start">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {loadingBrandOfferItems && (
             <Card className="p-6 bg-white border border-gray-200">
-              <p className="text-sm text-gray-600">Loading campaigns...</p>
+              <p className="text-sm text-gray-600">
+                {t("campaigns.myOffers.loadingCampaigns")}
+              </p>
             </Card>
           )}
           {filteredCampaigns.map((campaign: any) => {
@@ -6916,16 +7170,22 @@ export default function BrandDashboard() {
                       {campaign.name}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {offers.length} collaborators
+                      {t("campaigns.myOffers.collaboratorsCount", {
+                        count: offers.length,
+                      })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={statusBadgeClass}>
-                      {String(campaign.status).replace(/_/g, " ")}
+                      {campaign.status === "in_progress"
+                        ? t("campaigns.myOffers.tabs.active")
+                        : campaign.status === "pending_approval"
+                          ? t("campaigns.myOffers.tabs.pendingApproval")
+                          : t("campaigns.myOffers.tabs.expired")}
                     </Badge>
                     {campaign.completed_at && (
                       <Badge className="bg-green-100 text-green-700 border border-green-300">
-                        Done
+                        {t("campaigns.myOffers.done")}
                       </Badge>
                     )}
                   </div>
@@ -6934,7 +7194,9 @@ export default function BrandDashboard() {
                 <div className="px-6 pb-6">
                   <div className="space-y-3 text-sm mb-4">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Budget:</span>
+                      <span className="text-gray-600">
+                        {t("campaigns.myOffers.budget")}:
+                      </span>
                       <span className="font-bold text-gray-900">
                         {(() => {
                           const parts = String(
@@ -6956,7 +7218,9 @@ export default function BrandDashboard() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Start Date:</span>
+                      <span className="text-gray-600">
+                        {t("campaigns.myOffers.startDate")}:
+                      </span>
                       <span className="font-medium text-gray-900">
                         {campaign.start_date && campaign.start_date !== "N/A"
                           ? new Date(
@@ -6966,13 +7230,33 @@ export default function BrandDashboard() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Due Date:</span>
+                      <span className="text-gray-600">
+                        {t("campaigns.myOffers.dueDate")}:
+                      </span>
                       <span className="font-medium text-gray-900">
                         {campaign.due_date
                           ? new Date(
                               String(campaign.due_date),
                             ).toLocaleDateString()
                           : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">
+                        {t("campaigns.myOffers.assets")}:
+                      </span>
+                      <span className="font-medium text-gray-900">
+                        {t("campaigns.myOffers.deliveredCount", {
+                          count: Number(campaign.assets_delivered || 0),
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">
+                        {t("campaigns.myOffers.lastUpdate")}:
+                      </span>
+                      <span className="font-medium text-gray-900">
+                        {campaign.last_update || "—"}
                       </span>
                     </div>
                   </div>
@@ -6986,7 +7270,7 @@ export default function BrandDashboard() {
                         setExpandedMyOffersCampaignId(expanded ? "" : groupId);
                       }}
                     >
-                      Offers
+                      {t("campaigns.myOffers.offers")}
                     </Button>
                     <Button
                       variant="outline"
@@ -6996,9 +7280,10 @@ export default function BrandDashboard() {
                         event.stopPropagation();
                         if (!canManagePayOffers) {
                           toast({
-                            title: "View-only access",
-                            description:
-                              "You do not have permission to add collaborators.",
+                            title: t("campaigns.myOffers.viewOnlyAccess"),
+                            description: t(
+                              "campaigns.myOffers.viewOnlyAccessDesc",
+                            ),
                             variant: "destructive" as any,
                           });
                           return;
@@ -7007,7 +7292,7 @@ export default function BrandDashboard() {
                         if (first) openAddCollaboratorFlow(first);
                       }}
                     >
-                      Add Collaborator
+                      {t("campaigns.myOffers.addCollaborator")}
                     </Button>
                   </div>
                 </div>
@@ -7043,7 +7328,20 @@ export default function BrandDashboard() {
                                 {collaboratorName}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {String(offer?.status || "").replace(/_/g, " ")}
+                                {String(offer?.status || "").toLowerCase() ===
+                                "in_progress"
+                                  ? t("campaigns.myOffers.tabs.active")
+                                  : String(
+                                        offer?.status || "",
+                                      ).toLowerCase() === "pending_approval"
+                                    ? t(
+                                        "campaigns.myOffers.tabs.pendingApproval",
+                                      )
+                                    : String(
+                                          offer?.status || "",
+                                        ).toLowerCase() === "completed"
+                                      ? t("campaigns.myOffers.done")
+                                      : t("campaigns.myOffers.tabs.expired")}
                               </p>
                             </div>
                           </div>
@@ -7057,7 +7355,7 @@ export default function BrandDashboard() {
                                 if (offer?.id) setSelectedCampaign(offer.id);
                               }}
                             >
-                              View
+                              {t("campaigns.myOffers.view")}
                             </Button>
                           </div>
                         </div>
@@ -7075,13 +7373,13 @@ export default function BrandDashboard() {
             <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               {campaignView === "active"
-                ? "No active campaigns"
+                ? t("campaigns.myOffers.activeEmpty")
                 : campaignView === "pending"
-                  ? "No pending approval campaigns"
-                  : "No expired campaigns"}
+                  ? t("campaigns.myOffers.pendingEmpty")
+                  : t("campaigns.myOffers.expiredEmpty")}
             </h3>
             <p className="text-gray-600 mb-6">
-              Start a new campaign to get creators working on your content
+              {t("campaigns.myOffers.emptyStateCta")}
             </p>
           </Card>
         )}
@@ -7095,82 +7393,78 @@ export default function BrandDashboard() {
 
     return (
       <div className="space-y-8">
-        <div className="grid grid-cols-3 gap-3 sm:gap-6">
-          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
-            <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
-            <p className="text-xs sm:text-sm text-gray-600 mb-1">
-              Total Spend (30d)
+        <div className="grid md:grid-cols-3 gap-6">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaignsDashboard.stats.totalSpend30d")}
             </p>
-            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-              $12.4K
-            </p>
+            <p className="text-3xl font-bold text-gray-900">$12.4K</p>
           </Card>
-          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
-            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
-            <p className="text-xs sm:text-sm text-gray-600 mb-1">
-              Active Collaborators
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <Users className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaignsDashboard.stats.activeCollaborators")}
             </p>
-            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-              8
-            </p>
+            <p className="text-3xl font-bold text-gray-900">8</p>
           </Card>
-          <Card className="p-4 sm:p-6 bg-white border-2 border-gray-200 rounded-none">
-            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-[#F7B750] mb-2 sm:mb-4" />
-            <p className="text-xs sm:text-sm text-gray-600 mb-1">
-              Campaigns Launched
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaignsDashboard.stats.campaignsLaunched")}
             </p>
-            <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-              12
-            </p>
+            <p className="text-3xl font-bold text-gray-900">12</p>
           </Card>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
-          <Card className="p-4 sm:p-6 bg-white border-2 border-[#F7B750] rounded-none">
-            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
-              Collaborate with Agency
+        <div className="grid md:grid-cols-5 gap-6">
+          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              {t("campaignsDashboard.quickActions.collaborateWithAgency")}
             </h3>
             <Button
               onClick={handleAgencyCollaborationEntry}
-              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
+              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
             >
               {brandCanUseCampaignCollaboration
-                ? "Invite Agency"
-                : "Upgrade to Pro"}
+                ? t("dashboard.quickActions.inviteAgency")
+                : t("dashboard.planActions.upgradeToPro")}
             </Button>
           </Card>
-          <Card className="p-4 sm:p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
-            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
-              Add AI Creator
+          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              {t("campaignsDashboard.quickActions.addAICreator")}
             </h3>
             <Button
               disabled
-              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed text-xs sm:text-sm h-8 sm:h-10"
+              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed"
             >
-              Coming Soon
+              {t("campaignsDashboard.quickActions.comingSoon")}
             </Button>
           </Card>
-          <Card className="p-4 sm:p-6 bg-white border-2 border-amber-600/60 rounded-none">
-            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
-              Invite Company Seat
+          <Card className="p-6 bg-white border-2 border-amber-600/60 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              {t("campaignsDashboard.quickActions.inviteCompanySeat")}
             </h3>
             <Button
               onClick={handleCompanySeatEntry}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white rounded-none"
             >
               {(brandSeatLimit ?? 0) === 0
-                ? "Upgrade to Basic"
+                ? t("dashboard.quickActions.upgradeToBasic")
                 : brandSeatLimitReached
-                  ? "Seat limit reached"
-                  : `Up to ${brandSeatLimitLabel} seats`}
+                  ? t("dashboard.quickActions.seatLimitReached")
+                  : t("dashboard.quickActions.upToSeats", {
+                      count: brandSeatLimitLabel,
+                    })}
             </Button>
           </Card>
-          <Card className="p-4 sm:p-6 bg-white border-2 border-orange-600 rounded-none">
-            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
-              AI Studio Add-On
+          <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              {t("campaignsDashboard.quickActions.aiStudioAddon")}
             </h3>
             <Button
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none"
               onClick={() =>
                 navigate(
                   brandHasStudioAddon
@@ -7180,18 +7474,18 @@ export default function BrandDashboard() {
               }
             >
               {brandHasStudioAddon
-                ? "Open Studio"
+                ? t("dashboard.planLabels.openStudio")
                 : brandCanSelfServeStudioAddon
-                  ? "Enable Add-On"
-                  : "Upgrade to Pro"}
+                  ? t("dashboard.quickActions.enableAddon")
+                  : t("dashboard.planActions.upgradeToPro")}
             </Button>
           </Card>
-          <Card className="p-4 sm:p-6 bg-white border-2 border-blue-600 rounded-none">
-            <h3 className="text-sm sm:text-lg font-bold text-gray-900 mb-2">
-              Post a Job
+          <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              {t("campaignsDashboard.quickActions.postJob")}
             </h3>
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none"
               onClick={() => {
                 if (typeof window !== "undefined") {
                   window.localStorage.removeItem("jobDraftId");
@@ -7200,56 +7494,56 @@ export default function BrandDashboard() {
                 navigate(createPageUrl("PostJob"));
               }}
             >
-              Post Job
+              {t("campaignsDashboard.quickActions.postJob")}
             </Button>
           </Card>
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Your Campaigns
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {t("campaignsDashboard.yourCampaigns")}
             </h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("active")}
-                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Active
+                {t("campaigns.myOffers.tabs.active")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("pending_approval")}
-                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Pending
+                {t("campaigns.myOffers.tabs.pendingApproval")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("completed")}
-                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Expired
+                {t("campaigns.myOffers.tabs.expired")}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignHubTab("jobs")}
-                className={`border-2 rounded-none text-xs sm:text-sm h-8 sm:h-10 px-3 sm:px-4 ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
+                className={`border-2 rounded-none ${campaignHubTab === "jobs" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Jobs
+                {t("campaigns.myOffers.tabs.jobs")}
               </Button>
             </div>
           </div>
           {campaignHubTab === "jobs" ? (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">
-                    Job Postings
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {t("campaigns.jobs.jobPostings")}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    Manage published jobs, drafts, and applications.
+                    {t("campaigns.jobs.managePublished")}
                   </p>
                 </div>
                 <Button
@@ -7260,13 +7554,13 @@ export default function BrandDashboard() {
                     }
                     navigate(createPageUrl("PostJob"));
                   }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md shrink-0"
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                 >
-                  Post Job
+                  {t("campaigns.jobs.postJobButton")}
                 </Button>
               </div>
               <Card className="p-4 bg-white border border-gray-200">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div className="md:col-span-2">
                     <div className="relative">
                       <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
@@ -7276,7 +7570,7 @@ export default function BrandDashboard() {
                         onKeyDown={(e) => {
                           if (e.key === "Escape") setJobSearch("");
                         }}
-                        placeholder="Search job title, call type, or role"
+                        placeholder={t("campaigns.jobs.searchPlaceholder")}
                         className="pl-9 pr-9"
                       />
                       {jobSearch && (
@@ -7284,7 +7578,7 @@ export default function BrandDashboard() {
                           type="button"
                           onClick={() => setJobSearch("")}
                           className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                          aria-label="Clear search"
+                          aria-label={t("campaigns.jobs.clearSearch")}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -7299,10 +7593,18 @@ export default function BrandDashboard() {
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
+                      <SelectItem value="all">
+                        {t("campaigns.jobs.allStatuses")}
+                      </SelectItem>
+                      <SelectItem value="open">
+                        {t("campaigns.jobs.open")}
+                      </SelectItem>
+                      <SelectItem value="draft">
+                        {t("campaigns.jobs.draft")}
+                      </SelectItem>
+                      <SelectItem value="closed">
+                        {t("campaigns.jobs.closed")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <Select
@@ -7313,28 +7615,38 @@ export default function BrandDashboard() {
                       <SelectValue placeholder="Call type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All call types</SelectItem>
-                      <SelectItem value="creator">Creator call</SelectItem>
-                      <SelectItem value="agency">Agency call</SelectItem>
-                      <SelectItem value="athlete">Athlete call</SelectItem>
-                      <SelectItem value="ai_artist">AI artist call</SelectItem>
+                      <SelectItem value="all">
+                        {t("campaigns.jobs.allCallTypes")}
+                      </SelectItem>
+                      <SelectItem value="creator">
+                        {t("campaigns.jobs.creatorCall")}
+                      </SelectItem>
+                      <SelectItem value="agency">
+                        {t("campaigns.jobs.agencyCall")}
+                      </SelectItem>
+                      <SelectItem value="athlete">
+                        {t("campaigns.jobs.athleteCall")}
+                      </SelectItem>
+                      <SelectItem value="ai_artist">
+                        {t("campaigns.jobs.aiArtistCall")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </Card>
               {loadingBrandJobs && (
                 <Card className="p-6 text-sm text-gray-600">
-                  Loading job postings...
+                  {t("campaigns.jobs.loadingJobPostings")}
                 </Card>
               )}
               {!loadingBrandJobs && brandJobs.length === 0 && (
                 <Card className="p-8 text-center">
                   <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="font-semibold text-gray-800">
-                    No job postings yet.
+                    {t("campaigns.jobs.noJobPostingsYet")}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Post your first job to start receiving applications.
+                    {t("campaigns.jobs.postFirstJob")}
                   </p>
                 </Card>
               )}
@@ -7401,13 +7713,29 @@ export default function BrandDashboard() {
                                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
                                 }`}
                               >
-                                {job.status || "open"}
+                                {t(
+                                  `campaigns.jobs.${String(
+                                    job.status || "open",
+                                  ).toLowerCase()}`,
+                                  {
+                                    defaultValue: String(job.status || "open"),
+                                  },
+                                )}
                               </Badge>
                               <Badge
                                 variant="outline"
                                 className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50"
                               >
-                                {(job.call_type || "call").replace("_", " ")}
+                                {t(
+                                  `campaigns.jobs.${String(
+                                    job.call_type || "call",
+                                  ).toLowerCase()}`,
+                                  {
+                                    defaultValue: String(
+                                      job.call_type || "call",
+                                    ).replace(/_/g, " "),
+                                  },
+                                )}
                               </Badge>
                               {job.category ? (
                                 <Badge
@@ -7420,30 +7748,35 @@ export default function BrandDashboard() {
                             </div>
                             <p className="text-sm text-gray-600 line-clamp-2">
                               {job.about_role ||
-                                "No role description added yet."}
+                                t("campaigns.jobs.noRoleDescription")}
                             </p>
                           </div>
-                          <div className="flex flex-col items-start lg:items-end gap-2">
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-500">
+                          <div className="flex flex-col items-start lg:items-end gap-3">
+                            <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
                               {job.budget ? (
                                 <span>
-                                  Budget {job.budget} {job.currency || "USD"}
+                                  {t("campaigns.jobs.budget")} {job.budget}{" "}
+                                  {job.currency || "USD"}
                                 </span>
                               ) : null}
                               {job.start_date ? (
-                                <span>Start {job.start_date}</span>
+                                <span>
+                                  {t("campaigns.jobs.start")} {job.start_date}
+                                </span>
                               ) : null}
                               {job.end_date ? (
-                                <span>End {job.end_date}</span>
+                                <span>
+                                  {t("campaigns.jobs.end")} {job.end_date}
+                                </span>
                               ) : null}
                             </div>
                           </div>
                         </div>
-                        <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-2">
+                        <div className="pt-3 border-t border-slate-200 flex flex-wrap justify-end gap-2">
                           {job.status === "open" && (
                             <Button
                               variant="outline"
-                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50 flex-1 sm:flex-none"
+                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
                               disabled={!canManageJobs}
                               title={
                                 !canManageJobs
@@ -7454,13 +7787,13 @@ export default function BrandDashboard() {
                                 updateJobStatus(String(job.id), "closed")
                               }
                             >
-                              Close Job
+                              {t("campaigns.jobs.closeJob")}
                             </Button>
                           )}
 
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md flex-1 sm:flex-none"
+                            className="border-2 rounded-md"
                             onClick={() =>
                               setSelectedJobForApplications({
                                 ...job,
@@ -7468,11 +7801,11 @@ export default function BrandDashboard() {
                               })
                             }
                           >
-                            View Details
+                            {t("campaigns.jobs.viewDetails")}
                           </Button>
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md flex-1 sm:flex-none"
+                            className="border-2 rounded-md"
                             onClick={async () => {
                               setSelectedJobForApplications(job);
                               setLoadingJobApplications(true);
@@ -7492,7 +7825,7 @@ export default function BrandDashboard() {
                               }
                             }}
                           >
-                            View Applications
+                            {t("campaigns.jobs.viewApplications")}
                           </Button>
                         </div>
                       </div>
@@ -7522,10 +7855,10 @@ export default function BrandDashboard() {
                   <Card className="p-8 text-center">
                     <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                     <p className="font-semibold text-gray-800">
-                      No results found
+                      {t("campaignsDashboard.noResultsFound")}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      Try different keywords or adjust your filters.
+                      {t("campaignsDashboard.tryDifferentKeywords")}
                     </p>
                     {jobSearch && (
                       <button
@@ -7533,7 +7866,7 @@ export default function BrandDashboard() {
                         onClick={() => setJobSearch("")}
                         className="mt-3 text-sm text-blue-600 hover:underline"
                       >
-                        Clear search
+                        {t("campaignsDashboard.clearSearchButton")}
                       </button>
                     )}
                   </Card>
@@ -7556,7 +7889,7 @@ export default function BrandDashboard() {
                       </p>
                     </div>
                     <Button variant="outline" className="border-2 rounded-md">
-                      View Details
+                      {t("campaignsDashboard.viewDetails")}
                     </Button>
                   </div>
                 </Card>
@@ -7570,74 +7903,80 @@ export default function BrandDashboard() {
 
   const renderStudio = () => (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Asset Library
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {t("assetLibrary.title")}
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Download, manage, and organize all your creative assets
-          </p>
+          <p className="text-gray-600">{t("assetLibrary.subtitle")}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
-            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+            className="border-2 border-gray-300"
             onClick={handleBatchDownload}
             disabled={selectedAssetIds.size === 0 || isBatchDownloading}
           >
             {isBatchDownloading ? (
-              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
-              <Download className="w-4 h-4 mr-1.5" />
+              <Download className="w-4 h-4 mr-2" />
             )}
-            Batch
+            {t("assetLibrary.actions.batchDownload")}
             {selectedAssetIds.size > 0 ? ` (${selectedAssetIds.size})` : ""}
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+            className="border-2 border-gray-300"
             onClick={() => setShowFilterDialog(true)}
           >
-            <Filter className="w-4 h-4 mr-1.5" />
-            Filter
+            <Filter className="w-4 h-4 mr-2" />
+            {t("assetLibrary.actions.filter")}
           </Button>
           <Button
             variant="outline"
-            className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+            className="border-2 border-gray-300"
             onClick={handleRefreshAssets}
             disabled={studioLoading}
           >
             <RefreshCw
-              className={`w-4 h-4 mr-1.5 ${studioLoading ? "animate-spin" : ""}`}
+              className={`w-4 h-4 mr-2 ${studioLoading ? "animate-spin" : ""}`}
             />
-            Refresh
+            {t("assetLibrary.actions.refresh")}
           </Button>
         </div>
       </div>
 
       {/* Asset Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         <Card className="p-4 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Assets</p>
+          <p className="text-sm text-gray-600 mb-1">
+            {t("assetLibrary.stats.totalAssets")}
+          </p>
           <p className="text-3xl font-bold text-gray-900">
             {studioStats.total}
           </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Videos</p>
+          <p className="text-sm text-gray-600 mb-1">
+            {t("assetLibrary.stats.videos")}
+          </p>
           <p className="text-3xl font-bold text-gray-900">
             {studioStats.videos}
           </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Images</p>
+          <p className="text-sm text-gray-600 mb-1">
+            {t("assetLibrary.stats.images")}
+          </p>
           <p className="text-3xl font-bold text-gray-900">
             {studioStats.images}
           </p>
         </Card>
         <Card className="p-4 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Size</p>
+          <p className="text-sm text-gray-600 mb-1">
+            {t("assetLibrary.stats.totalSize")}
+          </p>
           <p className="text-3xl font-bold text-gray-900">
             {formatBytes(studioStats.totalSize)}
           </p>
@@ -7645,24 +7984,24 @@ export default function BrandDashboard() {
       </div>
 
       {/* Search & Filter Bar */}
-      <Card className="p-3 sm:p-4 bg-white border border-gray-200">
-        <div className="flex flex-wrap gap-2">
-          <div className="flex-1 min-w-[140px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <Card className="p-4 bg-white border border-gray-200">
+        <div className="flex gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
-              placeholder="Search assets..."
-              className="pl-9 border-2 border-gray-300 h-9 text-sm"
+              placeholder={t("assetLibrary.searchPlaceholder")}
+              className="pl-10 border-2 border-gray-300"
               value={studioSearchQuery}
               onChange={(e) => setStudioSearchQuery(e.target.value)}
             />
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-2">
             <Button
               variant={studioSourceFilter === "all" ? "default" : "outline"}
               onClick={() => setStudioSourceFilter("all")}
-              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+              className="border-2 border-gray-300"
             >
-              All
+              {t("assetLibrary.filters.all")}
             </Button>
             <Button
               variant={
@@ -7671,27 +8010,25 @@ export default function BrandDashboard() {
                   : "outline"
               }
               onClick={() => setStudioSourceFilter("studio_generation")}
-              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
+              className="border-2 border-gray-300"
             >
-              Studio
+              {t("assetLibrary.filters.studio")}
             </Button>
           </div>
-          <div className="flex gap-1.5">
-            <Button
-              variant={viewMode === "grid" ? "default" : "outline"}
-              onClick={() => setViewMode("grid")}
-              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
-            >
-              Grid
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              onClick={() => setViewMode("list")}
-              className="border-2 border-gray-300 h-9 px-3 text-xs sm:text-sm"
-            >
-              List
-            </Button>
-          </div>
+          <Button
+            variant={viewMode === "grid" ? "default" : "outline"}
+            onClick={() => setViewMode("grid")}
+            className="border-2 border-gray-300"
+          >
+            {t("assetLibrary.actions.grid")}
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "outline"}
+            onClick={() => setViewMode("list")}
+            className="border-2 border-gray-300"
+          >
+            {t("assetLibrary.actions.list")}
+          </Button>
         </div>
       </Card>
 
@@ -7699,17 +8036,14 @@ export default function BrandDashboard() {
       {studioLoading ? (
         <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
           <Loader2 className="w-8 h-8 text-gray-400 mx-auto mb-3 animate-spin" />
-          <p className="text-gray-500">Loading assets...</p>
+          <p className="text-gray-500">{t("assetLibrary.loading")}</p>
         </Card>
       ) : studioAssets.length === 0 ? (
         <Card className="col-span-3 p-12 bg-white border border-gray-200 text-center">
-          <p className="text-gray-500">
-            No assets available yet. Assets will appear here once campaigns are
-            completed.
-          </p>
+          <p className="text-gray-500">{t("assetLibrary.emptyState")}</p>
         </Card>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
+        <div className="grid md:grid-cols-3 gap-6">
           {displayedAssets.map((asset) => (
             <Card
               key={asset.id}
@@ -7736,7 +8070,9 @@ export default function BrandDashboard() {
                     className="bg-white/90 border-white data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600"
                   />
                   {asset.source_type === "studio_generation" && (
-                    <Badge className="bg-purple-600 text-white">Studio</Badge>
+                    <Badge className="bg-purple-600 text-white">
+                      {t("assetLibrary.filters.studio")}
+                    </Badge>
                   )}
                 </div>
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -7786,7 +8122,9 @@ export default function BrandDashboard() {
                 onCheckedChange={selectAllAssets}
               />
               <span className="text-sm text-gray-500">
-                {displayedAssets.length} assets
+                {t("assetLibrary.collectionsCount", {
+                  count: displayedAssets.length,
+                })}
               </span>
             </div>
             {displayedAssets.map((asset) => (
@@ -7820,7 +8158,7 @@ export default function BrandDashboard() {
                 </div>
                 {asset.source_type === "studio_generation" && (
                   <Badge className="bg-purple-100 text-purple-700">
-                    Studio
+                    {t("assetLibrary.filters.studio")}
                   </Badge>
                 )}
                 <div className="flex items-center gap-1">
@@ -7853,7 +8191,9 @@ export default function BrandDashboard() {
 
       {/* Organization Features */}
       <Card className="p-6 bg-white border border-gray-200">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Collections</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          {t("assetLibrary.collections")}
+        </h3>
         <div className="flex gap-3 flex-wrap">
           <Button
             variant="outline"
@@ -7861,7 +8201,7 @@ export default function BrandDashboard() {
             onClick={() => setShowCreateCollectionDialog(true)}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Create Collection
+            {t("assetLibrary.actions.createCollection")}
           </Button>
           {collections.map((collection) => (
             <Badge
@@ -7873,7 +8213,11 @@ export default function BrandDashboard() {
               }`}
               onClick={() => handleSelectCollection(collection.id)}
             >
-              {collection.name} ({collection.assetIds.length} assets)
+              {collection.name} (
+              {t("assetLibrary.collectionsCount", {
+                count: collection.assetIds.length,
+              })}
+              )
             </Badge>
           ))}
         </div>
@@ -7884,37 +8228,43 @@ export default function BrandDashboard() {
   const renderAnalytics = () => (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-          Analytics & Reporting
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {t("campaigns.analytics.title")}
         </h1>
-        <p className="text-gray-600">
-          Measure ROI and track efficiency metrics
-        </p>
+        <p className="text-gray-600">{t("campaigns.analytics.subtitle")}</p>
       </div>
 
       {/* Top KPI Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Projects (YTD)</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-6 bg-white border border-gray-200">
+          <p className="text-sm text-gray-600 mb-1">
+            {t("campaigns.analytics.totalProjectsYtd")}
+          </p>
+          <p className="text-3xl font-bold text-gray-900">
             {brandAnalytics.loading ? "—" : brandAnalytics.total_projects_ytd}
           </p>
         </Card>
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Avg Turnaround</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+        <Card className="p-6 bg-white border border-gray-200">
+          <p className="text-sm text-gray-600 mb-1">
+            {t("campaigns.analytics.avgTurnaround")}
+          </p>
+          <p className="text-3xl font-bold text-gray-900">
             {campaignMetrics.avg_turnaround_hours > 0
               ? `${campaignMetrics.avg_turnaround_hours}h`
               : "—"}
           </p>
         </Card>
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">$45.2K</p>
+        <Card className="p-6 bg-white border border-gray-200">
+          <p className="text-sm text-gray-600 mb-1">
+            {t("campaigns.analytics.totalSpendYtd")}
+          </p>
+          <p className="text-3xl font-bold text-gray-900">$45.2K</p>
         </Card>
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Avg Cost/Project</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">$3.8K</p>
+        <Card className="p-6 bg-white border border-gray-200">
+          <p className="text-sm text-gray-600 mb-1">
+            {t("campaigns.analytics.avgCostPerProject")}
+          </p>
+          <p className="text-3xl font-bold text-gray-900">$3.8K</p>
         </Card>
       </div>
 
@@ -7922,11 +8272,11 @@ export default function BrandDashboard() {
       <Card className="p-6 bg-white border border-gray-200">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-gray-900">
-            Talent Performance
+            {t("campaigns.analytics.talentPerformance")}
           </h3>
           <Button variant="outline" className="border-2 border-gray-300">
             <Download className="w-4 h-4 mr-2" />
-            Export Report
+            {t("campaigns.analytics.exportReport")}
           </Button>
         </div>
         <div className="overflow-x-auto">
@@ -7934,19 +8284,19 @@ export default function BrandDashboard() {
             <thead>
               <tr className="border-b-2 border-gray-300">
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Talent
+                  {t("campaigns.analytics.talent")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Projects
+                  {t("campaigns.analytics.projects")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Avg Turnaround
+                  {t("campaigns.analytics.avgTurnaround")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Success Rate
+                  {t("campaigns.analytics.successRate")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Total Cost
+                  {t("campaigns.analytics.totalCost")}
                 </th>
               </tr>
             </thead>
@@ -7954,7 +8304,7 @@ export default function BrandDashboard() {
               {brandAnalytics.loading && (
                 <tr>
                   <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
-                    Loading talent performance...
+                    {t("campaigns.analytics.loadingTalentPerformance")}
                   </td>
                 </tr>
               )}
@@ -7962,7 +8312,7 @@ export default function BrandDashboard() {
                 brandAnalytics.talent_performance.length === 0 && (
                   <tr>
                     <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
-                      No talent performance data yet.
+                      {t("campaigns.analytics.noTalentPerformance")}
                     </td>
                   </tr>
                 )}
@@ -8000,7 +8350,7 @@ export default function BrandDashboard() {
                               </p>
                               {idx < 3 && (
                                 <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300 text-xs mt-1">
-                                  Top Performer
+                                  {t("campaigns.analytics.topPerformer")}
                                 </Badge>
                               )}
                             </div>
@@ -8029,7 +8379,7 @@ export default function BrandDashboard() {
       <div className="grid md:grid-cols-1 gap-6">
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-lg font-bold text-gray-900 mb-4">
-            Spend by Month
+            {t("campaigns.analytics.spendByMonth")}
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <LineChart
@@ -8061,11 +8411,13 @@ export default function BrandDashboard() {
       {/* Budget Tracking */}
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Budget Forecast
+          {t("campaigns.analytics.budgetForecast")}
         </h3>
         <div className="grid md:grid-cols-3 gap-6">
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">YTD Spend</p>
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaigns.analytics.ytdSpend")}
+            </p>
             <p className="text-2xl font-bold text-gray-900">
               {billingYtdSpend > 0
                 ? `$${(billingYtdSpend / 100).toLocaleString()}`
@@ -8073,7 +8425,9 @@ export default function BrandDashboard() {
             </p>
           </div>
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Monthly Avg</p>
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaigns.analytics.monthlyAvg")}
+            </p>
             <p className="text-2xl font-bold text-gray-900">
               {billingMonthlyAvg > 0
                 ? `$${(billingMonthlyAvg / 100).toLocaleString()}`
@@ -8081,7 +8435,9 @@ export default function BrandDashboard() {
             </p>
           </div>
           <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaigns.analytics.projectedEoy")}
+            </p>
             <p className="text-2xl font-bold text-gray-900">
               {billingProjectedEoy > 0
                 ? `$${(billingProjectedEoy / 100000).toFixed(1)}K`
@@ -8103,13 +8459,20 @@ export default function BrandDashboard() {
             onClick={() => setSelectedContract(null)}
             className="border-2 border-gray-300"
           >
-            ← Back to Contract Hub
+            ←{" "}
+            {t("campaigns.contractHub.backToHub", {
+              defaultValue: "Back to Contract Hub",
+            })}
           </Button>
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900">
               {contract.project_name}
             </h1>
-            <p className="text-gray-600">Contract Details</p>
+            <p className="text-gray-600">
+              {t("campaigns.contractHub.contractDetails", {
+                defaultValue: "Contract Details",
+              })}
+            </p>
           </div>
         </div>
 
@@ -8117,51 +8480,81 @@ export default function BrandDashboard() {
         <div className="flex gap-3">
           <Button variant="outline" className="border-2 border-gray-300">
             <Download className="w-4 h-4 mr-2" />
-            Download PDF
+            {t("campaigns.contractHub.actions.downloadPdf", {
+              defaultValue: "Download PDF",
+            })}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Download className="w-4 h-4 mr-2" />
-            Download Word
+            {t("campaigns.contractHub.actions.downloadWord", {
+              defaultValue: "Download Word",
+            })}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Send className="w-4 h-4 mr-2" />
-            Email
+            {t("campaigns.contractHub.actions.email", {
+              defaultValue: "Email",
+            })}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Copy className="w-4 h-4 mr-2" />
-            Print
+            {t("campaigns.contractHub.actions.print", {
+              defaultValue: "Print",
+            })}
           </Button>
         </div>
 
         {/* Project Overview */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-6">
-            Project Overview
+            {t("campaigns.contractHub.projectOverview", {
+              defaultValue: "Project Overview",
+            })}
           </h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3 text-sm">
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Project:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.project", {
+                    defaultValue: "Project",
+                  })}
+                  :
+                </span>
                 <span className="font-semibold text-gray-900">
                   {contract.project_name}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Creator:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.creator", {
+                    defaultValue: "Creator",
+                  })}
+                  :
+                </span>
                 <span className="font-semibold text-gray-900">
                   {contract.creator_name} ({contract.creator_handle})
                 </span>
               </div>
               {contract.agency && (
                 <div className="flex justify-between py-2 border-b border-gray-200">
-                  <span className="text-gray-600">Agency:</span>
+                  <span className="text-gray-600">
+                    {t("campaigns.contractHub.fields.agency", {
+                      defaultValue: "Agency",
+                    })}
+                    :
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {contract.agency}
                   </span>
                 </div>
               )}
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Status:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.status", {
+                    defaultValue: "Status",
+                  })}
+                  :
+                </span>
                 <Badge
                   className={
                     contract.status === "signed"
@@ -8170,8 +8563,8 @@ export default function BrandDashboard() {
                   }
                 >
                   {contract.status === "signed"
-                    ? "✓ Fully Signed"
-                    : "⏳ Pending Signature"}
+                    ? `✓ ${t("statuses.contractFullySigned", { defaultValue: "Contract fully signed" })}`
+                    : `⏳ ${t("campaigns.contractHub.tabs.pendingSignature", { defaultValue: "Pending Signature" })}`}
                 </Badge>
               </div>
             </div>
@@ -8625,7 +9018,9 @@ export default function BrandDashboard() {
                       {new Date(contract.signed_date).toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-700">
-                      Contract fully signed by both parties
+                      {t("campaigns.contractHub.audit.contractFullySigned", {
+                        defaultValue: "Contract fully signed by both parties",
+                      })}
                     </p>
                     <p className="text-xs text-gray-500">
                       DocuSign Envelope: {contract.docusign_envelope_id}
@@ -8638,7 +9033,9 @@ export default function BrandDashboard() {
                       {new Date(contract.payment_release_date).toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-700">
-                      Payment released from escrow
+                      {t("campaigns.contractHub.audit.paymentReleased", {
+                        defaultValue: "Payment released from escrow",
+                      })}
                     </p>
                     <p className="text-xs text-gray-500">
                       Stripe Transaction: {contract.stripe_payout_id}
@@ -8650,7 +9047,11 @@ export default function BrandDashboard() {
                     {new Date(contract.created_date).toLocaleString()}
                   </p>
                   <p className="text-sm text-gray-700">
-                    Contract created and sent to {contract.creator_name}
+                    {t("campaigns.contractHub.audit.contractCreatedAndSent", {
+                      creatorName: contract.creator_name,
+                      defaultValue:
+                        "Contract created and sent to {{creatorName}}",
+                    })}
                   </p>
                   <p className="text-xs text-gray-500">
                     Created by: {brand?.name || "Brand"}
@@ -8700,7 +9101,9 @@ export default function BrandDashboard() {
                     ).toLocaleDateString()}
                   </p>
                 </div>
-                <Badge className="bg-green-500 text-white">Completed</Badge>
+                <Badge className="bg-green-500 text-white">
+                  {t("campaigns.deliverables.status.completed")}
+                </Badge>
               </div>
               {contract.stripe_payout_id && (
                 <p className="text-xs text-gray-500 mt-2">
@@ -8791,37 +9194,51 @@ export default function BrandDashboard() {
       if (s === "completed")
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            ✓ Fully Signed
+            ✓{" "}
+            {t("statuses.contractFullySigned", {
+              defaultValue: "Contract fully signed",
+            })}
           </span>
         );
       if (s === "sent" || s === "awaiting_signatures")
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            ⏳ Awaiting Signature
+            ⏳{" "}
+            {t("campaigns.contractHub.status.awaiting_signatures", {
+              defaultValue: "Awaiting Signatures",
+            })}
           </span>
         );
       if (s === "draft")
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
-            Draft
+            {t("statuses.draft", { defaultValue: "Draft" })}
           </span>
         );
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-500 border border-gray-200">
-          {c?.docuseal_status || "Unknown"}
+          {c?.docuseal_status ||
+            t("common.unknown", {
+              defaultValue: "Unknown",
+            })}
         </span>
       );
     };
 
     return (
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              Contract Hub
-            </h1>
-            <p className="text-gray-600">
-              All your verified licensing agreements in one place
+            <h2 className="text-2xl font-bold text-gray-900">
+              {t("campaigns.contractHub.title", {
+                defaultValue: "Contract Hub",
+              })}
+            </h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {t("campaigns.contractHub.subtitle", {
+                defaultValue:
+                  "All your verified licensing agreements in one place",
+              })}
             </p>
           </div>
         </div>
@@ -8831,7 +9248,9 @@ export default function BrandDashboard() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search by creator, agency, or title…"
+              placeholder={t("campaigns.contractHub.searchPlaceholder", {
+                defaultValue: "Search by creator, agency, or title…",
+              })}
               value={contractSearch}
               onChange={(e) => setContractSearch(e.target.value)}
               className="pl-9 h-9 text-sm border-gray-200"
@@ -8842,8 +9261,16 @@ export default function BrandDashboard() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Newest first</SelectItem>
-              <SelectItem value="oldest">Oldest first</SelectItem>
+              <SelectItem value="newest">
+                {t("campaigns.contractHub.sort.newestFirst", {
+                  defaultValue: "Newest first",
+                })}
+              </SelectItem>
+              <SelectItem value="oldest">
+                {t("campaigns.contractHub.sort.oldestFirst", {
+                  defaultValue: "Oldest first",
+                })}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -8851,13 +9278,27 @@ export default function BrandDashboard() {
         {/* Sub-tabs */}
         <div className="flex gap-1 border-b border-gray-200">
           {[
-            { key: "active", label: "Active", count: activeContracts.length },
+            {
+              key: "active",
+              label: t("campaigns.contractHub.tabs.active", {
+                defaultValue: "Active",
+              }),
+              count: activeContracts.length,
+            },
             {
               key: "pending",
-              label: "Pending Signature",
+              label: t("campaigns.contractHub.tabs.pendingSignature", {
+                defaultValue: "Pending Signature",
+              }),
               count: pendingContracts.length,
             },
-            { key: "all", label: "All Contracts", count: allContracts.length },
+            {
+              key: "all",
+              label: t("campaigns.contractHub.tabs.allContracts", {
+                defaultValue: "All Contracts",
+              }),
+              count: allContracts.length,
+            },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -8882,7 +9323,11 @@ export default function BrandDashboard() {
         {loadingBrandOfferItems ? (
           <div className="flex items-center justify-center py-16 gap-3 text-gray-400">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span className="text-sm">Loading contracts…</span>
+            <span className="text-sm">
+              {t("campaigns.contractHub.loading", {
+                defaultValue: "Loading contracts...",
+              })}
+            </span>
           </div>
         ) : contractsSorted.length === 0 ? (
           <div className="py-16 text-center">
@@ -8890,31 +9335,41 @@ export default function BrandDashboard() {
               <>
                 <Search className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-base font-semibold text-gray-700">
-                  No results
+                  {t("common.noResults", { defaultValue: "No results" })}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  No contracts match &ldquo;{contractSearch}&rdquo;
+                  {t("campaigns.contractHub.noResults", {
+                    defaultValue: `No contracts match “${contractSearch}”`,
+                  })}
                 </p>
               </>
             ) : contractHubTab === "pending" ? (
               <>
                 <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
                 <p className="text-base font-semibold text-gray-700">
-                  All contracts signed
+                  {t("campaigns.contractHub.empty.pendingTitle", {
+                    defaultValue: "All contracts signed",
+                  })}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  No pending signatures at this time.
+                  {t("campaigns.contractHub.empty.pendingSubtitle", {
+                    defaultValue: "No pending signatures at this time.",
+                  })}
                 </p>
               </>
             ) : (
               <>
                 <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-base font-semibold text-gray-700">
-                  No contracts yet
+                  {t("campaigns.contractHub.empty.title", {
+                    defaultValue: "No contracts yet",
+                  })}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  Contracts will appear here once campaigns are created and
-                  sent.
+                  {t("campaigns.contractHub.empty.subtitle", {
+                    defaultValue:
+                      "Contracts will appear here once campaigns are created and sent.",
+                  })}
                 </p>
               </>
             )}
@@ -8945,8 +9400,12 @@ export default function BrandDashboard() {
                         {contract.target_name && (
                           <span>
                             {contract.target_type === "agency"
-                              ? "Agency"
-                              : "Creator"}
+                              ? t("campaigns.contractHub.targetType.agency", {
+                                  defaultValue: "Agency",
+                                })
+                              : t("campaigns.contractHub.targetType.creator", {
+                                  defaultValue: "Creator",
+                                })}
                             :{" "}
                             <span className="font-medium text-gray-700">
                               {contract.target_name}
@@ -8954,13 +9413,19 @@ export default function BrandDashboard() {
                           </span>
                         )}
                         <span>
-                          Sent:{" "}
+                          {t("campaigns.contractHub.meta.sent", {
+                            defaultValue: "Sent",
+                          })}
+                          :{" "}
                           <span className="font-medium text-gray-700">
                             {sentAt}
                           </span>
                         </span>
                         <span>
-                          Budget:{" "}
+                          {t("campaigns.contractHub.meta.budget", {
+                            defaultValue: "Budget",
+                          })}
+                          :{" "}
                           <span className="font-medium text-gray-700">
                             {budget}
                           </span>
@@ -8976,7 +9441,9 @@ export default function BrandDashboard() {
                           className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
                         >
                           <Download className="w-3 h-3" />
-                          Download
+                          {t("campaigns.contractHub.actions.download", {
+                            defaultValue: "Download",
+                          })}
                         </a>
                       )}
                     </div>
@@ -9020,18 +9487,24 @@ export default function BrandDashboard() {
       if (end < today)
         return (
           <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
-            Expired
+            {t("dashboard.usageRightsPage.badges.expired", {
+              defaultValue: "Expired",
+            })}
           </span>
         );
       if (end <= in15)
         return (
           <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            Expiring soon
+            {t("dashboard.usageRightsPage.badges.expiringSoon", {
+              defaultValue: "Expiring soon",
+            })}
           </span>
         );
       return (
         <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Active
+          {t("dashboard.usageRightsPage.badges.active", {
+            defaultValue: "Active",
+          })}
         </span>
       );
     };
@@ -9039,52 +9512,201 @@ export default function BrandDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Usage Rights & Compliance
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {t("dashboard.usageRightsPage.title")}
           </h1>
           <p className="text-gray-600">
-            Manage licensing, prevent misuse, ensure compliance
+            {t("dashboard.usageRightsPage.subtitle")}
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-gray-200">
-          {[
-            { key: "licenses", label: "Active Licenses" },
-            {
-              key: "expiring",
-              label: "Expiring Soon (15d)",
+        {/* Usage Rights Tabs */}
+        <div className="flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setUsageRightsTab("licenses")}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              usageRightsTab === "licenses"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            {t("dashboard.usageRightsPage.tabs.activeLicenses")}
+          </button>
+          <button
+            onClick={() => setUsageRightsTab("expiring")}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              usageRightsTab === "expiring"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            {t("dashboard.usageRightsPage.tabs.expiringSoon", {
               count: expiringLicensesReal.length,
-            },
-            { key: "contracts", label: "Contract Hub" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setUsageRightsTab(tab.key)}
-              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
-                usageRightsTab === tab.key
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              {tab.label}
-              {tab.count != null && tab.count > 0 && (
-                <span className="ml-1.5 text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
+            })}
+          </button>
+          <button
+            onClick={() => setUsageRightsTab("contracts")}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              usageRightsTab === "contracts"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            {t("campaigns.contractHub.title")}
+          </button>
+          <button
+            onClick={() => setUsageRightsTab("compliance")}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              usageRightsTab === "compliance"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            {t("dashboard.usageRightsPage.tabs.compliance")}
+          </button>
         </div>
 
         {/* ── Active Licenses / Expiring Soon ── */}
         {(usageRightsTab === "licenses" || usageRightsTab === "expiring") && (
           <div className="space-y-6">
+            {/* License Stats */}
+            <div className="grid md:grid-cols-4 gap-6">
+              <Card className="p-6 bg-white border border-gray-200">
+                <p className="text-sm text-gray-600 mb-1">
+                  {t("dashboard.usageRightsPage.stats.activeLicenses")}
+                </p>
+                <p className="text-4xl font-bold text-gray-900">
+                  {approvedLicenses.length}
+                </p>
+              </Card>
+              <Card className="p-6 bg-white border border-gray-200">
+                <p className="text-sm text-gray-600 mb-1">
+                  {t("dashboard.usageRightsPage.stats.expiring30d")}
+                </p>
+                <p className="text-4xl font-bold text-gray-900">
+                  {expiringLicensesReal.length}
+                </p>
+                {expiringLicensesReal.length > 0 && (
+                  <Badge className="mt-1 bg-orange-100 text-orange-700 border border-orange-300">
+                    {t("dashboard.usageRightsPage.stats.renewSoon")}
+                  </Badge>
+                )}
+              </Card>
+              <Card className="p-6 bg-white border border-gray-200">
+                <p className="text-sm text-gray-600 mb-1">
+                  {t("dashboard.usageRightsPage.stats.royaltiesPaid")}
+                </p>
+                <p className="text-4xl font-bold text-gray-900">
+                  {brandSpendData
+                    ? `$${(brandSpendData.ytd_spend / 100000).toFixed(1)}K`
+                    : "$0"}
+                </p>
+              </Card>
+              <Card className="p-6 bg-white border border-gray-200">
+                <p className="text-sm text-gray-600 mb-1">
+                  {t("dashboard.usageRightsPage.stats.violations")}
+                </p>
+                <p className="text-4xl font-bold text-green-600">0</p>
+                <Badge className="mt-1 bg-green-100 text-green-700 border border-green-300">
+                  {t("dashboard.usageRightsPage.stats.allClear")}
+                </Badge>
+              </Card>
+            </div>
+
+            {/* Active Licenses Table */}
+            <Card className="p-6 bg-white border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">
+                {t("dashboard.usageRightsPage.activeLicensesTable.title")}
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-gray-300">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.asset",
+                        )}
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.creator",
+                        )}
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.territory",
+                        )}
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.duration",
+                        )}
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.channels",
+                        )}
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.expires",
+                        )}
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.status",
+                        )}
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.actions",
+                        )}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {/* Licenses are now loaded from real API data */}
+                    <tr>
+                      <td
+                        colSpan={8}
+                        className="px-4 py-12 text-center text-gray-500"
+                      >
+                        {t(
+                          "dashboard.usageRightsPage.activeLicensesTable.empty",
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Expiring Tab */}
+        {usageRightsTab === "expiring" && (
+          <div className="space-y-6">
+            <Card className="p-6 bg-white border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                {t("dashboard.usageRightsPage.expiring.title")}
+              </h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Expiring licenses are now loaded from real API data */}
+                <div className="col-span-3 text-center py-12">
+                  <p className="text-gray-500">
+                    {t("dashboard.usageRightsPage.expiring.empty")}
+                  </p>
+                </div>
+              </div>
+            </Card>
+
             {/* Metrics */}
             <div className="grid grid-cols-2 gap-4">
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  Active Licenses
+                  {t("dashboard.usageRightsPage.stats.activeLicenses", {
+                    defaultValue: "Active Licenses",
+                  })}
                 </p>
                 <p className="text-3xl font-black text-gray-900">
                   {approvedLicenses.length}
@@ -9092,7 +9714,9 @@ export default function BrandDashboard() {
               </div>
               <div className="p-5 rounded-xl border border-gray-200 bg-white">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  Expiring (15d)
+                  {t("dashboard.usageRightsPage.stats.expiring15d", {
+                    defaultValue: "Expiring (15d)",
+                  })}
                 </p>
                 <p
                   className={`text-3xl font-black ${expiringLicensesReal.length > 0 ? "text-amber-600" : "text-gray-900"}`}
@@ -9101,7 +9725,9 @@ export default function BrandDashboard() {
                 </p>
                 {expiringLicensesReal.length > 0 && (
                   <p className="text-xs text-amber-600 font-semibold mt-0.5">
-                    Renew soon
+                    {t("dashboard.usageRightsPage.stats.renewSoon", {
+                      defaultValue: "Renew soon",
+                    })}
                   </p>
                 )}
               </div>
@@ -9112,25 +9738,50 @@ export default function BrandDashboard() {
               <div className="px-5 py-4 border-b border-gray-100">
                 <h3 className="text-sm font-bold text-gray-900">
                   {usageRightsTab === "expiring"
-                    ? "Expiring Licenses"
-                    : "Active Licenses"}
+                    ? t(
+                        "dashboard.usageRightsPage.licenseTable.titleExpiring",
+                        {
+                          defaultValue: "Expiring Licenses",
+                        },
+                      )
+                    : t("dashboard.usageRightsPage.licenseTable.titleActive", {
+                        defaultValue: "Active Licenses",
+                      })}
                 </h3>
               </div>
               {loadingBrandLicensingRequests ? (
                 <div className="flex items-center justify-center py-12 gap-3 text-gray-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Loading licenses…</span>
+                  <span className="text-sm">
+                    {t("dashboard.usageRightsPage.licenseTable.loading", {
+                      defaultValue: "Loading licenses...",
+                    })}
+                  </span>
                 </div>
               ) : displayLicenses.length === 0 ? (
                 <div className="py-14 text-center">
                   <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                   <p className="text-sm font-semibold text-gray-600">
                     {usageRightsTab === "expiring"
-                      ? "No licenses expiring in the next 15 days"
-                      : "No active licenses yet"}
+                      ? t(
+                          "dashboard.usageRightsPage.licenseTable.emptyExpiringTitle",
+                          {
+                            defaultValue:
+                              "No licenses expiring in the next 15 days",
+                          },
+                        )
+                      : t(
+                          "dashboard.usageRightsPage.licenseTable.emptyActiveTitle",
+                          {
+                            defaultValue: "No active licenses yet",
+                          },
+                        )}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Licenses appear here once licensing requests are approved.
+                    {t("dashboard.usageRightsPage.licenseTable.emptySubtitle", {
+                      defaultValue:
+                        "Licenses appear here once licensing requests are approved.",
+                    })}
                   </p>
                 </div>
               ) : (
@@ -9138,22 +9789,48 @@ export default function BrandDashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100 bg-gray-50/60">
-                        {[
-                          "Creator / Talent",
-                          "Campaign",
-                          "Territory",
-                          "Usage Scope",
-                          "Duration",
-                          "Expires",
-                          "Status",
-                        ].map((h) => (
-                          <th
-                            key={h}
-                            className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide"
-                          >
-                            {h}
-                          </th>
-                        ))}
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.creatorTalent",
+                            { defaultValue: "Creator / Talent" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.campaign",
+                            { defaultValue: "Campaign" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.territory",
+                            { defaultValue: "Territory" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.usageScope",
+                            { defaultValue: "Usage Scope" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.duration",
+                            { defaultValue: "Duration" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.expires",
+                            { defaultValue: "Expires" },
+                          )}
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">
+                          {t(
+                            "dashboard.usageRightsPage.licenseTable.headers.status",
+                            { defaultValue: "Status" },
+                          )}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -9197,6 +9874,30 @@ export default function BrandDashboard() {
 
         {/* ── Contract Hub ── */}
         {usageRightsTab === "contracts" && renderContractHub()}
+
+        {/* Compliance Tab */}
+        {usageRightsTab === "compliance" && (
+          <div className="space-y-6">
+            {/* Watermark Verification */}
+            <Card className="p-6 bg-white border border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                {t("dashboard.usageRightsPage.compliance.title")}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {t("dashboard.usageRightsPage.compliance.subtitle")}
+              </p>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#F7B750] transition-colors cursor-pointer">
+                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-700 mb-2">
+                  {t("dashboard.usageRightsPage.compliance.dropzoneTitle")}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {t("dashboard.usageRightsPage.compliance.dropzoneSubtitle")}
+                </p>
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
     );
   };
@@ -9204,42 +9905,42 @@ export default function BrandDashboard() {
   const renderBilling = () => (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-          Billing & Payments
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {t("dashboard.billingPage.title")}
         </h1>
-        <p className="text-gray-600">
-          Payment tracking, invoicing, and budget management
-        </p>
+        <p className="text-gray-600">{t("dashboard.billingPage.subtitle")}</p>
       </div>
 
       {/* Budget Overview - Prominent Position */}
       {budgetLimit !== null && budgetLimit > 0 && (
         <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="flex items-start justify-between">
             <div>
               <h3 className="text-lg font-bold text-blue-900 mb-1">
-                Monthly Budget Tracker
+                {t("dashboard.billingPage.budgetTracker.title")}
               </h3>
               <p className="text-sm text-blue-700">
-                Track your spending against your budget limit
+                {t("dashboard.billingPage.budgetTracker.subtitle")}
               </p>
             </div>
             {budgetAlertEnabled && (
-              <Badge className="bg-blue-100 text-blue-800 border border-blue-300 self-start">
+              <Badge className="bg-blue-100 text-blue-800 border border-blue-300">
                 <Bell className="w-3 h-3 mr-1" />
-                Alerts On
+                {t("dashboard.billingPage.budgetTracker.alertsOn")}
               </Badge>
             )}
           </div>
           <div className="mt-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
-              <span className="text-xl sm:text-2xl font-bold text-blue-900">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-2xl font-bold text-blue-900">
                 {loadingBillingData
                   ? "..."
                   : `$${((billingCurrentMonthSpend || 0) / 100).toLocaleString()}`}
               </span>
               <span className="text-lg text-blue-700">
-                of ${budgetLimit.toLocaleString()} budget
+                {t("dashboard.billingPage.budgetTracker.ofBudget", {
+                  amount: budgetLimit.toLocaleString(),
+                })}
               </span>
             </div>
             <Progress
@@ -9266,8 +9967,8 @@ export default function BrandDashboard() {
                   }`}
                 >
                   {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit
-                    ? "You've reached your monthly budget limit"
-                    : "You've reached 80% of your monthly budget"}
+                    ? t("dashboard.billingPage.budgetTracker.limitReached")
+                    : t("dashboard.billingPage.budgetTracker.eightyPercent")}
                 </span>
               </div>
             )}
@@ -9276,10 +9977,12 @@ export default function BrandDashboard() {
       )}
 
       {/* Billing Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid md:grid-cols-4 gap-6">
         <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">This Month's Spend</p>
-          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+          <p className="text-sm text-gray-600 mb-1">
+            {t("dashboard.billingPage.overview.thisMonthSpend")}
+          </p>
+          <p className="text-4xl font-bold text-gray-900">
             {loadingBillingData
               ? "..."
               : billingCurrentMonthSpend > 0
@@ -9288,15 +9991,21 @@ export default function BrandDashboard() {
           </p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">In Escrow</p>
-          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+          <p className="text-sm text-gray-600 mb-1">
+            {t("dashboard.billingPage.overview.inEscrow")}
+          </p>
+          <p className="text-4xl font-bold text-gray-900">
             ${(escrowTotal / 1000).toFixed(1)}K
           </p>
-          <p className="text-xs text-gray-500 mt-1">Pending delivery</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {t("dashboard.billingPage.overview.pendingDelivery")}
+          </p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Amount Spent YTD</p>
-          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+          <p className="text-sm text-gray-600 mb-1">
+            {t("dashboard.billingPage.overview.amountSpentYtd")}
+          </p>
+          <p className="text-4xl font-bold text-gray-900">
             {loadingBillingData
               ? "..."
               : billingYtdSpend > 0
@@ -9306,16 +10015,21 @@ export default function BrandDashboard() {
         </Card>
         {canViewSubscriptions && (
           <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-1">Next Invoice</p>
+            <p className="text-sm text-gray-600 mb-1">
+              {t("dashboard.billingPage.overview.nextInvoice")}
+            </p>
             <p className="text-2xl font-bold text-gray-900">
-              {brandNextInvoiceDate || "Not set"}
+              {brandNextInvoiceDate ||
+                t("dashboard.billingPage.overview.notSet")}
             </p>
             <p className="text-xs text-gray-500 mt-1">
               {brandPlanTier === "enterprise"
-                ? "Custom enterprise contract"
+                ? t("dashboard.billingPage.overview.enterpriseContract")
                 : (brandRecurringAmount || 0) > 0
-                  ? `$${brandRecurringAmount}/mo recurring`
-                  : "No active subscription"}
+                  ? t("dashboard.billingPage.overview.recurring", {
+                      amount: brandRecurringAmount,
+                    })
+                  : t("dashboard.billingPage.overview.noActiveSubscription")}
             </p>
           </Card>
         )}
@@ -9323,24 +10037,24 @@ export default function BrandDashboard() {
 
       {/* Budget Management */}
       <Card
-        className={`p-4 sm:p-6 border-2 ${
+        className={`p-6 border-2 ${
           budgetLimit === null || budgetLimit === 0
             ? "bg-amber-50 border-amber-300"
             : "bg-white border-gray-200"
         }`}
       >
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
+        <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-xl font-bold text-gray-900">
-              Budget Management
+              {t("dashboard.billingPage.management.title")}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Set a monthly spending limit and get alerts
+              {t("dashboard.billingPage.management.subtitle")}
             </p>
           </div>
           {budgetLimit !== null && budgetLimit > 0 && budgetAlertEnabled && (
             <Badge className="bg-green-100 text-green-700 border border-green-300">
-              Active
+              {t("dashboard.billingPage.management.active")}
             </Badge>
           )}
         </div>
@@ -9353,11 +10067,10 @@ export default function BrandDashboard() {
               </div>
               <div>
                 <p className="font-semibold text-gray-900">
-                  Set your monthly budget
+                  {t("dashboard.billingPage.management.emptyTitle")}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
-                  Track your spending and get notified when you approach your
-                  limit. Stay on top of your creator campaign costs.
+                  {t("dashboard.billingPage.management.emptyDescription")}
                 </p>
               </div>
             </div>
@@ -9367,11 +10080,13 @@ export default function BrandDashboard() {
         <div className="space-y-4">
           <div>
             <Label className="text-sm font-semibold text-gray-700 block mb-2">
-              Monthly Budget Limit ($)
+              {t("dashboard.billingPage.management.monthlyBudgetLimit")}
             </Label>
             <Input
               type="number"
-              placeholder="e.g., 5000"
+              placeholder={t(
+                "dashboard.billingPage.management.monthlyBudgetPlaceholder",
+              )}
               className="border-2 border-gray-300 max-w-xs"
               value={budgetLimit ?? ""}
               onChange={(e) =>
@@ -9392,10 +10107,10 @@ export default function BrandDashboard() {
                 htmlFor="budgetAlertEnabled"
                 className="text-sm font-medium text-gray-900"
               >
-                Enable budget alerts
+                {t("dashboard.billingPage.management.enableAlerts")}
               </Label>
               <p className="text-xs text-gray-500">
-                Get notified at 80% and 100% of your budget
+                {t("dashboard.billingPage.management.enableAlertsHelp")}
               </p>
             </div>
           </div>
@@ -9410,13 +10125,17 @@ export default function BrandDashboard() {
                   budget_alert_enabled: budgetAlertEnabled,
                 });
                 toast({
-                  title: "Settings saved",
-                  description: "Budget settings updated successfully.",
+                  title: t("dashboard.billingPage.management.savedTitle"),
+                  description: t(
+                    "dashboard.billingPage.management.savedDescription",
+                  ),
                 });
               } catch {
                 toast({
-                  title: "Error",
-                  description: "Failed to save budget settings.",
+                  title: t("dashboard.billingPage.management.errorTitle"),
+                  description: t(
+                    "dashboard.billingPage.management.errorDescription",
+                  ),
                   variant: "destructive",
                 });
               } finally {
@@ -9424,7 +10143,9 @@ export default function BrandDashboard() {
               }
             }}
           >
-            {savingBudgetSettings ? "Saving..." : "Save Budget Settings"}
+            {savingBudgetSettings
+              ? t("dashboard.billingPage.management.saving")
+              : t("dashboard.billingPage.management.saveButton")}
           </Button>
         </div>
       </Card>
@@ -9444,13 +10165,19 @@ export default function BrandDashboard() {
                 <h3
                   className={`mt-3 text-xl font-bold ${brandSummaryTheme.headingClass}`}
                 >
-                  Current Plan: {brandPlanLabel}
+                  {t("dashboard.billingPage.currentPlan.title", {
+                    plan: brandPlanLabel,
+                  })}
                 </h3>
                 <p className={`mt-1 ${brandSummaryTheme.bodyClass}`}>
                   {brandTrialEndsAt
-                    ? `Free trial ends on ${brandTrialEndsAt}`
+                    ? t("dashboard.billingPage.currentPlan.freeTrialEnds", {
+                        date: brandTrialEndsAt,
+                      })
                     : brandCurrentPeriodEnd
-                      ? `Renews on ${brandCurrentPeriodEnd}`
+                      ? t("dashboard.billingPage.currentPlan.renewsOn", {
+                          date: brandCurrentPeriodEnd,
+                        })
                       : brandSubscriptionStatus}
                 </p>
               </div>
@@ -9471,14 +10198,14 @@ export default function BrandDashboard() {
                 <p
                   className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
                 >
-                  Base Subscription
+                  {t("dashboard.billingPage.currentPlan.baseSubscription")}
                 </p>
                 <p
                   className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
                 >
                   {brandBasePrice == null
                     ? brandPlanTier === "enterprise"
-                      ? "Custom"
+                      ? t("dashboard.billingPage.currentPlan.custom")
                       : "$0"
                     : `$${brandBasePrice}`}
                 </p>
@@ -9494,22 +10221,24 @@ export default function BrandDashboard() {
                 <p
                   className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
                 >
-                  AI Studio Add-On
+                  {t("dashboard.billingPage.currentPlan.aiStudioAddon")}
                 </p>
                 <p
                   className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
                 >
                   {brandHasIncludedStudio
-                    ? "Included"
+                    ? t("dashboard.billingPage.currentPlan.included")
                     : brandHasStudioAddon
                       ? `$${BRAND_STUDIO_ADDON_PRICE}`
-                      : "Inactive"}
+                      : t("dashboard.billingPage.currentPlan.inactive")}
                 </p>
                 <p
                   className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
                 >
                   {brandStudioCurrentPeriodEnd && brandPlanTier !== "enterprise"
-                    ? `Renews on ${brandStudioCurrentPeriodEnd}`
+                    ? t("dashboard.billingPage.currentPlan.renewsOn", {
+                        date: brandStudioCurrentPeriodEnd,
+                      })
                     : brandStudioStatus}
                 </p>
               </div>
@@ -9519,20 +10248,22 @@ export default function BrandDashboard() {
                 <p
                   className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
                 >
-                  Campaign Slots
+                  {t("dashboard.billingPage.currentPlan.campaignSlots")}
                 </p>
                 <p
                   className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
                 >
                   {brandCampaignLimit == null
-                    ? "Unlimited"
+                    ? t("dashboard.billingPage.currentPlan.unlimited")
                     : `${brandCampaignSlotsUsed} / ${brandCampaignLimitLabel}`}
                 </p>
                 <p
                   className={`text-xs mt-1 ${brandSummaryTheme.statMetaClass}`}
                 >
-                  {campaignMetrics.active_projects_count} active,{" "}
-                  {campaignMetrics.pending_approvals_count} pending approval
+                  {t("dashboard.billingPage.currentPlan.campaignSlotsMeta", {
+                    active: campaignMetrics.active_projects_count,
+                    pending: campaignMetrics.pending_approvals_count,
+                  })}
                 </p>
               </div>
               <div
@@ -9541,7 +10272,7 @@ export default function BrandDashboard() {
                 <p
                   className={`text-sm mb-1 ${brandSummaryTheme.statLabelClass}`}
                 >
-                  Team Seats
+                  {t("dashboard.billingPage.currentPlan.teamSeats")}
                 </p>
                 <p
                   className={`text-2xl font-bold ${brandSummaryTheme.statValueClass}`}
@@ -9556,11 +10287,22 @@ export default function BrandDashboard() {
                 <AlertDescription>
                   {brandCampaignLimitReached
                     ? brandCampaignLimit === 0
-                      ? "Upgrade to a paid brand plan to launch campaigns."
-                      : `You've reached ${brandCampaignSlotsUsed} of ${brandCampaignLimitLabel} campaign slots. Mark a campaign done or upgrade before launching another.`
+                      ? t("dashboard.billingPage.currentPlan.upgradeToPaid")
+                      : t(
+                          "dashboard.billingPage.currentPlan.campaignLimitReached",
+                          {
+                            used: brandCampaignSlotsUsed,
+                            total: brandCampaignLimitLabel,
+                          },
+                        )
                     : brandSeatLimit === 0
-                      ? "Upgrade to Basic or above to unlock company seats."
-                      : `You've reached your ${brandSeatLimitLabel} company seat limit on the current plan.`}
+                      ? t("dashboard.billingPage.currentPlan.upgradeForSeats")
+                      : t(
+                          "dashboard.billingPage.currentPlan.seatLimitReached",
+                          {
+                            total: brandSeatLimitLabel,
+                          },
+                        )}
                 </AlertDescription>
               </Alert>
             )}
@@ -9571,26 +10313,26 @@ export default function BrandDashboard() {
       {/* Payment Status / Project Billing */}
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-xl font-bold text-gray-900 mb-6">
-          Project Payment Status
+          {t("dashboard.billingPage.projectPaymentStatus.title")}
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b-2 border-gray-300">
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Project
+                  {t("dashboard.billingPage.projectPaymentStatus.project")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Talent
+                  {t("dashboard.billingPage.projectPaymentStatus.talent")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Amount
+                  {t("dashboard.billingPage.projectPaymentStatus.amount")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Status
+                  {t("dashboard.billingPage.projectPaymentStatus.status")}
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Date
+                  {t("dashboard.billingPage.projectPaymentStatus.date")}
                 </th>
               </tr>
             </thead>
@@ -9601,8 +10343,7 @@ export default function BrandDashboard() {
                   colSpan={5}
                   className="px-4 py-12 text-center text-gray-500"
                 >
-                  No campaigns available yet. Campaigns will appear here once
-                  you create them.
+                  {t("dashboard.billingPage.projectPaymentStatus.empty")}
                 </td>
               </tr>
             </tbody>
@@ -9613,23 +10354,25 @@ export default function BrandDashboard() {
       {/* Escrow Explanation */}
       <Card className="p-6 bg-blue-50 border border-blue-200">
         <h3 className="text-lg font-bold text-gray-900 mb-3">
-          How Escrow Works
+          {t("dashboard.billingPage.escrow.title")}
         </h3>
         <p className="text-gray-700 mb-4">
-          Escrow protects both you and creators. When you start a project,
-          payment is held securely. Once you approve deliverables, payment
-          releases to the creator.
+          {t("dashboard.billingPage.escrow.description")}
         </p>
         <p className="text-sm font-semibold text-blue-900">
-          Current Escrow: ${(escrowTotal / 1000).toFixed(1)}K across{" "}
-          {escrowProjects.length} projects
+          {t("dashboard.billingPage.escrow.current", {
+            amount: (escrowTotal / 1000).toFixed(1),
+            count: escrowProjects.length,
+          })}
         </p>
       </Card>
 
       {/* Invoice History */}
       <Card className="p-6 bg-white border border-gray-200">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Invoice History</h3>
+          <h3 className="text-xl font-bold text-gray-900">
+            {t("dashboard.billingPage.invoiceHistory.title")}
+          </h3>
           <Button
             variant="outline"
             className="border-2 border-gray-300"
@@ -9654,18 +10397,17 @@ export default function BrandDashboard() {
             }}
           >
             <Download className="w-4 h-4 mr-2" />
-            Export All
+            {t("dashboard.billingPage.invoiceHistory.exportAll")}
           </Button>
         </div>
         <div className="space-y-3">
           {loadingBillingData ? (
             <div className="p-4 text-center text-gray-500">
-              Loading invoices...
+              {t("dashboard.billingPage.invoiceHistory.loading")}
             </div>
           ) : brandInvoices.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
-              No invoices available yet. Invoices will appear here once you have
-              an active subscription.
+              {t("dashboard.billingPage.invoiceHistory.empty")}
             </div>
           ) : (
             brandInvoices.map((invoice) => {
@@ -9675,7 +10417,7 @@ export default function BrandDashboard() {
                     year: "numeric",
                     month: "long",
                   })
-                : "Unknown";
+                : t("dashboard.billingPage.invoiceHistory.unknown");
               return (
                 <div
                   key={invoice.id}
@@ -9701,7 +10443,10 @@ export default function BrandDashboard() {
                           : "bg-yellow-100 text-yellow-700 border border-yellow-300"
                       }
                     >
-                      {invoice.status}
+                      {t(
+                        `dashboard.billingPage.invoiceHistory.status.${String(invoice.status).toLowerCase()}`,
+                        { defaultValue: invoice.status },
+                      )}
                     </Badge>
                     {invoice.invoice_url && (
                       <Button
@@ -9728,12 +10473,10 @@ export default function BrandDashboard() {
   const renderSettings = () => (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-          Settings
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {t("dashboard.settingsPage.title")}
         </h1>
-        <p className="text-gray-600">
-          Manage your company profile and preferences
-        </p>
+        <p className="text-gray-600">{t("dashboard.settingsPage.subtitle")}</p>
       </div>
 
       <Tabs
@@ -9746,37 +10489,37 @@ export default function BrandDashboard() {
             value="profile"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
-            Profile
+            {t("dashboard.settingsPage.tabs.profile")}
           </TabsTrigger>
           <TabsTrigger
             value="notifications"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
-            Notifications
+            {t("dashboard.settingsPage.tabs.notifications")}
           </TabsTrigger>
           <TabsTrigger
             value="billing"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
-            Billing
+            {t("dashboard.settingsPage.tabs.billing")}
           </TabsTrigger>
           <TabsTrigger
             value="team"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
-            Team
+            {t("dashboard.settingsPage.tabs.team")}
           </TabsTrigger>
           <TabsTrigger
             value="integrations"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
-            Integrations
+            {t("dashboard.settingsPage.tabs.integrations")}
           </TabsTrigger>
           <TabsTrigger
             value="security"
             className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#F7B750] data-[state=active]:bg-transparent px-6 py-3 font-bold uppercase tracking-widest text-xs"
           >
-            Security & Legal
+            {t("dashboard.settingsPage.tabs.securityLegal")}
           </TabsTrigger>
         </TabsList>
 
@@ -9784,11 +10527,11 @@ export default function BrandDashboard() {
           {/* Company Logo */}
           <Card className="p-6 bg-white border border-gray-200 rounded-none shadow-none">
             <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase tracking-tight">
-              Company Logo
+              {t("dashboard.settingsPage.profile.companyLogo")}
             </h3>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-6">
               <div className="relative">
-                <Avatar className="w-24 sm:w-32 h-24 sm:h-32 border-2 border-gray-200 rounded-none bg-gray-50">
+                <Avatar className="w-32 h-32 border-2 border-gray-200 rounded-none bg-gray-50">
                   <AvatarImage src={brand?.logo} alt={brand?.name} />
                   <AvatarFallback className="text-2xl font-black text-gray-400 bg-gray-50 rounded-none border border-dashed border-gray-300">
                     {getBrandInitials(brand?.name)}
@@ -9807,24 +10550,25 @@ export default function BrandDashboard() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-900 uppercase tracking-widest mb-1">
-                  Upload Official Logo
+                  {t("dashboard.settingsPage.profile.uploadOfficialLogo")}
                 </p>
                 <p className="text-xs text-gray-500 font-medium">
-                  JPG or PNG, max 5MB, square format recommended
+                  {t("dashboard.settingsPage.profile.logoHelp")}
                 </p>
               </div>
             </div>
           </Card>
 
           {/* Company Information */}
-          <Card className="p-4 sm:p-6 md:p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <Building2 className="w-6 h-6" /> Company Information
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <Building2 className="w-6 h-6" />{" "}
+              {t("dashboard.settingsPage.profile.companyInformation")}
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+            <div className="grid md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Company Name
+                  {t("dashboard.settingsPage.profile.companyName")}
                 </Label>
                 <Input
                   value={brand?.name ?? ""}
@@ -9834,7 +10578,7 @@ export default function BrandDashboard() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Industry
+                  {t("dashboard.settingsPage.profile.industry")}
                 </Label>
                 <Input
                   value={brand?.industry ?? ""}
@@ -9846,7 +10590,7 @@ export default function BrandDashboard() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Website
+                  {t("dashboard.settingsPage.profile.website")}
                 </Label>
                 <Input
                   value={brand?.website ?? ""}
@@ -9858,7 +10602,7 @@ export default function BrandDashboard() {
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
-                  Your Email
+                  {t("dashboard.settingsPage.profile.yourEmail")}
                 </Label>
                 <Input
                   value={profile?.email ?? ""}
@@ -9871,40 +10615,61 @@ export default function BrandDashboard() {
             <div className="mt-12">
               <Button
                 onClick={handleSaveProfile}
-                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-6 sm:px-12 h-11 sm:h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none w-full sm:w-auto"
+                className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest px-12 h-14 shadow-[8px_8px_0px_rgba(247,183,80,0.3)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
               >
-                Save Profile Changes
+                {t("dashboard.settingsPage.profile.saveProfileChanges")}
               </Button>
             </div>
           </Card>
         </TabsContent>
 
         <TabsContent value="notifications" className="space-y-6 mt-0">
-          <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 rounded-none shadow-none">
-            <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
-              <Bell className="w-6 h-6" /> Communication Preferences
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <Bell className="w-6 h-6" />{" "}
+              {t("dashboard.settingsPage.notifications.title")}
             </h3>
             <div className="space-y-2">
               {[
                 {
-                  title: "New Project Alerts",
-                  desc: "When talent accepts or delivers assets",
+                  title: t(
+                    "dashboard.settingsPage.notifications.items.newProjectAlerts.title",
+                  ),
+                  desc: t(
+                    "dashboard.settingsPage.notifications.items.newProjectAlerts.desc",
+                  ),
                 },
                 {
-                  title: "Deliverable Submissions",
-                  desc: "When creators submit work for approval",
+                  title: t(
+                    "dashboard.settingsPage.notifications.items.deliverableSubmissions.title",
+                  ),
+                  desc: t(
+                    "dashboard.settingsPage.notifications.items.deliverableSubmissions.desc",
+                  ),
                 },
                 {
-                  title: "Approval Reminders",
-                  desc: "48-hour countdown notifications",
+                  title: t(
+                    "dashboard.settingsPage.notifications.items.approvalReminders.title",
+                  ),
+                  desc: t(
+                    "dashboard.settingsPage.notifications.items.approvalReminders.desc",
+                  ),
                 },
                 {
-                  title: "License Expiration Alerts",
-                  desc: "30-day advance notice",
+                  title: t(
+                    "dashboard.settingsPage.notifications.items.licenseExpirationAlerts.title",
+                  ),
+                  desc: t(
+                    "dashboard.settingsPage.notifications.items.licenseExpirationAlerts.desc",
+                  ),
                 },
                 {
-                  title: "Monthly Analytics Summary",
-                  desc: "Monthly performance email report",
+                  title: t(
+                    "dashboard.settingsPage.notifications.items.monthlyAnalyticsSummary.title",
+                  ),
+                  desc: t(
+                    "dashboard.settingsPage.notifications.items.monthlyAnalyticsSummary.desc",
+                  ),
                 },
               ].map((pref, i) => (
                 <div
@@ -9927,14 +10692,78 @@ export default function BrandDashboard() {
         </TabsContent>
 
         <TabsContent value="billing" className="space-y-6 mt-0">
-          <BrandSettingsBilling />
+          <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+            <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+              <CreditCard className="w-6 h-6" />{" "}
+              {t("dashboard.settingsPage.billing.title")}
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                  {t("dashboard.settingsPage.billing.billingAddress")}
+                </Label>
+                <Textarea
+                  defaultValue="123 Main St&#10;Los Angeles, CA 90001&#10;United States"
+                  className="rounded-none border-2 border-gray-200 focus:border-gray-900 font-bold min-h-[120px]"
+                />
+              </div>
+              <div className="space-y-8">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                    {t("dashboard.settingsPage.billing.billingEmail")}
+                  </Label>
+                  <Input
+                    defaultValue={t(
+                      "dashboard.settingsPage.billing.defaultBillingEmail",
+                    )}
+                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] block">
+                    {t("dashboard.settingsPage.billing.taxIdentification")}
+                  </Label>
+                  <Input
+                    placeholder={t(
+                      "dashboard.settingsPage.billing.taxIdentificationPlaceholder",
+                    )}
+                    className="rounded-none border-2 border-gray-200 focus:border-gray-900 h-12 font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-12 p-6 bg-gray-50 border-2 border-gray-900 rounded-none flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gray-950 rounded-lg flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    {t("dashboard.settingsPage.billing.primaryPaymentMethod")}
+                  </p>
+                  <p className="text-sm font-black text-gray-900">
+                    {t(
+                      "dashboard.settingsPage.billing.primaryPaymentMethodValue",
+                    )}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="rounded-none border-2 border-gray-900 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-gray-950 hover:text-white"
+              >
+                {t("dashboard.settingsPage.billing.manage")}
+              </Button>
+            </div>
+          </Card>
         </TabsContent>
 
         <TabsContent value="team" className="space-y-6 mt-0">
           <TeamManagementCard
             organizationType="brand"
-            title="Team Management"
-            description="Manage members, roles, and invitations for your brand organization."
+            title={t("dashboard.settingsPage.team.title")}
+            description={t("dashboard.settingsPage.team.description")}
             seatLimit={brandSeatLimit}
             seatLimitReached={brandSeatLimitReached}
           />
@@ -9946,26 +10775,26 @@ export default function BrandDashboard() {
               <Zap className="w-8 h-8 text-gray-300" />
             </div>
             <h3 className="text-xl font-black text-gray-900 mb-2 uppercase tracking-tighter">
-              Extend Your Workflow
+              {t("dashboard.settingsPage.integrations.title")}
             </h3>
             <p className="text-sm text-gray-500 font-medium max-w-sm mb-8">
-              Connect Likelee with your favorite marketing tools to automate
-              deliverables, tracking, and payments.
+              {t("dashboard.settingsPage.integrations.description")}
             </p>
             <Button
               disabled
               className="rounded-none bg-gray-100 text-gray-400 font-black uppercase tracking-widest text-xs px-8"
             >
-              Coming Soon
+              {t("campaignsDashboard.quickActions.comingSoon")}
             </Button>
           </Card>
         </TabsContent>
 
         <TabsContent value="security" className="space-y-6 mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
-                <Shield className="w-6 h-6" /> Security Settings
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+                <Shield className="w-6 h-6" />{" "}
+                {t("dashboard.settingsPage.security.title")}
               </h3>
               <div className="space-y-4">
                 <Button
@@ -9973,7 +10802,8 @@ export default function BrandDashboard() {
                   onClick={() => navigate("/forgot-password")}
                   className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
                 >
-                  Reset Admin Password <ChevronRight className="w-4 h-4" />
+                  {t("dashboard.settingsPage.security.resetAdminPassword")}{" "}
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
                 <div className="relative group">
                   <Button
@@ -9981,7 +10811,8 @@ export default function BrandDashboard() {
                     onClick={() => navigate("/TwoFactorSetup")}
                     className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
                   >
-                    Enable 2FA Protection <ChevronRight className="w-4 h-4" />
+                    {t("dashboard.settingsPage.security.enable2fa")}{" "}
+                    <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
                 <div className="relative group">
@@ -9990,7 +10821,8 @@ export default function BrandDashboard() {
                     onClick={() => setShowSessionAudit((v) => !v)}
                     className="w-full justify-between rounded-none border-2 border-gray-200 hover:border-gray-900 font-black uppercase tracking-widest text-[10px] h-12"
                   >
-                    Active Session Audit <ChevronRight className="w-4 h-4" />
+                    {t("dashboard.settingsPage.security.activeSessionAudit")}{" "}
+                    <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
                 {showSessionAudit && (
@@ -10001,9 +10833,10 @@ export default function BrandDashboard() {
               </div>
             </Card>
 
-            <Card className="p-4 sm:p-6 md:p-8 bg-white border border-gray-200 rounded-none shadow-none">
-              <h3 className="text-xl font-black text-gray-900 mb-4 sm:mb-8 uppercase tracking-tighter flex items-center gap-3">
-                <FileText className="w-6 h-6" /> Legal & Governance
+            <Card className="p-8 bg-white border border-gray-200 rounded-none shadow-none">
+              <h3 className="text-xl font-black text-gray-900 mb-8 uppercase tracking-tighter flex items-center gap-3">
+                <FileText className="w-6 h-6" />{" "}
+                {t("dashboard.settingsPage.legal.title")}
               </h3>
               <div className="space-y-3">
                 <button
@@ -10016,7 +10849,7 @@ export default function BrandDashboard() {
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-900 text-[10px] font-black uppercase tracking-widest text-gray-800 text-left transition-colors"
                 >
                   <FileText className="w-4 h-4 text-gray-500 shrink-0" />
-                  Terms & Conditions
+                  {t("dashboard.settingsPage.legal.terms")}
                 </button>
                 <button
                   onClick={() =>
@@ -10025,14 +10858,14 @@ export default function BrandDashboard() {
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-900 text-[10px] font-black uppercase tracking-widest text-gray-800 text-left transition-colors"
                 >
                   <FileText className="w-4 h-4 text-gray-500 shrink-0" />
-                  Privacy Policy
+                  {t("dashboard.settingsPage.legal.privacy")}
                 </button>
                 <button
                   onClick={() => navigate("/sagaftraalignment")}
                   className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-900 text-[10px] font-black uppercase tracking-widest text-gray-800 text-left transition-colors"
                 >
                   <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                  SAG-AFTRA Agreement
+                  {t("dashboard.settingsPage.legal.sagAftra")}
                 </button>
                 <div className="relative group">
                   <button
@@ -10040,14 +10873,14 @@ export default function BrandDashboard() {
                     className="w-full flex items-center gap-3 px-4 py-3.5 rounded-none border-2 border-gray-200 bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-400 text-left transition-colors opacity-50 blur-[1px] cursor-not-allowed"
                   >
                     <Download className="w-4 h-4 text-gray-400 shrink-0" />
-                    Data Export (GDPR)
+                    {t("dashboard.settingsPage.legal.dataExport")}
                   </button>
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                     <Badge
                       variant="secondary"
                       className="bg-gray-900 text-white font-black uppercase tracking-widest text-[10px]"
                     >
-                      Coming Soon
+                      {t("campaignsDashboard.quickActions.comingSoon")}
                     </Badge>
                   </div>
                 </div>
@@ -10062,11 +10895,10 @@ export default function BrandDashboard() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div>
             <h3 className="text-2xl font-black uppercase tracking-tighter mb-2 italic">
-              Need Assistance?
+              {t("dashboard.settingsPage.support.title")}
             </h3>
             <p className="text-gray-400 font-medium text-sm">
-              Our partner success team is available 24/7 to help you optimize
-              your campaigns.
+              {t("dashboard.settingsPage.support.description")}
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-3">
@@ -10077,7 +10909,8 @@ export default function BrandDashboard() {
               }}
               className="rounded-none bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12"
             >
-              <HelpCircle className="w-4 h-4 mr-2" /> Live Support
+              <HelpCircle className="w-4 h-4 mr-2" />{" "}
+              {t("dashboard.settingsPage.support.liveSupport")}
             </Button>
             <Button
               onClick={() => {
@@ -10086,7 +10919,8 @@ export default function BrandDashboard() {
               }}
               className="rounded-none bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-widest text-[10px] min-w-[140px] h-12 border-2 border-purple-500"
             >
-              <Calendar className="w-4 h-4 mr-2" /> Book a Demo
+              <Calendar className="w-4 h-4 mr-2" />{" "}
+              {t("dashboard.settingsPage.support.bookDemo")}
             </Button>
           </div>
         </div>
@@ -10101,17 +10935,25 @@ export default function BrandDashboard() {
         <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Hire {selectedCreator?.name}
+              {t("dashboard.hireModal.title", {
+                talentName: selectedCreator?.name,
+                defaultValue: `Hire ${selectedCreator?.name}`,
+              })}
             </DialogTitle>
             <DialogDescription>
-              Define contract terms before hiring this creator.
+              {t("dashboard.hireModal.subtitle", {
+                defaultValue:
+                  "Define contract terms before hiring this creator.",
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
             <p className="text-gray-700 mb-6">
-              Before you hire {selectedCreator?.name}, let's define the contract
-              terms.
+              {t("dashboard.hireModal.intro", {
+                talentName: selectedCreator?.name,
+                defaultValue: `Before you hire ${selectedCreator?.name}, let's define the contract terms.`,
+              })}
             </p>
 
             <div className="space-y-4">
@@ -10125,11 +10967,15 @@ export default function BrandDashboard() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      I'll Create the Project & Terms
+                      {t("dashboard.hireModal.options.self.title", {
+                        defaultValue: "I'll Create the Project & Terms",
+                      })}
                     </h3>
                     <p className="text-gray-600">
-                      Set deliverables, budget, and contract terms yourself
-                      using our guided builder.
+                      {t("dashboard.hireModal.options.self.description", {
+                        defaultValue:
+                          "Set deliverables, budget, and contract terms yourself using our guided builder.",
+                      })}
                     </p>
                   </div>
                 </div>
@@ -10145,11 +10991,15 @@ export default function BrandDashboard() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      My Agency Will Handle It
+                      {t("dashboard.hireModal.options.agency.title", {
+                        defaultValue: "My Agency Will Handle It",
+                      })}
                     </h3>
                     <p className="text-gray-600">
-                      Send this to your partner agency. They'll build the
-                      project and terms.
+                      {t("dashboard.hireModal.options.agency.description", {
+                        defaultValue:
+                          "Send this to your partner agency. They'll build the project and terms.",
+                      })}
                     </p>
                   </div>
                 </div>
@@ -10165,11 +11015,15 @@ export default function BrandDashboard() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      Browse Likelee Partner Agencies
+                      {t("dashboard.hireModal.options.browse.title", {
+                        defaultValue: "Browse Likelee Partner Agencies",
+                      })}
                     </h3>
                     <p className="text-gray-600">
-                      Hire a Likelee partner agency to manage the project for
-                      you.
+                      {t("dashboard.hireModal.options.browse.description", {
+                        defaultValue:
+                          "Hire a Likelee partner agency to manage the project for you.",
+                      })}
                     </p>
                   </div>
                 </div>
@@ -10186,18 +11040,32 @@ export default function BrandDashboard() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Request License
+              {t("dashboard.licensingRequest.title", {
+                defaultValue: "Request License",
+              })}
             </DialogTitle>
             <DialogDescription>
               {selectedLicenseCreator
-                ? `Send a licensing request for ${selectedLicenseCreator.display_name || selectedLicenseCreator.full_name || "this talent"}.`
-                : "Send a licensing request."}
+                ? t("dashboard.licensingRequest.subtitle", {
+                    talentName:
+                      selectedLicenseCreator.display_name ||
+                      selectedLicenseCreator.full_name ||
+                      "this talent",
+                    defaultValue: `Send a licensing request for ${selectedLicenseCreator.display_name || selectedLicenseCreator.full_name || "this talent"}.`,
+                  })
+                : t("dashboard.licensingRequest.subtitleGeneric", {
+                    defaultValue: "Send a licensing request.",
+                  })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start Date</Label>
+                <Label>
+                  {t("dashboard.licensingRequest.startDate", {
+                    defaultValue: "Start Date",
+                  })}
+                </Label>
                 <Input
                   type="date"
                   value={licenseRequestForm.start_date}
@@ -10210,7 +11078,11 @@ export default function BrandDashboard() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Duration (Days)</Label>
+                <Label>
+                  {t("dashboard.licensingRequest.duration", {
+                    defaultValue: "Duration (Days)",
+                  })}
+                </Label>
                 <Input
                   type="number"
                   min={1}
@@ -10224,11 +11096,20 @@ export default function BrandDashboard() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>License Fee</Label>
+                <Label>
+                  {t("dashboard.licensingRequest.licenseFee", {
+                    defaultValue: "License Fee",
+                  })}
+                </Label>
                 <Input
                   type="number"
                   min={0}
-                  placeholder="e.g. 5000"
+                  placeholder={t(
+                    "dashboard.licensingRequest.licenseFeePlaceholder",
+                    {
+                      defaultValue: "e.g. 5000",
+                    },
+                  )}
                   value={licenseRequestForm.license_fee}
                   onChange={(e) =>
                     setLicenseRequestForm((prev) => ({
@@ -10239,7 +11120,11 @@ export default function BrandDashboard() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Category</Label>
+                <Label>
+                  {t("dashboard.licensingRequest.category", {
+                    defaultValue: "Category",
+                  })}
+                </Label>
                 <Select
                   value={licenseRequestForm.category}
                   onValueChange={(value) =>
@@ -10250,22 +11135,60 @@ export default function BrandDashboard() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300">
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue
+                      placeholder={t(
+                        "dashboard.licensingRequest.selectCategory",
+                        { defaultValue: "Select category" },
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Social Media">Social Media</SelectItem>
-                    <SelectItem value="E-commerce">E-commerce</SelectItem>
-                    <SelectItem value="Advertising">Advertising</SelectItem>
-                    <SelectItem value="Editorial">Editorial</SelectItem>
-                    <SelectItem value="Film & TV">Film & TV</SelectItem>
-                    <SelectItem value="Custom">Custom</SelectItem>
+                    <SelectItem value="Social Media">
+                      {t("dashboard.licensingRequest.categories.socialMedia", {
+                        defaultValue: "Social Media",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="E-commerce">
+                      {t("dashboard.licensingRequest.categories.ecommerce", {
+                        defaultValue: "E-commerce",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Advertising">
+                      {t("dashboard.licensingRequest.categories.advertising", {
+                        defaultValue: "Advertising",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Editorial">
+                      {t("dashboard.licensingRequest.categories.editorial", {
+                        defaultValue: "Editorial",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Film & TV">
+                      {t("dashboard.licensingRequest.categories.filmTv", {
+                        defaultValue: "Film & TV",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Custom">
+                      {t("dashboard.licensingRequest.categories.custom", {
+                        defaultValue: "Custom",
+                      })}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Territory</Label>
+                <Label>
+                  {t("dashboard.licensingRequest.territory", {
+                    defaultValue: "Territory",
+                  })}
+                </Label>
                 <Input
-                  placeholder="e.g. Global"
+                  placeholder={t(
+                    "dashboard.licensingRequest.territoryPlaceholder",
+                    {
+                      defaultValue: "Global",
+                    },
+                  )}
                   value={licenseRequestForm.territory}
                   onChange={(e) =>
                     setLicenseRequestForm((prev) => ({
@@ -10276,7 +11199,11 @@ export default function BrandDashboard() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Exclusivity</Label>
+                <Label>
+                  {t("dashboard.licensingRequest.exclusivity", {
+                    defaultValue: "Exclusivity",
+                  })}
+                </Label>
                 <Select
                   value={licenseRequestForm.exclusivity}
                   onValueChange={(value) =>
@@ -10287,23 +11214,54 @@ export default function BrandDashboard() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300">
-                    <SelectValue placeholder="Select exclusivity" />
+                    <SelectValue
+                      placeholder={t(
+                        "dashboard.licensingRequest.selectExclusivity",
+                        { defaultValue: "Select exclusivity" },
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Non-exclusive">Non-exclusive</SelectItem>
+                    <SelectItem value="Non-exclusive">
+                      {t(
+                        "dashboard.licensingRequest.exclusivityOptions.nonExclusive",
+                        {
+                          defaultValue: "Non-exclusive",
+                        },
+                      )}
+                    </SelectItem>
                     <SelectItem value="Category exclusive">
-                      Category exclusive
+                      {t(
+                        "dashboard.licensingRequest.exclusivityOptions.categoryExclusive",
+                        {
+                          defaultValue: "Category exclusive",
+                        },
+                      )}
                     </SelectItem>
                     <SelectItem value="Full exclusivity">
-                      Full exclusivity
+                      {t(
+                        "dashboard.licensingRequest.exclusivityOptions.fullExclusivity",
+                        {
+                          defaultValue: "Full exclusivity",
+                        },
+                      )}
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Modifications Allowed</Label>
+                <Label>
+                  {t("dashboard.licensingRequest.modificationsAllowed", {
+                    defaultValue: "Modifications Allowed",
+                  })}
+                </Label>
                 <Input
-                  placeholder="e.g. Light edits allowed"
+                  placeholder={t(
+                    "dashboard.licensingRequest.modificationsPlaceholder",
+                    {
+                      defaultValue: "e.g. Light edits allowed",
+                    },
+                  )}
                   value={licenseRequestForm.modifications_allowed}
                   onChange={(e) =>
                     setLicenseRequestForm((prev) => ({
@@ -10315,9 +11273,19 @@ export default function BrandDashboard() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>
+                {t("dashboard.licensingRequest.description", {
+                  defaultValue: "Description",
+                })}
+              </Label>
               <Textarea
-                placeholder="Add a short description for this license request"
+                placeholder={t(
+                  "dashboard.licensingRequest.descriptionPlaceholder",
+                  {
+                    defaultValue:
+                      "Add a short description for this license request",
+                  },
+                )}
                 value={licenseRequestForm.description}
                 onChange={(e) =>
                   setLicenseRequestForm((prev) => ({
@@ -10328,7 +11296,11 @@ export default function BrandDashboard() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Additional Custom Terms</Label>
+              <Label>
+                {t("dashboard.licensingRequest.additionalCustomTerms", {
+                  defaultValue: "Additional Custom Terms",
+                })}
+              </Label>
               <Textarea
                 rows={4}
                 value={licenseRequestForm.custom_terms}
@@ -10338,7 +11310,12 @@ export default function BrandDashboard() {
                     custom_terms: e.target.value,
                   }))
                 }
-                placeholder="Add any custom licensing terms..."
+                placeholder={t(
+                  "dashboard.licensingRequest.customTermsPlaceholder",
+                  {
+                    defaultValue: "Add any custom licensing terms...",
+                  },
+                )}
               />
             </div>
           </div>
@@ -10347,7 +11324,9 @@ export default function BrandDashboard() {
               variant="outline"
               onClick={() => setShowLicenseRequestModal(false)}
             >
-              Cancel
+              {t("dashboard.licensingRequest.cancel", {
+                defaultValue: "Cancel",
+              })}
             </Button>
             <Button
               onClick={handleSubmitLicenseRequest}
@@ -10355,8 +11334,12 @@ export default function BrandDashboard() {
               className="bg-[#F7B750] hover:bg-[#E6A640] text-white"
             >
               {creatingLicenseRequest
-                ? "Creating..."
-                : "Create licensing request"}
+                ? t("dashboard.licensingRequest.creating", {
+                    defaultValue: "Creating...",
+                  })
+                : t("dashboard.licensingRequest.createRequest", {
+                    defaultValue: "Create licensing request",
+                  })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -10500,12 +11483,11 @@ export default function BrandDashboard() {
           <DialogHeader className="border-b border-gray-100 pb-3">
             <DialogTitle className="text-2xl font-bold text-gray-900">
               {selectedJobForApplications?._showDetailsOnly
-                ? "Job Details"
-                : "Applications"}
+                ? t("campaigns.jobs.viewDetails")
+                : t("campaigns.jobs.applications")}
             </DialogTitle>
             <DialogDescription>
-              View details for this job posting or review submitted
-              applications.
+              {t("campaigns.jobs.viewDetailsJobPosting")}
             </DialogDescription>
           </DialogHeader>
           {selectedJobForApplications?._showDetailsOnly ? (
@@ -10565,27 +11547,33 @@ export default function BrandDashboard() {
                   )}
                 </div>
                 <div className="text-sm font-semibold text-gray-900">
-                  About the role
+                  {t("campaigns.jobs.details.aboutRole")}
                 </div>
                 <div className="text-sm text-gray-700 whitespace-pre-line">
                   {selectedJobForApplications.about_role ||
-                    "No role description provided."}
+                    t("campaigns.jobs.noRoleDescription")}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
                   <div>
-                    <span className="font-medium text-gray-900">Location:</span>{" "}
+                    <span className="font-medium text-gray-900">
+                      {t("campaigns.jobs.details.location")}:
+                    </span>{" "}
                     {formatJobLabel(
                       selectedJobForApplications.location || "Remote",
                     )}
                   </div>
                   <div>
-                    <span className="font-medium text-gray-900">Job type:</span>{" "}
+                    <span className="font-medium text-gray-900">
+                      {t("campaigns.jobs.details.jobType")}:
+                    </span>{" "}
                     {formatJobLabel(
                       selectedJobForApplications.job_type || "Project",
                     )}
                   </div>
                   <div>
-                    <span className="font-medium text-gray-900">Timeline:</span>{" "}
+                    <span className="font-medium text-gray-900">
+                      {t("campaigns.jobs.details.timeline")}:
+                    </span>{" "}
                     {selectedJobForApplications.start_date || "—"}
                     {selectedJobForApplications.end_date
                       ? ` → ${selectedJobForApplications.end_date}`
@@ -10595,7 +11583,7 @@ export default function BrandDashboard() {
                     selectedJobForApplications.goals.length > 0 && (
                       <div className="md:col-span-2">
                         <span className="font-medium text-gray-900">
-                          Goals:
+                          {t("campaigns.jobs.details.goals")}:
                         </span>{" "}
                         {selectedJobForApplications.goals.join(", ")}
                       </div>
@@ -10603,7 +11591,7 @@ export default function BrandDashboard() {
                   {selectedJobForApplications.deliverables && (
                     <div>
                       <span className="font-medium text-gray-900">
-                        Deliverables:
+                        {t("campaigns.jobs.details.deliverables")}:
                       </span>{" "}
                       {selectedJobForApplications.deliverables}
                     </div>
@@ -10613,7 +11601,7 @@ export default function BrandDashboard() {
 
               <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h4 className="text-sm font-semibold text-gray-900">
-                  Talent Requirements
+                  {t("campaigns.jobs.details.talentRequirements")}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {(selectedJobForApplications.talent_types || []).map(
@@ -10642,14 +11630,16 @@ export default function BrandDashboard() {
                 <div className="text-sm text-gray-600">
                   {selectedJobForApplications.region && (
                     <span className="mr-3">
-                      <span className="font-medium text-gray-900">Region:</span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {t("campaigns.jobs.details.region")}:
+                      </span>{" "}
                       {selectedJobForApplications.region}
                     </span>
                   )}
                   {selectedJobForApplications.language && (
                     <span>
                       <span className="font-medium text-gray-900">
-                        Language:
+                        {t("campaigns.jobs.details.language")}:
                       </span>{" "}
                       {selectedJobForApplications.language}
                     </span>
@@ -10657,22 +11647,24 @@ export default function BrandDashboard() {
                 </div>
                 <div className="text-sm text-gray-600">
                   <span className="font-medium text-gray-900">
-                    Licensing required:
+                    {t("campaigns.jobs.details.licensingRequired")}:
                   </span>{" "}
-                  {selectedJobForApplications.needs_licensing ? "Yes" : "No"}
+                  {selectedJobForApplications.needs_licensing
+                    ? t("campaigns.jobs.details.yes")
+                    : t("campaigns.jobs.details.no")}
                 </div>
               </section>
 
               {selectedJobForApplications.needs_licensing && (
                 <section className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-5">
                   <h4 className="text-sm font-semibold text-gray-900">
-                    Licensing Details
+                    {t("campaigns.jobs.details.licensingDetails")}
                   </h4>
                   <div className="text-sm text-gray-600">
                     {selectedJobForApplications.usage_type && (
                       <span className="mr-3">
                         <span className="font-medium text-gray-900">
-                          Usage:
+                          {t("campaigns.jobs.details.usage")}:
                         </span>{" "}
                         {selectedJobForApplications.usage_type}
                       </span>
@@ -10680,7 +11672,7 @@ export default function BrandDashboard() {
                     {selectedJobForApplications.license_duration && (
                       <span className="mr-3">
                         <span className="font-medium text-gray-900">
-                          Duration:
+                          {t("campaigns.jobs.details.duration")}:
                         </span>{" "}
                         {String(
                           selectedJobForApplications.license_duration,
@@ -10690,7 +11682,7 @@ export default function BrandDashboard() {
                     {selectedJobForApplications.territories && (
                       <span>
                         <span className="font-medium text-gray-900">
-                          Territories:
+                          {t("campaigns.jobs.details.territories")}:
                         </span>{" "}
                         {selectedJobForApplications.territories}
                       </span>
@@ -10699,15 +11691,19 @@ export default function BrandDashboard() {
                   <div className="text-sm text-gray-600">
                     <span className="mr-3">
                       <span className="font-medium text-gray-900">
-                        Exclusivity:
+                        {t("campaigns.jobs.details.exclusivity")}:
                       </span>{" "}
-                      {selectedJobForApplications.exclusivity ? "Yes" : "No"}
+                      {selectedJobForApplications.exclusivity
+                        ? t("campaigns.jobs.details.yes")
+                        : t("campaigns.jobs.details.no")}
                     </span>
                     <span>
                       <span className="font-medium text-gray-900">
-                        Royalty option:
+                        {t("campaigns.jobs.details.royaltyOption")}:
                       </span>{" "}
-                      {selectedJobForApplications.royalty_option ? "Yes" : "No"}
+                      {selectedJobForApplications.royalty_option
+                        ? t("campaigns.jobs.details.yes")
+                        : t("campaigns.jobs.details.no")}
                     </span>
                   </div>
                 </section>
@@ -10715,18 +11711,20 @@ export default function BrandDashboard() {
 
               <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h4 className="text-sm font-semibold text-gray-900">
-                  Budget & Compensation
+                  {t("campaigns.jobs.details.budgetCompensation")}
                 </h4>
                 <div className="text-sm text-gray-600">
-                  <span className="font-medium text-gray-900">Budget:</span>{" "}
+                  <span className="font-medium text-gray-900">
+                    {t("campaigns.jobs.budget")}:
+                  </span>{" "}
                   {selectedJobForApplications.budget
                     ? `${selectedJobForApplications.budget} ${selectedJobForApplications.currency || "USD"}`
-                    : "Not specified"}
+                    : t("campaigns.jobs.details.notSpecified")}
                 </div>
                 {selectedJobForApplications.payment_type && (
                   <div className="text-sm text-gray-600">
                     <span className="font-medium text-gray-900">
-                      Payment type:
+                      {t("campaigns.jobs.details.paymentType")}:
                     </span>{" "}
                     {selectedJobForApplications.payment_type}
                   </div>
@@ -10747,21 +11745,23 @@ export default function BrandDashboard() {
                     0) && (
                   <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h4 className="text-sm font-semibold text-gray-900">
-                      Collaboration Preferences
+                      {t("campaigns.jobs.details.collaborationPreferences")}
                     </h4>
                     <div className="text-sm text-gray-600">
                       <span className="font-medium text-gray-900">
-                        Work with agency:
+                        {t("campaigns.jobs.details.workWithAgency")}:
                       </span>{" "}
                       {selectedJobForApplications.work_with_agency
-                        ? "Yes"
-                        : "No"}
+                        ? t("campaigns.jobs.details.yes")
+                        : t("campaigns.jobs.details.no")}
                     </div>
                     <div className="text-sm text-gray-600">
                       <span className="font-medium text-gray-900">
-                        Invite creator:
+                        {t("campaigns.jobs.details.inviteCreator")}:
                       </span>{" "}
-                      {selectedJobForApplications.invite_creator ? "Yes" : "No"}
+                      {selectedJobForApplications.invite_creator
+                        ? t("campaigns.jobs.details.yes")
+                        : t("campaigns.jobs.details.no")}
                     </div>
                     {/* Agencies */}
                     {(Array.isArray(
@@ -10780,7 +11780,7 @@ export default function BrandDashboard() {
                         0) ? (
                       <div className="pt-1">
                         <p className="text-xs font-semibold text-gray-700 mb-2">
-                          Agencies
+                          {t("campaigns.jobs.details.agencies")}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {/* Show Accepted/Pending first, then Declined */}
@@ -10817,15 +11817,17 @@ export default function BrandDashboard() {
                                   (agency?.id || agency?.agency_id),
                               );
 
-                            let statusLabel = "Pending";
+                            let statusLabel = t(
+                              "campaigns.jobs.status.pending",
+                            );
                             let statusColor =
                               "bg-slate-100 text-slate-600 border-slate-200";
                             if (isAccepted) {
-                              statusLabel = "Accepted";
+                              statusLabel = t("campaigns.jobs.status.accepted");
                               statusColor =
                                 "bg-emerald-100 text-emerald-700 border-emerald-200";
                             } else if (isDeclined) {
-                              statusLabel = "Declined";
+                              statusLabel = t("campaigns.jobs.status.declined");
                               statusColor =
                                 "bg-amber-100 text-amber-700 border-amber-200";
                             }
@@ -10887,7 +11889,7 @@ export default function BrandDashboard() {
                         0) ? (
                       <div className="pt-3">
                         <p className="text-xs font-semibold text-gray-700 mb-2">
-                          Creators
+                          {t("campaigns.jobs.details.creators")}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {[
@@ -10915,15 +11917,17 @@ export default function BrandDashboard() {
                                 []
                               ).some((c: any) => c?.id === creator?.id);
 
-                            let statusLabel = "Pending";
+                            let statusLabel = t(
+                              "campaigns.jobs.status.pending",
+                            );
                             let statusColor =
                               "bg-slate-100 text-slate-600 border-slate-200";
                             if (isAccepted) {
-                              statusLabel = "Accepted";
+                              statusLabel = t("campaigns.jobs.status.accepted");
                               statusColor =
                                 "bg-emerald-100 text-emerald-700 border-emerald-200";
                             } else if (isDeclined) {
-                              statusLabel = "Declined";
+                              statusLabel = t("campaigns.jobs.status.declined");
                               statusColor =
                                 "bg-amber-100 text-amber-700 border-amber-200";
                             }
@@ -11283,7 +12287,6 @@ export default function BrandDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Contract Update Request Modal */}
       <Dialog
         open={showUpdateRequestModal}
         onOpenChange={setShowUpdateRequestModal}
@@ -11291,19 +12294,19 @@ export default function BrandDashboard() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Request Contract Update
+              {t("dashboard.contractUpdateRequestModal.title", {
+                defaultValue: "Request Contract Update",
+              })}
             </DialogTitle>
             <DialogDescription>
-              Select how to proceed with the contract update request.
+              {t("dashboard.contractUpdateRequestModal.description", {
+                defaultValue:
+                  "Select how to proceed with the contract update request.",
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <p className="text-gray-700 mb-6">
-              Choose how you'd like to handle the contract update for this
-              campaign.
-            </p>
-
             <div className="space-y-4">
               <Card
                 className="p-6 border-2 border-gray-300 hover:border-[#F7B750] cursor-pointer transition-all"
@@ -11311,15 +12314,23 @@ export default function BrandDashboard() {
               >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 bg-[#F7B750] rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Edit className="w-6 h-6 text-white" />
+                    <FileText className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      I'll Make the Changes
+                      {t(
+                        "dashboard.contractUpdateRequestModal.options.self.title",
+                        { defaultValue: "I'll Make the Changes" },
+                      )}
                     </h3>
                     <p className="text-gray-600">
-                      Update contract terms yourself. Modify territory,
-                      duration, budget, or deliverables.
+                      {t(
+                        "dashboard.contractUpdateRequestModal.options.self.description",
+                        {
+                          defaultValue:
+                            "Update contract terms yourself. Modify territory, duration, budget, or deliverables.",
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
@@ -11335,11 +12346,19 @@ export default function BrandDashboard() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      Send to Partner Agency
+                      {t(
+                        "dashboard.contractUpdateRequestModal.options.agency.title",
+                        { defaultValue: "Send to Partner Agency" },
+                      )}
                     </h3>
                     <p className="text-gray-600">
-                      Forward this update request to your partner agency.
-                      They'll handle revisions and communicate with talent.
+                      {t(
+                        "dashboard.contractUpdateRequestModal.options.agency.description",
+                        {
+                          defaultValue:
+                            "Forward this update request to your partner agency. They'll handle revisions and communicate with talent.",
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
@@ -11349,8 +12368,10 @@ export default function BrandDashboard() {
             <Alert className="mt-6 bg-blue-50 border border-blue-200">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <AlertDescription className="text-blue-900">
-                <strong>Note:</strong> Contract updates require talent approval.
-                They have 48 hours to accept or decline the proposed changes.
+                {t("dashboard.contractUpdateRequestModal.note", {
+                  defaultValue:
+                    "Contract updates require talent approval. They have 48 hours to accept or decline the proposed changes.",
+                })}
               </AlertDescription>
             </Alert>
           </div>
@@ -12072,7 +13093,7 @@ export default function BrandDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed h-screen z-40`}
       >
         {/* Brand Section */}
         <div className="p-6 border-b border-gray-200">
@@ -12216,7 +13237,9 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <Target className="w-4 h-4" />
-                        <span className="flex-1 text-left">My Offers</span>
+                        <span className="flex-1 text-left">
+                          {t("campaigns.myOffers.title")}
+                        </span>
                       </button>
                       <button
                         onClick={() => {
@@ -12239,7 +13262,9 @@ export default function BrandDashboard() {
                         }
                       >
                         <Mail className="w-4 h-4" />
-                        <span className="flex-1 text-left">Inbox</span>
+                        <span className="flex-1 text-left">
+                          {t("campaigns.inbox.title")}
+                        </span>
                         {canViewInbox && inboxPendingCount > 0 && (
                           <Badge className="bg-gray-200 text-gray-700">
                             {inboxPendingCount}
@@ -12257,7 +13282,9 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <FileText className="w-4 h-4" />
-                        <span className="flex-1 text-left">Contract Hub</span>
+                        <span className="flex-1 text-left">
+                          {t("campaigns.contractHub.title")}
+                        </span>
                         {contractHubPendingCount > 0 && (
                           <Badge className="bg-amber-100 text-amber-800 border border-amber-200">
                             {contractHubPendingCount}
@@ -12275,7 +13302,9 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span className="flex-1 text-left">Deliverables</span>
+                        <span className="flex-1 text-left">
+                          {t("campaigns.deliverables.title")}
+                        </span>
                       </button>
                       <button
                         onClick={() => {
@@ -12291,7 +13320,9 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <Briefcase className="w-4 h-4" />
-                        <span className="flex-1 text-left">Jobs</span>
+                        <span className="flex-1 text-left">
+                          {t("campaigns.jobs.title")}
+                        </span>
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}
@@ -12302,7 +13333,9 @@ export default function BrandDashboard() {
                         }`}
                       >
                         <ImageIcon className="w-4 h-4" />
-                        <span className="text-left">Asset Library</span>
+                        <span className="text-left">
+                          {t("campaigns.assetLibrary.title")}
+                        </span>
                       </button>
                     </div>
                   )}
@@ -12321,32 +13354,11 @@ export default function BrandDashboard() {
         </button>
       </aside>
 
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
       {/* Main Content */}
       <main
-        className={`flex-1 ${sidebarOpen ? "md:ml-64" : "md:ml-20"} transition-all duration-300 overflow-y-auto`}
+        className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
       >
-        {/* Mobile top bar */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 sticky top-0 z-20">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Menu className="w-5 h-5 text-gray-600" />
-          </button>
-          <span className="text-sm font-bold text-gray-900 truncate">
-            {navigationItems.find((n) => n.id === activeSection)?.label ||
-              "Dashboard"}
-          </span>
-        </div>
-        <div className="p-4 sm:p-6 md:p-8">
+        <div className="p-8">
           <TrialCountdownBanner trialEndsAt={brandTrialEndsAt} />
           {activeSection === "home" && renderHome()}
           {activeSection === "marketplace" && renderCreatorMarketplace()}
@@ -12357,7 +13369,7 @@ export default function BrandDashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-2xl font-bold text-gray-900">
-                    Job Postings
+                    {t("campaigns.jobs.jobPostings")}
                   </h3>
                   <Button
                     onClick={() => {
@@ -12369,7 +13381,7 @@ export default function BrandDashboard() {
                     }}
                     className="bg-blue-600 hover:bg-blue-700 text-white rounded-md"
                   >
-                    Post Job
+                    {t("campaigns.jobs.postJobButton")}
                   </Button>
                 </div>
                 <Card className="p-4 bg-white border border-gray-200">
@@ -12381,7 +13393,7 @@ export default function BrandDashboard() {
                       onKeyDown={(e) => {
                         if (e.key === "Escape") setJobSearch("");
                       }}
-                      placeholder="Search job title or campaign name"
+                      placeholder={t("campaigns.jobs.searchPlaceholder")}
                       className="pl-9 pr-9"
                     />
                     {jobSearch && (
@@ -12389,7 +13401,7 @@ export default function BrandDashboard() {
                         type="button"
                         onClick={() => setJobSearch("")}
                         className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                        aria-label="Clear search"
+                        aria-label={t("campaigns.jobs.clearSearch")}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -12398,17 +13410,17 @@ export default function BrandDashboard() {
                 </Card>
                 {loadingBrandJobs && (
                   <Card className="p-6 text-sm text-gray-600">
-                    Loading job postings...
+                    {t("campaigns.jobs.loadingJobPostings")}
                   </Card>
                 )}
                 {!loadingBrandJobs && brandJobs.length === 0 && (
                   <Card className="p-8 text-center text-sm text-gray-600">
                     <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                     <p className="font-semibold text-gray-800">
-                      No job postings yet.
+                      {t("campaigns.jobs.noJobPostingsYet")}
                     </p>
                     <p className="text-gray-500 mt-1">
-                      Post your first job to start receiving applications.
+                      {t("campaigns.jobs.postFirstJob")}
                     </p>
                   </Card>
                 )}
@@ -12460,15 +13472,28 @@ export default function BrandDashboard() {
                                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
                                 }`}
                               >
-                                {job.status || "open"}
+                                {t(
+                                  `campaigns.jobs.${String(
+                                    job.status || "open",
+                                  ).toLowerCase()}`,
+                                  {
+                                    defaultValue: String(job.status || "open"),
+                                  },
+                                )}
                               </Badge>
                               <Badge
                                 variant="outline"
                                 className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-50"
                               >
-                                {String(job.call_type || "call").replace(
-                                  "_",
-                                  " ",
+                                {t(
+                                  `campaigns.jobs.${String(
+                                    job.call_type || "call",
+                                  ).toLowerCase()}`,
+                                  {
+                                    defaultValue: String(
+                                      job.call_type || "call",
+                                    ).replace(/_/g, " "),
+                                  },
                                 )}
                               </Badge>
                               {job.category ? (
@@ -12482,30 +13507,35 @@ export default function BrandDashboard() {
                             </div>
                             <p className="text-sm text-gray-600 line-clamp-2">
                               {job.about_role ||
-                                "No role description added yet."}
+                                t("campaigns.jobs.noRoleDescription")}
                             </p>
                           </div>
-                          <div className="flex flex-col items-start gap-2 lg:items-end lg:ml-auto">
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm text-gray-500">
+                          <div className="flex flex-col items-start gap-3 lg:items-end lg:ml-auto">
+                            <div className="flex items-center gap-6 text-sm text-gray-500 whitespace-nowrap">
                               {job.budget ? (
                                 <span>
-                                  Budget {job.budget} {job.currency || "USD"}
+                                  {t("campaigns.jobs.budget")} {job.budget}{" "}
+                                  {job.currency || "USD"}
                                 </span>
                               ) : null}
                               {job.start_date ? (
-                                <span>Start {job.start_date}</span>
+                                <span>
+                                  {t("campaigns.jobs.start")} {job.start_date}
+                                </span>
                               ) : null}
                               {job.end_date ? (
-                                <span>End {job.end_date}</span>
+                                <span>
+                                  {t("campaigns.jobs.end")} {job.end_date}
+                                </span>
                               ) : null}
                             </div>
                           </div>
                         </div>
-                        <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-2">
+                        <div className="pt-3 border-t border-slate-200 flex flex-wrap justify-end gap-2">
                           {job.status === "open" && (
                             <Button
                               variant="outline"
-                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50 flex-1 sm:flex-none"
+                              className="border-2 rounded-md border-red-200 text-red-600 hover:bg-red-50"
                               disabled={!canManageJobs}
                               title={
                                 !canManageJobs
@@ -12516,13 +13546,13 @@ export default function BrandDashboard() {
                                 updateJobStatus(String(job.id), "closed")
                               }
                             >
-                              Close Job
+                              {t("campaigns.jobs.closeJob")}
                             </Button>
                           )}
 
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md flex-1 sm:flex-none"
+                            className="border-2 rounded-md"
                             onClick={() =>
                               setSelectedJobForApplications({
                                 ...job,
@@ -12530,11 +13560,11 @@ export default function BrandDashboard() {
                               })
                             }
                           >
-                            View Details
+                            {t("campaigns.jobs.viewDetails")}
                           </Button>
                           <Button
                             variant="outline"
-                            className="border-2 rounded-md flex-1 sm:flex-none"
+                            className="border-2 rounded-md"
                             onClick={async () => {
                               setSelectedJobForApplications(job);
                               setLoadingJobApplications(true);
@@ -12554,7 +13584,7 @@ export default function BrandDashboard() {
                               }
                             }}
                           >
-                            View Applications
+                            {t("campaigns.jobs.viewApplications")}
                           </Button>
                         </div>
                       </div>
@@ -12576,10 +13606,10 @@ export default function BrandDashboard() {
                     <Card className="p-8 text-center">
                       <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                       <p className="font-semibold text-gray-800">
-                        No results found
+                        {t("campaigns.jobs.noResultsFound")}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
-                        Try different keywords or adjust your filters.
+                        {t("campaigns.jobs.tryDifferentKeywords")}
                       </p>
                       {jobSearch && (
                         <button
@@ -12587,7 +13617,7 @@ export default function BrandDashboard() {
                           onClick={() => setJobSearch("")}
                           className="mt-3 text-sm text-blue-600 hover:underline"
                         >
-                          Clear search
+                          {t("campaigns.jobs.clearSearchButton")}
                         </button>
                       )}
                     </Card>
@@ -12802,12 +13832,13 @@ export default function BrandDashboard() {
         <AlertDialogContent className="bg-white rounded-none border border-gray-300 shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-2xl font-bold text-gray-900">
-              Confirm Selection
+              {t("campaigns.inbox.confirmSelectionTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-600 space-y-4">
               <p>
-                You are about to finalize your talent selection for{" "}
-                <strong>{confirmingDonePkg?.title}</strong>.
+                {t("campaigns.inbox.confirmSelectionDescription", {
+                  title: confirmingDonePkg?.title || "",
+                })}
               </p>
               <div className="bg-gray-50 p-4 border border-gray-100">
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
@@ -12986,7 +14017,7 @@ export default function BrandDashboard() {
                 }
               }}
             >
-              Confirm Selection
+              {t("campaigns.inbox.confirmSelectionTitle")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

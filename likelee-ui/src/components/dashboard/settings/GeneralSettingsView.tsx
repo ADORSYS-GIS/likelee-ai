@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
@@ -79,17 +80,23 @@ import {
 import FileStorageView from "./FileStorageView";
 import { getUserFriendlyError } from "@/utils/error-utils";
 import TalentCommissionSettings from "./TalentCommissionSettings";
-import { AgencySettingsSubscription } from "./AgencySettingsSubscription";
-import {
-  DashboardSectionHeader,
-  DashboardTabRail,
-} from "@/components/dashboard/DashboardResponsive";
 
 type GeneralSettingsViewProps = {
   hasIrlBookingAddon?: boolean;
   hasProAccess?: boolean;
   agencyDisplayPlanLabel?: string;
   kycStatus?: string;
+};
+
+type TextTranslator = (key: string, options?: Record<string, any>) => string;
+
+const asTranslationText = (value: unknown, fallback: string): string =>
+  typeof value === "string" ? value : fallback;
+
+const createTextTranslator = (
+  rawT: (key: string, options?: Record<string, any>) => unknown,
+): TextTranslator => {
+  return (key, options) => asTranslationText(rawT(key, options), key);
 };
 
 const CALENDLY_USE_DEFAULT_VALUE = "__use_default_mapping__";
@@ -263,40 +270,44 @@ type TeamAuditLogRecord = {
   created_at: string;
 };
 
-const TEAM_ROLE_OPTIONS: Array<{
+const getTeamRoleOptions = (
+  t: TextTranslator,
+): Array<{
   value: Exclude<TeamRoleValue, "owner">;
   label: string;
   description: string;
-}> = [
+}> => [
   {
     value: "admin",
-    label: "Admin",
-    description: "Full team management, billing, campaigns, and approvals.",
+    label: t("agencyDashboard.settings.team.roles.admin.label"),
+    description: t("agencyDashboard.settings.team.roles.admin.description"),
   },
   {
     value: "project_manager",
-    label: "Project Manager",
-    description: "Campaign creation and deliverable approvals without billing.",
+    label: t("agencyDashboard.settings.team.roles.projectManager.label"),
+    description: t(
+      "agencyDashboard.settings.team.roles.projectManager.description",
+    ),
   },
   {
     value: "reviewer",
-    label: "Reviewer",
-    description: "Read-only access to deliverables with team visibility.",
+    label: t("agencyDashboard.settings.team.roles.reviewer.label"),
+    description: t("agencyDashboard.settings.team.roles.reviewer.description"),
   },
 ];
 
-const formatTeamRoleLabel = (role?: string) => {
+const formatTeamRoleLabel = (role: string | undefined, t: TextTranslator) => {
   switch (role) {
     case "owner":
-      return "Owner";
+      return t("agencyDashboard.settings.team.roles.owner");
     case "admin":
-      return "Admin";
+      return t("agencyDashboard.settings.team.roles.admin.label");
     case "project_manager":
-      return "Project Manager";
+      return t("agencyDashboard.settings.team.roles.projectManager.label");
     case "reviewer":
-      return "Reviewer";
+      return t("agencyDashboard.settings.team.roles.reviewer.label");
     default:
-      return role || "Unknown";
+      return role || t("agencyDashboard.settings.team.roles.unknown");
   }
 };
 
@@ -319,32 +330,37 @@ const InviteTeamMemberModal = ({
   onSubmit: () => void;
   submitting: boolean;
 }) => {
+  const { t: rawT } = useTranslation();
+  const t = createTextTranslator(rawT);
+  const teamRoleOptions = getTeamRoleOptions(t);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[95vw] rounded-2xl p-4 sm:p-6 overflow-hidden">
-        <DialogHeader className="space-y-1 sm:space-y-1.5 text-left">
-          <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
-            Invite Team Member
+      <DialogContent className="max-w-md rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-gray-900">
+            {t("agencyDashboard.settings.team.modals.inviteTitle")}
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
-            Send an email invitation to join your agency team
+          <DialogDescription className="text-sm text-gray-500 font-medium">
+            {t("agencyDashboard.settings.team.modals.inviteDescription")}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 sm:space-y-6 py-4">
-          <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm font-bold text-gray-900">
-              Email Address
+        <div className="space-y-6 py-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">
+              {t("agencyDashboard.settings.team.modals.emailAddress")}
             </Label>
             <Input
               value={email}
               onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="colleague@example.com"
-              className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm"
+              placeholder={t(
+                "agencyDashboard.settings.team.modals.emailPlaceholder",
+              )}
+              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
             />
           </div>
-          <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm font-bold text-gray-900">
-              User Role
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">
+              {t("agencyDashboard.settings.team.userRole")}
             </Label>
             <Select
               value={role}
@@ -352,54 +368,51 @@ const InviteTeamMemberModal = ({
                 onRoleChange(value as Exclude<TeamRoleValue, "owner">)
               }
             >
-              <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
-                <SelectValue placeholder="Select role" />
+              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectValue
+                  placeholder={t("agencyDashboard.settings.team.selectRole")}
+                />
               </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {TEAM_ROLE_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="text-xs font-bold py-2.5"
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <span>{option.label}</span>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        {option.description}
-                      </span>
-                    </div>
+              <SelectContent>
+                {teamRoleOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label} - {option.description}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="p-3 sm:p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-            <p className="text-[10px] sm:text-xs text-indigo-700 font-medium leading-relaxed">
-              <span className="font-bold">Note:</span> The invited user will
-              receive instructions via email to access the dashboard.
+          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+            <p className="text-xs text-indigo-700 font-medium leading-relaxed">
+              <span className="font-bold">
+                {t("agencyDashboard.settings.team.note")}:
+              </span>{" "}
+              {t("agencyDashboard.settings.team.inviteNote")}
             </p>
           </div>
         </div>
-        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto font-bold text-xs sm:text-sm"
+            className="font-bold"
             disabled={submitting}
           >
-            Cancel
+            {t("agencyDashboard.catalogs.actions.cancel")}
           </Button>
           <Button
             onClick={onSubmit}
             disabled={submitting}
-            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-6 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
           >
             {submitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Mail className="w-4 h-4" />
             )}
-            {submitting ? "Sending..." : "Send Invitation"}
+            {submitting
+              ? t("agencyDashboard.settings.team.modals.sending")
+              : t("agencyDashboard.settings.team.modals.sendInvitation")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -424,23 +437,29 @@ const EditPermissionsModal = ({
   onSubmit: () => void;
   submitting: boolean;
 }) => {
+  const { t: rawT } = useTranslation();
+  const t = createTextTranslator(rawT);
+  const teamRoleOptions = getTeamRoleOptions(t);
   if (!member) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-[95vw] rounded-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
-          <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
-            Update Team Role
+      <DialogContent className="max-w-md rounded-2xl max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="text-xl font-bold text-gray-900">
+            {t("agencyDashboard.settings.team.modals.updateRoleTitle")}
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
-            {member.email} is currently {formatTeamRoleLabel(member.role)}.
+          <DialogDescription className="text-sm text-gray-500 font-medium">
+            {t("agencyDashboard.settings.team.modals.currentRole", {
+              email: member.email,
+              role: formatTeamRoleLabel(member.role, t),
+            })}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-5 sm:space-y-6">
-          <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm font-bold text-gray-900">
-              New Role
+        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-6">
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-900">
+              {t("agencyDashboard.settings.team.newRole")}
             </Label>
             <Select
               value={nextRole}
@@ -448,47 +467,41 @@ const EditPermissionsModal = ({
                 onRoleChange(value as Exclude<TeamRoleValue, "owner">)
               }
             >
-              <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
-                <SelectValue placeholder="Select role" />
+              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectValue
+                  placeholder={t("agencyDashboard.settings.team.selectRole")}
+                />
               </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {TEAM_ROLE_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="text-xs font-bold py-2.5"
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <span>{option.label}</span>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        {option.description}
-                      </span>
-                    </div>
+              <SelectContent>
+                {teamRoleOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label} - {option.description}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 sm:p-4 text-[10px] sm:text-xs font-medium text-amber-800">
-            This change takes effect immediately for the member’s active
-            session.
+          <div className="rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium text-amber-800">
+            {t("agencyDashboard.settings.team.modals.roleChangeWarning")}
           </div>
         </div>
-        <DialogFooter className="p-4 sm:p-6 border-t border-gray-100 flex-col sm:flex-row gap-2 sm:gap-0">
+        <DialogFooter className="p-6 border-t border-gray-100 gap-2 sm:gap-0">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto font-bold text-xs sm:text-sm"
+            className="font-bold"
             disabled={submitting}
           >
-            Cancel
+            {t("agencyDashboard.catalogs.actions.cancel")}
           </Button>
           <Button
             onClick={onSubmit}
             disabled={submitting}
-            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-8 rounded-xl text-xs sm:text-sm"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 rounded-xl"
           >
-            {submitting ? "Saving..." : "Confirm Role Change"}
+            {submitting
+              ? t("agencyDashboard.settings.team.modals.saving")
+              : t("agencyDashboard.settings.team.modals.confirmRoleChange")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -505,38 +518,91 @@ const ActivityLogModal = ({
   onOpenChange: (open: boolean) => void;
   logs: TeamAuditLogRecord[];
 }) => {
+  const { t: rawT } = useTranslation();
+  const t = createTextTranslator(rawT);
   const decorateActivity = (log: TeamAuditLogRecord) => {
     switch (log.action) {
       case "team_invite_created":
         return {
-          label: "Invitation created",
-          details: `${log.target_email || "A member"} invited as ${formatTeamRoleLabel(log.new_role || "")}`,
+          label: t("agencyDashboard.settings.team.activity.invitationCreated"),
+          details: t(
+            "agencyDashboard.settings.team.activity.invitationCreatedDetails",
+            {
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+              role: formatTeamRoleLabel(log.new_role || "", t),
+            },
+          ),
           icon: Mail,
           color: "text-indigo-600 bg-indigo-50",
         };
       case "member_role_updated":
         return {
-          label: "Role updated",
-          details: `${log.target_email || "A member"} changed from ${formatTeamRoleLabel(
-            log.old_role || "",
-          )} to ${formatTeamRoleLabel(log.new_role || "")}`,
+          label: t("agencyDashboard.settings.team.activity.roleUpdated"),
+          details: t(
+            "agencyDashboard.settings.team.activity.roleUpdatedDetails",
+            {
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+              oldRole: formatTeamRoleLabel(log.old_role || "", t),
+              newRole: formatTeamRoleLabel(log.new_role || "", t),
+            },
+          ),
           icon: Shield,
           color: "text-amber-600 bg-amber-50",
         };
       case "team_invite_accepted":
         return {
-          label: "Invitation accepted",
-          details: `${log.target_email || "A member"} joined the team as ${formatTeamRoleLabel(
-            log.new_role || "",
-          )}`,
+          label: t("agencyDashboard.settings.team.activity.invitationAccepted"),
+          details: t(
+            "agencyDashboard.settings.team.activity.invitationAcceptedDetails",
+            {
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+              role: formatTeamRoleLabel(log.new_role || "", t),
+            },
+          ),
           icon: BadgeCheck,
           color: "text-green-600 bg-green-50",
         };
       case "team_invite_declined":
         return {
-          label: "Invitation declined",
-          details: `${log.target_email || "A member"} declined the invitation`,
+          label: t(
+            "agencyDashboard.settings.team.activity.invitationDeclined",
+            {
+              defaultValue: "Invitation declined",
+            },
+          ),
+          details: t(
+            "agencyDashboard.settings.team.activity.invitationDeclinedDetails",
+            {
+              defaultValue: "{{member}} declined the invitation",
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+            },
+          ),
           icon: XCircle,
+          color: "text-red-600 bg-red-50",
+        };
+      case "member_removed":
+        return {
+          label: t("agencyDashboard.settings.team.activity.memberRemoved", {
+            defaultValue: "Member removed",
+          }),
+          details: t(
+            "agencyDashboard.settings.team.activity.memberRemovedDetails",
+            {
+              defaultValue: "{{member}} was removed from the team",
+              member:
+                log.target_email ||
+                t("agencyDashboard.settings.team.activity.memberFallback"),
+            },
+          ),
+          icon: User,
           color: "text-red-600 bg-red-50",
         };
       default:
@@ -551,19 +617,25 @@ const ActivityLogModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg w-[95vw] rounded-2xl max-h-[80vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
-          <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
-            Team Activity Log
+      <DialogContent className="max-w-lg rounded-2xl max-h-[80vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="text-xl font-bold text-gray-900">
+            {t("agencyDashboard.settings.team.activity.logTitle", {
+              defaultValue: "Team Activity Log",
+            })}
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
-            Recent invite, role, and membership events
+          <DialogDescription className="text-sm text-gray-500 font-medium">
+            {t("agencyDashboard.settings.team.activity.logDescription", {
+              defaultValue: "Recent invite, role, and membership events",
+            })}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-3 sm:space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
           {logs.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
-              No team activity recorded yet.
+            <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+              {t("agencyDashboard.settings.team.activity.empty", {
+                defaultValue: "No team activity recorded yet.",
+              })}
             </div>
           ) : (
             logs.map((log) => {
@@ -571,21 +643,21 @@ const ActivityLogModal = ({
               return (
                 <div
                   key={log.id}
-                  className="flex gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
+                  className="flex gap-4 p-4 bg-gray-50/50 border border-gray-100 rounded-2xl"
                 >
                   <div
-                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}
+                    className={`w-10 h-10 rounded-xl ${activity.color} flex items-center justify-center shrink-0`}
                   >
-                    <activity.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <activity.icon className="w-5 h-5" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
                       {activity.label}
                     </p>
-                    <p className="text-[10px] sm:text-xs text-gray-500 font-medium mt-0.5 leading-tight">
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">
                       {activity.details}
                     </p>
-                    <p className="text-[9px] sm:text-[10px] text-gray-400 font-medium mt-1 uppercase tracking-wider">
+                    <p className="text-[10px] text-gray-400 font-medium mt-1">
                       {new Date(log.created_at).toLocaleString()}
                     </p>
                   </div>
@@ -594,13 +666,13 @@ const ActivityLogModal = ({
             })
           )}
         </div>
-        <DialogFooter className="p-4 sm:p-6 border-t border-gray-100">
+        <DialogFooter className="p-6 border-t border-gray-100">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            className="w-full font-bold rounded-xl h-9 sm:h-11 text-xs sm:text-sm"
+            className="w-full font-bold rounded-xl h-11"
           >
-            Close
+            {t("common.close", { defaultValue: "Close" })}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -608,12 +680,31 @@ const ActivityLogModal = ({
   );
 };
 
-const GeneralSettingsView = ({
-  kycStatus,
-  hasIrlBookingAddon = false,
-  hasProAccess = false,
-  agencyDisplayPlanLabel,
-}: GeneralSettingsViewProps) => {
+const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
+  const { t: rawT } = useTranslation();
+  const t: TextTranslator = (key, options) => {
+    if (!key.startsWith("agencyDashboard.settings.")) {
+      return asTranslationText(rawT(key, options), key);
+    }
+    const suffix = key.replace("agencyDashboard.settings.", "");
+    const fallback = asTranslationText(
+      rawT(`agencyDashboard.analytics.settings.${suffix}`, options),
+      key,
+    );
+    return asTranslationText(
+      rawT(key, {
+        ...(options || {}),
+        defaultValue: fallback,
+      }),
+      fallback,
+    );
+  };
+  const {
+    hasIrlBookingAddon,
+    hasProAccess,
+    agencyDisplayPlanLabel,
+    kycStatus,
+  } = props;
   const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -711,6 +802,30 @@ const GeneralSettingsView = ({
     useState(false);
   const [isSavingCalendlySettings, setIsSavingCalendlySettings] =
     useState(false);
+  const getEmailTemplateDisplayName = (
+    templateKey: string,
+    fallback: string,
+  ) => {
+    if (templateKey.startsWith("booking_confirmation")) {
+      return t(
+        "agencyDashboard.settings.emailTemplates.templateNames.bookingConfirmation",
+        { defaultValue: "Booking Confirmation" },
+      );
+    }
+    if (templateKey.startsWith("invoice_email")) {
+      return t(
+        "agencyDashboard.settings.emailTemplates.templateNames.invoiceEmail",
+        { defaultValue: "Invoice Email" },
+      );
+    }
+    if (templateKey.startsWith("payment_reminder")) {
+      return t(
+        "agencyDashboard.settings.emailTemplates.templateNames.paymentReminder",
+        { defaultValue: "Payment Reminder" },
+      );
+    }
+    return fallback;
+  };
   const [isFetchingCalendlySettings, setIsFetchingCalendlySettings] =
     useState(false);
   const hasCalendlyAccess = hasIrlBookingAddon && hasProAccess;
@@ -849,10 +964,14 @@ const GeneralSettingsView = ({
       setShowPermissionsModal(false);
       setSelectedMember(null);
       toast({
-        title: "Role updated",
-        description: `${selectedMember.email} is now ${formatTeamRoleLabel(
-          pendingRoleValue,
-        )}.`,
+        title: t("agencyDashboard.settings.team.activity.roleUpdated"),
+        description: t(
+          "agencyDashboard.settings.team.toasts.roleUpdatedDescription",
+          {
+            email: selectedMember.email,
+            role: formatTeamRoleLabel(pendingRoleValue, t),
+          },
+        ),
       });
       await fetchTeamContext();
       await fetchTeamAuditLogs();
@@ -1257,38 +1376,101 @@ const GeneralSettingsView = ({
   const defaultNotificationPrefs = [
     {
       key: "booking_created",
-      title: "Booking Created",
-      desc: "When a new booking is created",
+      title: t(
+        "agencyDashboard.settings.notifications.events.bookingCreated.title",
+        {
+          defaultValue: "Booking Created",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.bookingCreated.desc",
+        {
+          defaultValue: "When a new booking is created",
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "booking_confirmed",
-      title: "Booking Confirmed",
-      desc: "When a booking status changes to confirmed",
+      title: t(
+        "agencyDashboard.settings.notifications.events.bookingConfirmed.title",
+        {
+          defaultValue: "Booking Confirmed",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.bookingConfirmed.desc",
+        {
+          defaultValue: "When a booking status changes to confirmed",
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "payment_received",
-      title: "Payment Received",
-      desc: "When payment is received from a client",
+      title: t(
+        "agencyDashboard.settings.notifications.events.paymentReceived.title",
+        {
+          defaultValue: "Payment Received",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.paymentReceived.desc",
+        {
+          defaultValue: "When payment is received from a client",
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "invoice_sent",
-      title: "Invoice Sent",
-      desc: "When an invoice is sent to a client",
+      title: t(
+        "agencyDashboard.settings.notifications.events.invoiceSent.title",
+        {
+          defaultValue: "Invoice Sent",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.invoiceSent.desc",
+        {
+          defaultValue: "When an invoice is sent to a client",
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "talent_book_out",
-      title: `${entitySingularTitle} Book Out`,
-      desc: `When ${entitySingularLower} marks themselves unavailable`,
+      title: t(
+        "agencyDashboard.settings.notifications.events.entityBookOut.title",
+        {
+          entitySingular: entitySingularTitle,
+          defaultValue: `${entitySingularTitle} Book Out`,
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.entityBookOut.desc",
+        {
+          entitySingularLower,
+          defaultValue: `When ${entitySingularLower} marks themselves unavailable`,
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "license_expiring",
-      title: "License Expiring",
-      desc: `When a ${entitySingularLower} license is about to expire`,
+      title: t(
+        "agencyDashboard.settings.notifications.events.licenseExpiring.title",
+        {
+          defaultValue: "License Expiring",
+        },
+      ),
+      desc: t(
+        "agencyDashboard.settings.notifications.events.licenseExpiring.desc",
+        {
+          entitySingularLower,
+          defaultValue: `When a ${entitySingularLower} license is about to expire`,
+        },
+      ),
       channels: { email: true, sms: false, push: false },
     },
   ] as {
@@ -1575,8 +1757,94 @@ const GeneralSettingsView = ({
 
           if (error) throw error;
 
-          if (Array.isArray(data) && data.length > 0) {
-            const mapped = data.map((t: any) => ({
+          // Always prepare defaults with current language translations
+          const defaults = [
+            {
+              template_key: "booking_confirmation",
+              name: t(
+                "agencyDashboard.settings.emailTemplates.defaults.bookingConfirmation.name",
+                { defaultValue: "Booking Confirmation" },
+              ),
+              subject: t(
+                "agencyDashboard.settings.emailTemplates.defaults.bookingConfirmation.subject",
+                { defaultValue: "Booking Confirmed - {client_name}" },
+              ),
+              body: t(
+                "agencyDashboard.settings.emailTemplates.defaults.bookingConfirmation.body",
+                {
+                  defaultValue: `Hi ${entityNameToken},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}`,
+                  entityNameToken,
+                },
+              ),
+              is_active: true,
+            },
+            {
+              template_key: "invoice_email",
+              name: t(
+                "agencyDashboard.settings.emailTemplates.defaults.invoiceEmail.name",
+                { defaultValue: "Invoice Email" },
+              ),
+              subject: t(
+                "agencyDashboard.settings.emailTemplates.defaults.invoiceEmail.subject",
+                { defaultValue: "Invoice {invoice_number} from {agency_name}" },
+              ),
+              body: t(
+                "agencyDashboard.settings.emailTemplates.defaults.invoiceEmail.body",
+                {
+                  defaultValue:
+                    "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}",
+                },
+              ),
+              is_active: true,
+            },
+            {
+              template_key: "payment_reminder",
+              name: t(
+                "agencyDashboard.settings.emailTemplates.defaults.paymentReminder.name",
+                { defaultValue: "Payment Reminder" },
+              ),
+              subject: t(
+                "agencyDashboard.settings.emailTemplates.defaults.paymentReminder.subject",
+                { defaultValue: "Payment Reminder - Invoice {invoice_number}" },
+              ),
+              body: t(
+                "agencyDashboard.settings.emailTemplates.defaults.paymentReminder.body",
+                {
+                  defaultValue:
+                    "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}",
+                },
+              ),
+              is_active: true,
+            },
+          ];
+
+          const seedPayload = defaults.map((t) => ({
+            agency_id: effectiveAgencyId,
+            template_key: t.template_key,
+            name: t.name,
+            subject: templateValueForStorage(t.subject),
+            body: templateValueForStorage(t.body),
+            is_active: t.is_active,
+            updated_at: new Date().toISOString(),
+          }));
+
+          const { error: seedError } = await supabase
+            .from("agency_email_templates")
+            .upsert(seedPayload, { onConflict: "agency_id,template_key" });
+
+          if (seedError) throw seedError;
+
+          // Now fetch the updated templates from database
+          const { data: updatedData, error: fetchError } = await supabase
+            .from("agency_email_templates")
+            .select("id, template_key, name, subject, body, is_active")
+            .eq("agency_id", effectiveAgencyId)
+            .order("updated_at", { ascending: false });
+
+          if (fetchError) throw fetchError;
+
+          if (Array.isArray(updatedData) && updatedData.length > 0) {
+            const mapped = updatedData.map((t: any) => ({
               id: t.id,
               template_key: t.template_key,
               name: t.name,
@@ -1598,49 +1866,9 @@ const GeneralSettingsView = ({
               return aKey.localeCompare(bKey);
             });
             setEmailTemplates(mapped);
-            return;
+          } else {
+            setEmailTemplates(defaults);
           }
-
-          const defaults = [
-            {
-              template_key: "booking_confirmation",
-              name: "Booking Confirmation",
-              subject: "Booking Confirmed - {client_name}",
-              body: `Hi ${entityNameToken},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}`,
-              is_active: true,
-            },
-            {
-              template_key: "invoice_email",
-              name: "Invoice Email",
-              subject: "Invoice {invoice_number} from {agency_name}",
-              body: "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}",
-              is_active: true,
-            },
-            {
-              template_key: "payment_reminder",
-              name: "Payment Reminder",
-              subject: "Payment Reminder - Invoice {invoice_number}",
-              body: "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}",
-              is_active: true,
-            },
-          ];
-
-          const seedPayload = defaults.map((t) => ({
-            agency_id: effectiveAgencyId,
-            template_key: t.template_key,
-            name: t.name,
-            subject: templateValueForStorage(t.subject),
-            body: templateValueForStorage(t.body),
-            is_active: t.is_active,
-            updated_at: new Date().toISOString(),
-          }));
-
-          const { error: seedError } = await supabase
-            .from("agency_email_templates")
-            .upsert(seedPayload, { onConflict: "agency_id,template_key" });
-
-          if (seedError) throw seedError;
-          setEmailTemplates(defaults);
         } catch (e: any) {
           toast({
             title: "Failed to load email templates",
@@ -1986,37 +2214,78 @@ const GeneralSettingsView = ({
   return (
     <div className="max-w-full mx-auto">
       <div className="space-y-6 animate-in fade-in duration-500">
-        <DashboardSectionHeader
-          title="Agency Settings"
-          description="Configure your agency profile and preferences"
-        />
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+            {t("agencyDashboard.settings.title", { defaultValue: "Settings" })}
+          </h2>
+          <p className="text-sm sm:text-base text-gray-600 font-medium">
+            {t("agencyDashboard.settings.profile.subtitle", {
+              defaultValue: "Manage your agency profile and settings",
+            })}
+          </p>
+        </div>
 
         <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
-          {(
-            [
-              "Profile",
-              ...(teamContext?.permissions?.includes("manage_billing")
-                ? ["Subscription"]
-                : []),
-              "Commissions",
-              "Email Templates",
-              "Notifications",
-              "Tax & Currency",
-              "Team",
-              "File Storage",
-              "Integrations",
-            ] as const
-          ).map((tab) => (
+          {[
+            {
+              key: "Profile",
+              label: t("agencyDashboard.settings.subTabs.profile", {
+                defaultValue: "Profile",
+              }),
+            },
+            {
+              key: "Commissions",
+              label: t("agencyDashboard.settings.subTabs.commissions", {
+                defaultValue: "Commissions",
+              }),
+            },
+            {
+              key: "Email Templates",
+              label: t("agencyDashboard.settings.subTabs.emailTemplates", {
+                defaultValue: "Email Templates",
+              }),
+            },
+            {
+              key: "Notifications",
+              label: t("agencyDashboard.settings.subTabs.notifications", {
+                defaultValue: "Notifications",
+              }),
+            },
+            {
+              key: "Tax & Currency",
+              label: t("agencyDashboard.settings.subTabs.taxAndCurrency", {
+                defaultValue: "Tax & Currency",
+              }),
+            },
+            {
+              key: "Team",
+              label: t("agencyDashboard.settings.subTabs.team", {
+                defaultValue: "Team",
+              }),
+            },
+            {
+              key: "File Storage",
+              label: t("agencyDashboard.settings.subTabs.fileStorage", {
+                defaultValue: "File Storage",
+              }),
+            },
+            {
+              key: "Integrations",
+              label: t("agencyDashboard.settings.subTabs.integrations", {
+                defaultValue: "Integrations",
+              }),
+            },
+          ].map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
               className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab
+                activeTab === tab.key
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
               }`}
             >
-              {tab}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -2041,7 +2310,7 @@ const GeneralSettingsView = ({
                       planTier === "pro" ? "text-indigo-300" : "text-gray-400"
                     }`}
                   >
-                    Current Plan
+                    {t("agencyDashboard.settings.profile.currentPlan")}
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <div
@@ -2055,46 +2324,29 @@ const GeneralSettingsView = ({
                 </div>
                 {(!teamContext ||
                   teamContext.permissions?.includes("manage_billing")) && (
-                  <div className="flex gap-2">
-                    <Button
-                      asChild
-                      variant="outline"
-                      className={`rounded-xl font-bold ${
-                        planTier === "pro"
-                          ? "border-indigo-400/30 text-indigo-200 hover:bg-indigo-500/20"
-                          : planTier === "basic" || planTier === "agency"
-                            ? "border-emerald-400/30 text-emerald-700 hover:bg-emerald-100"
-                            : planTier === "enterprise"
-                              ? "border-amber-400/30 text-amber-700 hover:bg-amber-100"
-                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <a href={createPageUrl("AgencySubscribe")}>View Plans</a>
-                    </Button>
-                    <Button
-                      asChild
-                      variant={
-                        planTier === "pro" ||
-                        planTier === "basic" ||
-                        planTier === "enterprise"
-                          ? "default"
-                          : "outline"
-                      }
-                      className={`rounded-xl font-bold ${
-                        planTier === "pro"
-                          ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
-                          : planTier === "basic" || planTier === "agency"
-                            ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
-                            : planTier === "enterprise"
-                              ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
-                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <a href={createPageUrl("AgencySubscribe")}>
-                        Billing & Subscription
-                      </a>
-                    </Button>
-                  </div>
+                  <Button
+                    asChild
+                    variant={
+                      planTier === "pro" ||
+                      planTier === "basic" ||
+                      planTier === "enterprise"
+                        ? "default"
+                        : "outline"
+                    }
+                    className={`rounded-xl font-bold ${
+                      planTier === "pro"
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
+                        : planTier === "basic" || planTier === "agency"
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                          : planTier === "enterprise"
+                            ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
+                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <a href={createPageUrl("AgencySubscribe")}>
+                      Billing & Subscription
+                    </a>
+                  </Button>
                 )}
               </div>
             </Card>
@@ -2108,7 +2360,9 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                    Agency Information
+                    {t("agencyDashboard.settings.agencyInformation.title", {
+                      defaultValue: "Agency Information",
+                    })}
                   </h3>
                   {(kycStatus === "approved" ||
                     kycStatus === "verified" ||
@@ -2116,7 +2370,12 @@ const GeneralSettingsView = ({
                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
                       <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
                       <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
-                        Verified
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.verified",
+                          {
+                            defaultValue: "Verified",
+                          },
+                        )}
                       </span>
                     </div>
                   )}
@@ -2126,7 +2385,13 @@ const GeneralSettingsView = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Agency Name *
+                    {t(
+                      "agencyDashboard.settings.agencyInformation.agencyName",
+                      {
+                        defaultValue: "Agency Name",
+                      },
+                    )}{" "}
+                    *
                   </Label>
                   <Input
                     value={formData.agency_name}
@@ -2138,7 +2403,12 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Legal Entity Name
+                    {t(
+                      "agencyDashboard.settings.agencyInformation.legalEntityName",
+                      {
+                        defaultValue: "Legal Entity Name",
+                      },
+                    )}
                   </Label>
                   <Input
                     value={formData.legal_entity_name}
@@ -2150,7 +2420,9 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Address
+                    {t("agencyDashboard.settings.agencyInformation.address", {
+                      defaultValue: "Address",
+                    })}
                   </Label>
                   <Input
                     value={formData.address}
@@ -2162,7 +2434,9 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    City
+                    {t("agencyDashboard.settings.agencyInformation.city", {
+                      defaultValue: "City",
+                    })}
                   </Label>
                   <Input
                     value={formData.city}
@@ -2173,7 +2447,12 @@ const GeneralSettingsView = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      State/Province
+                      {t(
+                        "agencyDashboard.settings.agencyInformation.stateProvince",
+                        {
+                          defaultValue: "State/Province",
+                        },
+                      )}
                     </Label>
                     <Input
                       value={formData.state}
@@ -2185,7 +2464,12 @@ const GeneralSettingsView = ({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      ZIP/Postal Code
+                      {t(
+                        "agencyDashboard.settings.agencyInformation.zipPostalCode",
+                        {
+                          defaultValue: "ZIP/Postal Code",
+                        },
+                      )}
                     </Label>
                     <Input
                       value={formData.zip_postal_code}
@@ -2198,44 +2482,113 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Country
+                    {t("agencyDashboard.settings.agencyInformation.country", {
+                      defaultValue: "Country",
+                    })}
                   </Label>
                   <Select
                     value={formData.country}
                     onValueChange={(val) => handleInputChange("country", val)}
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
-                      <SelectValue placeholder="Select country" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.agencyInformation.selectCountry",
+                          {
+                            defaultValue: "Select country",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="us">United States</SelectItem>
-                      <SelectItem value="uk">United Kingdom</SelectItem>
-                      <SelectItem value="ca">Canada</SelectItem>
-                      <SelectItem value="de">Germany</SelectItem>
+                      <SelectItem value="us">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.countries.us",
+                          {
+                            defaultValue: "United States",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="uk">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.countries.uk",
+                          {
+                            defaultValue: "United Kingdom",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="ca">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.countries.ca",
+                          {
+                            defaultValue: "Canada",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="de">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.countries.de",
+                          {
+                            defaultValue: "Germany",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Time Zone
+                    {t("agencyDashboard.settings.agencyInformation.timeZone", {
+                      defaultValue: "Time Zone",
+                    })}
                   </Label>
                   <Select
                     value={formData.time_zone}
                     onValueChange={(val) => handleInputChange("time_zone", val)}
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
-                      <SelectValue placeholder="Select timezone" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.agencyInformation.selectTimezone",
+                          {
+                            defaultValue: "Select timezone",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="est">Eastern Time (EST)</SelectItem>
-                      <SelectItem value="cst">Central Time (CST)</SelectItem>
-                      <SelectItem value="pst">Pacific Time (PST)</SelectItem>
+                      <SelectItem value="est">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.timezones.est",
+                          {
+                            defaultValue: "Eastern Time (EST)",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="cst">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.timezones.cst",
+                          {
+                            defaultValue: "Central Time (CST)",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="pst">
+                        {t(
+                          "agencyDashboard.settings.agencyInformation.timezones.pst",
+                          {
+                            defaultValue: "Pacific Time (PST)",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Phone
+                    {t("agencyDashboard.settings.agencyInformation.phone", {
+                      defaultValue: "Phone",
+                    })}
                   </Label>
                   <Input
                     value={formData.phone_number}
@@ -2247,7 +2600,9 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Email
+                    {t("agencyDashboard.settings.agencyInformation.email", {
+                      defaultValue: "Email",
+                    })}
                   </Label>
                   <Input
                     value={formData.email}
@@ -2257,7 +2612,9 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Website
+                    {t("agencyDashboard.settings.agencyInformation.website", {
+                      defaultValue: "Website",
+                    })}
                   </Label>
                   <Input
                     value={formData.website}
@@ -2269,7 +2626,9 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Tax ID / EIN
+                    {t("agencyDashboard.settings.agencyInformation.taxIdEin", {
+                      defaultValue: "Tax ID / EIN",
+                    })}
                   </Label>
                   <Input
                     value={formData.tax_id_ein}
@@ -2283,17 +2642,20 @@ const GeneralSettingsView = ({
             </Card>
 
             {/* Branding */}
-            {/* Branding */}
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-                Branding
+                {t("agencyDashboard.settings.branding.title", {
+                  defaultValue: "Branding",
+                })}
               </h3>
               <div className="space-y-8">
                 <div className="space-y-4">
                   <Label className="text-sm font-bold text-gray-900">
-                    Agency Logo
+                    {t("agencyDashboard.settings.branding.agencyLogo", {
+                      defaultValue: "Agency Logo",
+                    })}
                   </Label>
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                  <div className="flex items-center gap-6">
                     <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
                       {profile?.logo_url ? (
                         <img
@@ -2318,28 +2680,42 @@ const GeneralSettingsView = ({
                       variant="outline"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 w-full px-4 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 sm:w-auto"
+                      className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                     >
                       {isUploading ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
                       ) : (
                         <Upload className="w-4 h-4" />
                       )}
-                      {isUploading ? "Uploading..." : "Upload New Logo"}
+                      {isUploading
+                        ? t("agencyDashboard.settings.branding.uploading", {
+                            defaultValue: "Uploading...",
+                          })
+                        : t("agencyDashboard.settings.branding.uploadNewLogo", {
+                            defaultValue: "Upload New Logo",
+                          })}
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Email Signature
+                    {t("agencyDashboard.settings.branding.emailSignature", {
+                      defaultValue: "Email Signature",
+                    })}
                   </Label>
                   <Textarea
                     value={formData.email_signature}
                     onChange={(e) =>
                       handleInputChange("email_signature", e.target.value)
                     }
-                    placeholder={`Best regards,\nAgency Name\nhttps://agency.com/\n+1 (212) 555-0123`}
+                    placeholder={t(
+                      "agencyDashboard.settings.branding.emailSignaturePlaceholder",
+                      {
+                        defaultValue:
+                          "Best regards,\\nAgency Name\\nhttps://agency.com/\\n+1 (212) 555-0123",
+                      },
+                    )}
                     className="bg-white border-gray-200 min-h-[120px] text-xs sm:text-sm text-gray-900 font-medium rounded-xl resize-none"
                   />
                 </div>
@@ -2357,13 +2733,20 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSaving ? "Saving..." : "Save Profile Settings"}
+                {isSaving
+                  ? t("agencyDashboard.settings.saveProfile.saving", {
+                      defaultValue: "Saving...",
+                    })
+                  : t(
+                      "agencyDashboard.settings.saveProfile.saveProfileSettings",
+                      {
+                        defaultValue: "Save Profile Settings",
+                      },
+                    )}
               </Button>
             </div>
           </div>
         )}
-
-        {activeTab === "Subscription" && <AgencySettingsSubscription />}
 
         {activeTab === "Commissions" && (
           <div className="space-y-6">
@@ -2375,13 +2758,23 @@ const GeneralSettingsView = ({
                   <DollarSign className="w-5 h-5 text-green-600" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Default Commission Rate
+                  {t(
+                    "agencyDashboard.settings.commissions.defaultCommissionRate",
+                    {
+                      defaultValue: "Default Commission Rate",
+                    },
+                  )}
                 </h3>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Agency Commission (%)
+                    {t(
+                      "agencyDashboard.settings.commissions.agencyCommission",
+                      {
+                        defaultValue: "Agency Commission (%)",
+                      },
+                    )}
                   </Label>
                   <Input
                     type="number"
@@ -2405,7 +2798,13 @@ const GeneralSettingsView = ({
                     className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl"
                   />
                   <p className="text-xs text-gray-500 font-medium">
-                    Applied to all bookings unless overridden
+                    {t(
+                      "agencyDashboard.settings.commissions.appliedUnlessOverridden",
+                      {
+                        defaultValue:
+                          "Applied to all bookings unless overridden",
+                      },
+                    )}
                   </p>
                 </div>
               </div>
@@ -2416,10 +2815,16 @@ const GeneralSettingsView = ({
             <div>
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
-                  {`${entitySingularTitle} Commission Rules`}
+                  {t("agencyDashboard.settings.commissions.rulesTitle", {
+                    entitySingular: entitySingularTitle,
+                    defaultValue: `${entitySingularTitle} Commission Rules`,
+                  })}
                 </h3>
                 <p className="text-sm text-gray-500 font-medium tracking-tight">
-                  {`Agency-managed ${entityPluralLower} can use settings-based overrides here. Marketplace-connected ${entityPluralLower} follow the active signed contract rate and are read-only on this screen.`}
+                  {t("agencyDashboard.settings.commissions.rulesDescription", {
+                    entityPlural: entityPluralLower,
+                    defaultValue: `Agency-managed ${entityPluralLower} can use settings-based overrides here. Marketplace-connected ${entityPluralLower} follow the active signed contract rate and are read-only on this screen.`,
+                  })}
                 </p>
               </div>
 
@@ -2439,7 +2844,13 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSavingCommissions ? "Saving..." : "Save Commission Settings"}
+                {isSavingCommissions
+                  ? t("agencyDashboard.settings.common.saving", {
+                      defaultValue: "Saving...",
+                    })
+                  : t("agencyDashboard.settings.commissions.save", {
+                      defaultValue: "Save Commission Settings",
+                    })}
               </Button>
             </div>
           </div>
@@ -2455,10 +2866,14 @@ const GeneralSettingsView = ({
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                      Email Templates
+                      {t("agencyDashboard.settings.emailTemplates.title", {
+                        defaultValue: "Email Templates",
+                      })}
                     </h3>
                     <p className="text-sm text-gray-500 font-medium">
-                      Customize automated email messages
+                      {t("agencyDashboard.settings.emailTemplates.subtitle", {
+                        defaultValue: "Customize automated email messages",
+                      })}
                     </p>
                   </div>
                 </div>
@@ -2467,13 +2882,20 @@ const GeneralSettingsView = ({
                   className="h-8 px-3 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg flex items-center gap-2"
                 >
                   <Plus className="w-3 h-3" />
-                  New Template
+                  {t("agencyDashboard.settings.emailTemplates.newTemplate", {
+                    defaultValue: "New Template",
+                  })}
                 </Button>
               </div>
 
               <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-2xl mb-8">
                 <h4 className="text-sm font-bold text-blue-900 mb-4">
-                  Available Variables:
+                  {t(
+                    "agencyDashboard.settings.emailTemplates.availableVariables",
+                    {
+                      defaultValue: "Available Variables:",
+                    },
+                  )}
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-y-3 gap-x-8">
                   {[
@@ -2513,12 +2935,21 @@ const GeneralSettingsView = ({
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 min-w-0">
                           <h4 className="text-sm sm:text-base font-bold text-gray-900 truncate">
-                            {template.name}
+                            {getEmailTemplateDisplayName(
+                              template.template_key,
+                              template.name,
+                            )}
                           </h4>
                           <Badge
                             className={`border font-bold text-[10px] h-5 shrink-0 ${template.is_active ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-100 text-gray-600 border-gray-200"}`}
                           >
-                            {template.is_active ? "Active" : "Inactive"}
+                            {template.is_active
+                              ? t("agencyDashboard.settings.team.active", {
+                                  defaultValue: "Active",
+                                })
+                              : t("agencyDashboard.settings.team.inactive", {
+                                  defaultValue: "Inactive",
+                                })}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
@@ -2546,7 +2977,12 @@ const GeneralSettingsView = ({
                       </div>
                       <div className="space-y-2">
                         <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                          Subject:
+                          {t(
+                            "agencyDashboard.settings.emailTemplates.subject",
+                            {
+                              defaultValue: "Subject:",
+                            },
+                          )}
                         </Label>
                         <p className="text-sm font-bold text-gray-900">
                           {template.subject}
@@ -2554,7 +2990,9 @@ const GeneralSettingsView = ({
                       </div>
                       <div className="space-y-2">
                         <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                          Body:
+                          {t("agencyDashboard.settings.emailTemplates.body", {
+                            defaultValue: "Body:",
+                          })}
                         </Label>
                         <div className="p-6 bg-gray-100 border border-gray-200 rounded-xl text-base text-gray-700 font-medium whitespace-pre-line leading-relaxed min-h-[150px]">
                           {template.body}
@@ -2577,7 +3015,13 @@ const GeneralSettingsView = ({
                 ) : (
                   <Save className="w-5 h-5" />
                 )}
-                {isSavingEmailTemplates ? "Saving..." : "Save Email Templates"}
+                {isSavingEmailTemplates
+                  ? t("agencyDashboard.settings.common.saving", {
+                      defaultValue: "Saving...",
+                    })
+                  : t("agencyDashboard.settings.emailTemplates.save", {
+                      defaultValue: "Save Email Templates",
+                    })}
               </Button>
             </div>
 
@@ -2588,13 +3032,30 @@ const GeneralSettingsView = ({
               <DialogContent className="max-w-2xl rounded-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-xl font-bold text-gray-900">
-                    {editingTemplateKey ? "Edit Template" : "New Template"}
+                    {editingTemplateKey
+                      ? t(
+                          "agencyDashboard.settings.emailTemplates.editTemplate",
+                          {
+                            defaultValue: "Edit Template",
+                          },
+                        )
+                      : t(
+                          "agencyDashboard.settings.emailTemplates.newTemplate",
+                          {
+                            defaultValue: "New Template",
+                          },
+                        )}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-5 py-2">
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      Template Name
+                      {t(
+                        "agencyDashboard.settings.emailTemplates.templateName",
+                        {
+                          defaultValue: "Template Name",
+                        },
+                      )}
                     </Label>
                     <Input
                       value={emailTemplateDraft.name}
@@ -2609,7 +3070,12 @@ const GeneralSettingsView = ({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      Subject
+                      {t(
+                        "agencyDashboard.settings.emailTemplates.subjectLabel",
+                        {
+                          defaultValue: "Subject",
+                        },
+                      )}
                     </Label>
                     <Input
                       value={emailTemplateDraft.subject}
@@ -2624,7 +3090,9 @@ const GeneralSettingsView = ({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      Body
+                      {t("agencyDashboard.settings.emailTemplates.bodyLabel", {
+                        defaultValue: "Body",
+                      })}
                     </Label>
                     <Textarea
                       value={emailTemplateDraft.body}
@@ -2639,9 +3107,19 @@ const GeneralSettingsView = ({
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                     <div>
-                      <p className="text-sm font-bold text-gray-900">Active</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {t("agencyDashboard.settings.emailTemplates.active", {
+                          defaultValue: "Active",
+                        })}
+                      </p>
                       <p className="text-xs text-gray-500 font-medium">
-                        Enable this template for automated emails
+                        {t(
+                          "agencyDashboard.settings.emailTemplates.enableTemplateHint",
+                          {
+                            defaultValue:
+                              "Enable this template for automated emails",
+                          },
+                        )}
                       </p>
                     </div>
                     <Switch
@@ -2661,13 +3139,17 @@ const GeneralSettingsView = ({
                     onClick={() => setShowEmailTemplateModal(false)}
                     className="font-bold"
                   >
-                    Cancel
+                    {t("agencyDashboard.catalogs.actions.cancel", {
+                      defaultValue: "Cancel",
+                    })}
                   </Button>
                   <Button
                     onClick={saveEmailTemplateDraft}
                     className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl"
                   >
-                    Save
+                    {t("agencyDashboard.settings.common.save", {
+                      defaultValue: "Save",
+                    })}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -2684,10 +3166,15 @@ const GeneralSettingsView = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                    Notification Preferences
+                    {t("agencyDashboard.settings.notifications.title", {
+                      defaultValue: "Notification Preferences",
+                    })}
                   </h3>
                   <p className="text-sm text-gray-500 font-medium">
-                    Choose how you want to be notified about important events
+                    {t("agencyDashboard.settings.notifications.subtitle", {
+                      defaultValue:
+                        "Choose how you want to be notified about important events",
+                    })}
                   </p>
                 </div>
               </div>
@@ -2727,25 +3214,50 @@ const GeneralSettingsView = ({
                           }
                         />
                         <span className="text-xs font-bold text-gray-900">
-                          Email
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.email",
+                            {
+                              defaultValue: "Email",
+                            },
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
-                          SMS
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.sms",
+                            {
+                              defaultValue: "SMS",
+                            },
+                          )}
                         </span>
                         <span className="text-[10px] font-bold text-gray-500 opacity-80">
-                          Coming Soon
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.comingSoon",
+                            {
+                              defaultValue: "Coming Soon",
+                            },
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
-                          Push
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.push",
+                            {
+                              defaultValue: "Push",
+                            },
+                          )}
                         </span>
                         <span className="text-[10px] font-bold text-gray-500 opacity-80">
-                          Coming Soon
+                          {t(
+                            "agencyDashboard.settings.notifications.channels.comingSoon",
+                            {
+                              defaultValue: "Coming Soon",
+                            },
+                          )}
                         </span>
                       </div>
                     </div>
@@ -2756,12 +3268,19 @@ const GeneralSettingsView = ({
 
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-                Notification Recipients
+                {t("agencyDashboard.settings.notifications.recipients.title", {
+                  defaultValue: "Notification Recipients",
+                })}
               </h3>
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Primary Notification Email
+                    {t(
+                      "agencyDashboard.settings.notifications.recipients.primaryEmail",
+                      {
+                        defaultValue: "Primary Notification Email",
+                      },
+                    )}
                   </Label>
                   <Input
                     value={notificationRecipients.primaryEmail}
@@ -2776,7 +3295,12 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    SMS Notification Number
+                    {t(
+                      "agencyDashboard.settings.notifications.recipients.smsNumber",
+                      {
+                        defaultValue: "SMS Notification Number",
+                      },
+                    )}
                   </Label>
                   <Input
                     value={notificationRecipients.smsNumber}
@@ -2791,7 +3315,12 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Additional Recipients (comma-separated)
+                    {t(
+                      "agencyDashboard.settings.notifications.recipients.additional",
+                      {
+                        defaultValue: "Additional Recipients (comma-separated)",
+                      },
+                    )}
                   </Label>
                   <Input
                     value={notificationRecipients.additionalEmails}
@@ -2814,7 +3343,9 @@ const GeneralSettingsView = ({
                 className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
               >
                 <Save className="w-5 h-5" />
-                Save Notification Settings
+                {t("agencyDashboard.settings.notifications.save", {
+                  defaultValue: "Save Notification Settings",
+                })}
               </Button>
             </div>
           </div>
@@ -2828,14 +3359,21 @@ const GeneralSettingsView = ({
                   <Globe className="w-5 h-5 text-gray-600" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Currency Settings
+                  {t("agencyDashboard.settings.taxAndCurrency.title", {
+                    defaultValue: "Tax & Currency Settings",
+                  })}
                 </h3>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Default Currency
+                    {t(
+                      "agencyDashboard.settings.taxAndCurrency.defaultCurrency",
+                      {
+                        defaultValue: "Default Currency",
+                      },
+                    )}
                   </Label>
                   <Select
                     value={taxCurrencySettings.defaultCurrency}
@@ -2847,18 +3385,48 @@ const GeneralSettingsView = ({
                     }
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
-                      <SelectValue placeholder="Select currency" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.taxAndCurrency.selectCurrency",
+                          {
+                            defaultValue: "Select currency",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="usd">USD - US Dollar</SelectItem>
-                      <SelectItem value="eur">EUR - Euro</SelectItem>
-                      <SelectItem value="gbp">GBP - British Pound</SelectItem>
+                      <SelectItem value="usd">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.currencies.usd",
+                          {
+                            defaultValue: "USD - US Dollar",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="eur">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.currencies.eur",
+                          {
+                            defaultValue: "EUR - Euro",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="gbp">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.currencies.gbp",
+                          {
+                            defaultValue: "GBP - British Pound",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Currency Display Format
+                    {t("agencyDashboard.settings.taxAndCurrency.dateFormat", {
+                      defaultValue: "Date Format",
+                    })}
                   </Label>
                   <Select
                     value={taxCurrencySettings.currencyDisplayFormat}
@@ -2870,7 +3438,14 @@ const GeneralSettingsView = ({
                     }
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
-                      <SelectValue placeholder="Select format" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.taxAndCurrency.selectFormat",
+                          {
+                            defaultValue: "Select format",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
                       <SelectItem value="1234.56">$1,234.56</SelectItem>
@@ -2883,7 +3458,9 @@ const GeneralSettingsView = ({
 
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-                Tax Rates
+                {t("agencyDashboard.settings.taxAndCurrency.invoiceSettings", {
+                  defaultValue: "Invoice Settings",
+                })}
               </h3>
               <div className="space-y-6">
                 <div className="space-y-2">
@@ -2945,7 +3522,12 @@ const GeneralSettingsView = ({
               <div className="space-y-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Default Payment Terms
+                    {t(
+                      "agencyDashboard.settings.taxAndCurrency.defaultPaymentTerms",
+                      {
+                        defaultValue: "Default Payment Terms",
+                      },
+                    )}
                   </Label>
                   <Select
                     value={taxCurrencySettings.defaultPaymentTerms}
@@ -2957,13 +3539,48 @@ const GeneralSettingsView = ({
                     }
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-11 text-gray-900 font-medium rounded-xl">
-                      <SelectValue placeholder="Select terms" />
+                      <SelectValue
+                        placeholder={t(
+                          "agencyDashboard.settings.taxAndCurrency.selectTerms",
+                          {
+                            defaultValue: "Select terms",
+                          },
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="due">Due on Receipt</SelectItem>
-                      <SelectItem value="net15">Net 15</SelectItem>
-                      <SelectItem value="net30">Net 30</SelectItem>
-                      <SelectItem value="net60">Net 60</SelectItem>
+                      <SelectItem value="due">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.paymentTerms.due",
+                          {
+                            defaultValue: "Due on Receipt",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="net15">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.paymentTerms.net15",
+                          {
+                            defaultValue: "Net 15",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="net30">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.paymentTerms.net30",
+                          {
+                            defaultValue: "Net 30",
+                          },
+                        )}
+                      </SelectItem>
+                      <SelectItem value="net60">
+                        {t(
+                          "agencyDashboard.settings.taxAndCurrency.paymentTerms.net60",
+                          {
+                            defaultValue: "Net 60",
+                          },
+                        )}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -3013,7 +3630,9 @@ const GeneralSettingsView = ({
                 className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
               >
                 <Save className="w-5 h-5" />
-                Save Tax & Currency Settings
+                {t("agencyDashboard.settings.taxAndCurrency.save", {
+                  defaultValue: "Save Tax & Currency Settings",
+                })}
               </Button>
             </div>
           </div>
@@ -3023,19 +3642,18 @@ const GeneralSettingsView = ({
 
         {activeTab === "Team" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-xl font-bold text-gray-900 leading-tight">
-                    Team Management
-                  </h3>
-                  <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
-                    Manage team members, roles, and permissions
-                  </p>
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  {t("agencyDashboard.settings.team.title", {
+                    defaultValue: "Team Management",
+                  })}
+                </h3>
+                <p className="text-sm text-gray-500 font-medium hidden sm:block">
+                  {t("agencyDashboard.settings.team.subtitle", {
+                    defaultValue: "Manage team members, roles, and permissions",
+                  })}
+                </p>
               </div>
               <Button
                 onClick={() => setShowInviteModal(true)}
@@ -3043,10 +3661,12 @@ const GeneralSettingsView = ({
                   isLoadingTeamContext ||
                   !teamContext?.permissions?.includes("invite_team_members")
                 }
-                className="h-8 sm:h-9 px-3 sm:px-4 bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all"
+                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto"
               >
-                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm">Invite</span>
+                <Plus className="w-4 h-4" />
+                {t("agencyDashboard.settings.team.actions.inviteUser", {
+                  defaultValue: "Invite User",
+                })}
               </Button>
             </div>
 
@@ -3054,23 +3674,27 @@ const GeneralSettingsView = ({
               <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Loading team members…
+                  {t("agencyDashboard.settings.team.loadingMembers", {
+                    defaultValue: "Loading team members...",
+                  })}
                 </div>
               </Card>
             ) : (
               <>
-                <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                  <div className="flex flex-col gap-4 sm:gap-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gray-50 flex items-center justify-center shrink-0">
-                          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                  <div className="flex flex-col gap-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-gray-600" />
                         </div>
                         <div>
-                          <h4 className="text-sm sm:text-lg font-bold text-gray-900 tracking-tight">
-                            Active Members
+                          <h4 className="text-lg font-bold text-gray-900 tracking-tight">
+                            {t("agencyDashboard.settings.team.activeMembers", {
+                              defaultValue: "Active Team Members",
+                            })}
                           </h4>
-                          <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
+                          <p className="text-sm text-gray-500 font-medium mt-1">
                             Current access inside{" "}
                             {teamContext?.organization_name || "your agency"}.
                           </p>
@@ -3079,25 +3703,29 @@ const GeneralSettingsView = ({
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
-                          size="sm"
-                          className="h-8 rounded-xl bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold transition-all px-3"
+                          className="rounded-xl"
                           onClick={() => setShowActivityModal(true)}
                         >
-                          <History className="w-3.5 h-3.5 mr-1.5" />
-                          <span className="text-[10px] sm:text-xs">
-                            Activity
-                          </span>
+                          <History className="w-4 h-4 mr-2" />
+                          {t("agencyDashboard.settings.team.activity.title", {
+                            defaultValue: "Activity",
+                          })}
                         </Button>
-                        <Badge className="bg-gray-50 text-gray-500 border-gray-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
-                          {teamContext?.members?.length || 0}
+                        <Badge className="bg-gray-50 text-gray-700 border-gray-200 font-bold text-[10px] h-6">
+                          {t("agencyDashboard.settings.team.memberCount", {
+                            count: teamContext?.members?.length || 0,
+                            defaultValue: "{{count}} Members",
+                          })}
                         </Badge>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="space-y-3">
                       {(teamContext?.members || []).length === 0 ? (
-                        <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
-                          No active team members yet.
+                        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                          {t("agencyDashboard.settings.team.emptyMembers", {
+                            defaultValue: "No active team members yet.",
+                          })}
                         </div>
                       ) : (
                         (teamContext?.members || []).map((member) => {
@@ -3111,37 +3739,59 @@ const GeneralSettingsView = ({
                           return (
                             <div
                               key={member.user_id}
-                              className="flex flex-col justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 hover:border-indigo-100 transition-all duration-300"
+                              className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
                             >
                               <div className="min-w-0">
-                                <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                                <div className="text-sm font-bold text-gray-900 truncate">
                                   {member.email}
                                 </div>
-                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                  <Badge className="bg-white text-gray-600 border-gray-100 text-[9px] sm:text-[10px] px-1.5 py-0">
-                                    {formatTeamRoleLabel(member.role)}
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                  <Badge className="bg-white text-gray-700 border-gray-200">
+                                    {formatTeamRoleLabel(member.role, t)}
                                   </Badge>
-                                  <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                    {member.status}
+                                  <span>
+                                    {t(
+                                      "agencyDashboard.settings.team.memberStatus",
+                                      { defaultValue: "Status" },
+                                    )}
+                                    : {member.status}
                                   </span>
                                 </div>
                               </div>
-                              <div className="flex items-center justify-end border-t border-gray-100 pt-3">
+                              <div className="flex items-center gap-2">
                                 {member.role === "owner" ? (
-                                  <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 text-[9px] font-black uppercase tracking-widest px-2">
-                                    Owner
+                                  <Badge className="bg-amber-50 text-amber-700 border-amber-200">
+                                    {t(
+                                      "agencyDashboard.settings.team.roles.owner",
+                                      { defaultValue: "Owner" },
+                                    )}
                                   </Badge>
                                 ) : (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-7 sm:h-8 rounded-lg bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white border-none font-bold text-[10px] sm:text-xs transition-all w-full sm:w-auto"
-                                    disabled={!canEditRole}
-                                    onClick={() => openRoleEditor(member)}
-                                  >
-                                    <Edit2 className="w-3 h-3 mr-1.5" />
-                                    Edit Role
-                                  </Button>
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      className="rounded-xl"
+                                      disabled={!canEditRole}
+                                      onClick={() => openRoleEditor(member)}
+                                    >
+                                      <Edit2 className="w-4 h-4 mr-2" />
+                                      {t(
+                                        "agencyDashboard.settings.team.actions.editRole",
+                                      )}
+                                    </Button>
+                                    {canRemove && (
+                                      <Button
+                                        variant="outline"
+                                        className="rounded-xl border-red-300 text-red-600 hover:bg-red-50"
+                                        onClick={() => {
+                                          setSelectedMember(member);
+                                          setShowDeleteMemberModal(true);
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>
@@ -3152,37 +3802,53 @@ const GeneralSettingsView = ({
                   </div>
                 </Card>
 
-                <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-                  <div className="flex flex-col gap-4 sm:gap-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                          <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+                <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+                  <div className="flex flex-col gap-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                          <Mail className="w-5 h-5 text-gray-600" />
                         </div>
                         <div>
-                          <h4 className="text-sm sm:text-lg font-bold text-gray-900 tracking-tight">
-                            Invitations
+                          <h4 className="text-lg font-bold text-gray-900 tracking-tight">
+                            {t(
+                              "agencyDashboard.settings.team.pendingInvitations.title",
+                              { defaultValue: "Pending Invitations" },
+                            )}
                           </h4>
-                          <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
-                            Outstanding invites waiting for acceptance.
+                          <p className="text-sm text-gray-500 font-medium mt-1">
+                            {t(
+                              "agencyDashboard.settings.team.pendingInvitations.description",
+                              {
+                                defaultValue:
+                                  "Invitations sent to teammates who haven't joined yet.",
+                              },
+                            )}
                           </p>
                         </div>
                       </div>
-                      <Badge className="bg-orange-50 text-orange-600 border-orange-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
+                      <Badge className="bg-gray-50 text-gray-700 border-gray-200 font-bold text-[10px] h-6">
                         {
                           (teamContext?.invites || []).filter(
                             (invite) => invite.status === "pending",
                           ).length
-                        }
+                        }{" "}
+                        {t(
+                          "agencyDashboard.settings.team.pendingInvitations.pending",
+                          { defaultValue: "pending" },
+                        )}
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="space-y-3">
                       {(teamContext?.invites || []).filter(
                         (invite) => invite.status === "pending",
                       ).length === 0 ? (
-                        <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
-                          No pending invitations.
+                        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                          {t(
+                            "agencyDashboard.settings.team.pendingInvitations.empty",
+                            { defaultValue: "No pending invitations." },
+                          )}
                         </div>
                       ) : (
                         (teamContext?.invites || [])
@@ -3190,30 +3856,32 @@ const GeneralSettingsView = ({
                           .map((invite) => (
                             <div
                               key={invite.id}
-                              className="flex flex-col justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 sm:p-4 hover:border-orange-100 transition-all duration-300"
+                              className="flex flex-col gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-4 sm:flex-row sm:items-center sm:justify-between"
                             >
                               <div className="min-w-0">
-                                <div className="text-xs sm:text-sm font-bold text-gray-900 truncate">
+                                <div className="text-sm font-bold text-gray-900 truncate">
                                   {invite.email}
                                 </div>
-                                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                  <Badge className="bg-white text-gray-600 border-gray-100 text-[9px] sm:text-[10px] px-1.5 py-0">
-                                    {formatTeamRoleLabel(invite.role)}
+                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                  <Badge className="bg-white text-gray-700 border-gray-200">
+                                    {formatTeamRoleLabel(invite.role, t)}
                                   </Badge>
-                                  <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                    Pending
+                                  <span>
+                                    {t(
+                                      "agencyDashboard.settings.team.pendingInvitations.expires",
+                                    )}{" "}
+                                    {new Date(
+                                      invite.expires_at,
+                                    ).toLocaleString()}
                                   </span>
                                 </div>
                               </div>
-                              <div className="border-t border-gray-100 pt-3">
-                                <div className="text-[9px] sm:text-[10px] text-gray-400 font-bold flex items-center gap-1.5">
-                                  <History className="w-2.5 h-2.5" />
-                                  Exp:{" "}
-                                  {new Date(
-                                    invite.expires_at,
-                                  ).toLocaleDateString()}
-                                </div>
-                              </div>
+                              <Badge className="bg-amber-50 text-amber-700 border-amber-200">
+                                {t(
+                                  "agencyDashboard.settings.team.pendingInvitations.pending",
+                                  { defaultValue: "pending" },
+                                )}
+                              </Badge>
                             </div>
                           ))
                       )}
@@ -3230,10 +3898,14 @@ const GeneralSettingsView = ({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  Integrations
+                  {t("agencyDashboard.settings.integrations.title", {
+                    defaultValue: "Integrations",
+                  })}
                 </h3>
                 <p className="text-sm text-gray-500 font-medium">
-                  Connect your agency with other tools
+                  {t("agencyDashboard.settings.integrations.subtitle", {
+                    defaultValue: "Connect your agency with other tools",
+                  })}
                 </p>
               </div>
               <Button
@@ -3241,7 +3913,9 @@ const GeneralSettingsView = ({
                 className="h-9 px-3 sm:h-10 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
-                Add Integration
+                {t("agencyDashboard.settings.integrations.addIntegration", {
+                  defaultValue: "Add Integration",
+                })}
               </Button>
             </div>
 
@@ -3253,15 +3927,27 @@ const GeneralSettingsView = ({
                   </div>
                   <div>
                     <h4 className="text-lg font-bold text-gray-900 tracking-tight">
-                      Connect Bank Account
+                      {t(
+                        "agencyDashboard.settings.integrations.connectBankAccount",
+                        {
+                          defaultValue: "Connect Bank Account",
+                        },
+                      )}
                     </h4>
                     <p className="text-sm text-gray-500 font-medium mt-1">
-                      Link your bank to receive client payments and manage
-                      payouts.
+                      {t(
+                        "agencyDashboard.settings.integrations.connectBankHint",
+                        {
+                          defaultValue:
+                            "Link your bank to receive client payments and manage payouts.",
+                        },
+                      )}
                     </p>
                     {bankStatus?.connected && (
                       <p className="text-xs text-gray-600 font-medium mt-2">
-                        Connected
+                        {t("agencyDashboard.settings.integrations.connected", {
+                          defaultValue: "Connected",
+                        })}
                         {bankStatus.bank_last4
                           ? ` • Account ending in ••••${bankStatus.bank_last4}`
                           : ""}
@@ -3271,14 +3957,28 @@ const GeneralSettingsView = ({
                       bankStatus &&
                       !bankStatus.connected && (
                         <p className="text-xs text-gray-500 font-medium mt-2">
-                          Not connected
+                          {t(
+                            "agencyDashboard.settings.integrations.notConnected",
+                            {
+                              defaultValue: "Not connected",
+                            },
+                          )}
                         </p>
                       )}
                   </div>
                 </div>
                 <Button asChild className="h-10 px-5 rounded-xl font-bold">
                   <a href={`/AgencyDashboard?tab=payouts`}>
-                    {bankStatus?.connected ? "Change account" : "Connect"}
+                    {bankStatus?.connected
+                      ? t(
+                          "agencyDashboard.settings.integrations.changeAccount",
+                          {
+                            defaultValue: "Change account",
+                          },
+                        )
+                      : t("agencyDashboard.settings.integrations.connect", {
+                          defaultValue: "Connect",
+                        })}
                   </a>
                 </Button>
               </div>
@@ -3294,21 +3994,47 @@ const GeneralSettingsView = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                        Calendly Integration
+                        {t(
+                          "agencyDashboard.settings.integrations.calendly.title",
+                          {
+                            defaultValue: "Calendly Integration",
+                          },
+                        )}
                       </h3>
                       <p className="text-sm text-gray-500 font-medium">
                         {hasCalendlyAccess
-                          ? "Automate meeting scheduling with your clients"
-                          : "Available on Pro with the IRL Booking add-on"}
+                          ? t(
+                              "agencyDashboard.settings.integrations.calendly.enabledHint",
+                              {
+                                defaultValue:
+                                  "Automate meeting scheduling with your clients",
+                              },
+                            )
+                          : t(
+                              "agencyDashboard.settings.integrations.calendly.lockedHint",
+                              {
+                                defaultValue:
+                                  "Available on Pro with the IRL Booking add-on",
+                              },
+                            )}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">
                         {hasCalendlyAccess
                           ? calendlySettings.is_enabled
-                            ? "Active"
-                            : "Disabled"
-                          : "Locked"}
+                            ? t("agencyDashboard.settings.team.active", {
+                                defaultValue: "Active",
+                              })
+                            : t(
+                                "agencyDashboard.settings.integrations.disabled",
+                                {
+                                  defaultValue: "Disabled",
+                                },
+                              )
+                          : t("agencyDashboard.settings.integrations.locked", {
+                              defaultValue: "Locked",
+                            })}
                       </span>
                       <Switch
                         checked={
@@ -3330,8 +4056,13 @@ const GeneralSettingsView = ({
               {!hasIrlBookingAddon && (
                 <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    Enable the IRL Booking add-on to use Calendly, scouting,
-                    client CRM, bookings, and IRL accounting workflows.
+                    {t(
+                      "agencyDashboard.settings.integrations.calendly.upgradeHint",
+                      {
+                        defaultValue:
+                          "Enable the IRL Booking add-on to use Calendly, scouting, client CRM, bookings, and IRL accounting workflows.",
+                      },
+                    )}
                   </div>
                   <Button
                     asChild
@@ -3339,7 +4070,12 @@ const GeneralSettingsView = ({
                     className="h-9 rounded-xl bg-amber-600 px-4 font-bold text-white hover:bg-amber-700"
                   >
                     <a href={createPageUrl("AgencySubscribe")}>
-                      Get IRL Booking Add-on
+                      {t(
+                        "agencyDashboard.settings.integrations.calendly.getAddon",
+                        {
+                          defaultValue: "Get IRL Booking Add-on",
+                        },
+                      )}
                     </a>
                   </Button>
                 </div>
@@ -3678,8 +4414,15 @@ const GeneralSettingsView = ({
                       <Save className="w-4 h-4" />
                     )}
                     {isSavingCalendlySettings
-                      ? "Saving..."
-                      : "Save Calendly Configuration"}
+                      ? t("agencyDashboard.settings.common.saving", {
+                          defaultValue: "Saving...",
+                        })
+                      : t(
+                          "agencyDashboard.settings.integrations.calendly.saveConfiguration",
+                          {
+                            defaultValue: "Save Calendly Configuration",
+                          },
+                        )}
                   </Button>
                 </div>
               </div>

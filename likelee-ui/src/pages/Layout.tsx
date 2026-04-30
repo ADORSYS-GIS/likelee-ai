@@ -628,7 +628,7 @@ export default function Layout({ children, currentPageName }) {
 
                 {/* Language Switcher and Mobile Menu Button */}
                 <div className="flex items-center gap-2">
-                  {!isLandingPage && <LanguageSwitcher />}
+                  <LanguageSwitcher />
                   <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     className="md:hidden text-gray-600 hover:text-gray-900 p-2"
@@ -671,11 +671,9 @@ export default function Layout({ children, currentPageName }) {
                     {t("aboutUs")}
                   </Link>
 
-                  {!isLandingPage && (
-                    <div className="px-4 py-3">
-                      <LanguageSwitcher />
-                    </div>
-                  )}
+                  <div className="px-4 py-3">
+                    <LanguageSwitcher />
+                  </div>
 
                   <div className="pt-4 px-4">
                     {!authenticated ? (

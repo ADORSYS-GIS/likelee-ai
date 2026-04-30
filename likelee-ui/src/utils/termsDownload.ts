@@ -1,6 +1,12 @@
 import { jsPDF } from "jspdf";
 
-export async function downloadTermsPdf(containerId: string, title: string) {
+type TermsPdfMode = "save" | "open";
+
+export async function downloadTermsPdf(
+  containerId: string,
+  title: string,
+  mode: TermsPdfMode = "save",
+) {
   if (typeof window === "undefined") return;
 
   // Ensure fonts are actually loaded before cloning
@@ -135,6 +141,12 @@ export async function downloadTermsPdf(containerId: string, title: string) {
     autoPaging: "text",
     margin: [40, 40, 40, 40],
   });
+
+  if (mode === "open") {
+    const url = doc.output("bloburl");
+    window.open(url, "_blank", "noopener,noreferrer");
+    return;
+  }
 
   doc.save(`${title.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }

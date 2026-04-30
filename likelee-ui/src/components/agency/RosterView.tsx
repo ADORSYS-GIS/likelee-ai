@@ -61,10 +61,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  DashboardTabRail,
-  DashboardTableSurface,
-} from "@/components/dashboard/DashboardResponsive";
+import { useTranslation } from "react-i18next";
 
 interface RosterViewProps {
   searchTerm: string;
@@ -125,6 +122,7 @@ const RosterView = ({
 }: RosterViewProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [seatBreakdownOpen, setSeatBreakdownOpen] = useState(false);
   const [seatBreakdownLoading, setSeatBreakdownLoading] = useState(false);
   const [seatBreakdown, setSeatBreakdown] = useState<{
@@ -150,13 +148,48 @@ const RosterView = ({
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
       Number.isFinite(value) ? value : 0,
     );
-
-  const formatRosterStatus = (value: string | null | undefined) => {
+  const translateStatus = (value: string | null | undefined) => {
     const normalized = String(value || "")
       .trim()
       .toLowerCase();
-    if (!normalized) return "Unknown";
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    if (normalized === "active") {
+      return t("agencyDashboard.roster.filters.active");
+    }
+    if (normalized === "pending") {
+      return t("agencyDashboard.roster.filters.pending");
+    }
+    if (normalized === "inactive") {
+      return t("agencyDashboard.roster.filters.inactive");
+    }
+    return value || t("agencyDashboard.roster.states.empty");
+  };
+  const translateRoleType = (value: string | null | undefined) => {
+    const normalized = String(value || "")
+      .trim()
+      .toLowerCase();
+    if (normalized === "model")
+      return t("agencyDashboard.roster.categories.model");
+    if (normalized === "actor")
+      return t("agencyDashboard.roster.categories.actor");
+    if (normalized === "creator")
+      return t("agencyDashboard.roster.categories.creator");
+    if (normalized === "voice")
+      return t("agencyDashboard.roster.categories.voice");
+    if (normalized === "athlete")
+      return t("agencyDashboard.roster.categories.athlete");
+    return value || t("agencyDashboard.roster.states.empty");
+  };
+  const translateAiUsage = (value: string | null | undefined) => {
+    const normalized = String(value || "")
+      .trim()
+      .toLowerCase();
+    if (normalized === "video")
+      return t("agencyDashboard.roster.aiUsage.video");
+    if (normalized === "image")
+      return t("agencyDashboard.roster.aiUsage.image");
+    if (normalized === "voice")
+      return t("agencyDashboard.roster.aiUsage.voice");
+    return value || t("agencyDashboard.roster.states.empty");
   };
 
   const openSeatBreakdown = async () => {
@@ -173,22 +206,51 @@ const RosterView = ({
     } catch (e: any) {
       const msg = String(e?.message || e || "");
       toast({
-        title: "Could not load seat breakdown",
-        description: msg || "Please try again.",
+        title: t("agencyDashboard.roster.header.seatBreakdown.loadErrorTitle"),
+        description:
+          msg || t("agencyDashboard.roster.header.seatBreakdown.tryAgain"),
         variant: "destructive",
       });
     } finally {
       setSeatBreakdownLoading(false);
     }
   };
-  const [digitalsFilter, setDigitalsFilter] = useState("All Talent");
+  const [digitalsFilter, setDigitalsFilter] = useState("all");
   const [showInsufficientSeatsModal, setShowInsufficientSeatsModal] =
     useState(false);
-  const singularLabel = isSportsAgency ? "athlete" : "talent";
-  const pluralLabel = isSportsAgency ? "athletes" : "talents";
-  const singularTitleLabel = isSportsAgency ? "Athlete" : "Talent";
-  const pluralTitleLabel = isSportsAgency ? "Athletes" : "Talents";
-  const allRosterFilterLabel = isSportsAgency ? "All Athletes" : "All Talent";
+  const singularLabel = t(
+    `agencyDashboard.roster.entities.${isSportsAgency ? "athlete" : "talent"}`,
+  );
+  const pluralLabel = t(
+    `agencyDashboard.roster.entities.${isSportsAgency ? "athletes" : "talents"}`,
+  );
+  const singularTitleLabel = t(
+    `agencyDashboard.roster.entities.${isSportsAgency ? "athleteTitle" : "talentTitle"}`,
+  );
+  const pluralTitleLabel = t(
+    `agencyDashboard.roster.entities.${isSportsAgency ? "athletesTitle" : "talentsTitle"}`,
+  );
+  const allRosterFilterLabel = t(
+    `agencyDashboard.roster.filters.${isSportsAgency ? "allAthletes" : "allTalent"}`,
+  );
+  const rosterTabs = [
+    { id: "roster", label: t("agencyDashboard.roster.tabs.roster") },
+    {
+      id: "digitals",
+      label: t("agencyDashboard.roster.tabs.digitalsTracking"),
+    },
+    { id: "campaigns", label: t("agencyDashboard.roster.tabs.campaigns") },
+    { id: "licenses", label: t("agencyDashboard.roster.tabs.licenses") },
+    { id: "analytics", label: t("agencyDashboard.roster.tabs.analytics") },
+  ];
+  const normalizedStatusFilter =
+    statusFilter === "All Status"
+      ? "all"
+      : String(statusFilter || "all").toLowerCase();
+  const normalizedCategoryFilter =
+    categoryFilter === "All Categories"
+      ? "all"
+      : String(categoryFilter || "all").toLowerCase();
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteSearch, setInviteSearch] = useState("");
@@ -477,8 +539,10 @@ const RosterView = ({
 
     if (!targets.length) {
       toast({
-        title: "No emails found",
-        description: `None of the selected ${pluralLabel} have an email address on file.`,
+        title: t("agencyDashboard.roster.reminder.noEmailsTitle"),
+        description: t("agencyDashboard.roster.reminder.noEmailsDescription", {
+          entityPlural: pluralLabel,
+        }),
         variant: "destructive",
       });
       return;
@@ -509,16 +573,21 @@ const RosterView = ({
 
       if (failed && !sent) {
         toast({
-          title: "Email not sent",
-          description: failures[0] || "Email sending failed",
+          title: t("agencyDashboard.roster.reminder.emailNotSentTitle"),
+          description:
+            failures[0] ||
+            t("agencyDashboard.roster.reminder.emailNotSentDescription"),
           variant: "destructive",
         });
         return;
       }
 
       toast({
-        title: "Reminders sent",
-        description: `Sent: ${sent}${failed ? `, Failed: ${failed}` : ""}`,
+        title: t("agencyDashboard.roster.reminder.sentTitle"),
+        description: t("agencyDashboard.roster.reminder.sentDescription", {
+          sent,
+          failed,
+        }),
         ...(failed ? { variant: "destructive" as const } : {}),
       });
     } finally {
@@ -620,13 +689,18 @@ const RosterView = ({
       onRosterChanged?.();
 
       toast({
-        title: "Digital uploaded successfully!",
-        description: `The ${singularLabel}'s digitals have been updated.`,
+        title: t("agencyDashboard.roster.upload.successTitle"),
+        description: t("agencyDashboard.roster.upload.successDescription", {
+          entity: singularLabel,
+        }),
       });
     } catch (e: any) {
-      const msg = typeof e?.message === "string" ? e.message : "Upload failed";
+      const msg =
+        typeof e?.message === "string"
+          ? e.message
+          : t("agencyDashboard.roster.upload.errorDescription");
       toast({
-        title: "Upload failed",
+        title: t("agencyDashboard.roster.upload.errorTitle"),
         description: msg,
         variant: "destructive",
       });
@@ -703,14 +777,14 @@ const RosterView = ({
       });
     }
 
-    if (statusFilter !== "All Status") {
+    if (normalizedStatusFilter !== "all") {
       data = data.filter(
-        (t) => (t.status || "").toLowerCase() === statusFilter.toLowerCase(),
+        (t) => (t.status || "").toLowerCase() === normalizedStatusFilter,
       );
     }
 
-    if (categoryFilter !== "All Categories") {
-      const target = categoryFilter.toLowerCase();
+    if (normalizedCategoryFilter !== "all") {
+      const target = normalizedCategoryFilter;
       data = data.filter((t) => {
         const role = String(t?.role ?? "").toLowerCase();
         const roleTypes = Array.isArray((t as any)?.role_types)
@@ -878,16 +952,16 @@ const RosterView = ({
   }, [
     rosterData,
     searchTerm,
-    statusFilter,
-    categoryFilter,
+    normalizedStatusFilter,
+    normalizedCategoryFilter,
     sortConfig,
     advancedFilters,
   ]);
 
   const clearFilters = () => {
     setSearchTerm("");
-    setStatusFilter("All Status");
-    setCategoryFilter("All Categories");
+    setStatusFilter("all");
+    setCategoryFilter("all");
     setSortConfig(null);
     setAdvancedFilters(defaultAdvancedFilters);
   };
@@ -898,10 +972,10 @@ const RosterView = ({
         const summary = digitalsSummaryByTalent.get(t.id);
         const last = summary?.lastUpdated;
         const daysAgo = calculateDaysSinceUpdate(last);
-        if (digitalsFilter === "Current Only") return daysAgo < 75;
-        if (digitalsFilter === "Needs Reminder")
+        if (digitalsFilter === "current") return daysAgo < 75;
+        if (digitalsFilter === "needsReminder")
           return !!last && daysAgo >= 75 && daysAgo < 90;
-        if (digitalsFilter === "Outdated Only") return !!last && daysAgo >= 90;
+        if (digitalsFilter === "outdated") return !!last && daysAgo >= 90;
         return true;
       })
       .map((t) => {
@@ -974,56 +1048,55 @@ const RosterView = ({
                 {kycStatus === "approved" && (
                   <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
                     <CheckCircle2 className="w-3 h-3" />
-                    Verified Agency
+                    {t("agencyDashboard.roster.header.verifiedAgency")}
                   </div>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-sm text-gray-500 font-medium">
+              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 font-medium">
                 {!!agencyEmail && (
-                  <span className="flex items-center gap-2 min-w-0">
-                    <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                  <span className="flex items-center gap-1 truncate">
                     <span className="truncate">{agencyEmail}</span>
                   </span>
                 )}
                 {!!agencyWebsite && (
                   <a
-                    className="flex items-center gap-2 min-w-0 hover:underline hover:text-[#0B9DA2] transition-colors"
+                    className="flex items-center gap-1 truncate hover:underline"
                     href={agencyWebsite}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <Globe className="w-4 h-4 text-gray-400 shrink-0" />
+                    <Globe className="w-4 h-4 text-gray-400" />
                     <span className="truncate">{agencyWebsite}</span>
                   </a>
                 )}
               </div>
             </div>
           </div>
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
+          <div className="flex gap-3">
             <Button
               type="button"
-              className="w-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 font-semibold gap-2 transition-all sm:w-auto shadow-sm"
+              className="bg-[#0B1828] hover:bg-[#132C49] text-white font-bold gap-2"
               onClick={() => navigate("/agencysubscribe")}
             >
-              Upgrade plan
+              {t("agencyDashboard.roster.header.upgradePlan")}
             </Button>
             <Button
               variant="outline"
-              className="w-full text-blue-600 border-blue-200 bg-white/50 hover:bg-blue-50 gap-2 sm:w-auto transition-all shadow-sm"
+              className="text-gray-700 border-gray-300 gap-2"
               onClick={() => onEditProfile?.()}
               disabled={!onEditProfile}
             >
               <Pencil className="w-4 h-4" />
-              Edit Profile
+              {t("agencyDashboard.roster.header.editProfile")}
             </Button>
             <Button
               variant="outline"
-              className="w-full text-blue-600 border-blue-200 bg-white/50 hover:bg-blue-50 gap-2 sm:w-auto transition-all shadow-sm"
+              className="text-gray-700 border-gray-300 gap-2"
               onClick={() => onViewMarketplace?.()}
               disabled={!onViewMarketplace}
             >
               <Eye className="w-4 h-4" />
-              View Marketplace
+              {t("agencyDashboard.roster.header.viewMarketplace")}
             </Button>
           </div>
         </div>
@@ -1039,12 +1112,14 @@ const RosterView = ({
             />
             <span className="font-medium">
               {stripeStatusLoading
-                ? "Stripe status"
+                ? t("agencyDashboard.roster.header.stripe.status")
                 : stripeConnected
                   ? stripeReady
-                    ? "Stripe Connected"
-                    : "Stripe Connected (setup incomplete)"
-                  : "Stripe Not Connected"}
+                    ? t("agencyDashboard.roster.header.stripe.connected")
+                    : t(
+                        "agencyDashboard.roster.header.stripe.connectedIncomplete",
+                      )
+                  : t("agencyDashboard.roster.header.stripe.notConnected")}
             </span>
           </div>
           <button
@@ -1056,18 +1131,23 @@ const RosterView = ({
           >
             <Users className="w-4 h-4 text-gray-400 group-hover:text-[#0B9DA2]" />
             <span className="font-medium group-hover:text-[#0B9DA2]">
-              {rosterData.length} / {seatsLimit || 0} seats used
+              {t("agencyDashboard.roster.header.seatsUsed", {
+                used: rosterData.length,
+                total: seatsLimit || 0,
+              })}
             </span>
           </button>
         </div>
       </Card>
 
       <Dialog open={seatBreakdownOpen} onOpenChange={setSeatBreakdownOpen}>
-        <DialogContent className="w-[95vw] max-w-2xl">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Seat Breakdown</DialogTitle>
+            <DialogTitle>
+              {t("agencyDashboard.roster.header.seatBreakdown.title")}
+            </DialogTitle>
             <DialogDescription>
-              Your total seats can come from annual and monthly subscriptions.
+              {t("agencyDashboard.roster.header.seatBreakdown.description")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1075,7 +1155,7 @@ const RosterView = ({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
-                  Total active
+                  {t("agencyDashboard.roster.header.seatBreakdown.totalActive")}
                 </div>
                 <div className="mt-1 text-2xl font-black text-gray-900">
                   {seatBreakdownLoading
@@ -1085,7 +1165,7 @@ const RosterView = ({
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
-                  Annual
+                  {t("agencyDashboard.roster.header.seatBreakdown.annual")}
                 </div>
                 <div className="mt-1 text-2xl font-black text-gray-900">
                   {seatBreakdownLoading
@@ -1095,7 +1175,7 @@ const RosterView = ({
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
                 <div className="text-xs font-black uppercase tracking-[0.18em] text-gray-500">
-                  Monthly
+                  {t("agencyDashboard.roster.header.seatBreakdown.monthly")}
                 </div>
                 <div className="mt-1 text-2xl font-black text-gray-900">
                   {seatBreakdownLoading
@@ -1107,18 +1187,30 @@ const RosterView = ({
 
             <div className="rounded-xl border border-gray-200 overflow-hidden">
               <div className="grid grid-cols-12 gap-2 bg-gray-50 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-gray-500">
-                <div className="col-span-2">Interval</div>
-                <div className="col-span-2">Source</div>
-                <div className="col-span-2 text-right">Seats</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-4">Renews/Ends</div>
+                <div className="col-span-2">
+                  {t("agencyDashboard.roster.header.seatBreakdown.interval")}
+                </div>
+                <div className="col-span-2">
+                  {t("agencyDashboard.roster.header.seatBreakdown.source")}
+                </div>
+                <div className="col-span-2 text-right">
+                  {t("agencyDashboard.roster.header.seatBreakdown.seats")}
+                </div>
+                <div className="col-span-2">
+                  {t("agencyDashboard.roster.header.seatBreakdown.status")}
+                </div>
+                <div className="col-span-4">
+                  {t("agencyDashboard.roster.header.seatBreakdown.renewsEnds")}
+                </div>
               </div>
               <div className="divide-y divide-gray-100">
                 {(seatBreakdown?.items || []).length === 0 ? (
                   <div className="px-4 py-6 text-sm text-gray-500">
                     {seatBreakdownLoading
-                      ? "Loading…"
-                      : "No active seat subscriptions found."}
+                      ? t("agencyDashboard.roster.states.loading")
+                      : t(
+                          "agencyDashboard.roster.header.seatBreakdown.noActiveSubscriptions",
+                        )}
                   </div>
                 ) : (
                   (seatBreakdown?.items || []).map((item) => (
@@ -1127,10 +1219,22 @@ const RosterView = ({
                       className="grid grid-cols-12 gap-2 px-4 py-3 text-sm"
                     >
                       <div className="col-span-2 font-bold text-gray-900">
-                        {item.interval === "year" ? "Annual" : "Monthly"}
+                        {item.interval === "year"
+                          ? t(
+                              "agencyDashboard.roster.header.seatBreakdown.annual",
+                            )
+                          : t(
+                              "agencyDashboard.roster.header.seatBreakdown.monthly",
+                            )}
                       </div>
                       <div className="col-span-2 text-gray-600">
-                        {item.source === "seat_addon" ? "Add-on" : "In plan"}
+                        {item.source === "seat_addon"
+                          ? t(
+                              "agencyDashboard.roster.header.seatBreakdown.addOn",
+                            )
+                          : t(
+                              "agencyDashboard.roster.header.seatBreakdown.inPlan",
+                            )}
                       </div>
                       <div className="col-span-2 text-right font-bold text-gray-900">
                         {formatNumber(item.seats)}
@@ -1143,7 +1247,7 @@ const RosterView = ({
                           ? new Date(
                               item.current_period_end,
                             ).toLocaleDateString()
-                          : "—"}
+                          : t("agencyDashboard.roster.states.empty")}
                       </div>
                     </div>
                   ))
@@ -1158,34 +1262,38 @@ const RosterView = ({
               variant="outline"
               onClick={() => setSeatBreakdownOpen(false)}
             >
-              Close
+              {t("agencyDashboard.roster.actions.close")}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-start justify-between min-h-[150px] sm:min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-gray-500 mb-1">
-              Active {pluralTitleLabel}
+              {t("agencyDashboard.roster.stats.activeEntities", {
+                entityPlural: pluralTitleLabel,
+              })}
             </p>
-            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <div className="text-3xl font-bold text-gray-900">
               {activeTalentCount}
             </div>
             <p className="text-xs text-gray-400 mt-1">
-              of {rosterData.length} total
+              {t("agencyDashboard.roster.stats.ofTotal", {
+                count: rosterData.length,
+              })}
             </p>
           </div>
-          <Users className="w-8 h-8 sm:w-10 sm:h-10 text-gray-100" />
+          <Users className="w-10 h-10 text-gray-100" />
         </Card>
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-start justify-between min-h-[150px] sm:min-h-0">
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-gray-500 mb-1">
-              Monthly Earnings
+              {t("agencyDashboard.roster.stats.monthlyEarnings")}
             </p>
-            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <div className="text-3xl font-bold text-gray-900">
               {formatCurrency(totalMonthlyEarnings)}
             </div>
             {(earnings30dTotalCents !== 0 ||
@@ -1202,92 +1310,101 @@ const RosterView = ({
               </p>
             )}
           </div>
-          <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 text-gray-100" />
+          <DollarSign className="w-10 h-10 text-gray-100" />
         </Card>
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-start justify-between min-h-[150px] sm:min-h-0">
+        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-gray-500 mb-1">
-              Active Campaigns
+              {t("agencyDashboard.roster.stats.activeCampaigns")}
             </p>
-            <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+            <div className="text-3xl font-bold text-gray-900">
               {activeCampaigns}
             </div>
             <p className="text-xs text-gray-400 mt-1">
-              across all {pluralLabel}
+              {t("agencyDashboard.roster.stats.acrossAllEntities", {
+                entityPlural: pluralLabel,
+              })}
             </p>
           </div>
-          <Briefcase className="w-8 h-8 sm:w-10 sm:h-10 text-gray-100" />
+          <Briefcase className="w-10 h-10 text-gray-100" />
         </Card>
         {agencyMode === "AI" && (
-          <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-start justify-between min-h-[150px] sm:min-h-0">
+          <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-500 mb-1">
-                Expiring Licenses
+                {t("agencyDashboard.roster.stats.expiringLicenses")}
               </p>
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <div className="text-3xl font-bold text-gray-900">
                 {expiringLicensesCount}
               </div>
               <p className="text-xs text-orange-500 font-medium mt-1">
-                require renewal
+                {t("agencyDashboard.roster.stats.requireRenewal")}
               </p>
             </div>
-            <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-gray-100" />
+            <AlertCircle className="w-10 h-10 text-gray-100" />
           </Card>
         )}
       </div>
 
       {/* Roster Table Section */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-4 md:p-6 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <DashboardTabRail
-            className="-mx-1 px-1 flex-1 min-w-0"
-            items={[
-              "Roster",
-              "Digitals Tracking",
-              "Campaigns",
-              "Licenses",
-              "Analytics",
-            ]
-              .filter((tab) => {
-                const isLicenses = tab === "Licenses";
-                const isCampaigns = tab === "Campaigns";
-                const isAiMode = agencyMode === "AI";
-                if (isLicenses && !isAiMode) return false;
-                if (isCampaigns && isAiMode) return false;
-                return true;
-              })
-              .map((tab) => ({
-                id: tab.toLowerCase().split(" ")[0],
-                label: tab === "Analytics" ? "Analytics Pro" : tab,
-                active: rosterTab === tab.toLowerCase().split(" ")[0],
-                onClick: () => setRosterTab(tab.toLowerCase().split(" ")[0]),
-              }))}
-          />
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+        <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+            {rosterTabs.map((tab) => {
+              const isLicenses = tab.id === "licenses";
+              const isCampaigns = tab.id === "campaigns";
+              const isAiMode = agencyMode === "AI";
+
+              // Filter logic:
+              // 1. Hide Licenses in IRL mode
+              // 2. Hide Campaigns in AI mode
+              if (isLicenses && !isAiMode) return null;
+              if (isCampaigns && isAiMode) return null;
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setRosterTab(tab.id)}
+                  className={`px-4 py-2 text-sm font-bold transition-colors relative ${
+                    rosterTab === tab.id
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  {tab.label}
+                  {tab.id === "analytics" && (
+                    <span className="ml-2 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                      Pro
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex w-full md:w-auto flex-wrap gap-3">
             <Button
               variant="outline"
-              size="sm"
-              className="gap-2 font-bold h-9 rounded-lg shrink-0"
+              className="gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export CSV</span>
+              <Download className="w-4 h-4" />{" "}
+              {t("agencyDashboard.roster.actions.exportCsv")}
             </Button>
             <Button
               variant="outline"
-              size="sm"
               onClick={handleInviteTalentClick}
-              className="border-gray-200 gap-2 font-bold h-9 rounded-lg shrink-0"
+              className="border-gray-200 gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
-              <Mail className="w-4 h-4" />
-              <span className="hidden sm:inline">Invite</span>
+              <Mail className="w-4 h-4" />{" "}
+              {t("agencyDashboard.roster.actions.sendPortalInvite")}
             </Button>
             <Button
-              size="sm"
               onClick={handleAddTalentClick}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold h-9 rounded-lg px-4 shrink-0"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />{" "}
-              <span>{isSportsAgency ? "Add Athlete" : "Add Talent"}</span>
+              {t(
+                `agencyDashboard.roster.actions.${isSportsAgency ? "addAthlete" : "addTalent"}`,
+              )}
             </Button>
           </div>
         </div>
@@ -1306,7 +1423,10 @@ const RosterView = ({
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder={`Search ${singularLabel}...`}
+                      placeholder={t(
+                        "agencyDashboard.roster.filters.searchEntity",
+                        { entity: singularLabel },
+                      )}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 h-11"
@@ -1314,26 +1434,46 @@ const RosterView = ({
                   </div>
                   <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <select
-                      value={statusFilter}
+                      value={normalizedStatusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                      <option>All Status</option>
-                      <option>Active</option>
-                      <option>Pending</option>
-                      <option>Inactive</option>
+                      <option value="all">
+                        {t("agencyDashboard.roster.filters.allStatus")}
+                      </option>
+                      <option value="active">
+                        {t("agencyDashboard.roster.filters.active")}
+                      </option>
+                      <option value="pending">
+                        {t("agencyDashboard.roster.filters.pending")}
+                      </option>
+                      <option value="inactive">
+                        {t("agencyDashboard.roster.filters.inactive")}
+                      </option>
                     </select>
                     <select
-                      value={categoryFilter}
+                      value={normalizedCategoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
-                      <option>All Categories</option>
-                      <option>Model</option>
-                      <option>Actor</option>
-                      <option>Creator</option>
-                      <option>Voice</option>
-                      <option>Athlete</option>
+                      <option value="all">
+                        {t("agencyDashboard.roster.filters.allCategories")}
+                      </option>
+                      <option value="model">
+                        {t("agencyDashboard.roster.categories.model")}
+                      </option>
+                      <option value="actor">
+                        {t("agencyDashboard.roster.categories.actor")}
+                      </option>
+                      <option value="creator">
+                        {t("agencyDashboard.roster.categories.creator")}
+                      </option>
+                      <option value="voice">
+                        {t("agencyDashboard.roster.categories.voice")}
+                      </option>
+                      <option value="athlete">
+                        {t("agencyDashboard.roster.categories.athlete")}
+                      </option>
                     </select>
                     <Button
                       variant="outline"
@@ -1343,7 +1483,7 @@ const RosterView = ({
                       }
                     >
                       <Filter className="w-4 h-4" />
-                      Advanced Filters
+                      {t("agencyDashboard.roster.filters.advancedFilters")}
                     </Button>
                   </div>
                 </div>
@@ -1360,194 +1500,78 @@ const RosterView = ({
                   {isLoading && filteredTalent.length === 0 ? (
                     <div className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium py-8">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {`Loading ${pluralLabel}...`}
+                      {t("agencyDashboard.roster.states.loadingEntities", {
+                        entityPlural: pluralLabel,
+                      })}
                     </div>
                   ) : filteredTalent.length === 0 ? (
                     <div className="text-center text-sm text-gray-500 font-medium py-8">
-                      {`No ${pluralLabel} to display.`}
+                      {t("agencyDashboard.roster.states.noEntities", {
+                        entityPlural: pluralLabel,
+                      })}
                     </div>
                   ) : (
-                    filteredTalent.map((talent) => {
-                      const displayStatus = formatRosterStatus(talent.status);
-                      const roleLabels =
-                        Array.isArray((talent as any).role_types) &&
-                        (talent as any).role_types.length > 0
-                          ? (talent as any).role_types
-                              .filter(
-                                (item: any) =>
-                                  typeof item === "string" &&
-                                  item.trim().length > 0,
-                              )
-                              .slice(0, 3)
-                          : [String(talent.role || "Model")];
-                      const sportsLabel = Array.isArray(talent.sports)
-                        ? talent.sports.join(", ")
-                        : talent.sport || talent.sports || "—";
-
-                      return (
-                        <button
-                          key={talent.id}
-                          type="button"
-                          className="w-full text-left rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-slate-300"
-                          onClick={() => setSelectedTalent(talent)}
+                    filteredTalent.map((talent) => (
+                      <button
+                        key={talent.id}
+                        type="button"
+                        className="w-full text-left bg-white border border-gray-200 rounded-xl p-4"
+                        onClick={() => setSelectedTalent(talent)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={talent.img || "https://placehold.co/150"}
+                            alt={talent.name}
+                            className="w-12 h-12 rounded-lg object-contain bg-gray-50"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold text-gray-900 truncate">
+                                {talent.name}
+                              </span>
+                              {talent.is_verified && (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {translateRoleType(
+                                String(talent.role || "model"),
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          className={`grid gap-3 mt-3 text-sm ${
+                            agencyMode === "IRL" ? "grid-cols-1" : "grid-cols-2"
+                          }`}
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex min-w-0 items-start gap-3">
-                              <img
-                                src={talent.img || "https://placehold.co/150"}
-                                alt={talent.name}
-                                className="h-12 w-12 rounded-xl bg-slate-50 object-contain"
-                              />
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="truncate text-lg font-bold text-slate-900">
-                                    {talent.name}
-                                  </span>
-                                  {talent.is_verified && (
-                                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
-                                  )}
-                                </div>
-                                <div className="mt-1 flex flex-wrap gap-1.5">
-                                  {roleLabels.map((label: string) => (
-                                    <Badge
-                                      key={label}
-                                      variant="secondary"
-                                      className="border-none bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-700"
-                                    >
-                                      {label}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </div>
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              Followers
                             </div>
-                            <Badge
-                              variant="secondary"
-                              className={`shrink-0 border px-2.5 py-1 text-[10px] font-bold ${
-                                displayStatus === "Active"
-                                  ? "border-green-200 bg-green-50 text-green-700"
-                                  : displayStatus === "Pending"
-                                    ? "border-amber-200 bg-amber-50 text-amber-700"
-                                    : "border-slate-200 bg-slate-100 text-slate-700"
-                              }`}
-                            >
-                              {displayStatus}
-                            </Badge>
+                            <div className="font-bold text-gray-900">
+                              {talent.followers || "0"}
+                            </div>
                           </div>
-
-                          <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-sm">
+                          {agencyMode !== "IRL" && (
                             <div>
-                              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                Followers
+                              <div className="text-xs text-gray-500">
+                                {t("agencyDashboard.roster.table.revenue")}
                               </div>
-                              <div className="mt-1 text-base font-bold text-slate-900">
-                                {formatNumber(Number(talent.followers || 0))}
+                              <div className="font-bold text-gray-900">
+                                {formatCurrency(
+                                  Number(talent?.earnings_val ?? 0),
+                                )}
                               </div>
                             </div>
-                            <div>
-                              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                {agencyMode === "IRL"
-                                  ? "Assets"
-                                  : "30D Revenue"}
-                              </div>
-                              <div className="mt-1 text-base font-bold text-slate-900">
-                                {agencyMode === "IRL"
-                                  ? formatNumber(Number(talent.assets || 0))
-                                  : formatCurrency(
-                                      Number(talent?.earnings_val ?? 0),
-                                    )}
-                              </div>
-                            </div>
-                            {agencyMode === "AI" && (
-                              <>
-                                <div>
-                                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Top Brand
-                                  </div>
-                                  <div className="mt-1 truncate text-sm font-semibold text-slate-900">
-                                    {talent.top_brand || "—"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    License Expiry
-                                  </div>
-                                  <div className="mt-1 text-sm font-semibold text-slate-900">
-                                    {talent.expiry || "—"}
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                            {isSportsAgency ? (
-                              <>
-                                <div>
-                                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Organization
-                                  </div>
-                                  <div className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900">
-                                    {talent.organization ||
-                                      talent.school ||
-                                      "—"}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Sports
-                                  </div>
-                                  <div className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900">
-                                    {sportsLabel}
-                                  </div>
-                                </div>
-                              </>
-                            ) : (
-                              <div>
-                                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                  Assets
-                                </div>
-                                <div className="mt-1 text-sm font-semibold text-slate-900">
-                                  {formatNumber(Number(talent.assets || 0))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {agencyMode === "AI" &&
-                            Array.isArray(talent.ai_usage) &&
-                            talent.ai_usage.length > 0 && (
-                              <div className="mt-3">
-                                <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                  AI Usage
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                  {talent.ai_usage.map((usage: string) => {
-                                    let Icon = null;
-                                    if (usage === "Video") Icon = Video;
-                                    else if (usage === "Image")
-                                      Icon = ImageIcon;
-                                    else if (usage === "Voice") Icon = Mic;
-
-                                    return (
-                                      <Badge
-                                        key={usage}
-                                        variant="outline"
-                                        className="flex items-center gap-1.5 rounded-md border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700"
-                                      >
-                                        {Icon && (
-                                          <Icon className="h-3.5 w-3.5" />
-                                        )}
-                                        {usage}
-                                      </Badge>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                        </button>
-                      );
-                    })
+                          )}
+                        </div>
+                      </button>
+                    ))
                   )}
                 </div>
 
-                <DashboardTableSurface className="hidden rounded-xl border border-gray-100 md:block">
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
                   <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
@@ -1569,12 +1593,12 @@ const RosterView = ({
                                 onClick={() => handleSort("status")}
                                 className="flex items-center gap-1 cursor-pointer pointer-events-auto"
                               >
-                                Status{" "}
+                                {t("agencyDashboard.roster.table.status")}{" "}
                                 <ArrowUpDown className="w-3 h-3 text-gray-500" />
                               </button>
                             </th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              AI Usage
+                              {t("agencyDashboard.roster.table.aiUsage")}
                             </th>
                           </>
                         )}
@@ -1584,31 +1608,31 @@ const RosterView = ({
                             onClick={() => handleSort("followers_val")}
                             className="flex items-center gap-1 cursor-pointer pointer-events-auto"
                           >
-                            Followers{" "}
+                            {t("agencyDashboard.roster.table.followers")}{" "}
                             <ArrowUpDown className="w-3 h-3 text-gray-500" />
                           </button>
                         </th>
                         {isSportsAgency ? (
                           <>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              Organization
+                              {t("agencyDashboard.roster.table.organization")}
                             </th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              Sports
+                              {t("agencyDashboard.roster.table.sports")}
                             </th>
                           </>
                         ) : (
                           <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                            Assets
+                            {t("agencyDashboard.roster.table.assets")}
                           </th>
                         )}
                         {agencyMode !== "IRL" && (
                           <>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              Top Brand
+                              {t("agencyDashboard.roster.table.topBrand")}
                             </th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              License Expiry
+                              {t("agencyDashboard.roster.table.licenseExpiry")}
                             </th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
                               <button
@@ -1616,7 +1640,7 @@ const RosterView = ({
                                 onClick={() => handleSort("earnings_val")}
                                 className="flex items-center gap-1 cursor-pointer pointer-events-auto"
                               >
-                                30D Revenue{" "}
+                                {t("agencyDashboard.roster.table.revenue30d")}{" "}
                                 <ArrowUpDown className="w-3 h-3 text-gray-500" />
                               </button>
                             </th>
@@ -1641,7 +1665,12 @@ const RosterView = ({
                           >
                             <div className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium">
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              {`Loading ${pluralLabel}…`}
+                              {t(
+                                "agencyDashboard.roster.states.loadingEntities",
+                                {
+                                  entityPlural: pluralLabel,
+                                },
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1660,7 +1689,9 @@ const RosterView = ({
                             className="px-6 py-10"
                           >
                             <div className="text-center text-sm text-gray-500 font-medium">
-                              {`No ${pluralLabel} to display.`}
+                              {t("agencyDashboard.roster.states.noEntities", {
+                                entityPlural: pluralLabel,
+                              })}
                             </div>
                           </td>
                         </tr>
@@ -1706,7 +1737,7 @@ const RosterView = ({
                                             variant="secondary"
                                             className="bg-gray-100 text-gray-700 border-none font-bold text-[10px]"
                                           >
-                                            {r}
+                                            {translateRoleType(r)}
                                           </Badge>
                                         ))
                                     ) : (
@@ -1714,7 +1745,9 @@ const RosterView = ({
                                         variant="secondary"
                                         className="bg-gray-100 text-gray-700 border-none font-bold text-[10px]"
                                       >
-                                        {String(talent.role || "Model")}
+                                        {translateRoleType(
+                                          String(talent.role || "model"),
+                                        )}
                                       </Badge>
                                     )}
                                   </div>
@@ -1725,7 +1758,7 @@ const RosterView = ({
                           {agencyMode === "AI" && (
                             <>
                               <td className="px-6 py-4 text-sm font-medium">
-                                {talent.status}
+                                {translateStatus(talent.status)}
                               </td>
                               <td className="px-6 py-4 flex flex-nowrap items-center gap-2">
                                 {talent.ai_usage?.map((u: string) => {
@@ -1740,7 +1773,7 @@ const RosterView = ({
                                       className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-gray-900 border border-gray-200 shadow-sm"
                                     >
                                       {Icon && <Icon className="w-3.5 h-3.5" />}
-                                      {u}
+                                      {translateAiUsage(u)}
                                     </Badge>
                                   );
                                 })}
@@ -1785,7 +1818,7 @@ const RosterView = ({
                       ))}
                     </tbody>
                   </table>
-                </DashboardTableSurface>
+                </div>
               </div>
             </>
           )}
@@ -1796,14 +1829,16 @@ const RosterView = ({
                 <TrendingUp className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Analytics
+                {t("agencyDashboard.roster.analytics.title")}
               </h2>
-              <p className="text-gray-500 max-w-md mb-8">Coming soon.</p>
+              <p className="text-gray-500 max-w-md mb-8">
+                {t("agencyDashboard.roster.analytics.comingSoonDescription")}
+              </p>
               <Button
                 disabled
                 className="bg-gray-200 text-gray-500 font-bold h-12 px-8 rounded-xl"
               >
-                Coming soon
+                {t("agencyDashboard.roster.analytics.comingSoonButton")}
               </Button>
             </div>
           )}
@@ -1814,10 +1849,12 @@ const RosterView = ({
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">
-                    Digitals Tracking
+                    {t("agencyDashboard.roster.digitals.title")}
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    {`Monitor and manage ${singularLabel} digitals (plain photos, no makeup)`}
+                    {t("agencyDashboard.roster.digitals.subtitle", {
+                      entity: singularLabel,
+                    })}
                   </p>
                 </div>
               </div>
@@ -1832,14 +1869,16 @@ const RosterView = ({
                   className="gap-2 text-gray-700 border-gray-200 font-bold hover:bg-gray-50 h-10"
                   disabled={reminderTargetTalentIds.length === 0}
                 >
-                  <Send className="w-4 h-4" /> Remind All (
+                  <Send className="w-4 h-4" />{" "}
+                  {t("agencyDashboard.roster.digitals.remindAll")} (
                   {digitalsStats.needsReminder + digitalsStats.outdated})
                 </Button>
               </div>
 
               {agencyDigitalsLoading && (
                 <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading digitals…
+                  <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                  {t("agencyDashboard.roster.digitals.loading")}
                 </div>
               )}
 
@@ -1847,24 +1886,25 @@ const RosterView = ({
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card
                   className={`p-5 cursor-pointer transition-all rounded-xl ${
-                    digitalsFilter === "Current Only"
+                    digitalsFilter === "current"
                       ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
                       : "bg-white border border-gray-100 shadow-sm hover:border-indigo-100"
                   }`}
-                  onClick={() => setDigitalsFilter("Current Only")}
+                  onClick={() => setDigitalsFilter("current")}
                 >
                   <div
                     className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${
-                      digitalsFilter === "Current Only"
+                      digitalsFilter === "current"
                         ? "text-indigo-700"
                         : "text-gray-400"
                     }`}
                   >
-                    <ImageIcon className="w-4 h-4" /> Current
+                    <ImageIcon className="w-4 h-4" />{" "}
+                    {t("agencyDashboard.roster.digitals.current")}
                   </div>
                   <p
                     className={`text-3xl font-bold mb-1 ${
-                      digitalsFilter === "Current Only"
+                      digitalsFilter === "current"
                         ? "text-indigo-900"
                         : "text-gray-900"
                     }`}
@@ -1873,35 +1913,36 @@ const RosterView = ({
                   </p>
                   <p
                     className={`text-xs font-bold ${
-                      digitalsFilter === "Current Only"
+                      digitalsFilter === "current"
                         ? "text-indigo-600"
                         : "text-blue-500"
                     }`}
                   >
-                    Up to date
+                    {t("agencyDashboard.roster.digitals.upToDate")}
                   </p>
                 </Card>
 
                 <Card
                   className={`p-5 cursor-pointer transition-all rounded-xl ${
-                    digitalsFilter === "Needs Reminder"
+                    digitalsFilter === "needsReminder"
                       ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
                       : "bg-white border border-gray-100 shadow-sm hover:border-indigo-100"
                   }`}
-                  onClick={() => setDigitalsFilter("Needs Reminder")}
+                  onClick={() => setDigitalsFilter("needsReminder")}
                 >
                   <div
                     className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${
-                      digitalsFilter === "Needs Reminder"
+                      digitalsFilter === "needsReminder"
                         ? "text-indigo-700"
                         : "text-gray-400"
                     }`}
                   >
-                    <Clock className="w-4 h-4" /> Reminder Due
+                    <Clock className="w-4 h-4" />{" "}
+                    {t("agencyDashboard.roster.digitals.reminderDue")}
                   </div>
                   <p
                     className={`text-3xl font-bold mb-1 ${
-                      digitalsFilter === "Needs Reminder"
+                      digitalsFilter === "needsReminder"
                         ? "text-indigo-900"
                         : "text-gray-900"
                     }`}
@@ -1910,35 +1951,36 @@ const RosterView = ({
                   </p>
                   <p
                     className={`text-xs font-medium ${
-                      digitalsFilter === "Needs Reminder"
+                      digitalsFilter === "needsReminder"
                         ? "text-indigo-600"
                         : "text-gray-400"
                     }`}
                   >
-                    75-89 days old
+                    {t("agencyDashboard.roster.digitals.daysOld75to89")}
                   </p>
                 </Card>
 
                 <Card
                   className={`p-5 cursor-pointer transition-all rounded-xl ${
-                    digitalsFilter === "Outdated Only"
+                    digitalsFilter === "outdated"
                       ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
                       : "bg-white border border-gray-100 shadow-sm hover:border-indigo-100"
                   }`}
-                  onClick={() => setDigitalsFilter("Outdated Only")}
+                  onClick={() => setDigitalsFilter("outdated")}
                 >
                   <div
                     className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${
-                      digitalsFilter === "Outdated Only"
+                      digitalsFilter === "outdated"
                         ? "text-indigo-700"
                         : "text-gray-400"
                     }`}
                   >
-                    <AlertCircle className="w-4 h-4" /> Outdated
+                    <AlertCircle className="w-4 h-4" />{" "}
+                    {t("agencyDashboard.roster.digitals.outdated")}
                   </div>
                   <p
                     className={`text-3xl font-bold mb-1 ${
-                      digitalsFilter === "Outdated Only"
+                      digitalsFilter === "outdated"
                         ? "text-indigo-900"
                         : "text-gray-900"
                     }`}
@@ -1947,36 +1989,38 @@ const RosterView = ({
                   </p>
                   <p
                     className={`text-xs font-medium ${
-                      digitalsFilter === "Outdated Only"
+                      digitalsFilter === "outdated"
                         ? "text-indigo-600"
                         : "text-gray-400"
                     }`}
                   >
-                    90+ days old
+                    {t("agencyDashboard.roster.digitals.daysOld90Plus")}
                   </p>
                 </Card>
 
                 <Card
                   className={`p-5 cursor-pointer transition-all rounded-xl ${
-                    digitalsFilter === "All Talent"
+                    digitalsFilter === "all"
                       ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
                       : "bg-white border border-gray-100 shadow-sm hover:border-indigo-100"
                   }`}
-                  onClick={() => setDigitalsFilter("All Talent")}
+                  onClick={() => setDigitalsFilter("all")}
                 >
                   <div
                     className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${
-                      digitalsFilter === "All Talent"
+                      digitalsFilter === "all"
                         ? "text-indigo-700"
                         : "text-gray-400"
                     }`}
                   >
                     <Calendar className="w-4 h-4" />{" "}
-                    {`Total ${pluralTitleLabel}`}
+                    {t("agencyDashboard.roster.digitals.totalEntities", {
+                      entityPlural: pluralTitleLabel,
+                    })}
                   </div>
                   <p
                     className={`text-3xl font-bold mb-1 ${
-                      digitalsFilter === "All Talent"
+                      digitalsFilter === "all"
                         ? "text-indigo-900"
                         : "text-gray-900"
                     }`}
@@ -1985,12 +2029,12 @@ const RosterView = ({
                   </p>
                   <p
                     className={`text-xs font-bold ${
-                      digitalsFilter === "All Talent"
+                      digitalsFilter === "all"
                         ? "text-indigo-600"
                         : "text-indigo-600"
                     }`}
                   >
-                    In roster
+                    {t("agencyDashboard.roster.digitals.inRoster")}
                   </p>
                 </Card>
               </div>
@@ -2003,10 +2047,16 @@ const RosterView = ({
                     onChange={(e) => setDigitalsFilter(e.target.value)}
                     className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="All Talent">{allRosterFilterLabel}</option>
-                    <option value="Current Only">Current Only</option>
-                    <option value="Needs Reminder">Needs Reminder</option>
-                    <option value="Outdated Only">Outdated Only</option>
+                    <option value="all">{allRosterFilterLabel}</option>
+                    <option value="current">
+                      {t("agencyDashboard.roster.filters.currentOnly")}
+                    </option>
+                    <option value="needsReminder">
+                      {t("agencyDashboard.roster.filters.needsReminder")}
+                    </option>
+                    <option value="outdated">
+                      {t("agencyDashboard.roster.filters.outdatedOnly")}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -2022,7 +2072,8 @@ const RosterView = ({
                         variant="secondary"
                         className="bg-green-50 text-green-600 text-[10px] flex items-center gap-1 border border-green-100"
                       >
-                        <CheckCircle2 className="w-3 h-3" /> Up to date
+                        <CheckCircle2 className="w-3 h-3" />{" "}
+                        {t("agencyDashboard.roster.digitals.upToDate")}
                       </Badge>
                     );
                   } else if (daysAgo >= 75 && daysAgo < 90) {
@@ -2031,7 +2082,8 @@ const RosterView = ({
                         variant="secondary"
                         className="bg-orange-50 text-orange-600 text-[10px] flex items-center gap-1 border border-orange-100"
                       >
-                        <Clock className="w-3 h-3" /> Reminder Due
+                        <Clock className="w-3 h-3" />{" "}
+                        {t("agencyDashboard.roster.digitals.reminderDue")}
                       </Badge>
                     );
                   } else if (daysAgo >= 90) {
@@ -2040,7 +2092,8 @@ const RosterView = ({
                         variant="secondary"
                         className="bg-red-50 text-red-600 text-[10px] flex items-center gap-1 border border-red-100"
                       >
-                        <AlertCircle className="w-3 h-3" /> Outdated
+                        <AlertCircle className="w-3 h-3" />{" "}
+                        {t("agencyDashboard.roster.digitals.outdated")}
                       </Badge>
                     );
                   }
@@ -2066,17 +2119,27 @@ const RosterView = ({
                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-gray-500 font-medium">
                             <span className="flex items-center gap-1.5">
                               <Clock className="w-3.5 h-3.5 text-gray-400" />
-                              Last updated:{" "}
+                              {t(
+                                "agencyDashboard.roster.digitals.lastUpdated",
+                              )}{" "}
                               {lastUpdated
                                 ? format(new Date(lastUpdated), "MMM d, yyyy")
-                                : "Never"}
+                                : t("agencyDashboard.roster.digitals.never")}
                             </span>
                             <span className="text-gray-300">|</span>
                             <span>
-                              {lastUpdated ? `${daysAgo} days ago` : "Never"}
+                              {lastUpdated
+                                ? t("agencyDashboard.roster.digitals.daysAgo", {
+                                    count: daysAgo,
+                                  })
+                                : t("agencyDashboard.roster.digitals.never")}
                             </span>
                             <span className="text-gray-300">|</span>
-                            <span>{totalPhotos || 0} photos</span>
+                            <span>
+                              {t("agencyDashboard.roster.digitals.photos", {
+                                count: totalPhotos || 0,
+                              })}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -2087,7 +2150,8 @@ const RosterView = ({
                           onClick={() => openHistory(talent)}
                           className="h-8 gap-2 text-gray-700 border-gray-200 font-bold text-xs hover:bg-gray-50"
                         >
-                          <Eye className="w-3 h-3" /> View History
+                          <Eye className="w-3 h-3" />{" "}
+                          {t("agencyDashboard.roster.digitals.viewHistory")}
                         </Button>
                         <Button
                           variant="outline"
@@ -2097,7 +2161,8 @@ const RosterView = ({
                           }
                           className="h-8 gap-2 text-gray-700 border-gray-200 font-bold text-xs hover:bg-gray-50"
                         >
-                          <Send className="w-3 h-3" /> Send Reminder
+                          <Send className="w-3 h-3" />{" "}
+                          {t("agencyDashboard.roster.digitals.sendReminder")}
                         </Button>
                         <Button
                           size="sm"
@@ -2110,7 +2175,8 @@ const RosterView = ({
                           }}
                           className="h-8 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
                         >
-                          <Upload className="w-3 h-3" /> Upload New
+                          <Upload className="w-3 h-3" />{" "}
+                          {t("agencyDashboard.roster.digitals.uploadNew")}
                         </Button>
                       </div>
                     </div>
@@ -2126,7 +2192,7 @@ const RosterView = ({
                 <Shield className="w-8 h-8 text-gray-300" />
               </div>
               <p className="text-gray-400 font-medium">
-                License management coming soon
+                {t("agencyDashboard.roster.licenses.comingSoon")}
               </p>
             </div>
           )}
@@ -2137,7 +2203,7 @@ const RosterView = ({
                 <FileText className="w-8 h-8 text-gray-300" />
               </div>
               <p className="text-gray-400 font-medium">
-                Campaign tracking coming soon
+                {t("agencyDashboard.roster.campaigns.comingSoon")}
               </p>
             </div>
           )}
@@ -2164,23 +2230,31 @@ const RosterView = ({
       />
 
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="w-[95vw] max-w-xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              Send Portal Invite
+              {t("agencyDashboard.roster.invites.title")}
             </DialogTitle>
             <DialogDescription>
-              {`Select an existing ${singularLabel} in your roster to send them a portal invite.`}
+              {t("agencyDashboard.roster.invites.description", {
+                entity: singularLabel,
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{`Search ${singularLabel}`}</Label>
+              <Label>
+                {t("agencyDashboard.roster.invites.searchLabel", {
+                  entity: singularLabel,
+                })}
+              </Label>
               <Input
                 value={inviteSearch}
                 onChange={(e) => setInviteSearch(e.target.value)}
-                placeholder="Search by name or email"
+                placeholder={t(
+                  "agencyDashboard.roster.invites.searchPlaceholder",
+                )}
               />
             </div>
 
@@ -2201,35 +2275,42 @@ const RosterView = ({
                 if (filtered.length === 0) {
                   return (
                     <div className="text-sm text-gray-600">
-                      {`No matching ${singularLabel}.`}
+                      {t("agencyDashboard.roster.invites.noMatchingEntity", {
+                        entity: singularLabel,
+                      })}
                     </div>
                   );
                 }
 
                 return (
                   <div className="max-h-56 overflow-y-auto space-y-2">
-                    {filtered.slice(0, 30).map((t: any) => {
-                      const email = String(t?.email || "").trim();
+                    {filtered.slice(0, 30).map((talent: any) => {
+                      const email = String(talent?.email || "").trim();
                       const name = String(
-                        t?.name || t?.full_legal_name || singularTitleLabel,
+                        talent?.name ||
+                          talent?.full_legal_name ||
+                          singularTitleLabel,
                       ).trim();
                       const rowSending =
                         !!inviteSendingEmail && inviteSendingEmail === email;
                       return (
                         <div
-                          key={t?.id || `${name}:${email}`}
-                          className="flex flex-col gap-3 rounded-lg border bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                          key={talent?.id || `${name}:${email}`}
+                          className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
                         >
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-gray-900 truncate">
                               {name}
                             </div>
                             <div className="text-xs text-gray-500 truncate">
-                              {email || "No email on file"}
+                              {email ||
+                                t(
+                                  "agencyDashboard.roster.invites.noEmailOnFile",
+                                )}
                             </div>
                           </div>
                           <Button
-                            className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700 sm:w-auto"
+                            className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white"
                             disabled={inviteSending || rowSending || !email}
                             onClick={async () => {
                               if (!email) return;
@@ -2244,16 +2325,24 @@ const RosterView = ({
                                   "already_connected"
                                 ) {
                                   toast({
-                                    title: "Already connected",
-                                    description:
-                                      "This creator is already connected to your agency. No new invite was sent.",
+                                    title: t(
+                                      "agencyDashboard.roster.invites.alreadyConnectedTitle",
+                                    ),
+                                    description: t(
+                                      "agencyDashboard.roster.invites.alreadyConnectedDescription",
+                                    ),
                                   });
                                   await refreshTalentInvites();
                                   return;
                                 }
                                 toast({
-                                  title: "Portal invite sent",
-                                  description: `Invitation sent to ${email}`,
+                                  title: t(
+                                    "agencyDashboard.roster.invites.sentTitle",
+                                  ),
+                                  description: t(
+                                    "agencyDashboard.roster.invites.sentDescription",
+                                    { email },
+                                  ),
                                 });
                                 await refreshTalentInvites();
 
@@ -2265,9 +2354,12 @@ const RosterView = ({
                                   try {
                                     await navigator.clipboard.writeText(url);
                                     toast({
-                                      title: "Invite link copied",
-                                      description:
-                                        "Copied invite URL to clipboard.",
+                                      title: t(
+                                        "agencyDashboard.roster.invites.linkCopiedTitle",
+                                      ),
+                                      description: t(
+                                        "agencyDashboard.roster.invites.linkCopiedDescription",
+                                      ),
                                     });
                                   } catch {
                                     // ignore
@@ -2275,9 +2367,14 @@ const RosterView = ({
                                 }
                               } catch (e: any) {
                                 toast({
-                                  title: "Failed to send",
+                                  title: t(
+                                    "agencyDashboard.roster.invites.failedToSendTitle",
+                                  ),
                                   description:
-                                    e?.message || "Could not send invite",
+                                    e?.message ||
+                                    t(
+                                      "agencyDashboard.roster.invites.failedToSendDescription",
+                                    ),
                                   variant: "destructive",
                                 });
                               } finally {
@@ -2289,10 +2386,10 @@ const RosterView = ({
                             {rowSending ? (
                               <span className="inline-flex items-center gap-2">
                                 <Loader2 className="w-4 h-4 animate-spin" />
-                                Sending…
+                                {t("agencyDashboard.roster.states.sending")}
                               </span>
                             ) : (
-                              "Send"
+                              t("agencyDashboard.roster.actions.send")
                             )}
                           </Button>
                         </div>
@@ -2309,14 +2406,14 @@ const RosterView = ({
                 onClick={() => setInviteOpen(false)}
                 disabled={inviteSending}
               >
-                Close
+                {t("agencyDashboard.roster.actions.close")}
               </Button>
             </div>
 
             <div className="pt-2 border-t">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-gray-900">
-                  Pending invites
+                  {t("agencyDashboard.roster.invites.pendingInvites")}
                 </div>
                 <Button
                   variant="ghost"
@@ -2327,10 +2424,10 @@ const RosterView = ({
                   {talentInvitesLoading ? (
                     <span className="inline-flex items-center gap-2 text-sm text-gray-600">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Refreshing
+                      {t("agencyDashboard.roster.states.refreshing")}
                     </span>
                   ) : (
-                    "Refresh"
+                    t("agencyDashboard.roster.actions.refresh")
                   )}
                 </Button>
               </div>
@@ -2346,49 +2443,55 @@ const RosterView = ({
                   if (pending.length === 0) {
                     return (
                       <div className="text-sm text-gray-600">
-                        No pending invites.
+                        {t("agencyDashboard.roster.invites.noPendingInvites")}
                       </div>
                     );
                   }
                   return pending.slice(0, 20).map((inv: any) => (
                     <div
                       key={inv.id}
-                      className="flex flex-col gap-3 rounded-lg border bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-gray-900 truncate">
                           {inv.email}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
-                          Expires{" "}
+                          {t("agencyDashboard.roster.invites.expires")}{" "}
                           {inv.expires_at
                             ? new Date(inv.expires_at).toLocaleString()
-                            : "—"}
+                            : t("agencyDashboard.roster.states.empty")}
                         </div>
                       </div>
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
-                          className="h-9 w-full sm:w-auto"
+                          className="h-9"
                           disabled={inviteSending}
                           onClick={async () => {
                             try {
                               await revokeAgencyTalentInvite(String(inv.id));
-                              toast({ title: "Invite revoked" });
+                              toast({
+                                title: t(
+                                  "agencyDashboard.roster.invites.inviteRevokedTitle",
+                                ),
+                              });
                               await refreshTalentInvites();
                             } catch (e: any) {
                               toast({
-                                title: "Failed to revoke",
+                                title: t(
+                                  "agencyDashboard.roster.invites.failedToRevokeTitle",
+                                ),
                                 description: e?.message || String(e),
                                 variant: "destructive",
                               });
                             }
                           }}
                         >
-                          Revoke
+                          {t("agencyDashboard.roster.actions.revoke")}
                         </Button>
                         <Button
-                          className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700 sm:w-auto"
+                          className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white"
                           disabled={inviteSending}
                           onClick={async () => {
                             try {
@@ -2400,24 +2503,33 @@ const RosterView = ({
                                 "already_connected"
                               ) {
                                 toast({
-                                  title: "Already connected",
-                                  description:
-                                    "This creator is already connected to your agency. No new invite was sent.",
+                                  title: t(
+                                    "agencyDashboard.roster.invites.alreadyConnectedTitle",
+                                  ),
+                                  description: t(
+                                    "agencyDashboard.roster.invites.alreadyConnectedDescription",
+                                  ),
                                 });
                               } else {
-                                toast({ title: "Re-invited" });
+                                toast({
+                                  title: t(
+                                    "agencyDashboard.roster.invites.reinvitedTitle",
+                                  ),
+                                });
                               }
                               await refreshTalentInvites();
                             } catch (e: any) {
                               toast({
-                                title: "Failed to re-invite",
+                                title: t(
+                                  "agencyDashboard.roster.invites.failedToReinviteTitle",
+                                ),
                                 description: e?.message || String(e),
                                 variant: "destructive",
                               });
                             }
                           }}
                         >
-                          Re-invite
+                          {t("agencyDashboard.roster.actions.reinvite")}
                         </Button>
                       </div>
                     </div>
@@ -2430,34 +2542,38 @@ const RosterView = ({
       </Dialog>
 
       <Dialog open={reminderOpen} onOpenChange={setReminderOpen}>
-        <DialogContent className="w-[95vw] max-w-xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              Send digitals reminder
+              {t("agencyDashboard.roster.reminder.title")}
             </DialogTitle>
             <DialogDescription>
-              {`Sends an email to the selected ${singularLabel}. Requires SMTP configuration on the server.`}
+              {t("agencyDashboard.roster.reminder.description", {
+                entity: singularLabel,
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-1">
-                Subject
+                {t("agencyDashboard.roster.reminder.subject")}
               </label>
               <Input
                 value={reminderSubject}
                 onChange={(e) => setReminderSubject(e.target.value)}
-                placeholder="Digitals update reminder"
+                placeholder={t(
+                  "agencyDashboard.roster.reminder.subjectPlaceholder",
+                )}
               />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-1">
-                Message
+                {t("agencyDashboard.roster.reminder.message")}
               </label>
               <p className="text-xs text-gray-500 mb-2">
-                Use {"{name}"} to personalize.
+                {t("agencyDashboard.roster.reminder.personalizeHelp")}
               </p>
               <textarea
                 value={reminderBody}
@@ -2472,14 +2588,16 @@ const RosterView = ({
                 onClick={() => setReminderOpen(false)}
                 disabled={sendingReminder}
               >
-                Cancel
+                {t("agencyDashboard.roster.actions.cancel")}
               </Button>
               <Button
                 onClick={onSendReminderFromModal}
                 disabled={sendingReminder}
                 className="font-bold"
               >
-                {sendingReminder ? "Sending..." : "Send"}
+                {sendingReminder
+                  ? t("agencyDashboard.roster.states.sending")
+                  : t("agencyDashboard.roster.actions.send")}
               </Button>
             </div>
           </div>
@@ -2499,11 +2617,13 @@ const RosterView = ({
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Insufficient seats!
+                {t("agencyDashboard.roster.seats.insufficientTitle")}
               </h3>
               <p className="text-gray-500 mb-8 font-medium">
-                Your current plan allows {seatsLimit || 0} {singularLabel}
-                {seatsLimit === 1 ? "" : "s"}. Upgrade to add more.
+                {t("agencyDashboard.roster.seats.insufficientDescription", {
+                  count: seatsLimit || 0,
+                  entity: singularLabel,
+                })}
               </p>
               <div className="flex flex-col w-full gap-3">
                 <Button
@@ -2513,14 +2633,14 @@ const RosterView = ({
                   }}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl"
                 >
-                  View plans
+                  {t("agencyDashboard.roster.seats.viewPlans")}
                 </Button>
                 <Button
                   variant="ghost"
                   onClick={() => setShowInsufficientSeatsModal(false)}
                   className="w-full text-gray-500 font-bold h-12 rounded-xl"
                 >
-                  Cancel
+                  {t("agencyDashboard.roster.actions.cancel")}
                 </Button>
               </div>
             </div>
@@ -2538,7 +2658,9 @@ const RosterView = ({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  Upload New Digitals - {uploadTalent.name}
+                  {t("agencyDashboard.roster.upload.title", {
+                    name: uploadTalent.name,
+                  })}
                 </h3>
               </div>
               <button
@@ -2556,18 +2678,18 @@ const RosterView = ({
                 <ImageIcon className="w-4 h-4 text-gray-600" />
               </div>
               <div className="text-sm text-gray-700">
-                <div className="font-bold">Digitals Guidelines:</div>
+                <div className="font-bold">
+                  {t("agencyDashboard.roster.upload.guidelinesTitle")}
+                </div>
                 <div className="text-gray-500 font-medium">
-                  Plain photos with no makeup, natural lighting, simple
-                  background. Include: headshot, 3/4 body, full body, left
-                  profile, right profile.
+                  {t("agencyDashboard.roster.upload.guidelinesDescription")}
                 </div>
               </div>
             </div>
 
             <div className="mt-4">
               <div className="text-sm font-bold text-gray-700 mb-2">
-                Upload Photos
+                {t("agencyDashboard.roster.upload.uploadPhotos")}
               </div>
               <div
                 className="border-2 border-dashed border-gray-200 rounded-xl p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:border-indigo-300 transition-colors"
@@ -2587,14 +2709,16 @@ const RosterView = ({
               >
                 <Upload className="w-8 h-8 text-gray-400 mb-3" />
                 <div className="text-sm font-bold text-gray-700">
-                  Click to upload or drag and drop
+                  {t("agencyDashboard.roster.upload.dragDrop")}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  JPEG or PNG, max 5MB each
+                  {t("agencyDashboard.roster.upload.fileHelp")}
                 </div>
                 {uploadFiles.length > 0 && (
                   <div className="mt-3 text-sm font-bold text-indigo-700">
-                    {uploadFiles.length} file(s) selected
+                    {t("agencyDashboard.roster.upload.filesSelected", {
+                      count: uploadFiles.length,
+                    })}
                   </div>
                 )}
                 <input
@@ -2615,7 +2739,7 @@ const RosterView = ({
 
             <div className="mt-4">
               <div className="text-sm font-bold text-gray-700 mb-2">
-                Date Taken
+                {t("agencyDashboard.roster.upload.dateTaken")}
               </div>
               <Input
                 type="date"
@@ -2632,7 +2756,7 @@ const RosterView = ({
                 className="h-10 font-bold"
                 disabled={uploadingDigitals}
               >
-                Cancel
+                {t("agencyDashboard.roster.actions.cancel")}
               </Button>
               <Button
                 onClick={uploadDigitals}
@@ -2645,11 +2769,13 @@ const RosterView = ({
               >
                 {uploadingDigitals ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Uploading…
+                    <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                    {t("agencyDashboard.roster.states.uploading")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
-                    <Upload className="w-4 h-4" /> Upload Digitals
+                    <Upload className="w-4 h-4" />{" "}
+                    {t("agencyDashboard.roster.upload.uploadDigitals")}
                   </span>
                 )}
               </Button>
@@ -2668,7 +2794,9 @@ const RosterView = ({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  Digitals History - {historyTalent.name}
+                  {t("agencyDashboard.roster.history.title", {
+                    name: historyTalent.name,
+                  })}
                 </h3>
               </div>
               <button
@@ -2683,7 +2811,8 @@ const RosterView = ({
 
             {historyLoading ? (
               <div className="mt-6 flex items-center gap-2 text-sm text-gray-500 font-medium">
-                <Loader2 className="w-4 h-4 animate-spin" /> Loading history…
+                <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                {t("agencyDashboard.roster.history.loading")}
               </div>
             ) : (
               <div className="mt-6 space-y-6">
@@ -2716,7 +2845,7 @@ const RosterView = ({
 
                 <div>
                   <div className="text-sm font-bold text-gray-700 mb-3">
-                    Previous Updates
+                    {t("agencyDashboard.roster.history.previousUpdates")}
                   </div>
                   <div className="space-y-4">
                     {historyGroups.map((g) => {
@@ -2726,7 +2855,7 @@ const RosterView = ({
                       const label =
                         g.date !== "Unknown"
                           ? format(new Date(g.date), "MMMM d, yyyy")
-                          : "Unknown";
+                          : t("agencyDashboard.roster.history.unknown");
                       return (
                         <Card
                           key={g.date}
@@ -2749,7 +2878,8 @@ const RosterView = ({
                               size="sm"
                               className="h-8 gap-2 text-gray-700 border-gray-200 font-bold text-xs hover:bg-gray-50"
                             >
-                              <Eye className="w-3 h-3" /> View
+                              <Eye className="w-3 h-3" />{" "}
+                              {t("agencyDashboard.roster.actions.view")}
                             </Button>
                           </div>
                           <div className="mt-3 flex gap-3 overflow-x-auto pb-1">

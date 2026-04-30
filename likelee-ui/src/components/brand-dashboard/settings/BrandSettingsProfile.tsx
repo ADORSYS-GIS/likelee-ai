@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Edit, Building2, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type BrandSettingsProfileProps = {
   brand: any;

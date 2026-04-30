@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -63,11 +64,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
-import {
-  DashboardSectionHeader,
-  DashboardTabRail,
-  DashboardTableSurface,
-} from "@/components/dashboard/DashboardResponsive";
 
 const extractFirstNumber = (value: unknown): number => {
   const raw = String(value ?? "").trim();
@@ -118,6 +114,18 @@ const BrandConnectionsView = ({
 }: {
   onMessageTalent?: (creatorId: string) => void;
 }) => {
+const BrandConnectionsView = () => {
+  const { t } = useTranslation();
+  const tBrand = (path: string, options?: Record<string, any>) => {
+    const fallback = t(
+      `agencyDashboard.analytics.brandConnections.${path}`,
+      options,
+    );
+    return t(`agencyDashboard.brandConnections.${path}`, {
+      ...(options || {}),
+      defaultValue: fallback,
+    });
+  };
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -604,16 +612,21 @@ const BrandConnectionsView = ({
         }),
       ]);
       toast({
-        title: action === "accept" ? "Request accepted" : "Request declined",
+        title:
+          action === "accept"
+            ? t("agencyDashboard.brandConnections.toasts.requestAccepted")
+            : t("agencyDashboard.brandConnections.toasts.requestDeclined"),
         description:
           action === "accept"
-            ? "Request approved successfully."
-            : "Request declined.",
+            ? t("agencyDashboard.brandConnections.toasts.requestApproved")
+            : t("agencyDashboard.brandConnections.toasts.requestDeclinedDesc"),
       });
     } catch {
       toast({
-        title: "Action failed",
-        description: "Please try again in a moment.",
+        title: t("agencyDashboard.brandConnections.toasts.actionFailed"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.pleaseTryAgain",
+        ),
         variant: "destructive" as any,
       });
     } finally {
@@ -621,6 +634,136 @@ const BrandConnectionsView = ({
         const next = new Set(prev);
         next.delete(id);
         return next;
+      });
+    }
+  };
+
+  const handleAssignTalents = async () => {
+    if (!assignDialog.offerId) return;
+    if (assignSubmitting) return;
+    if (assignmentLockedForOffer) {
+      toast({
+        title: t("agencyDashboard.brandConnections.toasts.assignmentsLocked"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.assignmentsLockedDesc",
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
+    setAssignSubmitting(true);
+    try {
+      const offerId = assignDialog.offerId;
+      const current = Array.isArray(offerAssignmentsQuery.data)
+        ? offerAssignmentsQuery.data
+        : [];
+      const currentByCreatorId = new Map<string, string>();
+      current.forEach((a: any) => {
+        const creatorScopedId = String(
+          a?.creator_id || a?.agency_users?.creator_id || a?.talent_id || "",
+        ).trim();
+        const aid = String(a?.id || "").trim();
+        if (creatorScopedId && aid)
+          currentByCreatorId.set(creatorScopedId, aid);
+      });
+
+      const desiredIds = new Set(
+        assignSelectedIds.map((id) => String(id || "").trim()).filter(Boolean),
+      );
+      const currentIds = new Set([...currentByCreatorId.keys()]);
+      const toAdd = [...desiredIds].filter((id) => !currentIds.has(id));
+      const toRemove = [...currentIds].filter((id) => !desiredIds.has(id));
+
+      if (toAdd.length === 0 && toRemove.length === 0) {
+        toast({
+          title: "No changes",
+          description: "Talent assignments are already up to date.",
+        });
+        setAssignDialog({ open: false, offerId: "", talentId: "" });
+        setAssignSelectedIds([]);
+        setAssignSearch("");
+        return;
+      }
+
+      await Promise.all([
+        ...toAdd.map((creatorId) =>
+          base44.post(`/api/campaign-offers/${offerId}/assignments`, {
+            creator_id: creatorId,
+          }),
+        ),
+        ...toRemove.map((creatorId) => {
+          const assignmentId = currentByCreatorId.get(creatorId);
+          if (!assignmentId) return Promise.resolve(null);
+          return base44.delete(
+            `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
+          );
+        }),
+      ]);
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "offer-assignments", assignDialog.offerId],
+      });
+      setAssignDialog({ open: false, offerId: "", talentId: "" });
+      setAssignSelectedIds([]);
+      setAssignSearch("");
+      toast({
+        title: "Assignments updated",
+        description: "Talent assignments saved successfully.",
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || "");
+      toast({
+        title: "Assignment failed",
+        description: msg.includes(
+          "cannot_change_assignments_after_contract_sent",
+        )
+          ? "You can’t change assigned talents after the contract is sent."
+          : msg || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAssignSubmitting(false);
+    }
+  };
+
+  const handleUnassignTalent = async () => {
+    const offerId = String(unassignConfirm.offerId || "").trim();
+    const assignmentId = String(unassignConfirm.assignmentId || "").trim();
+    if (!offerId || !assignmentId) return;
+    if (assignmentLockedForSelectedOffer) {
+      toast({
+        title: t("agencyDashboard.brandConnections.toasts.assignmentsLocked"),
+        description: selectedOfferContractSigned
+          ? t("agencyDashboard.brandConnections.toasts.contractAlreadySigned")
+          : t("agencyDashboard.brandConnections.toasts.cantUnassignAfterSent"),
+        variant: "destructive",
+      });
+      return;
+    }
+    setAssignSubmitting(true);
+    try {
+      await base44.delete(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/assignments/${encodeURIComponent(assignmentId)}`,
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "offer-assignments", offerId],
+      });
+      toast({
+        title: "Talent unassigned",
+        description: "Talent was removed from this offer.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Unassign failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAssignSubmitting(false);
+      setUnassignConfirm({
+        open: false,
+        offerId: "",
+        assignmentId: "",
+        talentName: "",
       });
     }
   };
@@ -689,13 +832,17 @@ const BrandConnectionsView = ({
         }),
       ]);
       toast({
-        title: "Disconnected",
-        description: "This brand connection has been disconnected.",
+        title: t("agencyDashboard.brandConnections.toasts.disconnected"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.disconnectedDesc",
+        ),
       });
     } catch {
       toast({
-        title: "Disconnect failed",
-        description: "Please try again in a moment.",
+        title: t("agencyDashboard.brandConnections.toasts.disconnectFailed"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.pleaseTryAgain",
+        ),
         variant: "destructive" as any,
       });
     } finally {
@@ -728,8 +875,10 @@ const BrandConnectionsView = ({
       });
     } catch (e: any) {
       toast({
-        title: "Action failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.brandConnections.toasts.actionFailed"),
+        description:
+          e?.message ||
+          t("agencyDashboard.brandConnections.toasts.pleaseTryAgainShort"),
         variant: "destructive" as any,
       });
     } finally {
@@ -972,27 +1121,12 @@ const BrandConnectionsView = ({
     const draft = packageDraftByOffer[offerId] || { title: "", message: "" };
     setBusyIds((prev) => new Set(prev).add(offerId));
     try {
-      // Build snapshot items from the offer's assigned talent IDs so the
-      // backend can resolve their names via normalize_package_snapshot_talent_names.
-      const offer = (offersQuery.data || []).find(
-        (o: any) => String(o?.id || "") === offerId,
-      );
-      const selectedTalentIds: string[] = Array.isArray(
-        offer?.meta?.selected_talent_ids,
-      )
-        ? offer.meta.selected_talent_ids
-        : [];
-      const snapshotItems = selectedTalentIds.map((tid: string) => ({
-        talent_id: tid,
-        talent_name: "", // backend will resolve this
-      }));
-
       const createResp = await base44.post<{ package?: any }>(
         `/api/campaign-offers/${offerId}/packages`,
         {
           title: draft.title || "Talent Package",
           message: draft.message || "",
-          package_snapshot: { items: snapshotItems },
+          package_snapshot: { talents: [] },
         },
       );
       const packageId = String(createResp?.package?.id || "").trim();
@@ -1088,7 +1222,9 @@ const BrandConnectionsView = ({
     return (
       <div className="flex flex-col items-center justify-center p-12 min-h-[400px]">
         <Loader2 className="h-10 w-10 text-gray-400 animate-spin mb-4" />
-        <p className="text-gray-500 font-medium">Verifying access...</p>
+        <p className="text-gray-500 font-medium">
+          {tBrand("ui.verifyingAccess")}
+        </p>
       </div>
     );
   }
@@ -1098,21 +1234,19 @@ const BrandConnectionsView = ({
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Brand Connections
+            {tBrand("title")}
           </h2>
-          <p className="text-gray-600">Access Restricted</p>
+          <p className="text-gray-600">{tBrand("ui.accessRestricted")}</p>
         </div>
         <Card className="p-12 flex flex-col items-center justify-center text-center border-dashed border-2">
           <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mb-4">
             <Lock className="h-8 w-8" />
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">
-            Permission Required
+            {tBrand("ui.permissionRequired")}
           </h3>
           <p className="text-gray-600 max-w-sm">
-            You do not have the required permissions to view brand connections.
-            Please contact your agency administrator if you believe this is an
-            error.
+            {tBrand("ui.permissionDescription")}
           </p>
         </Card>
       </div>
@@ -1125,155 +1259,100 @@ const BrandConnectionsView = ({
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
-            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="font-bold text-amber-800">
+              {tBrand("ui.viewOnlyTitle")}
+            </p>
             <p className="text-sm text-amber-700">
-              Your role allows viewing brand connections but not managing them.
+              {tBrand("ui.viewOnlyDescription")}
             </p>
           </div>
         </div>
       )}
-      <DashboardSectionHeader
-        title="Brand Connections"
-        description="Manage active connections and invitations."
-      />
-
-      {/* Mobile Tabs: Horizontal Scroll */}
-      <div className="flex gap-2 mb-6 sm:hidden overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-        {[
-          {
-            id: "connections",
-            label: "Brands",
-            active: activeTab === "connections",
-            onClick: () => setActiveTab("connections"),
-          },
-          {
-            id: "requests",
-            label: showRequestsBadge
-              ? `Requests (${pendingRequests - (seenCounts.requests || 0)})`
-              : "Requests",
-            active: activeTab === "requests",
-            onClick: () => setActiveTab("requests"),
-          },
-          {
-            id: "offers",
-            label: showOffersBadge
-              ? `Offers (${pendingOffers - (seenCounts.offers || 0)})`
-              : "Offers",
-            active: activeTab === "offers",
-            onClick: () => setActiveTab("offers"),
-          },
-          {
-            id: "contract_hub",
-            label: "Contracts",
-            active: activeTab === "contract_hub",
-            onClick: () => setActiveTab("contract_hub"),
-          },
-          {
-            id: "deliverables",
-            label: "Deliverables",
-            active: false,
-            onClick: () => {
-              navigate("/AgencyDashboard?tab=deliverables");
-              setActiveTab("connections");
-            },
-          },
-          {
-            id: "feedback",
-            label: showFeedbackBadge
-              ? `Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
-              : "Feedback",
-            active: activeTab === "feedback",
-            onClick: () => setActiveTab("feedback"),
-          },
-        ].map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={item.onClick}
-            className={`min-h-[40px] rounded-xl px-4 py-2 text-center text-[13px] font-bold transition-all whitespace-nowrap ${
-              item.active
-                ? "bg-indigo-50/70 text-indigo-700 shadow-sm ring-1 ring-indigo-700/10"
-                : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">{tBrand("title")}</h2>
+        <p className="text-gray-600">{tBrand("ui.subtitle")}</p>
       </div>
-      <div className="hidden sm:block">
-        <DashboardTabRail
-          items={[
-            {
-              id: "connections",
-              label: "Connected Brands",
-              active: activeTab === "connections",
-              onClick: () => setActiveTab("connections"),
-            },
-            {
-              id: "requests",
-              label: showRequestsBadge
-                ? `Requests (${pendingRequests - (seenCounts.requests || 0)})`
-                : "Requests",
-              active: activeTab === "requests",
-              onClick: () => setActiveTab("requests"),
-            },
-            {
-              id: "offers",
-              label: showOffersBadge
-                ? `Brand Offers (${pendingOffers - (seenCounts.offers || 0)})`
-                : "Brand Offers",
-              active: activeTab === "offers",
-              onClick: () => setActiveTab("offers"),
-            },
-            {
-              id: "contract_hub",
-              label: "Contract Hub",
-              active: activeTab === "contract_hub",
-              onClick: () => setActiveTab("contract_hub"),
-            },
-            {
-              id: "deliverables",
-              label: "Deliverables",
-              active: false,
-              onClick: () => {
-                navigate("/AgencyDashboard?tab=deliverables");
-                setActiveTab("connections");
-              },
-            },
-            {
-              id: "feedback",
-              label: showFeedbackBadge
-                ? `Package Feedback (${pendingFeedback - (seenCounts.feedback || 0)})`
-                : "Package Feedback",
-              active: activeTab === "feedback",
-              onClick: () => setActiveTab("feedback"),
-            },
-          ]}
-        />
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={activeTab === "connections" ? "default" : "outline"}
+          onClick={() => setActiveTab("connections")}
+        >
+          {tBrand("connectedBrands")}
+        </Button>
+        <Button
+          variant={activeTab === "requests" ? "default" : "outline"}
+          onClick={() => setActiveTab("requests")}
+          className="relative"
+        >
+          {tBrand("requests")}
+          {showRequestsBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingRequests - (seenCounts.requests || 0)}
+            </Badge>
+          )}
+        </Button>
+        <Button
+          variant={activeTab === "offers" ? "default" : "outline"}
+          onClick={() => setActiveTab("offers")}
+          className="relative"
+        >
+          {tBrand("brandOffers")}
+          {showOffersBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingOffers - (seenCounts.offers || 0)}
+            </Badge>
+          )}
+        </Button>
+        <Button
+          variant={activeTab === "contract_hub" ? "default" : "outline"}
+          onClick={() => setActiveTab("contract_hub")}
+        >
+          {tBrand("contractHub.title")}
+        </Button>
+        <Button
+          variant={activeTab === "deliverables" ? "default" : "outline"}
+          onClick={() => {
+            navigate("/AgencyDashboard?tab=deliverables");
+            setActiveTab("connections");
+          }}
+        >
+          {tBrand("deliverables")}
+        </Button>
+        <Button
+          variant={activeTab === "feedback" ? "default" : "outline"}
+          onClick={() => setActiveTab("feedback")}
+          className="relative"
+        >
+          {tBrand("packageFeedback")}
+          {showFeedbackBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingFeedback - (seenCounts.feedback || 0)}
+            </Badge>
+          )}
+        </Button>
       </div>
 
       {activeTab === "connections" && (
-        <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl">
+        <Card className="p-6 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-bold text-gray-900 mb-3">
-            Connected Brands
+            {tBrand("connectedBrands")}
           </h3>
           {connectionsQuery.isLoading && (
-            <p className="text-sm text-gray-500">Loading connected brands...</p>
+            <p className="text-sm text-gray-500">{tBrand("loadingBrands")}</p>
           )}
           {!connectionsQuery.isLoading && connectionsQuery.error && (
-            <p className="text-sm text-red-600">
-              Failed to load connected brands.
-            </p>
+            <p className="text-sm text-red-600">{tBrand("loadBrandsFailed")}</p>
           )}
           {!connectionsQuery.isLoading &&
             !connectionsQuery.error &&
             connections.length === 0 && (
-              <p className="text-sm text-gray-500">No connected brands yet.</p>
+              <p className="text-sm text-gray-500">{tBrand("noBrands")}</p>
             )}
           {!connectionsQuery.isLoading &&
             !connectionsQuery.error &&
             connections.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-3">
                 {connections.map((connection: any) => {
                   const companyName = String(
                     connection?.brands?.company_name || "Brand",
@@ -1291,17 +1370,20 @@ const BrandConnectionsView = ({
                       key={String(
                         connection?.id || `${companyName}-${connectedAt}`,
                       )}
-                      className="border border-gray-200 rounded-lg p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                      className="border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4"
                     >
-                      <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 break-words">
+                      <div>
+                        <p className="font-semibold text-gray-900">
                           {companyName}
                         </p>
-                        <p className="text-sm text-gray-600 break-words">
-                          {email || "No email provided"}
+                        <p className="text-sm text-gray-600">
+                          {email ||
+                            t(
+                              "agencyDashboard.analytics.brandConnections.ui.noEmailProvided",
+                            )}
                         </p>
                       </div>
-                      <div className="flex items-center justify-between gap-3 sm:justify-end sm:text-right">
+                      <div className="text-right flex items-center gap-3">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -1313,7 +1395,9 @@ const BrandConnectionsView = ({
                                     !brandId || isBusy || !canDisconnectBrands
                                   }
                                   onClick={() => disconnectBrand(brandId)}
-                                  aria-label="Disconnect from brand"
+                                  aria-label={t(
+                                    "agencyDashboard.analytics.brandConnections.ui.disconnectFromBrand",
+                                  )}
                                   className="disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <Link2Off className="h-4 w-4" />
@@ -1322,17 +1406,21 @@ const BrandConnectionsView = ({
                             </TooltipTrigger>
                             {!canDisconnectBrands && (
                               <TooltipContent>
-                                <p>Your role cannot disconnect brands</p>
+                                {t(
+                                  "agencyDashboard.analytics.brandConnections.ui.noDisconnectPermission",
+                                )}
                               </TooltipContent>
                             )}
                           </Tooltip>
                         </TooltipProvider>
                         <div>
                           <Badge className="bg-green-100 text-green-700 border border-green-300">
-                            Connected
+                            {tBrand("ui.connected")}
                           </Badge>
                           <p className="text-xs text-gray-500 mt-1">
-                            Since {connectedAt}
+                            {tBrand("ui.since", {
+                              date: connectedAt,
+                            })}
                           </p>
                         </div>
                       </div>
@@ -1346,29 +1434,37 @@ const BrandConnectionsView = ({
 
       {activeTab === "requests" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
-          <h3 className="text-lg font-bold text-gray-900 mb-3">Requests</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-3">
+            {tBrand("requests")}
+          </h3>
           {requestsQuery.isLoading && (
-            <p className="text-sm text-gray-500">Loading requests...</p>
+            <p className="text-sm text-gray-500">
+              {tBrand("ui.loadingRequests")}
+            </p>
           )}
           {!requestsQuery.isLoading && requestsQuery.error && (
-            <p className="text-sm text-red-600">Failed to load requests.</p>
+            <p className="text-sm text-red-600">
+              {tBrand("ui.failedToLoadRequests")}
+            </p>
           )}
           {!requestsQuery.isLoading &&
             !requestsQuery.error &&
             requests.length === 0 && (
               <p className="text-sm text-gray-500">
-                No pending requests right now.
+                {tBrand("ui.noPendingRequests")}
               </p>
             )}
           {!requestsQuery.isLoading &&
             !requestsQuery.error &&
             requests.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-4">
                 {requests.map((req: any) => {
                   const requestId = String(req?.id || "");
                   const isBusy = busyIds.has(requestId);
                   const companyName = String(
-                    req?.brands?.company_name || req?.brand_name || "Brand",
+                    req?.brands?.company_name ||
+                      req?.brand_name ||
+                      t("agencyDashboard.brandConnections.ui.brandFallback"),
                   );
                   const email = String(req?.brands?.email || "").trim();
                   const message = String(req?.message || "").trim();
@@ -1390,12 +1486,15 @@ const BrandConnectionsView = ({
                             {companyName}
                           </h4>
                           <p className="text-sm text-gray-600">
-                            {email || "No email provided"}
+                            {email ||
+                              t(
+                                "agencyDashboard.analytics.brandConnections.ui.noEmailProvided",
+                              )}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className="bg-amber-100 text-amber-700 border border-amber-300">
-                            Pending
+                            {t("agencyDashboard.brandConnections.ui.pending")}
                           </Badge>
                           <Badge
                             variant="outline"
@@ -1406,7 +1505,9 @@ const BrandConnectionsView = ({
                         </div>
                       </div>
                       <p className="text-xs text-gray-500 mb-2">
-                        Requested on: {createdAt}
+                        {t("agencyDashboard.brandConnections.ui.requestedOn", {
+                          date: createdAt,
+                        })}
                       </p>
                       {message && (
                         <p className="text-sm text-gray-800 mb-4 italic">
@@ -1425,13 +1526,21 @@ const BrandConnectionsView = ({
                                   disabled={isBusy || !canManageConnections}
                                   className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  {isBusy ? "Working..." : "Accept"}
+                                  {isBusy
+                                    ? t(
+                                        "agencyDashboard.brandConnections.ui.working",
+                                      )
+                                    : t(
+                                        "agencyDashboard.brandConnections.ui.accept",
+                                      )}
                                 </Button>
                               </span>
                             </TooltipTrigger>
                             {!canManageConnections && (
                               <TooltipContent>
-                                <p>Your role cannot accept requests</p>
+                                {t(
+                                  "agencyDashboard.brandConnections.ui.noAcceptRequestPermission",
+                                )}
                               </TooltipContent>
                             )}
                           </Tooltip>
@@ -1448,13 +1557,17 @@ const BrandConnectionsView = ({
                                   disabled={isBusy || !canManageConnections}
                                   className="border-red-300 text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  Decline
+                                  {t(
+                                    "agencyDashboard.brandConnections.ui.decline",
+                                  )}
                                 </Button>
                               </span>
                             </TooltipTrigger>
                             {!canManageConnections && (
                               <TooltipContent>
-                                <p>Your role cannot decline requests</p>
+                                {t(
+                                  "agencyDashboard.brandConnections.ui.noDeclineRequestPermission",
+                                )}
                               </TooltipContent>
                             )}
                           </Tooltip>
@@ -1470,7 +1583,7 @@ const BrandConnectionsView = ({
 
       {activeTab === "offers" && (
         <>
-          <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl">
+          <Card className="p-6 border border-gray-200 rounded-xl">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-900">
@@ -1480,20 +1593,24 @@ const BrandConnectionsView = ({
                       className="flex items-center gap-2 hover:text-indigo-600 transition-colors"
                     >
                       <ArrowLeft className="h-5 w-5" />
-                      Brand Offers
+                      {tBrand("brandOffers")}
                     </button>
                   ) : (
-                    "Brand Offers"
+                    tBrand("brandOffers")
                   )}
                 </h3>
               </div>
 
               {offersQuery.isLoading && (
-                <p className="text-sm text-gray-500">Loading offers...</p>
+                <p className="text-sm text-gray-500">
+                  {t("agencyDashboard.brandConnections.ui.loadingOffers")}
+                </p>
               )}
 
               {!offersQuery.isLoading && offers.length === 0 && (
-                <p className="text-sm text-gray-500">No campaign offers yet.</p>
+                <p className="text-sm text-gray-500">
+                  {t("agencyDashboard.brandConnections.ui.noOffers")}
+                </p>
               )}
 
               {selectedOfferId ? (
@@ -1504,9 +1621,13 @@ const BrandConnectionsView = ({
                   if (!offer) {
                     return (
                       <div className="p-8 text-center">
-                        <p className="text-gray-500 mb-4">Offer not found</p>
+                        <p className="text-gray-500 mb-4">
+                          {t(
+                            "agencyDashboard.brandConnections.ui.offerNotFound",
+                          )}
+                        </p>
                         <Button onClick={() => setSelectedOfferId("")}>
-                          Back to list
+                          {t("agencyDashboard.brandConnections.ui.backToList")}
                         </Button>
                       </div>
                     );
@@ -1525,7 +1646,7 @@ const BrandConnectionsView = ({
                   return (
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
                       {/* Fixed Header Style */}
-                      <div className="bg-gray-50 px-4 py-4 sm:px-6 sm:py-6 border-b border-gray-200">
+                      <div className="bg-gray-50 px-6 py-6 border-b border-gray-200">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-3">
@@ -1566,9 +1687,9 @@ const BrandConnectionsView = ({
                         </div>
                       </div>
 
-                      <div className="p-4 sm:p-6 md:p-8 space-y-8">
+                      <div className="p-6 md:p-8 space-y-8">
                         {/* Action Bar */}
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-indigo-50/50 p-2.5 sm:p-4 rounded-xl border border-indigo-100/50">
+                        <div className="flex flex-wrap items-center gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
                           {isPending && (
                             <>
                               <TooltipProvider>
@@ -1576,7 +1697,7 @@ const BrandConnectionsView = ({
                                   <TooltipTrigger asChild>
                                     <span>
                                       <Button
-                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 sm:px-6 h-8 sm:h-auto text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 disabled:opacity-50 disabled:cursor-not-allowed"
                                         disabled={
                                           busyIds.has(selectedOfferId) ||
                                           !canManageConnections
@@ -1594,7 +1715,7 @@ const BrandConnectionsView = ({
                                   </TooltipTrigger>
                                   {!canManageConnections && (
                                     <TooltipContent>
-                                      <p>Your role cannot accept offers</p>
+                                      Your role cannot accept offers
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -1605,7 +1726,7 @@ const BrandConnectionsView = ({
                                     <span>
                                       <Button
                                         variant="outline"
-                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold px-3 sm:px-4 h-8 sm:h-auto text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                         disabled={
                                           busyIds.has(selectedOfferId) ||
                                           !canManageConnections
@@ -1623,7 +1744,7 @@ const BrandConnectionsView = ({
                                   </TooltipTrigger>
                                   {!canManageConnections && (
                                     <TooltipContent>
-                                      <p>Your role cannot decline offers</p>
+                                      Your role cannot decline offers
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -1643,15 +1764,15 @@ const BrandConnectionsView = ({
                                   const token =
                                     offerPkg.meta?.agency_package_token;
                                   return (
-                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-1.5 sm:py-2 px-3 sm:px-4 rounded-full flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs">
-                                        <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                    <div className="flex items-center gap-3">
+                                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-2 px-4 rounded-full flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4" />
                                         Package Successfully Sent
                                       </Badge>
                                       {token && (
                                         <Button
                                           variant="secondary"
-                                          className="font-bold h-8 sm:h-10 text-xs sm:text-sm px-3 sm:px-4"
+                                          className="font-bold"
                                           onClick={() =>
                                             window.open(
                                               `/share/package/${token}`,
@@ -1667,7 +1788,7 @@ const BrandConnectionsView = ({
                                 }
                                 return (
                                   <Button
-                                    className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold px-4 sm:px-5 py-2 sm:py-3 w-full sm:w-auto h-9 sm:h-11 text-xs sm:text-sm rounded-xl transition-all ring-1 ring-indigo-700/10"
+                                    className="bg-black hover:bg-gray-800 text-white font-bold px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
                                     onClick={() => {
                                       navigate(
                                         "/AgencyDashboard?tab=packages",
@@ -1690,16 +1811,59 @@ const BrandConnectionsView = ({
                           )}
                           {isFullySigned &&
                             offer?.payment_status !== "paid" && (
-                              <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 sm:px-4 py-2 sm:py-3">
-                                <span className="text-amber-700 text-[10px] sm:text-sm font-semibold">
+                              <div className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                                <span className="text-amber-700 text-sm font-semibold">
                                   ⏳ Brand has not yet completed payment.
-                                  Deliverable uploads/submissions are disabled.
+                                  Deliverable uploads and submissions are
+                                  disabled until paid.
                                 </span>
                               </div>
                             )}
+                          {(() => {
+                            const pay = String(
+                              offer?.payment_status || "unpaid",
+                            ).toLowerCase();
+                            const canEdit =
+                              pay !== "processing" &&
+                              pay !== "paid" &&
+                              !assignmentLockedForSelectedOffer;
+                            return (
+                              <Button
+                                variant="outline"
+                                className="border-indigo-200 text-indigo-700 font-bold"
+                                disabled={!canEdit}
+                                onClick={() =>
+                                  setAssignDialog({
+                                    open: true,
+                                    offerId: selectedOfferId,
+                                    talentId: "",
+                                  })
+                                }
+                                title={
+                                  assignmentLockedForSelectedOffer
+                                    ? selectedOfferContractSigned
+                                      ? "Contract is already signed. Assigned talents can’t be changed."
+                                      : "Assignments are locked after the contract is sent."
+                                    : undefined
+                                }
+                              >
+                                <User className="h-4 w-4 mr-2" />
+                                {tBrand("contractHub.assignTalent", {
+                                  defaultValue: "Assign Talent",
+                                })}
+                              </Button>
+                            );
+                          })()}
+                          {assignmentLockedForSelectedOffer && (
+                            <p className="text-xs text-gray-500">
+                              {selectedOfferContractSigned
+                                ? "Contract is already signed and you can’t change assigned talents."
+                                : "Talent assignments are locked because the contract was already sent."}
+                            </p>
+                          )}
                         </div>
 
-                        <div className="rounded-xl border border-indigo-100 bg-white p-3 sm:p-4 space-y-3">
+                        <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-bold text-gray-900">
                               Assigned Talent
@@ -1811,10 +1975,10 @@ const BrandConnectionsView = ({
                           )}
                         </div>
 
-                        {/* Full brief — shown directly, no duplicate summary, full width of container */}
+                        {/* Full brief — shown directly, no duplicate summary */}
                         {offer?.brief_snapshot &&
                         typeof offer.brief_snapshot === "object" ? (
-                          <div className="-mx-4 sm:-mx-6 md:-mx-8 -mb-4 sm:-mb-6 md:-mb-8 border-t border-gray-200 bg-slate-50 overflow-hidden">
+                          <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                             <CampaignBriefView
                               brief={offer.brief_snapshot}
                               brandName={String(
@@ -1904,22 +2068,22 @@ const BrandConnectionsView = ({
                         onClick={() => setSelectedOfferId(offerId)}
                       >
                         {/* Row header */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-3 sm:px-6 border-b border-blue-100 bg-white gap-3 sm:gap-4">
-                          <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-white gap-4">
+                          <div className="flex items-center gap-4 min-w-0">
                             <div className="min-w-0">
-                              <h4 className="font-extrabold text-gray-900 text-sm sm:text-base tracking-tight truncate">
+                              <h4 className="font-extrabold text-gray-900 text-base tracking-tight truncate">
                                 {offer?.brand_campaigns?.name ||
                                   offer?.offer_title ||
                                   "Campaign Offer"}
                               </h4>
-                              <p className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-widest truncate">
+                              <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                                 {offer?.offer_title || "Direct Request"}
                               </p>
                             </div>
                           </div>
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+                          <div className="flex items-center gap-3 shrink-0">
                             <Badge
-                              className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide ${
+                              className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
                                 isAccepted
                                   ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                                   : "bg-indigo-100 text-indigo-700 border-indigo-200"
@@ -1929,7 +2093,7 @@ const BrandConnectionsView = ({
                             </Badge>
                             {isFullySigned && (
                               <Badge
-                                className={`px-2 py-0.5 sm:px-2.5 sm:py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wide ${
+                                className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
                                   offer?.payment_status === "paid"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                     : "bg-amber-50 text-amber-700 border-amber-200"
@@ -1941,14 +2105,14 @@ const BrandConnectionsView = ({
                               </Badge>
                             )}
                             {isPending && (
-                              <div className="flex items-center gap-1.5 sm:gap-2">
+                              <>
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span>
                                         <Button
                                           size="sm"
-                                          className="h-7 sm:h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] sm:text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                           disabled={
                                             busyIds.has(offerId) ||
                                             !canManageConnections
@@ -1964,7 +2128,7 @@ const BrandConnectionsView = ({
                                     </TooltipTrigger>
                                     {!canManageConnections && (
                                       <TooltipContent>
-                                        <p>Your role cannot accept offers</p>
+                                        Your role cannot accept offers
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
@@ -1976,7 +2140,7 @@ const BrandConnectionsView = ({
                                         <Button
                                           size="sm"
                                           variant="outline"
-                                          className="h-7 sm:h-8 border-red-200 text-red-600 hover:bg-red-50 font-bold text-[10px] sm:text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                          className="border-red-200 text-red-600 hover:bg-red-50 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                                           disabled={
                                             busyIds.has(offerId) ||
                                             !canManageConnections
@@ -1992,12 +2156,12 @@ const BrandConnectionsView = ({
                                     </TooltipTrigger>
                                     {!canManageConnections && (
                                       <TooltipContent>
-                                        <p>Your role cannot decline offers</p>
+                                        Your role cannot decline offers
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
                                 </TooltipProvider>
-                              </div>
+                              </>
                             )}
                             {isAccepted &&
                               (() => {
@@ -2111,7 +2275,7 @@ const BrandConnectionsView = ({
                                 return (
                                   <Button
                                     size="sm"
-                                    className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 font-bold h-8 px-3"
+                                    className="bg-black hover:bg-gray-800 text-white font-bold"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       navigate(
@@ -2131,97 +2295,109 @@ const BrandConnectionsView = ({
                                   </Button>
                                 );
                               })()}
+                            {isFullySigned && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-indigo-200 text-indigo-700 font-bold"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAssignDialog({
+                                    open: true,
+                                    offerId,
+                                    talentId: "",
+                                  });
+                                }}
+                              >
+                                <User className="h-4 w-4 mr-2" />
+                                {tBrand("contractHub.assignTalent", {
+                                  defaultValue: "Assign Talent",
+                                })}
+                              </Button>
+                            )}
                           </div>
                         </div>
 
                         {/* Brief & Scope body */}
-                        <div className="px-4 py-3 sm:px-6 sm:py-5 space-y-5">
-                          <div className="flex items-center justify-between gap-4 mb-1">
-                            <h3 className="text-sm font-black text-gray-900 tracking-tight uppercase">
+                        <div className="px-6 py-5 space-y-5">
+                          <div className="flex items-center justify-between gap-4">
+                            <h3 className="text-base font-extrabold text-gray-900 tracking-tight">
                               Brief &amp; Scope
                             </h3>
                             <button
                               onClick={() => setSelectedOfferId(offerId)}
-                              className="text-[11px] font-bold text-blue-600 border border-blue-200 rounded-md px-2.5 py-1 hover:bg-blue-50 transition-colors whitespace-nowrap"
+                              className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
                             >
-                              Details →
+                              View Full Details →
                             </button>
                           </div>
 
-                          {/* Reorganized Metadata Grid: Deliverables | Timeline | Budget */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                            {/* Deliverables */}
-                            <div className="space-y-0.5">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                Deliverables
-                              </p>
-                              <p className="text-sm font-semibold text-gray-800">
-                                {deliverablesSummary}
-                              </p>
-                            </div>
+                          {/* Deliverables */}
+                          <div>
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                              Deliverables
+                            </p>
+                            <p className="text-sm text-gray-800">
+                              {deliverablesSummary}
+                            </p>
+                          </div>
 
-                            {/* Timeline */}
-                            <div className="space-y-0.5">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                          {/* Timeline + Budget */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
                                 Timeline
                               </p>
-                              <div className="text-[13px] text-gray-700 font-medium">
-                                {launchDate || deadlineDate ? (
-                                  <>
-                                    {launchDate && (
-                                      <div>Start: {launchDate}</div>
-                                    )}
-                                    {deadlineDate && (
-                                      <div>Due: {deadlineDate}</div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <span className="text-gray-400 italic font-normal">
-                                    Not specified
-                                  </span>
-                                )}
-                              </div>
+                              {launchDate && (
+                                <p className="text-sm text-gray-800">
+                                  Start: {launchDate}
+                                </p>
+                              )}
+                              {deadlineDate && (
+                                <p className="text-sm text-gray-800">
+                                  Due: {deadlineDate}
+                                </p>
+                              )}
+                              {!launchDate && !deadlineDate && (
+                                <p className="text-sm text-gray-400">
+                                  Not specified
+                                </p>
+                              )}
                             </div>
-
-                            {/* Budget */}
-                            <div className="space-y-0.5">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            <div>
+                              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
                                 Budget
                               </p>
-                              <div className="text-[13px] text-gray-700">
-                                {budgetTotal || budgetCreator ? (
-                                  <>
-                                    {budgetTotal && (
-                                      <div className="font-bold text-gray-900">
-                                        Total: {budgetTotal}
-                                      </div>
-                                    )}
-                                    {budgetCreator && (
-                                      <div className="text-gray-500 text-[11px]">
-                                        Talent: {budgetCreator}
-                                      </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <span className="text-gray-400 italic font-normal">
-                                    Not specified
-                                  </span>
-                                )}
-                              </div>
+                              {budgetTotal && (
+                                <p className="text-sm font-bold text-gray-900">
+                                  Total: {budgetTotal}
+                                </p>
+                              )}
+                              {budgetCreator && (
+                                <p className="text-sm text-gray-700">
+                                  Creator: {budgetCreator}
+                                </p>
+                              )}
+                              {!budgetTotal && !budgetCreator && (
+                                <p className="text-sm text-gray-400">
+                                  Not specified
+                                </p>
+                              )}
                             </div>
                           </div>
 
                           {/* Teaser — navigates to full-page detail */}
                           {(bs || offer?.message) && (
                             <div
-                              className="flex items-center gap-2 bg-blue-50/50 border border-blue-100/50 rounded-lg px-3 py-2 cursor-pointer hover:bg-blue-100/50 transition-colors"
+                              className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
                               onClick={() => setSelectedOfferId(offerId)}
                             >
-                              <span className="text-blue-500 text-xs shrink-0">
+                              <span className="text-blue-500 mt-0.5 shrink-0">
                                 ⓘ
                               </span>
-                              <p className="text-[11px] font-medium text-blue-700">
-                                View complete brief, dialogue & visuals
+                              <p className="text-sm font-medium text-blue-700">
+                                Click to view complete brief with dialogue,
+                                visuals, and contract details
                               </p>
                             </div>
                           )}
@@ -2239,13 +2415,23 @@ const BrandConnectionsView = ({
       {activeTab === "feedback" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
           <h3 className="text-lg font-bold text-gray-900 mb-3">
-            Package Feedback
+            {tBrand("feedback.title", {
+              defaultValue: "Package Feedback",
+            })}
           </h3>
           {feedbackQuery.isLoading && (
-            <p className="text-sm text-gray-500">Loading package feedback...</p>
+            <p className="text-sm text-gray-500">
+              {tBrand("feedback.loading", {
+                defaultValue: "Loading package feedback...",
+              })}
+            </p>
           )}
           {!feedbackQuery.isLoading && feedbackItems.length === 0 && (
-            <p className="text-sm text-gray-500">No package feedback yet.</p>
+            <p className="text-sm text-gray-500">
+              {tBrand("feedback.empty", {
+                defaultValue: "No package feedback yet.",
+              })}
+            </p>
           )}
           {feedbackItems.length > 0 && (
             <div className="space-y-3">
@@ -2281,7 +2467,9 @@ const BrandConnectionsView = ({
                       }}
                     >
                       <Eye className="w-3 h-3 mr-2" />
-                      View Activity
+                      {tBrand("feedback.viewActivity", {
+                        defaultValue: "View Activity",
+                      })}
                     </Button>
                   </div>
                 </div>
@@ -2292,11 +2480,17 @@ const BrandConnectionsView = ({
       )}
 
       {activeTab === "contract_hub" && (
-        <Card className="p-4 sm:p-6 border border-gray-200 rounded-xl space-y-6">
+        <Card className="p-6 border border-gray-200 rounded-xl space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-900">Contract Hub</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              {tBrand("contractHub.title", {
+                defaultValue: "Contract Hub",
+              })}
+            </h3>
             <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              Agency Management
+              {tBrand("contractHub.managementTag", {
+                defaultValue: "Agency Management",
+              })}
             </div>
           </div>
 
@@ -2304,17 +2498,20 @@ const BrandConnectionsView = ({
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-sm text-gray-500 font-medium">
-                No active campaign offers to manage contracts for.
+                {tBrand("contractHub.noActiveOffers", {
+                  defaultValue:
+                    "No active campaign offers to manage contracts for.",
+                })}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Sidebar: Offer List - Hidden on mobile if an offer is selected */}
-              <div
-                className={`${selectedOfferId ? "hidden md:block" : "block"} md:col-span-1 space-y-3`}
-              >
+              {/* Sidebar: Offer List */}
+              <div className="md:col-span-1 space-y-3">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
-                  Campaign Offers
+                  {tBrand("contractHub.campaignOffers", {
+                    defaultValue: "Campaign Offers",
+                  })}
                 </p>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                   {offers.map((offer: any) => {
@@ -2335,7 +2532,10 @@ const BrandConnectionsView = ({
                             className={`font-bold text-sm ${isSelected ? "text-blue-900" : "text-gray-900"}`}
                           >
                             {String(
-                              offer?.brand_campaigns?.name || "Campaign offer",
+                              offer?.brand_campaigns?.name ||
+                                tBrand("contractHub.campaignOffer", {
+                                  defaultValue: "Campaign offer",
+                                }),
                             )}
                           </p>
                           {isSelected && (
@@ -2343,13 +2543,18 @@ const BrandConnectionsView = ({
                           )}
                         </div>
                         <p className="text-xs text-gray-500 mt-1 truncate">
-                          Brand:{" "}
+                          {tBrand("contractHub.brandLabel", {
+                            defaultValue: "Brand",
+                          })}
+                          :{" "}
                           {String(
                             offer?.brands?.company_name ||
                               offer?.brands?.name ||
                               offer?.brand_campaigns?.brands?.company_name ||
                               offer?.brand_campaigns?.brands?.name ||
-                              "Unknown",
+                              tBrand("contractHub.unknownBrand", {
+                                defaultValue: "Unknown",
+                              }),
                           )}
                         </p>
                       </div>
@@ -2358,32 +2563,23 @@ const BrandConnectionsView = ({
                 </div>
               </div>
 
-              {/* Main: Contract Management - Full width on mobile if selected */}
-              <div
-                className={`${selectedOfferId ? "block" : "hidden md:block"} md:col-span-2`}
-              >
-                {selectedOfferId && (
-                  <div className="md:hidden mb-4">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setSelectedOfferId("")}
-                      className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 -ml-2"
-                    >
-                      <ArrowLeft className="h-4 w-4" />
-                      Back to Offers
-                    </Button>
-                  </div>
-                )}
+              {/* Main: Contract Management */}
+              <div className="md:col-span-2">
                 {!selectedOfferId ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-gray-50 rounded-2xl border border-gray-200">
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
                       <ArrowLeft className="w-6 h-6 text-gray-400" />
                     </div>
                     <h4 className="text-lg font-bold text-gray-900 mb-1">
-                      Select an offer
+                      {tBrand("contractHub.selectOfferTitle", {
+                        defaultValue: "Select an offer",
+                      })}
                     </h4>
                     <p className="text-sm text-gray-500 max-w-xs">
-                      Choose an offer from the sidebar to manage its contracts.
+                      {tBrand("contractHub.selectOfferDescription", {
+                        defaultValue:
+                          "Choose an offer from the sidebar to manage its contracts.",
+                      })}
                     </p>
                   </div>
                 ) : (
@@ -2397,50 +2593,54 @@ const BrandConnectionsView = ({
                         <TabsList className="bg-gray-100 p-1 rounded-lg">
                           <TabsTrigger
                             value="submissions"
-                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50/70 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm ring-1 ring-indigo-700/5"
+                            className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
                           >
-                            Submissions
+                            {t(
+                              "agencyDashboard.brandConnections.contractHub.submissions",
+                            )}
                           </TabsTrigger>
                           <TabsTrigger
                             value="upload"
-                            className="px-4 py-1.5 text-xs font-semibold rounded-md transition-all data-[state=active]:bg-indigo-50/70 data-[state=active]:text-indigo-700 data-[state=active]:shadow-sm ring-1 ring-indigo-700/5"
+                            className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
                           >
-                            New Contract
+                            {t(
+                              "agencyDashboard.brandConnections.contractHub.newContract",
+                            )}
                           </TabsTrigger>
                         </TabsList>
                       </div>
                       {!hasAssignedTalent && (
                         <div className="mb-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                           <span className="text-amber-700 text-sm font-semibold">
-                            Assign at least 1 talent before preparing/sending a
-                            contract. This is required for correct payouts when
-                            the brand pays.
+                            {t(
+                              "agencyDashboard.brandConnections.contractHub.assignTalentBeforeContract",
+                            )}
                           </span>
                         </div>
                       )}
                       {!agencyStripeReadyForPayouts && (
                         <Alert className="mb-4 bg-blue-50 border border-blue-200 rounded-xl">
-                          <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5" />
-                          <AlertDescription className="text-blue-900 text-sm font-medium mt-1">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                              <p className="flex-1">
-                                Before sending contracts, connect your agency
-                                Stripe account and complete onboarding. Brands
-                                can’t pay until payouts are set up, and
-                                commissions/talent earnings can’t be transferred
-                                unless transfers are enabled.
-                              </p>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100 whitespace-nowrap"
-                                onClick={() =>
-                                  navigate("/AgencyDashboard?tab=payouts")
-                                }
-                              >
-                                Go to Payouts
-                              </Button>
-                            </div>
+                          <AlertCircle className="h-4 w-4 text-blue-600" />
+                          <AlertDescription className="text-blue-900 text-sm font-medium flex items-start justify-between gap-3">
+                            <span>
+                              {t(
+                                "agencyDashboard.brandConnections.contractHub.connectStripeBeforeSending",
+                              )}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="ml-auto shrink-0 bg-white border-blue-200 text-blue-600 hover:bg-blue-50 font-bold text-xs"
+                              onClick={() =>
+                                navigate(
+                                  "/AgencyDashboard?tab=accounting&subTab=Connect Bank",
+                                )
+                              }
+                            >
+                              {t(
+                                "agencyDashboard.brandConnections.contractHub.setupPayouts",
+                              )}
+                            </Button>
                           </AlertDescription>
                         </Alert>
                       )}
@@ -2459,7 +2659,9 @@ const BrandConnectionsView = ({
                               <FileText className="w-8 h-8 text-gray-300" />
                             </div>
                             <p className="text-gray-500 font-medium mb-4">
-                              No contracts found for this offer.
+                              {t(
+                                "agencyDashboard.brandConnections.contractHub.noContractsForOffer",
+                              )}
                             </p>
                             <Button
                               variant="outline"
@@ -2468,7 +2670,9 @@ const BrandConnectionsView = ({
                               disabled={!hasAssignedTalent}
                             >
                               <Plus className="w-4 h-4 mr-2" />
-                              Create First Contract
+                              {t(
+                                "agencyDashboard.brandConnections.contractHub.createFirstContract",
+                              )}
                             </Button>
                           </div>
                         ) : (
@@ -2482,21 +2686,33 @@ const BrandConnectionsView = ({
                               <section className="space-y-4">
                                 <div className="flex items-center justify-between">
                                   <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-                                    Contract Templates
+                                    {t(
+                                      "agencyDashboard.brandConnections.contractHub.contractTemplates",
+                                      { defaultValue: "Contract Templates" },
+                                    )}
                                   </h5>
                                   <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                                    Ready to Prepare
+                                    {t(
+                                      "agencyDashboard.brandConnections.contractHub.readyToPrepare",
+                                      { defaultValue: "Ready to Prepare" },
+                                    )}
                                   </span>
                                 </div>
-                                <DashboardTableSurface className="bg-white shadow-sm">
-                                  <table className="min-w-[620px] w-full text-left">
+                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                  <table className="w-full text-left">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Title
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.titleColumn",
+                                            { defaultValue: "Title" },
+                                          )}
                                         </th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
-                                          Actions
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.actionsColumn",
+                                            { defaultValue: "Actions" },
+                                          )}
                                         </th>
                                       </tr>
                                     </thead>
@@ -2522,7 +2738,7 @@ const BrandConnectionsView = ({
                                               key={cId}
                                               className="hover:bg-gray-50/50 transition-colors"
                                             >
-                                              <td className="px-3 sm:px-6 py-4">
+                                              <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                   <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                                                     <FileText className="w-5 h-5 text-blue-500" />
@@ -2531,11 +2747,24 @@ const BrandConnectionsView = ({
                                                     <p className="text-sm font-bold text-gray-900">
                                                       {String(
                                                         c?.title ||
-                                                          "Contract Draft",
+                                                          t(
+                                                            "agencyDashboard.brandConnections.contractHub.contractDraft",
+                                                            {
+                                                              defaultValue:
+                                                                "Contract Draft",
+                                                            },
+                                                          ),
                                                       )}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400 mt-0.5">
-                                                      Template ID:{" "}
+                                                      {t(
+                                                        "agencyDashboard.brandConnections.contractHub.templateId",
+                                                        {
+                                                          defaultValue:
+                                                            "Template ID",
+                                                        },
+                                                      )}
+                                                      :{" "}
                                                       {String(
                                                         c?.docuseal_template_id ||
                                                           "N/A",
@@ -2544,7 +2773,7 @@ const BrandConnectionsView = ({
                                                   </div>
                                                 </div>
                                               </td>
-                                              <td className="px-3 sm:px-6 py-4 text-right">
+                                              <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
                                                   <Button
                                                     size="sm"
@@ -2562,7 +2791,12 @@ const BrandConnectionsView = ({
                                                     }
                                                   >
                                                     <Wand2 className="w-4 h-4 mr-2" />
-                                                    Prepare
+                                                    {t(
+                                                      "agencyDashboard.brandConnections.contractHub.prepare",
+                                                      {
+                                                        defaultValue: "Prepare",
+                                                      },
+                                                    )}
                                                   </Button>
                                                   <Button
                                                     size="sm"
@@ -2581,7 +2815,13 @@ const BrandConnectionsView = ({
                                                     ) : (
                                                       <>
                                                         <Send className="w-4 h-4 mr-2" />
-                                                        Send
+                                                        {t(
+                                                          "agencyDashboard.brandConnections.contractHub.send",
+                                                          {
+                                                            defaultValue:
+                                                              "Send",
+                                                          },
+                                                        )}
                                                       </>
                                                     )}
                                                   </Button>
@@ -2606,7 +2846,7 @@ const BrandConnectionsView = ({
                                         })}
                                     </tbody>
                                   </table>
-                                </DashboardTableSurface>
+                                </div>
                               </section>
                             )}
 
@@ -2619,24 +2859,39 @@ const BrandConnectionsView = ({
                               <section className="space-y-4">
                                 <div className="flex items-center justify-between">
                                   <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
-                                    Sent Submissions
+                                    {t(
+                                      "agencyDashboard.brandConnections.contractHub.sentSubmissions",
+                                      { defaultValue: "Sent Submissions" },
+                                    )}
                                   </h5>
                                   <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-medium">
-                                    Active Submissions
+                                    {t(
+                                      "agencyDashboard.brandConnections.contractHub.activeSubmissions",
+                                      { defaultValue: "Active Submissions" },
+                                    )}
                                   </span>
                                 </div>
-                                <DashboardTableSurface className="bg-white shadow-sm">
-                                  <table className="min-w-[760px] w-full text-left">
+                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                  <table className="w-full text-left">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Title
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.titleColumn",
+                                            { defaultValue: "Title" },
+                                          )}
                                         </th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
-                                          Status
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.statusColumn",
+                                            { defaultValue: "Status" },
+                                          )}
                                         </th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
-                                          Actions
+                                          {t(
+                                            "agencyDashboard.brandConnections.contractHub.actionsColumn",
+                                            { defaultValue: "Actions" },
+                                          )}
                                         </th>
                                       </tr>
                                     </thead>
@@ -2671,11 +2926,21 @@ const BrandConnectionsView = ({
                                                     <p className="text-sm font-bold text-gray-900">
                                                       {String(
                                                         c?.title ||
-                                                          "Contract Submission",
+                                                          t(
+                                                            "agencyDashboard.brandConnections.contractHub.contractSubmission",
+                                                            {
+                                                              defaultValue:
+                                                                "Contract Submission",
+                                                            },
+                                                          ),
                                                       )}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400 mt-0.5">
-                                                      ID: {cId.slice(0, 8)}...
+                                                      {t(
+                                                        "agencyDashboard.brandConnections.contractHub.id",
+                                                        { defaultValue: "ID" },
+                                                      )}
+                                                      : {cId.slice(0, 8)}...
                                                     </p>
                                                   </div>
                                                 </div>
@@ -2697,10 +2962,19 @@ const BrandConnectionsView = ({
                                                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                                   }`}
                                                 >
-                                                  {statusLabel}
+                                                  {t(
+                                                    `statuses.${statusLabel}`,
+                                                    {
+                                                      defaultValue:
+                                                        statusLabel.replace(
+                                                          /_/g,
+                                                          " ",
+                                                        ),
+                                                    },
+                                                  )}
                                                 </Badge>
                                               </td>
-                                              <td className="px-3 sm:px-6 py-4 text-right">
+                                              <td className="px-6 py-4 text-right">
                                                 {(() => {
                                                   const agencySignUrl =
                                                     String(
@@ -2857,7 +3131,7 @@ const BrandConnectionsView = ({
                                         })}
                                     </tbody>
                                   </table>
-                                </DashboardTableSurface>
+                                </div>
                               </section>
                             )}
                           </div>
@@ -2870,10 +3144,14 @@ const BrandConnectionsView = ({
                             <div className="space-y-4">
                               <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
                               <p className="text-gray-900 font-bold">
-                                Uploading PDF...
+                                {t(
+                                  "agencyDashboard.brandConnections.contractHub.uploadingPdf",
+                                )}
                               </p>
                               <p className="text-xs text-gray-500">
-                                Creating your DocuSeal template draft
+                                {t(
+                                  "agencyDashboard.brandConnections.contractHub.creatingTemplate",
+                                )}
                               </p>
                             </div>
                           ) : (
@@ -2882,16 +3160,20 @@ const BrandConnectionsView = ({
                                 <Plus className="w-10 h-10 text-blue-500" />
                               </div>
                               <h4 className="text-xl font-bold text-gray-900 mb-2">
-                                Upload Contract PDF
+                                {t(
+                                  "agencyDashboard.brandConnections.contractHub.uploadContractPdf",
+                                )}
                               </h4>
                               <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm leading-relaxed">
-                                Upload a PDF contract to create a new signature
-                                request. You can place fields in the builder
-                                afterwards.
+                                {t(
+                                  "agencyDashboard.brandConnections.contractHub.uploadPdfDescription",
+                                )}
                               </p>
                               {!hasAssignedTalent && (
                                 <p className="text-sm text-amber-700 font-semibold mb-6">
-                                  Assign at least 1 talent to this offer first.
+                                  {t(
+                                    "agencyDashboard.brandConnections.contractHub.assignTalentFirst",
+                                  )}
                                 </p>
                               )}
                               <div className="flex items-center justify-center gap-4">
@@ -3010,6 +3292,335 @@ const BrandConnectionsView = ({
           })}
         </Card>
       )}
+
+      <Dialog
+        open={assignDialog.open}
+        onOpenChange={(open) => {
+          setAssignDialog((prev) => ({ ...prev, open }));
+          if (open) {
+            // Preselect currently assigned talents so the agency can also unassign
+            // by deselecting before saving (until the contract is sent).
+            setAssignSelectedIds(Array.from(assignedTalentIds));
+          } else {
+            setAssignSearch("");
+            setAssignSelectedIds([]);
+          }
+        }}
+      >
+        <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
+          <DialogHeader className="mb-8">
+            <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
+              {tBrand("contractHub.assignTalent", {
+                defaultValue: "Assign Talent",
+              })}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
+              Select one or more talents from your roster to assign to this
+              offer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
+            <AlertDescription className="text-sm text-blue-900 font-medium">
+              You can change assigned talents any time before the contract is
+              sent. Once you send the contract, assignments are locked.
+            </AlertDescription>
+          </Alert>
+
+          {assignmentLockedForOffer ? (
+            <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
+              <AlertDescription className="text-sm text-amber-900 font-semibold">
+                This offer’s contract has already been sent. Talent assignments
+                are locked.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          <div className="relative mb-8">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Filter by name or email..."
+              value={assignSearch}
+              onChange={(e) => setAssignSearch(e.target.value)}
+              className="h-12 pl-10 bg-gray-100 border-none rounded-xl"
+            />
+          </div>
+
+          <ScrollArea className="h-[450px] pr-2 sm:pr-4">
+            {rosterQuery.isLoading ? (
+              <div className="h-[420px] flex flex-col items-center justify-center text-center">
+                <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
+                <p className="text-sm font-bold text-gray-500">
+                  Loading talents…
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Fetching your agency roster.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {filteredRoster.map((talent: any) => {
+                  const id = String(talent?.creator_id || talent?.id || "");
+                  const needsInvite = !talent?.has_creator_account;
+                  const canAssign = !needsInvite && Boolean(id);
+                  const alreadyAssigned = assignedTalentIds.has(id);
+                  const isSelected = assignSelectedIds.includes(id);
+                  const willUnassign = alreadyAssigned && !isSelected;
+                  const talentName =
+                    talent?.stage_name ||
+                    talent?.name ||
+                    talent?.full_legal_name ||
+                    "Talent";
+                  return (
+                    <Card
+                      key={id || talent?.id}
+                      onClick={() => {
+                        if (assignmentLockedForOffer) return;
+                        if (needsInvite) {
+                          setInviteRequiredDialog({
+                            open: true,
+                            talentName,
+                            talentId: talent?.id || id,
+                          });
+                          return;
+                        }
+                        if (!canAssign) return;
+                        setAssignSelectedIds((prev) =>
+                          prev.includes(id)
+                            ? prev.filter((x) => x !== id)
+                            : [...prev, id],
+                        );
+                      }}
+                      className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
+                        needsInvite
+                          ? "border-dashed border-amber-200 bg-amber-50/30 cursor-pointer hover:border-amber-300"
+                          : assignmentLockedForOffer
+                            ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                            : "cursor-pointer border-gray-50 hover:border-gray-100 bg-white"
+                      } ${
+                        isSelected
+                          ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
+                          : ""
+                      }`}
+                    >
+                      <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
+                        <Avatar className="w-16 h-16 rounded-2xl">
+                          <AvatarImage src={getTalentAvatar(talent)} />
+                          <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
+                            {getTalentInitial(talent)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
+                          {talentName}
+                        </h6>
+                        <div className="mt-1 flex items-center gap-2 flex-wrap">
+                          {alreadyAssigned && (
+                            <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] tracking-widest font-black px-2 py-0.5">
+                              assigned
+                            </Badge>
+                          )}
+                          {willUnassign && (
+                            <Badge className="bg-red-50 text-red-700 border-red-200 text-[10px] tracking-widest font-black px-2 py-0.5">
+                              will unassign
+                            </Badge>
+                          )}
+                          {needsInvite && (
+                            <Badge className="bg-amber-50 text-amber-600 border border-amber-200 text-[10px] tracking-widest font-black px-2 py-0.5 flex items-center gap-1">
+                              <Mail className="w-2.5 h-2.5" />
+                              invite required
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      {needsInvite && !isSelected && (
+                        <UserX className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                      )}
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+
+          <Button
+            onClick={() => setAssignConfirmOpen(true)}
+            disabled={
+              assignmentLockedForOffer ||
+              assignSelectedIds.length === 0 ||
+              assignSubmitting
+            }
+            className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg h-12 font-bold tracking-wider text-sm shadow-md shadow-indigo-200"
+          >
+            {assignSubmitting ? (
+              <Loader2 className="w-5 h-5 animate-spin mr-3" />
+            ) : null}
+            Confirm Selection ({assignSelectedIds.length})
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Required Modal */}
+      <Dialog
+        open={inviteRequiredDialog.open}
+        onOpenChange={(open) =>
+          setInviteRequiredDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-sm rounded-2xl p-8 border-none bg-white shadow-2xl text-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center">
+              <UserX className="w-7 h-7 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-gray-900 tracking-tight">
+                Onboarding not completed
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                <span className="font-semibold text-gray-700">
+                  {inviteRequiredDialog.talentName}
+                </span>{" "}
+                hasn't accepted their portal invite yet. They need to complete
+                onboarding before they can be assigned to a contract.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              <Button
+                onClick={() => {
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  });
+                  navigate(
+                    `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent("All Talent")}&openTalentId=${encodeURIComponent(inviteRequiredDialog.talentId || "")}`,
+                  );
+                }}
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold text-sm flex items-center justify-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                {tBrand("dialogs.goToRosterInvite", {
+                  defaultValue: "Go to Roster & Invite",
+                })}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setInviteRequiredDialog({
+                    open: false,
+                    talentName: "",
+                    talentId: "",
+                  })
+                }
+                className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
+              >
+                {t("agencyDashboard.deliverables.unassignTalent.cancel", {
+                  defaultValue: "Cancel",
+                })}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={assignConfirmOpen}
+        onOpenChange={(open) => {
+          if (assignSubmitting) return;
+          setAssignConfirmOpen(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t(
+                "agencyDashboard.deliverables.assignTalent.confirmDialogTitle",
+                {
+                  defaultValue: "Confirm talent assignment?",
+                },
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                "agencyDashboard.deliverables.assignTalent.changeBeforeContract",
+                {
+                  defaultValue:
+                    "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
+                },
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={assignSubmitting}>
+              {t("agencyDashboard.deliverables.unassignTalent.cancel", {
+                defaultValue: "Cancel",
+              })}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={assignSubmitting || assignmentLockedForOffer}
+              onClick={async () => {
+                await handleAssignTalents();
+                setAssignConfirmOpen(false);
+              }}
+            >
+              {t(
+                "agencyDashboard.deliverables.assignTalent.confirmAssignment",
+                {
+                  defaultValue: "Confirm assignment",
+                },
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={unassignConfirm.open}
+        onOpenChange={(open) => {
+          if (assignSubmitting) return;
+          setUnassignConfirm((prev) => ({ ...prev, open }));
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("agencyDashboard.deliverables.unassignTalent.title", {
+                defaultValue: "Unassign talent?",
+              })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("agencyDashboard.deliverables.unassignTalent.description", {
+                defaultValue:
+                  "Remove {talentName} from this offer. You can change assigned talents before the contract is sent. After you send the contract, assignments are locked.",
+                talentName: unassignConfirm.talentName,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={assignSubmitting}>
+              {t("agencyDashboard.deliverables.unassignTalent.cancel", {
+                defaultValue: "Cancel",
+              })}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={assignSubmitting || assignmentLockedForSelectedOffer}
+              onClick={async () => {
+                await handleUnassignTalent();
+              }}
+            >
+              {t("agencyDashboard.deliverables.unassignTalent.unassign", {
+                defaultValue: "Unassign",
+              })}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog
         open={messageDialog.open}

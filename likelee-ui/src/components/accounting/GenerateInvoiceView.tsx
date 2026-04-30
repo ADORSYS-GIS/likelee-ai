@@ -50,6 +50,7 @@ import {
   voidInvoice,
 } from "@/api/functions";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from "react-i18next";
 
 type LineItemState = {
   id: string;
@@ -74,6 +75,7 @@ type AttachmentState = {
 };
 
 export const GenerateInvoiceViewApi = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const invoiceIdFromQuery = searchParams.get("invoiceId") || undefined;
@@ -1052,10 +1054,16 @@ export const GenerateInvoiceViewApi = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Invoice Generation
+            {t(
+              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.title",
+              { defaultValue: "Invoice Generation" },
+            )}
           </h2>
           <p className="text-gray-600 font-medium">
-            Create and manage client invoices
+            {t(
+              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.subtitle",
+              { defaultValue: "Create and manage client invoices" },
+            )}
           </p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
@@ -1065,7 +1073,10 @@ export const GenerateInvoiceViewApi = () => {
             className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Eye className="w-5 h-5" />
-            Preview
+            {t(
+              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.preview",
+              { defaultValue: "Preview" },
+            )}
           </Button>
         </div>
       </div>
@@ -1074,7 +1085,10 @@ export const GenerateInvoiceViewApi = () => {
         <div className="space-y-6">
           <div>
             <Label className="text-sm font-bold text-gray-700 mb-3 block">
-              Create Invoice From
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.createInvoiceFrom",
+                { defaultValue: "Create Invoice From" },
+              )}
             </Label>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
@@ -1087,7 +1101,10 @@ export const GenerateInvoiceViewApi = () => {
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
-                Existing Booking
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.options.existingBooking",
+                  { defaultValue: "Existing Booking" },
+                )}
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
@@ -1098,7 +1115,10 @@ export const GenerateInvoiceViewApi = () => {
                 }`}
                 onClick={() => setCreateFrom("manual")}
               >
-                Manual Entry
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.options.manualEntry",
+                  { defaultValue: "Manual Entry" },
+                )}
               </Button>
             </div>
           </div>
@@ -1106,14 +1126,24 @@ export const GenerateInvoiceViewApi = () => {
           {createFrom === "booking" && (
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Select Booking to Invoice
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.selectBooking",
+                  { defaultValue: "Select Booking to Invoice" },
+                )}
               </Label>
               <Select
                 value={selectedBookingId}
                 onValueChange={setSelectedBookingId}
               >
                 <SelectTrigger className="h-12 rounded-xl border-gray-200">
-                  <SelectValue placeholder="Choose a completed or confirmed booking" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.placeholders.selectBooking",
+                      {
+                        defaultValue: "Choose a completed or confirmed booking",
+                      },
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
                   {bookings.length === 0 && (
@@ -1135,18 +1165,27 @@ export const GenerateInvoiceViewApi = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Invoice Number
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.invoiceNumber",
+                  { defaultValue: "Invoice Number" },
+                )}
               </Label>
               <Input
                 value={invoiceNumber}
                 disabled
-                placeholder="Assigned automatically on save"
+                placeholder={t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.placeholders.invoiceNumber",
+                  { defaultValue: "Assigned automatically on save" },
+                )}
                 className="h-12 rounded-xl border-gray-200 font-mono"
               />
             </div>
             <div className="md:col-span-1">
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Invoice Date
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.invoiceDate",
+                  { defaultValue: "Invoice Date" },
+                )}
               </Label>
               <Input
                 type="date"
@@ -1157,7 +1196,10 @@ export const GenerateInvoiceViewApi = () => {
             </div>
             <div className="md:col-span-1">
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Due Date
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.dueDate",
+                  { defaultValue: "Due Date" },
+                )}
               </Label>
               <div className="flex flex-col sm:flex-row gap-2">
                 <Input
@@ -1175,7 +1217,10 @@ export const GenerateInvoiceViewApi = () => {
                     <SelectItem value="net_30">Net 30</SelectItem>
                     <SelectItem value="net_60">Net 60</SelectItem>
                     <SelectItem value="due_on_receipt">
-                      Due on Receipt
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.options.dueOnReceipt",
+                        { defaultValue: "Due on Receipt" },
+                      )}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -1185,14 +1230,22 @@ export const GenerateInvoiceViewApi = () => {
 
           <div>
             <Label className="text-sm font-bold text-gray-700 mb-2 block">
-              Bill To (Client)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.billToClient",
+                { defaultValue: "Bill To (Client)" },
+              )}
             </Label>
             <Select
               value={selectedClientId}
               onValueChange={setSelectedClientId}
             >
               <SelectTrigger className="h-12 rounded-xl border-gray-200">
-                <SelectValue placeholder="Select client" />
+                <SelectValue
+                  placeholder={t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.placeholders.selectClient",
+                    { defaultValue: "Select client" },
+                  )}
+                />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {clients.length === 0 && (
@@ -1212,7 +1265,10 @@ export const GenerateInvoiceViewApi = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                PO Number
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.poNumber",
+                  { defaultValue: "PO Number" },
+                )}
               </Label>
               <Input
                 value={poNumber}
@@ -1222,7 +1278,10 @@ export const GenerateInvoiceViewApi = () => {
             </div>
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Job/Project Reference
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.projectReference",
+                  { defaultValue: "Job/Project Reference" },
+                )}
               </Label>
               <Input
                 value={projectReference}
@@ -1235,7 +1294,10 @@ export const GenerateInvoiceViewApi = () => {
           <div>
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
               <Label className="text-sm font-bold text-gray-700">
-                Invoice Items
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.invoiceItems",
+                  { defaultValue: "Invoice Items" },
+                )}
               </Label>
               <Button
                 variant="outline"
@@ -1243,7 +1305,10 @@ export const GenerateInvoiceViewApi = () => {
                 className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
               >
                 <Plus className="w-4 h-4" />
-                Add Line Item
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.addLineItem",
+                  { defaultValue: "Add Line Item" },
+                )}
               </Button>
             </div>
 
@@ -1260,7 +1325,10 @@ export const GenerateInvoiceViewApi = () => {
                   >
                     <div className="flex items-center justify-between gap-2 mb-4">
                       <p className="text-sm font-bold text-gray-900">
-                        Item #{idx + 1}
+                        {t(
+                          "agencyDashboard.brandConnections.accounting.invoiceGenerationView.labels.itemNumber",
+                          { count: idx + 1, defaultValue: "Item #{{count}}" },
+                        )}
                       </p>
                       {items.length > 1 && (
                         <Button
@@ -1277,7 +1345,10 @@ export const GenerateInvoiceViewApi = () => {
                     <div className="space-y-4">
                       <div>
                         <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                          Description
+                          {t(
+                            "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.description",
+                            { defaultValue: "Description" },
+                          )}
                         </Label>
                         <Textarea
                           value={it.description}
@@ -1291,7 +1362,10 @@ export const GenerateInvoiceViewApi = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                            Talent
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.talent",
+                              { defaultValue: "Talent" },
+                            )}
                           </Label>
                           <Select
                             value={it.talent_id}
@@ -1300,7 +1374,12 @@ export const GenerateInvoiceViewApi = () => {
                             }
                           >
                             <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                              <SelectValue placeholder="Select talent" />
+                              <SelectValue
+                                placeholder={t(
+                                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.placeholders.selectTalent",
+                                  { defaultValue: "Select talent" },
+                                )}
+                              />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl">
                               {talents.length === 0 && (
@@ -1320,7 +1399,10 @@ export const GenerateInvoiceViewApi = () => {
                         </div>
                         <div>
                           <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                            Date of Service
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.dateOfService",
+                              { defaultValue: "Date of Service" },
+                            )}
                           </Label>
                           <Input
                             type="date"
@@ -1340,7 +1422,10 @@ export const GenerateInvoiceViewApi = () => {
                       <div className="grid grid-cols-3 gap-4">
                         <div>
                           <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                            Rate Type
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.rateType",
+                              { defaultValue: "Rate Type" },
+                            )}
                           </Label>
                           <Input
                             value={it.rate_type || ""}
@@ -1352,7 +1437,10 @@ export const GenerateInvoiceViewApi = () => {
                         </div>
                         <div>
                           <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                            Quantity/Hours
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.quantityHours",
+                              { defaultValue: "Quantity/Hours" },
+                            )}
                           </Label>
                           <Input
                             type="number"
@@ -1365,7 +1453,10 @@ export const GenerateInvoiceViewApi = () => {
                         </div>
                         <div>
                           <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                            Unit Price (cents)
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.unitPriceCents",
+                              { defaultValue: "Unit Price (cents)" },
+                            )}
                           </Label>
                           <Input
                             type="number"
@@ -1384,7 +1475,10 @@ export const GenerateInvoiceViewApi = () => {
 
                       <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                         <span className="text-sm font-bold text-gray-700">
-                          Line Total:
+                          {t(
+                            "agencyDashboard.brandConnections.accounting.invoiceGenerationView.labels.lineTotal",
+                            { defaultValue: "Line Total:" },
+                          )}
                         </span>
                         <span className="text-lg font-bold text-gray-900">
                           {money(lineTotal)}
@@ -1400,7 +1494,10 @@ export const GenerateInvoiceViewApi = () => {
           <Card className="p-5 bg-white border border-gray-100 rounded-2xl">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
               <Label className="text-sm font-bold text-gray-900">
-                Expenses (Optional)
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.expensesOptional",
+                  { defaultValue: "Expenses (Optional)" },
+                )}
               </Label>
               <Button
                 variant="outline"
@@ -1408,7 +1505,10 @@ export const GenerateInvoiceViewApi = () => {
                 className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
               >
                 <Plus className="w-4 h-4" />
-                Add Expense
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.addExpense",
+                  { defaultValue: "Add Expense" },
+                )}
               </Button>
             </div>
 
@@ -1420,7 +1520,10 @@ export const GenerateInvoiceViewApi = () => {
                     className="flex flex-col sm:flex-row gap-3 sm:items-center"
                   >
                     <Input
-                      placeholder="Expense description"
+                      placeholder={t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.placeholders.expenseDescription",
+                        { defaultValue: "Expense description" },
+                      )}
                       value={expense.description}
                       onChange={(e) =>
                         updateExpense(expense.id, "description", e.target.value)
@@ -1464,11 +1567,17 @@ export const GenerateInvoiceViewApi = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h4 className="text-sm font-bold text-gray-900">
-                Financial Settings
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.sections.financialSettings",
+                  { defaultValue: "Financial Settings" },
+                )}
               </h4>
               <div>
                 <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                  Agency Commission (%)
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.agencyCommissionPercent",
+                    { defaultValue: "Agency Commission (%)" },
+                  )}
                 </Label>
                 <div className="flex gap-2 items-center">
                   <Input
@@ -1504,7 +1613,10 @@ export const GenerateInvoiceViewApi = () => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <Label className="text-xs font-bold text-gray-700">
-                    Tax Rate (%)
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.taxRatePercent",
+                      { defaultValue: "Tax Rate (%)" },
+                    )}
                   </Label>
                   <div className="flex items-center gap-2">
                     <Checkbox
@@ -1515,7 +1627,10 @@ export const GenerateInvoiceViewApi = () => {
                       className="rounded-md w-4 h-4 border-gray-300"
                     />
                     <span className="text-xs text-gray-600 font-medium">
-                      Tax Exempt
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.taxExempt",
+                        { defaultValue: "Tax Exempt" },
+                      )}
                     </span>
                   </div>
                 </div>
@@ -1528,7 +1643,12 @@ export const GenerateInvoiceViewApi = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="0">0% - No Tax</SelectItem>
+                    <SelectItem value="0">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.options.noTax",
+                        { defaultValue: "0% - No Tax" },
+                      )}
+                    </SelectItem>
                     <SelectItem value="5">5%</SelectItem>
                     <SelectItem value="10">10%</SelectItem>
                     <SelectItem value="15">15%</SelectItem>
@@ -1538,7 +1658,10 @@ export const GenerateInvoiceViewApi = () => {
 
               <div>
                 <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                  Discount
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.discount",
+                    { defaultValue: "Discount" },
+                  )}
                 </Label>
                 <Input
                   type="number"
@@ -1551,12 +1674,21 @@ export const GenerateInvoiceViewApi = () => {
 
             <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
               <h4 className="text-sm font-bold text-gray-900 mb-4">
-                Invoice Summary
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.sections.invoiceSummary",
+                  { defaultValue: "Invoice Summary" },
+                )}
               </h4>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-700 font-medium">
-                    Subtotal ({items.length} items)
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.labels.subtotalItems",
+                      {
+                        count: items.length,
+                        defaultValue: "Subtotal ({{count}} items)",
+                      },
+                    )}
                   </span>
                   <span className="text-sm font-bold text-gray-900">
                     {money(subtotalCents)}
@@ -1564,7 +1696,13 @@ export const GenerateInvoiceViewApi = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-700 font-medium">
-                    Agency Commission ({commissionPct}%)
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.labels.agencyCommissionSummary",
+                      {
+                        percent: commissionPct,
+                        defaultValue: "Agency Commission ({{percent}}%)",
+                      },
+                    )}
                   </span>
                   <span className="text-sm font-bold text-red-600">
                     -{money(agencyFeeCents)}
@@ -1572,7 +1710,10 @@ export const GenerateInvoiceViewApi = () => {
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-indigo-200">
                   <span className="text-sm text-gray-700 font-medium">
-                    Talent Net Amount
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.labels.talentNetAmount",
+                      { defaultValue: "Talent Net Amount" },
+                    )}
                   </span>
                   <span className="text-sm font-bold text-green-600">
                     {money(talentNetCents)}
@@ -1580,7 +1721,10 @@ export const GenerateInvoiceViewApi = () => {
                 </div>
                 <div className="flex justify-between items-center pt-2">
                   <span className="text-lg font-bold text-gray-900">
-                    Grand Total
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.labels.grandTotal",
+                      { defaultValue: "Grand Total" },
+                    )}
                   </span>
                   <span className="text-2xl font-bold text-indigo-600">
                     {money(subtotalCents + expensesCents)}
@@ -1593,7 +1737,10 @@ export const GenerateInvoiceViewApi = () => {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                Additional Notes (Optional)
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.additionalNotesOptional",
+                  { defaultValue: "Additional Notes (Optional)" },
+                )}
               </Label>
               <Textarea
                 value={notesInternal}
@@ -1603,7 +1750,10 @@ export const GenerateInvoiceViewApi = () => {
             </div>
             <div>
               <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                Payment Instructions
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.paymentInstructions",
+                  { defaultValue: "Payment Instructions" },
+                )}
               </Label>
               <Textarea
                 value={paymentInstructions}
@@ -1615,7 +1765,10 @@ export const GenerateInvoiceViewApi = () => {
 
           <div>
             <Label className="text-xs font-bold text-gray-700 mb-2 block">
-              Invoice Footer Text
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.invoiceFooterText",
+                { defaultValue: "Invoice Footer Text" },
+              )}
             </Label>
             <Input
               value={footerText}
@@ -1628,10 +1781,19 @@ export const GenerateInvoiceViewApi = () => {
             <div className="flex justify-between items-center mb-2">
               <div>
                 <Label className="text-sm font-bold text-gray-900">
-                  Attached Files (Optional)
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.attachedFilesOptional",
+                    { defaultValue: "Attached Files (Optional)" },
+                  )}
                 </Label>
                 <p className="text-xs text-gray-500 font-medium">
-                  Attach contracts, usage agreements, or supporting documents.
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.labels.attachedFilesDescription",
+                    {
+                      defaultValue:
+                        "Attach contracts, usage agreements, or supporting documents.",
+                    },
+                  )}
                 </p>
               </div>
               <label>
@@ -1652,7 +1814,10 @@ export const GenerateInvoiceViewApi = () => {
                 >
                   <span>
                     <Upload className="w-4 h-4" />
-                    Upload File
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.uploadFile",
+                      { defaultValue: "Upload File" },
+                    )}
                   </span>
                 </Button>
               </label>
@@ -1661,7 +1826,12 @@ export const GenerateInvoiceViewApi = () => {
             {attachments.length === 0 ? (
               <div className="mt-4 flex flex-col items-center justify-center py-8 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
                 <Upload className="w-10 h-10 text-gray-300 mb-2" />
-                <p className="text-gray-500 font-bold">No files attached</p>
+                <p className="text-gray-500 font-bold">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.empty.noFilesAttached",
+                    { defaultValue: "No files attached" },
+                  )}
+                </p>
               </div>
             ) : (
               <div className="mt-4 space-y-2">
@@ -1712,7 +1882,10 @@ export const GenerateInvoiceViewApi = () => {
                     className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                   >
                     <Save className="w-4 h-4" />
-                    Save as Draft
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.saveAsDraft",
+                      { defaultValue: "Save as Draft" },
+                    )}
                   </Button>
 
                   <Button
@@ -1721,7 +1894,10 @@ export const GenerateInvoiceViewApi = () => {
                     onClick={onMarkSent}
                     className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                   >
-                    Mark as Sent
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.markAsSent",
+                      { defaultValue: "Mark as Sent" },
+                    )}
                   </Button>
 
                   <Button
@@ -1730,7 +1906,10 @@ export const GenerateInvoiceViewApi = () => {
                     className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
                   >
                     <Mail className="w-4 h-4" />
-                    Email to Client
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.emailToClient",
+                      { defaultValue: "Email to Client" },
+                    )}
                   </Button>
 
                   <Button
@@ -1740,7 +1919,10 @@ export const GenerateInvoiceViewApi = () => {
                     className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                   >
                     <Download className="w-4 h-4" />
-                    Download PDF
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.downloadPdf",
+                      { defaultValue: "Download PDF" },
+                    )}
                   </Button>
 
                   <Button
@@ -1750,7 +1932,10 @@ export const GenerateInvoiceViewApi = () => {
                     className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                   >
                     <Printer className="w-4 h-4" />
-                    Print
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.print",
+                      { defaultValue: "Print" },
+                    )}
                   </Button>
 
                   <Button
@@ -1760,7 +1945,10 @@ export const GenerateInvoiceViewApi = () => {
                     className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                   >
                     <Copy className="w-4 h-4" />
-                    Duplicate
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.duplicate",
+                      { defaultValue: "Duplicate" },
+                    )}
                   </Button>
 
                   <Button
@@ -1769,7 +1957,10 @@ export const GenerateInvoiceViewApi = () => {
                     onClick={onMarkPaid}
                     className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                   >
-                    Mark as Paid
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.markAsPaid",
+                      { defaultValue: "Mark as Paid" },
+                    )}
                   </Button>
 
                   <Button
@@ -1778,7 +1969,10 @@ export const GenerateInvoiceViewApi = () => {
                     onClick={onVoid}
                     className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                   >
-                    Void
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.void",
+                      { defaultValue: "Void" },
+                    )}
                   </Button>
                 </>
               );
@@ -1791,33 +1985,63 @@ export const GenerateInvoiceViewApi = () => {
         <DialogContent className="max-w-3xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Invoice Preview
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.title",
+                { defaultValue: "Invoice Preview" },
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="bg-white border border-gray-200 rounded-xl p-5 overflow-auto max-h-[60vh]">
             <div className="flex items-start justify-between gap-6">
               <div>
-                <div className="text-lg font-bold text-gray-900">Invoice</div>
+                <div className="text-lg font-bold text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.invoice",
+                    { defaultValue: "Invoice" },
+                  )}
+                </div>
                 <div className="text-sm text-gray-600 break-words max-w-[22rem]">
-                  {invoiceNumber || "(not assigned yet)"}
+                  {invoiceNumber ||
+                    t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.notAssignedYet",
+                      { defaultValue: "(not assigned yet)" },
+                    )}
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-600">Invoice date</div>
+                <div className="text-sm text-gray-600">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.invoiceDate",
+                    { defaultValue: "Invoice date" },
+                  )}
+                </div>
                 <div className="text-sm font-bold text-gray-900">
                   {invoiceDate}
                 </div>
-                <div className="mt-2 text-sm text-gray-600">Due date</div>
+                <div className="mt-2 text-sm text-gray-600">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.dueDate",
+                    { defaultValue: "Due date" },
+                  )}
+                </div>
                 <div className="text-sm font-bold text-gray-900">{dueDate}</div>
               </div>
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-6">
               <div>
-                <div className="text-xs font-bold text-gray-700">Bill To</div>
+                <div className="text-xs font-bold text-gray-700">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.billTo",
+                    { defaultValue: "Bill To" },
+                  )}
+                </div>
                 <div className="mt-1 text-sm font-bold text-gray-900">
                   {clients.find((c) => c?.id === selectedClientId)?.company ||
-                    "(no client selected)"}
+                    t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.noClientSelected",
+                      { defaultValue: "(no client selected)" },
+                    )}
                 </div>
                 {clients.find((c) => c?.id === selectedClientId)
                   ?.contact_name && (
@@ -1835,7 +2059,12 @@ export const GenerateInvoiceViewApi = () => {
                 )}
               </div>
               <div className="text-right">
-                <div className="text-xs font-bold text-gray-700">Status</div>
+                <div className="text-xs font-bold text-gray-700">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.status",
+                    { defaultValue: "Status" },
+                  )}
+                </div>
                 <div className="mt-1 text-sm font-bold text-gray-900">
                   {invoiceStatus}
                 </div>
@@ -1851,14 +2080,37 @@ export const GenerateInvoiceViewApi = () => {
 
             <div className="mt-6">
               <div className="text-xs font-bold text-gray-700 mb-2">
-                Line Items
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.lineItems",
+                  { defaultValue: "Line Items" },
+                )}
               </div>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-[11px] font-bold text-gray-700">
-                  <div className="col-span-6">Description</div>
-                  <div className="col-span-2 text-right">Qty</div>
-                  <div className="col-span-2 text-right">Unit</div>
-                  <div className="col-span-2 text-right">Total</div>
+                  <div className="col-span-6">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.description",
+                      { defaultValue: "Description" },
+                    )}
+                  </div>
+                  <div className="col-span-2 text-right">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.qty",
+                      { defaultValue: "Qty" },
+                    )}
+                  </div>
+                  <div className="col-span-2 text-right">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.unit",
+                      { defaultValue: "Unit" },
+                    )}
+                  </div>
+                  <div className="col-span-2 text-right">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.total",
+                      { defaultValue: "Total" },
+                    )}
+                  </div>
                 </div>
                 {items
                   .filter((x) => x.description.trim().length > 0)
@@ -1881,7 +2133,10 @@ export const GenerateInvoiceViewApi = () => {
                                   ?.full_name ||
                                 talents.find((t) => t?.id === it.talent_id)
                                   ?.name ||
-                                "Talent"
+                                t(
+                                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.talent",
+                                  { defaultValue: "Talent" },
+                                )
                               : ""}
                             {it.talent_id && it.date_of_service ? " • " : ""}
                             {it.date_of_service || ""}
@@ -1907,7 +2162,10 @@ export const GenerateInvoiceViewApi = () => {
                 {items.filter((x) => x.description.trim().length > 0).length ===
                   0 && (
                   <div className="px-3 py-4 text-sm text-gray-600">
-                    No line items
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.noLineItems",
+                      { defaultValue: "No line items" },
+                    )}
                   </div>
                 )}
               </div>
@@ -1915,13 +2173,31 @@ export const GenerateInvoiceViewApi = () => {
 
             <div className="mt-6">
               <div className="text-xs font-bold text-gray-700 mb-2">
-                Expenses
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.expenses",
+                  { defaultValue: "Expenses" },
+                )}
               </div>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-[11px] font-bold text-gray-700">
-                  <div className="col-span-8">Description</div>
-                  <div className="col-span-2 text-right">Taxable</div>
-                  <div className="col-span-2 text-right">Amount</div>
+                  <div className="col-span-8">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.description",
+                      { defaultValue: "Description" },
+                    )}
+                  </div>
+                  <div className="col-span-2 text-right">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.taxable",
+                      { defaultValue: "Taxable" },
+                    )}
+                  </div>
+                  <div className="col-span-2 text-right">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.table.amount",
+                      { defaultValue: "Amount" },
+                    )}
+                  </div>
                 </div>
                 {expenses
                   .filter((x) => x.description.trim().length > 0)
@@ -1934,7 +2210,15 @@ export const GenerateInvoiceViewApi = () => {
                         {ex.description}
                       </div>
                       <div className="col-span-2 text-right text-gray-700">
-                        {ex.taxable ? "Yes" : "No"}
+                        {ex.taxable
+                          ? t(
+                              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.yes",
+                              { defaultValue: "Yes" },
+                            )
+                          : t(
+                              "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.no",
+                              { defaultValue: "No" },
+                            )}
                       </div>
                       <div className="col-span-2 text-right font-bold text-gray-900">
                         {money(Number(ex.amount_cents || "0") || 0)}
@@ -1944,7 +2228,10 @@ export const GenerateInvoiceViewApi = () => {
                 {expenses.filter((x) => x.description.trim().length > 0)
                   .length === 0 && (
                   <div className="px-3 py-4 text-sm text-gray-600">
-                    No expenses
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.noExpenses",
+                      { defaultValue: "No expenses" },
+                    )}
                   </div>
                 )}
               </div>
@@ -1954,16 +2241,26 @@ export const GenerateInvoiceViewApi = () => {
               <div className="text-sm text-gray-700">
                 <div>
                   <div className="text-xs font-bold text-gray-700">
-                    Payment Instructions
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.paymentInstructions",
+                      { defaultValue: "Payment Instructions" },
+                    )}
                   </div>
                   <div className="mt-1 whitespace-pre-wrap">
-                    {paymentInstructions || "(none provided)"}
+                    {paymentInstructions ||
+                      t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.noneProvided",
+                        { defaultValue: "(none provided)" },
+                      )}
                   </div>
                 </div>
                 {footerText && (
                   <div className="mt-4">
                     <div className="text-xs font-bold text-gray-700">
-                      Footer
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.footer",
+                        { defaultValue: "Footer" },
+                      )}
                     </div>
                     <div className="mt-1">{footerText}</div>
                   </div>
@@ -1972,26 +2269,44 @@ export const GenerateInvoiceViewApi = () => {
               <div className="text-sm">
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between">
-                    <span className="text-gray-700">Subtotal</span>
+                    <span className="text-gray-700">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.subtotal",
+                        { defaultValue: "Subtotal" },
+                      )}
+                    </span>
                     <span className="font-bold text-gray-900">
                       {money(subtotalCents)}
                     </span>
                   </div>
                   <div className="flex justify-between mt-2">
-                    <span className="text-gray-700">Expenses</span>
+                    <span className="text-gray-700">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.expenses",
+                        { defaultValue: "Expenses" },
+                      )}
+                    </span>
                     <span className="font-bold text-gray-900">
                       {money(expensesCents)}
                     </span>
                   </div>
                   <div className="flex justify-between mt-2">
-                    <span className="text-gray-700">Discount</span>
+                    <span className="text-gray-700">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.fields.discount",
+                        { defaultValue: "Discount" },
+                      )}
+                    </span>
                     <span className="font-bold text-gray-900">
                       -{money(discountCentsNum)}
                     </span>
                   </div>
                   <div className="flex justify-between mt-2">
                     <span className="text-gray-700">
-                      Tax{" "}
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.tax",
+                        { defaultValue: "Tax" },
+                      )}{" "}
                       {taxExempt
                         ? "(exempt)"
                         : taxRatePct
@@ -2003,15 +2318,31 @@ export const GenerateInvoiceViewApi = () => {
                     </span>
                   </div>
                   <div className="border-t border-gray-200 mt-3 pt-3 flex justify-between">
-                    <span className="text-gray-900 font-bold">Total</span>
+                    <span className="text-gray-900 font-bold">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.total",
+                        { defaultValue: "Total" },
+                      )}
+                    </span>
                     <span className="text-gray-900 font-bold">
                       {money(totalCents)}
                     </span>
                   </div>
                   <div className="mt-4 text-xs text-gray-600">
-                    Agency fee ({commissionPct}%): {money(agencyFeeCents)}
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.agencyFee",
+                      {
+                        percent: commissionPct,
+                        defaultValue: "Agency fee ({{percent}}%)",
+                      },
+                    )}
+                    : {money(agencyFeeCents)}
                     <br />
-                    Talent net: {money(talentNetCents)}
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceGenerationView.preview.talentNet",
+                      { defaultValue: "Talent net" },
+                    )}
+                    : {money(talentNetCents)}
                   </div>
                 </div>
               </div>
@@ -2023,7 +2354,10 @@ export const GenerateInvoiceViewApi = () => {
               onClick={() => setShowPreview(false)}
               className="h-10 px-5 rounded-xl border-gray-200 font-bold"
             >
-              Close
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceGenerationView.actions.close",
+                { defaultValue: "Close" },
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
