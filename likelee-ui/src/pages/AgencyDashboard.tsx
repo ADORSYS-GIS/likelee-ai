@@ -10725,7 +10725,9 @@ const ScoutingHubView = ({
   isSavingEvent: boolean;
   setIsSavingEvent: (saving: boolean) => void;
 }) => {
-  const [eventToDelete, setEventToDelete] = useState<ScoutingEvent | null>(null);
+  const [eventToDelete, setEventToDelete] = useState<ScoutingEvent | null>(
+    null,
+  );
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const { t } = useTranslation();
@@ -19155,7 +19157,9 @@ export default function AgencyDashboard() {
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
   const agencyTrialTierLabel = useMemo(() => {
     if (!agencyTrialActive) return "";
-    const tier = String(agencyBilling?.trial_tier || agencyPlanTier || "").trim();
+    const tier = String(
+      agencyBilling?.trial_tier || agencyPlanTier || "",
+    ).trim();
     if (tier === "pro") return "PRO";
     if (tier === "basic") return "BASIC";
     if (tier === "enterprise") return "ENTERPRISE";
@@ -21916,20 +21920,20 @@ export default function AgencyDashboard() {
                       }`}
                       title={t("agencyDashboard.dashboard.banner.currentPlan")}
                     >
-                       {agencyTrialActive ? (
-                         <span className="inline-flex items-center gap-2">
-                           <span>{agencyDisplayPlanLabel} TRIAL</span>
-                           {agencyTrialCountdown ? (
-                             <span className="text-[11px] font-black tracking-normal opacity-95">
-                               {agencyTrialCountdown}
-                             </span>
-                           ) : null}
-                         </span>
-                       ) : (
-                         String(agencyPlanTier || agencyDisplayPlanLabel || "")
-                           .trim()
-                           .toUpperCase()
-                       )}
+                      {agencyTrialActive ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span>{agencyDisplayPlanLabel} TRIAL</span>
+                          {agencyTrialCountdown ? (
+                            <span className="text-[11px] font-black tracking-normal opacity-95">
+                              {agencyTrialCountdown}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        String(agencyPlanTier || agencyDisplayPlanLabel || "")
+                          .trim()
+                          .toUpperCase()
+                      )}
                     </div>
                   )}
 
@@ -22212,9 +22216,7 @@ export default function AgencyDashboard() {
               />
             )}
             {activeTab === "talent-packages" && (
-              <PackagesView
-                isSportsAgency={isSportsAgency}
-              />
+              <PackagesView isSportsAgency={isSportsAgency} />
             )}
             {activeTab === "marketplace" && (
               <MarketplaceTab
