@@ -3531,7 +3531,18 @@ pub async fn send_offer_contract(
                             email: Some(brand_email.clone()),
                             role: Some("First Party".to_string()),
                             order: Some(1),
-                            fields: None,
+                            fields: Some(vec![
+                                crate::services::docuseal::SubmitterField {
+                                    name: "Brand Name".to_string(),
+                                    default_value: Some(brand_name.clone()),
+                                    readonly: Some(true),
+                                },
+                                crate::services::docuseal::SubmitterField {
+                                    name: "Brand Email".to_string(),
+                                    default_value: Some(brand_email.clone()),
+                                    readonly: Some(true),
+                                },
+                            ]),
                             values: None,
                         },
                         Submitter {
@@ -3539,7 +3550,18 @@ pub async fn send_offer_contract(
                             email: Some(creator_email.clone()),
                             role: Some("Second Party".to_string()),
                             order: Some(2),
-                            fields: None,
+                            fields: Some(vec![
+                                crate::services::docuseal::SubmitterField {
+                                    name: "Creator Name".to_string(),
+                                    default_value: Some(creator_name.clone()),
+                                    readonly: Some(true),
+                                },
+                                crate::services::docuseal::SubmitterField {
+                                    name: "Creator Email".to_string(),
+                                    default_value: Some(creator_email.clone()),
+                                    readonly: Some(true),
+                                },
+                            ]),
                             values: None,
                         },
                     ],
@@ -3750,7 +3772,18 @@ pub async fn send_offer_contract(
                             email: Some(agency_email.clone()),
                             role: Some("First Party".to_string()),
                             order: Some(0),
-                            fields: None,
+                            fields: Some(vec![
+                                crate::services::docuseal::SubmitterField {
+                                    name: "Agency Name".to_string(),
+                                    default_value: Some(agency_name.clone()),
+                                    readonly: Some(true),
+                                },
+                                crate::services::docuseal::SubmitterField {
+                                    name: "Agency Email".to_string(),
+                                    default_value: Some(agency_email.clone()),
+                                    readonly: Some(true),
+                                },
+                            ]),
                             values: None,
                         },
                         Submitter {
@@ -3758,7 +3791,18 @@ pub async fn send_offer_contract(
                             email: Some(brand_email.clone()),
                             role: Some("Second Party".to_string()),
                             order: Some(1),
-                            fields: None,
+                            fields: Some(vec![
+                                crate::services::docuseal::SubmitterField {
+                                    name: "Brand Name".to_string(),
+                                    default_value: Some(brand_name.clone()),
+                                    readonly: Some(true),
+                                },
+                                crate::services::docuseal::SubmitterField {
+                                    name: "Brand Email".to_string(),
+                                    default_value: Some(brand_email.clone()),
+                                    readonly: Some(true),
+                                },
+                            ]),
                             values: None,
                         },
                     ],

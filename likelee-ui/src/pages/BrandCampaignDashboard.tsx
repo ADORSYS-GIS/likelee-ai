@@ -3865,7 +3865,35 @@ export default function BrandCampaignDashboard({
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 w-full bg-gray-50 overflow-auto">
-            {brandSignUrl ? <DocusealForm src={brandSignUrl} /> : null}
+            {brandSignUrl ? (
+              <DocusealForm
+                src={brandSignUrl}
+                onComplete={async () => {
+                  setBrandSignOpen(false);
+                  if (awaitingBrandSignature) {
+                    setAwaitingBrandSignature(false);
+                    resetCampaignBuilder();
+                  }
+                  try {
+                    await refreshSelectedCampaignDetails();
+                  } catch {
+                    // ignore transient refresh issues; polling will catch up
+                  }
+                }}
+                onDecline={async () => {
+                  setBrandSignOpen(false);
+                  if (awaitingBrandSignature) {
+                    setAwaitingBrandSignature(false);
+                    resetCampaignBuilder();
+                  }
+                  try {
+                    await refreshSelectedCampaignDetails();
+                  } catch {
+                    // ignore transient refresh issues; polling will catch up
+                  }
+                }}
+              />
+            ) : null}
           </div>
           <DialogFooter className="p-4 border-t">
             <Button

@@ -10409,7 +10409,29 @@ export default function BrandDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 w-full bg-gray-50 overflow-auto">
-            {brandSignUrl ? <DocusealForm src={brandSignUrl} /> : null}
+            {brandSignUrl ? (
+              <DocusealForm
+                src={brandSignUrl}
+                onComplete={async () => {
+                  setBrandSignOpen(false);
+                  setBrandSignUrl(null);
+                  // Polling (30s interval) will pick up the status change from webhooks.
+                  // Force an immediate refresh of contract hub rows if on that section.
+                  if (activeSection === "campaigns-contract-hub") {
+                    setContractHubRows([]);
+                  }
+                }}
+                onDecline={async () => {
+                  setBrandSignOpen(false);
+                  setBrandSignUrl(null);
+                  // Polling (30s interval) will pick up the status change from webhooks.
+                  // Force an immediate refresh of contract hub rows if on that section.
+                  if (activeSection === "campaigns-contract-hub") {
+                    setContractHubRows([]);
+                  }
+                }}
+              />
+            ) : null}
           </div>
           <DialogFooter className="p-4 border-t">
             <Button

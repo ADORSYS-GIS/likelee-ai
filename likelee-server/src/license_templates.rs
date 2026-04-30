@@ -64,41 +64,48 @@ fn render_contract_to_html(body: &str, format: &str) -> String {
         body.to_string() // Already HTML
     };
 
-    format!(
-        r#"
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body {{
-                    font-family: 'Helvetica', 'Arial', sans-serif;
-                    line-height: 1.6;
-                    color: #1a202c;
-                    margin: 0;
-                    padding: 0;
-                }}
-                .container {{
-                    max-width: 800px;
-                    margin: 0 auto;
-                }}
-                h1 {{ font-size: 24pt; color: #1a202c; margin-bottom: 24pt; }}
-                h2 {{ font-size: 18pt; color: #2d3748; margin-top: 24pt; margin-bottom: 12pt; border-bottom: 1px solid #e2e8f0; }}
-                p {{ margin-bottom: 12pt; text-align: justify; }}
-                strong {{ font-weight: bold; }}
-                hr {{ border: 0; border-top: 1px solid #cbd5e0; margin: 24pt 0; }}
-                ul, ol {{ margin-bottom: 12pt; padding-left: 24pt; }}
-                li {{ margin-bottom: 6pt; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                {}
+    let signature_block = r#"
+        <div style="margin-top: 60px; padding-top: 30px; border-top: 2px solid #e2e8f0; page-break-inside: avoid;">
+            <h2 style="font-size: 16pt; color: #1a202c; margin-bottom: 20px;">Signatures</h2>
+
+            <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <h3 style="font-size: 12pt; color: #dc2626; margin-bottom: 12px;">First Party (Agency)</h3>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Name: {{Agency Name;role=First Party;type=text;default=;readonly=false}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Email: {{Agency Email;role=First Party;type=text;default=;readonly=false}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Date: {{Agency Date;role=First Party;type=datenow;default=;readonly=true}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 40px;">
+                        Signature: {{Agency Signature;role=First Party;type=signature;default=;readonly=false}}
+                    </p>
+                </div>
+                <div style="flex: 1; min-width: 250px;">
+                    <h3 style="font-size: 12pt; color: #2b6cb0; margin-bottom: 12px;">Second Party (Client)</h3>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Name: {{Client Name;role=Second Party;type=text;default=;readonly=false}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Email: {{Client Email;role=Second Party;type=text;default=;readonly=false}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Date: {{Client Date;role=Second Party;type=datenow;default=;readonly=true}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 40px;">
+                        Signature: {{Client Signature;role=Second Party;type=signature;default=;readonly=false}}
+                    </p>
+                </div>
             </div>
-        </body>
-        </html>
-        "#,
-        content_html
+        </div>
+    "#;
+
+    format!(
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><style>body{{font-family:Arial,sans-serif;line-height:1.6;padding:32px;color:#0f172a}} h1,h2,h3{{color:#111827}} p,li{{font-size:14px}}</style></head><body>{}{}</body></html>",
+        content_html, signature_block
     )
 }
 

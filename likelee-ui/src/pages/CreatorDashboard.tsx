@@ -9482,7 +9482,31 @@ export default function CreatorDashboard() {
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 w-full bg-gray-50 overflow-auto">
-              {creatorSignUrl ? <DocusealForm src={creatorSignUrl} /> : null}
+              {creatorSignUrl ? (
+                <DocusealForm
+                  src={creatorSignUrl}
+                  onComplete={async () => {
+                    setCreatorSignOpen(false);
+                    if (selectedOfferBriefId) {
+                      try {
+                        await loadOfferDetails(selectedOfferBriefId);
+                      } catch {
+                        // no-op
+                      }
+                    }
+                  }}
+                  onDecline={async () => {
+                    setCreatorSignOpen(false);
+                    if (selectedOfferBriefId) {
+                      try {
+                        await loadOfferDetails(selectedOfferBriefId);
+                      } catch {
+                        // no-op
+                      }
+                    }
+                  }}
+                />
+              ) : null}
             </div>
             <DialogFooter className="p-4 border-t">
               <Button

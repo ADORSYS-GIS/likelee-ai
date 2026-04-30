@@ -1216,7 +1216,34 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
               </div>
             </div>
             <div className="flex-1 overflow-auto">
-              {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+              {agencySignUrl ? (
+                <DocusealForm
+                  src={agencySignUrl}
+                  onComplete={async () => {
+                    if (currentSubmissionId) {
+                      try {
+                        await syncLicenseSubmissionStatus(currentSubmissionId);
+                      } catch {
+                        // ignore transient sync issues
+                      }
+                    }
+                    setAgencySignOpen(false);
+                    onComplete();
+                    onClose();
+                  }}
+                  onDecline={async () => {
+                    if (currentSubmissionId) {
+                      try {
+                        await syncLicenseSubmissionStatus(currentSubmissionId);
+                      } catch {
+                        // ignore transient sync issues
+                      }
+                    }
+                    setAgencySignOpen(false);
+                    onClose();
+                  }}
+                />
+              ) : null}
             </div>
           </div>
           <div className="p-4 border-t flex justify-end">

@@ -18,6 +18,7 @@ import { getLicenseTemplates, LicenseTemplate } from "@/api/licenseTemplates";
 import {
   createMarketplaceCreatorContract,
   finalizeMarketplaceCreatorContract,
+  syncMarketplaceContract,
   MarketplaceContractSummary,
 } from "@/api/marketplaceContracts";
 import { Loader2, ExternalLink } from "lucide-react";
@@ -403,7 +404,34 @@ export function MarketplaceConnectContractModal({
               </div>
             </div>
             <div className="flex-1 overflow-auto">
-              {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+              {agencySignUrl ? (
+                <DocusealForm
+                  src={agencySignUrl}
+                  onComplete={async () => {
+                    if (draftContract?.id) {
+                      try {
+                        await syncMarketplaceContract(draftContract.id);
+                      } catch {
+                        // ignore transient sync issues; polling will catch up
+                      }
+                    }
+                    setAgencySignOpen(false);
+                    onSuccess?.(draftContract || undefined);
+                    onClose();
+                  }}
+                  onDecline={async () => {
+                    if (draftContract?.id) {
+                      try {
+                        await syncMarketplaceContract(draftContract.id);
+                      } catch {
+                        // ignore transient sync issues
+                      }
+                    }
+                    setAgencySignOpen(false);
+                    onClose();
+                  }}
+                />
+              ) : null}
             </div>
           </div>
           <DialogFooter className="p-4 border-t">

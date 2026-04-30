@@ -76,9 +76,48 @@ fn render_contract_to_html(body: &str, format: &str) -> String {
         body.to_string()
     };
 
+    let signature_block = r#"
+        <div style="margin-top: 60px; padding-top: 30px; border-top: 2px solid #e2e8f0; page-break-inside: avoid;">
+            <h2 style="font-size: 16pt; color: #1a202c; margin-bottom: 20px;">Signatures</h2>
+
+            <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 250px;">
+                    <h3 style="font-size: 12pt; color: #dc2626; margin-bottom: 12px;">First Party (Agency)</h3>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Name: {{Agency Name;role=First Party;type=text;default=;readonly=false}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Email: {{Agency Email;role=First Party;type=text;default=;readonly=false}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Date: {{Agency Date;role=First Party;type=datenow;default=;readonly=true}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 40px;">
+                        Signature: {{Agency Signature;role=First Party;type=signature;default=;readonly=false}}
+                    </p>
+                </div>
+                <div style="flex: 1; min-width: 250px;">
+                    <h3 style="font-size: 12pt; color: #2b6cb0; margin-bottom: 12px;">Second Party (Creator)</h3>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Name: {{Creator Name;role=Second Party;type=text;default=;readonly=false}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Email: {{Creator Email;role=Second Party;type=text;default=;readonly=false}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
+                        Date: {{Creator Date;role=Second Party;type=datenow;default=;readonly=true}}
+                    </p>
+                    <p style="font-size: 11pt; color: #4a5568; margin-bottom: 40px;">
+                        Signature: {{Creator Signature;role=Second Party;type=signature;default=;readonly=false}}
+                    </p>
+                </div>
+            </div>
+        </div>
+    "#;
+
     format!(
-        "<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><style>body{{font-family:Arial,sans-serif;line-height:1.6;padding:32px;color:#0f172a}} h1,h2,h3{{color:#111827}} p,li{{font-size:14px}}</style></head><body>{}</body></html>",
-        content_html
+        "<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><style>body{{font-family:Arial,sans-serif;line-height:1.6;padding:32px;color:#0f172a}} h1,h2,h3{{color:#111827}} p,li{{font-size:14px}}</style></head><body>{}{}</body></html>",
+        content_html, signature_block
     )
 }
 
@@ -914,10 +953,21 @@ pub async fn finalize_contract_endpoint(
             vec![
                 Submitter {
                     name: Some(agency_name.clone()),
-                    email: Some(agency_email),
+                    email: Some(agency_email.clone()),
                     role: Some("First Party".to_string()),
                     order: Some(0),
-                    fields: None,
+                    fields: Some(vec![
+                        crate::services::docuseal::SubmitterField {
+                            name: "Agency Name".to_string(),
+                            default_value: Some(agency_name.clone()),
+                            readonly: Some(true),
+                        },
+                        crate::services::docuseal::SubmitterField {
+                            name: "Agency Email".to_string(),
+                            default_value: Some(agency_email.clone()),
+                            readonly: Some(true),
+                        },
+                    ]),
                     values: None,
                 },
                 Submitter {
@@ -925,7 +975,18 @@ pub async fn finalize_contract_endpoint(
                     email: creator_email.clone(),
                     role: Some("Second Party".to_string()),
                     order: Some(1),
-                    fields: None,
+                    fields: Some(vec![
+                        crate::services::docuseal::SubmitterField {
+                            name: "Creator Name".to_string(),
+                            default_value: Some(creator_name.clone()),
+                            readonly: Some(true),
+                        },
+                        crate::services::docuseal::SubmitterField {
+                            name: "Creator Email".to_string(),
+                            default_value: creator_email.clone(),
+                            readonly: Some(true),
+                        },
+                    ]),
                     values: None,
                 },
             ],
