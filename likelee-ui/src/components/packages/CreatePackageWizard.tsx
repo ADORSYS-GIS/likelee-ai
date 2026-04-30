@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Loader2,
@@ -85,6 +86,7 @@ export function CreatePackageWizard({
   isSportsAgency = false,
   offerContext = null,
 }: CreatePackageWizardProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
   const canViewConnections = hasPermission("view_brand_connections");
@@ -93,11 +95,31 @@ export function CreatePackageWizard({
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const entityPluralLower = isSportsAgency ? "athletes" : "talents";
   const steps = [
-    { id: "basic", title: "Basic Info", icon: Type },
-    { id: "talent", title: `Select ${entityPluralTitle}`, icon: User },
-    { id: "custom", title: "Customize", icon: Palette },
-    { id: "consent", title: "Consents", icon: ShieldCheck },
-    { id: "send", title: "Send", icon: Send },
+    {
+      id: "basic",
+      title: t("agencyDashboard.analytics.createPackage.steps.basic"),
+      icon: Type,
+    },
+    {
+      id: "talent",
+      title: t("agencyDashboard.analytics.createPackage.steps.talent"),
+      icon: User,
+    },
+    {
+      id: "custom",
+      title: t("agencyDashboard.analytics.createPackage.steps.custom"),
+      icon: Palette,
+    },
+    {
+      id: "consent",
+      title: t("agencyDashboard.analytics.createPackage.steps.consent"),
+      icon: ShieldCheck,
+    },
+    {
+      id: "send",
+      title: t("agencyDashboard.analytics.createPackage.steps.send"),
+      icon: Send,
+    },
   ];
   const [step, setStep] = useState(0);
   const [showTalentSelector, setShowTalentSelector] = useState(false);
@@ -151,8 +173,12 @@ export function CreatePackageWizard({
 
     if (!supabase || !user?.id) {
       toast({
-        title: "Upload unavailable",
-        description: "Please sign in again and retry the upload.",
+        title: t(
+          "agencyDashboard.analytics.createPackage.basicInfo.uploadUnavailable",
+        ),
+        description: t(
+          "agencyDashboard.analytics.createPackage.basicInfo.uploadUnavailableDesc",
+        ),
         variant: "destructive",
       });
       return;
@@ -160,14 +186,18 @@ export function CreatePackageWizard({
 
     if (!file.type?.startsWith("image/")) {
       toast({
-        title: "Invalid file",
-        description: "Please choose an image file.",
+        title: t(
+          "agencyDashboard.analytics.createPackage.basicInfo.invalidFile",
+        ),
+        description: t(
+          "agencyDashboard.analytics.createPackage.basicInfo.invalidFileDesc",
+        ),
         variant: "destructive",
       });
       return;
     }
 
-    setIsUploadingCover(true);
+    setCoverUploading(true);
     try {
       const safeName = (file.name || "cover")
         .toString()
@@ -199,16 +229,22 @@ export function CreatePackageWizard({
       }
 
       setFormData((prev) => ({ ...prev, cover_image_url: publicUrl }));
-      toast({ title: "Cover image uploaded" });
+      toast({
+        title: t(
+          "agencyDashboard.analytics.createPackage.basicInfo.coverUploaded",
+        ),
+      });
     } catch (err: any) {
       const msg = String(err?.message || err);
       toast({
-        title: "Cover upload failed",
+        title: t(
+          "agencyDashboard.analytics.createPackage.basicInfo.coverUploadFailed",
+        ),
         description: msg,
         variant: "destructive",
       });
     } finally {
-      setIsUploadingCover(false);
+      setCoverUploading(false);
     }
   };
 
@@ -309,26 +345,6 @@ export function CreatePackageWizard({
     },
     enabled: open && isOfferMode,
   });
-
-  // When a brand is selected (or the brand list loads with a pre-selected brand),
-  // always sync the brand's name and email into formData — these are the
-  // authoritative recipient details for offer packages.
-  useEffect(() => {
-    if (!isOfferMode || !selectedBrandId) return;
-    const list = Array.isArray(connectedBrands) ? connectedBrands : [];
-    const match = list.find(
-      (c: any) => String(c?.brand_id || "").trim() === selectedBrandId,
-    );
-    if (!match) return;
-    const brandName = String(match?.brands?.company_name || "").trim();
-    const brandEmail = String(match?.brands?.email || "").trim();
-    // Always overwrite with brand values — the brand is the recipient
-    setFormData((prev) => ({
-      ...prev,
-      client_name: brandName || brandEmail || prev.client_name,
-      client_email: brandEmail || prev.client_email,
-    }));
-  }, [selectedBrandId, connectedBrands, isOfferMode]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -472,14 +488,22 @@ export function CreatePackageWizard({
   const nextStep = async () => {
     if (step === 0 && !formData.title)
       return toast({
-        title: "Required",
-        description: "Title is required",
+        title: t("agencyDashboard.analytics.createPackage.validation.required"),
+        description: t(
+          "agencyDashboard.analytics.createPackage.validation.titleRequired",
+        ),
         variant: "destructive",
       });
     if (step === 1 && formData.items.length === 0)
       return toast({
-        title: "Empty",
-        description: `Please select at least one ${entitySingularLower}`,
+        title: t("agencyDashboard.analytics.createPackage.validation.empty"),
+        description: isSportsAgency
+          ? t(
+              "agencyDashboard.analytics.createPackage.validation.selectAthlete",
+            )
+          : t(
+              "agencyDashboard.analytics.createPackage.validation.selectTalent",
+            ),
         variant: "destructive",
       });
     if (
@@ -489,8 +513,10 @@ export function CreatePackageWizard({
         .filter(Boolean).length === 0
     )
       return toast({
-        title: "Consent Required",
-        description: "Add at least one consent point before continuing.",
+        title: t("agencyDashboard.analytics.createPackage.consents.title"),
+        description: t(
+          "agencyDashboard.analytics.createPackage.validation.addConsent",
+        ),
         variant: "destructive",
       });
 
@@ -573,23 +599,33 @@ export function CreatePackageWizard({
     if (!isTemplateMode && !isOfferMode) {
       if (!formData.client_name.trim()) {
         return toast({
-          title: "Required",
-          description: "Client Contact name is required.",
+          title: t(
+            "agencyDashboard.analytics.createPackage.validation.required",
+          ),
+          description: t(
+            "agencyDashboard.analytics.createPackage.send.clientNameRequired",
+          ),
           variant: "destructive",
         });
       }
       if (!formData.client_email.trim()) {
         return toast({
-          title: "Required",
-          description: "Delivery Email is required.",
+          title: t(
+            "agencyDashboard.analytics.createPackage.validation.required",
+          ),
+          description: t(
+            "agencyDashboard.analytics.createPackage.send.deliveryEmailRequired",
+          ),
           variant: "destructive",
         });
       }
       const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g;
       if (!emailRegex.test(formData.client_email)) {
         return toast({
-          title: "Invalid Email",
-          description: "Please enter a valid email address for delivery.",
+          title: t("agencyDashboard.analytics.createPackage.send.clientEmail"),
+          description: t(
+            "agencyDashboard.analytics.createPackage.send.invalidEmail",
+          ),
           variant: "destructive",
         });
       }
@@ -597,7 +633,7 @@ export function CreatePackageWizard({
 
     if (formData.password_protected && !formData.password.trim()) {
       return toast({
-        title: "Password Required",
+        title: t("agencyDashboard.analytics.createPackage.send.password"),
         description:
           "Please set a password for this protected package in the 'Customize' step.",
         variant: "destructive",
@@ -607,15 +643,19 @@ export function CreatePackageWizard({
     if (isOfferMode) {
       if (!offerContext?.offerId) {
         return toast({
-          title: "Missing offer",
-          description: "This package is not linked to an offer.",
+          title: t("agencyDashboard.analytics.createPackage.send.failed"),
+          description: t(
+            "agencyDashboard.analytics.createPackage.send.notLinkedToOffer",
+          ),
           variant: "destructive",
         });
       }
       if (!selectedBrandId.trim()) {
         return toast({
-          title: "Required",
-          description: "Please select a connected brand.",
+          title: t("agencyDashboard.analytics.createPackage.send.required"),
+          description: t(
+            "agencyDashboard.analytics.createPackage.send.selectConnectedBrand",
+          ),
           variant: "destructive",
         });
       }
@@ -630,20 +670,6 @@ export function CreatePackageWizard({
       .filter(Boolean);
 
     if (isOfferMode) {
-      const connectedBrandRows = Array.isArray(connectedBrands)
-        ? connectedBrands
-        : [];
-      const selectedBrand = connectedBrandRows.find(
-        (connection: any) =>
-          String(connection?.brand_id || "").trim() ===
-          String(selectedBrandId || "").trim(),
-      );
-      const selectedBrandName = String(
-        selectedBrand?.brands?.company_name || "",
-      ).trim();
-      const selectedBrandEmail = String(
-        selectedBrand?.brands?.email || "",
-      ).trim();
       const selectedTalentIds = itemsArray
         .map((it: any) => String(it?.talent_id || it?.id || "").trim())
         .filter(Boolean);
@@ -662,21 +688,12 @@ export function CreatePackageWizard({
         meta: {
           selected_talent_ids: selectedTalentIds,
           selected_brand_id: selectedBrandId,
-          selected_brand_name: selectedBrandName || undefined,
-          selected_brand_email: selectedBrandEmail || undefined,
-          skip_client_email_notification: true,
           wizard_source: "talent_packages",
           offer_id: offerContext.offerId,
         },
-        // Persist the real recipient identity on the package so downstream
-        // public-package actions can reuse it without prompting again.
-        // Prefer formData values (editable by agency) over brand-derived values.
-        client_email: selectedBrandEmail || formData.client_email,
-        client_name:
-          selectedBrandName ||
-          selectedBrandEmail ||
-          formData.client_name ||
-          "Brand Portal",
+        // Offer mode: bypass legacy email system and set neutral client name for logs
+        client_email: "",
+        client_name: "Brand Portal",
       };
 
       const offerPayload = {
@@ -703,7 +720,7 @@ export function CreatePackageWizard({
           consent_items: normalizedConsentItems,
           items: itemsArray.map((item: any) => ({
             talent_id: item.talent_id || item.id,
-            talent_name: item?.talent?.full_name || item?.talent_name,
+            talent_name: item?.talent?.name || item?.talent?.full_name,
             asset_ids: (item.assets || []).map((asset: any) => ({
               asset_id: asset.asset_id || asset.id,
               asset_type: asset.asset_type || asset.type || "image",
@@ -740,11 +757,21 @@ export function CreatePackageWizard({
             <div className="bg-indigo-50 border-b border-indigo-100 px-4 sm:px-6 py-3 flex items-center justify-center gap-2">
               <Copy className="w-4 h-4 text-indigo-600" />
               <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest">
-                Creating new package from{" "}
+                {t(
+                  "agencyDashboard.analytics.createPackage.fromTemplatePrefix",
+                  {
+                    defaultValue: "Creating new package from",
+                  },
+                )}{" "}
                 <span className="text-indigo-900">
                   "{packageToEdit?.title}"
                 </span>{" "}
-                template
+                {t(
+                  "agencyDashboard.analytics.createPackage.fromTemplateSuffix",
+                  {
+                    defaultValue: "template",
+                  },
+                )}
               </p>
             </div>
           )}
@@ -755,11 +782,20 @@ export function CreatePackageWizard({
               <div>
                 <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
                   {isEditMode
-                    ? `Edit ${entitySingularTitle} Package`
-                    : `Create a New ${entitySingularTitle} Package`}
+                    ? t("agencyDashboard.analytics.createPackage.editTitle", {
+                        defaultValue: "Edit {{entity}} Package",
+                        entity: entitySingularTitle,
+                      })
+                    : t("agencyDashboard.analytics.createPackage.title", {
+                        defaultValue: `Create a New ${entitySingularTitle} Package`,
+                      })}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
-                  {`Build a beautiful portfolio package to showcase your ${entitySingularLower} to clients`}
+                  {t("agencyDashboard.analytics.createPackage.subtitle", {
+                    defaultValue:
+                      "Build a beautiful portfolio package to showcase your {{entity}} to clients",
+                    entity: entitySingularLower,
+                  })}
                 </DialogDescription>
               </div>
             </div>
@@ -805,10 +841,15 @@ export function CreatePackageWizard({
                   <div className="space-y-8 max-w-2xl mx-auto w-full">
                     <div className="space-y-3">
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                        Package Title *
+                        {t(
+                          "agencyDashboard.analytics.createPackage.basicInfo.titleLabel",
+                        )}{" "}
+                        *
                       </Label>
                       <Input
-                        placeholder="e.g. Summer Campaign 2026"
+                        placeholder={t(
+                          "agencyDashboard.analytics.createPackage.basicInfo.titlePlaceholder",
+                        )}
                         value={formData.title}
                         onChange={(e) =>
                           setFormData({ ...formData, title: e.target.value })
@@ -818,10 +859,21 @@ export function CreatePackageWizard({
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                        Introduction Note
+                        {t(
+                          "agencyDashboard.analytics.createPackage.basicInfo.descriptionLabel",
+                          {
+                            defaultValue: "Introduction Note",
+                          },
+                        )}
                       </Label>
                       <Textarea
-                        placeholder="Share the vision for this selection..."
+                        placeholder={t(
+                          "agencyDashboard.analytics.createPackage.basicInfo.descriptionPlaceholder",
+                          {
+                            defaultValue:
+                              "Share the vision for this selection...",
+                          },
+                        )}
                         value={formData.description}
                         onChange={(e) =>
                           setFormData({
@@ -834,7 +886,9 @@ export function CreatePackageWizard({
                     </div>
                     <div className="space-y-3">
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
-                        Cover Image
+                        {t(
+                          "agencyDashboard.analytics.createPackage.basicInfo.coverImage",
+                        )}
                       </Label>
                       <div className="flex gap-3">
                         <Input
@@ -855,7 +909,17 @@ export function CreatePackageWizard({
                             <ImageIcon className="w-4 h-4 text-gray-500" />
                           )}
                           <span className="text-xs font-bold text-gray-600">
-                            {coverUploading ? "Uploading..." : "Upload"}
+                            {coverUploading
+                              ? t(
+                                  "agencyDashboard.analytics.createPackage.common.loading",
+                                  {
+                                    defaultValue: "Uploading...",
+                                  },
+                                )
+                              : t(
+                                  "agencyDashboard.analytics.createPackage.basicInfo.uploadCover",
+                                  { defaultValue: "Upload" },
+                                )}
                           </span>
                           <input
                             type="file"
@@ -867,8 +931,12 @@ export function CreatePackageWizard({
                               if (!file) return;
                               if (!file.type.startsWith("image/")) {
                                 toast({
-                                  title: "Invalid file",
-                                  description: "Please select an image file.",
+                                  title: t(
+                                    "agencyDashboard.analytics.createPackage.upload.invalidFile",
+                                  ),
+                                  description: t(
+                                    "agencyDashboard.analytics.createPackage.upload.invalidFileDesc",
+                                  ),
                                   variant: "destructive",
                                 });
                                 return;
@@ -888,13 +956,19 @@ export function CreatePackageWizard({
                                     ...prev,
                                     cover_image_url: url,
                                   }));
-                                  toast({ title: "Image uploaded" });
+                                  toast({
+                                    title: t(
+                                      "agencyDashboard.analytics.createPackage.upload.imageUploaded",
+                                    ),
+                                  });
                                 } else {
                                   throw new Error("Upload returned no URL");
                                 }
                               } catch (err: any) {
                                 toast({
-                                  title: "Upload failed",
+                                  title: t(
+                                    "agencyDashboard.analytics.createPackage.upload.uploadFailed",
+                                  ),
                                   description:
                                     err?.message || "Please try again.",
                                   variant: "destructive",
@@ -1020,7 +1094,10 @@ export function CreatePackageWizard({
                               full_name: item?.talent_name || "Talent",
                             };
                           const talentName = String(
-                            resolvedTalent?.full_name ||
+                            resolvedTalent?.stage_name ||
+                              resolvedTalent?.name ||
+                              resolvedTalent?.full_legal_name ||
+                              resolvedTalent?.full_name ||
                               item?.talent_name ||
                               "Talent",
                           ).trim();
@@ -1086,8 +1163,12 @@ export function CreatePackageWizard({
                                 >
                                   <Layers className="w-4 h-4" />
                                   {assetsCount > 0
-                                    ? "Update Selection"
-                                    : "Select Assets"}
+                                    ? t(
+                                        "agencyDashboard.analytics.createPackage.common.save",
+                                      )
+                                    : t(
+                                        "agencyDashboard.analytics.createPackage.selectTalents.addTalent",
+                                      )}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -1124,7 +1205,9 @@ export function CreatePackageWizard({
                     <div className="space-y-8">
                       <div className="space-y-1">
                         <h3 className="text-2xl font-black text-gray-900 tracking-tighter">
-                          Package Controls
+                          {t(
+                            "agencyDashboard.analytics.createPackage.customize.title",
+                          )}
                         </h3>
                         <p className="text-sm text-gray-400 font-medium">
                           Fine-tune the client experience and permissions
@@ -1134,17 +1217,23 @@ export function CreatePackageWizard({
                         {[
                           {
                             id: "allow_comments",
-                            label: "Client Feedback",
+                            label: t(
+                              "agencyDashboard.analytics.createPackage.customize.allowComments",
+                            ),
                             desc: `Allow clients to leave notes on specific ${entityPluralLower}`,
                           },
                           {
                             id: "allow_favorites",
-                            label: "Interest Tracking",
+                            label: t(
+                              "agencyDashboard.analytics.createPackage.customize.allowFavorites",
+                            ),
                             desc: `Let clients favorite ${entityPluralLower} to shortlist them`,
                           },
                           {
                             id: "allow_callbacks",
-                            label: "Callback Requests",
+                            label: t(
+                              "agencyDashboard.analytics.createPackage.customize.allowCallbacks",
+                            ),
                             desc: "Clients can directly request inquiries or callbacks",
                           },
                           {
@@ -1206,7 +1295,13 @@ export function CreatePackageWizard({
                               onClick={() => setShowPassword((prev) => !prev)}
                               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                               aria-label={
-                                showPassword ? "Hide password" : "Show password"
+                                showPassword
+                                  ? t(
+                                      "agencyDashboard.analytics.createPackage.send.password",
+                                    )
+                                  : t(
+                                      "agencyDashboard.analytics.createPackage.send.password",
+                                    )
                               }
                             >
                               {showPassword ? (
@@ -1224,7 +1319,9 @@ export function CreatePackageWizard({
                       <div className="flex items-center gap-3 mb-2">
                         <Calendar className="w-5 h-5 text-indigo-600" />
                         <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          Privacy Expiration
+                          {t(
+                            "agencyDashboard.analytics.createPackage.send.expiryDate",
+                          )}
                         </Label>
                       </div>
                       <Input
@@ -1250,7 +1347,9 @@ export function CreatePackageWizard({
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">
-                          Consent Checklist
+                          {t(
+                            "agencyDashboard.analytics.createPackage.consents.consentItems",
+                          )}
                         </h4>
                         <p className="text-xs text-gray-500 font-medium mt-1">
                           Default points are prefilled. Edit, remove, or add
@@ -1265,7 +1364,9 @@ export function CreatePackageWizard({
                         className="h-8 px-3 text-xs font-bold"
                       >
                         <Plus className="w-3.5 h-3.5 mr-1" />
-                        Add Point
+                        {t(
+                          "agencyDashboard.analytics.createPackage.consents.addConsent",
+                        )}
                       </Button>
                     </div>
                     <div className="space-y-2">
@@ -1301,7 +1402,9 @@ export function CreatePackageWizard({
                     <div className="space-y-6">
                       <div className="space-y-1">
                         <h3 className="text-2xl font-black text-gray-900 tracking-tight">
-                          Ready to send?
+                          {t(
+                            "agencyDashboard.analytics.createPackage.send.title",
+                          )}
                         </h3>
                         <p className="text-sm text-gray-500 font-medium">
                           {isOfferMode
@@ -1316,7 +1419,9 @@ export function CreatePackageWizard({
                             <Lock className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
                             <div>
                               <p className="text-xs font-black text-red-900 uppercase tracking-widest">
-                                Password Missing
+                                {t(
+                                  "agencyDashboard.analytics.createPackage.send.password",
+                                )}
                               </p>
                               <p className="text-sm text-red-700 font-medium mt-1">
                                 This package has access control enabled but no
@@ -1330,17 +1435,24 @@ export function CreatePackageWizard({
                       {isOfferMode && (
                         <div className="space-y-2">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                            Recipient Brand *
+                            {t(
+                              "agencyDashboard.analytics.createPackage.send.selectBrand",
+                            )}
                           </Label>
                           {canViewConnections ? (
                             <select
                               value={selectedBrandId}
-                              onChange={(e) => {
-                                setSelectedBrandId(e.target.value);
-                              }}
+                              onChange={(e) =>
+                                setSelectedBrandId(e.target.value)
+                              }
                               className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                             >
-                              <option value="">Select a brand…</option>
+                              <option value="">
+                                {t(
+                                  "agencyDashboard.analytics.createPackage.send.selectBrand",
+                                )}
+                                …
+                              </option>
                               {(Array.isArray(connectedBrands)
                                 ? connectedBrands
                                 : []
@@ -1378,59 +1490,71 @@ export function CreatePackageWizard({
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {isOfferMode ? (
-                          (() => {
-                            const list = Array.isArray(connectedBrands)
-                              ? connectedBrands
-                              : [];
-                            const match = list.find(
-                              (c: any) =>
-                                String(c?.brand_id || "").trim() ===
-                                String(selectedBrandId || "").trim(),
-                            );
-                            const displayName =
-                              String(
-                                match?.brands?.company_name || "",
-                              ).trim() ||
-                              String(match?.brands?.email || "").trim() ||
-                              formData.client_name;
-                            const displayEmail =
-                              String(match?.brands?.email || "").trim() ||
-                              formData.client_email;
-                            return (
-                              <>
-                                <div className="space-y-3">
-                                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                    Client Contact
-                                  </Label>
-                                  <Input
-                                    readOnly
-                                    value={displayName}
-                                    className="h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium text-gray-700 cursor-default"
-                                  />
-                                </div>
-                                <div className="space-y-3">
-                                  <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                    Delivery Email
-                                  </Label>
-                                  <Input
-                                    readOnly
-                                    type="email"
-                                    value={displayEmail}
-                                    className="h-12 bg-gray-50 border border-gray-200 rounded-lg px-4 font-medium text-gray-700 cursor-default"
-                                  />
-                                  <p className="text-xs text-gray-500 font-medium">
-                                    Delivered via inbox (email is
-                                    informational).
-                                  </p>
-                                </div>
-                              </>
-                            );
-                          })()
+                          <>
+                            <div className="space-y-3">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                {t(
+                                  "agencyDashboard.analytics.createPackage.send.clientName",
+                                )}
+                              </Label>
+                              <Input
+                                readOnly
+                                value={(() => {
+                                  const list = Array.isArray(connectedBrands)
+                                    ? connectedBrands
+                                    : [];
+                                  const match = list.find(
+                                    (c: any) =>
+                                      String(c?.brand_id || "").trim() ===
+                                      String(selectedBrandId || "").trim(),
+                                  );
+                                  return (
+                                    String(
+                                      match?.brands?.company_name || "",
+                                    ).trim() ||
+                                    String(match?.brands?.email || "").trim() ||
+                                    ""
+                                  );
+                                })()}
+                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                              />
+                            </div>
+                            <div className="space-y-3">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                {t(
+                                  "agencyDashboard.analytics.createPackage.send.clientEmail",
+                                )}
+                              </Label>
+                              <Input
+                                readOnly
+                                type="email"
+                                value={(() => {
+                                  const list = Array.isArray(connectedBrands)
+                                    ? connectedBrands
+                                    : [];
+                                  const match = list.find(
+                                    (c: any) =>
+                                      String(c?.brand_id || "").trim() ===
+                                      String(selectedBrandId || "").trim(),
+                                  );
+                                  return String(
+                                    match?.brands?.email || "",
+                                  ).trim();
+                                })()}
+                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                              />
+                              <p className="text-xs text-gray-500 font-medium">
+                                Delivered via inbox (email is informational).
+                              </p>
+                            </div>
+                          </>
                         ) : (
                           <>
                             <div className="space-y-3">
                               <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                Client Contact *
+                                {t(
+                                  "agencyDashboard.analytics.createPackage.send.clientName",
+                                )}
                               </Label>
                               <Input
                                 placeholder="e.g. John Doe"
@@ -1446,7 +1570,9 @@ export function CreatePackageWizard({
                             </div>
                             <div className="space-y-3">
                               <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                                Delivery Email *
+                                {t(
+                                  "agencyDashboard.analytics.createPackage.send.clientEmail",
+                                )}
                               </Label>
                               <Input
                                 type="email"
@@ -1472,7 +1598,9 @@ export function CreatePackageWizard({
                       </div>
                       <h4 className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-500 mb-6 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                        Live Preview Summary
+                        {t(
+                          "agencyDashboard.analytics.createPackage.send.title",
+                        )}
                       </h4>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
@@ -1496,14 +1624,19 @@ export function CreatePackageWizard({
                                 (acc, it) => acc + it.assets.length,
                                 0,
                               )}{" "}
-                              Assets
+                              {t(
+                                "agencyDashboard.analytics.createPackage.common.loading",
+                              )}
                             </Badge>
                           </div>
 
                           {formData.expires_at && (
                             <div className="flex items-center gap-2 text-[10px] font-bold text-orange-600 uppercase tracking-widest bg-orange-50 px-3 py-2 rounded-lg w-fit">
                               <Calendar className="w-3 h-3" />
-                              Expires:{" "}
+                              {t(
+                                "agencyDashboard.analytics.createPackage.send.expiryDate",
+                              )}
+                              :{" "}
                               {new Date(
                                 formData.expires_at,
                               ).toLocaleDateString()}
@@ -1514,7 +1647,9 @@ export function CreatePackageWizard({
                         <div className="space-y-6">
                           <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100">
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">
-                              Active Experience
+                              {t(
+                                "agencyDashboard.analytics.createPackage.customize.title",
+                              )}
                             </p>
                             <div className="grid grid-cols-2 gap-3">
                               {[
@@ -1569,18 +1704,25 @@ export function CreatePackageWizard({
                                 style={{
                                   backgroundColor: formData.primary_color,
                                 }}
-                                title="Primary Color"
+                                title={t(
+                                  "agencyDashboard.analytics.createPackage.customize.primaryColor",
+                                )}
                               />
                               <div
                                 className="w-8 h-8 rounded-full border-2 border-white shadow-sm"
                                 style={{
                                   backgroundColor: formData.secondary_color,
                                 }}
-                                title="Secondary Color"
+                                title={t(
+                                  "agencyDashboard.analytics.createPackage.customize.secondaryColor",
+                                )}
                               />
                             </div>
                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                              Branding applied
+                              {t(
+                                "agencyDashboard.analytics.createPackage.customize.brandingApplied",
+                                { defaultValue: "Branding applied" },
+                              )}
                             </p>
                           </div>
                         </div>
@@ -1603,10 +1745,11 @@ export function CreatePackageWizard({
               className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
             >
               {step === 0 ? (
-                "Cancel"
+                t("agencyDashboard.analytics.createPackage.common.cancel")
               ) : (
                 <>
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                  <ArrowLeft className="w-4 h-4 mr-2" />{" "}
+                  {t("agencyDashboard.analytics.createPackage.common.previous")}
                 </>
               )}
             </Button>
@@ -1622,7 +1765,7 @@ export function CreatePackageWizard({
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <span className="flex items-center gap-2">
-                      Continue{" "}
+                      {t("agencyDashboard.analytics.createPackage.common.next")}{" "}
                       <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                     </span>
                   )}

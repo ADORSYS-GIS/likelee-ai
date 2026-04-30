@@ -19,6 +19,7 @@ import {
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 export const CampaignModal = ({
   open,
@@ -31,6 +32,7 @@ export const CampaignModal = ({
   initialData?: any;
   onSaveSuccess?: (campaign: any) => void;
 }) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: "",
     status: "created",
@@ -82,14 +84,22 @@ export const CampaignModal = ({
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["bookings-campaigns"] });
       toast({
-        title: initialData?.id ? "Campaign updated" : "Campaign created",
+        title: initialData?.id
+          ? t("agencyDashboard.bookings.campaignModal.toasts.updated", {
+              defaultValue: "Campaign updated",
+            })
+          : t("agencyDashboard.bookings.campaignModal.toasts.created", {
+              defaultValue: "Campaign created",
+            }),
       });
       if (onSaveSuccess) onSaveSuccess(data);
       onOpenChange(false);
     },
     onError: (error: any) => {
       toast({
-        title: "Error saving campaign",
+        title: t("agencyDashboard.bookings.campaignModal.toasts.error", {
+          defaultValue: "Error saving campaign",
+        }),
         description: error.message,
         variant: "destructive",
       });
@@ -100,8 +110,10 @@ export const CampaignModal = ({
     e.preventDefault();
     if (!formData.name) {
       toast({
-        title: "Please fill in the campaign name",
-        variant: "warning",
+        title: t("agencyDashboard.bookings.campaignModal.errors.missingName", {
+          defaultValue: "Please fill in the campaign name",
+        }),
+        variant: "destructive",
       });
       return;
     }
@@ -128,26 +140,45 @@ export const CampaignModal = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {initialData ? "Edit Campaign" : "Create New Campaign"}
+            {initialData
+              ? t("agencyDashboard.bookings.campaignModal.titleEdit", {
+                  defaultValue: "Edit Campaign",
+                })
+              : t("agencyDashboard.bookings.campaignModal.titleCreate", {
+                  defaultValue: "Create New Campaign",
+                })}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Campaign Name *</Label>
+            <Label htmlFor="name">
+              {t("agencyDashboard.bookings.campaignModal.fields.name", {
+                defaultValue: "Campaign Name *",
+              })}
+            </Label>
             <Input
               id="name"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              placeholder="e.g. Summer Shoot 2024"
+              placeholder={t(
+                "agencyDashboard.bookings.campaignModal.placeholders.name",
+                {
+                  defaultValue: "e.g. Summer Shoot 2024",
+                },
+              )}
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">
+                {t("agencyDashboard.bookings.campaignModal.fields.status", {
+                  defaultValue: "Status",
+                })}
+              </Label>
               <Select
                 value={formData.status}
                 onValueChange={(v) => setFormData({ ...formData, status: v })}
@@ -156,14 +187,39 @@ export const CampaignModal = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="created">Created</SelectItem>
-                  <SelectItem value="ongoing">Ongoing</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="created">
+                    {t(
+                      "agencyDashboard.bookings.campaignModal.statuses.created",
+                      {
+                        defaultValue: "Created",
+                      },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="ongoing">
+                    {t(
+                      "agencyDashboard.bookings.campaignModal.statuses.ongoing",
+                      {
+                        defaultValue: "Ongoing",
+                      },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    {t(
+                      "agencyDashboard.bookings.campaignModal.statuses.completed",
+                      {
+                        defaultValue: "Completed",
+                      },
+                    )}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="duration">Duration (days)</Label>
+              <Label htmlFor="duration">
+                {t("agencyDashboard.bookings.campaignModal.fields.duration", {
+                  defaultValue: "Duration (days)",
+                })}
+              </Label>
               <Input
                 id="duration"
                 type="number"
@@ -177,7 +233,11 @@ export const CampaignModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="start_date">Start Date</Label>
+            <Label htmlFor="start_date">
+              {t("agencyDashboard.bookings.campaignModal.fields.startDate", {
+                defaultValue: "Start Date",
+              })}
+            </Label>
             <Input
               id="start_date"
               type="date"
@@ -195,14 +255,22 @@ export const CampaignModal = ({
               onClick={() => onOpenChange(false)}
               disabled={mutation.isPending}
             >
-              Cancel
+              {t("agencyDashboard.bookings.campaignModal.actions.cancel", {
+                defaultValue: "Cancel",
+              })}
             </Button>
             <Button
               type="submit"
               disabled={mutation.isPending}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all"
             >
-              {mutation.isPending ? "Saving..." : "Save Campaign"}
+              {mutation.isPending
+                ? t("agencyDashboard.bookings.campaignModal.actions.saving", {
+                    defaultValue: "Saving...",
+                  })
+                : t("agencyDashboard.bookings.campaignModal.actions.save", {
+                    defaultValue: "Save Campaign",
+                  })}
             </Button>
           </DialogFooter>
         </form>

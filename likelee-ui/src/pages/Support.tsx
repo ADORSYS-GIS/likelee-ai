@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 
 export default function Support() {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: "",
     subject: "",
@@ -57,17 +59,16 @@ export default function Support() {
             <Mail className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Support
+            {t("supportPage.hero.title")}
           </h1>
           <p className="text-xl text-gray-700 leading-relaxed max-w-2xl mx-auto mb-4">
-            Need a hand? We've got you. The fastest way to reach us is{" "}
+            {t("supportPage.hero.subtitle")}{" "}
             <button
               onClick={() => {
                 navigator.clipboard.writeText(CONTACT_EMAIL);
                 toast({
-                  title: "Copied to Clipboard",
-                  description:
-                    "Support email address has been copied to your clipboard.",
+                  title: t("supportPage.footer.copied"),
+                  description: t("supportPage.footer.copiedDescription"),
                 });
               }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
@@ -77,22 +78,19 @@ export default function Support() {
             .
           </p>
           <p className="text-lg text-gray-600">
-            We read every message. Please include as much detail as you can
-            (screenshots, links, steps to reproduce). We'll reply as quickly as
-            possible.
+            {t("supportPage.hero.description")}
           </p>
         </div>
 
         <div className="max-w-3xl mx-auto">
           <p className="text-center text-sm text-gray-600 mb-6">
-            Or email us directly at{" "}
+            {t("supportPage.footer.orEmail")}{" "}
             <button
               onClick={() => {
                 navigator.clipboard.writeText(CONTACT_EMAIL);
                 toast({
-                  title: "Copied to Clipboard",
-                  description:
-                    "Support email address has been copied to your clipboard.",
+                  title: t("supportPage.footer.copied"),
+                  description: t("supportPage.footer.copiedDescription"),
                 });
               }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
@@ -109,10 +107,10 @@ export default function Support() {
                 <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Message Sent!
+                {t("supportPage.success.title")}
               </h3>
               <p className="text-gray-600">
-                Thank you for your message. We'll get back to you soon.
+                {t("supportPage.success.description")}
               </p>
             </div>
           ) : (
@@ -122,7 +120,7 @@ export default function Support() {
                   htmlFor="email"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  Your Email *
+                  {t("supportPage.form.emailLabel")}
                 </Label>
                 <Input
                   id="email"
@@ -133,7 +131,7 @@ export default function Support() {
                     setFormData({ ...formData, email: e.target.value })
                   }
                   className="border-2 border-gray-300 rounded-none"
-                  placeholder="you@example.com"
+                  placeholder={t("supportPage.form.emailPlaceholder")}
                 />
               </div>
 
@@ -142,7 +140,7 @@ export default function Support() {
                   htmlFor="subject"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  Subject *
+                  {t("supportPage.form.subjectLabel")}
                 </Label>
                 <Input
                   id="subject"
@@ -153,7 +151,7 @@ export default function Support() {
                     setFormData({ ...formData, subject: e.target.value })
                   }
                   className="border-2 border-gray-300 rounded-none"
-                  placeholder="How can we help?"
+                  placeholder={t("supportPage.form.subjectPlaceholder")}
                 />
               </div>
 
@@ -162,7 +160,7 @@ export default function Support() {
                   htmlFor="message"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  Your Question *
+                  {t("supportPage.form.messageLabel")}
                 </Label>
                 <Textarea
                   id="message"
@@ -172,7 +170,7 @@ export default function Support() {
                     setFormData({ ...formData, message: e.target.value })
                   }
                   className="border-2 border-gray-300 rounded-none min-h-[200px]"
-                  placeholder="Please include as much detail as possible: what you're trying to do, what's happening, any error messages, screenshots, etc."
+                  placeholder={t("supportPage.form.messagePlaceholder")}
                 />
               </div>
 
@@ -181,7 +179,9 @@ export default function Support() {
                 disabled={sending}
                 className="w-full h-14 text-lg font-medium bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:from-[#2AB8C1] hover:to-teal-600 text-white border-2 border-black rounded-none"
               >
-                {sending ? "Sending..." : "Send Message"}
+                {sending
+                  ? t("supportPage.form.sending")
+                  : t("supportPage.form.sendButton")}
               </Button>
             </form>
           )}
@@ -189,14 +189,13 @@ export default function Support() {
 
         <div className="mt-8 text-center">
           <p className="text-gray-600">
-            Or email us directly at{" "}
+            {t("supportPage.footer.orEmail")}{" "}
             <button
               onClick={() => {
                 navigator.clipboard.writeText(CONTACT_EMAIL);
                 toast({
-                  title: "Copied to Clipboard",
-                  description:
-                    "Support email address has been copied to your clipboard.",
+                  title: t("supportPage.footer.copied"),
+                  description: t("supportPage.footer.copiedDescription"),
                 });
               }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
