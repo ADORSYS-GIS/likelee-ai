@@ -1757,32 +1757,7 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
 
           if (error) throw error;
 
-          if (Array.isArray(data) && data.length > 0) {
-            const mapped = data.map((t: any) => ({
-              id: t.id,
-              template_key: t.template_key,
-              name: t.name,
-              subject: templateValueForDisplay(t.subject),
-              body: templateValueForDisplay(t.body),
-              is_active: !!t.is_active,
-            }));
-            const order = new Map<string, number>([
-              ["booking_confirmation", 1],
-              ["invoice_email", 2],
-              ["payment_reminder", 3],
-            ]);
-            mapped.sort((a, b) => {
-              const aKey = String(a.template_key || "");
-              const bKey = String(b.template_key || "");
-              const aRank = order.get(aKey) ?? 99;
-              const bRank = order.get(bKey) ?? 99;
-              if (aRank !== bRank) return aRank - bRank;
-              return aKey.localeCompare(bKey);
-            });
-            setEmailTemplates(mapped);
-            return;
-          }
-
+          // Always prepare defaults with current language translations
           const defaults = [
             {
               template_key: "booking_confirmation",
@@ -1858,7 +1833,42 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
             .upsert(seedPayload, { onConflict: "agency_id,template_key" });
 
           if (seedError) throw seedError;
-          setEmailTemplates(defaults);
+
+          // Now fetch the updated templates from database
+          const { data: updatedData, error: fetchError } = await supabase
+            .from("agency_email_templates")
+            .select("id, template_key, name, subject, body, is_active")
+            .eq("agency_id", effectiveAgencyId)
+            .order("updated_at", { ascending: false });
+
+          if (fetchError) throw fetchError;
+
+          if (Array.isArray(updatedData) && updatedData.length > 0) {
+            const mapped = updatedData.map((t: any) => ({
+              id: t.id,
+              template_key: t.template_key,
+              name: t.name,
+              subject: templateValueForDisplay(t.subject),
+              body: templateValueForDisplay(t.body),
+              is_active: !!t.is_active,
+            }));
+            const order = new Map<string, number>([
+              ["booking_confirmation", 1],
+              ["invoice_email", 2],
+              ["payment_reminder", 3],
+            ]);
+            mapped.sort((a, b) => {
+              const aKey = String(a.template_key || "");
+              const bKey = String(b.template_key || "");
+              const aRank = order.get(aKey) ?? 99;
+              const bRank = order.get(bKey) ?? 99;
+              if (aRank !== bRank) return aRank - bRank;
+              return aKey.localeCompare(bKey);
+            });
+            setEmailTemplates(mapped);
+          } else {
+            setEmailTemplates(defaults);
+          }
         } catch (e: any) {
           toast({
             title: "Failed to load email templates",
