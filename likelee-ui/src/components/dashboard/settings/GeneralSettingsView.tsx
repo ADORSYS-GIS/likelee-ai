@@ -1786,23 +1786,59 @@ const GeneralSettingsView = (props: GeneralSettingsViewProps) => {
           const defaults = [
             {
               template_key: "booking_confirmation",
-              name: "Booking Confirmation",
-              subject: "Booking Confirmed - {client_name}",
-              body: `Hi ${entityNameToken},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}`,
+              name: t(
+                "agencyDashboard.settings.emailTemplates.defaults.bookingConfirmation.name",
+                { defaultValue: "Booking Confirmation" },
+              ),
+              subject: t(
+                "agencyDashboard.settings.emailTemplates.defaults.bookingConfirmation.subject",
+                { defaultValue: "Booking Confirmed - {client_name}" },
+              ),
+              body: t(
+                "agencyDashboard.settings.emailTemplates.defaults.bookingConfirmation.body",
+                {
+                  defaultValue: `Hi ${entityNameToken},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}`,
+                  entityNameToken,
+                },
+              ),
               is_active: true,
             },
             {
               template_key: "invoice_email",
-              name: "Invoice Email",
-              subject: "Invoice {invoice_number} from {agency_name}",
-              body: "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}",
+              name: t(
+                "agencyDashboard.settings.emailTemplates.defaults.invoiceEmail.name",
+                { defaultValue: "Invoice Email" },
+              ),
+              subject: t(
+                "agencyDashboard.settings.emailTemplates.defaults.invoiceEmail.subject",
+                { defaultValue: "Invoice {invoice_number} from {agency_name}" },
+              ),
+              body: t(
+                "agencyDashboard.settings.emailTemplates.defaults.invoiceEmail.body",
+                {
+                  defaultValue:
+                    "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}",
+                },
+              ),
               is_active: true,
             },
             {
               template_key: "payment_reminder",
-              name: "Payment Reminder",
-              subject: "Payment Reminder - Invoice {invoice_number}",
-              body: "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}",
+              name: t(
+                "agencyDashboard.settings.emailTemplates.defaults.paymentReminder.name",
+                { defaultValue: "Payment Reminder" },
+              ),
+              subject: t(
+                "agencyDashboard.settings.emailTemplates.defaults.paymentReminder.subject",
+                { defaultValue: "Payment Reminder - Invoice {invoice_number}" },
+              ),
+              body: t(
+                "agencyDashboard.settings.emailTemplates.defaults.paymentReminder.body",
+                {
+                  defaultValue:
+                    "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}",
+                },
+              ),
               is_active: true,
             },
           ];
