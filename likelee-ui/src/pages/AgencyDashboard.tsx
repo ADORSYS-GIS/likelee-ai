@@ -21899,20 +21899,20 @@ export default function AgencyDashboard() {
                       }`}
                       title={t("agencyDashboard.dashboard.banner.currentPlan")}
                     >
-                      {agencyTrialActive ? (
-                        <span className="inline-flex items-center gap-2">
-                          <span>{agencyTrialTierLabel} TRIAL</span>
-                          {agencyTrialCountdown ? (
-                            <span className="text-[11px] font-black tracking-normal opacity-95">
-                              {agencyTrialCountdown}
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        String(agencyPlanTier || agencyDisplayPlanLabel || "")
-                          .trim()
-                          .toUpperCase()
-                      )}
+                       {agencyTrialActive ? (
+                         <span className="inline-flex items-center gap-2">
+                           <span>{agencyDisplayPlanLabel} TRIAL</span>
+                           {agencyTrialCountdown ? (
+                             <span className="text-[11px] font-black tracking-normal opacity-95">
+                               {agencyTrialCountdown}
+                             </span>
+                           ) : null}
+                         </span>
+                       ) : (
+                         String(agencyPlanTier || agencyDisplayPlanLabel || "")
+                           .trim()
+                           .toUpperCase()
+                       )}
                     </div>
                   )}
 
