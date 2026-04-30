@@ -213,39 +213,39 @@ export default function TalentAgency() {
           <div className="grid md:grid-cols-3 gap-8">
             {/* Recurring Revenue That Scales */}
             <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none flex flex-col">
-              <div className="w-12 h-12 mb-6">
+              <div className="w-12 h-12 mb-6 flex-shrink-0">
                 <DollarSign className="w-12 h-12 text-indigo-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 {t("talentAgency.whyAgenciesWin.revenue.title")}
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed flex-1">
                 {t("talentAgency.whyAgenciesWin.revenue.description")}
               </p>
             </Card>
 
             {/* Talent Stays Because They Feel Secure */}
             <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none flex flex-col">
-              <div className="w-12 h-12 mb-6">
+              <div className="w-12 h-12 mb-6 flex-shrink-0">
                 <Users className="w-12 h-12 text-purple-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 {t("talentAgency.whyAgenciesWin.retention.title")}
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed flex-1">
                 {t("talentAgency.whyAgenciesWin.retention.description")}
               </p>
             </Card>
 
             {/* Legal Protection Built In */}
             <Card className="p-8 md:p-10 bg-white border-2 border-black rounded-none flex flex-col">
-              <div className="w-12 h-12 mb-6">
+              <div className="w-12 h-12 mb-6 flex-shrink-0">
                 <Shield className="w-12 h-12 text-green-600" />
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 {t("talentAgency.whyAgenciesWin.protection.title")}
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-gray-700 leading-relaxed flex-1">
                 {t("talentAgency.whyAgenciesWin.protection.description")}
               </p>
             </Card>
