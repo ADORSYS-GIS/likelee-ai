@@ -116,12 +116,14 @@ interface BrandConnectionsViewProps {
   requestsCount?: number;
   offersCount?: number;
   feedbackCount?: number;
+  userId?: string;
 }
 
 const BrandConnectionsView = ({
-  requestsCount = 0,
-  offersCount = 0,
-  feedbackCount = 0,
+  requestsCount,
+  offersCount,
+  feedbackCount,
+  userId,
 }: BrandConnectionsViewProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -1216,11 +1218,13 @@ const BrandConnectionsView = ({
     }
   };
 
-  // Track viewed feedback items in localStorage
+  // Track viewed feedback items in localStorage (keyed by user ID to avoid cross-account leakage)
   const [viewedFeedbackIds, setViewedFeedbackIds] = useState<Set<string>>(
     () => {
+      if (typeof window === "undefined") return new Set(); // SSR guard
       try {
-        const saved = localStorage.getItem("viewed_feedback_ids");
+        const userKey = userId || "anonymous";
+        const saved = localStorage.getItem(`viewed_feedback_ids_${userKey}`);
         return saved ? new Set(JSON.parse(saved)) : new Set();
       } catch {
         return new Set();
@@ -1230,11 +1234,13 @@ const BrandConnectionsView = ({
 
   // Save viewed feedback IDs to localStorage
   useEffect(() => {
+    if (typeof window === "undefined") return; // SSR guard
+    const userKey = userId || "anonymous";
     localStorage.setItem(
-      "viewed_feedback_ids",
+      `viewed_feedback_ids_${userKey}`,
       JSON.stringify(Array.from(viewedFeedbackIds)),
     );
-  }, [viewedFeedbackIds]);
+  }, [viewedFeedbackIds, userId]);
 
   // Mark feedback as viewed when on feedback tab
   useEffect(() => {
@@ -1264,15 +1270,17 @@ const BrandConnectionsView = ({
     }).length;
   }, [feedbackItems, viewedFeedbackIds]);
 
-  // Use props if provided, otherwise calculate from queries
-  const pendingRequests = requestsCount > 0 ? requestsCount : requests.length;
+  // Use props if provided (check !== undefined), otherwise calculate from queries
+  // This correctly handles when parent passes 0 intentionally (no pending items)
+  const pendingRequests =
+    requestsCount !== undefined ? requestsCount : requests.length;
   const pendingOffers =
-    offersCount > 0
+    offersCount !== undefined
       ? offersCount
       : offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
   // Use unviewed count for feedback instead of total count
   const pendingFeedback =
-    feedbackCount > 0
+    feedbackCount !== undefined
       ? Math.max(
           0,
           feedbackCount - (feedbackItems.length - unviewedFeedbackCount),

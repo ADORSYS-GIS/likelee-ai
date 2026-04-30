@@ -17753,15 +17753,20 @@ export default function AgencyDashboard() {
         ).length
       : 0;
 
-    // Calculate unviewed feedback count
+    // Calculate unviewed feedback count (keyed by user ID to avoid cross-account leakage)
     const feedbackItems = Array.isArray(brandConnectionFeedbackQuery.data)
       ? brandConnectionFeedbackQuery.data
       : [];
 
     let viewedFeedbackIds: Set<string>;
     try {
-      const saved = localStorage.getItem("viewed_feedback_ids");
-      viewedFeedbackIds = saved ? new Set(JSON.parse(saved)) : new Set();
+      if (typeof window !== "undefined") {
+        const userKey = user?.id || "anonymous";
+        const saved = localStorage.getItem(`viewed_feedback_ids_${userKey}`);
+        viewedFeedbackIds = saved ? new Set(JSON.parse(saved)) : new Set();
+      } else {
+        viewedFeedbackIds = new Set();
+      }
     } catch {
       viewedFeedbackIds = new Set();
     }
@@ -17776,6 +17781,7 @@ export default function AgencyDashboard() {
     brandConnectionRequestsCountQuery.data,
     brandConnectionOffersQuery.data,
     brandConnectionFeedbackQuery.data,
+    user?.id,
   ]);
 
   const pendingBrandConnectionCount = useMemo(() => {
@@ -20560,6 +20566,7 @@ export default function AgencyDashboard() {
                     requestsCount={brandCounts.numRequests}
                     offersCount={brandCounts.numOffers}
                     feedbackCount={brandCounts.numFeedback}
+                    userId={user?.id}
                   />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
@@ -20585,6 +20592,7 @@ export default function AgencyDashboard() {
                     requestsCount={brandCounts.numRequests}
                     offersCount={brandCounts.numOffers}
                     feedbackCount={brandCounts.numFeedback}
+                    userId={user?.id}
                   />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
