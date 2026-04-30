@@ -108,19 +108,7 @@ const extractDeliverableCount = (value: unknown): number => {
   return counted > 0 ? counted : lines.length;
 };
 
-interface BrandConnectionsViewProps {
-  requestsCount?: number;
-  offersCount?: number;
-  feedbackCount?: number;
-  userId?: string;
-}
-
-const BrandConnectionsView = ({
-  requestsCount,
-  offersCount,
-  feedbackCount,
-  userId,
-}: BrandConnectionsViewProps) => {
+const BrandConnectionsView = () => {
   const { t } = useTranslation();
   const tBrand = (path: string, options?: Record<string, any>) => {
     const fallback = t(
@@ -1219,79 +1207,44 @@ const BrandConnectionsView = ({
     }
   };
 
-  // Track viewed feedback items in localStorage (keyed by user ID to avoid cross-account leakage)
-  const [viewedFeedbackIds, setViewedFeedbackIds] = useState<Set<string>>(
-    () => {
-      if (typeof window === "undefined") return new Set(); // SSR guard
-      try {
-        const userKey = userId || "anonymous";
-        const saved = localStorage.getItem(`viewed_feedback_ids_${userKey}`);
-        return saved ? new Set(JSON.parse(saved)) : new Set();
-      } catch {
-        return new Set();
+  const pendingRequests = requests.length;
+  const pendingOffers = offers.filter((o) =>
+    ["sent", "viewed"].includes(o.status),
+  ).length;
+  const pendingFeedback = feedbackItems.length;
+
+  React.useEffect(() => {
+    setSeenCounts((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      if (activeTab === "requests" && prev.requests !== pendingRequests) {
+        next.requests = pendingRequests;
+        changed = true;
       }
-    },
-  );
-
-  // Save viewed feedback IDs to localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return; // SSR guard
-    const userKey = userId || "anonymous";
-    localStorage.setItem(
-      `viewed_feedback_ids_${userKey}`,
-      JSON.stringify(Array.from(viewedFeedbackIds)),
-    );
-  }, [viewedFeedbackIds, userId]);
-
-  // Mark feedback as viewed when on feedback tab
-  useEffect(() => {
-    if (activeTab === "feedback" && feedbackItems.length > 0) {
-      const newViewedIds = new Set(viewedFeedbackIds);
-      let hasNewViews = false;
-
-      feedbackItems.forEach((item: any) => {
-        const feedbackId = String(item?.id || "");
-        if (feedbackId && !newViewedIds.has(feedbackId)) {
-          newViewedIds.add(feedbackId);
-          hasNewViews = true;
-        }
-      });
-
-      if (hasNewViews) {
-        setViewedFeedbackIds(newViewedIds);
+      if (activeTab === "offers" && prev.offers !== pendingOffers) {
+        next.offers = pendingOffers;
+        changed = true;
       }
-    }
-  }, [activeTab, feedbackItems, viewedFeedbackIds]);
+      if (activeTab === "feedback" && prev.feedback !== pendingFeedback) {
+        next.feedback = pendingFeedback;
+        changed = true;
+      }
 
-  // Calculate unviewed feedback count
-  const unviewedFeedbackCount = useMemo(() => {
-    return feedbackItems.filter((item: any) => {
-      const feedbackId = String(item?.id || "");
-      return feedbackId && !viewedFeedbackIds.has(feedbackId);
-    }).length;
-  }, [feedbackItems, viewedFeedbackIds]);
+      if (changed) {
+        localStorage.setItem(
+          "brand_connections_seen_counts",
+          JSON.stringify(next),
+        );
+        return next;
+      }
+      return prev;
+    });
+  }, [activeTab, pendingRequests, pendingOffers, pendingFeedback]);
 
-  // Use props if provided (check !== undefined), otherwise calculate from queries
-  // This correctly handles when parent passes 0 intentionally (no pending items)
-  const pendingRequests =
-    requestsCount !== undefined ? requestsCount : requests.length;
-  const pendingOffers =
-    offersCount !== undefined
-      ? offersCount
-      : offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
-  // Use unviewed count for feedback instead of total count
-  const pendingFeedback =
-    feedbackCount !== undefined
-      ? Math.max(
-          0,
-          feedbackCount - (feedbackItems.length - unviewedFeedbackCount),
-        )
-      : unviewedFeedbackCount;
-
-  // Always show badges - they disappear when count reaches 0
-  const showRequestsBadge = pendingRequests > 0;
-  const showOffersBadge = pendingOffers > 0;
-  const showFeedbackBadge = pendingFeedback > 0;
+  const showRequestsBadge = pendingRequests > (seenCounts.requests || 0);
+  const showOffersBadge = pendingOffers > (seenCounts.offers || 0);
+  const showFeedbackBadge = pendingFeedback > (seenCounts.feedback || 0);
 
   if (accessLoading) {
     return (
@@ -1343,150 +1296,69 @@ const BrandConnectionsView = ({
           </div>
         </div>
       )}
-      <DashboardSectionHeader
-        title={tBrand("title")}
-        description={tBrand("ui.subtitle")}
-      />
-
-      {/* Mobile Tabs: Horizontal Scroll */}
-      <div className="flex gap-2 mb-6 sm:hidden overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-        {[
-          {
-            id: "connections",
-            label: tBrand("connectedBrands"),
-            badge: null,
-            active: activeTab === "connections",
-            onClick: () => setActiveTab("connections"),
-          },
-          {
-            id: "requests",
-            label: tBrand("requests"),
-            badge: showRequestsBadge ? pendingRequests : null,
-            active: activeTab === "requests",
-            onClick: () => setActiveTab("requests"),
-          },
-          {
-            id: "offers",
-            label: tBrand("brandOffers"),
-            badge: showOffersBadge ? pendingOffers : null,
-            active: activeTab === "offers",
-            onClick: () => setActiveTab("offers"),
-          },
-          {
-            id: "contract_hub",
-            label: tBrand("contractHub.title"),
-            badge: null,
-            active: activeTab === "contract_hub",
-            onClick: () => setActiveTab("contract_hub"),
-          },
-          {
-            id: "deliverables",
-            label: tBrand("deliverables"),
-            badge: null,
-            active: false,
-            onClick: () => {
-              navigate("/AgencyDashboard?tab=deliverables");
-              setActiveTab("connections");
-            },
-          },
-          {
-            id: "feedback",
-            label: tBrand("packageFeedback"),
-            badge: showFeedbackBadge ? pendingFeedback : null,
-            active: activeTab === "feedback",
-            onClick: () => setActiveTab("feedback"),
-          },
-        ].map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={item.onClick}
-            className={`min-h-[40px] rounded-xl px-4 py-2 text-center text-[13px] font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
-              item.active
-                ? "bg-indigo-50/70 text-indigo-700 shadow-sm ring-1 ring-indigo-700/10"
-                : "bg-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-900 border border-transparent"
-            }`}
-          >
-            {item.label}
-            {item.badge !== null && (
-              <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-indigo-600 rounded-full min-w-[20px]">
-                {item.badge}
-              </span>
-            )}
-          </button>
-        ))}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">{tBrand("title")}</h2>
+        <p className="text-gray-600">{tBrand("ui.subtitle")}</p>
       </div>
-      <div className="hidden sm:block">
-        <DashboardTabRail
-          items={[
-            {
-              id: "connections",
-              label: tBrand("connectedBrands"),
-              active: activeTab === "connections",
-              onClick: () => setActiveTab("connections"),
-            },
-            {
-              id: "requests",
-              label: (
-                <span className="flex items-center gap-2">
-                  {tBrand("requests")}
-                  {showRequestsBadge && (
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-indigo-600 rounded-full min-w-[20px]">
-                      {pendingRequests}
-                    </span>
-                  )}
-                </span>
-              ),
-              active: activeTab === "requests",
-              onClick: () => setActiveTab("requests"),
-            },
-            {
-              id: "offers",
-              label: (
-                <span className="flex items-center gap-2">
-                  {tBrand("brandOffers")}
-                  {showOffersBadge && (
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-indigo-600 rounded-full min-w-[20px]">
-                      {pendingOffers}
-                    </span>
-                  )}
-                </span>
-              ),
-              active: activeTab === "offers",
-              onClick: () => setActiveTab("offers"),
-            },
-            {
-              id: "contract_hub",
-              label: tBrand("contractHub.title"),
-              active: activeTab === "contract_hub",
-              onClick: () => setActiveTab("contract_hub"),
-            },
-            {
-              id: "deliverables",
-              label: tBrand("deliverables"),
-              active: false,
-              onClick: () => {
-                navigate("/AgencyDashboard?tab=deliverables");
-                setActiveTab("connections");
-              },
-            },
-            {
-              id: "feedback",
-              label: (
-                <span className="flex items-center gap-2">
-                  {tBrand("packageFeedback")}
-                  {showFeedbackBadge && (
-                    <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-indigo-600 rounded-full min-w-[20px]">
-                      {pendingFeedback}
-                    </span>
-                  )}
-                </span>
-              ),
-              active: activeTab === "feedback",
-              onClick: () => setActiveTab("feedback"),
-            },
-          ]}
-        />
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={activeTab === "connections" ? "default" : "outline"}
+          onClick={() => setActiveTab("connections")}
+        >
+          {tBrand("connectedBrands")}
+        </Button>
+        <Button
+          variant={activeTab === "requests" ? "default" : "outline"}
+          onClick={() => setActiveTab("requests")}
+          className="relative"
+        >
+          {tBrand("requests")}
+          {showRequestsBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingRequests - (seenCounts.requests || 0)}
+            </Badge>
+          )}
+        </Button>
+        <Button
+          variant={activeTab === "offers" ? "default" : "outline"}
+          onClick={() => setActiveTab("offers")}
+          className="relative"
+        >
+          {tBrand("brandOffers")}
+          {showOffersBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingOffers - (seenCounts.offers || 0)}
+            </Badge>
+          )}
+        </Button>
+        <Button
+          variant={activeTab === "contract_hub" ? "default" : "outline"}
+          onClick={() => setActiveTab("contract_hub")}
+        >
+          {tBrand("contractHub.title")}
+        </Button>
+        <Button
+          variant={activeTab === "deliverables" ? "default" : "outline"}
+          onClick={() => {
+            navigate("/AgencyDashboard?tab=deliverables");
+            setActiveTab("connections");
+          }}
+        >
+          {tBrand("deliverables")}
+        </Button>
+        <Button
+          variant={activeTab === "feedback" ? "default" : "outline"}
+          onClick={() => setActiveTab("feedback")}
+          className="relative"
+        >
+          {tBrand("packageFeedback")}
+          {showFeedbackBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingFeedback - (seenCounts.feedback || 0)}
+            </Badge>
+          )}
+        </Button>
       </div>
 
       {activeTab === "connections" && (
