@@ -5296,7 +5296,10 @@ pub async fn list_brand_inbox_packages(
 pub async fn dismiss_brand_inbox_package(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(PackagePath { offer_id, package_id }): Path<PackagePath>,
+    Path(PackagePath {
+        offer_id,
+        package_id,
+    }): Path<PackagePath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
@@ -8452,8 +8455,8 @@ pub async fn handle_webhook(
     let status_update = match payload.event_type.as_str() {
         "submission.started" | "submission.opened" | "submission.viewed" | "form.started"
         | "form.viewed" => Some("opened"),
-        "submission.completed" => Some("completed"),   // ALL parties signed
-        "form.completed" => Some("partially_signed"),  // ONE party signed
+        "submission.completed" => Some("completed"), // ALL parties signed
+        "form.completed" => Some("partially_signed"), // ONE party signed
         "submission.declined" | "form.declined" => Some("declined"),
         _ => None,
     };
