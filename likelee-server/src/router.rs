@@ -1048,6 +1048,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::brand_campaigns::mark_brand_package_done),
         )
         .route(
+            "/api/campaign-offers/:offer_id/packages/:package_id/dismiss",
+            post(crate::brand_campaigns::dismiss_brand_inbox_package),
+        )
+        .route(
             "/api/agency/brand-offers/package-feedback",
             get(crate::brand_campaigns::list_agency_package_feedback),
         )

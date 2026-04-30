@@ -366,6 +366,12 @@ pub struct OfferPath {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct PackagePath {
+    pub offer_id: String,
+    pub package_id: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct OfferContractPath {
     pub offer_id: String,
     pub contract_id: String,
@@ -5250,11 +5256,22 @@ pub async fn list_brand_inbox_packages(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    // Exclude:
+    // 1. Packages the brand explicitly dismissed (dismissed_by_brand = true)
+    // 2. Expired packages — hidden immediately after expires_at passes
+    //    — packages with status = 'feedback_received' are never auto-hidden
+    //      regardless of expiry because they have active downstream state.
+    let now = chrono::Utc::now().to_rfc3339();
     let resp = state
         .pg
         .from("campaign_offer_packages")
         .select("*,campaign_offers(id,status,target_type,target_id,offer_title,brand_campaigns(name)),agencies(id,agency_name)")
         .eq("brand_id", &user.id)
+        .eq("dismissed_by_brand", "false")
+        .or(format!(
+            "expires_at.is.null,expires_at.gt.{},status.eq.feedback_received",
+            now
+        ))
         .order("created_at.desc")
         .execute()
         .await
@@ -5269,6 +5286,85 @@ pub async fn list_brand_inbox_packages(
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     Ok(Json(json!({"packages": rows})))
+}
+
+/// POST /api/campaign-offers/:offer_id/packages/:package_id/dismiss
+///
+/// Soft-hides a package from the brand's inbox by setting dismissed_by_brand = true.
+/// Blocked when status = 'feedback_received' — talent assignments and contracts
+/// may already be in progress and the record must remain visible.
+pub async fn dismiss_brand_inbox_package(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(PackagePath { offer_id, package_id }): Path<PackagePath>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    // Fetch the package to validate ownership and check status.
+    let pkg_resp = state
+        .pg
+        .from("campaign_offer_packages")
+        .select("id,status,brand_id")
+        .eq("id", &package_id)
+        .eq("offer_id", &offer_id)
+        .eq("brand_id", &user.id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !pkg_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "package not found".to_string()));
+    }
+
+    let pkg_text = pkg_resp.text().await.unwrap_or_default();
+    let pkg: serde_json::Value = serde_json::from_str(&pkg_text).unwrap_or_default();
+
+    let pkg_status = pkg
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+
+    // Block dismissal of finalized packages — they have active downstream state.
+    if pkg_status == "feedback_received" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "cannot_dismiss_finalized_package".to_string(),
+        ));
+    }
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let update_resp = state
+        .pg
+        .from("campaign_offer_packages")
+        .eq("id", &package_id)
+        .eq("offer_id", &offer_id)
+        .eq("brand_id", &user.id)
+        .update(
+            json!({
+                "dismissed_by_brand": true,
+                "updated_at": now,
+            })
+            .to_string(),
+        )
+        .select("id,status,dismissed_by_brand")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !update_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            update_resp.status().as_u16(),
+            update_resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    Ok(Json(json!({"status": "ok"})))
 }
 
 pub async fn mark_brand_package_done(
