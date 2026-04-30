@@ -1,7 +1,7 @@
 # Role Separation Policy
 
 > **Last updated:** 2026-04-29
-> **Status:** Enforced at application layer + database layer
+> **Status:** Enforced at database layer, with backend error sanitization
 
 ## Summary
 
@@ -36,54 +36,7 @@ Each user account in LikeLee may hold **exactly one role**: `creator`, `brand`, 
 
 ## Enforcement Layers
 
-### Layer 1: Application-Level Validation (Backend)
-
-**File:** `likelee-server/src/auth.rs`
-
-The `ensure_single_role()` function is called during signup flows. It queries all three role tables and returns a `409 Conflict` if the user already has a profile in any of them:
-
-```rust
-pub async fn ensure_single_role(
-    state: &AppState,
-    user_id: &str,
-) -> Result<(), (StatusCode, String)> {
-    let tables = vec![
-        ("creator_profiles", "creator"),
-        ("agencies", "agency"),
-        ("brands", "brand"),
-    ];
-
-    for (table, role_name) in tables {
-        let resp = state
-            .pg
-            .from(table)
-            .select("id")
-            .eq("id", user_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| {
-                tracing::warn!("Failed to check {} for user {}: {}", table, user_id, e);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal error".to_string())
-            })?;
-
-        if resp.status().is_success() {
-            let text = resp.text().await.unwrap_or_default();
-            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-            if !rows.is_empty() {
-                return Err((
-                    StatusCode::CONFLICT,
-                    format!("Cannot mix roles: user already has {} profile", role_name),
-                ));
-            }
-        }
-    }
-
-    Ok(())
-}
-```
-
-### Layer 2: Database-Level Triggers
+### Layer 1: Database-Level Triggers
 
 **File:** `supabase/migrations/2026-04-29_enforce_single_role.sql`
 
@@ -93,9 +46,9 @@ The trigger logic:
 - **On INSERT:** Counts profiles across all three tables. Rejects if count > 0.
 - **On UPDATE:** Counts profiles in the *other two* tables only (excludes the current table since the row already exists). Rejects if count > 0.
 
-This provides a safety net even if the application-level check is bypassed.
+This provides a safety net even if profile creation bypasses backend validation.
 
-### Layer 3: Error Sanitization
+### Layer 2: Error Sanitization
 
 **File:** `likelee-server/src/errors.rs`
 
@@ -187,7 +140,6 @@ MFA (multi-factor authentication) is restricted to creator/talent users only. Br
 
 | Scenario | HTTP Status | Error Code | Message |
 |----------|-------------|------------|---------|
-| User already has profile in another role table (app check) | 409 | — | `"Cannot mix roles: user already has {role} profile"` |
 | User already has profile in another role table (DB trigger) | 409 | `23P01` | `"This account already has a profile with a different role..."` |
 | Profile not found | 404 | `profile_not_found` | `"{Role} profile not found."` |
 | Unauthorized profile access | 403 | — | `"You do not have permission to access this record."` |
@@ -222,9 +174,8 @@ If a user is found with multiple role profiles:
 
 ### Unit Tests
 
-1. **`ensure_single_role()`** — Test with user having 0, 1, and 2+ profiles
-2. **Database trigger** — Test INSERT and UPDATE scenarios for each table combination
-3. **Error sanitization** — Test that `23P01` maps to the correct user-friendly message
+1. **Database trigger** — Test INSERT and UPDATE scenarios for each table combination
+2. **Error sanitization** — Test that `23P01` maps to the correct user-friendly message
 
 ### Integration Tests
 
@@ -248,7 +199,7 @@ If a user is found with multiple role profiles:
 ## Files Reference
 
 ### Backend (Rust)
-- `likelee-server/src/auth.rs` — `ensure_single_role()`, `AuthUser` struct, JWT parsing
+- `likelee-server/src/auth.rs` — `AuthUser` struct, JWT parsing
 - `likelee-server/src/errors.rs` — `sanitize_db_error()` with role mixing error mapping
 - `likelee-server/src/creators.rs` — Creator registration and profile management
 - `likelee-server/src/brands.rs` — Brand registration and profile management

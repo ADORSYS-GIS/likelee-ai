@@ -2,8 +2,7 @@
 -- Date: 2026-04-29
 -- Purpose: Prevent a single auth.users id from having profiles in more than
 --          one role table (creators, brands, agencies). This is a safety net
---          that complements the application-level ensure_single_role() check
---          in likelee-server/src/auth.rs.
+--          that protects profile insert/update flows in the backend.
 
 BEGIN;
 
