@@ -811,7 +811,10 @@ export default function BrandDashboard() {
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
-  const [finalizedPackageInfo, setFinalizedPackageInfo] = useState<{ title: string; agencyName: string } | null>(null);
+  const [finalizedPackageInfo, setFinalizedPackageInfo] = useState<{
+    title: string;
+    agencyName: string;
+  } | null>(null);
   const [dismissingPkg, setDismissingPkg] = useState<any>(null);
   const [dismissingBusy, setDismissingBusy] = useState(false);
   const [confirmingDonePkgPublicData, setConfirmingDonePkgPublicData] =
@@ -4598,8 +4601,7 @@ export default function BrandDashboard() {
                               pkg?.campaign_offers?.brand_campaigns?.name ||
                               "Talent package",
                             agencyName:
-                              pkg?.agencies?.agency_name ||
-                              "the agency",
+                              pkg?.agencies?.agency_name || "the agency",
                           });
                           return;
                         }
@@ -12697,10 +12699,11 @@ export default function BrandDashboard() {
                     const msg = String(e?.message || "");
                     toast({
                       title: "Could not remove package",
-                      description:
-                        msg.includes("cannot_dismiss_finalized_package")
-                          ? "This package has been finalized and cannot be removed."
-                          : msg || "Please try again.",
+                      description: msg.includes(
+                        "cannot_dismiss_finalized_package",
+                      )
+                        ? "This package has been finalized and cannot be removed."
+                        : msg || "Please try again.",
                       variant: "destructive" as any,
                     });
                   } finally {
@@ -12750,9 +12753,8 @@ export default function BrandDashboard() {
                 <span className="font-semibold text-gray-700">
                   {finalizedPackageInfo?.agencyName}
                 </span>{" "}
-                has already been finalized. Talent assignments and contracts
-                are in progress and this package cannot be removed from your
-                inbox.
+                has already been finalized. Talent assignments and contracts are
+                in progress and this package cannot be removed from your inbox.
               </p>
             </div>
 
@@ -12771,7 +12773,8 @@ export default function BrandDashboard() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
-                  This package will automatically disappear from your inbox once its expiry date passes
+                  This package will automatically disappear from your inbox once
+                  its expiry date passes
                 </li>
               </ul>
             </div>
