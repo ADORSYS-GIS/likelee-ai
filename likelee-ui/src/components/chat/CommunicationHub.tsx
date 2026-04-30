@@ -11,7 +11,7 @@ export function CommunicationHub({
 }: {
   initialCreatorId?: string;
   translationPrefix?: string;
-  onInitialCreatorHandled?: () => void;    
+  onInitialCreatorHandled?: () => void;
 }) {
   const { t } = useTranslation();
   const { profile } = useAuth();
