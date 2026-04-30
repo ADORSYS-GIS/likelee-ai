@@ -443,7 +443,7 @@ export default function OrganizationSignup() {
   const getPostSignupDestination = React.useCallback(
     (targetFlow: "brand" | "agency" | null) => {
       if (targetFlow !== "brand") {
-        return "/AgencyDashboard";
+        return "/AgencySubscribe?post_signup=1";
       }
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -953,7 +953,7 @@ export default function OrganizationSignup() {
       // Clear auth intent after successful profile completion
       clearAuthIntent();
       if (flow === "agency") {
-        navigate("/AgencyDashboard", { replace: true });
+        navigate("/AgencySubscribe?post_signup=1", { replace: true });
         return;
       }
       // For brands, let the ProtectedRoute handle the redirect to pricing

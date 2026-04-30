@@ -1,0 +1,421 @@
+{
+  "common": {
+    "error": "Error",
+    "organization": "Organization",
+    "passwordRequired": "Password *",
+    "confirmPasswordRequired": "Confirm Password *",
+    "companyNamePlaceholder": "e.g., Acme Corporation",
+    "websitePlaceholder": "https://example.com",
+    "phonePlaceholder": "+1 (555) 000-0000",
+    "continue": "Continue",
+    "saving": "Saving..."
+  },
+  "identityVerification": "Identity Verification",
+  "identityVerificationMessage": "You record a 60-second guided video. We verify your identity against your government ID and confirm facial motion (liveness check). This stops imposters before they enter the system.",
+  "verificationFirst": "Verification First",
+  "verificationFirstMessage": "Every creator passes identity checks before their avatar goes live. Bad actors don't get a platform.",
+  "faqUnauthorizedUseTitle": "What if someone uses my asset without permission?",
+  "faqUnauthorizedUseDescription": "Watermarks + automated DMCA takedowns. We scan the web and issue takedowns automatically.",
+  "organizationSignup": {
+    "selectAndContinue": "Select and Continue",
+    "selectAll": "Select All",
+    "missingFieldsTitle": "Missing Fields",
+    "missingFieldsDescription": "Please fill in all required fields to proceed.",
+    "passwordMismatchTitle": "Passwords do not match",
+    "passwordMismatchDescription": "Please check your password and confirm password fields.",
+    "orgType": {
+      "brandCompany": "Brand / Company",
+      "productionStudio": "Production Studio",
+      "marketingAgency": "Marketing Agency",
+      "talentAgency": "Talent Agency"
+    },
+    "profileNotFoundTitle": "Profile Not Found",
+    "profileNotFoundDescription": "Could not find the organization profile. Please try again.",
+    "kycError": "Could not start KYC session. Please contact support.",
+    "kycFail": "Failed to initiate organization KYC.",
+    "kycVerifiedTitle": "Verification Complete",
+    "onboardingInProgressTitle": "Onboarding in Progress",
+    "kycVerifiedDescription": "Your organization has been successfully verified. You now have full access to the Likelee platform.",
+    "onboardingInProgressDescription": "Thank you for submitting your details. Our team is reviewing your application.",
+    "whatsNext": "What's Next?",
+    "kycRedirect": "Please complete your identity verification to proceed.",
+    "calendarLink": "Schedule a call with our onboarding team to fast-track your approval.",
+    "completeKycButton": "Complete Verification",
+    "signUpAs": "Sign up as",
+    "step": "Step",
+    "of": "of",
+    "companyInfo": "Company Info",
+    "agencyInfo": "Agency Info",
+    "startWithBasics": "Let's start with the basics.",
+    "emailPlaceholder": "company@example.com",
+    "passwordPlaceholder": "••••••••",
+    "errors": {
+      "not_admin": "You do not have permission to perform this action.",
+      "user_not_allowed": "User not allowed to register this organization.",
+      "duplicate_email": "This email is already associated with an organization.",
+      "generic": "An unexpected error occurred. Please try again.",
+      "invalidCredentials": "Incorrect email or password. Please check your details and try again.",
+      "weakPassword": "Your password is too short. Please use at least 6 characters.",
+      "emailNotConfirmed": "Please verify your email address. Check your inbox for a 6-digit verification code.",
+      "rateLimit": "Too many attempts. Please wait a moment before trying again.",
+      "networkError": "Connection lost. Please check your internet connection."
+    },
+    "companyEmail": "Company Email",
+    "agencyEmail": "Agency Email",
+    "confirmPassword": "Confirm Password",
+    "organizationName": "Organization Name",
+    "agencyName": "Agency Name",
+    "contactName": "Contact Name",
+    "contactTitle": "Contact Title",
+    "contactTitlePlaceholder": "e.g. Marketing Manager",
+    "agentName": "Primary Agent Name",
+    "agentTitle": "Agent Title",
+    "website": "Website",
+    "phoneNumber": "Phone Number",
+    "saving": "Saving...",
+    "continue": "Continue",
+    "back": "Back",
+    "submitting": "Submitting...",
+    "completeSignUp": "Complete Sign Up",
+    "terms": {
+      "title": "Terms & Agreements",
+      "subtitle": "Please review and agree to the Privacy Policy and Terms of Service to complete your registration.",
+      "agreeTo": "I agree to the",
+      "policyLink": "Privacy Policy",
+      "andTerms": "and Terms of Service",
+      "mustAgreeTitle": "Agreement Required",
+      "mustAgree": "You must agree to the terms to complete your registration.",
+      "completeRegistration": "Complete Registration",
+      "download": "Download"
+    },
+    "industries": {
+      "fashion": "Fashion",
+      "beauty": "Beauty",
+      "technology": "Technology",
+      "automotive": "Automotive",
+      "foodBeverage": "Food & Beverage",
+      "travel": "Travel",
+      "entertainment": "Entertainment",
+      "healthWellness": "Health & Wellness",
+      "finance": "Finance",
+      "other": "Other"
+    },
+    "brandDetails": {
+      "title": "Brand Details",
+      "subtitle": "Tell us more about your brand goals.",
+      "industry": "Industry",
+      "selectIndustry": "Select your industry",
+      "primaryGoal": "Primary Goal",
+      "selectAll": "Select All",
+      "geographicTarget": "Geographic Target",
+      "geographicTargetPlaceholder": "e.g. Global, US, Europe",
+      "provideCreatorsQuestion": "Do you represent creators?",
+      "provideCreators": "Yes, we have a roster",
+      "uploadOwnAssets": "No, we want to find talent"
+    },
+    "continueToVerification": "Continue to Verification",
+    "productionStudio": {
+      "title": "Studio Details",
+      "subtitle": "Tell us about your production work",
+      "primaryProductionType": "Primary Production Type *",
+      "budgetRangeLabel": "Typical Production Budget Range",
+      "selectProductionType": "Select production type",
+      "selectBudgetRange": "Select monthly budget",
+      "budgetRangeUnder10k": "Under $10k",
+      "budgetRange10k50k": "$10k - $50k",
+      "budgetRange50k250k": "$50k - $250k",
+      "budgetRange250k1m": "$250k - $1M",
+      "budgetRangeOver1m": "Over $1M",
+      "createsForQuestion": "Do you create for clients or your own IP?",
+      "forClients": "For clients",
+      "ownIp": "Own IP",
+      "both": "Both",
+      "usesAiQuestion": "Do you already use AI in your production workflow?",
+      "rolesNeededLabel": "What roles are you looking to fill through Likelee?"
+    },
+    "marketingAgency": {
+      "title": "Agency Details",
+      "subtitle": "Tell us about your agency",
+      "clientCountLabel": "Number of Client Brands Currently Managed",
+      "clientCountPlaceholder": "e.g., 5",
+      "campaignBudgetLabel": "Typical Campaign Budget Per Brand",
+      "campaignBudgetPlaceholder": "Select budget range",
+      "budgetUnder5k": "Under $5,000",
+      "budget5k25k": "$5,000 - $25,000",
+      "budget25k100k": "$25,000 - $100,000",
+      "budget100k500k": "$100,000 - $500,000",
+      "budgetOver500k": "Over $500,000",
+      "servicesLabel": "Primary Services Offered",
+      "matchCreatorsQuestion": "Would you like Likelee to match you with creators or just provide licensing tools?",
+      "matchWithCreators": "Match me with creators",
+      "justProvideTools": "Just provide licensing tools",
+      "handleContractsQuestion": "Do you handle contracts and royalties for clients or want Likelee to automate that?",
+      "weHandleIt": "We handle it",
+      "automateWithLikelee": "Automate with Likelee"
+    },
+    "talentAgency": {
+      "title": "Agency Details",
+      "subtitle": "Tell us about your talent roster",
+      "talentCountLabel": "Number of Models or Talent Represented",
+      "talentCountPlaceholder": "e.g., 25",
+      "licenseLikenessQuestion": "Do you currently license your models' likeness?",
+      "openToAiQuestion": "Are your talents open to AI recreation or only likeness protection?",
+      "campaignsPursuedLabel": "What types of campaigns or collaborations do you pursue most?",
+      "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
+    },
+    "sportsAgency": {
+      "title": "Sports Agency Details",
+      "subtitle": "Tell us about your athlete roster",
+      "athleteCount": "Number of Athletes Represented",
+      "licenseAthletesQuestion": "Do you currently license your athletes' likeness?",
+      "openToAiQuestion": "Are your athletes open to AI recreation or only likeness protection?",
+      "campaignTypesQuestion": "What types of campaigns or collaborations do you pursue most?",
+      "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
+    },
+    "options": {
+      "aiUsage": {
+        "yes": "Yes",
+        "no": "No",
+        "exploring": "Exploring",
+        "maybeLater": "Maybe later"
+      },
+      "productionTypes": {
+        "film": "Film",
+        "tv": "TV",
+        "commercial": "Commercial",
+        "musicVideo": "Music Video",
+        "animation": "Animation",
+        "mixedAiLive": "Mixed AI/Live"
+      },
+      "services": {
+        "socialMediaManagement": "Social media management",
+        "influencerCampaigns": "Influencer campaigns",
+        "videoAds": "Video ads",
+        "ugcProduction": "UGC production",
+        "contentCreation": "Content creation",
+        "brandStrategy": "Brand strategy"
+      },
+      "campaignTypes": {
+        "fashion": "Fashion",
+        "music": "Music",
+        "fitness": "Fitness",
+        "lifestyle": "Lifestyle",
+        "beauty": "Beauty",
+        "sports": "Sports",
+        "entertainment": "Entertainment"
+      },
+      "primaryGoals": {
+        "runAdCampaigns": "Run ad campaigns",
+        "findBrandAmbassadors": "Find brand ambassadors",
+        "licenseAiReadyFaces": "License AI-ready faces"
+      },
+      "rolesNeeded": {
+        "talentFacesVoices": "Talent (faces/voices)",
+        "postproductionAiGeneration": "Postproduction / AI generation",
+        "creativeCollaboration": "Creative collaboration"
+      },
+      "openToAiOptions": {
+        "aiRecreation": "AI recreation",
+        "likenessProtectionOnly": "Likeness protection only",
+        "variesByTalent": "Varies by talent"
+      }
+    }
+  },
+  "creatorSignup": {
+    "options": {
+      "contentTypes": {
+        "aiGeneratedFilms": "AI-generated films",
+        "aiDrivenCommercials": "AI-driven commercials",
+        "aiArtInstallations": "AI art installations",
+        "virtualRealityExperiences": "Virtual-reality experiences",
+        "interactiveMedia": "Interactive media",
+        "digitalFashion": "Digital fashion",
+        "musicVideos": "Music videos",
+        "other": "Other"
+      },
+      "aiTools": {
+        "adobeFirefly": "Adobe Firefly",
+        "dallE4": "DALL·E 4",
+        "googleVeo": "Google Veo",
+        "hailouMinimax": "Hailou Minimax",
+        "inVideoAi": "InVideo AI",
+        "klingAi": "Kling AI",
+        "lumaDreamMachine": "Luma Dream Machine",
+        "metaMovieGen": "Meta Movie Gen",
+        "midjourney": "Midjourney",
+        "openAiSora": "OpenAI Sora",
+        "pikaLabs": "Pika Labs",
+        "runwayGen4": "Runway Gen-4",
+        "stableDiffusionXl": "Stable Diffusion XL",
+        "stableVideoDiffusion": "Stable Video Diffusion",
+        "synthesia": "Synthesia",
+        "vidu": "Vidu",
+        "other": "Other"
+      }
+    }
+  },
+  "creatorSignupOptions.main.title": "What type of creator are you?",
+  "creatorSignupOptions.main.subtitle": "Choose the option that best describes you to get started with the right profile setup.",
+  "creatorSignupOptions.influencer.title": "Influencer / UGC Creator",
+  "creatorSignupOptions.influencer.description": "You create content, have an audience, or collaborate with brands.",
+  "creatorSignupOptions.model_actor.title": "Independent Model or Actor",
+  "creatorSignupOptions.model_actor.description": "You do castings, campaigns, or studio shoots — and want verified likeness protection + licensing opportunities.",
+  "creatorSignupOptions.athlete.title": "Athlete (NIL & Pro)",
+  "creatorSignupOptions.athlete.description": "You're a college or pro athlete managing your own name, image, and likeness dealings.",
+  "creatorSignupOptions.selectButton": "Select",
+  "creatorSignupOptions.authModal.title": "Get started",
+  "creatorSignupOptions.authModal.selected": "Selected:",
+  "creatorSignupOptions.authModal.signUpAs": "Sign up as",
+  "creatorSignupOptions.authModal.alreadyHaveAccount": "I already have an account",
+  "faces.hero.signUpButton": "Sign Up",
+  "verification": {
+    "title": "Verify Identity",
+    "description": "Likelee uses facial verification to ensure that every profile is owned by a real human. This protects your rights and prevents AI identity theft.",
+    "why": {
+      "title": "Why verify?",
+      "items": {
+        "discovered": "Get discovered by verified brands.",
+        "trust": "Build trust with your audience.",
+        "opportunities": "Unlock premium opportunities."
+      }
+    },
+    "processDesc": "The process takes about 2 minutes. You'll need:",
+    "requirements": {
+      "title": "Requirements",
+      "items": {
+        "id": "A valid government ID (Driver's License, Passport, etc.)",
+        "camera": "A device with a camera (phone or webcam)",
+        "time": "About 2 minutes of your time"
+      }
+    },
+    "actions": {
+      "start": "Verify Identity",
+      "starting": "Starting...",
+      "liveness": "Liveness Check",
+      "livenessApproved": "Liveness Approved",
+      "preparing": "Preparing...",
+      "skip": "Skip for now",
+      "verifyAndContinue": "Verify & Continue",
+      "checking": "Checking...",
+      "refreshStatus": "Refresh Status",
+      "resumeVerification": "Resume Verification",
+      "continueVerification": "Continue Verification",
+      "startNewVerification": "Start New Verification",
+      "retryVerification": "Retry Verification"
+    },
+    "hints": {
+      "refreshHint": "If the status does not update automatically a few seconds after verification, use Refresh Status.",
+      "resumeHint": "Closed the verification window? Use Resume Verification to continue. If that link no longer works, start a new verification session or use Refresh Status if you already finished.",
+      "restartHint": "If the last verification window was closed or expired, start a new verification session or use Refresh Status if you already finished.",
+      "followUpResumeHint": "Veriff requested another step. Use Continue Verification to finish approval, or start a new verification session if the earlier link no longer works.",
+      "followUpRestartHint": "Veriff requested another step. Start a new verification session if the earlier link is no longer available, or use Refresh Status if you already finished it.",
+      "rejectedHint": "Your last verification was not approved. Review the note above and retry with a new verification session."
+    },
+    "status": {
+      "notStarted": "Not Started",
+      "verifying": "Verifying",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
+  },
+  "unauthorized": {
+    "title": "Access Denied",
+    "description": "Oops! You don't have the required permissions to view this page. This area is restricted to {{role}} only.",
+    "roles": {
+      "brandsAndAgencies": "Brands and Agencies",
+      "authorizedUsers": "authorized users"
+    },
+    "goBack": "Go Back",
+    "contactSupport": "If you believe this is a mistake, please contact support or check your account settings."
+  },
+  "forgotPasswordPage": {
+    "title": "Reset your password",
+    "instructions": "Enter your email address and we will send you a link to reset your password.",
+    "emailLabel": "Email",
+    "submitButton": {
+      "sending": "Sending...",
+      "default": "Send Reset Link"
+    },
+    "backToSignIn": "Back to Sign In",
+    "successMessage": "If an account exists for this email, a password reset link has been sent.",
+    "errorMessage": "Failed to send reset link"
+  },
+  "updatePassword": {
+    "toasts": {
+      "passwordUpdated": "Your password has been updated."
+    }
+  },
+  "login": {
+    "toasts": {
+      "signInFailed": "Sign-in failed"
+    }
+  },
+  "creatorSignupOptions": {
+    "main": {
+      "title": "Choose Your Identity",
+      "subtitle": "Join the ecosystem built for creators to own, control, and profit from their digital likeness."
+    },
+    "influencer": {
+      "title": "Influencer & Content Creator",
+      "description": "Monetize your social presence by licensing your digital double for social-first campaigns."
+    },
+    "model_actor": {
+      "title": "Model & Actor",
+      "description": "Secure high-end commercial and editorial opportunities with a verified digital twin."
+    },
+    "athlete": {
+      "title": "Athlete (NIL)",
+      "description": "Scale your brand partnerships and earn passive income with NIL-compliant digital likeness."
+    },
+    "selectButton": "Select & Continue",
+    "authModal": {
+      "title": "Welcome to Likelee",
+      "selected": "You selected:",
+      "signUpAs": "Sign up as",
+      "alreadyHaveAccount": "Already have an account? Sign In"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "welcome": "Welcome to Likelee",
+      "signInToContinue": "Sign in to continue",
+      "loading": "Loading...",
+      "alreadySignedIn": "You are already signed in.",
+      "goToDashboard": "Go to Dashboard",
+      "comingSoonTitle": "Coming Soon",
+      "comingSoonMessage": "We're currently onboarding agencies manually. Join the waitlist to get early access.",
+      "learnMore": "Learn More",
+      "googleSignInFailed": "Google sign-in failed",
+      "continueWithGoogle": "Continue with Google",
+      "or": "OR",
+      "emailLabel": "Email",
+      "companyEmailLabel": "Company Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "forgotPassword": "Forgot password?",
+      "signingIn": "Signing in...",
+      "signInButton": "Sign in",
+      "needAccount": "Need an account?",
+      "signUp": "Sign up",
+      "tabs": {
+        "creator": "Creator",
+        "brand": "Brand",
+        "agency": "Agency"
+      }
+    },
+    "emailOtp": {
+      "title": "Verify your email",
+      "description": "Stay here, check your inbox, and enter the 6-digit code to keep onboarding on the same tab.",
+      "helperText": "If the code does not arrive right away, use resend and check your spam folder.",
+      "enterCodePrefix": "Enter the 6-digit code sent to",
+      "verifying": "Verifying…",
+      "sending": "Sending…",
+      "resendAvailableIn": "Resend available in {{seconds}}s",
+      "resendCode": "Resend code",
+      "verifyLabel": "Verify code",
+      "continueButton": "Continue"
+    }
+  }
+}

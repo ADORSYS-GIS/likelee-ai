@@ -38,6 +38,7 @@ const ScoutingTrips = lazy(() =>
   })),
 );
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -136,6 +137,7 @@ import {
   ImageIcon,
   Loader2,
   Mic,
+  ExternalLink,
   Link as LinkIcon,
   Pencil,
   Play,
@@ -145,11 +147,9 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useChat";
-import {
-  DashboardPageShell,
-  DashboardTabRail,
-} from "@/components/dashboard/DashboardResponsive";
+import i18n from "@/i18n";
 // ----------- LAZY TAB COMPONENTS -----------
+const t = i18n.t.bind(i18n);
 const CommunicationHub = lazy(() =>
   import("@/components/chat/CommunicationHub").then((m) => ({
     default: m.CommunicationHub,
@@ -410,7 +410,12 @@ const ConnectBankView = ({
         setPayoutHistory((historyData as any)?.items || []);
       } catch (e: any) {
         toast({
-          title: "Failed to load bank connection status",
+          title: t(
+            "agencyDashboard.payouts.connectBank.errors.failedToLoadStatus",
+            {
+              defaultValue: "Bankverbindungsstatus konnte nicht geladen werden",
+            },
+          ),
           description: parseBackendError(e),
           variant: "destructive" as any,
         });
@@ -435,8 +440,14 @@ const ConnectBankView = ({
       window.location.href = url;
     } catch (e: any) {
       toast({
-        title: "Failed to start Stripe onboarding",
-        description: String(e?.message || e),
+        title: t(
+          "agencyDashboard.payouts.connectBank.errors.failedToStartStripeOnboarding",
+          { defaultValue: "Stripe-Onboarding konnte nicht gestartet werden" },
+        ),
+        description: t(
+          "agencyDashboard.payouts.connectBank.errors.failedToStartStripeOnboardingDesc",
+          { defaultValue: "Bitte versuchen Sie es erneut." },
+        ),
         variant: "destructive" as any,
       });
     } finally {
@@ -449,8 +460,16 @@ const ConnectBankView = ({
     const amountDollars = parseFloat(payoutAmount);
     if (!isFinite(amountDollars) || amountDollars <= 0) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid payout amount",
+        title: t("agencyDashboard.payouts.connectBank.errors.invalidAmount", {
+          defaultValue: "Ungültiger Betrag",
+        }),
+        description: t(
+          "agencyDashboard.payouts.connectBank.errors.invalidAmountDesc",
+          {
+            defaultValue:
+              "Bitte geben Sie einen gültigen Auszahlungsbetrag ein",
+          },
+        ),
         variant: "destructive" as any,
       });
       return;
@@ -461,8 +480,14 @@ const ConnectBankView = ({
         ?.available_cents || 0;
     if (amountCents > stripecashoutCents) {
       toast({
-        title: "Insufficient funds",
-        description: `cashout in Stripe: $${(stripecashoutCents / 100).toFixed(2)}`,
+        title: t(
+          "agencyDashboard.payouts.connectBank.errors.insufficientFunds",
+          { defaultValue: "Unzureichende Mittel" },
+        ),
+        description: `${t(
+          "agencyDashboard.payouts.connectBank.errors.cashoutInStripe",
+          { defaultValue: "Cashout in Stripe:" },
+        )} $${(stripecashoutCents / 100).toFixed(2)}`,
         variant: "destructive" as any,
       });
       return;
@@ -497,12 +522,20 @@ const ConnectBankView = ({
       setPayoutAmount("");
 
       toast({
-        title: "Payout requested",
-        description: "Your payout request was submitted.",
+        title: t("agencyDashboard.payouts.connectBank.toasts.payoutRequested", {
+          defaultValue: "Auszahlung angefragt",
+        }),
+        description: t(
+          "agencyDashboard.payouts.connectBank.toasts.payoutRequestedDesc",
+          { defaultValue: "Ihre Auszahlungsanfrage wurde übermittelt." },
+        ),
       });
     } catch (e: any) {
       toast({
-        title: "Failed to request payout",
+        title: t(
+          "agencyDashboard.payouts.connectBank.errors.failedToRequestPayout",
+          { defaultValue: "Auszahlungsanfrage fehlgeschlagen" },
+        ),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -535,10 +568,15 @@ const ConnectBankView = ({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Connect Your Bank Account
+            {t("agencyDashboard.payouts.connectBank.title", {
+              defaultValue: "Connect Your Bank Account",
+            })}
           </h2>
           <p className="text-gray-600 font-medium">
-            Link your bank account to receive direct payments from clients and
+            {t("agencyDashboard.payouts.connectBank.subtitle", {
+              defaultValue:
+                "Link your bank account to receive direct payments from clients and",
+            })}{" "}
             {`manage payouts to ${entityPluralLower}`}
           </p>
         </div>
@@ -550,7 +588,13 @@ const ConnectBankView = ({
           aria-disabled={loading || actionsLocked}
         >
           <CreditCard className="w-4 h-4" />
-          {connected ? "Change account" : "Connect Bank Account"}
+          {connected
+            ? t("agencyDashboard.payouts.connectBank.changeAccount", {
+                defaultValue: "Change account",
+              })
+            : t("agencyDashboard.payouts.connectBank.connectBankAccount", {
+                defaultValue: "Connect Bank Account",
+              })}
         </Button>
       </div>
 
@@ -578,10 +622,15 @@ const ConnectBankView = ({
               <CreditCard className="w-8 h-8 text-green-600" />
             </div>
             <h3 className="text-xl font-bold text-gray-900">
-              Connect Your Bank Account
+              {t("agencyDashboard.payouts.connectBank.title", {
+                defaultValue: "Connect Your Bank Account",
+              })}
             </h3>
             <p className="text-sm text-gray-600 font-medium mt-1">
-              Link your bank account to receive direct payments from clients and
+              {t("agencyDashboard.payouts.connectBank.subtitle", {
+                defaultValue:
+                  "Link your bank account to receive direct payments from clients and",
+              })}{" "}
               {`manage payouts to ${entityPluralLower}`}
             </p>
           </div>
@@ -593,7 +642,12 @@ const ConnectBankView = ({
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <DollarSign className="w-4 h-4 text-amber-700" />
                     <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">
-                      Held (Pending Transfer)
+                      {t(
+                        "agencyDashboard.payouts.connectBank.heldPendingTransfer",
+                        {
+                          defaultValue: "Held (Pending Transfer)",
+                        },
+                      )}
                     </p>
                   </div>
                   <p className="text-2xl font-black text-gray-900">
@@ -608,7 +662,10 @@ const ConnectBankView = ({
                       : "$0.00"}
                   </p>
                   <p className="text-[10px] text-gray-500 font-medium mt-1">
-                    Tracked in Likelee. Not necessarily cashout yet.
+                    {t("agencyDashboard.payouts.connectBank.trackedInLikelee", {
+                      defaultValue:
+                        "Tracked in Likelee. Not necessarily cashout yet.",
+                    })}
                   </p>
                 </Card>
 
@@ -616,7 +673,9 @@ const ConnectBankView = ({
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <DollarSign className="w-4 h-4 text-indigo-600" />
                     <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
-                      cashout (Stripe)
+                      {t("agencyDashboard.payouts.connectBank.cashoutStripe", {
+                        defaultValue: "cashout (Stripe)",
+                      })}
                     </p>
                   </div>
                   <p className="text-2xl font-black text-gray-900">
@@ -630,7 +689,13 @@ const ConnectBankView = ({
                     )}
                   </p>
                   <p className="text-[10px] text-gray-500 font-medium mt-1">
-                    Available in your connected Stripe account.
+                    {t(
+                      "agencyDashboard.payouts.connectBank.availableInStripeAccount",
+                      {
+                        defaultValue:
+                          "Available in your connected Stripe account.",
+                      },
+                    )}
                   </p>
                 </Card>
               </div>
@@ -640,7 +705,9 @@ const ConnectBankView = ({
           {connected && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <div className="text-sm text-gray-600 font-medium">
-                Request a payout from your available balance.
+                {t("agencyDashboard.payouts.connectBank.requestPayoutHint", {
+                  defaultValue: "Request a payout from your available balance.",
+                })}
               </div>
               <Button
                 className={`h-10 px-5 rounded-xl font-bold ${actionButtonClass}`}
@@ -648,7 +715,9 @@ const ConnectBankView = ({
                 disabled={loading || actionsLocked}
                 aria-disabled={loading || actionsLocked}
               >
-                Request Payout
+                {t("agencyDashboard.payouts.connectBank.requestPayout", {
+                  defaultValue: "Request Payout",
+                })}
               </Button>
             </div>
           )}
@@ -656,7 +725,11 @@ const ConnectBankView = ({
           <Dialog open={showPayoutDialog} onOpenChange={setShowPayoutDialog}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Request Payout</DialogTitle>
+                <DialogTitle>
+                  {t("agencyDashboard.payouts.connectBank.requestPayout", {
+                    defaultValue: "Request Payout",
+                  })}
+                </DialogTitle>
                 <DialogDescription>
                   Enter an amount (in USD) and request an instant payout.
                 </DialogDescription>
@@ -693,7 +766,9 @@ const ConnectBankView = ({
           {connected && payoutHistory.length > 0 && (
             <div className="mt-6">
               <div className="text-sm font-bold text-gray-900 mb-2">
-                Payout History
+                {t("agencyDashboard.payouts.tabs.paymentHistory", {
+                  defaultValue: "Payment History",
+                })}
               </div>
               <div className="space-y-2">
                 {payoutHistory.slice(0, 5).map((p) => (
@@ -712,7 +787,10 @@ const ConnectBankView = ({
                       variant="secondary"
                       className={`${payoutStatusClass(p.status)} capitalize`}
                     >
-                      {String(p.status || "pending")}
+                      {t(
+                        `agencyDashboard.payouts.connectBank.status.${String(p.status || "pending").toLowerCase()}`,
+                        { defaultValue: String(p.status || "pending") },
+                      )}
                     </Badge>
                   </div>
                 ))}
@@ -736,6 +814,46 @@ const ConnectBankView = ({
             </div>
           )}
 
+          {/* Transfers not enabled warning — shown when connected but Stripe capability is inactive */}
+          {connected && !status?.transfers_enabled && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-amber-900">
+                  {t(
+                    "agencyDashboard.payouts.connectBank.transfersNotEnabled",
+                    {
+                      defaultValue: "Transfers not enabled",
+                    },
+                  )}
+                </p>
+                <p className="text-xs text-amber-800 font-medium mt-1">
+                  {t(
+                    "agencyDashboard.payouts.connectBank.transfersNotEnabledDesc",
+                    {
+                      defaultValue:
+                        "Your Stripe account is connected but the transfers capability is not active. This means payouts from brand offers cannot be sent to your account until you complete Stripe onboarding.",
+                    },
+                  )}
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-3 h-8 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs flex items-center gap-1.5"
+                  onClick={connect}
+                  disabled={loading || actionsLocked}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  {t(
+                    "agencyDashboard.payouts.connectBank.completeStripeSetup",
+                    {
+                      defaultValue: "Complete Stripe setup",
+                    },
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {!!status?.last_error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
@@ -754,19 +872,30 @@ const ConnectBankView = ({
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle2 className="w-4 h-4 text-blue-600" />
               <p className="text-sm font-bold text-gray-900">
-                Why Connect Your Bank?
+                {t("agencyDashboard.payouts.connectBank.whyTitle", {
+                  defaultValue: "Why Connect Your Bank?",
+                })}
               </p>
             </div>
             <div className="space-y-2">
               {[
-                "Receive invoice payments directly to your account",
-                "Automate talent commission payouts",
-                "Track cash flow and reconcile payments",
-                "Bank-level security with 256-bit encryption",
-              ].map((t) => (
-                <div key={t} className="flex items-start gap-2">
+                t("agencyDashboard.payouts.connectBank.whyItem1", {
+                  defaultValue:
+                    "Receive invoice payments directly to your account",
+                }),
+                t("agencyDashboard.payouts.connectBank.whyItem2", {
+                  defaultValue: "Automate talent commission payouts",
+                }),
+                t("agencyDashboard.payouts.connectBank.whyItem3", {
+                  defaultValue: "Track cash flow and reconcile payments",
+                }),
+                t("agencyDashboard.payouts.connectBank.whyItem4", {
+                  defaultValue: "Bank-level security with 256-bit encryption",
+                }),
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                  <p className="text-xs text-gray-700 font-medium">{t}</p>
+                  <p className="text-xs text-gray-700 font-medium">{item}</p>
                 </div>
               ))}
             </div>
@@ -779,12 +908,20 @@ const ConnectBankView = ({
             aria-disabled={loading || actionsLocked}
           >
             <Link className="w-4 h-4" />
-            {connected ? "Change account" : "Connect with Stripe"}
+            {connected
+              ? t("agencyDashboard.payouts.connectBank.changeAccount", {
+                  defaultValue: "Change account",
+                })
+              : t("agencyDashboard.payouts.connectBank.connectStripe", {
+                  defaultValue: "Connect with Stripe",
+                })}
           </Button>
 
           <div className="text-center mt-4">
             <p className="text-xs text-gray-500 font-medium">
-              Powered by Stripe Connect
+              {t("agencyDashboard.payouts.connectBank.poweredByStripe", {
+                defaultValue: "Powered by Stripe Connect",
+              })}
             </p>
             <p className="text-[10px] text-gray-400 font-medium">
               Bank-level security • SOC 2 certified • PCI DSS compliant
@@ -793,7 +930,9 @@ const ConnectBankView = ({
 
           <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-6">
             <p className="text-xs font-bold text-gray-700 mb-2">
-              What you'll need:
+              {t("agencyDashboard.payouts.connectBank.whatYouNeed", {
+                defaultValue: "What you'll need:",
+              })}
             </p>
             <div className="text-xs text-gray-600 font-medium space-y-1">
               <div>
@@ -1296,13 +1435,6 @@ import {
   Legend,
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -3023,6 +3155,7 @@ const ShareFileModal = ({
 // --- Accounting & Invoicing Views ---
 
 const ExpenseTrackingView = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
@@ -3031,7 +3164,7 @@ const ExpenseTrackingView = () => {
   const [expenseRows, setExpenseRows] = useState<any[]>([]);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [newExpenseName, setNewExpenseName] = useState("");
-  const [newExpenseCategory, setNewExpenseCategory] = useState("Travel");
+  const [newExpenseCategory, setNewExpenseCategory] = useState("travel");
   const [newExpenseDate, setNewExpenseDate] = useState(() =>
     new Date().toISOString().slice(0, 10),
   );
@@ -3078,7 +3211,10 @@ const ExpenseTrackingView = () => {
       setExpenseRows(asArray(resp));
     } catch (e: any) {
       toast({
-        title: "Failed to load expenses",
+        title: t(
+          "agencyDashboard.brandConnections.accounting.expenseTrackingView.toasts.failedToLoadExpenses",
+          { defaultValue: "Ausgaben konnten nicht geladen werden" },
+        ),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -3093,7 +3229,7 @@ const ExpenseTrackingView = () => {
   }, []);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (String(status || "").toLowerCase()) {
       case "approved":
         return "bg-green-50 text-green-700 border-green-200";
       case "pending":
@@ -3106,23 +3242,39 @@ const ExpenseTrackingView = () => {
   };
 
   const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "Travel":
+    switch (String(category || "").toLowerCase()) {
+      case "travel":
         return <Calendar className="w-5 h-5 text-orange-600" />;
-      case "Equipment":
+      case "equipment":
         return <Package className="w-5 h-5 text-blue-600" />;
-      case "Marketing":
+      case "marketing":
         return <Megaphone className="w-5 h-5 text-purple-600" />;
       default:
         return <Receipt className="w-5 h-5 text-gray-600" />;
     }
   };
 
+  const translateExpenseCategory = (category: string) => {
+    const key = String(category || "other").toLowerCase();
+    return t(
+      `agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.${key}`,
+      { defaultValue: category },
+    );
+  };
+
+  const translateExpenseStatus = (status: string) => {
+    const key = String(status || "approved").toLowerCase();
+    return t(
+      `agencyDashboard.brandConnections.accounting.expenseTrackingView.statuses.${key}`,
+      { defaultValue: status },
+    );
+  };
+
   const normalizedExpenses = useMemo(() => {
     return expenseRows.map((ex) => ({
       id: String((ex as any)?.id || ""),
       name: String((ex as any)?.name || ""),
-      category: String((ex as any)?.category || "Other"),
+      category: String((ex as any)?.category || "other"),
       date: formatDate((ex as any)?.expense_date),
       status: String((ex as any)?.status || "approved"),
       submitter: String((ex as any)?.submitter || ""),
@@ -3189,10 +3341,18 @@ const ExpenseTrackingView = () => {
       setNewExpenseAmount("0");
       setNewExpenseSubmitter("");
       await loadExpenses();
-      toast({ title: "Expense added" });
+      toast({
+        title: t(
+          "agencyDashboard.brandConnections.accounting.expenseTrackingView.toasts.expenseAdded",
+          { defaultValue: "Expense added" },
+        ),
+      });
     } catch (e: any) {
       toast({
-        title: "Failed to add expense",
+        title: t(
+          "agencyDashboard.brandConnections.accounting.expenseTrackingView.toasts.failedToAddExpense",
+          { defaultValue: "Failed to add expense" },
+        ),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -3203,9 +3363,13 @@ const ExpenseTrackingView = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Expense Tracking</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {t("agencyDashboard.brandConnections.accounting.expenseTracking")}
+          </h2>
           <p className="text-gray-600 font-medium">
-            Track and manage agency expenses
+            {t(
+              "agencyDashboard.brandConnections.accounting.expenseTrackingSubtitle",
+            )}
           </p>
         </div>
         <Button
@@ -3213,7 +3377,10 @@ const ExpenseTrackingView = () => {
           className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <Plus className="w-5 h-5" />
-          Add Expense
+          {t(
+            "agencyDashboard.brandConnections.accounting.expenseTrackingView.actions.addExpense",
+            { defaultValue: "Add Expense" },
+          )}
         </Button>
       </div>
 
@@ -3221,7 +3388,10 @@ const ExpenseTrackingView = () => {
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
-            placeholder="Search expenses..."
+            placeholder={t(
+              "agencyDashboard.brandConnections.accounting.expenseTrackingView.searchPlaceholder",
+              { defaultValue: "Search expenses..." },
+            )}
             className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -3229,20 +3399,52 @@ const ExpenseTrackingView = () => {
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-full sm:w-64 h-12 bg-white border-gray-100 rounded-xl">
-            <SelectValue placeholder="All Categories" />
+            <SelectValue
+              placeholder={t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.filters.allCategories",
+                { defaultValue: "All Categories" },
+              )}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="travel">Travel</SelectItem>
-            <SelectItem value="equipment">Equipment</SelectItem>
-            <SelectItem value="marketing">Marketing</SelectItem>
+            <SelectItem value="all">
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.filters.allCategories",
+                { defaultValue: "All Categories" },
+              )}
+            </SelectItem>
+            <SelectItem value="travel">
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.travel",
+                { defaultValue: "Travel" },
+              )}
+            </SelectItem>
+            <SelectItem value="equipment">
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.equipment",
+                { defaultValue: "Equipment" },
+              )}
+            </SelectItem>
+            <SelectItem value="marketing">
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.marketing",
+                { defaultValue: "Marketing" },
+              )}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-3">
         {loading ? (
-          <div className="text-sm text-gray-600 font-medium">Loading…</div>
+          <div className="text-sm text-gray-600 font-medium">
+            {t(
+              "agencyDashboard.brandConnections.accounting.expenseTrackingView.loading",
+              {
+                defaultValue: "Wird geladen...",
+              },
+            )}
+          </div>
         ) : (
           filteredExpenses.map((expense) => (
             <Card
@@ -3259,7 +3461,8 @@ const ExpenseTrackingView = () => {
                       {expense.name}
                     </h4>
                     <p className="text-sm text-gray-600 font-bold">
-                      {expense.category} • {expense.date}
+                      {translateExpenseCategory(expense.category)} •{" "}
+                      {expense.date}
                       {expense.submitter && ` • ${expense.submitter}`}
                     </p>
                   </div>
@@ -3267,9 +3470,9 @@ const ExpenseTrackingView = () => {
                 <div className="flex items-center justify-between sm:justify-end gap-4">
                   <Badge
                     variant="outline"
-                    className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
+                    className={`text-xs font-bold px-3 py-1 rounded-lg ${getStatusColor(expense.status)}`}
                   >
-                    {expense.status}
+                    {translateExpenseStatus(expense.status)}
                   </Badge>
                   <span className="text-lg font-bold text-gray-900">
                     {money(expense.amountCents, expense.currency)}
@@ -3285,7 +3488,10 @@ const ExpenseTrackingView = () => {
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-bold text-gray-700 mb-1">
-              Total Expenses
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.totalExpenses",
+                { defaultValue: "Total Expenses" },
+              )}
             </p>
             <p className="text-3xl font-bold text-orange-600">
               {totalExpensesText}
@@ -3301,26 +3507,46 @@ const ExpenseTrackingView = () => {
         <DialogContent className="sm:max-w-[520px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900">
-              Add Expense
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.title",
+                { defaultValue: "Add Expense" },
+              )}
             </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
-              Create a new operating expense for your agency.
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.subtitle",
+                {
+                  defaultValue:
+                    "Create a new operating expense for your agency.",
+                },
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Label className="text-sm font-bold text-gray-700">
+                {t(
+                  "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.name",
+                  { defaultValue: "Name" },
+                )}
+              </Label>
               <Input
                 value={newExpenseName}
                 onChange={(e) => setNewExpenseName(e.target.value)}
                 className="h-11 rounded-xl"
-                placeholder="e.g. Camera rental"
+                placeholder={t(
+                  "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.placeholders.name",
+                  { defaultValue: "e.g. Camera rental" },
+                )}
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Category
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.category",
+                    { defaultValue: "Category" },
+                  )}
                 </Label>
                 <Select
                   value={newExpenseCategory}
@@ -3330,15 +3556,40 @@ const ExpenseTrackingView = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="Travel">Travel</SelectItem>
-                    <SelectItem value="Equipment">Equipment</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Travel">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.travel",
+                        { defaultValue: "Travel" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="Equipment">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.equipment",
+                        { defaultValue: "Equipment" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="Marketing">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.marketing",
+                        { defaultValue: "Marketing" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="Other">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.categories.other",
+                        { defaultValue: "Other" },
+                      )}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.date",
+                    { defaultValue: "Date" },
+                  )}
+                </Label>
                 <Input
                   type="date"
                   value={newExpenseDate}
@@ -3350,7 +3601,10 @@ const ExpenseTrackingView = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Amount (USD)
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.amountUsd",
+                    { defaultValue: "Amount (USD)" },
+                  )}
                 </Label>
                 <Input
                   value={newExpenseAmount}
@@ -3361,7 +3615,10 @@ const ExpenseTrackingView = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Status
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.status",
+                    { defaultValue: "Status" },
+                  )}
                 </Label>
                 <Select
                   value={newExpenseStatus}
@@ -3371,22 +3628,43 @@ const ExpenseTrackingView = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="approved">approved</SelectItem>
-                    <SelectItem value="pending">pending</SelectItem>
-                    <SelectItem value="rejected">rejected</SelectItem>
+                    <SelectItem value="approved">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.statuses.approved",
+                        { defaultValue: "Approved" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="pending">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.statuses.pending",
+                        { defaultValue: "Pending" },
+                      )}
+                    </SelectItem>
+                    <SelectItem value="rejected">
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.expenseTrackingView.statuses.rejected",
+                        { defaultValue: "Rejected" },
+                      )}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                Submitter (optional)
+                {t(
+                  "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.fields.submitterOptional",
+                  { defaultValue: "Submitter (optional)" },
+                )}
               </Label>
               <Input
                 value={newExpenseSubmitter}
                 onChange={(e) => setNewExpenseSubmitter(e.target.value)}
                 className="h-11 rounded-xl"
-                placeholder="e.g. Emma"
+                placeholder={t(
+                  "agencyDashboard.brandConnections.accounting.expenseTrackingView.modal.placeholders.submitter",
+                  { defaultValue: "e.g. Emma" },
+                )}
               />
             </div>
           </div>
@@ -3396,14 +3674,20 @@ const ExpenseTrackingView = () => {
               onClick={() => setShowAddExpense(false)}
               className="h-11 rounded-xl font-bold"
             >
-              Cancel
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.actions.cancel",
+                { defaultValue: "Cancel" },
+              )}
             </Button>
             <Button
               onClick={submitNewExpense}
               disabled={!newExpenseName.trim() || loading}
               className="h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
             >
-              Add Expense
+              {t(
+                "agencyDashboard.brandConnections.accounting.expenseTrackingView.actions.addExpense",
+                { defaultValue: "Add Expense" },
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -3417,6 +3701,7 @@ const TalentStatementsView = ({
 }: {
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralTitle = isSportsAgency ? "Athletes" : "Talent";
@@ -3667,21 +3952,30 @@ const TalentStatementsView = ({
               className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <Mail className="w-4 h-4" />
-              Email Statement
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.emailStatement",
+                { defaultValue: "Email Statement" },
+              )}
             </Button>
             <Button
               variant="outline"
               className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Download PDF
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.downloadPdf",
+                { defaultValue: "Download PDF" },
+              )}
             </Button>
             <Button
               variant="outline"
               className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <Printer className="w-4 h-4" />
-              Print
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.print",
+                { defaultValue: "Print" },
+              )}
             </Button>
           </div>
         </div>
@@ -3699,15 +3993,50 @@ const TalentStatementsView = ({
               </h3>
               <Select defaultValue="all-time">
                 <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 font-bold text-gray-700">
-                  <SelectValue placeholder="Select period" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.selectPeriod",
+                      { defaultValue: "Select period" },
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="all-time">All Time</SelectItem>
-                  <SelectItem value="this-month">This Month</SelectItem>
-                  <SelectItem value="last-month">Last Month</SelectItem>
-                  <SelectItem value="this-quarter">This Quarter</SelectItem>
-                  <SelectItem value="this-year">This Year</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
+                  <SelectItem value="all-time">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.allTime",
+                      { defaultValue: "All Time" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="this-month">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.thisMonth",
+                      { defaultValue: "This Month" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="last-month">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.lastMonth",
+                      { defaultValue: "Last Month" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="this-quarter">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.thisQuarter",
+                      { defaultValue: "This Quarter" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="this-year">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.thisYear",
+                      { defaultValue: "This Year" },
+                    )}
+                  </SelectItem>
+                  <SelectItem value="custom">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.customRange",
+                      { defaultValue: "Custom Range" },
+                    )}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -3718,55 +4047,90 @@ const TalentStatementsView = ({
           <Card className="p-6 bg-orange-50 border border-orange-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-orange-600" />
-              <p className="text-sm font-bold text-gray-700">Total Owed</p>
+              <p className="text-sm font-bold text-gray-700">
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalOwed",
+                  { defaultValue: "Total Owed" },
+                )}
+              </p>
             </div>
             <p className="text-3xl font-bold text-orange-600 mb-1">
               {money(Number(selectedTalent.totalOwedCents || 0) || 0, "USD")}
             </p>
             <p className="text-xs text-gray-600 font-medium">
-              {unpaidCount} unpaid jobs
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.unpaidJobs",
+                { count: unpaidCount, defaultValue: "{{count}} unpaid jobs" },
+              )}
             </p>
           </Card>
           <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-green-600" />
               <p className="text-sm font-bold text-gray-700">
-                Total Paid (YTD)
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalPaidYtd",
+                  { defaultValue: "Total Paid (YTD)" },
+                )}
               </p>
             </div>
             <p className="text-3xl font-bold text-green-600 mb-1">
               {money(Number(selectedTalent.totalPaidYTDCents || 0) || 0, "USD")}
             </p>
             <p className="text-xs text-gray-600 font-medium">
-              {paidCount} paid jobs
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.paidJobs",
+                { count: paidCount, defaultValue: "{{count}} paid jobs" },
+              )}
             </p>
           </Card>
           <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-purple-600" />
               <p className="text-sm font-bold text-gray-700">
-                Lifetime Earnings
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.lifetimeEarnings",
+                  { defaultValue: "Lifetime Earnings" },
+                )}
               </p>
             </div>
             <p className="text-3xl font-bold text-purple-600 mb-1">$2.4</p>
-            <p className="text-xs text-gray-600 font-medium">Avg: $0/mo</p>
+            <p className="text-xs text-gray-600 font-medium">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.avgPerMonth",
+                { defaultValue: "Avg: $0/mo" },
+              )}
+            </p>
           </Card>
           <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <Calendar className="w-4 h-4 text-blue-600" />
-              <p className="text-sm font-bold text-gray-700">Last Payment</p>
+              <p className="text-sm font-bold text-gray-700">
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.lastPayment",
+                  { defaultValue: "Last Payment" },
+                )}
+              </p>
             </div>
             <p className="text-lg font-bold text-blue-600 mb-1">
               {selectedTalent.lastPaymentAt
                 ? formatDate(selectedTalent.lastPaymentAt)
-                : "No payments"}
+                : t(
+                    "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.noPayments",
+                    { defaultValue: "No payments" },
+                  )}
             </p>
           </Card>
         </div>
 
         <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
           <div className="p-6 border-b border-gray-100">
-            <h4 className="text-lg font-bold text-gray-900">Earnings Detail</h4>
+            <h4 className="text-lg font-bold text-gray-900">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.earningsDetail",
+                { defaultValue: "Earnings Detail" },
+              )}
+            </h4>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -3774,28 +4138,52 @@ const TalentStatementsView = ({
                 <tr>
                   <th className="px-6 py-3 text-left w-12"></th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Job Date
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.jobDate",
+                      { defaultValue: "Job Date" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Client
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.client",
+                      { defaultValue: "Client" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Description
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.description",
+                      { defaultValue: "Description" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Gross
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.gross",
+                      { defaultValue: "Gross" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Commission
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.commission",
+                      { defaultValue: "Commission" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Net
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.net",
+                      { defaultValue: "Net" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Status
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.status",
+                      { defaultValue: "Status" },
+                    )}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                    Invoice
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.table.invoice",
+                      { defaultValue: "Invoice" },
+                    )}
                   </th>
                 </tr>
               </thead>
@@ -3840,7 +4228,15 @@ const TalentStatementsView = ({
                               : "bg-yellow-100 text-yellow-700 border-yellow-200 font-bold"
                           }
                         >
-                          {isPaid ? "Paid" : "Unpaid"}
+                          {isPaid
+                            ? t(
+                                "agencyDashboard.brandConnections.accounting.talentStatementsView.statuses.paid",
+                                { defaultValue: "Paid" },
+                              )
+                            : t(
+                                "agencyDashboard.brandConnections.accounting.talentStatementsView.statuses.unpaid",
+                                { defaultValue: "Unpaid" },
+                              )}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-sm font-bold text-indigo-600">
@@ -3855,7 +4251,10 @@ const TalentStatementsView = ({
           <div className="p-6 bg-gray-50 border-t border-gray-100 space-y-3">
             <div className="flex justify-between items-center max-w-md ml-auto">
               <span className="text-sm text-gray-600 font-bold">
-                Total Gross Amount
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalGrossAmount",
+                  { defaultValue: "Total Gross Amount" },
+                )}
               </span>
               <span className="text-sm font-bold text-gray-900">
                 {money(totalGrossCents, "USD")}
@@ -3863,7 +4262,10 @@ const TalentStatementsView = ({
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto">
               <span className="text-sm text-gray-600 font-bold">
-                Total Agency Commission (20%)
+                {t(
+                  "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalAgencyCommission",
+                  { defaultValue: "Total Agency Commission (20%)" },
+                )}
               </span>
               <span className="text-sm font-bold text-red-600">
                 -{money(totalAgencyFeeCents, "USD")}
@@ -3888,10 +4290,23 @@ const TalentStatementsView = ({
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {`${entitySingularTitle} Earnings Statements`}
+            {t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.title",
+              {
+                entitySingular: entitySingularTitle,
+                defaultValue: "{{entitySingular}} Earnings Statements",
+              },
+            )}
           </h2>
           <p className="text-gray-600 font-medium">
-            {`View and manage ${entitySingularLower} payment statements`}
+            {t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.subtitle",
+              {
+                entitySingularLower,
+                defaultValue:
+                  "View and manage {{entitySingularLower}} payment statements",
+              },
+            )}
           </p>
         </div>
         <Button
@@ -3901,7 +4316,10 @@ const TalentStatementsView = ({
           disabled={loading}
         >
           <Download className="w-5 h-5" />
-          Export All
+          {t(
+            "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.exportAll",
+            { defaultValue: "Export All" },
+          )}
         </Button>
       </div>
 
@@ -3909,7 +4327,13 @@ const TalentStatementsView = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder={`Search by ${entitySingularLower} name...`}
+            placeholder={t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.searchPlaceholder",
+              {
+                entitySingularLower,
+                defaultValue: "Search by {{entitySingularLower}} name...",
+              },
+            )}
             className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -3917,18 +4341,44 @@ const TalentStatementsView = ({
         </div>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full sm:w-56 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="Sort by..." />
+            <SelectValue
+              placeholder={t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.sortBy",
+                { defaultValue: "Sort by..." },
+              )}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="amount-high">
-              Amount Owed (High to Low)
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.amountHigh",
+                { defaultValue: "Amount Owed (High to Low)" },
+              )}
             </SelectItem>
             <SelectItem value="amount-low">
-              Amount Owed (Low to High)
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.amountLow",
+                { defaultValue: "Amount Owed (Low to High)" },
+              )}
             </SelectItem>
-            <SelectItem value="total-paid">Total Paid (High to Low)</SelectItem>
-            <SelectItem value="name-az">Name (A-Z)</SelectItem>
-            <SelectItem value="name-za">Name (Z-A)</SelectItem>
+            <SelectItem value="total-paid">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.totalPaidHigh",
+                { defaultValue: "Total Paid (High to Low)" },
+              )}
+            </SelectItem>
+            <SelectItem value="name-az">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.nameAz",
+                { defaultValue: "Name (A-Z)" },
+              )}
+            </SelectItem>
+            <SelectItem value="name-za">
+              {t(
+                "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.nameZa",
+                { defaultValue: "Name (Z-A)" },
+              )}
+            </SelectItem>
           </SelectContent>
         </Select>
         <div className="flex items-center gap-2 px-3 h-10 bg-white border border-gray-200 rounded-xl w-full sm:w-auto">
@@ -3944,7 +4394,10 @@ const TalentStatementsView = ({
             htmlFor="unpaid-earnings"
             className="text-sm font-bold text-gray-700 cursor-pointer"
           >
-            Has Unpaid Earnings
+            {t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.filters.hasUnpaidEarnings",
+              { defaultValue: "Has Unpaid Earnings" },
+            )}
           </Label>
         </div>
       </div>
@@ -3974,41 +4427,75 @@ const TalentStatementsView = ({
                       {talent.name}
                     </h4>
                     <p className="text-xs text-gray-600 font-bold">
-                      {talent.totalJobs} total jobs
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalJobs",
+                        {
+                          count: talent.totalJobs,
+                          defaultValue: "{{count}} total jobs",
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                   <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                      Total Owed
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalOwed",
+                        { defaultValue: "Total Owed" },
+                      )}
                     </p>
                     <p className="text-base font-bold text-orange-600">
                       {money(talent.totalOwedCents, "USD")}
                     </p>
                     <p className="text-[10px] text-gray-400 font-medium">
-                      {talent.totalOwedCents > 0 ? "Has unpaid" : "No unpaid"}
+                      {talent.totalOwedCents > 0
+                        ? t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.hasUnpaid",
+                            { defaultValue: "Has unpaid" },
+                          )
+                        : t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.noUnpaid",
+                            { defaultValue: "No unpaid" },
+                          )}
                     </p>
                   </div>
                   <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                      Total Paid (YTD)
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.totalPaidYtd",
+                        { defaultValue: "Total Paid (YTD)" },
+                      )}
                     </p>
                     <p className="text-base font-bold text-green-600">
                       {money(talent.totalPaidYTDCents, "USD")}
                     </p>
                     <p className="text-[10px] text-gray-400 font-medium">
-                      {talent.totalPaidYTDCents > 0 ? "Has paid" : "No paid"}
+                      {talent.totalPaidYTDCents > 0
+                        ? t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.hasPaid",
+                            { defaultValue: "Has paid" },
+                          )
+                        : t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.noPaid",
+                            { defaultValue: "No paid" },
+                          )}
                     </p>
                   </div>
                   <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                      Last Payment
+                      {t(
+                        "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.lastPayment",
+                        { defaultValue: "Last Payment" },
+                      )}
                     </p>
                     <p className="text-xs text-gray-600 font-medium">
                       {talent.lastPaymentAt
                         ? formatDate(talent.lastPaymentAt)
-                        : "No payments"}
+                        : t(
+                            "agencyDashboard.brandConnections.accounting.talentStatementsView.labels.noPayments",
+                            { defaultValue: "No payments" },
+                          )}
                     </p>
                   </div>
                   <Button
@@ -4016,7 +4503,10 @@ const TalentStatementsView = ({
                     className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 col-span-2 sm:col-span-3"
                   >
                     <FileText className="w-4 h-4" />
-                    View Statement
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.talentStatementsView.actions.viewStatement",
+                      { defaultValue: "View Statement" },
+                    )}
                   </Button>
                 </div>
               </div>
@@ -4024,7 +4514,10 @@ const TalentStatementsView = ({
           ))
         ) : (
           <div className="text-sm text-gray-600 font-medium">
-            No talent statements yet.
+            {t(
+              "agencyDashboard.brandConnections.accounting.talentStatementsView.empty",
+              { defaultValue: "No talent statements yet." },
+            )}
           </div>
         )}
       </div>
@@ -4033,6 +4526,7 @@ const TalentStatementsView = ({
 };
 
 const PaymentTrackingView = () => {
+  const { t } = useTranslation();
   const reminderKey = "likelee.payment_reminders.v1";
   const [reminder3Days, setReminder3Days] = useState(true);
   const [reminderDueDate, setReminderDueDate] = useState(true);
@@ -4246,9 +4740,13 @@ const PaymentTrackingView = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Payment Tracking</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {t("agencyDashboard.brandConnections.accounting.paymentTracking")}
+        </h2>
         <p className="text-gray-600 font-medium">
-          Monitor payments and manage reminders
+          {t(
+            "agencyDashboard.brandConnections.accounting.paymentTrackingSubtitle",
+          )}
         </p>
       </div>
 
@@ -4556,7 +5054,7 @@ const FinancialReportsView = () => {
         setExpenseRows(asArray(expenses));
       } catch (e: any) {
         toast({
-          title: "Failed to load financial reports",
+          title: t("agencyDashboard.brandConnections.accounting.loadFailed"),
           description: String(e?.message || e),
           variant: "destructive" as any,
         });
@@ -5373,9 +5871,13 @@ const FinancialReportsView = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Financial Reports</h2>
+        <h2 className="text-2xl font-bold text-gray-900">
+          {t("agencyDashboard.brandConnections.accounting.financialReports")}
+        </h2>
         <p className="text-gray-600 font-medium">
-          Comprehensive financial analytics and insights
+          {t(
+            "agencyDashboard.brandConnections.accounting.financialReportsSubtitle",
+          )}
         </p>
       </div>
 
@@ -5430,7 +5932,9 @@ const FinancialReportsView = () => {
 
       <Card className="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-          <h3 className="text-lg font-bold text-gray-900">Financial Reports</h3>
+          <h3 className="text-lg font-bold text-gray-900">
+            {t("agencyDashboard.brandConnections.accounting.financialReports")}
+          </h3>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
@@ -8524,6 +9028,14 @@ const InvoiceManagementView = ({
   activeSubTab: string;
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
+  const tPayout = (path: string, options?: Record<string, any>) => {
+    const fallback = t(`agencyDashboard.analytics.payouts.${path}`, options);
+    return t(`agencyDashboard.payouts.${path}`, {
+      ...(options || {}),
+      defaultValue: fallback,
+    });
+  };
   const statementsTabLabel = isSportsAgency
     ? "Athlete Statements"
     : "Talent Statements";
@@ -8812,13 +9324,37 @@ const InvoiceManagementView = ({
   };
 
   const accountingTabs = [
-    { id: "Invoice Management", label: "Invoice Management", icon: FileText },
-    { id: "Invoice Generation", label: "Generate Invoice", icon: Plus },
-    { id: "Payment Tracking", label: "Payment Tracking", icon: DollarSign },
+    {
+      id: "Invoice Management",
+      label: t("agencyDashboard.brandConnections.accounting.invoiceManagement"),
+      icon: FileText,
+    },
+    {
+      id: "Invoice Generation",
+      label: t("agencyDashboard.brandConnections.accounting.invoiceGeneration"),
+      icon: Plus,
+    },
+    {
+      id: "Payment Tracking",
+      label: t("agencyDashboard.brandConnections.accounting.paymentTracking"),
+      icon: DollarSign,
+    },
     { id: statementsTabLabel, label: statementsTabLabel, icon: Receipt },
-    { id: "Financial Reports", label: "Financial Reports", icon: BarChart2 },
-    { id: "Expense Tracking", label: "Expense Tracking", icon: CreditCard },
-    { id: "Connect Bank", label: "Connect Bank", icon: CreditCard },
+    {
+      id: "Financial Reports",
+      label: t("agencyDashboard.brandConnections.accounting.financialReports"),
+      icon: BarChart2,
+    },
+    {
+      id: "Expense Tracking",
+      label: t("agencyDashboard.brandConnections.accounting.expenseTracking"),
+      icon: CreditCard,
+    },
+    {
+      id: "Connect Bank",
+      label: t("agencyDashboard.brandConnections.accounting.connectBank"),
+      icon: CreditCard,
+    },
   ];
 
   return (
@@ -8850,10 +9386,12 @@ const InvoiceManagementView = ({
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Invoice Management
+            {t("agencyDashboard.brandConnections.accounting.invoiceManagement")}
           </h2>
           <p className="text-gray-600 font-medium">
-            View and manage all client invoices
+            {t(
+              "agencyDashboard.brandConnections.accounting.invoiceManagementSubtitle",
+            )}
           </p>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
@@ -8863,7 +9401,10 @@ const InvoiceManagementView = ({
             className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Filter className="w-4 h-4" />
-            Filters
+            {t(
+              "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.title",
+              { defaultValue: "Filters" },
+            )}
             <ChevronDown
               className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
             />
@@ -8875,7 +9416,12 @@ const InvoiceManagementView = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Search by invoice #, client, or talent name..."
+            placeholder={t(
+              "agencyDashboard.brandConnections.accounting.invoiceManagementView.searchPlaceholder",
+              {
+                defaultValue: "Search by invoice #, client, or talent name...",
+              },
+            )}
             className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -8883,81 +9429,149 @@ const InvoiceManagementView = ({
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="All Status" />
+            <SelectValue
+              placeholder={t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.allStatus",
+                { defaultValue: "All Status" },
+              )}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="all" className="font-bold text-gray-700">
-              All Status
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.allStatus",
+                { defaultValue: "All Status" },
+              )}
             </SelectItem>
             <SelectItem value="draft" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
-                <span className="text-gray-900">Draft</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.draft",
+                    { defaultValue: "Draft" },
+                  )}
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="sent" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-yellow-500 rounded-sm"></div>
-                <span className="text-gray-900">Sent</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.sent",
+                    { defaultValue: "Sent" },
+                  )}
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="paid" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
-                <span className="text-gray-900">Paid</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.paid",
+                    { defaultValue: "Paid" },
+                  )}
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="overdue" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
-                <span className="text-gray-900">Overdue</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.overdue",
+                    { defaultValue: "Overdue" },
+                  )}
+                </span>
               </div>
             </SelectItem>
             <SelectItem value="void" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
-                <span className="text-gray-900">Void</span>
+                <span className="text-gray-900">
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.statuses.void",
+                    { defaultValue: "Void" },
+                  )}
+                </span>
               </div>
             </SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-full sm:w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
-            <SelectValue placeholder="Sort by..." />
+            <SelectValue
+              placeholder={t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.sortBy",
+                { defaultValue: "Sort by..." },
+              )}
+            />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
             <SelectItem value="newest" className="font-bold text-gray-700">
-              Newest First
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.newest",
+                { defaultValue: "Newest First" },
+              )}
             </SelectItem>
             <SelectItem value="oldest" className="font-bold text-gray-700">
-              Oldest First
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.oldest",
+                { defaultValue: "Oldest First" },
+              )}
             </SelectItem>
             <SelectItem value="due-soonest" className="font-bold text-gray-700">
-              Due Date (Soonest)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.dueSoonest",
+                { defaultValue: "Due Date (Soonest)" },
+              )}
             </SelectItem>
             <SelectItem value="due-latest" className="font-bold text-gray-700">
-              Due Date (Latest)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.dueLatest",
+                { defaultValue: "Due Date (Latest)" },
+              )}
             </SelectItem>
             <SelectItem value="amount-high" className="font-bold text-gray-700">
-              Amount (High to Low)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.amountHigh",
+                { defaultValue: "Amount (High to Low)" },
+              )}
             </SelectItem>
             <SelectItem value="amount-low" className="font-bold text-gray-700">
-              Amount (Low to High)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.amountLow",
+                { defaultValue: "Amount (Low to High)" },
+              )}
             </SelectItem>
             <SelectItem value="client-az" className="font-bold text-gray-700">
-              Client (A-Z)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.clientAz",
+                { defaultValue: "Client (A-Z)" },
+              )}
             </SelectItem>
             <SelectItem value="client-za" className="font-bold text-gray-700">
-              Client (Z-A)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.clientZa",
+                { defaultValue: "Client (Z-A)" },
+              )}
             </SelectItem>
             <SelectItem value="invoice-asc" className="font-bold text-gray-700">
-              Invoice # (Asc)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.invoiceAsc",
+                { defaultValue: "Invoice # (Asc)" },
+              )}
             </SelectItem>
             <SelectItem
               value="invoice-desc"
               className="font-bold text-gray-700"
             >
-              Invoice # (Desc)
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.sort.invoiceDesc",
+                { defaultValue: "Invoice # (Desc)" },
+              )}
             </SelectItem>
           </SelectContent>
         </Select>
@@ -8969,7 +9583,10 @@ const InvoiceManagementView = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Issue Date From
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.issueDateFrom",
+                  { defaultValue: "Issue Date From" },
+                )}
               </Label>
               <Input
                 type="date"
@@ -8980,7 +9597,10 @@ const InvoiceManagementView = ({
             </div>
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Issue Date To
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.issueDateTo",
+                  { defaultValue: "Issue Date To" },
+                )}
               </Label>
               <Input
                 type="date"
@@ -8991,7 +9611,10 @@ const InvoiceManagementView = ({
             </div>
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Min Amount
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.minAmount",
+                  { defaultValue: "Min Amount" },
+                )}
               </Label>
               <Input
                 type="number"
@@ -9003,7 +9626,10 @@ const InvoiceManagementView = ({
             </div>
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
-                Max Amount
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.maxAmount",
+                  { defaultValue: "Max Amount" },
+                )}
               </Label>
               <Input
                 type="number"
@@ -9025,15 +9651,28 @@ const InvoiceManagementView = ({
                   className="rounded-md w-4 h-4 border-gray-300"
                 />
                 <Label className="text-sm font-bold text-gray-700">
-                  Show Overdue Only
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.showOverdueOnly",
+                    { defaultValue: "Show Overdue Only" },
+                  )}
                 </Label>
               </div>
               <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
                 <SelectTrigger className="w-48 h-10 rounded-xl border-gray-200 text-sm">
-                  <SelectValue placeholder="All Currencies" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.allCurrencies",
+                      { defaultValue: "All Currencies" },
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
-                  <SelectItem value="all">All Currencies</SelectItem>
+                  <SelectItem value="all">
+                    {t(
+                      "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.allCurrencies",
+                      { defaultValue: "All Currencies" },
+                    )}
+                  </SelectItem>
                   <SelectItem value="usd">USD</SelectItem>
                   <SelectItem value="eur">EUR</SelectItem>
                   <SelectItem value="gbp">GBP</SelectItem>
@@ -9046,18 +9685,27 @@ const InvoiceManagementView = ({
               className="h-10 px-4 rounded-xl font-bold text-gray-700 flex items-center gap-2"
             >
               <X className="w-4 h-4" />
-              Clear All Filters
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.filters.clearAll",
+                { defaultValue: "Clear All Filters" },
+              )}
             </Button>
           </div>
         </Card>
       )}
 
       <div className="text-sm text-gray-700 font-bold">
-        Showing{" "}
+        {t(
+          "agencyDashboard.brandConnections.accounting.invoiceManagementView.showing",
+          { defaultValue: "Showing" },
+        )}{" "}
         <span className="font-bold text-gray-900">
           {filteredInvoices.length} of {normalizedInvoices.length}
         </span>{" "}
-        invoices
+        {t(
+          "agencyDashboard.brandConnections.accounting.invoiceManagementView.invoices",
+          { defaultValue: "invoices" },
+        )}
       </div>
 
       <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
@@ -9069,25 +9717,46 @@ const InvoiceManagementView = ({
                   <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Invoice #
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.invoiceNumber",
+                    { defaultValue: "Invoice #" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Client Name
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.clientName",
+                    { defaultValue: "Client Name" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Issue Date
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.issueDate",
+                    { defaultValue: "Issue Date" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Due Date
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.dueDate",
+                    { defaultValue: "Due Date" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Amount
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.amount",
+                    { defaultValue: "Amount" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Status
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.status",
+                    { defaultValue: "Status" },
+                  )}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-900 uppercase tracking-wider">
-                  Actions
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.table.actions",
+                    { defaultValue: "Actions" },
+                  )}
                 </th>
               </tr>
             </thead>
@@ -9199,11 +9868,17 @@ const InvoiceManagementView = ({
                             className="font-bold text-gray-700 cursor-pointer"
                           >
                             <History className="w-4 h-4 mr-2" />
-                            Payment History
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceManagementView.actions.paymentHistory",
+                              { defaultValue: "Payment History" },
+                            )}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="font-bold text-gray-700 cursor-pointer">
                             <Printer className="w-4 h-4 mr-2" />
-                            Print
+                            {t(
+                              "agencyDashboard.brandConnections.accounting.invoiceManagementView.actions.print",
+                              { defaultValue: "Print" },
+                            )}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -9221,7 +9896,10 @@ const InvoiceManagementView = ({
         <DialogContent className="max-w-2xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-900">
-              Payment History
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.title",
+                { defaultValue: "Payment History" },
+              )}
             </DialogTitle>
             <p className="text-sm text-gray-600 font-medium">
               Invoice #{selectedInvoice?.invoiceNumber}
@@ -9233,7 +9911,10 @@ const InvoiceManagementView = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
-                  Invoice Total
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.invoiceTotal",
+                    { defaultValue: "Invoice Total" },
+                  )}
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
                   {money(
@@ -9244,7 +9925,10 @@ const InvoiceManagementView = ({
               </Card>
               <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
-                  Total Paid
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.totalPaid",
+                    { defaultValue: "Total Paid" },
+                  )}
                 </p>
                 <p className="text-2xl font-bold text-green-600">
                   {money(
@@ -9257,7 +9941,10 @@ const InvoiceManagementView = ({
               </Card>
               <Card className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
-                  Remaining Balance
+                  {t(
+                    "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.remainingBalance",
+                    { defaultValue: "Remaining Balance" },
+                  )}
                 </p>
                 <p className="text-2xl font-bold text-orange-600">
                   {money(
@@ -9280,7 +9967,10 @@ const InvoiceManagementView = ({
             {/* Payment Transactions */}
             <div>
               <h4 className="text-sm font-bold text-gray-900 mb-3">
-                Payment Transactions
+                {t(
+                  "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.paymentTransactions",
+                  { defaultValue: "Payment Transactions" },
+                )}
               </h4>
               {(() => {
                 const inv: any = selectedInvoice || {};
@@ -9322,10 +10012,19 @@ const InvoiceManagementView = ({
                   return (
                     <Card className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
                       <p className="text-sm font-bold text-gray-900">
-                        No payments recorded
+                        {t(
+                          "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.noPaymentsRecorded",
+                          { defaultValue: "No payments recorded" },
+                        )}
                       </p>
                       <p className="text-xs text-gray-600 font-medium">
-                        This invoice has not been marked as paid.
+                        {t(
+                          "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.noPaymentsRecordedDescription",
+                          {
+                            defaultValue:
+                              "This invoice has not been marked as paid.",
+                          },
+                        )}
                       </p>
                     </Card>
                   );
@@ -9344,7 +10043,13 @@ const InvoiceManagementView = ({
                         <div className="flex justify-between items-start mb-1">
                           <div>
                             <p className="text-sm font-bold text-gray-900">
-                              Payment #{idx + 1}
+                              {t(
+                                "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.paymentNumber",
+                                {
+                                  count: idx + 1,
+                                  defaultValue: "Payment #{{count}}",
+                                },
+                              )}
                             </p>
                             <p className="text-xs text-gray-600 font-medium">
                               {formatDateTime(p.at)}
@@ -9355,7 +10060,10 @@ const InvoiceManagementView = ({
                           </span>
                         </div>
                         <p className="text-xs text-gray-600 font-medium">
-                          Invoice marked as paid
+                          {t(
+                            "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.invoiceMarkedPaid",
+                            { defaultValue: "Invoice marked as paid" },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -9371,13 +10079,19 @@ const InvoiceManagementView = ({
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Export History
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.paymentHistory.exportHistory",
+                { defaultValue: "Export History" },
+              )}
             </Button>
             <Button
               onClick={() => setShowPaymentHistory(false)}
               className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
             >
-              Close
+              {t(
+                "agencyDashboard.brandConnections.accounting.invoiceManagementView.actions.close",
+                { defaultValue: "Close" },
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -9992,6 +10706,8 @@ const ScoutingHubView = ({
   setIsProspectModalOpen,
   prospectToEdit,
   setProspectToEdit,
+  isSavingEvent,
+  setIsSavingEvent,
 }: {
   isSportsAgency?: boolean;
   activeTab: string;
@@ -10006,10 +10722,67 @@ const ScoutingHubView = ({
   setIsProspectModalOpen: (open: boolean) => void;
   prospectToEdit: ScoutingProspect | null;
   setProspectToEdit: (prospect: ScoutingProspect | null) => void;
+  isSavingEvent: boolean;
+  setIsSavingEvent: (saving: boolean) => void;
 }) => {
+  const [eventToDelete, setEventToDelete] = useState<ScoutingEvent | null>(
+    null,
+  );
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
+
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
+  };
+
+  const handleDeleteEvent = (event: ScoutingEvent) => {
+    setEventToDelete(event);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteEvent = async () => {
+    if (!eventToDelete) return;
+    setIsDeletingEvent(true);
+
+    try {
+      await scoutingService.deleteEvent(eventToDelete.id);
+      refreshData();
+      toast({
+        title: t("agencyDashboard.scouting.toasts.eventDeleted", {
+          defaultValue: "Event deleted",
+        }),
+        description: t(
+          "agencyDashboard.scouting.toasts.eventDeletedDescription",
+          {
+            defaultValue: `"{{name}}" has been successfully removed.`,
+            name: eventToDelete.name,
+          },
+        ),
+      });
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      toast({
+        title: t("agencyDashboard.scouting.toasts.deleteFailed", {
+          defaultValue: "Delete failed",
+        }),
+        description: t(
+          "agencyDashboard.scouting.toasts.deleteFailedDescription",
+          {
+            defaultValue: "An error occurred while deleting the event.",
+          },
+        ),
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingEvent(false);
+      setEventToDelete(null);
+      setIsDeleteConfirmOpen(false);
+    }
+  };
 
   const [eventForm, setEventForm] = useState<{
     name: string;
@@ -10030,14 +10803,54 @@ const ScoutingHubView = ({
   });
 
   const tabs = [
-    "Prospect Pipeline",
-    "Social Discovery",
-    "Marketplace",
-    "Scouting Map",
-    "Plan Trip",
-    "Submissions",
-    "Open Calls",
-    "Analytics",
+    {
+      key: "prospectPipeline",
+      label: t("agencyDashboard.scouting.tabs.prospectPipeline", {
+        defaultValue: "Prospect Pipeline",
+      }),
+    },
+    {
+      key: "socialDiscovery",
+      label: t("agencyDashboard.scouting.tabs.socialDiscovery", {
+        defaultValue: "Social Discovery",
+      }),
+    },
+    {
+      key: "marketplace",
+      label: t("agencyDashboard.scouting.tabs.marketplace", {
+        defaultValue: "Marketplace",
+      }),
+    },
+    {
+      key: "scoutingMap",
+      label: t("agencyDashboard.scouting.tabs.scoutingMap", {
+        defaultValue: "Scouting Map",
+      }),
+    },
+    {
+      key: "planTrip",
+      label: t("agencyDashboard.scouting.tabs.planTrip", {
+        defaultValue: "Plan Trip",
+      }),
+    },
+    {
+      key: "submissions",
+      label: t("agencyDashboard.scouting.tabs.submissions", {
+        defaultValue: "Submissions",
+      }),
+    },
+    {
+      key: "openCalls",
+      label: t("agencyDashboard.scouting.tabs.openCalls", {
+        defaultValue: "Open Calls",
+      }),
+    },
+    {
+      key: "analytics",
+      label: t("agencyDashboard.scouting.tabs.analytics", {
+        defaultValue: "Analytics",
+      }),
+    },
   ];
 
   return (
@@ -10045,111 +10858,75 @@ const ScoutingHubView = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Scouting Hub
+            {t("agencyDashboard.scouting.title", {
+              defaultValue: "Scouting Hub",
+            })}
           </h1>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            {`Discover, track, and manage ${entityPluralLower} prospects`}
+            {t("agencyDashboard.scouting.subtitle", {
+              entityPluralLower,
+              defaultValue: `Discover, track, and manage ${entityPluralLower} prospects`,
+            })}
           </p>
         </div>
-        <div className="flex w-full md:w-auto items-center justify-end gap-3 pb-1">
-          {/* Mobile Actions Dropdown */}
-          <div className="md:hidden w-full flex justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-10 w-10 rounded-lg border-indigo-200 text-indigo-600 bg-indigo-50/50 hover:bg-indigo-100/50"
-                >
-                  <Plus className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 z-[200] p-2 rounded-xl border border-gray-100 shadow-xl bg-white/95 backdrop-blur-sm"
-              >
-                <DropdownMenuItem
-                  className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer"
-                  onClick={() => {
-                    setProspectToEdit(null);
-                    setIsProspectModalOpen(true);
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-3 text-indigo-500" /> Add Prospect
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer mt-1"
-                  onClick={() => {
-                    setActiveTab("Open Calls");
-                    setEventToEdit(null);
-                    setIsEventModalOpen(true);
-                  }}
-                >
-                  <Calendar className="w-4 h-4 mr-3 text-indigo-500" /> Create
-                  Event
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="rounded-lg p-3 text-sm font-bold text-gray-700 hover:text-indigo-700 hover:bg-indigo-50 cursor-pointer mt-1"
-                  onClick={() => setActiveTab("Plan Trip")}
-                >
-                  <MapPin className="w-4 h-4 mr-3 text-indigo-500" /> Plan
-                  Scouting Trip
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 border-indigo-200 font-bold text-indigo-600 bg-indigo-50/50 shadow-sm rounded-lg h-9 text-sm hover:bg-indigo-100/50"
-              onClick={() => {
-                setProspectToEdit(null);
-                setIsProspectModalOpen(true);
-              }}
-            >
-              <Plus className="w-4 h-4" /> Add Prospect
-            </Button>
-            <Button
-              variant="default"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
-              onClick={() => {
-                setActiveTab("Open Calls");
-                setEventToEdit(null);
-                setIsEventModalOpen(true);
-              }}
-            >
-              <Calendar className="w-4 h-4" /> Create Event
-            </Button>
-            <Button
-              onClick={() => setActiveTab("Plan Trip")}
-              className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
-            >
-              <MapPin className="w-4 h-4" /> Plan Scouting Trip
-            </Button>
-          </div>
+        <div className="flex w-full md:w-auto items-center gap-3 overflow-x-auto pb-1">
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm rounded-lg h-9 text-sm"
+            onClick={() => {
+              setProspectToEdit(null);
+              setIsProspectModalOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4 text-gray-400" />{" "}
+            {t("agencyDashboard.scouting.addProspect", {
+              defaultValue: "Add Prospect",
+            })}
+          </Button>
+          <Button
+            variant="default"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
+            onClick={() => {
+              setActiveTab("openCalls");
+              setEventToEdit(null);
+              setIsEventModalOpen(true);
+            }}
+          >
+            <Calendar className="w-4 h-4" />{" "}
+            {t("agencyDashboard.scouting.createEvent", {
+              defaultValue: "Create Event",
+            })}
+          </Button>
+          <Button
+            onClick={() => setActiveTab("planTrip")}
+            className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
+          >
+            <MapPin className="w-4 h-4" />{" "}
+            {t("agencyDashboard.scouting.planScoutingTrip", {
+              defaultValue: "Plan Scouting Trip",
+            })}
+          </Button>
         </div>
       </div>
 
       <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto w-full">
         {tabs.map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === tab
+              activeTab === tab.key
                 ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
                 : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
             }`}
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
 
       <div className={`mt-8 w-full`}>
-        {activeTab === "Prospect Pipeline" && (
+        {activeTab === "prospectPipeline" && (
           <ProspectPipelineTab
             onAddProspect={() => {
               setProspectToEdit(null);
@@ -10161,9 +10938,9 @@ const ScoutingHubView = ({
             }}
           />
         )}
-        {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
-        {activeTab === "Marketplace" && <MarketplaceTab />}
-        <div className={activeTab === "Scouting Map" ? "block" : "hidden"}>
+        {activeTab === "socialDiscovery" && <SocialDiscoveryTab />}
+        {activeTab === "marketplace" && <MarketplaceTab />}
+        <div className={activeTab === "scoutingMap" ? "block" : "hidden"}>
           <ScoutingMapTab
             onEditEvent={(event) => {
               setEventToEdit(event);
@@ -10177,14 +10954,15 @@ const ScoutingHubView = ({
               setEventToEdit(null);
               setIsEventModalOpen(true);
             }}
+            onDeleteEvent={handleDeleteEvent}
             isVisible={activeTab === "Scouting Map"}
           />
         </div>
-        <div className={activeTab === "Plan Trip" ? "block" : "hidden"}>
+        <div className={activeTab === "planTrip" ? "block" : "hidden"}>
           <ScoutingTrips />
         </div>
-        {activeTab === "Submissions" && <SubmissionsTab />}
-        {activeTab === "Open Calls" && (
+        {activeTab === "submissions" && <SubmissionsTab />}
+        {activeTab === "openCalls" && (
           <OpenCallsTab
             onCreateEvent={() => {
               setEventToEdit(null);
@@ -10196,7 +10974,7 @@ const ScoutingHubView = ({
             }}
           />
         )}
-        {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
+        {activeTab === "analytics" && <ScoutingAnalyticsTab />}
       </div>
       <ProspectModalAlt
         open={isProspectModalOpen}
@@ -10214,28 +10992,50 @@ const ScoutingHubView = ({
         <DialogContent className="sm:max-w-[600px] rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900">
-              {eventToEdit ? "Edit Event" : "Create Event"}
+              {eventToEdit
+                ? t("agencyDashboard.scouting.eventModal.titleEdit", {
+                    defaultValue: "Edit Event",
+                  })
+                : t("agencyDashboard.scouting.eventModal.titleCreate", {
+                    defaultValue: "Create Event",
+                  })}
             </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
-              Manage open calls and casting events for your scouting pipeline.
+              {t("agencyDashboard.scouting.eventModal.subtitle", {
+                defaultValue:
+                  "Manage open calls and casting events for your scouting pipeline.",
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Label className="text-sm font-bold text-gray-700">
+                {t("agencyDashboard.scouting.eventModal.fields.name", {
+                  defaultValue: "Name",
+                })}
+              </Label>
               <Input
                 value={eventForm.name}
                 onChange={(e) =>
                   setEventForm((p) => ({ ...p, name: e.target.value }))
                 }
-                placeholder="Event name"
+                placeholder={t(
+                  "agencyDashboard.scouting.eventModal.placeholders.eventName",
+                  {
+                    defaultValue: "Event name",
+                  },
+                )}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  {t("agencyDashboard.scouting.eventModal.fields.date", {
+                    defaultValue: "Date",
+                  })}
+                </Label>
                 <Input
                   type="date"
                   value={eventForm.event_date}
@@ -10246,7 +11046,9 @@ const ScoutingHubView = ({
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Status
+                  {t("agencyDashboard.scouting.eventModal.fields.status", {
+                    defaultValue: "Status",
+                  })}
                 </Label>
                 <Input
                   value={eventForm.status}
@@ -10256,7 +11058,12 @@ const ScoutingHubView = ({
                       status: e.target.value as ScoutingEvent["status"],
                     }))
                   }
-                  placeholder="scheduled"
+                  placeholder={t(
+                    "agencyDashboard.scouting.eventModal.placeholders.status",
+                    {
+                      defaultValue: "scheduled",
+                    },
+                  )}
                 />
               </div>
             </div>
@@ -10264,53 +11071,81 @@ const ScoutingHubView = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Start time
+                  {t("agencyDashboard.scouting.eventModal.fields.startTime", {
+                    defaultValue: "Start time",
+                  })}
                 </Label>
                 <Input
                   value={eventForm.start_time}
                   onChange={(e) =>
                     setEventForm((p) => ({ ...p, start_time: e.target.value }))
                   }
-                  placeholder="09:00"
+                  placeholder={t(
+                    "agencyDashboard.scouting.eventModal.placeholders.startTime",
+                    {
+                      defaultValue: "09:00",
+                    },
+                  )}
                 />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  End time
+                  {t("agencyDashboard.scouting.eventModal.fields.endTime", {
+                    defaultValue: "End time",
+                  })}
                 </Label>
                 <Input
                   value={eventForm.end_time}
                   onChange={(e) =>
                     setEventForm((p) => ({ ...p, end_time: e.target.value }))
                   }
-                  placeholder="18:00"
+                  placeholder={t(
+                    "agencyDashboard.scouting.eventModal.placeholders.endTime",
+                    {
+                      defaultValue: "18:00",
+                    },
+                  )}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                Location
+                {t("agencyDashboard.scouting.eventModal.fields.location", {
+                  defaultValue: "Location",
+                })}
               </Label>
               <Input
                 value={eventForm.location}
                 onChange={(e) =>
                   setEventForm((p) => ({ ...p, location: e.target.value }))
                 }
-                placeholder="Location"
+                placeholder={t(
+                  "agencyDashboard.scouting.eventModal.placeholders.location",
+                  {
+                    defaultValue: "Location",
+                  },
+                )}
               />
             </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                Description
+                {t("agencyDashboard.scouting.eventModal.fields.description", {
+                  defaultValue: "Description",
+                })}
               </Label>
               <Textarea
                 value={eventForm.description}
                 onChange={(e) =>
                   setEventForm((p) => ({ ...p, description: e.target.value }))
                 }
-                placeholder="Optional details"
+                placeholder={t(
+                  "agencyDashboard.scouting.eventModal.placeholders.description",
+                  {
+                    defaultValue: "Optional details",
+                  },
+                )}
               />
             </div>
           </div>
@@ -10320,7 +11155,9 @@ const ScoutingHubView = ({
               variant="outline"
               onClick={() => setIsEventModalOpen(false)}
             >
-              Cancel
+              {t("agencyDashboard.scouting.eventModal.actions.cancel", {
+                defaultValue: "Cancel",
+              })}
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
@@ -10985,32 +11822,20 @@ const ProspectPipelineTab = ({
             </React.Fragment>
           ))}
         </div>
-
-        {/* Mobile/Tablet Stats Carousel */}
-        <div className="lg:hidden mb-8 relative w-[85%] mx-auto">
-          <Carousel opts={{ align: "start", dragFree: true }}>
-            <CarouselContent>
-              {stats.map((stat) => (
-                <CarouselItem
-                  key={stat.label}
-                  className="basis-1/2 sm:basis-1/3"
-                >
-                  <div
-                    className={`p-4 sm:p-6 border rounded-2xl ${stat.color} transition-all h-full flex flex-col justify-center`}
-                  >
-                    <p className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-tight mb-1 sm:mb-2 w-full truncate">
-                      {stat.label}
-                    </p>
-                    <p className="text-3xl font-black text-gray-900 tracking-tight">
-                      {stat.count}
-                    </p>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="-left-6 sm:-left-10 h-8 w-8 sm:h-10 sm:w-10 bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50 shadow-sm" />
-            <CarouselNext className="-right-6 sm:-right-10 h-8 w-8 sm:h-10 sm:w-10 bg-white border-indigo-100 text-indigo-600 hover:bg-indigo-50 shadow-sm" />
-          </Carousel>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 mb-8">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className={`p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
+            >
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2">
+                {stat.label}
+              </p>
+              <p className="text-4xl font-black text-gray-900 tracking-tight">
+                {stat.count}
+              </p>
+            </div>
+          ))}
         </div>
 
         {isLoading ? (
@@ -11250,18 +12075,45 @@ const MarketplaceTab = ({
 }: {
   connectLocked?: boolean;
   onConnectLocked?: () => void;
-}) => (
-  <MarketplaceSection
-    title="Likelee Marketplace"
-    subtitle="Verified creators only"
-    verifiedBadgeLabel="Verified Profiles"
-    queryScope="scouting-marketplace"
-    enableAgencyContractConnect
-    connectLocked={connectLocked}
-    connectLockedReason={connectLocked ? "upgrade plan to connect." : ""}
-    onConnectLocked={onConnectLocked}
-  />
-);
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Suspense
+      fallback={
+        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl h-[600px] flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        </Card>
+      }
+    >
+      <MarketplaceSection
+        title={t("agencyDashboard.marketplace.title", {
+          defaultValue: "Likelee Marketplace",
+        })}
+        subtitle={t("agencyDashboard.marketplace.subtitle", {
+          defaultValue: "Verified creators only",
+        })}
+        verifiedBadgeLabel={t("agencyDashboard.marketplace.verifiedBadge", {
+          defaultValue: "Verified Profiles",
+        })}
+        searchPlaceholder={t("agencyDashboard.scouting.search.placeholder", {
+          defaultValue: "Search by name, role, bio, or skills...",
+        })}
+        queryScope="scouting-marketplace"
+        enableAgencyContractConnect
+        connectLocked={connectLocked}
+        connectLockedReason={
+          connectLocked
+            ? t("agencyDashboard.marketplace.connectLockedReason", {
+                defaultValue: "Upgrade plan to connect.",
+              })
+            : ""
+        }
+        onConnectLocked={onConnectLocked}
+      />
+    </Suspense>
+  );
+};
 
 const ScoutingMapTab = ({
   onEditEvent,
@@ -11284,44 +12136,61 @@ const ScoutingMapTab = ({
   </Card>
 );
 
-const SubmissionsTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Website Submissions</h2>
-        <p className="text-sm text-gray-500 font-medium">
-          Review talent applications
+const SubmissionsTab = () => {
+  const { t } = useTranslation();
+  return (
+    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">
+            {t("agencyDashboard.scouting.submissions.title", {
+              defaultValue: "Website Submissions",
+            })}
+          </h2>
+          <p className="text-sm text-gray-500 font-medium">
+            {t("agencyDashboard.scouting.submissions.subtitle", {
+              defaultValue: "Review talent applications",
+            })}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge
+            variant="secondary"
+            className="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 text-sm rounded-xl h-11 flex items-center gap-2"
+          >
+            {t("agencyDashboard.scouting.submissions.pendingReview", {
+              defaultValue: "18 Pending Review",
+            })}
+          </Badge>
+          <Button
+            variant="outline"
+            className="font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm border-gray-300"
+          >
+            {t("agencyDashboard.scouting.submissions.bulkActions", {
+              defaultValue: "Bulk Actions",
+            })}
+          </Button>
+        </div>
+      </div>
+
+      <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
+        <div className="p-8 bg-gray-50 rounded-full mb-6">
+          <Mail className="w-12 h-12 text-gray-200" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">
+          {t("agencyDashboard.scouting.submissions.emptyTitle", {
+            defaultValue: "No new submissions",
+          })}
+        </h3>
+        <p className="text-gray-500 max-w-sm font-medium">
+          {t("agencyDashboard.scouting.submissions.emptyDescription", {
+            defaultValue: "Applications from your website will appear here",
+          })}
         </p>
       </div>
-      <div className="flex items-center gap-3">
-        <Badge
-          variant="secondary"
-          className="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 text-sm rounded-xl h-11 flex items-center gap-2"
-        >
-          18 Pending Review
-        </Badge>
-        <Button
-          variant="outline"
-          className="font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm border-gray-300"
-        >
-          Bulk Actions
-        </Button>
-      </div>
-    </div>
-
-    <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
-      <div className="p-8 bg-gray-50 rounded-full mb-6">
-        <Mail className="w-12 h-12 text-gray-200" />
-      </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">
-        No new submissions
-      </h3>
-      <p className="text-gray-500 max-w-sm font-medium">
-        Applications from your website will appear here
-      </p>
-    </div>
-  </Card>
-);
+    </Card>
+  );
+};
 
 const OpenCallsTab = ({
   onCreateEvent,
@@ -11330,6 +12199,7 @@ const OpenCallsTab = ({
   onCreateEvent: () => void;
   onEditEvent: (event: ScoutingEvent) => void;
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { data: events, isLoading } = useQuery({
     queryKey: ["scouting-events", user?.id],
@@ -11347,37 +12217,55 @@ const OpenCallsTab = ({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h2 className="text-xl font-bold text-gray-900">
-            Open Calls & Events
+            {t("agencyDashboard.scouting.openCalls.title", {
+              defaultValue: "Open Calls & Events",
+            })}
           </h2>
           <p className="text-sm text-gray-500 font-medium">
-            Organize open calls and virtual castings to find new talent
+            {t("agencyDashboard.scouting.openCalls.subtitle", {
+              defaultValue:
+                "Organize open calls and virtual castings to find new talent",
+            })}
           </p>
         </div>
         <Button
           onClick={onCreateEvent}
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-xl shadow-sm"
         >
-          <Plus className="w-4 h-4" /> Create Event
+          <Plus className="w-4 h-4" />{" "}
+          {t("agencyDashboard.scouting.createEvent", {
+            defaultValue: "Create Event",
+          })}
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">Loading events...</div>
+        <div className="text-center py-12">
+          {t("agencyDashboard.scouting.openCalls.loading", {
+            defaultValue: "Loading events...",
+          })}
+        </div>
       ) : !events || events.length === 0 ? (
         <div className="text-center py-20 border-2 border-dashed border-gray-100 rounded-3xl">
           <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-gray-900 mb-1">
-            No events scheduled
+            {t("agencyDashboard.scouting.openCalls.emptyTitle", {
+              defaultValue: "No events scheduled",
+            })}
           </h3>
           <p className="text-gray-500 mb-6 text-sm">
-            Create your first open call or scouting event
+            {t("agencyDashboard.scouting.openCalls.emptyDescription", {
+              defaultValue: "Create your first open call or scouting event",
+            })}
           </p>
           <Button
             onClick={onCreateEvent}
             variant="outline"
             className="font-bold rounded-xl"
           >
-            Create First Event
+            {t("agencyDashboard.scouting.openCalls.createFirstEvent", {
+              defaultValue: "Create First Event",
+            })}
           </Button>
         </div>
       ) : (
@@ -11394,14 +12282,19 @@ const OpenCallsTab = ({
                     <Calendar className="w-6 h-6 text-indigo-600" />
                   </div>
                   <Badge className="bg-green-50 text-green-700 border-green-100">
-                    Active
+                    {t("agencyDashboard.scouting.openCalls.active", {
+                      defaultValue: "Active",
+                    })}
                   </Badge>
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-indigo-600 transition-colors line-clamp-1">
                   {event.name}
                 </h3>
                 <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-4 min-h-[2rem]">
-                  {event.description || "No description provided."}
+                  {event.description ||
+                    t("agencyDashboard.scouting.openCalls.noDescription", {
+                      defaultValue: "No description provided.",
+                    })}
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-gray-600 bg-gray-50/80 p-2 rounded-lg border border-gray-100/50 group-hover:bg-indigo-50/30 transition-colors">
@@ -11428,13 +12321,31 @@ const OpenCallsTab = ({
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-white px-2 py-0.5 rounded border border-gray-100">
                   {(event as any).event_type || "EVENT"}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
-                >
-                  Edit Details
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-red-500 font-bold hover:bg-red-50 hover:text-red-600 transition-all text-[11px] px-3 rounded-md border border-transparent"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteEvent(event);
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    {t("agencyDashboard.scouting.openCalls.delete", {
+                      defaultValue: "Delete",
+                    })}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
+                  >
+                    {t("agencyDashboard.scouting.openCalls.editDetails", {
+                      defaultValue: "Edit Details",
+                    })}
+                  </Button>
+                </div>
               </div>
             </Card>
           ))}
@@ -11445,6 +12356,7 @@ const OpenCallsTab = ({
 };
 
 const ScoutingAnalyticsTab = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const {
     data: analytics,
@@ -11472,28 +12384,44 @@ const ScoutingAnalyticsTab = () => {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-500">
         <AlertCircle className="w-12 h-12 mb-4 text-red-500" />
-        <p>Failed to load analytics data.</p>
+        <p>
+          {t("agencyDashboard.scouting.analytics.failedToLoad", {
+            defaultValue: "Failed to load analytics data.",
+          })}
+        </p>
       </div>
     );
   }
 
   const stats = [
     {
-      label: "TOTAL PROSPECTS",
+      label: t("agencyDashboard.scouting.analytics.totalProspects", {
+        defaultValue: "TOTAL PROSPECTS",
+      }),
       value: analytics.totalProspects.toString(),
-      sub: "All time",
+      sub: t("agencyDashboard.scouting.analytics.allTime", {
+        defaultValue: "All time",
+      }),
       subColor: "text-gray-500",
     },
     {
-      label: "CONVERSION RATE",
+      label: t("agencyDashboard.scouting.analytics.conversionRate", {
+        defaultValue: "CONVERSION RATE",
+      }),
       value: `${analytics.conversionRate}%`,
-      sub: "Prospects → Signed",
+      sub: t("agencyDashboard.scouting.analytics.prospectsToSigned", {
+        defaultValue: "Prospects → Signed",
+      }),
       subColor: "text-gray-500",
     },
     {
-      label: "AVG. TIME TO SIGN",
+      label: t("agencyDashboard.scouting.analytics.avgTimeToSign", {
+        defaultValue: "AVG. TIME TO SIGN",
+      }),
       value: `${analytics.avgTimeToSign}d`,
-      sub: "From discovery",
+      sub: t("agencyDashboard.scouting.analytics.fromDiscovery", {
+        defaultValue: "From discovery",
+      }),
       subColor: "text-gray-500",
     },
   ];
@@ -16630,15 +17558,39 @@ const RoyaltiesPayoutsView = ({
 }: {
   isSportsAgency?: boolean;
 }) => {
+  const { t } = useTranslation();
+  const tPayout = (path: string, options?: Record<string, any>) => {
+    const fallback = t(`agencyDashboard.analytics.payouts.${path}`, options);
+    return t(`agencyDashboard.payouts.${path}`, {
+      ...(options || {}),
+      defaultValue: fallback,
+    });
+  };
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
-  const [activeTab, setActiveTab] = useState("Commission Structure");
-  const subTabs = [
-    "Commission Structure",
-    "Payout Preferences",
-    "Commission Breakdown",
-    "Payment History",
+  const [activeTab, setActiveTab] = useState<
+    | "commissionStructure"
+    | "payoutPreferences"
+    | "commissionBreakdown"
+    | "paymentHistory"
+  >("commissionStructure");
+  const subTabs: Array<
+    | "commissionStructure"
+    | "payoutPreferences"
+    | "commissionBreakdown"
+    | "paymentHistory"
+  > = [
+    "commissionStructure",
+    "payoutPreferences",
+    "commissionBreakdown",
+    "paymentHistory",
   ];
+  const payoutTabDefaults: Record<(typeof subTabs)[number], string> = {
+    commissionStructure: "Commission Structure",
+    payoutPreferences: "Payout Preferences",
+    commissionBreakdown: "Commission Breakdown",
+    paymentHistory: "Payment History",
+  };
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -16656,7 +17608,7 @@ const RoyaltiesPayoutsView = ({
     queryFn: async () => {
       return await base44.get<any[]>("/api/agency/payout-schedule/upcoming");
     },
-    enabled: activeTab === "Payout Preferences",
+    enabled: activeTab === "payoutPreferences",
   });
 
   const updatePayoutSettingsMutation = useMutation({
@@ -16686,7 +17638,7 @@ const RoyaltiesPayoutsView = ({
       );
       return resp;
     },
-    enabled: activeTab === "Commission Breakdown",
+    enabled: activeTab === "commissionBreakdown",
   });
 
   const { data: paymentHistoryTopEarners } = useQuery({
@@ -16697,7 +17649,7 @@ const RoyaltiesPayoutsView = ({
       );
       return resp;
     },
-    enabled: activeTab === "Payment History",
+    enabled: activeTab === "paymentHistory",
   });
 
   // Fetch Royalties & Payouts Summary Metrics
@@ -16727,20 +17679,33 @@ const RoyaltiesPayoutsView = ({
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white p-4 sm:p-6 border-b border-gray-100 rounded-xl">
         <h2 className="text-2xl font-bold text-gray-900">
-          Commission & Payout Management
+          {t("agencyDashboard.payouts.title", {
+            defaultValue: "Commission & Payout Management",
+          })}
         </h2>
         <Button
           variant="outline"
           className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm w-full sm:w-auto"
         >
-          <Download className="w-4 h-4" /> Export Report
+          <Download className="w-4 h-4" />{" "}
+          {t("agencyDashboard.payouts.actions.exportReport", {
+            defaultValue: "Export Report",
+          })}
         </Button>
       </div>
 
       <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-        <div className="text-sm font-bold text-gray-900">Payouts and fees</div>
+        <div className="text-sm font-bold text-gray-900">
+          {t("agencyDashboard.payouts.banner.title", {
+            defaultValue: "Payouts and fees",
+          })}
+        </div>
         <div className="text-xs text-gray-700 font-medium mt-1">
-          {`For licensing requests, platform fees and ${entitySingularLower} commission will be deducted from the total paid amount.`}
+          {t("agencyDashboard.payouts.banner.description", {
+            entitySingular: entitySingularLower,
+            defaultValue:
+              "For licensing requests, platform fees and {{entitySingular}} commission will be deducted from the total paid amount.",
+          })}
         </div>
       </Card>
 
@@ -16752,13 +17717,19 @@ const RoyaltiesPayoutsView = ({
               <DollarSign className="w-6 h-6 text-green-600" />
             </div>
             <p className="text-sm font-bold text-gray-500">
-              Accrued This Month
+              {t("agencyDashboard.payouts.stats.accruedThisMonth", {
+                defaultValue: "Accrued This Month",
+              })}
             </p>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">
             {royaltiesData?.accrued_this_month_formatted || "$0"}
           </h3>
-          <p className="text-xs font-bold text-green-600">Ready for payout</p>
+          <p className="text-xs font-bold text-green-600">
+            {t("agencyDashboard.payouts.stats.readyForPayout", {
+              defaultValue: "Ready for payout",
+            })}
+          </p>
         </Card>
 
         <Card className="p-5 sm:p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
@@ -16766,13 +17737,19 @@ const RoyaltiesPayoutsView = ({
             <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
               <TrendingUp className="w-6 h-6 text-blue-600" />
             </div>
-            <p className="text-sm font-bold text-gray-500">Pending Approval</p>
+            <p className="text-sm font-bold text-gray-500">
+              {t("agencyDashboard.payouts.stats.pendingApproval", {
+                defaultValue: "Pending Approval",
+              })}
+            </p>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">
             {royaltiesData?.pending_approval_formatted || "$0"}
           </h3>
           <p className="text-xs font-bold text-gray-400">
-            Awaiting brand confirmation
+            {t("agencyDashboard.payouts.stats.awaitingBrandConfirmation", {
+              defaultValue: "Awaiting brand confirmation",
+            })}
           </p>
         </Card>
 
@@ -16781,13 +17758,20 @@ const RoyaltiesPayoutsView = ({
             <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center border border-purple-100">
               <CheckCircle2 className="w-6 h-6 text-purple-600" />
             </div>
-            <p className="text-sm font-bold text-gray-500">Paid YTD</p>
+            <p className="text-sm font-bold text-gray-500">
+              {t("agencyDashboard.payouts.stats.paidYTD", {
+                defaultValue: "Paid YTD",
+              })}
+            </p>
           </div>
           <h3 className="text-3xl font-bold text-gray-900 mb-1">
             {royaltiesData?.paid_ytd_formatted || "$0"}
           </h3>
           <p className="text-xs font-bold text-gray-400">
-            {`To ${entitySingularTitle} This year`}
+            {t("agencyDashboard.payouts.stats.toEntityThisYear", {
+              entitySingular: entitySingularTitle,
+              defaultValue: "To {{entitySingular}} This year",
+            })}
           </p>
         </Card>
 
@@ -16797,7 +17781,9 @@ const RoyaltiesPayoutsView = ({
               <Percent className="w-6 h-6 text-indigo-600" />
             </div>
             <p className="text-sm font-bold text-indigo-500">
-              Agency Commission YTD
+              {t("agencyDashboard.payouts.stats.agencyCommissionYTD", {
+                defaultValue: "Agency Commission YTD",
+              })}
             </p>
           </div>
           <h3 className="text-3xl font-bold text-indigo-900 mb-1">
@@ -16806,7 +17792,10 @@ const RoyaltiesPayoutsView = ({
           <p className="text-xs font-bold text-indigo-500">
             {avgTierCommissionRate === null
               ? ""
-              : `${avgTierCommissionRate.toFixed(0)}% avg commission rate`}
+              : t("agencyDashboard.payouts.stats.avgCommissionRate", {
+                  rate: avgTierCommissionRate.toFixed(0),
+                  defaultValue: "{{rate}}% avg commission rate",
+                })}
           </p>
         </Card>
       </div>
@@ -16824,27 +17813,38 @@ const RoyaltiesPayoutsView = ({
                   : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
               }`}
             >
-              {tab}
+              {tPayout(`tabs.${tab}`, {
+                defaultValue: payoutTabDefaults[tab],
+              })}
             </button>
           ))}
         </div>
       </div>
 
-      {activeTab === "Commission Structure" && (
+      {activeTab === "commissionStructure" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <div className="mb-4">
             <h3 className="text-lg font-bold text-gray-900 mb-1 tracking-tight">
-              {`${entitySingularTitle} Commission Rules`}
+              {t("agencyDashboard.payouts.commissionStructure.title", {
+                entitySingular: entitySingularTitle,
+                defaultValue: `${entitySingularTitle} Commission Rules`,
+              })}
             </h3>
             <p className="text-sm text-gray-500 font-medium tracking-tight">
-              {`Agency-managed ${entitySingularLower} can use settings-based overrides here. Marketplace-connected ${entitySingularLower} follow the active signed contract rate and are read-only on this screen.`}
+              {t("agencyDashboard.payouts.commissionStructure.description", {
+                entitySingularLower,
+                defaultValue: `Agency-managed ${entitySingularLower} can use settings-based overrides here. Marketplace-connected ${entitySingularLower} follow the active signed contract rate and are read-only on this screen.`,
+              })}
             </p>
           </div>
           <TalentCommissionSettings entitySingularLower={entitySingularLower} />
         </div>
       )}
 
-      {activeTab === "Royalties & Payouts" && (
+      {activeTab ===
+        t("agencyDashboard.payouts.tabs.royaltiesAndPayouts", {
+          defaultValue: "Royalties & Payouts",
+        }) && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           {/* Royalties Overview Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -16857,7 +17857,9 @@ const RoyaltiesPayoutsView = ({
                   <TrendingUp className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                  Accrued This Month
+                  {t("agencyDashboard.payouts.royalties.accruedThisMonth", {
+                    defaultValue: "Accrued This Month",
+                  })}
                 </p>
               </div>
               <h3 className="text-3xl font-black text-gray-900 mb-2">
@@ -16865,7 +17867,9 @@ const RoyaltiesPayoutsView = ({
               </h3>
               <p className="text-xs font-bold text-green-600 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                Live Earnings Pool
+                {t("agencyDashboard.payouts.royalties.liveEarningsPool", {
+                  defaultValue: "Live Earnings Pool",
+                })}
               </p>
             </Card>
 
@@ -16878,14 +17882,21 @@ const RoyaltiesPayoutsView = ({
                   <Clock className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                  Pending Approval
+                  {t("agencyDashboard.payouts.royalties.pendingApproval", {
+                    defaultValue: "Pending Approval",
+                  })}
                 </p>
               </div>
               <h3 className="text-3xl font-black text-gray-900 mb-2">
                 {royaltiesData?.pending_approval_formatted || "$0.00"}
               </h3>
               <p className="text-xs font-bold text-amber-600">
-                Awaiting Payout Processing
+                {t(
+                  "agencyDashboard.payouts.royalties.awaitingPayoutProcessing",
+                  {
+                    defaultValue: "Awaiting Payout Processing",
+                  },
+                )}
               </p>
             </Card>
 
@@ -16898,26 +17909,34 @@ const RoyaltiesPayoutsView = ({
                   <Calendar className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-black text-indigo-200 uppercase tracking-widest">
-                  {`YTD Paid to ${entitySingularTitle}`}
+                  {t("agencyDashboard.payouts.royalties.ytdPaidToEntity", {
+                    entitySingular: entitySingularTitle,
+                    defaultValue: `YTD Paid to ${entitySingularTitle}`,
+                  })}
                 </p>
               </div>
               <h3 className="text-3xl font-black text-white mb-2">
                 {royaltiesData?.paid_ytd_formatted || "$0.00"}
               </h3>
               <p className="text-xs font-bold text-indigo-300">
-                Total Net Payouts 2024
+                {t("agencyDashboard.payouts.royalties.totalNetPayouts", {
+                  defaultValue: "Total Net Payouts 2024",
+                })}
               </p>
             </Card>
           </div>
         </div>
       )}
 
-      {activeTab === "Payment History" && (
+      {activeTab === "paymentHistory" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">
-                {`Top Earning ${entitySingularTitle} (Last 30 Days)`}
+                {t("agencyDashboard.payouts.paymentHistory.topEarningTitle", {
+                  entitySingular: entitySingularTitle,
+                  defaultValue: `Top Earning ${entitySingularTitle} (Last 30 Days)`,
+                })}
               </h3>
             </div>
             <div>
@@ -16939,7 +17958,13 @@ const RoyaltiesPayoutsView = ({
                           {row.name}
                         </h4>
                         <p className="text-xs text-gray-500 font-medium">
-                          {row.campaigns_count || 0} campaigns
+                          {t(
+                            "agencyDashboard.payouts.paymentHistory.campaigns",
+                            {
+                              count: row.campaigns_count || 0,
+                              defaultValue: "{{count}} campaigns",
+                            },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -16949,11 +17974,24 @@ const RoyaltiesPayoutsView = ({
                       </h4>
                       <p className="text-[10px] font-black uppercase tracking-tight">
                         <span className="text-green-600">
-                          {`${entitySingularTitle}: ${row.talent_formatted}`}
+                          {t(
+                            "agencyDashboard.payouts.paymentHistory.talentLabel",
+                            {
+                              entitySingular: entitySingularTitle,
+                              defaultValue: `${entitySingularTitle}:`,
+                            },
+                          )}{" "}
+                          {row.talent_formatted}
                         </span>{" "}
                         •{" "}
                         <span className="text-indigo-600">
-                          Agency: {row.agency_formatted}
+                          {t(
+                            "agencyDashboard.payouts.paymentHistory.agencyLabel",
+                            {
+                              defaultValue: "Agency:",
+                            },
+                          )}{" "}
+                          {row.agency_formatted}
                         </span>
                       </p>
                     </div>
@@ -16965,7 +18003,10 @@ const RoyaltiesPayoutsView = ({
                     <Receipt className="w-8 h-8 text-gray-100" />
                   </div>
                   <p className="text-gray-400 font-bold">
-                    No successful payments found in the last 30 days.
+                    {t("agencyDashboard.payouts.paymentHistory.noPayments", {
+                      defaultValue:
+                        "No successful payments found in the last 30 days.",
+                    })}
                   </p>
                 </div>
               )}
@@ -16974,16 +18015,20 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === "Payout Preferences" && (
+      {activeTab === "payoutPreferences" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
             <h3 className="text-lg font-bold text-gray-900 mb-6">
-              Payout Schedule Settings
+              {t("agencyDashboard.payouts.payoutPreferences.scheduleSettings", {
+                defaultValue: "Payout Schedule Settings",
+              })}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Payout Frequency
+                  {t("agencyDashboard.payouts.payoutPreferences.frequency", {
+                    defaultValue: "Payout Frequency",
+                  })}
                 </Label>
                 <Select
                   value={payoutSettings?.payout_frequency || "Monthly"}
@@ -16997,21 +18042,48 @@ const RoyaltiesPayoutsView = ({
                   }
                 >
                   <SelectTrigger className="h-12 bg-white border-gray-200">
-                    <SelectValue placeholder="Select Frequency" />
+                    <SelectValue
+                      placeholder={t(
+                        "agencyDashboard.payouts.payoutPreferences.selectFrequency",
+                        {
+                          defaultValue: "Select Frequency",
+                        },
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Weekly">Weekly</SelectItem>
-                    <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
-                    <SelectItem value="Monthly">Monthly</SelectItem>
+                    <SelectItem value="Weekly">
+                      {t("agencyDashboard.payouts.payoutPreferences.weekly", {
+                        defaultValue: "Weekly",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Bi-Weekly">
+                      {t("agencyDashboard.payouts.payoutPreferences.biWeekly", {
+                        defaultValue: "Bi-Weekly",
+                      })}
+                    </SelectItem>
+                    <SelectItem value="Monthly">
+                      {t("agencyDashboard.payouts.payoutPreferences.monthly", {
+                        defaultValue: "Monthly",
+                      })}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-gray-500">
-                  {`How often ${entitySingularLower} receives payouts`}
+                  {t(
+                    "agencyDashboard.payouts.payoutPreferences.frequencyDescription",
+                    {
+                      entitySingularLower,
+                      defaultValue: `How often ${entitySingularLower} receives payouts`,
+                    },
+                  )}
                 </p>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
-                  Minimum Payout Threshold
+                  {t("agencyDashboard.payouts.payoutPreferences.minThreshold", {
+                    defaultValue: "Minimum Payout Threshold",
+                  })}
                 </Label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
@@ -17035,7 +18107,12 @@ const RoyaltiesPayoutsView = ({
                   />
                 </div>
                 <p className="text-xs text-gray-500">
-                  Don't pay if balance is under this amount
+                  {t(
+                    "agencyDashboard.payouts.payoutPreferences.minThresholdDescription",
+                    {
+                      defaultValue: "Don't pay if balance is under this amount",
+                    },
+                  )}
                 </p>
               </div>
             </div>
@@ -17043,7 +18120,11 @@ const RoyaltiesPayoutsView = ({
 
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 space-y-6">
-              <h3 className="text-lg font-bold text-gray-900">Payout Method</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                {t("agencyDashboard.payouts.payoutPreferences.method", {
+                  defaultValue: "Payout Method",
+                })}
+              </h3>
               <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-200 rounded-xl">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-white border border-green-200 flex items-center justify-center text-green-600">
@@ -17052,29 +18133,68 @@ const RoyaltiesPayoutsView = ({
                   <div>
                     <h4 className="text-base font-bold text-gray-900">
                       {payoutSettings?.payout_method ||
-                        "Stripe Connected Account"}
+                        t(
+                          "agencyDashboard.payouts.payoutPreferences.stripeConnected",
+                          {
+                            defaultValue: "Stripe Connected Account",
+                          },
+                        )}
                     </h4>
                     <p className="text-sm text-gray-500">
-                      Auto-deduct commission, transfer net to talent
+                      {t(
+                        "agencyDashboard.payouts.payoutPreferences.autoDeduct",
+                        {
+                          defaultValue:
+                            "Auto-deduct commission, transfer net to talent",
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
                 <Badge className="bg-green-500 hover:bg-green-600 text-white border-none px-3 py-1 text-xs font-bold">
-                  Active
+                  {t("agencyDashboard.payouts.payoutPreferences.active", {
+                    defaultValue: "Active",
+                  })}
                 </Badge>
               </div>
 
               <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
                 <h4 className="text-sm font-bold text-blue-900 mb-2">
-                  How it works:
+                  {t("agencyDashboard.payouts.payoutPreferences.howItWorks", {
+                    defaultValue: "How it works:",
+                  })}
                 </h4>
                 <ul className="text-sm text-blue-800 space-y-1">
                   {(
                     payoutSettings?.how_it_works_json || [
-                      "1. Brand pays license fee to agency Stripe account",
-                      "2. Agency commission (14%) auto-deducted",
-                      "3. Net amount transferred to talent's connected account",
-                      "4. Automatic payout on schedule (monthly)",
+                      t(
+                        "agencyDashboard.payouts.payoutPreferences.howItWorksStep1",
+                        {
+                          defaultValue:
+                            "1. Brand pays license fee to agency Stripe account",
+                        },
+                      ),
+                      t(
+                        "agencyDashboard.payouts.payoutPreferences.howItWorksStep2",
+                        {
+                          defaultValue:
+                            "2. Agency commission (14%) auto-deducted",
+                        },
+                      ),
+                      t(
+                        "agencyDashboard.payouts.payoutPreferences.howItWorksStep3",
+                        {
+                          defaultValue:
+                            "3. Net amount transferred to talent's connected account",
+                        },
+                      ),
+                      t(
+                        "agencyDashboard.payouts.payoutPreferences.howItWorksStep4",
+                        {
+                          defaultValue:
+                            "4. Automatic payout on schedule (monthly)",
+                        },
+                      ),
                     ]
                   ).map((step: string, idx: number) => (
                     <li key={idx}>
@@ -17091,7 +18211,12 @@ const RoyaltiesPayoutsView = ({
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8">
               <h3 className="text-lg font-bold text-gray-900 mb-6">
-                Upcoming Payout Schedule
+                {t(
+                  "agencyDashboard.payouts.payoutPreferences.upcomingSchedule",
+                  {
+                    defaultValue: "Upcoming Payout Schedule",
+                  },
+                )}
               </h3>
               <div className="space-y-4">
                 {upcomingSchedule && upcomingSchedule.length > 0 ? (
@@ -17109,7 +18234,22 @@ const RoyaltiesPayoutsView = ({
                             {format(new Date(item.date), "MMM d, yyyy")}
                           </h4>
                           <p className="text-xs text-gray-500">
-                            {item.description || "Scheduled payout"}
+                            {(item.description ===
+                            "Next payout date not reached"
+                              ? t(
+                                  "agencyDashboard.payouts.payoutPreferences.nextPayoutDateNotReached",
+                                  {
+                                    defaultValue:
+                                      "Next payout date not reached",
+                                  },
+                                )
+                              : item.description) ||
+                              t(
+                                "agencyDashboard.payouts.payoutPreferences.scheduledPayout",
+                                {
+                                  defaultValue: "Scheduled payout",
+                                },
+                              )}
                           </p>
                         </div>
                       </div>
@@ -17118,7 +18258,13 @@ const RoyaltiesPayoutsView = ({
                           {currencyFormatter.format(item.amount_cents / 100)}
                         </h4>
                         <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-none text-[10px] font-bold">
-                          {item.status || "scheduled"}
+                          {item.status ||
+                            t(
+                              "agencyDashboard.payouts.payoutPreferences.scheduled",
+                              {
+                                defaultValue: "scheduled",
+                              },
+                            )}
                         </Badge>
                       </div>
                     </div>
@@ -17129,10 +18275,21 @@ const RoyaltiesPayoutsView = ({
                       <Calendar className="w-6 h-6 text-gray-200" />
                     </div>
                     <p className="text-sm font-bold text-gray-900 mb-1">
-                      No upcoming payouts
+                      {t(
+                        "agencyDashboard.payouts.payoutPreferences.noUpcoming",
+                        {
+                          defaultValue: "No upcoming payouts",
+                        },
+                      )}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Your next payout will appear here when scheduled.
+                      {t(
+                        "agencyDashboard.payouts.payoutPreferences.noUpcomingDescription",
+                        {
+                          defaultValue:
+                            "Your next payout will appear here when scheduled.",
+                        },
+                      )}
                     </p>
                   </div>
                 )}
@@ -17142,15 +18299,19 @@ const RoyaltiesPayoutsView = ({
         </div>
       )}
 
-      {activeTab === "Commission Breakdown" && (
+      {activeTab === "commissionBreakdown" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
           <div className="mb-0">
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Recent License Deal Breakdowns
+              {t("agencyDashboard.payouts.commissionBreakdown.title", {
+                defaultValue: "Recent License Deal Breakdowns",
+              })}
             </h3>
             <p className="text-sm font-medium text-gray-500 max-w-2xl">
-              Full transparency on how each license deal is split between talent
-              and agency.
+              {t("agencyDashboard.payouts.commissionBreakdown.description", {
+                defaultValue:
+                  "Full transparency on how each license deal is split between talent and agency.",
+              })}
             </p>
           </div>
 
@@ -17158,7 +18319,12 @@ const RoyaltiesPayoutsView = ({
             <Card className="p-6 bg-gray-50/50 border border-gray-200 rounded-2xl flex flex-wrap items-center gap-8 mb-6">
               <div className="flex-1 min-w-[200px]">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                  Total Volume (Last 30 Days)
+                  {t(
+                    "agencyDashboard.payouts.commissionBreakdown.totalVolume",
+                    {
+                      defaultValue: "Total Volume (Last 30 Days)",
+                    },
+                  )}
                 </p>
                 <p className="text-2xl font-black text-gray-900">
                   {currencyFormatter.format(
@@ -17172,7 +18338,12 @@ const RoyaltiesPayoutsView = ({
               <div className="w-[1px] h-10 bg-gray-200 hidden md:block" />
               <div className="flex-1 min-w-[200px]">
                 <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">
-                  Talent Total Share
+                  {t(
+                    "agencyDashboard.payouts.commissionBreakdown.talentTotalShare",
+                    {
+                      defaultValue: "Talent Total Share",
+                    },
+                  )}
                 </p>
                 <p className="text-2xl font-black text-green-600">
                   {currencyFormatter.format(
@@ -17187,7 +18358,12 @@ const RoyaltiesPayoutsView = ({
               <div className="w-[1px] h-10 bg-gray-200 hidden md:block" />
               <div className="flex-1 min-w-[200px]">
                 <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">
-                  Agency Total Revenue
+                  {t(
+                    "agencyDashboard.payouts.commissionBreakdown.agencyTotalRevenue",
+                    {
+                      defaultValue: "Agency Total Revenue",
+                    },
+                  )}
                 </p>
                 <p className="text-2xl font-black text-indigo-600">
                   {currencyFormatter.format(
@@ -17200,7 +18376,10 @@ const RoyaltiesPayoutsView = ({
                 </p>
               </div>
               <Button className="bg-white border-2 border-gray-900 text-gray-900 font-black text-[10px] uppercase h-10 tracking-widest px-6 shadow-[4px_4px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
-                <Download className="w-3.5 h-3.5 mr-2" /> Export Report
+                <Download className="w-3.5 h-3.5 mr-2" />{" "}
+                {t("agencyDashboard.payouts.commissionBreakdown.exportReport", {
+                  defaultValue: "Export Report",
+                })}
               </Button>
             </Card>
           )}
@@ -17234,7 +18413,12 @@ const RoyaltiesPayoutsView = ({
                     </div>
                     <div className="px-6 py-3 bg-gray-900 text-white rounded-2xl text-center min-w-[160px]">
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5 text-gray-400">
-                        Total Gross
+                        {t(
+                          "agencyDashboard.payouts.commissionBreakdown.totalGross",
+                          {
+                            defaultValue: "Total Gross",
+                          },
+                        )}
                       </p>
                       <p className="text-2xl font-black font-display tracking-tight">
                         {currencyFormatter.format(deal.total_value)}
@@ -17247,7 +18431,12 @@ const RoyaltiesPayoutsView = ({
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <p className="text-[10px] font-black text-green-700 uppercase tracking-widest mb-1">
-                            Talent Earnings
+                            {t(
+                              "agencyDashboard.payouts.commissionBreakdown.talentEarnings",
+                              {
+                                defaultValue: "Talent Earnings",
+                              },
+                            )}
                           </p>
                           <p className="text-3xl font-black text-green-600 transition-transform group-hover:scale-105 origin-left">
                             {currencyFormatter.format(deal.talent_share)}
@@ -17271,7 +18460,12 @@ const RoyaltiesPayoutsView = ({
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-1">
-                            Agency Commission
+                            {t(
+                              "agencyDashboard.payouts.commissionBreakdown.agencyCommission",
+                              {
+                                defaultValue: "Agency Commission",
+                              },
+                            )}
                           </p>
                           <p className="text-3xl font-black text-indigo-600 transition-transform group-hover:scale-105 origin-left">
                             {currencyFormatter.format(deal.agency_share)}
@@ -17291,9 +18485,23 @@ const RoyaltiesPayoutsView = ({
                   </div>
 
                   <div className="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] px-2">
-                    <span>TALENT POOL</span>
+                    <span>
+                      {t(
+                        "agencyDashboard.payouts.commissionBreakdown.talentPool",
+                        {
+                          defaultValue: "TALENT POOL",
+                        },
+                      )}
+                    </span>
                     <span className="flex-1 border-b-2 border-dashed border-gray-100 mx-4" />
-                    <span>AGENCY FEE</span>
+                    <span>
+                      {t(
+                        "agencyDashboard.payouts.commissionBreakdown.agencyFee",
+                        {
+                          defaultValue: "AGENCY FEE",
+                        },
+                      )}
+                    </span>
                   </div>
                 </Card>
               ))}
@@ -17304,11 +18512,18 @@ const RoyaltiesPayoutsView = ({
                 <Calculator className="w-10 h-10 text-gray-200" />
               </div>
               <p className="text-xl font-bold text-gray-900 mb-2">
-                No license deals found
+                {t("agencyDashboard.payouts.commissionBreakdown.noDeals", {
+                  defaultValue: "No license deals found",
+                })}
               </p>
               <p className="text-sm text-gray-500 max-w-xs">
-                Recent licensing transactions will automatically generate
-                detailed split breakdowns here.
+                {t(
+                  "agencyDashboard.payouts.commissionBreakdown.noDealsDescription",
+                  {
+                    defaultValue:
+                      "Recent licensing transactions will automatically generate detailed split breakdowns here.",
+                  },
+                )}
               </p>
             </div>
           )}
@@ -17318,12 +18533,21 @@ const RoyaltiesPayoutsView = ({
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                   <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight mb-2">
-                    Commission Transparency
+                    {t(
+                      "agencyDashboard.payouts.commissionBreakdown.transparencyTitle",
+                      {
+                        defaultValue: "Commission Transparency",
+                      },
+                    )}
                   </h3>
                   <p className="text-sm font-medium text-blue-700 max-w-xl">
-                    This breakdown is visible to talent in their payment
-                    history. Full transparency ensures accurate accounting and
-                    builds long-term trust.
+                    {t(
+                      "agencyDashboard.payouts.commissionBreakdown.transparencyDescription",
+                      {
+                        defaultValue:
+                          "This breakdown is visible to talent in their payment history. Full transparency ensures accurate accounting and builds long-term trust.",
+                      },
+                    )}
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -17331,7 +18555,13 @@ const RoyaltiesPayoutsView = ({
                     variant="outline"
                     className="bg-white border-blue-200 text-blue-900 font-bold text-xs gap-2 h-11 px-5 shadow-sm hover:bg-blue-100 transition-all"
                   >
-                    <Settings className="w-4 h-4" /> Configure
+                    <Settings className="w-4 h-4" />{" "}
+                    {t(
+                      "agencyDashboard.payouts.commissionBreakdown.configure",
+                      {
+                        defaultValue: "Configure",
+                      },
+                    )}
                   </Button>
                   <Button
                     variant="default"
@@ -17349,6 +18579,7 @@ const RoyaltiesPayoutsView = ({
   );
 };
 export default function AgencyDashboard() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -17666,31 +18897,9 @@ export default function AgencyDashboard() {
       ? brandReqs.filter((r: any) => r?.status === "pending").length
       : 0;
 
-    // seen counts from localStorage
-    const regSeen = parseInt(
-      localStorage.getItem("regular_licensing_seen_count") || "0",
-      10,
-    );
-    const brandSeen = parseInt(
-      localStorage.getItem("brand_licensing_seen_count") || "0",
-      10,
-    );
-
-    // If currently on the licensing requests tab, we clear it visually
-    if (activeTab === "licensing" && activeSubTab === "Licensing Requests") {
-      return 0;
-    }
-
-    const regUnseen = Math.max(0, regPending - regSeen);
-    const brandUnseen = Math.max(0, brandPending - brandSeen);
-
-    return regUnseen + brandUnseen;
-  }, [
-    licensingRequestsCountQuery.data,
-    brandLicenseRequestsQuery.data,
-    activeTab,
-    activeSubTab,
-  ]);
+    // Always show total count - notifications persist until requests are handled
+    return regPending + brandPending;
+  }, [licensingRequestsCountQuery.data, brandLicenseRequestsQuery.data]);
 
   const brandConnectionRequestsCountQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -17774,37 +18983,47 @@ export default function AgencyDashboard() {
           ["sent", "viewed"].includes(o.status),
         ).length
       : 0;
-    const numFeedback = Array.isArray(brandConnectionFeedbackQuery.data)
-      ? brandConnectionFeedbackQuery.data.length
-      : 0;
+
+    // Calculate unviewed feedback count (keyed by user ID to avoid cross-account leakage)
+    const feedbackItems = Array.isArray(brandConnectionFeedbackQuery.data)
+      ? brandConnectionFeedbackQuery.data
+      : [];
+
+    let viewedFeedbackIds: Set<string>;
+    try {
+      if (typeof window !== "undefined") {
+        const userKey = user?.id || "anonymous";
+        const saved = localStorage.getItem(`viewed_feedback_ids_${userKey}`);
+        viewedFeedbackIds = saved ? new Set(JSON.parse(saved)) : new Set();
+      } else {
+        viewedFeedbackIds = new Set();
+      }
+    } catch {
+      viewedFeedbackIds = new Set();
+    }
+
+    const numFeedback = feedbackItems.filter((item: any) => {
+      const feedbackId = String(item?.id || "");
+      return feedbackId && !viewedFeedbackIds.has(feedbackId);
+    }).length;
 
     return { numRequests, numOffers, numFeedback };
   }, [
     brandConnectionRequestsCountQuery.data,
     brandConnectionOffersQuery.data,
     brandConnectionFeedbackQuery.data,
+    user?.id,
   ]);
 
   const pendingBrandConnectionCount = useMemo(() => {
     const { numRequests, numOffers, numFeedback } = brandCounts;
 
-    // Subtract seen counts
-    const saved = localStorage.getItem("brand_connections_seen_counts");
-    const seen = saved ? JSON.parse(saved) : {};
-
-    const diffRequests = Math.max(0, numRequests - (seen.requests || 0));
-    const diffOffers = Math.max(0, numOffers - (seen.offers || 0));
-    const diffFeedback = Math.max(0, numFeedback - (seen.feedback || 0));
-
-    // If currently on the brand-connections tab, we don't want the badge to persist if viewed
-    if (activeTab === "brand-connections") {
-      return 0;
-    }
-
-    return diffRequests + diffOffers + diffFeedback;
-  }, [brandCounts, activeTab]);
+    // Always show total count - notifications persist until requests are handled
+    return numRequests + numOffers + numFeedback;
+  }, [brandCounts]);
 
   const pendingJobInvitesCount = useMemo(() => {
+    // Always show total count - notifications persist until invites are handled
     return Array.isArray(brandConnectionJobInvitesQuery.data)
       ? brandConnectionJobInvitesQuery.data.length
       : 0;
@@ -17871,8 +19090,12 @@ export default function AgencyDashboard() {
     ? "Athlete Statements"
     : "Talent Statements";
   const packagesTabLabel = isSportsAgency
-    ? "Athlete Packages"
-    : "Talent Packages";
+    ? t("agencyDashboard.navigation.athletePackages", {
+        defaultValue: "Athlete Packages",
+      })
+    : t("agencyDashboard.navigation.talentPackages", {
+        defaultValue: "Talent Packages",
+      });
   const isRosterPrimarySubTab =
     activeSubTab === "All Talent" || activeSubTab === "All Athletes";
 
@@ -17912,6 +19135,7 @@ export default function AgencyDashboard() {
     agencyBilling?.can_connect_marketplace_creators ?? agencyHasPaidAccess;
   const agencyCanUseBrandConnections =
     agencyBilling?.can_use_brand_connections ?? agencyHasPaidAccess;
+  const agencySubscriptionLocked = !agencyHasPaidAccess;
   const agencyDisplayPlanLabel = (() => {
     const raw = String(agencyBilling?.display_plan_label || "").trim();
     const normalized = raw
@@ -17922,7 +19146,25 @@ export default function AgencyDashboard() {
     if (normalized) return normalized;
     return agencyPlanTier === "free" ? "Free" : agencyPlanLabel;
   })();
+  const agencyPlanIntervalLabel = (() => {
+    const raw = String(agencyBilling?.display_plan_label || "")
+      .trim()
+      .toLowerCase();
+    if (raw.includes("annual")) return "Annual";
+    if (raw.includes("monthly")) return "Monthly";
+    return "";
+  })();
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
+  const agencyTrialTierLabel = useMemo(() => {
+    if (!agencyTrialActive) return "";
+    const tier = String(
+      agencyBilling?.trial_tier || agencyPlanTier || "",
+    ).trim();
+    if (tier === "pro") return "PRO";
+    if (tier === "basic") return "BASIC";
+    if (tier === "enterprise") return "ENTERPRISE";
+    return tier.toUpperCase() || "AGENCY";
+  }, [agencyTrialActive, agencyBilling?.trial_tier, agencyPlanTier]);
 
   useEffect(() => {
     let cancelled = false;
@@ -18040,8 +19282,8 @@ export default function AgencyDashboard() {
 
     return null;
   }, [agencyProfileQuery.data, profile]);
-  const hasIrlBookingAddon = irlAddonEntitlement === true || agencyTrialActive;
-  const irlAddonLocked = irlAddonEntitlement === false && !agencyTrialActive;
+  const hasIrlBookingAddon = irlAddonEntitlement === true;
+  const irlAddonLocked = irlAddonEntitlement !== true;
   const effectiveAgencyMode: "AI" | "IRL" =
     agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
   const isMobile = useIsMobile();
@@ -18270,13 +19512,33 @@ export default function AgencyDashboard() {
     isRosterPrimarySubTab,
   ]);
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
-    searchParams.get("scoutingTab") || "Prospect Pipeline",
+    searchParams.get("scoutingTab") || "prospectPipeline",
   );
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<any>(null);
   const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<any>(null);
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
+
+  // Ensure valid sub-tab for Scouting to avoid blank screen
+  useEffect(() => {
+    if (activeTab === "scouting") {
+      const validScoutingTabs = [
+        "prospectPipeline",
+        "socialDiscovery",
+        "marketplace",
+        "scoutingMap",
+        "planTrip",
+        "submissions",
+        "openCalls",
+        "analytics",
+      ];
+      if (!validScoutingTabs.includes(activeScoutingTab)) {
+        setActiveScoutingTab("prospectPipeline");
+      }
+    }
+  }, [activeTab, activeScoutingTab]);
 
   // Ensure valid sub-tab for Analytics to avoid blank screen
   useEffect(() => {
@@ -18982,42 +20244,108 @@ export default function AgencyDashboard() {
     );
   }, [dismissedNotificationIds]);
 
+  // Handler for notification clicks with navigation
+  const handleNotificationClick = (notif: any) => {
+    // Only dismiss immediately for messages and system alerts
+    // Action-required notifications (brand connections, licensing, job invites)
+    // should only disappear when user accepts/declines the request
+    const shouldDismissImmediately =
+      notif.navigateTo === "messages" ||
+      notif.id === "welcome" ||
+      notif.id?.startsWith("system_");
+
+    if (shouldDismissImmediately) {
+      markAsRead(notif.id);
+    }
+
+    // Navigate to the appropriate tab/page
+    if (notif.navigateTo) {
+      setActiveTab(notif.navigateTo);
+      setShowNotifications(false);
+    }
+  };
+
   const systemNotifications = useMemo(() => {
     const alerts = [];
     if (pendingBrandConnectionCount > 0) {
       const parts = [];
       const { numRequests, numOffers, numFeedback } = brandCounts;
-      if (numRequests > 0) parts.push(`${numRequests} request(s)`);
-      if (numOffers > 0) parts.push(`${numOffers} offer(s)`);
-      if (numFeedback > 0) parts.push(`${numFeedback} feedback(s)`);
+      if (numRequests > 0)
+        parts.push(
+          t("agencyDashboard.header.notifications.summary.requests", {
+            count: numRequests,
+            defaultValue: "{{count}} request(s)",
+          }),
+        );
+      if (numOffers > 0)
+        parts.push(
+          t("agencyDashboard.header.notifications.summary.offers", {
+            count: numOffers,
+            defaultValue: "{{count}} offer(s)",
+          }),
+        );
+      if (numFeedback > 0)
+        parts.push(
+          t("agencyDashboard.header.notifications.summary.feedback", {
+            count: numFeedback,
+            defaultValue: "{{count}} feedback(s)",
+          }),
+        );
 
       alerts.push({
         id: `brand_conn_${pendingBrandConnectionCount}`,
-        title: "Brand Connections",
-        message: `Pending: ${parts.join(", ")}.`,
-        time: "Action required",
+        title: t("agencyDashboard.navigation.brandConnections", {
+          defaultValue: "Brand Connections",
+        }),
+        message: t("agencyDashboard.header.notifications.summary.pending", {
+          defaultValue: "Pending: {{parts}}.",
+          parts: parts.join(", "),
+        }),
+        time: t("agencyDashboard.header.notifications.summary.actionRequired", {
+          defaultValue: "Action required",
+        }),
         color: "indigo",
         isSummary: true,
+        navigateTo: "jobs", // Fixed: Navigate to jobs tab for brand connections
       });
     }
     if (pendingLicensingRequestsCount > 0) {
       alerts.push({
         id: `license_req_${pendingLicensingRequestsCount}`,
-        title: "Licensing Requests",
-        message: `You have ${pendingLicensingRequestsCount} pending licensing request(s).`,
-        time: "Action required",
+        title: t("agencyDashboard.navigation.licensing", {
+          defaultValue: "Licensing Requests",
+        }),
+        message: t(
+          "agencyDashboard.header.notifications.summary.pendingLicensing",
+          {
+            defaultValue: "You have {{count}} pending licensing request(s).",
+            count: pendingLicensingRequestsCount,
+          },
+        ),
+        time: t("agencyDashboard.header.notifications.summary.actionRequired", {
+          defaultValue: "Action required",
+        }),
         color: "indigo",
         isSummary: true,
+        navigateTo: "licensing", // Add navigation target
       });
     }
     if (pendingJobInvitesCount > 0) {
       alerts.push({
         id: `job_invites_${pendingJobInvitesCount}`,
-        title: "Job Invites",
-        message: `You have ${pendingJobInvitesCount} pending job invite(s).`,
-        time: "New message",
+        title: t("agencyDashboard.navigation.subItems.jobInvites", {
+          defaultValue: "Job Invites",
+        }),
+        message: t("agencyDashboard.header.notifications.summary.pendingJobs", {
+          defaultValue: "You have {{count}} pending job invite(s).",
+          count: pendingJobInvitesCount,
+        }),
+        time: t("agencyDashboard.header.notifications.summary.newMessage", {
+          defaultValue: "New message",
+        }),
         color: "blue",
         isSummary: true,
+        navigateTo: "jobs", // Add navigation target
       });
     }
     alerts.push({
@@ -19033,6 +20361,8 @@ export default function AgencyDashboard() {
     pendingBrandConnectionCount,
     pendingLicensingRequestsCount,
     pendingJobInvitesCount,
+    brandCounts,
+    dismissedNotificationIds,
   ]);
 
   const notifications = useMemo(() => {
@@ -19042,11 +20372,32 @@ export default function AgencyDashboard() {
     }));
   }, [systemNotifications, dismissedNotificationIds]);
 
+  // Clean up old dismissed notification IDs that are no longer relevant
+  useEffect(() => {
+    const currentNotificationIds = systemNotifications.map((n) => n.id);
+    const relevantDismissedIds = dismissedNotificationIds.filter(
+      (id) =>
+        // Keep welcome and system alerts dismissals
+        id === "welcome" ||
+        id.startsWith("system_") ||
+        // Keep if still in current notifications
+        currentNotificationIds.includes(id),
+    );
+
+    // Update if we removed any old IDs
+    if (relevantDismissedIds.length !== dismissedNotificationIds.length) {
+      setDismissedNotificationIds(relevantDismissedIds);
+    }
+  }, [systemNotifications, dismissedNotificationIds]);
+
   const chatUnreadCount = useUnreadMessages(profile?.id);
+
+  // Use chat unread count directly - will be dismissed when clicked
+  const displayChatUnreadCount = chatUnreadCount || 0;
 
   const allNotifications = useMemo(() => {
     const chatNotification =
-      chatUnreadCount > 0
+      displayChatUnreadCount > 0
         ? {
             id: `chat_unread_${chatUnreadCount}`,
             title: "Messages",
@@ -19055,6 +20406,7 @@ export default function AgencyDashboard() {
             color: "blue",
             isSummary: true,
             read: false,
+            navigateTo: "messages", // Add navigation target for messages
           }
         : null;
 
@@ -19064,7 +20416,8 @@ export default function AgencyDashboard() {
   }, [chatUnreadCount, notifications]);
 
   const unreadCount =
-    notifications.filter((n: any) => !n.read).length + (chatUnreadCount || 0);
+    notifications.filter((n: any) => !n.read).length +
+    (displayChatUnreadCount || 0);
   const filteredNotifications = allNotifications.filter(
     (n) => activeNotificationTab === "all" || !n.read,
   );
@@ -19215,31 +20568,41 @@ export default function AgencyDashboard() {
           { id: "marketplace", label: "Marketplace", icon: Store },
           {
             id: "jobs",
-            label: "Jobs",
+            label: t("agencyDashboard.tabs.jobs", { defaultValue: "Jobs" }),
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            badges: {
+              "Job Invites":
+                pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            },
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
           {
             id: "roster",
-            label: "Roster",
+            label: t("agencyDashboard.tabs.roster", { defaultValue: "Roster" }),
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "messages",
-            label: "Messages",
+            label: t("agencyDashboard.tabs.messages", {
+              defaultValue: "Messages",
+            }),
             icon: MessageSquare,
-            badge: chatUnreadCount || undefined,
+            badge: displayChatUnreadCount || undefined,
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
           {
             id: "licensing",
-            label: "Licensing",
+            label: t("agencyDashboard.tabs.licensing", {
+              defaultValue: "Licensing",
+            }),
             icon: FileText,
             subItems: [
               "Licensing Requests",
@@ -19257,33 +20620,62 @@ export default function AgencyDashboard() {
                   ? pendingLicensingRequestsCount
                   : undefined,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "client-crm",
+            label: "Client CRM",
+            icon: Building2,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "protection",
             label: "Protection & Usage",
             icon: Shield,
-            badge: "Coming soon",
+            badge: t("agencyDashboard.analytics.labels.comingSoon", {
+              defaultValue: "Coming soon",
+            }),
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "analytics",
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabledSubItems: {
-              "Analytics Dashboard": !hasProAccess,
-            },
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
-          { id: "packages", label: packagesTabLabel, icon: Package },
-          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
-          { id: "catalogs", label: "Catalogs", icon: Library },
+          {
+            id: "packages",
+            label: packagesTabLabel,
+            icon: Package,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            icon: FolderCheck,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "catalogs",
+            label: "Catalogs",
+            icon: Library,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
-            disabled: !agencyCanUseBrandConnections,
-            disabledReason: "Requires a paid plan",
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -19301,30 +20693,52 @@ export default function AgencyDashboard() {
           { id: "marketplace", label: "Marketplace", icon: Store },
           {
             id: "jobs",
-            label: "Jobs",
+            label: t("agencyDashboard.tabs.jobs", { defaultValue: "Jobs" }),
             icon: Briefcase,
             subItems: ["Job Invites", "Open Job Board"],
             badge:
               pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            badges: {
+              "Job Invites":
+                pendingJobInvitesCount > 0 ? pendingJobInvitesCount : undefined,
+            },
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
           {
             id: "roster",
-            label: "Roster",
+            label: t("agencyDashboard.tabs.roster", { defaultValue: "Roster" }),
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "messages",
-            label: "Messages",
+            label: t("agencyDashboard.tabs.messages", {
+              defaultValue: "Messages",
+            }),
             icon: MessageSquare,
             badge: chatUnreadCount || undefined,
             disabled: !hasProAccess,
             disabledReason: "Requires Pro",
           },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "scouting",
+            label: t("agencyDashboard.tabs.scouting", {
+              defaultValue: "Scouting",
+            }),
+            icon: Target,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "client-crm",
+            label: "Client CRM",
+            icon: Building2,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "bookings",
             label: "Bookings",
@@ -19337,6 +20751,8 @@ export default function AgencyDashboard() {
               "Management & Analytics",
               "Campaigns",
             ],
+            disabled: !irlAddonEntitlement,
+            disabledReason: "Requires IRL Booking add-on",
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           {
@@ -19352,6 +20768,8 @@ export default function AgencyDashboard() {
               "Expense Tracking",
               "Connect Bank",
             ],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
             disabledSubItems: {
               "Financial Reports": !hasProAccess,
               "Expense Tracking": !hasProAccess,
@@ -19362,19 +20780,36 @@ export default function AgencyDashboard() {
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabledSubItems: {
-              "Analytics Dashboard": !hasProAccess,
-            },
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
-          { id: "packages", label: packagesTabLabel, icon: Package },
-          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
-          { id: "catalogs", label: "Catalogs", icon: Library },
+          {
+            id: "packages",
+            label: packagesTabLabel,
+            icon: Package,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            icon: FolderCheck,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "catalogs",
+            label: "Catalogs",
+            icon: Library,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
-            disabled: !agencyCanUseBrandConnections,
-            disabledReason: "Requires a paid plan",
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -19388,11 +20823,84 @@ export default function AgencyDashboard() {
           },
         ];
 
-  const activeSidebarItem = sidebarItems.find((item) => item.id === activeTab);
-  const shouldShowTopSubTabRail =
-    !!activeSidebarItem?.subItems &&
-    activeSidebarItem.subItems.length > 0 &&
-    (isMobile || (showLabels && !showSubItems));
+  const getSidebarItemLabel = (label: string) => {
+    const keyMap: Record<string, string> = {
+      Dashboard: "agencyDashboard.navigation.dashboard",
+      Jobs: "agencyDashboard.navigation.jobs",
+      Job: "agencyDashboard.navigation.jobs",
+      Marketplace: "agencyDashboard.navigation.marketplace",
+      Messages: "agencyDashboard.navigation.messages",
+      Message: "agencyDashboard.navigation.messages",
+      Roster: "agencyDashboard.navigation.roster",
+      Scouting: "agencyDashboard.navigation.scouting",
+      Bookings: "agencyDashboard.navigation.bookings",
+      Payouts: "agencyDashboard.navigation.payouts",
+      "Accounting & Invoicing": "agencyDashboard.navigation.accounting",
+      Analytics: "agencyDashboard.navigation.analytics",
+      "Client CRM": "agencyDashboard.navigation.clientCRM",
+      Catalogs: "agencyDashboard.navigation.catalogs",
+      "Talent Packages": "agencyDashboard.navigation.talentPackages",
+      "Athlete Packages": "agencyDashboard.navigation.athletePackages",
+      Deliverables: "agencyDashboard.navigation.deliverables",
+      "Brand Connections": "agencyDashboard.navigation.brandConnections",
+      Settings: "agencyDashboard.navigation.settings",
+      "Protection & Usage": "agencyDashboard.navigation.protection",
+    };
+
+    const key = keyMap[label];
+    return key ? t(key, { defaultValue: label }) : label;
+  };
+
+  const getSidebarSubItemLabel = (subItem: string) => {
+    const keyMap: Record<string, string> = {
+      "Performance Tiers":
+        "agencyDashboard.navigation.subItems.performanceTiers",
+      "All Talent": "agencyDashboard.navigation.subItems.allTalent",
+      "All Athletes": "agencyDashboard.navigation.subItems.allAthletes",
+      "Licensing Requests":
+        "agencyDashboard.navigation.subItems.licensingRequests",
+      "Active Licenses": "agencyDashboard.navigation.subItems.activeLicenses",
+      "License Submissions":
+        "agencyDashboard.navigation.subItems.licenseSubmissions",
+      "License Templates":
+        "agencyDashboard.navigation.subItems.licenseTemplates",
+      "Job Invites": "agencyDashboard.navigation.subItems.jobInvites",
+      "Open Job Board": "agencyDashboard.navigation.subItems.openJobBoard",
+      "Calendar & Schedule":
+        "agencyDashboard.navigation.subItems.calendarSchedule",
+      "Booking Requests": "agencyDashboard.navigation.subItems.bookingRequests",
+      "Athlete Availability":
+        "agencyDashboard.navigation.subItems.athleteAvailability",
+      "Talent Availability":
+        "agencyDashboard.navigation.subItems.talentAvailability",
+      Notifications: "agencyDashboard.navigation.subItems.notifications",
+      "Management & Analytics":
+        "agencyDashboard.navigation.subItems.managementAnalytics",
+      Campaigns: "agencyDashboard.navigation.subItems.campaigns",
+      "Invoice Generation":
+        "agencyDashboard.navigation.subItems.invoiceGeneration",
+      "Invoice Management":
+        "agencyDashboard.navigation.subItems.invoiceManagement",
+      "Payment Tracking": "agencyDashboard.navigation.subItems.paymentTracking",
+      "Talent Statements":
+        "agencyDashboard.navigation.subItems.talentStatements",
+      "Athlete Statements":
+        "agencyDashboard.navigation.subItems.athleteStatements",
+      "Financial Reports":
+        "agencyDashboard.navigation.subItems.financialReports",
+      "Expense Tracking": "agencyDashboard.navigation.subItems.expenseTracking",
+      "Connect Bank": "agencyDashboard.navigation.subItems.connectBank",
+      "Analytics Dashboard":
+        "agencyDashboard.navigation.subItems.analyticsDashboard",
+      "Royalties & Payouts":
+        "agencyDashboard.navigation.subItems.royaltiesPayouts",
+      "General Settings": "agencyDashboard.navigation.subItems.generalSettings",
+      "File Storage": "agencyDashboard.navigation.subItems.fileStorage",
+    };
+
+    const key = keyMap[subItem];
+    return key ? t(key, { defaultValue: subItem }) : subItem;
+  };
 
   useEffect(() => {
     const validTabIds = new Set(sidebarItems.map((item) => item.id));
@@ -19473,7 +20981,10 @@ export default function AgencyDashboard() {
                 </h2>
                 {agencyKycStatus === "approved" && (
                   <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
-                    <ShieldCheck className="w-3 h-3" /> Verified
+                    <ShieldCheck className="w-3 h-3" />{" "}
+                    {t("agencyDashboard.labels.verified", {
+                      defaultValue: "Verified",
+                    })}
                   </Badge>
                 )}
               </div>
@@ -19538,9 +21049,15 @@ export default function AgencyDashboard() {
                 }}
                 title={
                   item.disabled
-                    ? item.disabledReason || "Requires Pro"
+                    ? item.disabledReason === "Choose a plan"
+                      ? t("agencyDashboard.navigation.choosePlan", {
+                          defaultValue: "Choose a plan",
+                        })
+                      : t("agencyDashboard.navigation.requiresPro", {
+                          defaultValue: "Requires Pro",
+                        })
                     : isSidebarCollapsed
-                      ? item.label
+                      ? getSidebarItemLabel(item.label)
                       : undefined
                 }
                 onFocus={() => {
@@ -19606,7 +21123,10 @@ export default function AgencyDashboard() {
                         setOpenCollapsedSubmenu(item.id);
                       }
                     }}
-                    aria-label={`Open ${item.label} submenu`}
+                    aria-label={t("agencyDashboard.navigation.openSubmenu", {
+                      label: getSidebarItemLabel(item.label),
+                      defaultValue: "Open {{label}} submenu",
+                    })}
                   >
                     <ChevronRight className="h-3 w-3" />
                   </span>
@@ -19618,7 +21138,7 @@ export default function AgencyDashboard() {
                       style={{ opacity: labelOpacity }}
                     >
                       <span className="block whitespace-normal break-words">
-                        {item.label}
+                        {getSidebarItemLabel(item.label)}
                       </span>
                       {typeof item.badge === "string" && (
                         <span className="inline-flex mt-1 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
@@ -19637,10 +21157,35 @@ export default function AgencyDashboard() {
                       )}
                     {item.disabled && (
                       <span
-                        className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                        className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold transition-opacity duration-150 shrink-0 ${
+                          item.disabledReason === "Choose a plan" ||
+                          item.disabledReason === "Requires a paid plan"
+                            ? "bg-green-50 text-green-700"
+                            : item.disabledReason ===
+                                "Requires IRL Booking add-on"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-amber-100 text-amber-700"
+                        }`}
                         style={{ opacity: labelOpacity }}
                       >
-                        Pro
+                        {item.disabledReason === "Choose a plan" ||
+                        item.disabledReason === "Requires a paid plan" ? (
+                          <>
+                            <Star className="w-3 h-3" strokeWidth={2.5} />
+                            Basic
+                          </>
+                        ) : item.disabledReason ===
+                          "Requires IRL Booking add-on" ? (
+                          <>
+                            <Crown className="w-3 h-3" strokeWidth={2.5} />
+                            IRL
+                          </>
+                        ) : (
+                          <>
+                            <Crown className="w-3 h-3" strokeWidth={2.5} />
+                            Pro
+                          </>
+                        )}
                       </span>
                     )}
                     {item.subItems && (
@@ -19664,8 +21209,9 @@ export default function AgencyDashboard() {
                         key={subItem}
                         onClick={() => {
                           if (
-                            item.disabledSubItems &&
-                            item.disabledSubItems[subItem]
+                            item.disabled ||
+                            (item.disabledSubItems &&
+                              item.disabledSubItems[subItem])
                           ) {
                             navigate("/AgencySubscribe");
                             setSidebarOpen(false);
@@ -19696,13 +21242,16 @@ export default function AgencyDashboard() {
                           activeTab === item.id && activeSubTab === subItem
                             ? "text-indigo-700 bg-indigo-50 font-bold"
                             : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                        } ${item.disabled || (item.disabledSubItems && item.disabledSubItems[subItem]) ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
-                        <span className="truncate">{subItem}</span>
+                        <span className="truncate">
+                          {getSidebarSubItemLabel(subItem)}
+                        </span>
                         <span className="flex items-center gap-2">
                           {item.disabledSubItems &&
                             item.disabledSubItems[subItem] && (
-                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0">
+                                <Crown className="w-3 h-3" strokeWidth={2.5} />
                                 Pro
                               </span>
                             )}
@@ -19730,7 +21279,13 @@ export default function AgencyDashboard() {
                 ? "justify-center px-2 py-2"
                 : "gap-2 px-3 py-2"
             }`}
-            title={isSidebarCollapsed ? "Sign Out" : undefined}
+            title={
+              isSidebarCollapsed
+                ? t("agencyDashboard.navigation.signOut", {
+                    defaultValue: "Sign Out",
+                  })
+                : undefined
+            }
           >
             <LogOut className="w-5 h-5 transform -scale-x-100" />
             {showLabels && (
@@ -19738,7 +21293,9 @@ export default function AgencyDashboard() {
                 className="transition-opacity duration-150"
                 style={{ opacity: labelOpacity }}
               >
-                Sign Out
+                {t("agencyDashboard.navigation.signOut", {
+                  defaultValue: "Sign Out",
+                })}
               </span>
             )}
           </button>
@@ -19795,7 +21352,10 @@ export default function AgencyDashboard() {
                   <div
                     className="relative rounded-lg border border-gray-200 bg-white shadow-lg p-2"
                     role="menu"
-                    aria-label={`${item.label} submenu`}
+                    aria-label={t("agencyDashboard.navigation.submenu", {
+                      label: getSidebarItemLabel(item.label),
+                      defaultValue: "{{label}} submenu",
+                    })}
                     tabIndex={0}
                     onKeyDown={(event) => {
                       if (event.key === "Escape") {
@@ -19848,7 +21408,9 @@ export default function AgencyDashboard() {
                             : "text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium"
                         } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
-                        <span className="truncate">{subItem}</span>
+                        <span className="truncate">
+                          {getSidebarSubItemLabel(subItem)}
+                        </span>
                         <span className="flex items-center gap-2">
                           {item.disabledSubItems &&
                             item.disabledSubItems[subItem] && (
@@ -19953,31 +21515,45 @@ export default function AgencyDashboard() {
               </Button>
 
               {showNotifications && (
-                <div className="fixed left-2 right-2 top-28 w-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[min(22rem,calc(100vw-1rem))]">
+                <div className="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col">
                   <div className="p-4 border-b border-gray-100 pb-0">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-gray-900">Notifications</h3>
+                      <h3 className="font-bold text-gray-900">
+                        {t("agencyDashboard.header.notifications.title", {
+                          defaultValue: "Notifications",
+                        })}
+                      </h3>
                       {unreadCount > 0 && (
                         <button
                           onClick={markAllAsRead}
                           className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                         >
-                          Mark all as read
+                          {t(
+                            "agencyDashboard.header.notifications.markAllRead",
+                            {
+                              defaultValue: "Mark all as read",
+                            },
+                          )}
                         </button>
                       )}
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-6">
                       <button
                         onClick={() => setActiveNotificationTab("all")}
-                        className={`pb-3 text-sm font-semibold border-b-2 whitespace-nowrap ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                        className={`pb-3 text-sm font-semibold border-b-2 ${activeNotificationTab === "all" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                       >
-                        All
+                        {t("agencyDashboard.header.notifications.all", {
+                          defaultValue: "All",
+                        })}
                       </button>
                       <button
                         onClick={() => setActiveNotificationTab("unread")}
-                        className={`pb-3 text-sm font-medium border-b-2 whitespace-nowrap ${activeNotificationTab === "unread" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                        className={`pb-3 text-sm font-medium border-b-2 ${activeNotificationTab === "unread" ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
                       >
-                        Unread ({unreadCount})
+                        {t("agencyDashboard.header.notifications.unread", {
+                          defaultValue: "Unread ({{count}})",
+                          count: unreadCount,
+                        })}
                       </button>
                     </div>
                   </div>
@@ -19986,15 +21562,22 @@ export default function AgencyDashboard() {
                       <div className="p-6 flex flex-col items-center justify-center text-center">
                         <p className="text-sm font-medium text-gray-500">
                           {activeNotificationTab === "all"
-                            ? "No notifications found."
-                            : "You're all caught up!"}
+                            ? t("agencyDashboard.header.notifications.none", {
+                                defaultValue: "No notifications found.",
+                              })
+                            : t(
+                                "agencyDashboard.header.notifications.caughtUp",
+                                {
+                                  defaultValue: "You're all caught up!",
+                                },
+                              )}
                         </p>
                       </div>
                     ) : (
                       filteredNotifications.map((notif: any) => (
                         <button
                           key={notif.id}
-                          onClick={() => markAsRead(notif.id as string)}
+                          onClick={() => handleNotificationClick(notif)}
                           className={`w-full text-left p-4 hover:bg-gray-50 transition-colors group flex items-start gap-4 ${!notif.read ? "bg-indigo-50/30" : ""}`}
                         >
                           <div
@@ -20111,10 +21694,17 @@ export default function AgencyDashboard() {
                       <Building2 className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Organization Settings
+                          {t(
+                            "agencyDashboard.header.profile.organizationSettings",
+                            {
+                              defaultValue: "Organization Settings",
+                            },
+                          )}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Manage company profile
+                          {t("agencyDashboard.header.profile.manageCompany", {
+                            defaultValue: "Manage company profile",
+                          })}
                         </p>
                       </div>
                     </button>
@@ -20122,8 +21712,18 @@ export default function AgencyDashboard() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
                         toast({
-                          title: "Team & Permissions",
-                          description: "Coming soon",
+                          title: t(
+                            "agencyDashboard.header.profile.teamPermissions",
+                            {
+                              defaultValue: "Team & Permissions",
+                            },
+                          ),
+                          description: t(
+                            "agencyDashboard.analytics.labels.comingSoon",
+                            {
+                              defaultValue: "Coming Soon",
+                            },
+                          ),
                           duration: 2000,
                         });
                         setShowProfileMenu(false);
@@ -20132,9 +21732,16 @@ export default function AgencyDashboard() {
                       <Users className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Team & Permissions
+                          {t("agencyDashboard.header.profile.teamPermissions", {
+                            defaultValue: "Team & Permissions",
+                          })}
                         </p>
-                        <p className="text-xs text-gray-500">10 active users</p>
+                        <p className="text-xs text-gray-500">
+                          {t("agencyDashboard.header.profile.activeUsers", {
+                            defaultValue: "{{count}} active users",
+                            count: 10,
+                          })}
+                        </p>
                       </div>
                     </button>
                     <button
@@ -20147,7 +21754,12 @@ export default function AgencyDashboard() {
                       <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Billing & Subscription
+                          {t(
+                            "agencyDashboard.header.profile.billingSubscription",
+                            {
+                              defaultValue: "Billing & Subscription",
+                            },
+                          )}
                         </p>
                         <p className="text-xs text-gray-500">
                           {agencyDisplayPlanLabel}
@@ -20165,10 +21777,14 @@ export default function AgencyDashboard() {
                       <FileText className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Legal & Compliance
+                          {t("agencyDashboard.header.profile.legalCompliance", {
+                            defaultValue: "Legal & Compliance",
+                          })}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Contracts, terms, privacy
+                          {t("agencyDashboard.header.profile.legalSubtitle", {
+                            defaultValue: "Contracts, terms, privacy",
+                          })}
                         </p>
                       </div>
                     </button>
@@ -20183,10 +21799,17 @@ export default function AgencyDashboard() {
                       <LinkIcon className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
-                          Integrations
+                          {t("agencyDashboard.header.profile.integrations", {
+                            defaultValue: "Integrations",
+                          })}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Stripe, ElevenLabs connected
+                          {t(
+                            "agencyDashboard.header.profile.integrationsSubtitle",
+                            {
+                              defaultValue: "Stripe, ElevenLabs connected",
+                            },
+                          )}
                         </p>
                       </div>
                     </button>
@@ -20198,7 +21821,11 @@ export default function AgencyDashboard() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-red-50 rounded-lg transition-colors text-left text-red-600"
                     >
                       <LogOut className="w-4 h-4 transform -scale-x-100" />
-                      <span className="text-sm font-bold">Sign Out</span>
+                      <span className="text-sm font-bold">
+                        {t("agencyDashboard.navigation.signOut", {
+                          defaultValue: "Sign Out",
+                        })}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -20341,474 +21968,450 @@ export default function AgencyDashboard() {
         </Dialog>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden bg-gray-50">
-          <DashboardPageShell className="max-w-none px-2 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8">
-            {shouldShowTopSubTabRail ? (
-              <DashboardTabRail
-                className="mb-4"
-                items={(activeSidebarItem?.subItems || []).map((subItem) => ({
-                  id: `${activeTab}-${subItem}`,
-                  label: subItem,
-                  active: activeSubTab === subItem,
-                  onClick: () => {
-                    if (
-                      activeSidebarItem?.disabledSubItems &&
-                      activeSidebarItem.disabledSubItems[subItem]
-                    ) {
-                      navigate("/AgencySubscribe");
-                      return;
-                    }
-                    if (activeTab === "jobs" && subItem === "Open Job Board") {
-                      navigate(
-                        `${createPageUrl("Jobs")}?backTo=${encodeURIComponent(
-                          `${createPageUrl("AgencyDashboard")}?tab=jobs&subTab=${encodeURIComponent("Job Invites")}`,
-                        )}`,
-                      );
-                      return;
-                    }
-                    setActiveView(activeTab, subItem);
-                  },
-                }))}
-              />
-            ) : null}
-            {activeTab === "dashboard" && (
-              <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="text-lg font-black text-gray-900">
-                      Welcome to your agency dashboard
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      This is your main hub for managing your agency.
-                    </div>
+        <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
+          {activeTab === "dashboard" && (
+            <div className="mb-6 rounded-[28px] border border-blue-200 bg-blue-50 p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-lg font-black text-gray-900">
+                    {t("agencyDashboard.dashboard.banner.title")}
                   </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                    {!agencyBillingLoading && (
-                      <div
-                        className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
-                          agencyTrialActive
-                            ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
-                            : agencyPlanTier === "pro"
-                              ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
-                              : agencyPlanTier === "basic" ||
-                                  agencyPlanTier === "agency"
-                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
-                                : agencyPlanTier === "enterprise"
-                                  ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
-                                  : "bg-white text-gray-900 ring-gray-200"
-                        }`}
-                        title="Current plan"
-                      >
-                        {agencyTrialActive ? (
-                          <span className="inline-flex items-center gap-2">
-                            <span>{agencyTrialTierLabel} TRIAL</span>
-                            {agencyTrialCountdown ? (
-                              <span className="text-[11px] font-black tracking-normal opacity-95">
-                                {agencyTrialCountdown}
-                              </span>
-                            ) : null}
-                          </span>
-                        ) : (
-                          String(agencyPlanTier || agencyDisplayPlanLabel || "")
-                            .trim()
-                            .toUpperCase()
-                        )}
-                      </div>
-                    )}
-
-                    {!agencyBillingLoading &&
-                      agencyPlanTier === "free" &&
-                      !agencyTrialActive && (
-                        <Button
-                          type="button"
-                          className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
-                          onClick={() => navigate("/agencysubscribe")}
-                        >
-                          Upgrade
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      )}
+                  <div className="text-gray-500 font-medium mt-1">
+                    {t("agencyDashboard.dashboard.banner.subtitle")}
                   </div>
                 </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                  {!agencyBillingLoading && (
+                    <div
+                      className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
+                        agencyTrialActive
+                          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
+                          : agencyPlanTier === "pro"
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
+                            : agencyPlanTier === "basic" ||
+                                agencyPlanTier === "agency"
+                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
+                              : agencyPlanTier === "enterprise"
+                                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
+                                : "bg-white text-gray-900 ring-gray-200"
+                      }`}
+                      title={t("agencyDashboard.dashboard.banner.currentPlan")}
+                    >
+                      {agencyTrialActive ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span>{agencyDisplayPlanLabel} TRIAL</span>
+                          {agencyTrialCountdown ? (
+                            <span className="text-[11px] font-black tracking-normal opacity-95">
+                              {agencyTrialCountdown}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        String(agencyPlanTier || agencyDisplayPlanLabel || "")
+                          .trim()
+                          .toUpperCase()
+                      )}
+                    </div>
+                  )}
+
+                  {!agencyBillingLoading &&
+                    agencyPlanTier === "free" &&
+                    !agencyTrialActive && (
+                      <Button
+                        type="button"
+                        className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        Upgrade
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
               </div>
+            </div>
+          )}
+          <Suspense fallback={<TabSkeleton />}>
+            {activeTab === "dashboard" && (
+              <AgencyDashboardView
+                isSportsAgency={isSportsAgency}
+                onKYC={handleKYC}
+                agencyName={agencyName}
+                rosterData={rosterTalents}
+                licensingRequestsCount={pendingLicensingRequestsCount}
+                overview={dashboardOverviewQuery.data}
+                talentPerformance={talentPerformanceQuery.data}
+                revenueBreakdown={revenueBreakdownQuery.data}
+                licensingPipeline={licensingPipelineQuery.data}
+                recentActivity={recentActivityQuery.data}
+                kycStatus={agencyKycStatus}
+                kycRejectionReason={agencyKycRejectionReason}
+                kycLoading={kycLoading}
+                onRefreshStatus={refreshAgencyKycStatus}
+                refreshLoading={kycStatusRefreshing}
+                canResumeKyc={
+                  String(agencyKycStatus || "")
+                    .trim()
+                    .toLowerCase() === "pending" && !!savedKycSessionUrl
+                }
+              />
             )}
-            <Suspense fallback={<TabSkeleton />}>
-              {activeTab === "dashboard" && (
-                <AgencyDashboardView
+            {activeTab === "roster" && isRosterPrimarySubTab && (
+              <AgencyRosterView
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                statusFilter={statusFilter}
+                setStatusFilter={setStatusFilter}
+                categoryFilter={categoryFilter}
+                setCategoryFilter={setCategoryFilter}
+                sortConfig={sortConfig}
+                setSortConfig={setSortConfig}
+                agencyMode={effectiveAgencyMode}
+                rosterData={rosterTalents}
+                activeCampaigns={activeCampaigns}
+                earnings30dTotalCents={earnings30dTotalCents}
+                earningsPrev30dTotalCents={earningsPrev30dTotalCents}
+                agencyName={agencyName}
+                agencyEmail={agencyEmail}
+                agencyWebsite={agencyWebsite}
+                logoUrl={agencyLogoUrl}
+                kycStatus={agencyKycStatus}
+                onEditProfile={goToEditProfile}
+                onViewMarketplace={goToMarketplace}
+                seatsLimit={seatsLimit}
+                isLoading={rosterQuery.isLoading}
+                onRosterChanged={() => rosterQuery.refetch()}
+                isSportsAgency={isSportsAgency}
+              />
+            )}
+            {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
+              <PerformanceTiers isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "jobs" &&
+              activeSubTab === "Job Invites" &&
+              (hasProAccess ? (
+                <AgencyJobInvitesView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Jobs are available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "licensing" &&
+              activeSubTab === "Licensing Requests" && (
+                <LicensingRequestsView
                   isSportsAgency={isSportsAgency}
-                  onKYC={handleKYC}
-                  agencyName={agencyName}
-                  rosterData={rosterTalents}
-                  licensingRequestsCount={pendingLicensingRequestsCount}
-                  overview={dashboardOverviewQuery.data}
-                  talentPerformance={talentPerformanceQuery.data}
-                  revenueBreakdown={revenueBreakdownQuery.data}
-                  licensingPipeline={licensingPipelineQuery.data}
-                  recentActivity={recentActivityQuery.data}
-                  kycStatus={agencyKycStatus}
-                  kycRejectionReason={agencyKycRejectionReason}
-                  kycLoading={kycLoading}
-                  onRefreshStatus={refreshAgencyKycStatus}
-                  refreshLoading={kycStatusRefreshing}
-                  canResumeKyc={
-                    String(agencyKycStatus || "")
-                      .trim()
-                      .toLowerCase() === "pending" && !!savedKycSessionUrl
+                  onBrandRequestAccepted={(ctx) => {
+                    console.log("Brand request accepted, context:", ctx);
+                    setBrandRequestContext(ctx);
+                    setActiveView("licensing", "License Templates");
+                  }}
+                />
+              )}
+            {activeTab === "licensing" &&
+              activeSubTab === "Brand Connections" &&
+              (agencyCanUseBrandConnections ? (
+                <BrandConnectionsView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Brand Connections are available on paid agency plans only.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "brand-connections" &&
+              (agencyCanUseBrandConnections ? (
+                <BrandConnectionsView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Brand Connections are available on paid agency plans only.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "licensing" &&
+              activeSubTab === "License Submissions" && (
+                <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
+              )}
+            {activeTab === "licensing" &&
+              activeSubTab === "Active Licenses" && (
+                <ActiveLicensesView
+                  onRenew={handleRenew}
+                  isSportsAgency={isSportsAgency}
+                />
+              )}
+            {activeTab === "licensing" &&
+              activeSubTab === "License Templates" && (
+                <LicenseTemplatesTab
+                  isSportsAgency={isSportsAgency}
+                  renewalLaunchContext={renewalLaunchContext}
+                  onRenewalLaunchHandled={() => {
+                    setRenewalLaunchContext(null);
+                  }}
+                  brandRequestContext={
+                    brandRequestContext
+                      ? {
+                          brand_id: brandRequestContext.brandId,
+                          brand_name: brandRequestContext.brandName,
+                          brand_email: brandRequestContext.brandEmail,
+                          licensing_request_id:
+                            brandRequestContext.licensingRequestId,
+                          talent_id: brandRequestContext.talentId,
+                          talent_name: brandRequestContext.talentName,
+                        }
+                      : null
                   }
+                  onBrandRequestContextHandled={() => {
+                    console.log("Brand request context handled, clearing");
+                    setBrandRequestContext(null);
+                  }}
                 />
               )}
-              {activeTab === "roster" && isRosterPrimarySubTab && (
-                <AgencyRosterView
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                  statusFilter={statusFilter}
-                  setStatusFilter={setStatusFilter}
-                  categoryFilter={categoryFilter}
-                  setCategoryFilter={setCategoryFilter}
-                  sortConfig={sortConfig}
-                  setSortConfig={setSortConfig}
-                  agencyMode={effectiveAgencyMode}
-                  rosterData={rosterTalents}
-                  activeCampaigns={activeCampaigns}
-                  earnings30dTotalCents={earnings30dTotalCents}
-                  earningsPrev30dTotalCents={earningsPrev30dTotalCents}
-                  agencyName={agencyName}
-                  agencyEmail={agencyEmail}
-                  agencyWebsite={agencyWebsite}
-                  logoUrl={agencyLogoUrl}
-                  kycStatus={agencyKycStatus}
-                  onEditProfile={goToEditProfile}
-                  onViewMarketplace={goToMarketplace}
-                  seatsLimit={seatsLimit}
-                  isLoading={rosterQuery.isLoading}
-                  onRosterChanged={() => rosterQuery.refetch()}
-                  isSportsAgency={isSportsAgency}
-                />
-              )}
-              {activeTab === "roster" &&
-                activeSubTab === "Performance Tiers" && (
-                  <PerformanceTiers isSportsAgency={isSportsAgency} />
-                )}
-              {activeTab === "jobs" &&
-                activeSubTab === "Job Invites" &&
-                (hasProAccess ? (
-                  <AgencyJobInvitesView />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Jobs are available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeTab === "licensing" &&
-                activeSubTab === "Licensing Requests" && (
-                  <LicensingRequestsView
-                    isSportsAgency={isSportsAgency}
-                    onBrandRequestAccepted={(ctx) => {
-                      console.log("Brand request accepted, context:", ctx);
-                      setBrandRequestContext(ctx);
-                      setActiveView("licensing", "License Templates");
-                    }}
-                  />
-                )}
-              {activeTab === "licensing" &&
-                activeSubTab === "Brand Connections" &&
-                (agencyCanUseBrandConnections ? (
-                  <BrandConnectionsView />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Brand Connections are available on paid agency plans only.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeTab === "brand-connections" &&
-                (agencyCanUseBrandConnections ? (
-                  <BrandConnectionsView />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Brand Connections are available on paid agency plans only.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeTab === "licensing" &&
-                activeSubTab === "License Submissions" && (
-                  <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
-                )}
-              {activeTab === "licensing" &&
-                activeSubTab === "Active Licenses" && (
-                  <ActiveLicensesView
-                    onRenew={handleRenew}
-                    isSportsAgency={isSportsAgency}
-                  />
-                )}
-              {activeTab === "licensing" &&
-                activeSubTab === "License Templates" && (
-                  <LicenseTemplatesTab
-                    isSportsAgency={isSportsAgency}
-                    renewalLaunchContext={renewalLaunchContext}
-                    onRenewalLaunchHandled={() => {
-                      setRenewalLaunchContext(null);
-                    }}
-                    brandRequestContext={
-                      brandRequestContext
-                        ? {
-                            brand_id: brandRequestContext.brandId,
-                            brand_name: brandRequestContext.brandName,
-                            brand_email: brandRequestContext.brandEmail,
-                            licensing_request_id:
-                              brandRequestContext.licensingRequestId,
-                            talent_id: brandRequestContext.talentId,
-                            talent_name: brandRequestContext.talentName,
-                          }
-                        : null
-                    }
-                    onBrandRequestContextHandled={() => {
-                      console.log("Brand request context handled, clearing");
-                      setBrandRequestContext(null);
-                    }}
-                  />
-                )}
-              {activeTab === "protection" && (
+            {activeTab === "protection" && (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">
+                  Coming soon
+                </div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Protection & Usage is coming soon.
+                </div>
+              </Card>
+            )}
+            {activeTab === "analytics" &&
+              activeSubTab === "Analytics Dashboard" &&
+              (effectiveAgencyMode === "IRL" ? (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                   <div className="text-lg font-black text-gray-900">
                     Coming soon
                   </div>
                   <div className="text-gray-500 font-medium mt-1">
-                    Protection & Usage is coming soon.
+                    Analytics Dashboard for IRL Mode is coming soon.
                   </div>
                 </Card>
-              )}
-              {activeTab === "analytics" &&
-                activeSubTab === "Analytics Dashboard" &&
-                (effectiveAgencyMode === "IRL" ? (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Coming soon
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Analytics Dashboard for IRL Mode is coming soon.
-                    </div>
-                  </Card>
-                ) : hasProAccess ? (
-                  <AnalyticsDashboardView
-                    onRenewLicense={handleRenew}
-                    agencyMode={effectiveAgencyMode}
-                    licenseComplianceData={LICENSE_COMPLIANCE_DATA}
-                    talentData={TALENT_DATA}
-                  />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Advanced Analytics is available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeTab === "analytics" &&
-                activeSubTab === "Royalties & Payouts" && (
-                  <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
-                )}
-              {activeTab === "deliverables" && <AgencyDeliverablesView />}
-
-              {activeTab === "packages" && (
-                <PackagesView isSportsAgency={isSportsAgency} />
-              )}
-              {activeTab === "catalogs" && (
-                <CatalogsView isSportsAgency={isSportsAgency} />
-              )}
-              {activeTab === "payouts" && (
-                <ConnectBankView isSportsAgency={isSportsAgency} />
-              )}
-              {activeTab === "settings" &&
-                activeSubTab === "General Settings" && (
-                  <GeneralSettingsView
-                    hasIrlBookingAddon={hasIrlBookingAddon}
-                    hasProAccess={hasProAccess}
-                    agencyDisplayPlanLabel={agencyDisplayPlanLabel}
-                  />
-                )}
-              {activeTab === "settings" && activeSubTab === "File Storage" && (
-                <FileStorageView />
-              )}
-              {activeTab === "scouting" && (
-                <ScoutingHubView
-                  isSportsAgency={isSportsAgency}
-                  activeTab={activeScoutingTab}
-                  setActiveTab={setActiveScoutingTab}
-                  isEventModalOpen={isEventModalOpen}
-                  setIsEventModalOpen={setIsEventModalOpen}
-                  eventToEdit={eventToEdit}
-                  setEventToEdit={setEventToEdit}
-                  isPlanTripModalOpen={isPlanTripModalOpen}
-                  setIsPlanTripModalOpen={setIsPlanTripModalOpen}
-                  isProspectModalOpen={isProspectModalOpen}
-                  setIsProspectModalOpen={setIsProspectModalOpen}
-                  prospectToEdit={prospectToEdit}
-                  setProspectToEdit={setProspectToEdit}
-                />
-              )}
-              {activeTab === "talent-packages" && (
-                <TalentPackagesView
-                  isSportsAgency={isSportsAgency}
-                  agencyId={profile?.id}
-                />
-              )}
-              {activeTab === "marketplace" && (
-                <MarketplaceTab
-                  connectLocked={!agencyCanConnectMarketplace}
-                  onConnectLocked={() => navigate("/agencysubscribe")}
-                />
-              )}
-              {activeTab === "messages" &&
-                (hasProAccess ? (
-                  <CommunicationHub />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Messaging is available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeTab === "client-crm" && <ClientCRMView />}
-              {activeTab === "file-storage" && <FileStorageView />}
-              {activeTab === "bookings" && (
-                <BookingsView
-                  activeSubTab={activeSubTab}
-                  bookings={bookings}
-                  onAddBooking={onAddBooking}
-                  onUpdateBooking={onUpdateBooking}
-                  onCancelBooking={onCancelBooking}
-                  bookOuts={bookOuts}
-                  onAddBookOut={onAddBookOut}
-                  onRemoveBookOut={onRemoveBookOut}
-                  isSportsAgency={isSportsAgency}
+              ) : hasProAccess ? (
+                <AnalyticsDashboardView
+                  onRenewLicense={handleRenew}
                   agencyMode={effectiveAgencyMode}
+                  licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                  talentData={TALENT_DATA}
+                />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Advanced Analytics is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "analytics" &&
+              activeSubTab === "Royalties & Payouts" && (
+                <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
+              )}
+            {activeTab === "deliverables" && <AgencyDeliverablesView />}
+
+            {activeTab === "packages" && (
+              <PackagesView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "catalogs" && (
+              <CatalogsView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "payouts" && (
+              <ConnectBankView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "settings" &&
+              activeSubTab === "General Settings" && (
+                <GeneralSettingsView
+                  hasIrlBookingAddon={hasIrlBookingAddon}
+                  hasProAccess={hasProAccess}
+                  agencyDisplayPlanLabel={agencyDisplayPlanLabel}
+                  kycStatus={agencyKycStatus}
                 />
               )}
-              {activeTab === "accounting" && (
-                <div>
-                  {activeSubTab === "Connect Bank" && (
-                    <ConnectBankView isSportsAgency={isSportsAgency} />
-                  )}
-                  {activeSubTab === "Invoice Generation" && (
-                    <GenerateInvoiceView />
-                  )}
-                  {activeSubTab === "Invoice Management" && (
-                    <InvoiceManagementView
-                      setActiveSubTab={setActiveSubTab}
-                      activeSubTab={activeSubTab}
-                      isSportsAgency={isSportsAgency}
-                    />
-                  )}
-                  {activeSubTab === "Payment Tracking" && (
-                    <PaymentTrackingView />
-                  )}
-                  {(activeSubTab === "Talent Statements" ||
-                    activeSubTab === "Athlete Statements") && (
-                    <TalentStatementsView isSportsAgency={isSportsAgency} />
-                  )}
-                  {activeSubTab === "Financial Reports" &&
-                    (hasProAccess ? (
-                      <FinancialReportsView />
-                    ) : (
-                      <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                        <div className="text-lg font-black text-gray-900">
-                          Upgrade required
-                        </div>
-                        <div className="text-gray-500 font-medium mt-1">
-                          Financial Reports are available on the Pro plan.
-                        </div>
-                        <div className="mt-4">
-                          <Button
-                            className="rounded-xl font-bold"
-                            onClick={() => navigate("/agencysubscribe")}
-                          >
-                            View plans
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  {activeSubTab === "Expense Tracking" &&
-                    (hasProAccess ? (
-                      <ExpenseTrackingView />
-                    ) : (
-                      <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                        <div className="text-lg font-black text-gray-900">
-                          Upgrade required
-                        </div>
-                        <div className="text-gray-500 font-medium mt-1">
-                          Expense Tracking is available on the Pro plan.
-                        </div>
-                        <div className="mt-4">
-                          <Button
-                            className="rounded-xl font-bold"
-                            onClick={() => navigate("/agencysubscribe")}
-                          >
-                            View plans
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                </div>
-              )}
-            </Suspense>
-          </DashboardPageShell>
+            {activeTab === "settings" && activeSubTab === "File Storage" && (
+              <FileStorageView />
+            )}
+            {activeTab === "scouting" && (
+              <ScoutingHubView
+                isSportsAgency={isSportsAgency}
+                activeTab={activeScoutingTab}
+                setActiveTab={setActiveScoutingTab}
+                isEventModalOpen={isEventModalOpen}
+                setIsEventModalOpen={setIsEventModalOpen}
+                eventToEdit={eventToEdit}
+                setEventToEdit={setEventToEdit}
+                isPlanTripModalOpen={isPlanTripModalOpen}
+                setIsPlanTripModalOpen={setIsPlanTripModalOpen}
+                isProspectModalOpen={isProspectModalOpen}
+                setIsProspectModalOpen={setIsProspectModalOpen}
+                prospectToEdit={prospectToEdit}
+                setProspectToEdit={setProspectToEdit}
+                isSavingEvent={isSavingEvent}
+                setIsSavingEvent={setIsSavingEvent}
+              />
+            )}
+            {activeTab === "talent-packages" && (
+              <PackagesView isSportsAgency={isSportsAgency} />
+            )}
+            {activeTab === "marketplace" && (
+              <MarketplaceTab
+                connectLocked={!agencyCanConnectMarketplace}
+                onConnectLocked={() => navigate("/agencysubscribe")}
+              />
+            )}
+            {activeTab === "messages" &&
+              (hasProAccess ? (
+                <CommunicationHub
+                  initialCreatorId={
+                    String(searchParams.get("openCreatorId") || "").trim() ||
+                    undefined
+                  }
+                />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Messaging is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "client-crm" && <ClientCRMView />}
+            {activeTab === "file-storage" && <FileStorageView />}
+            {activeTab === "bookings" && (
+              <BookingsView
+                activeSubTab={activeSubTab}
+                bookings={bookings}
+                onAddBooking={onAddBooking}
+                onUpdateBooking={onUpdateBooking}
+                onCancelBooking={onCancelBooking}
+                bookOuts={bookOuts}
+                onAddBookOut={onAddBookOut}
+                onRemoveBookOut={onRemoveBookOut}
+                isSportsAgency={isSportsAgency}
+                agencyMode={effectiveAgencyMode}
+              />
+            )}
+            {activeTab === "accounting" && (
+              <div>
+                {activeSubTab === "Connect Bank" && (
+                  <ConnectBankView isSportsAgency={isSportsAgency} />
+                )}
+                {activeSubTab === "Invoice Generation" && (
+                  <GenerateInvoiceView />
+                )}
+                {activeSubTab === "Invoice Management" && (
+                  <InvoiceManagementView
+                    setActiveSubTab={setActiveSubTab}
+                    activeSubTab={activeSubTab}
+                    isSportsAgency={isSportsAgency}
+                  />
+                )}
+                {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
+                {(activeSubTab === "Talent Statements" ||
+                  activeSubTab === "Athlete Statements") && (
+                  <TalentStatementsView isSportsAgency={isSportsAgency} />
+                )}
+                {activeSubTab === "Financial Reports" &&
+                  (hasProAccess ? (
+                    <FinancialReportsView />
+                  ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                      <div className="text-lg font-black text-gray-900">
+                        Upgrade required
+                      </div>
+                      <div className="text-gray-500 font-medium mt-1">
+                        {t(
+                          "agencyDashboard.brandConnections.accounting.financialReportsProOnly",
+                        )}
+                      </div>
+                      <div className="mt-4">
+                        <Button
+                          className="rounded-xl font-bold"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          View plans
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                {activeSubTab === "Expense Tracking" &&
+                  (hasProAccess ? (
+                    <ExpenseTrackingView />
+                  ) : (
+                    <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                      <div className="text-lg font-black text-gray-900">
+                        Upgrade required
+                      </div>
+                      <div className="text-gray-500 font-medium mt-1">
+                        {t(
+                          "agencyDashboard.brandConnections.accounting.expenseTrackingProOnly",
+                        )}
+                      </div>
+                      <div className="mt-4">
+                        <Button
+                          className="rounded-xl font-bold"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          View plans
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+              </div>
+            )}
+          </Suspense>
         </main>
 
         <Dialog
