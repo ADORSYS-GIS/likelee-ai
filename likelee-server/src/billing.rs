@@ -5576,7 +5576,8 @@ pub async fn set_brand_primary_payment_method(
     user: AuthUser,
     Json(req): Json<SetPrimaryPaymentMethodRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let brand_access = team::require_brand_permission(&state, &user, Permission::ManageBilling).await?;
+    let brand_access =
+        team::require_brand_permission(&state, &user, Permission::ManageBilling).await?;
     let brand_id = brand_access.organization_id.clone();
 
     // Try to find payment method locally first
@@ -5769,7 +5770,8 @@ pub async fn delete_brand_payment_method(
     user: AuthUser,
     Json(req): Json<DeletePaymentMethodRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    let brand_access = team::require_brand_permission(&state, &user, Permission::ManageBilling).await?;
+    let brand_access =
+        team::require_brand_permission(&state, &user, Permission::ManageBilling).await?;
     let brand_id = brand_access.organization_id.clone();
 
     // Soft delete payment method — scoped to the brand org, not the caller's user id
@@ -5855,7 +5857,9 @@ pub async fn delete_brand_payment_method(
                     }),
                     ..Default::default()
                 };
-                match stripe_sdk::Customer::update(&client, &customer_id_parsed, update_params).await {
+                match stripe_sdk::Customer::update(&client, &customer_id_parsed, update_params)
+                    .await
+                {
                     Ok(_) => {
                         info!(brand_id = %brand_id, customer_id = %stripe_customer_id, "cleared stripe customer default payment method after delete");
                     }

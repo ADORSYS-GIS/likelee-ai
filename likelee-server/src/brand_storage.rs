@@ -1034,9 +1034,14 @@ pub async fn upload_brand_brief_asset(
     );
 
     // Brief assets are public so they can be embedded in brief snapshots viewed by creators/agencies.
-    let uploaded =
-        upload_object(&state, StorageVisibility::Public, &path, bytes.clone(), mime_type.as_deref())
-            .await?;
+    let uploaded = upload_object(
+        &state,
+        StorageVisibility::Public,
+        &path,
+        bytes.clone(),
+        mime_type.as_deref(),
+    )
+    .await?;
     let public_url = uploaded.public_url.clone();
 
     // Record in brand_files for storage quota tracking
@@ -1082,7 +1087,11 @@ pub async fn upload_brand_brief_asset(
         size_bytes: Some(new_size),
         checksum_sha256: None,
         source_table: Some("brand_files".to_string()),
-        source_id: if id.is_empty() { None } else { Some(id.clone()) },
+        source_id: if id.is_empty() {
+            None
+        } else {
+            Some(id.clone())
+        },
         created_by: Some(user.id.clone()),
         counts_toward_quota: true,
     };
@@ -1092,5 +1101,7 @@ pub async fn upload_brand_brief_asset(
 
     info!(brand_id = %brand_id, file_id = %id, size_bytes = new_size, "brand_brief_asset_uploaded");
 
-    Ok(Json(serde_json::json!({ "url": public_url, "id": id, "file_name": fname })))
+    Ok(Json(
+        serde_json::json!({ "url": public_url, "id": id, "file_name": fname }),
+    ))
 }
