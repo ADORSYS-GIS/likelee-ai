@@ -4739,14 +4739,6 @@ export default function BrandDashboard() {
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
-                    {canManagePayOffers && (
-                      <Button
-                        variant="outline"
-                        className="border border-gray-300 rounded-none"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
                   </div>
                 </Card>
               );

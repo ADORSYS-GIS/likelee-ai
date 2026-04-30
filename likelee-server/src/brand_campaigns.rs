@@ -4230,11 +4230,11 @@ pub async fn refresh_offer_contract_status(
         serde_json::from_str(&update_text).unwrap_or_default();
 
     // Only consider an offer "fully signed" when BOTH parties have signed.
-    // We treat all in-flight signature states as "sent"/"partially signed".
+    // "opened" means the document was viewed but not yet signed — keep the offer
+    // at contract_sent so it does not advance before any party actually signs.
     let mapped_offer_status = match derived_status {
         "completed" => Some("contract_fully_signed"),
-        "opened" => Some("contract_partially_signed"),
-        "sent" | "agency_pending" => Some("contract_sent"),
+        "opened" | "sent" | "agency_pending" => Some("contract_sent"),
         "declined" => Some("changes_requested"),
         _ => None,
     };
@@ -4708,10 +4708,13 @@ pub async fn sync_offer_contract(
 
     // 4. Propagate status change to the parent campaign offer
     if let Some(ds) = contract.get("docuseal_status").and_then(|v| v.as_str()) {
+        // Only advance the offer status when a party has actually signed.
+        // "opened"/"viewed" means the document was opened in a browser — not signed.
+        // We keep those as contract_sent so the offer doesn't advance prematurely.
         let mapped = match ds {
             "completed" | "fully_signed" => Some("contract_fully_signed"),
-            "partially_signed" | "opened" | "agency_pending" => Some("contract_partially_signed"),
-            "sent" | "pending" => Some("contract_sent"),
+            "partially_signed" => Some("contract_partially_signed"),
+            "opened" | "sent" | "pending" | "agency_pending" => Some("contract_sent"),
             "declined" => Some("changes_requested"),
             _ => None,
         };
@@ -6709,10 +6712,11 @@ pub async fn handle_campaign_contract_webhook(
             .await;
 
         // Only consider an offer "fully signed" when BOTH parties have signed.
+        // "opened" means the document was viewed but not yet signed — keep the offer
+        // at contract_sent so it does not advance before any party actually signs.
         let mapped_offer_status = match derived_status {
             "completed" => Some("contract_fully_signed"),
-            "opened" => Some("contract_partially_signed"),
-            "sent" | "agency_pending" => Some("contract_sent"),
+            "opened" | "sent" | "agency_pending" => Some("contract_sent"),
             "declined" => Some("changes_requested"),
             _ => None,
         };
