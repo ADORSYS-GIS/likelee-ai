@@ -4626,12 +4626,20 @@ pub async fn sync_offer_contract(
                         "agency_pending"
                     }
                 } else {
-                    match ds_submission.status.as_str() {
-                        "completed" => "completed",
-                        "declined" => "declined",
-                        "pending" | "sent" => "sent",
-                        "opened" | "viewed" => "opened",
-                        other => other,
+                    // Creator offer: First Party = Brand, Second Party = Creator.
+                    // Check individual submitter statuses — never trust ds_submission.status
+                    // directly because DocuSeal marks the submission "completed" after the
+                    // first signer, not after all signers.
+                    let brand_signed = is_submitter_signed(&first_submitter_status);
+                    let creator_signed = is_submitter_signed(&second_submitter_status);
+                    if brand_signed && creator_signed {
+                        "completed"
+                    } else if brand_signed || creator_signed {
+                        "opened"
+                    } else if any_opened {
+                        "opened"
+                    } else {
+                        "sent"
                     }
                 };
                 update.insert("docuseal_status".to_string(), json!(live_status));
@@ -4698,8 +4706,9 @@ pub async fn sync_offer_contract(
     if let Some(ds) = contract.get("docuseal_status").and_then(|v| v.as_str()) {
         let mapped = match ds {
             "completed" | "fully_signed" => Some("contract_fully_signed"),
-            "partially_signed" => Some("contract_partially_signed"),
-            "sent" | "pending" | "opened" | "viewed" => Some("contract_sent"),
+            "partially_signed" | "opened" | "agency_pending" => Some("contract_partially_signed"),
+            "sent" | "pending" => Some("contract_sent"),
+            "declined" => Some("changes_requested"),
             _ => None,
         };
         if let Some(status_value) = mapped {
@@ -8340,10 +8349,15 @@ pub async fn handle_webhook(
         "Received DocuSeal brand campaign webhook"
     );
 
+    // form.completed fires when a SINGLE submitter completes their form.
+    // submission.completed fires when ALL submitters have signed.
+    // We must not treat form.completed as fully signed — that would mark the
+    // contract complete after only one party signs.
     let status_update = match payload.event_type.as_str() {
         "submission.started" | "submission.opened" | "submission.viewed" | "form.started"
         | "form.viewed" => Some("opened"),
-        "submission.completed" | "form.completed" => Some("completed"),
+        "submission.completed" => Some("completed"),   // ALL parties signed
+        "form.completed" => Some("partially_signed"),  // ONE party signed
         "submission.declined" | "form.declined" => Some("declined"),
         _ => None,
     };
@@ -8371,7 +8385,7 @@ pub async fn handle_webhook(
     let resp = state
         .pg
         .from("campaign_offer_contracts")
-        .select("id, offer_id")
+        .select("id, offer_id, target_type")
         .eq("docuseal_submission_id", submission_id.to_string())
         .single()
         .execute()
@@ -8389,6 +8403,7 @@ pub async fn handle_webhook(
     let contract: serde_json::Value = serde_json::from_str(&contract_text).unwrap_or_default();
     let contract_id = contract["id"].as_str().unwrap_or_default();
     let offer_id = contract["offer_id"].as_str().unwrap_or_default();
+    let target_type = contract["target_type"].as_str().unwrap_or("");
 
     if contract_id.is_empty() {
         return Ok(StatusCode::OK);
@@ -8420,13 +8435,18 @@ pub async fn handle_webhook(
         .execute()
         .await;
 
+    // 2. Verify both parties have signed before advancing the offer to fully_signed.
+    //    For agency offers: First Party = Agency, Second Party = Brand.
+    //    For creator offers: First Party = Brand, Second Party = Creator.
+    //    We only mark contract_fully_signed when BOTH submitters are signed.
     let submitters = payload
         .data
         .get("submitters")
         .and_then(|v| v.as_array())
         .cloned()
         .unwrap_or_default();
-    let brand_signed = submitters
+
+    let first_signed = submitters
         .iter()
         .find(|s| {
             s.get("role")
@@ -8439,23 +8459,33 @@ pub async fn handle_webhook(
         .map(|s| is_submitter_signed(&s.to_lowercase()))
         .unwrap_or(false);
 
+    let second_signed = submitters
+        .iter()
+        .find(|s| {
+            s.get("role")
+                .and_then(|v| v.as_str())
+                .map(|r| docuseal_role_key(r) == "secondparty")
+                .unwrap_or(false)
+        })
+        .and_then(|s| s.get("status"))
+        .and_then(|v| v.as_str())
+        .map(|s| is_submitter_signed(&s.to_lowercase()))
+        .unwrap_or(false);
+
+    let both_signed = first_signed && second_signed;
+
     // 2. Update the parent campaign_offers status and log activity
     if !offer_id.is_empty() {
-        if brand_signed || new_status == "completed" {
+        // Only advance to contract_fully_signed when BOTH parties have signed.
+        // submission.completed guarantees this; form.completed does not.
+        if both_signed || new_status == "completed" {
             info!(
                 offer_id,
+                target_type,
+                first_signed,
+                second_signed,
                 "Updating campaign offer status to contract_fully_signed via webhook"
             );
-
-            // Fetch offer details for activity logging
-            let _offer_resp = state
-                .pg
-                .from("campaign_offers")
-                .select("brand_id,brand_campaign_id,target_type,target_id")
-                .eq("id", offer_id)
-                .single()
-                .execute()
-                .await;
 
             let _ = state
                 .pg
@@ -8471,8 +8501,30 @@ pub async fn handle_webhook(
                 .execute()
                 .await;
 
-            // NEW: Generate the billing stub (licensing_request) for the campaign offer
+            // Generate the billing stub (licensing_request) for the campaign offer
             let _ = ensure_campaign_billing_stub(&state, offer_id).await;
+        } else if new_status == "partially_signed" {
+            // One party signed — advance to partially signed, not fully signed
+            info!(
+                offer_id,
+                target_type,
+                first_signed,
+                second_signed,
+                "Updating campaign offer status to contract_partially_signed via webhook"
+            );
+            let _ = state
+                .pg
+                .from("campaign_offers")
+                .update(
+                    json!({
+                        "status": "contract_partially_signed",
+                        "updated_at": chrono::Utc::now().to_rfc3339(),
+                    })
+                    .to_string(),
+                )
+                .eq("id", offer_id)
+                .execute()
+                .await;
         } else if new_status == "opened" {
             let _ = state
                 .pg
