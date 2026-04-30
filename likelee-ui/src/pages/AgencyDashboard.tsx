@@ -22066,7 +22066,11 @@ export default function AgencyDashboard() {
             {activeTab === "messages" &&
               (hasProAccess ? (
                 <CommunicationHub
-                  initialCreatorId={messagingCreatorId}
+                  initialCreatorId={
+                    messagingCreatorId ||
+                    String(searchParams.get("openCreatorId") || "").trim() ||
+                    undefined
+                  }
                   onInitialCreatorHandled={() =>
                     setMessagingCreatorId(undefined)
                   }
@@ -22185,48 +22189,6 @@ export default function AgencyDashboard() {
               <MarketplaceTab
                 connectLocked={!agencyCanConnectMarketplace}
                 onConnectLocked={() => navigate("/agencysubscribe")}
-              />
-            )}
-            {activeTab === "messages" &&
-              (hasProAccess ? (
-                <CommunicationHub
-                  initialCreatorId={
-                    String(searchParams.get("openCreatorId") || "").trim() ||
-                    undefined
-                  }
-                />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Messaging is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "client-crm" && <ClientCRMView />}
-            {activeTab === "file-storage" && <FileStorageView />}
-            {activeTab === "bookings" && (
-              <BookingsView
-                activeSubTab={activeSubTab}
-                bookings={bookings}
-                onAddBooking={onAddBooking}
-                onUpdateBooking={onUpdateBooking}
-                onCancelBooking={onCancelBooking}
-                bookOuts={bookOuts}
-                onAddBookOut={onAddBookOut}
-                onRemoveBookOut={onRemoveBookOut}
-                isSportsAgency={isSportsAgency}
-                agencyMode={effectiveAgencyMode}
               />
             )}
             {activeTab === "accounting" && (

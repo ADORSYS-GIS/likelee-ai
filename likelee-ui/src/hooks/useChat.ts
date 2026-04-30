@@ -82,6 +82,11 @@ export function useChat(currentUserId?: string, userRole?: string) {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sending, setSending] = useState(false);
   const refreshTimerRef = useRef<number | null>(null);
+  const activeConversationIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
 
   // 1. Load all conversation threads using TanStack Query
   const {
@@ -162,7 +167,11 @@ export function useChat(currentUserId?: string, userRole?: string) {
       }, 250);
     };
 
-    const channel = supabase.channel(`chat-global-${currentUserId}`);
+    const channel = supabase.channel(
+      `chat-global-${currentUserId}-${conversationIds.join("_") || "base"}-${Math.random()
+        .toString(36)
+        .slice(2)}`,
+    );
 
     channel.on(
       "postgres_changes",
@@ -180,7 +189,8 @@ export function useChat(currentUserId?: string, userRole?: string) {
           async (payload) => {
             const newMsg = payload.new as Message;
             const isFromMe = newMsg.sender_id === currentUserId;
-            const isActive = newMsg.conversation_id === activeConversationId;
+            const isActive =
+              newMsg.conversation_id === activeConversationIdRef.current;
 
             if (isActive) {
               setMessages((prev) => {
@@ -246,7 +256,9 @@ export function useChat(currentUserId?: string, userRole?: string) {
           { event: "UPDATE", schema: "public", table: "messages", filter },
           (payload) => {
             const updatedMsg = payload.new as Message;
-            if (updatedMsg.conversation_id === activeConversationId) {
+            if (
+              updatedMsg.conversation_id === activeConversationIdRef.current
+            ) {
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === updatedMsg.id
@@ -300,13 +312,7 @@ export function useChat(currentUserId?: string, userRole?: string) {
       }
       supabase.removeChannel(channel);
     };
-  }, [
-    currentUserId,
-    activeConversationId,
-    queryClient,
-    loadConversations,
-    conversationIds,
-  ]);
+  }, [currentUserId, queryClient, loadConversations, conversationIds]);
 
   const openConversation = useCallback(
     async (conversationId: string) => {

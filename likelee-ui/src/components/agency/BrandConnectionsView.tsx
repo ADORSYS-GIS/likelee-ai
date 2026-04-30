@@ -57,6 +57,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getAgencyTalents } from "@/api/functions";
+import { useAuth } from "@/auth/AuthProvider";
+import {
+  DashboardSectionHeader,
+  DashboardTabRail,
+} from "@/components/dashboard/DashboardResponsive";
 import {
   Tooltip,
   TooltipContent,
@@ -128,11 +133,13 @@ const BrandConnectionsView = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user, profile } = useAuth();
   const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
   const canViewConnections = hasPermission("view_brand_connections");
   const canManageConnections = hasPermission("manage_brand_connections");
   const canDisconnectBrands = hasPermission("disconnect_brand_connections");
   const isReadOnly = canViewConnections && !canManageConnections;
+  const currentUserKey = String(profile?.id || user?.id || "").trim();
 
   const [activeTab, setActiveTab] = useState<
     | "connections"
@@ -161,6 +168,39 @@ const BrandConnectionsView = ({
   );
   const [isUploading, setIsUploading] = useState(false);
   const [contractTab, setContractTab] = useState("submissions");
+  const [assignDialog, setAssignDialog] = useState<{
+    open: boolean;
+    offerId: string;
+    talentId: string;
+  }>({
+    open: false,
+    offerId: "",
+    talentId: "",
+  });
+  const [assignSearch, setAssignSearch] = useState("");
+  const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
+  const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
+  const [inviteRequiredDialog, setInviteRequiredDialog] = useState<{
+    open: boolean;
+    talentName: string;
+    talentId: string;
+  }>({
+    open: false,
+    talentName: "",
+    talentId: "",
+  });
+  const [unassignConfirm, setUnassignConfirm] = useState<{
+    open: boolean;
+    offerId: string;
+    assignmentId: string;
+    talentName: string;
+  }>({
+    open: false,
+    offerId: "",
+    assignmentId: "",
+    talentName: "",
+  });
   const [messageDialog, setMessageDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -417,6 +457,33 @@ const BrandConnectionsView = ({
   const assignmentLockedForSelectedOffer = selectedOfferLockInfo.locked;
   const selectedOfferContractSigned = selectedOfferLockInfo.contractSigned;
   const selectedOfferPackageFinalized = selectedOfferLockInfo.packageFinalized;
+  const assignmentLockedForOffer =
+    !!assignDialog.offerId &&
+    assignDialog.offerId === selectedOfferId &&
+    assignmentLockedForSelectedOffer;
+  const filteredRoster = useMemo(() => {
+    const query = assignSearch.trim().toLowerCase();
+    if (!query) return roster;
+    return roster.filter((talent: any) => {
+      const haystack = [
+        talent?.stage_name,
+        talent?.name,
+        talent?.full_legal_name,
+        talent?.email,
+      ]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      return haystack.includes(query);
+    });
+  }, [assignSearch, roster]);
+
+  useEffect(() => {
+    if (!assignDialog.open) return;
+    const offerId = String(assignDialog.offerId || "").trim();
+    if (offerId && offerId !== selectedOfferId) {
+      setSelectedOfferId(offerId);
+    }
+  }, [assignDialog.open, assignDialog.offerId, selectedOfferId]);
 
   const agencyPayoutAccountStatusQuery = useQuery({
     queryKey: ["agency", "payouts", "account_status"],
@@ -653,8 +720,8 @@ const BrandConnectionsView = ({
     setAssignSubmitting(true);
     try {
       const offerId = assignDialog.offerId;
-      const current = Array.isArray(offerAssignmentsQuery.data)
-        ? offerAssignmentsQuery.data
+      const current = Array.isArray(offerAssignmentsQuery.data?.assignments)
+        ? offerAssignmentsQuery.data.assignments
         : [];
       const currentByCreatorId = new Map<string, string>();
       current.forEach((a: any) => {
@@ -1183,7 +1250,7 @@ const BrandConnectionsView = ({
     () => {
       if (typeof window === "undefined") return new Set(); // SSR guard
       try {
-        const userKey = userId || "anonymous";
+        const userKey = currentUserKey || "anonymous";
         const saved = localStorage.getItem(`viewed_feedback_ids_${userKey}`);
         return saved ? new Set(JSON.parse(saved)) : new Set();
       } catch {
@@ -1195,12 +1262,12 @@ const BrandConnectionsView = ({
   // Save viewed feedback IDs to localStorage
   useEffect(() => {
     if (typeof window === "undefined") return; // SSR guard
-    const userKey = userId || "anonymous";
+    const userKey = currentUserKey || "anonymous";
     localStorage.setItem(
       `viewed_feedback_ids_${userKey}`,
       JSON.stringify(Array.from(viewedFeedbackIds)),
     );
-  }, [viewedFeedbackIds, userId]);
+  }, [currentUserKey, viewedFeedbackIds]);
 
   // Mark feedback as viewed when on feedback tab
   useEffect(() => {
@@ -1230,22 +1297,11 @@ const BrandConnectionsView = ({
     }).length;
   }, [feedbackItems, viewedFeedbackIds]);
 
-  // Use props if provided (check !== undefined), otherwise calculate from queries
-  // This correctly handles when parent passes 0 intentionally (no pending items)
-  const pendingRequests =
-    requestsCount !== undefined ? requestsCount : requests.length;
-  const pendingOffers =
-    offersCount !== undefined
-      ? offersCount
-      : offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
-  // Use unviewed count for feedback instead of total count
-  const pendingFeedback =
-    feedbackCount !== undefined
-      ? Math.max(
-          0,
-          feedbackCount - (feedbackItems.length - unviewedFeedbackCount),
-        )
-      : unviewedFeedbackCount;
+  const pendingRequests = requests.length;
+  const pendingOffers = offers.filter((o) =>
+    ["sent", "viewed"].includes(o.status),
+  ).length;
+  const pendingFeedback = unviewedFeedbackCount;
 
   // Always show badges - they disappear when count reaches 0
   const showRequestsBadge = pendingRequests > 0;
