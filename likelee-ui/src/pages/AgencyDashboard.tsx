@@ -20328,14 +20328,17 @@ export default function AgencyDashboard() {
         navigateTo: "jobs", // Add navigation target
       });
     }
-    alerts.push({
-      id: "welcome",
-      title: "System Alert",
-      message:
-        "Your verification was successfully processed. Welcome to Likelee!",
-      time: "Just now",
-      color: "blue",
-    });
+    // Only show welcome alert if not dismissed
+    if (!dismissedNotificationIds.includes("welcome")) {
+      alerts.push({
+        id: "welcome",
+        title: "System Alert",
+        message:
+          "Your verification was successfully processed. Welcome to Likelee!",
+        time: "",
+        color: "blue",
+      });
+    }
     return alerts;
   }, [
     pendingBrandConnectionCount,
@@ -21501,9 +21504,11 @@ export default function AgencyDashboard() {
                             <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
                               {notif.message}
                             </p>
-                            <p className="text-xs text-gray-400 mt-1.5 font-medium">
-                              {notif.time}
-                            </p>
+                            {notif.time && (
+                              <p className="text-xs text-gray-400 mt-1.5 font-medium">
+                                {notif.time}
+                              </p>
+                            )}
                           </div>
                           {!notif.read && (
                             <div className="w-2 h-2 rounded-full bg-indigo-600 shrink-0 mt-2" />
@@ -21511,21 +21516,6 @@ export default function AgencyDashboard() {
                         </button>
                       ))
                     )}
-                  </div>
-                  <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
-                    <button
-                      onClick={() => {
-                        toast({
-                          title: "View all notifications",
-                          description:
-                            "Navigating to full notifications page...",
-                        });
-                        setShowNotifications(false);
-                      }}
-                      className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                      View all notifications
-                    </button>
                   </div>
                 </div>
               )}
