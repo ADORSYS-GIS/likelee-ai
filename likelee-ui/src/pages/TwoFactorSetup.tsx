@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,7 @@ interface FactorInfo {
 }
 
 export default function TwoFactorSetup() {
+  const { t } = useTranslation();
   const { mfa, authenticated, initialized, profile, refreshProfile } =
     useAuth();
   const navigate = useNavigate();
@@ -391,10 +393,10 @@ export default function TwoFactorSetup() {
               <Shield className="w-8 h-8 text-blue-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Two-Factor Authentication
+              {t("auth.twoFactor.title")}
             </h1>
             <p className="text-sm text-gray-500 mt-2">
-              Enter the 6-digit code from your authenticator app
+              {t("auth.twoFactor.enterCode")}
             </p>
           </div>
 

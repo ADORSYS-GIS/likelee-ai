@@ -416,6 +416,21 @@
       "resendCode": "Resend code",
       "verifyLabel": "Verify code",
       "continueButton": "Continue"
+    },
+    "twoFactor": {
+      "title": "Two-Factor Authentication",
+      "enterCode": "Enter the 6-digit code from your authenticator app",
+      "verify": "Verify",
+      "verifying": "Verifying...",
+      "signInWithDifferentAccount": "Sign in with a different account",
+      "setupTitle": "Two-Factor Authentication",
+      "setupDescription": "Enter the 6-digit code from your authenticator app",
+      "enabled": "2FA Enabled",
+      "enabledDescription": "Two-factor authentication is now active on your account.",
+      "disabled": "2FA Disabled",
+      "disabledDescription": "Two-factor authentication has been removed.",
+      "setupError": "There was an issue setting up two-factor authentication. Please try again or contact support if the problem persists.",
+      "protectedMessage": "Your account is now protected with two-factor authentication. You'll need to enter a code from your authenticator app when signing in."
     }
   }
 }

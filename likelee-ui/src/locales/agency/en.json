@@ -201,6 +201,83 @@
         "needsReminder": "Needs Reminder",
         "outdatedOnly": "Outdated Only"
       },
+      "advancedFilters": {
+        "title": "Advanced Filters",
+        "sections": {
+          "physicalAttributes": "Physical Attributes",
+          "appearance": "Appearance",
+          "specialFeatures": "Special Features"
+        },
+        "fields": {
+          "gender": "Gender",
+          "heightRange": "Height Range",
+          "ageRange": "Age Range",
+          "hairColor": "Hair Color",
+          "eyeColor": "Eye Color",
+          "ethnicity": "Ethnicity",
+          "tattoos": "Tattoos",
+          "piercings": "Piercings"
+        },
+        "placeholders": {
+          "allGenders": "All Genders",
+          "minCm": "Min (cm)",
+          "maxCm": "Max (cm)",
+          "min": "Min",
+          "max": "Max",
+          "allHairColors": "All Hair Colors",
+          "allEyeColors": "All Eye Colors",
+          "allEthnicities": "All Ethnicities",
+          "any": "Any"
+        },
+        "options": {
+          "gender": {
+            "all": "All Genders",
+            "male": "Male",
+            "female": "Female",
+            "nonBinary": "Non-Binary"
+          },
+          "hairColor": {
+            "all": "All Hair Colors",
+            "black": "Black",
+            "brown": "Brown",
+            "blonde": "Blonde",
+            "red": "Red",
+            "gray": "Gray",
+            "other": "Other"
+          },
+          "eyeColor": {
+            "all": "All Eye Colors",
+            "brown": "Brown",
+            "blue": "Blue",
+            "green": "Green",
+            "hazel": "Hazel",
+            "gray": "Gray"
+          },
+          "ethnicity": {
+            "all": "All Ethnicities",
+            "white": "White",
+            "black": "Black",
+            "asian": "Asian",
+            "hispanic": "Hispanic",
+            "middleEastern": "Middle Eastern",
+            "mixed": "Mixed",
+            "other": "Other"
+          },
+          "tattoos": {
+            "any": "Any",
+            "yes": "Has Tattoos",
+            "no": "No Tattoos"
+          },
+          "piercings": {
+            "any": "Any",
+            "yes": "Has Piercings",
+            "no": "No Piercings"
+          }
+        },
+        "actions": {
+          "reset": "Reset Advanced Filters"
+        }
+      },
       "categories": {
         "model": "Model",
         "actor": "Actor",
@@ -1161,6 +1238,62 @@
             "fileUploadedTitle": "File Uploaded",
             "fileUploadedDescription": "The document has been uploaded successfully.",
             "uploadFailedTitle": "Upload Failed"
+          }
+        },
+        "logCommunication": {
+          "title": "Log Communication",
+          "fields": {
+            "contact": "Contact",
+            "type": "Type",
+            "date": "Date",
+            "subject": "Subject",
+            "notes": "Notes"
+          },
+          "placeholders": {
+            "selectContact": "Select contact",
+            "selectType": "Select type",
+            "subject": "Meeting summary...",
+            "notes": "Details about the communication..."
+          },
+          "types": {
+            "email": "Email",
+            "call": "Phone Call",
+            "meeting": "Meeting",
+            "other": "Other"
+          },
+          "actions": {
+            "saving": "Saving...",
+            "logCommunication": "Log Communication",
+            "cancel": "Cancel"
+          },
+          "toasts": {
+            "success": "Communication logged successfully",
+            "failed": "Failed to log communication"
+          }
+        },
+        "addContact": {
+          "title": "Add Contact",
+          "fields": {
+            "fullName": "Full Name *",
+            "role": "Role",
+            "email": "Email",
+            "phone": "Phone",
+            "primaryContact": "Primary Contact"
+          },
+          "placeholders": {
+            "fullName": "John Doe",
+            "role": "Casting Director",
+            "email": "john@example.com",
+            "phone": "+1..."
+          },
+          "actions": {
+            "adding": "Adding...",
+            "addContact": "Add Contact",
+            "cancel": "Cancel"
+          },
+          "toasts": {
+            "success": "Contact added successfully",
+            "failed": "Failed to add contact"
           }
         }
       }
@@ -2428,6 +2561,7 @@
         "dec": "Dec"
       },
       "irlComingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon.",
+      "protectionUsageComingSoonDescription": "Protection & Usage is coming soon.",
       "loading": "Loading analytics...",
       "error": "Failed to load analytics data",
       "toastError": "Analytics Error",
@@ -3376,6 +3510,22 @@
             "renameFailed": "Failed to rename folder",
             "deleteSuccess": "Folder deleted successfully",
             "deleteFailed": "Failed to delete folder"
+          },
+          "createFolderModal": {
+            "title": "Create New Folder",
+            "description": "Organize your files into folders",
+            "fields": {
+              "folderName": "Folder Name",
+              "folderType": "Folder Type"
+            },
+            "placeholders": {
+              "folderName": "e.g., Q1 2024 Campaigns",
+              "selectType": "Select type..."
+            },
+            "actions": {
+              "cancel": "Cancel",
+              "create": "Create Folder"
+            }
           },
           "files": {
             "title": "Files",
