@@ -3,6 +3,7 @@ import React from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";
 import { supabase } from "@/lib/supabase";
 import { EmailOtpDialog } from "@/components/auth/EmailOtpDialog";
@@ -13,6 +14,7 @@ import {
 } from "@/lib/emailOtp";
 
 export default function Register() {
+  const { t } = useTranslation();
   const { initialized, authenticated } = useAuth();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -185,10 +187,16 @@ export default function Register() {
         open={otpOpen}
         onOpenChange={setOtpOpen}
         email={normalizeEmail(email)}
-        title="Verify your email"
-        description="Enter the 6-digit code from your inbox to finish creating your account without leaving this page."
-        helperText="Use resend if the code takes a moment to arrive."
-        verifyLabel="Create account"
+        title={t("auth.emailOtp.title", "Verify your email")}
+        description={t(
+          "auth.emailOtp.description",
+          "Stay here, check your inbox, and enter the 6-digit code to keep onboarding on the same tab.",
+        )}
+        helperText={t(
+          "auth.emailOtp.helperText",
+          "If the code does not arrive right away, use resend and check your spam folder.",
+        )}
+        verifyLabel={t("auth.signUp.createAccount", "Create account")}
         onVerify={handleVerifyOtp}
         onResend={handleResendOtp}
         theme={{

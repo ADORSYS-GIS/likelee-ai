@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import type { Message, Participant } from "@/hooks/useChat";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -24,11 +25,10 @@ interface ChatWindowProps {
   sending: boolean;
   otherParticipant: Participant;
   selfParticipant: Participant;
-  showBackButton?: boolean;
-  onBack?: () => void;
   onSend: (content: string) => void;
   onEdit: (id: string, content: string) => void;
   onDelete: (id: string) => void;
+  translationPrefix?: string;
 }
 
 export function ChatWindow({
@@ -37,12 +37,12 @@ export function ChatWindow({
   sending,
   otherParticipant,
   selfParticipant,
-  showBackButton = false,
-  onBack,
   onSend,
   onEdit,
   onDelete,
+  translationPrefix = "talentPortal.chat",
 }: ChatWindowProps) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [deleteMessageId, setDeleteMessageId] = useState<string | null>(null);
@@ -105,28 +105,6 @@ export function ChatWindow({
 
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-white shadow-sm">
-        {showBackButton && onBack ? (
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-50"
-            aria-label="Back to conversations"
-          >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </button>
-        ) : null}
         <Avatar
           url={otherParticipant.avatarUrl}
           name={otherParticipant.name}
@@ -137,7 +115,9 @@ export function ChatWindow({
             {otherParticipant.name}
           </p>
           <p className="text-xs text-gray-400 capitalize">
-            {otherParticipant.role}
+            {t(`${translationPrefix}.roles.${otherParticipant.role}`, {
+              defaultValue: otherParticipant.role,
+            })}
           </p>
         </div>
       </div>
@@ -162,10 +142,14 @@ export function ChatWindow({
               </svg>
             </div>
             <p className="text-sm font-semibold text-gray-500">
-              No messages yet
+              {t(`${translationPrefix}.noMessagesYet`, {
+                defaultValue: "No messages yet",
+              })}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              Send a message to start the conversation.
+              {t(`${translationPrefix}.sendToStart`, {
+                defaultValue: "Send a message to start the conversation.",
+              })}
             </p>
           </div>
         ) : (
@@ -219,14 +203,20 @@ export function ChatWindow({
                             d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
                           />
                         </svg>
-                        <span>This message was deleted</span>
+                        <span>
+                          {t(`${translationPrefix}.messageDeleted`, {
+                            defaultValue: "This message was deleted",
+                          })}
+                        </span>
                       </div>
                     ) : (
                       <>
                         {msg.content}
                         {msg.edited_at && (
                           <span className="text-[9px] opacity-70 ml-1.5 align-middle">
-                            (edited)
+                            {t(`${translationPrefix}.edited`, {
+                              defaultValue: "(edited)",
+                            })}
                           </span>
                         )}
                       </>
@@ -255,13 +245,17 @@ export function ChatWindow({
                           <DropdownMenuItem
                             onClick={() => handleEditClick(msg.id, msg.content)}
                           >
-                            Edit
+                            {t(`${translationPrefix}.edit`, {
+                              defaultValue: "Edit",
+                            })}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleDeleteClick(msg.id)}
                             className="text-red-600"
                           >
-                            Delete
+                            {t(`${translationPrefix}.delete`, {
+                              defaultValue: "Delete",
+                            })}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -296,7 +290,9 @@ export function ChatWindow({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Type a message… (Enter to send)"
+            placeholder={t(`${translationPrefix}.typeMessage`, {
+              defaultValue: "Type a message… (Enter to send)",
+            })}
             className="flex-1 resize-none bg-transparent text-sm text-gray-800 placeholder-gray-400 outline-none max-h-36 overflow-y-auto"
           />
           <button
@@ -304,7 +300,9 @@ export function ChatWindow({
             onClick={handleSend}
             disabled={!draft.trim() || sending}
             className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-md"
-            aria-label="Send message"
+            aria-label={t(`${translationPrefix}.sendMessage`, {
+              defaultValue: "Send message",
+            })}
           >
             {sending ? (
               <svg
@@ -338,7 +336,9 @@ export function ChatWindow({
           </button>
         </div>
         <p className="text-[10px] text-gray-400 mt-1 ml-1">
-          Shift+Enter for new line
+          {t(`${translationPrefix}.shiftEnter`, {
+            defaultValue: "Shift+Enter for new line",
+          })}
         </p>
       </div>
 
@@ -348,18 +348,24 @@ export function ChatWindow({
       >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Message</DialogTitle>
+            <DialogTitle>
+              {t(`${translationPrefix}.deleteMessageTitle`, {
+                defaultValue: "Delete Message",
+              })}
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this message? This action cannot
-              be undone.
+              {t(`${translationPrefix}.deleteMessageDescription`, {
+                defaultValue:
+                  "Are you sure you want to delete this message? This action cannot be undone.",
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="ghost" onClick={() => setDeleteMessageId(null)}>
-              Cancel
+              {t(`${translationPrefix}.cancel`, { defaultValue: "Cancel" })}
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>
-              Delete
+              {t(`${translationPrefix}.delete`, { defaultValue: "Delete" })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -371,27 +377,35 @@ export function ChatWindow({
       >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Edit Message</DialogTitle>
+            <DialogTitle>
+              {t(`${translationPrefix}.editMessageTitle`, {
+                defaultValue: "Edit Message",
+              })}
+            </DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <textarea
               className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px] resize-none"
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              placeholder="Enter your message..."
+              placeholder={t(`${translationPrefix}.enterMessage`, {
+                defaultValue: "Enter your message...",
+              })}
               autoFocus
             />
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="ghost" onClick={() => setEditingMessageId(null)}>
-              Cancel
+              {t(`${translationPrefix}.cancel`, { defaultValue: "Cancel" })}
             </Button>
             <Button
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
               onClick={saveEdit}
               disabled={!editContent.trim()}
             >
-              Save Changes
+              {t(`${translationPrefix}.saveChanges`, {
+                defaultValue: "Save Changes",
+              })}
             </Button>
           </DialogFooter>
         </DialogContent>

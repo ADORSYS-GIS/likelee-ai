@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 const DEFAULT_ROSTER_MODELS = 10;
 const MIN_ROSTER_MODELS = 2;
@@ -84,6 +85,7 @@ export default function AgencySubscribe() {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [searchParams] = useSearchParams();
   const success = searchParams.get("success") === "1";
@@ -1053,16 +1055,20 @@ export default function AgencySubscribe() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 sm:pb-24">
         <div className="text-center">
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight font-display">
-            Simple, transparent pricing
+            {t("agency.subscribe.pageTitle")}
           </h1>
           <p className="text-gray-500 mt-3 sm:mt-4 text-base sm:text-lg">
-            Start with licensing. Add what you need. Scale when you're ready.
+            {t("agency.subscribe.pageSubtitle")}
           </p>
 
           <div className="flex items-center justify-center gap-3 mt-6 flex-wrap">
             <Badge variant="outline" className="bg-white/70">
-              Plans are billed{" "}
-              {billingInterval === "year" ? "annually" : "monthly"}
+              {t("agency.subscribe.billedInterval", {
+                interval:
+                  billingInterval === "year"
+                    ? t("agency.subscribe.billedAnnually")
+                    : t("agency.subscribe.billedMonthly"),
+              })}
             </Badge>
             <div className="flex items-center gap-2 rounded-full border border-[#D9E4F1] bg-white/90 px-3 py-1.5">
               <button
@@ -1088,7 +1094,7 @@ export default function AgencySubscribe() {
                   navigate({ search: sp.toString() }, { replace: true });
                 }}
               >
-                Monthly
+                {t("agency.subscribe.monthly")}
               </button>
               <div
                 className={`h-5 w-10 rounded-full border border-[#D9E4F1] p-0.5 transition-colors cursor-pointer ${
@@ -1163,30 +1169,30 @@ export default function AgencySubscribe() {
                   navigate({ search: sp.toString() }, { replace: true });
                 }}
               >
-                Annual
+                {t("agency.subscribe.annual")}
               </button>
               <Badge className="ml-1 border border-emerald-200 bg-emerald-100 text-emerald-700">
-                SAVE 20%
+                {t("agency.subscribe.save20")}
               </Badge>
             </div>
             {!authenticated && initialized && (
               <Badge variant="outline" className="bg-white/70">
-                Public pricing preview
+                {t("agency.subscribe.publicPricingPreview")}
               </Badge>
             )}
             {success && (
               <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
-                Subscription started
+                {t("agency.subscribe.subscriptionStarted")}
               </Badge>
             )}
             {postSignup && !success && (
               <Badge className="bg-[#EEF4FF] text-[#17315F] border border-[#D9E4F1]">
-                Finish setup by starting a trial
+                {t("agency.subscribe.finishSetup")}
               </Badge>
             )}
             {canceled && (
               <Badge variant="outline" className="bg-white/70">
-                Checkout canceled
+                {t("agency.subscribe.checkoutCanceled")}
               </Badge>
             )}
           </div>
