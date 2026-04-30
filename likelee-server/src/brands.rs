@@ -189,26 +189,25 @@ pub async fn update(
 
     if let serde_json::Value::Object(ref mut map) = v {
         // Check if we're only updating notification_prefs BEFORE mutating the map
-        let is_only_notification_prefs =
-            payload.notification_prefs.is_some()
-                && payload.company_name.is_none()
-                && payload.contact_name.is_none()
-                && payload.contact_title.is_none()
-                && payload.email.is_none()
-                && payload.website.is_none()
-                && payload.phone_number.is_none()
-                && payload.logo_url.is_none()
-                && payload.industry.is_none()
-                && payload.primary_goal.is_none()
-                && payload.geographic_target.is_none()
-                && payload.provide_creators.is_none()
-                && payload.production_type.is_none()
-                && payload.budget_range.is_none()
-                && payload.creates_for.is_none()
-                && payload.uses_ai.is_none()
-                && payload.roles_needed.is_none()
-                && payload.status.is_none()
-                && payload.onboarding_step.is_none();
+        let is_only_notification_prefs = payload.notification_prefs.is_some()
+            && payload.company_name.is_none()
+            && payload.contact_name.is_none()
+            && payload.contact_title.is_none()
+            && payload.email.is_none()
+            && payload.website.is_none()
+            && payload.phone_number.is_none()
+            && payload.logo_url.is_none()
+            && payload.industry.is_none()
+            && payload.primary_goal.is_none()
+            && payload.geographic_target.is_none()
+            && payload.provide_creators.is_none()
+            && payload.production_type.is_none()
+            && payload.budget_range.is_none()
+            && payload.creates_for.is_none()
+            && payload.uses_ai.is_none()
+            && payload.roles_needed.is_none()
+            && payload.status.is_none()
+            && payload.onboarding_step.is_none();
 
         // If only updating notification_prefs, use UPDATE instead of UPSERT
         if is_only_notification_prefs {

@@ -757,13 +757,16 @@ export default function BrandDashboard() {
   const [contractSearch, setContractSearch] = useState("");
   const [contractSort, setContractSort] = useState("newest");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
-  const [notificationPrefs, setNotificationPrefs] = useState<Record<string, boolean>>({
+  const [notificationPrefs, setNotificationPrefs] = useState<
+    Record<string, boolean>
+  >({
     newProjectAlerts: true,
     deliverableSubmissions: true,
     approvalReminders: true,
     licenseExpirationAlerts: true,
   });
-  const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] = useState(false);
+  const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] =
+    useState(false);
   const { toast } = useToast();
   const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
   const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
@@ -1138,7 +1141,10 @@ export default function BrandDashboard() {
           contact_email: profile?.email || prev.contact_email,
           logo: profile?.logo_url || "",
         }));
-        if (profile?.notification_prefs && typeof profile.notification_prefs === "object") {
+        if (
+          profile?.notification_prefs &&
+          typeof profile.notification_prefs === "object"
+        ) {
           const prefs = profile.notification_prefs as Record<string, boolean>;
           setNotificationPrefs({
             newProjectAlerts: prefs.newProjectAlerts ?? true,
@@ -2484,13 +2490,19 @@ export default function BrandDashboard() {
     toast({ title: "Success", description: "Profile updated! (Demo mode)" });
   };
 
-  const handleToggleNotificationPref = async (prefId: string, value: boolean) => {
+  const handleToggleNotificationPref = async (
+    prefId: string,
+    value: boolean,
+  ) => {
     const newPrefs = { ...notificationPrefs, [prefId]: value };
     setNotificationPrefs(newPrefs);
     setIsSavingNotificationPrefs(true);
     try {
       await base44.post("/api/brand-profile", { notification_prefs: newPrefs });
-      toast({ title: "Preference saved", description: "Your notification setting has been updated." });
+      toast({
+        title: "Preference saved",
+        description: "Your notification setting has been updated.",
+      });
     } catch (e: any) {
       toast({
         title: "Failed to save preference",
@@ -9896,7 +9908,9 @@ export default function BrandDashboard() {
                   </div>
                   <Switch
                     checked={notificationPrefs[pref.id] ?? true}
-                    onCheckedChange={(val) => handleToggleNotificationPref(pref.id, val)}
+                    onCheckedChange={(val) =>
+                      handleToggleNotificationPref(pref.id, val)
+                    }
                     disabled={isSavingNotificationPrefs}
                     className="data-[state=checked]:bg-[#F7B750]"
                   />
