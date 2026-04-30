@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { getBrandProfile } from "@/api/functions";
@@ -43,9 +42,51 @@ import {
   Plus,
 } from "lucide-react";
 
+const categories = [
+  "Marketing Campaign",
+  "Film Production",
+  "Advertising Creative",
+  "Brand Content",
+  "UGC Campaign",
+  "AI Video Production",
+  "Product Launch",
+  "Social Media Content",
+  "Other",
+];
+
+const workTypes = [
+  "UGC Campaign",
+  "Ad Creative",
+  "Likeness Licensing",
+  "Full Project Management",
+  "Video Editing",
+  "Voice Synthesis",
+  "AI Generation",
+  "Brand Partnership",
+];
+
+const talentTypes = [
+  "AI Talent (Virtual)",
+  "Creator (Licensing Call)",
+  "Model (Licensing Call)",
+  "Production Studio",
+  "Marketing Agency",
+];
+
+const skills = [
+  "Video Editing",
+  "Sora Generation",
+  "Runway ML",
+  "Voice Synthesis",
+  "ElevenLabs",
+  "Lip Sync",
+  "Face Swap",
+  "Content Strategy",
+  "Campaign Management",
+];
+
 export default function PostJob() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [showCustomWorkType, setShowCustomWorkType] = useState(false);
@@ -111,57 +152,6 @@ export default function PostJob() {
 
   const totalSteps = 7;
   const progress = (currentStep / totalSteps) * 100;
-  const categories = [
-    "Marketing Campaign",
-    "Film Production",
-    "Advertising Creative",
-    "Brand Content",
-    "UGC Campaign",
-    "AI Video Production",
-    "Product Launch",
-    "Social Media Content",
-    "Other",
-  ].map((value, index) => ({
-    value,
-    label: t(`postJobPage.categories.${index}`, { defaultValue: value }),
-  }));
-  const workTypes = [
-    "UGC Campaign",
-    "Ad Creative",
-    "Likeness Licensing",
-    "Full Project Management",
-    "Video Editing",
-    "Voice Synthesis",
-    "AI Generation",
-    "Brand Partnership",
-  ].map((value, index) => ({
-    value,
-    label: t(`postJobPage.workTypes.${index}`, { defaultValue: value }),
-  }));
-  const talentTypes = [
-    "AI Talent (Virtual)",
-    "Creator (Licensing Call)",
-    "Model (Licensing Call)",
-    "Production Studio",
-    "Marketing Agency",
-  ].map((value, index) => ({
-    value,
-    label: t(`postJobPage.talentTypes.${index}`, { defaultValue: value }),
-  }));
-  const skills = [
-    "Video Editing",
-    "Sora Generation",
-    "Runway ML",
-    "Voice Synthesis",
-    "ElevenLabs",
-    "Lip Sync",
-    "Face Swap",
-    "Content Strategy",
-    "Campaign Management",
-  ].map((value, index) => ({
-    value,
-    label: t(`postJobPage.skills.${index}`, { defaultValue: value }),
-  }));
 
   useEffect(() => {
     let mounted = true;
@@ -724,7 +714,7 @@ export default function PostJob() {
             className="mb-4 rounded-none"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            {t("postJobPage.backToDashboard")}
+            Back to Dashboard
           </Button>
 
           <div className="flex items-center gap-4 mb-6">
@@ -732,10 +722,10 @@ export default function PostJob() {
               <Briefcase className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {t("postJobPage.title")}
-              </h1>
-              <p className="text-gray-600">{t("postJobPage.subtitle")}</p>
+              <h1 className="text-3xl font-bold text-gray-900">Post a Job</h1>
+              <p className="text-gray-600">
+                Find the perfect talent for your campaign
+              </p>
             </div>
           </div>
 
@@ -743,15 +733,10 @@ export default function PostJob() {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                {t("postJobPage.stepCounter", {
-                  current: currentStep,
-                  total: totalSteps,
-                })}
+                Step {currentStep} of {totalSteps}
               </span>
               <span className="text-sm text-gray-600">
-                {t("postJobPage.percentComplete", {
-                  percent: Math.round(progress),
-                })}
+                {Math.round(progress)}% Complete
               </span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-none">
@@ -770,27 +755,27 @@ export default function PostJob() {
               <div className="flex items-center gap-3 mb-6">
                 <FileText className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {t("postJobPage.steps.basicInformation")}
+                  Basic Information
                 </h2>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.jobTitle")}
+                  Job Title / Campaign Title *
                 </Label>
                 <Input
                   value={formData.job_title}
                   onChange={(e) =>
                     setFormData({ ...formData, job_title: e.target.value })
                   }
-                  placeholder={t("postJobPage.placeholders.jobTitle")}
+                  placeholder="e.g., AI Product Launch Campaign"
                   className="border-2 border-gray-300 rounded-none"
                 />
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.companyName")}
+                  Company Name
                 </Label>
                 <Input
                   value={formData.company_name}
@@ -801,13 +786,13 @@ export default function PostJob() {
                   readOnly
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  {t("postJobPage.autoFilledProfile")}
+                  Auto-filled from your profile
                 </p>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.contactEmail")}
+                  Contact Email *
                 </Label>
                 <Input
                   type="email"
@@ -815,14 +800,14 @@ export default function PostJob() {
                   onChange={(e) =>
                     setFormData({ ...formData, contact_email: e.target.value })
                   }
-                  placeholder={t("postJobPage.placeholders.contactEmail")}
+                  placeholder="contact@company.com"
                   className="border-2 border-gray-300 rounded-none"
                 />
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.category")}
+                  Category *
                 </Label>
                 <Select
                   value={formData.category}
@@ -831,17 +816,15 @@ export default function PostJob() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                    <SelectValue
-                      placeholder={t("postJobPage.placeholders.selectCategory")}
-                    />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
                       <SelectItem
-                        key={cat.value}
-                        value={cat.value.toLowerCase().replace(/ /g, "_")}
+                        key={cat}
+                        value={cat.toLowerCase().replace(/ /g, "_")}
                       >
-                        {cat.label}
+                        {cat}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -850,7 +833,7 @@ export default function PostJob() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.callType")}
+                  Call Type *
                 </Label>
                 <Select
                   value={formData.call_type}
@@ -859,59 +842,41 @@ export default function PostJob() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                    <SelectValue
-                      placeholder={t("postJobPage.placeholders.selectCallType")}
-                    />
+                    <SelectValue placeholder="Select call type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="creator">
-                      {t("postJobPage.callType.creator", {
-                        defaultValue: "Creator call",
-                      })}
-                    </SelectItem>
-                    <SelectItem value="agency">
-                      {t("postJobPage.callType.agency", {
-                        defaultValue: "Agency call",
-                      })}
-                    </SelectItem>
-                    <SelectItem value="athlete">
-                      {t("postJobPage.callType.athlete", {
-                        defaultValue: "Athlete call",
-                      })}
-                    </SelectItem>
-                    <SelectItem value="ai_artist">
-                      {t("postJobPage.callType.aiArtist", {
-                        defaultValue: "AI artist call",
-                      })}
-                    </SelectItem>
+                    <SelectItem value="creator">Creator call</SelectItem>
+                    <SelectItem value="agency">Agency call</SelectItem>
+                    <SelectItem value="athlete">Athlete call</SelectItem>
+                    <SelectItem value="ai_artist">AI artist call</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                  {t("postJobPage.fields.workTypes")}
+                  Type of Work (Select all that apply)
                 </Label>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {workTypes.map((type) => (
                     <div
-                      key={type.value}
+                      key={type}
                       className="flex items-center gap-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50 cursor-pointer"
-                      onClick={() => toggleArrayItem("work_types", type.value)}
+                      onClick={() => toggleArrayItem("work_types", type)}
                     >
                       <Checkbox
-                        id={type.value}
-                        checked={formData.work_types.includes(type.value)}
+                        id={type}
+                        checked={formData.work_types.includes(type)}
                         onCheckedChange={() =>
-                          toggleArrayItem("work_types", type.value)
+                          toggleArrayItem("work_types", type)
                         }
                         className="border-2 border-gray-400 shrink-0"
                       />
                       <label
-                        htmlFor={type.value}
+                        htmlFor={type}
                         className="text-xs sm:text-sm text-gray-700 cursor-pointer leading-tight"
                       >
-                        {type.label}
+                        {type}
                       </label>
                     </div>
                   ))}
@@ -922,19 +887,19 @@ export default function PostJob() {
                     className="col-span-2 border-2 border-gray-300 rounded-none hover:bg-gray-50 justify-start"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    {t("postJobPage.customWorkType.other")}
+                    Other (Custom)
                   </Button>
                 </div>
 
                 {showCustomWorkType && (
                   <div className="mt-4 p-4 border-2 border-blue-200 bg-blue-50 rounded-none">
                     <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                      {t("postJobPage.customWorkType.add")}
+                      Add Custom Work Type
                     </Label>
                     <Input
                       value={customWorkType}
                       onChange={(e) => setCustomWorkType(e.target.value)}
-                      placeholder={t("postJobPage.placeholders.customWorkType")}
+                      placeholder="e.g., Virtual Event Hosting"
                       className="w-full border-2 border-gray-300 rounded-none mb-3"
                       onKeyPress={(e) =>
                         e.key === "Enter" && addCustomWorkType()
@@ -945,7 +910,7 @@ export default function PostJob() {
                         onClick={addCustomWorkType}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                       >
-                        {t("postJobPage.actions.add")}
+                        Add
                       </Button>
                       <Button
                         variant="outline"
@@ -955,7 +920,7 @@ export default function PostJob() {
                         }}
                         className="flex-1 border-2 border-gray-300 rounded-none"
                       >
-                        {t("postJobPage.actions.cancel")}
+                        Cancel
                       </Button>
                     </div>
                   </div>
@@ -964,7 +929,7 @@ export default function PostJob() {
                 {formData.custom_work_types.length > 0 && (
                   <div className="mt-4">
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("postJobPage.customWorkType.listLabel")}
+                      Custom Work Types:
                     </Label>
                     <div className="flex flex-wrap gap-2">
                       {formData.custom_work_types.map((type) => (
@@ -986,7 +951,7 @@ export default function PostJob() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.jobStatus")}
+                  Job Status
                 </Label>
                 <Select
                   value={formData.status}
@@ -996,13 +961,9 @@ export default function PostJob() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="open">
-                      {t("statuses.active", { defaultValue: "Open" })}
-                    </SelectItem>
-                    <SelectItem value="closed">
-                      {t("common.closed", { defaultValue: "Closed" })}
-                    </SelectItem>
-                    <SelectItem value="draft">{t("statuses.draft")}</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1012,7 +973,7 @@ export default function PostJob() {
                   onClick={handleNext}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
-                  {t("postJobPage.next.projectOverview")}
+                  Next: Project Overview
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -1025,13 +986,13 @@ export default function PostJob() {
               <div className="flex items-center gap-3 mb-6">
                 <FileText className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {t("postJobPage.steps.projectOverview")}
+                  Project Overview
                 </h2>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.location")}
+                  Location
                 </Label>
                 <Select
                   value={formData.location || "remote"}
@@ -1040,30 +1001,22 @@ export default function PostJob() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                    <SelectValue
-                      placeholder={t("postJobPage.placeholders.selectLocation")}
-                    />
+                    <SelectValue placeholder="Select location" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="remote">
-                      {t("postJobPage.location.remote")}
-                    </SelectItem>
-                    <SelectItem value="hybrid">
-                      {t("postJobPage.location.hybrid")}
-                    </SelectItem>
-                    <SelectItem value="on_site">
-                      {t("postJobPage.location.onSite")}
-                    </SelectItem>
+                    <SelectItem value="remote">Remote</SelectItem>
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
+                    <SelectItem value="on_site">On-site</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {t("postJobPage.location.help")}
+                  Most jobs are automatically labeled as remote
                 </p>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.jobType")}
+                  Job Type *
                 </Label>
                 <Select
                   value={formData.job_type}
@@ -1072,44 +1025,34 @@ export default function PostJob() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                    <SelectValue
-                      placeholder={t("postJobPage.placeholders.selectJobType")}
-                    />
+                    <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="contract">
-                      {t("postJobPage.jobType.contract")}
-                    </SelectItem>
-                    <SelectItem value="per_project">
-                      {t("postJobPage.jobType.perProject")}
-                    </SelectItem>
-                    <SelectItem value="part_time">
-                      {t("postJobPage.jobType.partTime")}
-                    </SelectItem>
-                    <SelectItem value="full_time">
-                      {t("postJobPage.jobType.fullTime")}
-                    </SelectItem>
+                    <SelectItem value="contract">Contract</SelectItem>
+                    <SelectItem value="per_project">Per Project</SelectItem>
+                    <SelectItem value="part_time">Part-Time</SelectItem>
+                    <SelectItem value="full_time">Full-Time</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.aboutRole")}
+                  About the Role *
                 </Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  placeholder={t("postJobPage.placeholders.aboutRole")}
+                  placeholder="What's being created, who it's for, what style it should have..."
                   className="border-2 border-gray-300 rounded-none min-h-[150px]"
                 />
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                  {t("postJobPage.fields.goalsKpis")}
+                  Goals & KPIs
                 </Label>
                 <div className="grid grid-cols-1 gap-3">
                   <Textarea
@@ -1122,7 +1065,7 @@ export default function PostJob() {
                           : [],
                       })
                     }
-                    placeholder={t("postJobPage.placeholders.goalsKpis")}
+                    placeholder="Enter your goals & KPIs (one per line)..."
                     className="border-2 border-gray-300 rounded-none w-full min-h-[100px]"
                   />
                 </div>
@@ -1130,14 +1073,14 @@ export default function PostJob() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.deliverables")}
+                  Deliverables
                 </Label>
                 <Input
                   value={formData.deliverables}
                   onChange={(e) =>
                     setFormData({ ...formData, deliverables: e.target.value })
                   }
-                  placeholder={t("postJobPage.placeholders.deliverables")}
+                  placeholder="e.g., 3 short videos, 5 stills, 1 voiceover clip"
                   className="border-2 border-gray-300 rounded-none"
                 />
               </div>
@@ -1145,7 +1088,7 @@ export default function PostJob() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    {t("postJobPage.fields.expectedStartDate")}
+                    Expected Start Date
                   </Label>
                   <Input
                     type="date"
@@ -1158,7 +1101,7 @@ export default function PostJob() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    {t("postJobPage.fields.expectedEndDate")}
+                    Expected End Date
                   </Label>
                   <Input
                     type="date"
@@ -1178,13 +1121,13 @@ export default function PostJob() {
                   className="border-2 border-gray-300 rounded-none"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  {t("postJobPage.actions.back")}
+                  Back
                 </Button>
                 <Button
                   onClick={handleNext}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
-                  {t("postJobPage.next.talentRequirements")}
+                  Next: Talent Requirements
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -1197,19 +1140,19 @@ export default function PostJob() {
               <div className="flex items-center gap-3 mb-6">
                 <Users className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {t("postJobPage.steps.talentRequirements")}
+                  Talent Requirements
                 </h2>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                  {t("postJobPage.fields.preferredTalentType")}
+                  Preferred Talent Type
                 </Label>
 
                 {/* AI Talent Section */}
                 <div className="mb-4">
                   <Label className="text-xs font-semibold text-gray-600 mb-2 block uppercase">
-                    {t("postJobPage.talentSections.aiTalentDefault")}
+                    AI Talent (Default)
                   </Label>
                   <div className="grid grid-cols-1 gap-3">
                     <div className="flex items-center space-x-2 p-3 border-2 border-blue-200 bg-blue-50 rounded-none">
@@ -1227,9 +1170,7 @@ export default function PostJob() {
                         htmlFor="AI Talent (Virtual)"
                         className="text-sm text-gray-700 cursor-pointer flex-1"
                       >
-                        {t("postJobPage.talentTypes.0", {
-                          defaultValue: "AI Talent (Virtual)",
-                        })}
+                        AI Talent (Virtual)
                       </label>
                     </div>
                   </div>
@@ -1238,29 +1179,29 @@ export default function PostJob() {
                 {/* Human Talent Section */}
                 <div>
                   <Label className="text-xs font-semibold text-gray-600 mb-2 block uppercase">
-                    {t("postJobPage.talentSections.humanTalentOther")}
+                    Human Talent & Other
                   </Label>
                   <div className="grid grid-cols-2 gap-3">
                     {talentTypes
-                      .filter((t) => t.value !== "AI Talent (Virtual)")
+                      .filter((t) => t !== "AI Talent (Virtual)")
                       .map((type) => (
                         <div
-                          key={type.value}
+                          key={type}
                           className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                         >
                           <Checkbox
-                            id={type.value}
-                            checked={formData.talent_types.includes(type.value)}
+                            id={type}
+                            checked={formData.talent_types.includes(type)}
                             onCheckedChange={() =>
-                              toggleArrayItem("talent_types", type.value)
+                              toggleArrayItem("talent_types", type)
                             }
                             className="border-2 border-gray-400"
                           />
                           <label
-                            htmlFor={type.value}
+                            htmlFor={type}
                             className="text-sm text-gray-700 cursor-pointer flex-1"
                           >
-                            {type.label}
+                            {type}
                           </label>
                         </div>
                       ))}
@@ -1271,27 +1212,27 @@ export default function PostJob() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    {t("postJobPage.fields.region")}
+                    Region
                   </Label>
                   <Input
                     value={formData.region}
                     onChange={(e) =>
                       setFormData({ ...formData, region: e.target.value })
                     }
-                    placeholder={t("postJobPage.placeholders.region")}
+                    placeholder="e.g., North America, Global"
                     className="border-2 border-gray-300 rounded-none"
                   />
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    {t("postJobPage.fields.language")}
+                    Language
                   </Label>
                   <Input
                     value={formData.language}
                     onChange={(e) =>
                       setFormData({ ...formData, language: e.target.value })
                     }
-                    placeholder={t("postJobPage.placeholders.language")}
+                    placeholder="e.g., English, Spanish"
                     className="border-2 border-gray-300 rounded-none"
                   />
                 </div>
@@ -1299,27 +1240,27 @@ export default function PostJob() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                  {t("postJobPage.fields.skillsNeeded")}
+                  Skills Needed
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {skills.map((skill) => (
                     <div
-                      key={skill.value}
+                      key={skill}
                       className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
                     >
                       <Checkbox
-                        id={skill.value}
-                        checked={formData.required_skills.includes(skill.value)}
+                        id={skill}
+                        checked={formData.required_skills.includes(skill)}
                         onCheckedChange={() =>
-                          toggleArrayItem("required_skills", skill.value)
+                          toggleArrayItem("required_skills", skill)
                         }
                         className="border-2 border-gray-400"
                       />
                       <label
-                        htmlFor={skill.value}
+                        htmlFor={skill}
                         className="text-sm text-gray-700 cursor-pointer flex-1"
                       >
-                        {skill.label}
+                        {skill}
                       </label>
                     </div>
                   ))}
@@ -1339,7 +1280,7 @@ export default function PostJob() {
                   htmlFor="needs_licensing"
                   className="text-sm font-medium text-gray-900 cursor-pointer flex-1"
                 >
-                  {t("postJobPage.fields.needsLicensing")}
+                  This job requires Face or Voice Licensing
                 </label>
               </div>
 
@@ -1357,8 +1298,8 @@ export default function PostJob() {
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   {formData.needs_licensing
-                    ? t("postJobPage.next.licensingDetails")
-                    : t("postJobPage.next.budget")}
+                    ? "Next: Licensing Details"
+                    : "Next: Budget"}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -1371,20 +1312,21 @@ export default function PostJob() {
               <div className="flex items-center gap-3 mb-6">
                 <Shield className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {t("postJobPage.steps.likenessLicensing")}
+                  Likeness Usage & Licensing
                 </h2>
               </div>
 
               <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
                 <AlertCircle className="h-5 w-5 text-blue-600" />
                 <AlertDescription className="text-blue-900">
-                  {t("postJobPage.licensing.help")}
+                  Legal agreement templates and royalty calculations will be
+                  auto-embedded based on your selections.
                 </AlertDescription>
               </Alert>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.usageType")}
+                  Usage Type *
                 </Label>
                 <Select
                   value={formData.usage_type}
@@ -1393,38 +1335,22 @@ export default function PostJob() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                    <SelectValue
-                      placeholder={t(
-                        "postJobPage.placeholders.selectUsageType",
-                      )}
-                    />
+                    <SelectValue placeholder="Select usage type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="commercial">
-                      {t("postJobPage.usageType.commercial")}
-                    </SelectItem>
-                    <SelectItem value="film">
-                      {t("postJobPage.usageType.film")}
-                    </SelectItem>
-                    <SelectItem value="ad">
-                      {t("postJobPage.usageType.advertising")}
-                    </SelectItem>
-                    <SelectItem value="social">
-                      {t("postJobPage.usageType.socialMedia")}
-                    </SelectItem>
-                    <SelectItem value="music">
-                      {t("postJobPage.usageType.musicVideo")}
-                    </SelectItem>
-                    <SelectItem value="other">
-                      {t("postJobPage.usageType.other")}
-                    </SelectItem>
+                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="film">Film</SelectItem>
+                    <SelectItem value="ad">Advertising</SelectItem>
+                    <SelectItem value="social">Social Media</SelectItem>
+                    <SelectItem value="music">Music Video</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.licenseDuration")}
+                  Duration of License *
                 </Label>
                 <Select
                   value={formData.license_duration}
@@ -1433,33 +1359,21 @@ export default function PostJob() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                    <SelectValue
-                      placeholder={t("postJobPage.placeholders.selectDuration")}
-                    />
+                    <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="30_days">
-                      {t("postJobPage.licenseDuration.days30")}
-                    </SelectItem>
-                    <SelectItem value="3_months">
-                      {t("postJobPage.licenseDuration.months3")}
-                    </SelectItem>
-                    <SelectItem value="6_months">
-                      {t("postJobPage.licenseDuration.months6")}
-                    </SelectItem>
-                    <SelectItem value="1_year">
-                      {t("postJobPage.licenseDuration.year1")}
-                    </SelectItem>
-                    <SelectItem value="perpetual">
-                      {t("postJobPage.licenseDuration.perpetual")}
-                    </SelectItem>
+                    <SelectItem value="30_days">30 Days</SelectItem>
+                    <SelectItem value="3_months">3 Months</SelectItem>
+                    <SelectItem value="6_months">6 Months</SelectItem>
+                    <SelectItem value="1_year">1 Year</SelectItem>
+                    <SelectItem value="perpetual">Perpetual</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.territories")}
+                  Territories *
                 </Label>
                 <Select
                   value={formData.territories}
@@ -1468,28 +1382,14 @@ export default function PostJob() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                    <SelectValue
-                      placeholder={t(
-                        "postJobPage.placeholders.selectTerritories",
-                      )}
-                    />
+                    <SelectValue placeholder="Select territories" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="global">
-                      {t("postJobPage.territories.global")}
-                    </SelectItem>
-                    <SelectItem value="us">
-                      {t("postJobPage.territories.us")}
-                    </SelectItem>
-                    <SelectItem value="eu">
-                      {t("postJobPage.territories.eu")}
-                    </SelectItem>
-                    <SelectItem value="asia">
-                      {t("postJobPage.territories.asia")}
-                    </SelectItem>
-                    <SelectItem value="latam">
-                      {t("postJobPage.territories.latam")}
-                    </SelectItem>
+                    <SelectItem value="global">Global</SelectItem>
+                    <SelectItem value="us">United States</SelectItem>
+                    <SelectItem value="eu">European Union</SelectItem>
+                    <SelectItem value="asia">Asia</SelectItem>
+                    <SelectItem value="latam">Latin America</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1508,7 +1408,7 @@ export default function PostJob() {
                     htmlFor="exclusivity"
                     className="text-sm text-gray-700 cursor-pointer flex-1"
                   >
-                    {t("postJobPage.fields.exclusiveUse")}
+                    Exclusive use of likeness for this campaign
                   </label>
                 </div>
 
@@ -1525,7 +1425,7 @@ export default function PostJob() {
                     htmlFor="royalty_option"
                     className="text-sm text-gray-700 cursor-pointer flex-1"
                   >
-                    {t("postJobPage.fields.royaltyOption")}
+                    Include royalty-based payout (%)
                   </label>
                 </div>
               </div>
@@ -1537,7 +1437,7 @@ export default function PostJob() {
                   className="border-2 border-gray-300 rounded-none"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  {t("postJobPage.actions.back")}
+                  Back
                 </Button>
                 <Button
                   onClick={handleNext}
@@ -1548,7 +1448,7 @@ export default function PostJob() {
                   }
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
-                  {t("postJobPage.next.budget")}
+                  Next: Budget
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -1561,14 +1461,14 @@ export default function PostJob() {
               <div className="flex items-center gap-3 mb-6">
                 <DollarSign className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {t("postJobPage.steps.budgetCompensation")}
+                  Budget & Compensation
                 </h2>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    {t("postJobPage.fields.budget")}
+                    Budget *
                   </Label>
                   <Input
                     type="number"
@@ -1576,18 +1476,19 @@ export default function PostJob() {
                     onChange={(e) =>
                       setFormData({ ...formData, budget: e.target.value })
                     }
-                    placeholder={t("postJobPage.placeholders.budget")}
+                    placeholder="2000"
                     className="border-2 border-gray-300 rounded-none"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    {t("postJobPage.budgetHelp")}
+                    Enter the total fixed budget or base payment for this
+                    project.
                   </p>
                 </div>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.paymentType")}
+                  Payment Type *
                 </Label>
                 <Select
                   value={formData.payment_type}
@@ -1596,32 +1497,22 @@ export default function PostJob() {
                   }
                 >
                   <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                    <SelectValue
-                      placeholder={t(
-                        "postJobPage.placeholders.selectPaymentType",
-                      )}
-                    />
+                    <SelectValue placeholder="Select payment type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fixed">
-                      {t("postJobPage.paymentType.fixed")}
-                    </SelectItem>
+                    <SelectItem value="fixed">Fixed Price</SelectItem>
                     <SelectItem value="per_deliverable">
-                      {t("postJobPage.paymentType.perDeliverable")}
+                      Per Deliverable
                     </SelectItem>
-                    <SelectItem value="hourly">
-                      {t("postJobPage.paymentType.hourly")}
-                    </SelectItem>
-                    <SelectItem value="royalty_base">
-                      {t("postJobPage.paymentType.royaltyBase")}
-                    </SelectItem>
+                    <SelectItem value="hourly">Hourly Rate</SelectItem>
+                    <SelectItem value="royalty_base">Royalty + Base</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.currency")}
+                  Currency
                 </Label>
                 <Select
                   value={formData.currency}
@@ -1643,8 +1534,8 @@ export default function PostJob() {
               <Alert className="bg-amber-50 border-2 border-amber-600 rounded-none">
                 <AlertCircle className="h-5 w-5 text-amber-600" />
                 <AlertDescription className="text-amber-900">
-                  <strong>{t("postJobPage.paymentMethodRequiredTitle")}</strong>{" "}
-                  {t("postJobPage.paymentMethodRequiredDesc")}
+                  <strong>Payment Method Required:</strong> You'll need to add
+                  payment information before this job goes live.
                 </AlertDescription>
               </Alert>
 
@@ -1655,13 +1546,13 @@ export default function PostJob() {
                   className="border-2 border-gray-300 rounded-none"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  {t("postJobPage.actions.back")}
+                  Back
                 </Button>
                 <Button
                   onClick={handleNext}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
-                  {t("postJobPage.next.collaboration")}
+                  Next: Collaboration
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -1674,7 +1565,7 @@ export default function PostJob() {
               <div className="flex items-center gap-3 mb-6">
                 <Users className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {t("postJobPage.steps.collaborationPreferences")}
+                  Collaboration Preferences
                 </h2>
               </div>
 
@@ -1685,10 +1576,10 @@ export default function PostJob() {
                       htmlFor="work_with_agency"
                       className="text-sm font-medium text-gray-900 cursor-pointer block mb-1"
                     >
-                      {t("postJobPage.fields.workWithAgency")}
+                      Work with a Marketing Agency?
                     </label>
                     <p className="text-xs text-gray-600">
-                      {t("postJobPage.workWithAgencyHelp")}
+                      Connect with verified agencies from marketplace
                     </p>
                   </div>
                   <Checkbox
@@ -1710,21 +1601,21 @@ export default function PostJob() {
                 {formData.work_with_agency && (
                   <Card className="p-4 bg-blue-50 border-2 border-blue-200 rounded-none space-y-3">
                     <p className="text-sm text-gray-700">
-                      {t("postJobPage.searchInviteAgencies")}
+                      Search and invite connected agencies:
                     </p>
                     <Input
                       value={agencySearch}
                       onChange={(e) => setAgencySearch(e.target.value)}
-                      placeholder={t("postJobPage.placeholders.searchAgencies")}
+                      placeholder="Search agencies..."
                       className="border-2 border-gray-300 rounded-none"
                     />
                     {loadingAgencies ? (
                       <p className="text-xs text-gray-600">
-                        {t("postJobPage.loadingConnectedAgencies")}
+                        Loading connected agencies...
                       </p>
                     ) : filteredAgencies.length === 0 ? (
                       <p className="text-xs text-gray-600">
-                        {t("postJobPage.noConnectedAgencies")}
+                        No connected agencies found.
                       </p>
                     ) : (
                       <div className="space-y-2">
@@ -1735,9 +1626,7 @@ export default function PostJob() {
                           const label =
                             agency?.display_name ||
                             agency?.agency_name ||
-                            t(
-                              "campaignsDashboard.builder.collaborators.agencyFallback",
-                            );
+                            "Agency";
                           return (
                             <label
                               key={agencyId}
@@ -1766,10 +1655,10 @@ export default function PostJob() {
                       htmlFor="invite_creator"
                       className="text-sm font-medium text-gray-900 cursor-pointer block mb-1"
                     >
-                      {t("postJobPage.fields.inviteCreator")}
+                      Invite AI Creator or Talent?
                     </label>
                     <p className="text-xs text-gray-600">
-                      {t("postJobPage.inviteCreatorHelp")}
+                      Browse top-rated creators and AI talent
                     </p>
                   </div>
                   <Checkbox
@@ -1791,21 +1680,21 @@ export default function PostJob() {
                 {formData.invite_creator && (
                   <Card className="p-4 bg-purple-50 border-2 border-purple-200 rounded-none space-y-3">
                     <p className="text-sm text-gray-700">
-                      {t("postJobPage.searchInviteCreators")}
+                      Search and invite connected creators:
                     </p>
                     <Input
                       value={creatorSearch}
                       onChange={(e) => setCreatorSearch(e.target.value)}
-                      placeholder={t("postJobPage.placeholders.searchCreators")}
+                      placeholder="Search creators..."
                       className="border-2 border-gray-300 rounded-none"
                     />
                     {loadingCreators ? (
                       <p className="text-xs text-gray-600">
-                        {t("postJobPage.loadingConnectedCreators")}
+                        Loading connected creators...
                       </p>
                     ) : filteredCreators.length === 0 ? (
                       <p className="text-xs text-gray-600">
-                        {t("postJobPage.noConnectedCreators")}
+                        No connected creators found.
                       </p>
                     ) : (
                       <div className="space-y-2">
@@ -1814,9 +1703,7 @@ export default function PostJob() {
                           const label =
                             creator?.full_name ||
                             creator?.display_name ||
-                            t(
-                              "campaignsDashboard.builder.collaborators.creatorFallback",
-                            );
+                            "Creator";
                           return (
                             <label
                               key={creatorId}
@@ -1842,7 +1729,7 @@ export default function PostJob() {
 
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  {t("postJobPage.fields.attachBrandAssets")}
+                  Attach Brand Assets
                 </Label>
                 <label
                   htmlFor="job-brand-assets-upload"
@@ -1850,10 +1737,10 @@ export default function PostJob() {
                 >
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                   <p className="text-sm font-medium text-gray-700 mb-1">
-                    {t("postJobPage.brandAssetsUploadTitle")}
+                    Upload logos, media kits, or reference content
                   </p>
                   <p className="text-xs text-gray-500">
-                    {t("postJobPage.brandAssetsUploadHelp")}
+                    PDF, JPG, PNG, MP4 up to 100MB
                   </p>
                 </label>
                 <input
@@ -1881,12 +1768,12 @@ export default function PostJob() {
                           {isImage ? (
                             <img
                               src={url}
-                              alt={asset?.name || t("postJobPage.brandAsset")}
+                              alt={asset?.name || "Brand asset"}
                               className="h-24 w-full object-cover"
                             />
                           ) : (
                             <div className="h-24 flex items-center justify-center text-xs text-gray-600 bg-gray-50">
-                              {asset?.name || t("postJobPage.fileUploaded")}
+                              {asset?.name || "File uploaded"}
                             </div>
                           )}
                           <button
@@ -1900,7 +1787,7 @@ export default function PostJob() {
                               }))
                             }
                             className="absolute top-1 right-1 bg-white/90 border border-gray-200 rounded-full p-1 hover:bg-white"
-                            aria-label={t("postJobPage.removeAsset")}
+                            aria-label="Remove asset"
                           >
                             <X className="w-3 h-3 text-gray-700" />
                           </button>
@@ -1924,7 +1811,7 @@ export default function PostJob() {
                   htmlFor="confidential"
                   className="text-sm text-gray-700 cursor-pointer flex-1"
                 >
-                  {t("postJobPage.fields.confidential")}
+                  Mark this as private (visible to invited collaborators only)
                 </label>
               </div>
 
@@ -1935,13 +1822,13 @@ export default function PostJob() {
                   className="border-2 border-gray-300 rounded-none"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  {t("postJobPage.actions.back")}
+                  Back
                 </Button>
                 <Button
                   onClick={handleNext}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
-                  {t("postJobPage.next.previewPublish")}
+                  Next: Preview & Publish
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
@@ -1954,7 +1841,7 @@ export default function PostJob() {
               <div className="flex items-center gap-3 mb-6">
                 <Eye className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {t("postJobPage.steps.previewPublish")}
+                  Preview & Publish
                 </h2>
               </div>
 
@@ -1988,8 +1875,7 @@ export default function PostJob() {
                       {formData.start_date && (
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {t("campaignsDashboard.overview.start")}{" "}
-                          {formData.start_date}
+                          Starts {formData.start_date}
                         </span>
                       )}
                     </div>
@@ -1998,16 +1884,16 @@ export default function PostJob() {
 
                 <div className="border-t-2 border-gray-200 pt-6">
                   <h4 className="font-bold text-gray-900 mb-3">
-                    {t("postJobPage.steps.projectOverview")}
+                    Project Overview
                   </h4>
                   <p className="text-gray-700 mb-4">
-                    {formData.description || t("postJobPage.noDescription")}
+                    {formData.description || "No description provided"}
                   </p>
 
                   {formData.deliverables && (
                     <div className="mb-4">
                       <span className="text-sm font-medium text-gray-700">
-                        {t("postJobPage.fields.deliverables")}:{" "}
+                        Deliverables:{" "}
                       </span>
                       <span className="text-sm text-gray-600">
                         {formData.deliverables}
@@ -2018,7 +1904,7 @@ export default function PostJob() {
                   {formData.talent_types.length > 0 && (
                     <div className="mb-4">
                       <span className="text-sm font-medium text-gray-700 block mb-2">
-                        {t("postJobPage.lookingFor")}:
+                        Looking for:
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {formData.talent_types.map((type) => (
@@ -2037,7 +1923,7 @@ export default function PostJob() {
                     <Alert className="bg-amber-50 border-2 border-amber-600 rounded-none mt-4">
                       <Shield className="h-5 w-5 text-amber-600" />
                       <AlertDescription className="text-amber-900">
-                        <strong>{t("postJobPage.licensingRequired")}:</strong>{" "}
+                        <strong>Licensing Required:</strong>{" "}
                         {formData.usage_type} usage, {formData.license_duration}{" "}
                         duration, {formData.territories} territories
                       </AlertDescription>
@@ -2053,7 +1939,7 @@ export default function PostJob() {
                   className="flex-1 border-2 border-gray-300 rounded-none"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  {t("postJobPage.backToEdit")}
+                  Back to Edit
                 </Button>
                 <Button
                   variant="outline"
@@ -2061,9 +1947,7 @@ export default function PostJob() {
                   className="flex-1 border-2 border-gray-300 rounded-none"
                   disabled={savingDraft}
                 >
-                  {savingDraft
-                    ? t("postJobPage.actions.saving")
-                    : t("postJobPage.actions.saveDraft")}
+                  {savingDraft ? "Saving..." : "Save as Draft"}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -2071,9 +1955,7 @@ export default function PostJob() {
                   disabled={submitting}
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  {submitting
-                    ? t("postJobPage.actions.publishing")
-                    : t("postJobPage.actions.publishMarketplace")}
+                  {submitting ? "Publishing..." : "Publish to Marketplace"}
                 </Button>
               </div>
             </div>

@@ -321,8 +321,89 @@ const getImageSections = (t: any) => [
 // Example campaigns moved inside CreatorDashboard component to support translations
 
 // Example content items for blank users
-const exampleContentItems: any[] = [];
-const exampleDetections: any[] = [];
+const exampleContentItems = [
+  {
+    id: "content-nike",
+    brand: "Nike Sportswear",
+    brand_logo:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi7Zx9TmyT9DJpbcODrb4HbvoNES_u0yr7tQ&s",
+    titleKey: "instagramReel",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1556906781-9a412961c28c?q=80&w=2000&auto=format&fit=crop",
+    platform: "Instagram",
+    views: "125,000",
+    engagement: "4.2%",
+    published_at: "2026-03-20",
+    is_live: true,
+    url: "#",
+  },
+  {
+    id: "content-glossier",
+    brand: "Glossier Beauty",
+    brand_logo:
+      "https://images.seeklogo.com/logo-png/61/1/glossier-icon-logo-png_seeklogo-618085.png",
+    titleKey: "webBanner",
+    thumbnail_url:
+      "https://ae.buynship.com/contents/uploads/2022/01/Glossier-Blog-Banner-1024x536.png",
+    platform: "Website",
+    views: "89,000",
+    engagement: "2.8%",
+    published_at: "2026-03-18",
+    is_live: true,
+    url: "#",
+  },
+  {
+    id: "content-tesla",
+    brand: "Tesla Motors",
+    brand_logo:
+      "https://upload.wikimedia.org/wikipedia/commons/e/e8/Tesla_logo.png",
+    titleKey: "tvCommercial",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1617788138017-80ad40651399?q=80&w=2000&auto=format&fit=crop",
+    platform: "YouTube",
+    views: "450,000",
+    engagement: "5.1%",
+    published_at: "2026-02-15",
+    is_live: true,
+    url: "#",
+  },
+];
+
+const exampleDetections = [
+  {
+    id: "det-1",
+    account: "@crypto_gains_2026",
+    platform: "TikTok",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop",
+    status: "needs_review",
+    match_confidence: 94,
+    detected_at: "2026-03-24",
+    logo: "https://upload.wikimedia.org/wikipedia/en/thumb/a/a9/TikTok_logo.svg/1200px-TikTok_logo.svg.png",
+  },
+  {
+    id: "det-2",
+    account: "@beauty_deals_shop",
+    platform: "Instagram",
+    thumbnail_url:
+      "https://images.unsplash.com/photo-1611262588024-d12430b98920?q=80&w=1000&auto=format&fit=crop",
+    status: "takedown_requested",
+    match_confidence: 87,
+    detected_at: "2026-03-22",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png",
+  },
+  {
+    id: "det-3",
+    account: "Quick Weight Loss Co.",
+    platform: "Facebook",
+    thumbnail_url:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Facebook_icon_2013.svg/2048px-Facebook_icon_2013.svg.png",
+    status: "resolved",
+    match_confidence: 91,
+    detected_at: "2026-03-19",
+    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png",
+  },
+];
 
 // Example public profile data
 const exampleProfilePreviewData = {
@@ -580,7 +661,6 @@ export default function CreatorDashboard() {
   const [sendDeliverablePreviewUrls, setSendDeliverablePreviewUrls] = useState<
     string[]
   >([]);
-  const sendDeliverableInputRef = useRef<HTMLInputElement | null>(null);
   const [seenBrandRequestIds, setSeenBrandRequestIds] = useState<Set<string>>(
     new Set(),
   );
@@ -706,35 +786,10 @@ export default function CreatorDashboard() {
   const totalBrandConnectionNotifications =
     unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
 
-  const formatStatus = (status: unknown) => {
-    const normalized = String(status || "sent")
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "_")
-      .replace(/-+/g, "_");
-    const statusKeyMap: Record<string, string> = {
-      accepted: "common.accepted",
-      declined: "common.declined",
-      approved: "common.approved",
-      sent: "common.sent",
-      contract_fully_signed: "common.contractFullySigned",
-      contract_partially_signed: "common.contractPartiallySigned",
-      contract_sent: "common.contractSent",
-      changes_requested: "common.changesRequested",
-      viewed: "common.viewed",
-      fulfilled: "common.fulfilled",
-      brand_review: "creatorDashboard.brandConnections.brandReview",
-    };
-    const mappedKey = statusKeyMap[normalized];
-    if (mappedKey) {
-      return t(mappedKey, {
-        defaultValue: "",
-      });
-    }
-    return String(status || "sent")
+  const formatStatus = (status: unknown) =>
+    String(status || "sent")
       .replace(/_/g, " ")
       .replace(/\b\w/g, (m) => m.toUpperCase());
-  };
 
   const offerStatusBadgeClass = (statusRaw: unknown) => {
     const status = String(statusRaw || "").toLowerCase();
@@ -3792,25 +3847,16 @@ export default function CreatorDashboard() {
       const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
       setDaysLeft(days);
       if (ms <= 0) {
-        setTrialCountdown(
-          t("creatorDashboard.planStatus.trialEnded", {
-            defaultValue: "Trial ended",
-          }),
-        );
+        setTrialCountdown("Trial ended");
         return;
       }
-      setTrialCountdown(
-        t("creatorDashboard.planStatus.days", {
-          count: days,
-          defaultValue: "{{count}} days",
-        }),
-      );
+      setTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
     };
 
     compute();
     const id = window.setInterval(compute, 60 * 1000);
     return () => window.clearInterval(id);
-  }, [creatorPlanTier, t, trialActive, trialEndsAt]);
+  }, [creatorPlanTier, trialActive, trialEndsAt]);
 
   const creatorCategoryLimit =
     typeof creatorBilling?.category_limit === "number"
@@ -3967,13 +4013,11 @@ export default function CreatorDashboard() {
     },
     {
       id: "jobs",
-      label: t("creatorDashboard.nav.jobs", { defaultValue: "Jobs" }),
+      label: "Jobs",
       icon: Briefcase,
       locked: !creatorCanUseJobs,
       requiredPlan: "pro",
-      premiumFeature: t("creatorDashboard.jobs.title", {
-        defaultValue: "Jobs",
-      }),
+      premiumFeature: "Jobs",
       onClick: () => {
         navigate(createPageUrl("Jobs"));
       },
@@ -4019,9 +4063,7 @@ export default function CreatorDashboard() {
     },
     {
       id: "talent-portal",
-      label: t("creatorDashboard.nav.talentPortal", {
-        defaultValue: "Talent Portal",
-      }),
+      label: "Talent Portal",
       icon: Briefcase,
       locked: !creatorCanUseTalentPortal,
       requiredPlan: "pro",
@@ -4033,12 +4075,8 @@ export default function CreatorDashboard() {
         }
         if (!talentPortalEnabled) {
           toast({
-            title: t("creatorDashboard.talentPortal.title", {
-              defaultValue: "Talent Portal",
-            }),
-            description: t("creatorDashboard.talentPortal.connectAgencyHint", {
-              defaultValue: "Connect to an agency to access Talent Portal.",
-            }),
+            title: "Talent Portal",
+            description: "Connect to an agency to access Talent Portal.",
           });
           return;
         }
@@ -4047,15 +4085,11 @@ export default function CreatorDashboard() {
     },
     {
       id: "agency-connection",
-      label: t("creatorDashboard.nav.agencyConnection", {
-        defaultValue: "Agency Connection",
-      }),
+      label: "Agency Connection",
       icon: LinkIcon,
       locked: !creatorCanUseAgencyConnection,
       requiredPlan: "basic",
-      premiumFeature: t("creatorDashboard.agencyConnections.title", {
-        defaultValue: "Agency Connection",
-      }),
+      premiumFeature: "Agency Connection",
       badge:
         agencyInvites.filter((i) => i.status === "pending").length > 0
           ? agencyInvites.filter((i) => i.status === "pending").length
@@ -4063,15 +4097,11 @@ export default function CreatorDashboard() {
     },
     {
       id: "brand-connection",
-      label: t("creatorDashboard.nav.brandConnection", {
-        defaultValue: "Brand Connection",
-      }),
+      label: "Brand Connection",
       icon: LinkIcon,
       locked: !creatorCanUseBrandConnection,
       requiredPlan: "basic",
-      premiumFeature: t("creatorDashboard.brandConnections.title", {
-        defaultValue: "Brand Connection",
-      }),
+      premiumFeature: "Brand Connection",
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
     },
@@ -6103,11 +6133,7 @@ export default function CreatorDashboard() {
               {trialActive && trialEndsAt && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <div className="flex items-center gap-1.5 font-medium text-[#64748B]">
-                    <span className="text-[#94A3B8]">
-                      {t("creatorDashboard.planStatus.endsIn", {
-                        defaultValue: "Ends in:",
-                      })}
-                    </span>
+                    <span className="text-[#94A3B8]">Ends in:</span>
                     <span
                       className={`font-black ${
                         isExpiringSoon ? "text-red-500" : "text-[#0F172A]"
@@ -6118,10 +6144,7 @@ export default function CreatorDashboard() {
                   </div>
                   {trialStartAt && (
                     <span className="text-[10px] text-[#94A3B8] font-medium bg-[#F1F5F9] px-2 py-0.5 rounded-full">
-                      {t("creatorDashboard.planStatus.started", {
-                        defaultValue: "Started {{date}}",
-                        date: new Date(trialStartAt).toLocaleDateString(),
-                      })}
+                      Started {new Date(trialStartAt).toLocaleDateString()}
                     </span>
                   )}
                   {isExpiringSoon && (
@@ -6131,9 +6154,7 @@ export default function CreatorDashboard() {
                       className="flex items-center gap-1 bg-red-100/80 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight"
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                      {t("creatorDashboard.planStatus.expiringSoon", {
-                        defaultValue: "Expiring Soon",
-                      })}
+                      Expiring Soon
                     </motion.div>
                   )}
                 </div>
@@ -6164,13 +6185,7 @@ export default function CreatorDashboard() {
                 <Gift className="h-4 w-4 text-[#38BDF8]" />
               </motion.div>
             )}
-            {trialActive
-              ? t("creatorDashboard.planStatus.manageSubscription", {
-                  defaultValue: "Manage Subscription",
-                })
-              : t("creatorDashboard.planStatus.accountSettings", {
-                  defaultValue: "Account Settings",
-                })}
+            {trialActive ? "Manage Subscription" : "Account Settings"}
             <ChevronRight
               className={`ml-2 h-4 w-4 transition-transform ${
                 isExpiringSoon
@@ -6221,28 +6236,19 @@ export default function CreatorDashboard() {
                 </motion.div>
                 <div className="max-w-xl">
                   <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-4">
-                    {t("creatorDashboard.trialOffer.badge", {
-                      defaultValue: "Exclusive Creator Offer",
-                    })}
+                    Exclusive Creator Offer
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black tracking-tight sm:text-4xl leading-tight">
-                    {t("creatorDashboard.trialOffer.titlePrefix", {
-                      defaultValue: "Experience Likelee",
-                    })}{" "}
+                    Experience Likelee{" "}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">
-                      {t("creatorDashboard.trialOffer.pro", {
-                        defaultValue: "Pro",
-                      })}
+                      Pro
                     </span>{" "}
-                    {t("creatorDashboard.trialOffer.titleSuffix", {
-                      defaultValue: "for 30 Days",
-                    })}
+                    for 30 Days
                   </h2>
                   <p className="mt-3 text-sm sm:text-lg text-slate-300 leading-relaxed font-medium">
-                    {t("creatorDashboard.trialOffer.description", {
-                      defaultValue:
-                        "Unlock professional features including AI Voice profiles, advanced analytics, content monitoring, and premium campaign opportunities.",
-                    })}
+                    Unlock professional features including AI Voice profiles,
+                    advanced analytics, content monitoring, and premium campaign
+                    opportunities.
                   </p>
                 </div>
               </div>
@@ -6250,15 +6256,9 @@ export default function CreatorDashboard() {
                 <div className="rounded-[20px] sm:rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-6 backdrop-blur-md">
                   <div className="space-y-3 mb-5 sm:mb-8">
                     {[
-                      t("creatorDashboard.trialOffer.bullets.premiumAccess", {
-                        defaultValue: "30 Days of Premium Access",
-                      }),
-                      t("creatorDashboard.trialOffer.bullets.cancelAnytime", {
-                        defaultValue: "Cancel anytime during trial",
-                      }),
-                      t("creatorDashboard.trialOffer.bullets.autoBilling", {
-                        defaultValue: "Automatic billing after 30 days",
-                      }),
+                      "30 Days of Premium Access",
+                      "Cancel anytime during trial",
+                      "Automatic billing after 30 days",
                     ].map((item, i) => (
                       <div
                         key={i}
@@ -6274,9 +6274,7 @@ export default function CreatorDashboard() {
                     onClick={() => navigate("/CreatorSubscribe")}
                     className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-base sm:text-lg shadow-xl group"
                   >
-                    {t("creatorDashboard.trialOffer.cta", {
-                      defaultValue: "Explore Plans & Unlock Trial",
-                    })}
+                    Explore Plans & Unlock Trial
                     <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </div>
@@ -7273,7 +7271,7 @@ export default function CreatorDashboard() {
                           <h4 className="font-bold text-gray-900 capitalize text-base sm:text-xl">
                             {t(
                               `creatorDashboard.voice.emotionNames.${recording.emotion.toLowerCase()}`,
-                              { defaultValue: recording.emotion },
+                              recording.emotion,
                             )}
                           </h4>
                           <p className="text-xs sm:text-sm text-gray-600">
@@ -7515,12 +7513,8 @@ export default function CreatorDashboard() {
                 }}
               >
                 {disconnectRequiresApproval
-                  ? t("creatorDashboard.agencyConnections.disconnect", {
-                      defaultValue: "Request disconnect",
-                    })
-                  : t("creatorDashboard.agencyConnections.disconnectNow", {
-                      defaultValue: "Disconnect",
-                    })}
+                  ? "Request disconnect"
+                  : "Disconnect"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -7655,15 +7649,10 @@ export default function CreatorDashboard() {
 
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
-            {t("creatorDashboard.agencyConnections.title", {
-              defaultValue: "Agency Connection",
-            })}
+            Agency Connection
           </h2>
           <p className="text-gray-600 mt-1">
-            {t("creatorDashboard.agencyConnections.subtitle", {
-              defaultValue:
-                "Manage agency invitations and your connected agencies.",
-            })}
+            Manage agency invitations and your connected agencies.
           </p>
         </div>
 
@@ -7679,9 +7668,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setAgencyConnectionSubTab("connections")}
           >
-            {t("creatorDashboard.agencyConnections.connections", {
-              defaultValue: "Connections",
-            })}
+            Connections
           </Button>
           <Button
             variant={
@@ -7696,9 +7683,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setAgencyConnectionSubTab("asset_requests")}
           >
-            {t("creatorDashboard.agencyConnections.assetRequests", {
-              defaultValue: "Asset Requests",
-            })}
+            Asset Requests
             {unseenAssetRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenAssetRequestCount}
@@ -7713,26 +7698,12 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-lg font-semibold text-gray-900">
-                    {t("creatorDashboard.agencyConnections.connectedAgencies", {
-                      defaultValue: "Connected Agencies",
-                    })}
+                    Connected Agencies
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {agencyConnections.length > 0
-                      ? t(
-                          "creatorDashboard.agencyConnections.connectedAgenciesDescription",
-                          {
-                            defaultValue:
-                              "You can be connected to multiple agencies at once.",
-                          },
-                        )
-                      : t(
-                          "creatorDashboard.agencyConnections.noConnectionsDescription",
-                          {
-                            defaultValue:
-                              "You are not connected to any agencies yet.",
-                          },
-                        )}
+                      ? "You can be connected to multiple agencies at once."
+                      : "You are not connected to any agencies yet."}
                   </div>
                 </div>
                 {agencyConnectionLoading && (
@@ -7777,18 +7748,8 @@ export default function CreatorDashboard() {
                             {String(
                               c.marketplace_contract?.disconnect_status || "",
                             ).toLowerCase() === "pending"
-                              ? t(
-                                  "creatorDashboard.agencyConnections.disconnectPending",
-                                  {
-                                    defaultValue: "Disconnect request pending",
-                                  },
-                                )
-                              : t(
-                                  "creatorDashboard.agencyConnections.connectedAgency",
-                                  {
-                                    defaultValue: "Connected agency",
-                                  },
-                                )}
+                              ? "Disconnect request pending"
+                              : "Connected agency"}
                           </div>
                         </div>
                       </button>
@@ -7821,18 +7782,8 @@ export default function CreatorDashboard() {
                           {String(
                             c.marketplace_contract?.status || "",
                           ).toLowerCase() === "active"
-                            ? t(
-                                "creatorDashboard.agencyConnections.disconnect",
-                                {
-                                  defaultValue: "Request disconnect",
-                                },
-                              )
-                            : t(
-                                "creatorDashboard.agencyConnections.disconnectNow",
-                                {
-                                  defaultValue: "Disconnect",
-                                },
-                              )}
+                            ? "Request disconnect"
+                            : "Disconnect"}
                         </Button>
                       )}
                     </div>
@@ -7845,25 +7796,12 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-lg font-semibold text-gray-900">
-                    {t("creatorDashboard.agencyConnections.invitations", {
-                      defaultValue: "Invitations",
-                    })}
+                    Invitations
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {pending.length > 0
-                      ? t(
-                          "creatorDashboard.agencyConnections.pendingInvitationsDescription",
-                          {
-                            defaultValue:
-                              "Respond to pending invitations from agencies.",
-                          },
-                        )
-                      : t(
-                          "creatorDashboard.agencyConnections.noPendingInvitations",
-                          {
-                            defaultValue: "No pending invitations right now.",
-                          },
-                        )}
+                      ? "Respond to pending invitations from agencies."
+                      : "No pending invitations right now."}
                   </div>
                 </div>
                 {pending.length > 0 && (
@@ -8105,17 +8043,10 @@ export default function CreatorDashboard() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-lg font-semibold text-gray-900">
-                  {t("creatorDashboard.agencyConnections.assetRequests", {
-                    defaultValue: "Asset Requests",
-                  })}
+                  Asset Requests
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  {t(
-                    "creatorDashboard.agencyConnections.uploadForAgencyRequest",
-                    {
-                      defaultValue: "Upload deliverables for agency requests.",
-                    },
-                  )}
+                  Upload deliverables for agency requests.
                 </div>
               </div>
               {unseenAssetRequestCount > 0 && (
@@ -8126,18 +8057,10 @@ export default function CreatorDashboard() {
             </div>
             <div className="mt-6 space-y-4">
               {loadingAssetRequests && (
-                <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.agencyConnections.loadingRequests", {
-                    defaultValue: "Loading requests...",
-                  })}
-                </p>
+                <p className="text-sm text-gray-600">Loading requests...</p>
               )}
               {!loadingAssetRequests && assetRequests.length === 0 && (
-                <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.agencyConnections.noAssetRequests", {
-                    defaultValue: "No asset requests yet.",
-                  })}
-                </p>
+                <p className="text-sm text-gray-600">No asset requests yet.</p>
               )}
               {assetRequests.map((req: any) => {
                 const offer = req?.campaign_offers || {};
@@ -8202,7 +8125,7 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="capitalize">
-                          {formatStatus(req?.status || "sent")}
+                          {String(req?.status || "sent").replace(/_/g, " ")}
                         </Badge>
                         <ChevronDown
                           className={`w-4 h-4 text-gray-400 transition-transform ${
@@ -8227,10 +8150,7 @@ export default function CreatorDashboard() {
                               window.open(String(req.file_url), "_blank")
                             }
                           >
-                            <FileText className="w-4 h-4 mr-2" />{" "}
-                            {t("creatorDashboard.brandConnections.viewPDF", {
-                              defaultValue: "View PDF",
-                            })}
+                            <FileText className="w-4 h-4 mr-2" /> View PDF
                           </Button>
                         )}
                         <div className="flex flex-wrap gap-2 pt-2">
@@ -8276,45 +8196,22 @@ export default function CreatorDashboard() {
                               } catch {}
                             }}
                           >
-                            {t(
-                              "creatorDashboard.brandConnections.uploadDeliverables",
-                              {
-                                defaultValue: "Upload Deliverables",
-                              },
-                            )}
+                            Upload Deliverables
                           </Button>
                         </div>
                         <div className="pt-2 border-t border-gray-100">
                           <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-2">
-                            <span>
-                              {t(
-                                "creatorDashboard.brandConnections.yourDeliverables",
-                                {
-                                  defaultValue: "Your deliverables",
-                                },
-                              )}
-                            </span>
+                            <span>Your deliverables</span>
                           </div>
                           {loadingOfferDeliverablesById[offerId] && (
                             <p className="text-xs text-gray-500">
-                              {t(
-                                "creatorDashboard.brandConnections.loadingDeliverables",
-                                {
-                                  defaultValue: "Loading deliverables...",
-                                },
-                              )}
+                              Loading deliverables...
                             </p>
                           )}
                           {!loadingOfferDeliverablesById[offerId] &&
                             requestDeliverables.length === 0 && (
                               <p className="text-xs text-gray-500">
-                                {t(
-                                  "creatorDashboard.brandConnections.noDeliverablesSubmitted",
-                                  {
-                                    defaultValue:
-                                      "No deliverables submitted yet.",
-                                  },
-                                )}
+                                No deliverables submitted yet.
                               </p>
                             )}
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -8361,10 +8258,8 @@ export default function CreatorDashboard() {
                                         {String(
                                           deliverable?.status || "submitted",
                                         ).toLowerCase() === "brand_approved"
-                                          ? t("common.approved", {
-                                              defaultValue: "approved",
-                                            })
-                                          : formatStatus(
+                                          ? "approved"
+                                          : String(
                                               deliverable?.status ||
                                                 "submitted",
                                             )}
@@ -8377,15 +8272,7 @@ export default function CreatorDashboard() {
                                     </div>
                                     {agencyNote && (
                                       <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded p-2">
-                                        <strong>
-                                          {t(
-                                            "creatorDashboard.agencyConnections.agencyFeedback",
-                                            {
-                                              defaultValue: "Agency feedback",
-                                            },
-                                          )}
-                                          :
-                                        </strong>{" "}
+                                        <strong>Agency Feedback:</strong>{" "}
                                         {agencyNote}
                                       </div>
                                     )}
@@ -8398,9 +8285,7 @@ export default function CreatorDashboard() {
                                           rel="noreferrer"
                                           className="text-xs text-blue-600 underline"
                                         >
-                                          {t("brandConnections.openFile", {
-                                            defaultValue: "Open file",
-                                          })}
+                                          Open file
                                         </a>
                                       )}
                                   </div>
@@ -8425,24 +8310,15 @@ export default function CreatorDashboard() {
     return (
       <div className="space-y-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            {t("creatorDashboard.brandConnections.title", {
-              defaultValue: "Brand Connection",
-            })}
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900">Brand Connection</h2>
           <p className="text-gray-600 mt-1">
-            {t("creatorDashboard.brandConnections.subtitle", {
-              defaultValue:
-                "Manage connections, requests, and incoming campaign offers.",
-            })}
+            Manage connections, requests, and incoming campaign offers.
           </p>
           {totalBrandConnectionNotifications > 0 && (
             <p className="text-xs text-amber-700 mt-2">
-              {t("creatorDashboard.brandConnections.notificationsSummary", {
-                defaultValue:
-                  "{{count}} neue Benachrichtigungen zu Anfragen, Angeboten und Lieferungen.",
-                count: totalBrandConnectionNotifications,
-              })}
+              {totalBrandConnectionNotifications} new notification
+              {totalBrandConnectionNotifications > 1 ? "s" : ""} across
+              requests, offers, and deliverables.
             </p>
           )}
         </div>
@@ -8459,9 +8335,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setBrandConnectionSubTab("connections")}
           >
-            {t("creatorDashboard.brandConnections.connections", {
-              defaultValue: "Connected Brands",
-            })}
+            Connected Brands
           </Button>
           <Button
             variant={
@@ -8483,9 +8357,7 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            {t("creatorDashboard.brandConnections.requests", {
-              defaultValue: "Anfragen",
-            })}
+            Requests
             {unseenRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenRequestCount}
@@ -8510,9 +8382,7 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            {t("creatorDashboard.brandConnections.offers", {
-              defaultValue: "Markenangebote",
-            })}
+            Brand Offers
             {unseenOfferCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenOfferCount}
@@ -8530,9 +8400,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setBrandConnectionSubTab("job-invites")}
           >
-            {t("creatorDashboard.jobs.jobInvites", {
-              defaultValue: "Job Invites",
-            })}
+            Job Invites
             {jobInvites.length > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {jobInvites.length}
@@ -8559,9 +8427,7 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            {t("creatorDashboard.brandConnections.deliverables", {
-              defaultValue: "Lieferungen",
-            })}
+            Deliverables
             {unseenDeliverableFeedbackCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenDeliverableFeedbackCount}
@@ -8573,24 +8439,12 @@ export default function CreatorDashboard() {
         {brandConnectionSubTab === "connections" && (
           <Card className="p-6">
             <div className="text-lg font-semibold text-gray-900">
-              {t("creatorDashboard.brandConnections.connections", {
-                defaultValue: "Connected Brands",
-              })}
+              Connected Brands
             </div>
             <div className="text-sm text-gray-600 mt-1">
               {brandConnections.length > 0
-                ? t(
-                    "creatorDashboard.brandConnections.connectionsDescription",
-                    {
-                      defaultValue: "You are connected with brands below.",
-                    },
-                  )
-                : t(
-                    "creatorDashboard.brandConnections.noConnectionsDescription",
-                    {
-                      defaultValue: "Sie sind noch mit keiner Marke verbunden.",
-                    },
-                  )}
+                ? "You are connected with brands below."
+                : "You are not connected to any brands yet."}
             </div>
             {brandConnections.length > 0 && (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -8642,16 +8496,12 @@ export default function CreatorDashboard() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-lg font-semibold text-gray-900">
-                  {t("creatorDashboard.brandConnections.requests", {
-                    defaultValue: "Anfragen",
-                  })}
+                  Requests
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
                   {pending.length > 0
                     ? "Respond to pending brand connection requests."
-                    : t("creatorDashboard.brandConnections.noPendingRequests", {
-                        defaultValue: "Derzeit keine ausstehenden Anfragen.",
-                      })}
+                    : "No pending requests right now."}
                 </div>
               </div>
               {pending.length > 0 && (
@@ -8710,23 +8560,13 @@ export default function CreatorDashboard() {
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
-                {t("creatorDashboard.brandConnections.jobInvites", {
-                  defaultValue: "Job Invites",
-                })}
+                Job Invites
               </div>
               {loadingJobInvites && (
-                <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.brandConnections.loadingJobInvites", {
-                    defaultValue: "Loading job invites...",
-                  })}
-                </p>
+                <p className="text-sm text-gray-600">Loading job invites...</p>
               )}
               {!loadingJobInvites && jobInvites.length === 0 && (
-                <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.brandConnections.noJobInvites", {
-                    defaultValue: "No job invites yet.",
-                  })}
-                </p>
+                <p className="text-sm text-gray-600">No job invites yet.</p>
               )}
               {!loadingJobInvites && jobInvites.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -8772,12 +8612,7 @@ export default function CreatorDashboard() {
                                 )
                               }
                             >
-                              {t(
-                                "creatorDashboard.brandConnections.viewJobDetails",
-                                {
-                                  defaultValue: "View job details",
-                                },
-                              )}
+                              View job details
                             </Button>
                             <Button
                               variant="outline"
@@ -8788,9 +8623,7 @@ export default function CreatorDashboard() {
                                 setJobInviteConfirmOpen(true);
                               }}
                             >
-                              {t("common.accept", {
-                                defaultValue: "Accept",
-                              })}
+                              Accept
                             </Button>
                             <Button
                               variant="outline"
@@ -8801,9 +8634,7 @@ export default function CreatorDashboard() {
                                 setJobInviteConfirmOpen(true);
                               }}
                             >
-                              {t("common.decline", {
-                                defaultValue: "Decline",
-                              })}
+                              Decline
                             </Button>
                           </>
                         ) : (
@@ -8817,9 +8648,7 @@ export default function CreatorDashboard() {
                               )
                             }
                           >
-                            {t("jobsPage.details.apply", {
-                              defaultValue: "Apply",
-                            })}
+                            Apply
                           </Button>
                         )}
                       </div>
@@ -8835,22 +8664,16 @@ export default function CreatorDashboard() {
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
-                {t("creatorDashboard.brandConnections.offers", {
-                  defaultValue: "Markenangebote",
-                })}
+                Brand Offers
               </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.brandConnections.loadingOffers", {
-                    defaultValue: "Loading campaign offers...",
-                  })}
+                  Loading campaign offers...
                 </p>
               )}
               {!loadingBrandOffers && brandOffers.length === 0 && (
                 <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.brandConnections.noCampaignOffers", {
-                    defaultValue: "No campaign offers available yet.",
-                  })}
+                  No campaign offers available yet.
                 </p>
               )}
               {!selectedOfferBriefId && brandOffers.length > 0 && (
@@ -8870,11 +8693,11 @@ export default function CreatorDashboard() {
                             </div>
                             <div className="text-xs text-gray-500">
                               {offer?.brands?.company_name || "Brand"} •{" "}
-                              {formatStatus(status)}
+                              {status.replace(/_/g, " ")}
                             </div>
                           </div>
                           <Badge variant="outline" className="capitalize">
-                            {formatStatus(status)}
+                            {status.replace(/_/g, " ")}
                           </Badge>
                         </div>
                         {offer?.message && (
@@ -8888,9 +8711,7 @@ export default function CreatorDashboard() {
                             className="border-gray-200"
                             onClick={() => openOfferBriefPage(offerId)}
                           >
-                            {t("creatorDashboard.brandConnections.viewBrief", {
-                              defaultValue: "Brief anzeigen",
-                            })}
+                            View brief
                           </Button>
                         </div>
                       </div>
@@ -8905,15 +8726,9 @@ export default function CreatorDashboard() {
                     className="border-gray-300"
                     onClick={closeOfferBriefPage}
                   >
-                    {t("creatorDashboard.brandConnections.backToBrandOffers", {
-                      defaultValue: "← Zurück zu Markenangeboten",
-                    })}
+                    ← Back to Brand Offers
                   </Button>
-                  <p className="text-sm text-red-600">
-                    {t("creatorDashboard.brandConnections.offerBriefNotFound", {
-                      defaultValue: "Offer brief not found.",
-                    })}
-                  </p>
+                  <p className="text-sm text-red-600">Offer brief not found.</p>
                 </div>
               )}
               {selectedOfferBriefId && selectedBriefOffer && (
@@ -8925,26 +8740,14 @@ export default function CreatorDashboard() {
                         onClick={closeOfferBriefPage}
                         className="border-2 border-gray-300"
                       >
-                        {t(
-                          "creatorDashboard.brandConnections.backToBrandOffers",
-                          {
-                            defaultValue: "← Zurück zu Markenangeboten",
-                          },
-                        )}
+                        ← Back to Brand Offers
                       </Button>
                       <h1 className="text-3xl font-bold text-gray-900">
-                        {selectedBriefCampaign?.name || "Campaign"} -{" "}
-                        {t(
-                          "creatorDashboard.brandConnections.briefAndContract",
-                          {
-                            defaultValue: "Brief & Contract",
-                          },
-                        )}
+                        {selectedBriefCampaign?.name || "Campaign"} - Brief &
+                        Contract
                       </h1>
                       <p className="text-gray-600">
-                        {t("creatorDashboard.brandConnections.detailedScope", {
-                          defaultValue: "Detailed scope and requirements",
-                        })}
+                        Detailed scope and requirements
                       </p>
                     </div>
                     <Badge
@@ -9338,18 +9141,11 @@ export default function CreatorDashboard() {
                         onClick={signContract}
                         disabled={!selectedBriefContract}
                       >
-                        {t("creatorDashboard.brandConnections.signContract", {
-                          defaultValue: "Vertrag unterschreiben",
-                        })}
+                        Sign Contract
                       </Button>
                     ) : (
                       <div className="text-sm font-medium text-emerald-700">
-                        {t(
-                          "creatorDashboard.brandConnections.contractAlreadySigned",
-                          {
-                            defaultValue: "Vertrag bereits unterschrieben.",
-                          },
-                        )}
+                        Contract already signed.
                       </div>
                     )}
                   </div>
@@ -9386,112 +9182,71 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
                         <p>
-                          {t("creatorDashboard.brandConnections.offerStatus", {
-                            defaultValue: "Offer status:",
-                          })}{" "}
+                          Offer status:{" "}
                           <span className="font-semibold text-gray-900">
                             {formatStatus(offer?.status || "sent")}
                           </span>
                         </p>
                         <p>
-                          {t(
-                            "creatorDashboard.brandConnections.deliverableStatus",
-                            {
-                              defaultValue: "Deliverable status:",
-                            },
-                          )}{" "}
+                          Deliverable status:{" "}
                           <span className="font-semibold text-gray-900">
                             {(() => {
                               const normalized = String(
                                 offer?.status || "",
                               ).toLowerCase();
                               if (normalized.includes("changes_requested")) {
-                                return t(
-                                  "creatorDashboard.brandConnections.requestReview",
-                                  {
-                                    defaultValue: "Request Review",
-                                  },
-                                );
+                                return "Request Review";
                               }
                               if (
                                 normalized.includes("deliverables_submitted")
                               ) {
-                                return t(
-                                  "creatorDashboard.brandConnections.submitted",
-                                  {
-                                    defaultValue: "Submitted",
-                                  },
-                                );
+                                return "Submitted";
                               }
                               if (normalized.includes("approved")) {
-                                return t("common.approved", {
-                                  defaultValue: "Approved",
-                                });
+                                return "Approved";
                               }
                               if (
                                 normalized.includes("contract_fully_signed") ||
                                 normalized.includes("signed")
                               ) {
-                                return t(
-                                  "creatorDashboard.brandConnections.readyToSubmit",
-                                  {
-                                    defaultValue: "Ready to submit",
-                                  },
-                                );
+                                return "Ready to submit";
                               }
-                              return t(
-                                "creatorDashboard.brandConnections.notStarted",
-                                {
-                                  defaultValue: "Not started",
-                                },
-                              );
+                              return "Not started";
                             })()}
                           </span>
                         </p>
                         <p>
-                          {t("creatorDashboard.brandConnections.category", {
-                            defaultValue: "Category:",
-                          })}{" "}
+                          Category:{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.category || "N/A")}
                           </span>
                         </p>
                         <p>
-                          {t("creatorDashboard.brandConnections.budgetRange", {
-                            defaultValue: "Budget range:",
-                          })}{" "}
+                          Budget range:{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.budget_range || "N/A")}
                           </span>
                         </p>
                         <p>
-                          {t("creatorDashboard.brandConnections.usageScope", {
-                            defaultValue: "Usage scope:",
-                          })}{" "}
+                          Usage scope:{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.usage_scope || "N/A")}
                           </span>
                         </p>
                         <p>
-                          {t("creatorDashboard.brandConnections.territory", {
-                            defaultValue: "Territory:",
-                          })}{" "}
+                          Territory:{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.territory || "N/A")}
                           </span>
                         </p>
                         <p>
-                          {t("creatorDashboard.brandConnections.startDate", {
-                            defaultValue: "Start date:",
-                          })}{" "}
+                          Start date:{" "}
                           <span className="font-semibold text-gray-900">
                             {String(campaign?.start_date || "N/A")}
                           </span>
                         </p>
                         <p>
-                          {t("creatorDashboard.brandConnections.duration", {
-                            defaultValue: "Duration:",
-                          })}{" "}
+                          Duration:{" "}
                           <span className="font-semibold text-gray-900">
                             {campaign?.duration_days
                               ? `${campaign.duration_days} days`
@@ -9510,13 +9265,8 @@ export default function CreatorDashboard() {
                           String(offer?.id || ""),
                         ) && (
                           <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                            {t(
-                              "creatorDashboard.brandConnections.editsRequested",
-                              {
-                                defaultValue:
-                                  "Edits requested by brand. Open brief and check feedback comments.",
-                              },
-                            )}
+                            Edits requested by brand. Open brief and check
+                            feedback comments.
                           </div>
                         )}
                       <Button
@@ -9524,9 +9274,7 @@ export default function CreatorDashboard() {
                         className="border-gray-200"
                         onClick={() => openOfferBriefPage(offerId)}
                       >
-                        {t("creatorDashboard.brandConnections.viewBrief", {
-                          defaultValue: "Brief anzeigen",
-                        })}
+                        View brief
                       </Button>
                     </div>
                   );
@@ -9540,9 +9288,7 @@ export default function CreatorDashboard() {
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-lg font-semibold text-gray-900">
-                  {t("creatorDashboard.brandConnections.deliverables", {
-                    defaultValue: "Lieferungen",
-                  })}
+                  Deliverables
                 </div>
                 <Button
                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -9552,28 +9298,16 @@ export default function CreatorDashboard() {
                     setSendDeliverableOpen(true);
                   }}
                 >
-                  {t("creatorDashboard.brandConnections.sendDeliverable", {
-                    defaultValue: "Send deliverable",
-                  })}
+                  Send deliverable
                 </Button>
               </div>
               {loadingBrandOffers && (
-                <p className="text-sm text-gray-600">
-                  {t("creatorDashboard.brandConnections.loadingDeliverables", {
-                    defaultValue: "Loading deliverables...",
-                  })}
-                </p>
+                <p className="text-sm text-gray-600">Loading deliverables...</p>
               )}
               {!loadingBrandOffers &&
                 deliverableEligibleOffers.length === 0 && (
                   <p className="text-sm text-gray-600">
-                    {t(
-                      "creatorDashboard.brandConnections.noDeliverablesForSignedOffers",
-                      {
-                        defaultValue:
-                          "No deliverables yet for fully signed offers.",
-                      },
-                    )}
+                    No deliverables yet for fully signed offers.
                   </p>
                 )}
               {deliverableEligibleOffers.map((offer: any) => {
@@ -9590,10 +9324,7 @@ export default function CreatorDashboard() {
                           {offer?.brand_campaigns?.name || "Campaign offer"}
                         </p>
                         <p className="text-xs text-gray-600">
-                          {t("creatorDashboard.brandConnections.offerStatus", {
-                            defaultValue: "Offer status:",
-                          })}{" "}
-                          {formatStatus(offer?.status || "sent")}
+                          Offer status: {formatStatus(offer?.status || "sent")}
                         </p>
                       </div>
                       <Button
@@ -9601,34 +9332,18 @@ export default function CreatorDashboard() {
                         className="border-gray-200"
                         onClick={() => openOfferBrief(offerId)}
                       >
-                        {expanded
-                          ? t("common.hide", {
-                              defaultValue: "Hide",
-                            })
-                          : t("common.open", {
-                              defaultValue: "Open",
-                            })}
+                        {expanded ? "Hide" : "Open"}
                       </Button>
                     </div>
                     {expanded && (
                       <div className="rounded-md border border-gray-200 p-3">
                         {loadingOfferDetails ? (
                           <div className="text-xs text-gray-500">
-                            {t(
-                              "creatorDashboard.brandConnections.loadingDeliverables",
-                              {
-                                defaultValue: "Loading deliverables...",
-                              },
-                            )}
+                            Loading deliverables...
                           </div>
                         ) : selectedOfferDeliverables.length === 0 ? (
                           <div className="text-xs text-gray-500">
-                            {t(
-                              "creatorDashboard.brandConnections.noDeliverables",
-                              {
-                                defaultValue: "No deliverables yet.",
-                              },
-                            )}
+                            No deliverables yet.
                           </div>
                         ) : (
                           selectedOfferDeliverables.map((deliverable: any) => (
@@ -9648,9 +9363,7 @@ export default function CreatorDashboard() {
                                   {String(
                                     deliverable?.status || "submitted",
                                   ).toLowerCase() === "brand_approved"
-                                    ? t("common.approved", {
-                                        defaultValue: "Approved",
-                                      })
+                                    ? "Approved"
                                     : formatStatus(
                                         deliverable?.status || "submitted",
                                       )}
@@ -9837,9 +9550,7 @@ export default function CreatorDashboard() {
               <Input
                 value={campaignSearch}
                 onChange={(e) => setCampaignSearch(e.target.value)}
-                placeholder={t("creatorDashboard.campaigns.searchPlaceholder", {
-                  defaultValue: "Search by brand or campaign",
-                })}
+                placeholder="Search by brand or campaign"
                 className="pl-12 pr-12 h-12"
               />
               {campaignSearch.trim() && (
@@ -10147,24 +9858,17 @@ export default function CreatorDashboard() {
       <div className="space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            {t("creatorDashboard.nav.approvals", {
-              defaultValue: "Approval Queue",
-            })}
+            Approval Queue
           </h2>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
-            {t("creatorDashboard.approvals.subtitle", {
-              defaultValue:
-                "Review brand requests, contract actions, and deliverable feedback.",
-            })}
+            Review brand requests, contract actions, and deliverable feedback.
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              {t("creatorDashboard.approvals.pendingRequests", {
-                defaultValue: "Pending requests",
-              })}
+              Pending requests
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pending.length}
@@ -10173,9 +9877,7 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("requests")}
             >
-              {t("creatorDashboard.approvals.openRequests", {
-                defaultValue: "Offene Anfragen",
-              })}
+              Open requests
             </Button>
           </Card>
 
@@ -10190,17 +9892,13 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("offers")}
             >
-              {t("creatorDashboard.approvals.reviewOffers", {
-                defaultValue: "Angebote prüfen",
-              })}
+              Review offers
             </Button>
           </Card>
 
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              {t("creatorDashboard.approvals.deliverableFeedback", {
-                defaultValue: "Lieferungs-Feedback",
-              })}
+              Deliverable feedback
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pendingDeliverables.length}
@@ -10209,9 +9907,7 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("deliverables")}
             >
-              {t("creatorDashboard.approvals.viewFeedback", {
-                defaultValue: "Feedback anzeigen",
-              })}
+              View feedback
             </Button>
           </Card>
         </div>
@@ -10220,15 +9916,10 @@ export default function CreatorDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="text-base sm:text-lg font-semibold text-gray-900">
-                {t("creatorDashboard.approvals.needsAttention", {
-                  defaultValue: "Benötigt Ihre Aufmerksamkeit",
-                })}
+                Needs your attention
               </div>
               <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                {t("creatorDashboard.approvals.needsAttentionDescription", {
-                  defaultValue:
-                    "Die neuesten Elemente, die noch eine Antwort von Ihnen benötigen.",
-                })}
+                The latest items that still need a response from you.
               </div>
             </div>
             <Badge className="bg-[#1A2140] text-white w-fit">
@@ -10280,11 +9971,11 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {offer?.brands?.company_name || "Brand"} •{" "}
-                        {formatStatus(offer?.status || "sent")}
+                        {String(offer?.status || "sent").replace(/_/g, " ")}
                       </div>
                     </div>
                     <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
-                      {formatStatus(offer?.status || "sent")}
+                      {String(offer?.status || "sent").replace(/_/g, " ")}
                     </Badge>
                   </div>
                 </div>
@@ -10301,19 +9992,11 @@ export default function CreatorDashboard() {
                         {offer?.brand_campaigns?.name || "Deliverable review"}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {t(
-                          "creatorDashboard.approvals.feedbackReceivedOnDeliverables",
-                          {
-                            defaultValue:
-                              "Feedback zu eingereichten Lieferungen erhalten",
-                          },
-                        )}
+                        Feedback received on submitted deliverables
                       </div>
                     </div>
                     <Badge className="bg-rose-50 text-rose-700 border border-rose-200">
-                      {t("creatorDashboard.approvals.feedback", {
-                        defaultValue: "Feedback",
-                      })}
+                      Feedback
                     </Badge>
                   </div>
                 </div>
@@ -10361,9 +10044,7 @@ export default function CreatorDashboard() {
               <Input
                 value={archiveSearch}
                 onChange={(e) => setArchiveSearch(e.target.value)}
-                placeholder={t("creatorDashboard.campaigns.searchPlaceholder", {
-                  defaultValue: "Search by brand or campaign",
-                })}
+                placeholder="Search by brand or campaign"
                 className="pl-12 pr-12 h-12"
               />
               {archiveSearch.trim() && (
@@ -10383,35 +10064,23 @@ export default function CreatorDashboard() {
           <Card className="p-6 rounded-xl shadow-sm text-center text-gray-600">
             {archiveSearch.trim() ? (
               <>
-                <p>{t("creatorDashboard.campaigns.empty.searchTitle")}</p>
+                <p>No campaigns match your search.</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {t("creatorDashboard.campaigns.empty.searchDescription")}
+                  Try a different brand or campaign name.
                 </p>
               </>
             ) : loadingBrandOffers ? (
               <>
-                <p>
-                  {t("creatorDashboard.archive.loadingPastCampaigns", {
-                    defaultValue: "Loading past campaigns...",
-                  })}
-                </p>
+                <p>Loading past campaigns...</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {t("creatorDashboard.archive.fetchingCompletedCampaigns", {
-                    defaultValue: "Fetching your completed campaigns.",
-                  })}
+                  Fetching your completed campaigns.
                 </p>
               </>
             ) : (
               <>
-                <p>
-                  {t("creatorDashboard.archive.noPastCampaigns", {
-                    defaultValue: "No past campaigns yet.",
-                  })}
-                </p>
+                <p>No past campaigns yet.</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {t("creatorDashboard.archive.completedCampaignsWillAppear", {
-                    defaultValue: "Completed campaigns will appear here.",
-                  })}
+                  Completed campaigns will appear here.
                 </p>
               </>
             )}
@@ -11084,12 +10753,7 @@ export default function CreatorDashboard() {
               <div className="mt-2 flex items-center gap-2 text-sm text-blue-800 font-medium">
                 <CreditCard className="w-4 h-4" />
                 <span>
-                  {t(
-                    "creatorDashboard.earnings.metrics.connectedBankAccountEndingIn",
-                    {
-                      defaultValue: "Connected bank account ending in",
-                    },
-                  )}{" "}
+                  Connected bank account ending in{" "}
                   <strong>{payoutAccountStatus.bank_last4}</strong>
                 </span>
               </div>
@@ -11102,9 +10766,7 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500"></div>
             <p className="text-sm font-medium text-gray-600 mb-2 relative z-10">
-              {t("creatorDashboard.earnings.metrics.cashoutBalanceStripe", {
-                defaultValue: "Cashout Balance (Stripe)",
-              })}
+              cashout Balance (Stripe)
             </p>
             <p className="text-3xl font-bold text-emerald-600 relative z-10">
               $
@@ -11114,18 +10776,10 @@ export default function CreatorDashboard() {
               ).toFixed(2)}
             </p>
             <p className="text-sm text-gray-600 mt-1 relative z-10">
-              {t(
-                "creatorDashboard.earnings.metrics.availableInConnectedStripe",
-                {
-                  defaultValue: "Available in your connected Stripe account.",
-                },
-              )}
+              Available in your connected Stripe account.
             </p>
             <p className="text-xs text-gray-500 mt-2 relative z-10">
-              {t("creatorDashboard.earnings.metrics.heldPendingTransfer", {
-                defaultValue: "Held (pending transfer)",
-              })}
-              : $
+              Held (pending transfer): $
               {(
                 (balances.find((b) => b.currency === "USD")?.available_cents ||
                   0) / 100
@@ -11273,9 +10927,7 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900">
-                {t("creatorDashboard.earnings.transfers.pendingTransfers", {
-                  defaultValue: "Pending Transfers",
-                })}
+                Pending Transfers
               </h3>
               <Button
                 size="sm"
@@ -11287,9 +10939,7 @@ export default function CreatorDashboard() {
                 <RefreshCw
                   className={`w-3 h-3 mr-1 ${loadingCreatorTransfers ? "animate-spin" : ""}`}
                 />
-                {t("creatorDashboard.earnings.transfers.refresh", {
-                  defaultValue: "Refresh",
-                })}
+                Refresh
               </Button>
             </div>
 
@@ -11300,53 +10950,32 @@ export default function CreatorDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {creatorTransfers.map((transfer: any) => {
+                {creatorTransfers.map((t: any) => {
                   const statusIcon =
-                    transfer.transfer_status === "created" ? (
+                    t.transfer_status === "created" ? (
                       <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    ) : transfer.transfer_status === "failed" ||
-                      transfer.transfer_status === "pending_retry" ? (
+                    ) : t.transfer_status === "failed" ||
+                      t.transfer_status === "pending_retry" ? (
                       <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
                     ) : (
                       <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     );
 
                   const statusLabel =
-                    transfer.transfer_status === "created"
+                    t.transfer_status === "created"
                       ? "transferred"
-                      : transfer.transfer_status === "pending_retry"
-                        ? t(
-                            "creatorDashboard.earnings.transfers.status.retrying",
-                            {
-                              defaultValue: "retrying…",
-                            },
-                          )
-                        : transfer.transfer_status === "failed"
-                          ? t(
-                              "creatorDashboard.earnings.transfers.status.failed",
-                              {
-                                defaultValue: "failed",
-                              },
-                            )
-                          : t(
-                              "creatorDashboard.earnings.transfers.status.pending",
-                              {
-                                defaultValue: "pending",
-                              },
-                            );
+                      : t.transfer_status === "pending_retry"
+                        ? "retrying…"
+                        : t.transfer_status === "failed"
+                          ? "failed"
+                          : "pending";
 
                   const friendlyReason = (reason: string) => {
                     if (!reason) return null;
                     if (
                       reason.includes("insufficient_capabilities_for_transfer")
                     )
-                      return t(
-                        "creatorDashboard.earnings.transfers.errors.incompleteStripe",
-                        {
-                          defaultValue:
-                            "Your Stripe account is not fully set up. Complete Stripe onboarding to receive transfers.",
-                        },
-                      );
+                      return "Your Stripe account is not fully set up. Complete Stripe onboarding to receive transfers.";
                     if (reason.includes("transfers_not_allowed"))
                       return "Transfers not allowed on your Stripe account.";
                     if (
@@ -11361,7 +10990,7 @@ export default function CreatorDashboard() {
 
                   return (
                     <div
-                      key={transfer.offer_id}
+                      key={t.offer_id}
                       className="p-4 rounded-xl border border-gray-200 bg-gray-50/50"
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -11370,49 +10999,37 @@ export default function CreatorDashboard() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-semibold text-gray-900 truncate">
-                                {transfer.offer_title}
+                                {t.offer_title}
                               </span>
                               <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
-                                {transfer.brand_name}
+                                {t.brand_name}
                               </span>
                             </div>
-                            {transfer.transfer_status === "failed" &&
-                              transfer.failure_reason && (
+                            {t.transfer_status === "failed" &&
+                              t.failure_reason && (
                                 <p className="text-[11px] text-amber-700 mt-1 leading-snug">
-                                  {friendlyReason(transfer.failure_reason)}
+                                  {friendlyReason(t.failure_reason)}
                                 </p>
                               )}
-                            {transfer.retry_count > 0 && (
+                            {t.retry_count > 0 && (
                               <p className="text-[10px] text-gray-400 mt-0.5">
-                                {transfer.retry_count}{" "}
-                                {transfer.retry_count === 1
-                                  ? t(
-                                      "creatorDashboard.earnings.transfers.retry",
-                                      {
-                                        defaultValue: "retry",
-                                      },
-                                    )
-                                  : t(
-                                      "creatorDashboard.earnings.transfers.retries",
-                                      {
-                                        defaultValue: "retries",
-                                      },
-                                    )}
+                                {t.retry_count}{" "}
+                                {t.retry_count === 1 ? "retry" : "retries"}
                               </p>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
                           <span className="text-sm font-bold text-gray-900">
-                            ${((transfer.amount_cents ?? 0) / 100).toFixed(2)}
+                            ${((t.amount_cents ?? 0) / 100).toFixed(2)}
                           </span>
                           <span
                             className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
-                              transfer.transfer_status === "created"
+                              t.transfer_status === "created"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : transfer.transfer_status === "failed"
+                                : t.transfer_status === "failed"
                                   ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : transfer.transfer_status === "pending_retry"
+                                  : t.transfer_status === "pending_retry"
                                     ? "bg-blue-50 text-blue-700 border-blue-200"
                                     : "bg-gray-50 text-gray-500 border-gray-200"
                             }`}
@@ -11435,15 +11052,13 @@ export default function CreatorDashboard() {
                   <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-bold text-amber-900">
-                      {t("creatorDashboard.earnings.transfers.actionRequired", {
-                        defaultValue: "Action required",
-                      })}
+                      Action required
                     </p>
                     <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                      {t("creatorDashboard.earnings.transfers.failedReason", {
-                        defaultValue:
-                          "One or more transfers failed because your Stripe account is not fully set up. Complete your Stripe onboarding to receive these funds. The agency will retry the transfer once your account is ready.",
-                      })}
+                      One or more transfers failed because your Stripe account
+                      is not fully set up. Complete your Stripe onboarding to
+                      receive these funds. The agency will retry the transfer
+                      once your account is ready.
                     </p>
                     {!payoutAccountStatus?.transfers_enabled && (
                       <Button
@@ -11451,12 +11066,7 @@ export default function CreatorDashboard() {
                         className="mt-3 h-8 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs"
                         onClick={() => setShowPayoutSettings(true)}
                       >
-                        {t(
-                          "creatorDashboard.earnings.transfers.completeStripeSetup",
-                          {
-                            defaultValue: "Complete Stripe setup",
-                          },
-                        )}
+                        Complete Stripe setup
                       </Button>
                     )}
                   </div>
@@ -11832,14 +11442,12 @@ export default function CreatorDashboard() {
 
               <div className="pt-2">
                 <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                  {t(
-                    "creatorDashboard.settingsView.profile.professionalDetails",
-                  )}
+                  Professional Details
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("creatorDashboard.settingsView.profile.creatorType")}
+                      Creator Type
                     </Label>
                     <Input
                       value={creator.creator_type || ""}
@@ -11850,15 +11458,13 @@ export default function CreatorDashboard() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder={t(
-                        "creatorDashboard.settingsView.profile.placeholders.creatorType",
-                      )}
+                      placeholder="Model / Influencer / Actor"
                     />
                   </div>
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("creatorDashboard.settingsView.profile.dateOfBirth")}
+                      Date of Birth
                     </Label>
                     <DobInput
                       value={creator.birthday || ""}
@@ -11875,7 +11481,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("creatorDashboard.settingsView.profile.gender")}
+                      Gender
                     </Label>
                     <Input
                       value={creator.gender || ""}
@@ -11891,7 +11497,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("creatorDashboard.settingsView.profile.ethnicity")}
+                      Ethnicity
                     </Label>
                     <Input
                       value={creator.ethnicity || ""}
@@ -11907,7 +11513,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("creatorDashboard.settingsView.profile.race")}
+                      Race
                     </Label>
                     <Input
                       value={creator.race || ""}
@@ -11923,7 +11529,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("creatorDashboard.settingsView.profile.hairColor")}
+                      Hair Color
                     </Label>
                     <Input
                       value={creator.hair_color || ""}
@@ -11939,7 +11545,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("creatorDashboard.settingsView.profile.eyeColor")}
+                      Eye Color
                     </Label>
                     <Input
                       value={creator.eye_color || ""}
@@ -11955,7 +11561,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      {t("creatorDashboard.settingsView.profile.heightCm")}
+                      Height (cm)
                     </Label>
                     <Input
                       type="number"
@@ -12426,9 +12032,7 @@ export default function CreatorDashboard() {
                 <div>
                   <div className="flex items-center gap-3">
                     <h3 className="text-xl font-bold text-[#142033]">
-                      {t("creatorDashboard.settingsView.billingSummary.title", {
-                        defaultValue: "Creator subscription",
-                      })}
+                      Creator subscription
                     </h3>
                     <Badge
                       className={
@@ -12441,23 +12045,13 @@ export default function CreatorDashboard() {
                     >
                       {effectivePlanTier === "pro"
                         ? trialActive
-                          ? t("creatorDashboard.billing.proTrial", {
-                              defaultValue: "Pro Trial",
-                            })
-                          : t("creatorDashboard.billing.pro", {
-                              defaultValue: "Pro",
-                            })
+                          ? "Pro Trial"
+                          : "Pro"
                         : effectivePlanTier === "basic"
                           ? trialActive
-                            ? t("creatorDashboard.billing.basicTrial", {
-                                defaultValue: "Basic Trial",
-                              })
-                            : t("creatorDashboard.billing.basic", {
-                                defaultValue: "Basic",
-                              })
-                          : t("creatorDashboard.billing.free", {
-                              defaultValue: "Free",
-                            })}
+                            ? "Basic Trial"
+                            : "Basic"
+                          : "Free"}
                     </Badge>
                   </div>
                 </div>
@@ -12469,48 +12063,18 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                      {t(
-                        "creatorDashboard.settingsView.billingSummary.currentAccess",
-                        {
-                          defaultValue: "Current access",
-                        },
-                      )}
+                      Current access
                     </div>
                     <div className="mt-1 text-2xl font-bold text-[#142033]">
                       {effectivePlanTier === "pro"
                         ? trialActive
-                          ? t(
-                              "creatorDashboard.settingsView.billingSummary.access.proTrial",
-                              {
-                                defaultValue: "Pro Trial access",
-                              },
-                            )
-                          : t(
-                              "creatorDashboard.settingsView.billingSummary.access.pro",
-                              {
-                                defaultValue: "Pro creator access",
-                              },
-                            )
+                          ? "Pro Trial access"
+                          : "Pro creator access"
                         : effectivePlanTier === "basic"
                           ? trialActive
-                            ? t(
-                                "creatorDashboard.settingsView.billingSummary.access.basicTrial",
-                                {
-                                  defaultValue: "Basic Trial access",
-                                },
-                              )
-                            : t(
-                                "creatorDashboard.settingsView.billingSummary.access.basic",
-                                {
-                                  defaultValue: "Basic creator access",
-                                },
-                              )
-                          : t(
-                              "creatorDashboard.settingsView.billingSummary.access.free",
-                              {
-                                defaultValue: "Free creator access",
-                              },
-                            )}
+                            ? "Basic Trial access"
+                            : "Basic creator access"
+                          : "Free creator access"}
                     </div>
                   </div>
                 </div>
@@ -12518,152 +12082,51 @@ export default function CreatorDashboard() {
                 <div className="mt-6 grid gap-3 md:grid-cols-2">
                   {[
                     {
-                      label: t("creatorSubscribe.features.content", {
-                        defaultValue: "Content",
-                      }),
-                      value: t(
-                        "creatorDashboard.settingsView.billingSummary.cards.content.value",
-                        {
-                          defaultValue: "Included for all creators",
-                        },
-                      ),
+                      label: "Content",
+                      value: "Included for all creators",
                       included: true,
                     },
                     {
-                      label: t(
-                        "creatorDashboard.settingsView.billingSummary.cards.kyc.label",
-                        {
-                          defaultValue: "KYC access",
-                        },
-                      ),
-                      value: creatorCanUseKyc
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.included",
-                            {
-                              defaultValue: "Included",
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
-                            {
-                              defaultValue: "Upgrade to Basic",
-                            },
-                          ),
+                      label: "KYC access",
+                      value: creatorCanUseKyc ? "Included" : "Upgrade to Basic",
                       included: creatorCanUseKyc,
                     },
                     {
-                      label: t("creatorSubscribe.features.likeness", {
-                        defaultValue: "My Likeness",
-                      }),
+                      label: "My Likeness",
                       value: creatorCanUseLikeness
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.included",
-                            {
-                              defaultValue: "Included",
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
-                            {
-                              defaultValue: "Upgrade to Basic",
-                            },
-                          ),
+                        ? "Included"
+                        : "Upgrade to Basic",
                       included: creatorCanUseLikeness,
                     },
                     {
-                      label: t("creatorSubscribe.features.payouts", {
-                        defaultValue: "Payouts",
-                      }),
+                      label: "Payouts",
                       value: creatorCanUsePayouts
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.included",
-                            {
-                              defaultValue: "Included",
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
-                            {
-                              defaultValue: "Upgrade to Basic",
-                            },
-                          ),
+                        ? "Included"
+                        : "Upgrade to Basic",
                       included: creatorCanUsePayouts,
                     },
                     {
-                      label: t("creatorSubscribe.features.rules", {
-                        defaultValue: "Settings: My Rules",
-                      }),
-                      value: creatorCanUseRules
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.included",
-                            {
-                              defaultValue: "Included",
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.proOnly",
-                            {
-                              defaultValue: "Pro only",
-                            },
-                          ),
+                      label: "My Rules",
+                      value: creatorCanUseRules ? "Included" : "Pro only",
                       included: creatorCanUseRules,
                     },
                     {
-                      label: t("creatorSubscribe.features.voice", {
-                        defaultValue: "Voice",
-                      }),
+                      label: "Voice",
                       value: creatorCanUseVoice
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.voiceEnabled",
-                            {
-                              defaultValue: "Enabled ({{count}} tones)",
-                              count: Math.max(creatorVoiceLimit, 6),
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.proOnly",
-                            {
-                              defaultValue: "Pro only",
-                            },
-                          ),
+                        ? `Enabled (${Math.max(creatorVoiceLimit, 6)} tones)`
+                        : "Pro only",
                       included: creatorCanUseVoice,
                     },
                     {
-                      label: t("creatorDashboard.nav.jobs", {
-                        defaultValue: "Jobs",
-                      }),
-                      value: creatorCanUseJobs
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.included",
-                            {
-                              defaultValue: "Included",
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.proOnly",
-                            {
-                              defaultValue: "Pro only",
-                            },
-                          ),
+                      label: "Jobs",
+                      value: creatorCanUseJobs ? "Included" : "Pro only",
                       included: creatorCanUseJobs,
                     },
                     {
-                      label: t("creatorSubscribe.features.activeCampaigns", {
-                        defaultValue: "Active Campaigns",
-                      }),
+                      label: "Active Campaigns",
                       value: creatorCanUseActiveCampaigns
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.included",
-                            {
-                              defaultValue: "Included",
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.proOnly",
-                            {
-                              defaultValue: "Pro only",
-                            },
-                          ),
+                        ? "Included"
+                        : "Pro only",
                       included: creatorCanUseActiveCampaigns,
                     },
                   ].map((item) => (
@@ -12676,35 +12139,16 @@ export default function CreatorDashboard() {
                           className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${
                             item.included
                               ? "bg-[#E8F7FB] text-[#1683A3]"
-                              : item.value ===
-                                  t(
-                                    "creatorDashboard.settingsView.billingSummary.proOnly",
-                                    {
-                                      defaultValue: "Pro only",
-                                    },
-                                  )
+                              : item.value === "Pro only"
                                 ? "bg-[#FFF4DA] text-[#B7791F]"
                                 : "bg-[#F1F5F9] text-[#718096]"
                           }`}
                         >
                           {item.included ? (
                             <Check className="h-4 w-4" />
-                          ) : item.value ===
-                            t(
-                              "creatorDashboard.settingsView.billingSummary.proOnly",
-                              {
-                                defaultValue: "Pro only",
-                              },
-                            ) ? (
+                          ) : item.value === "Pro only" ? (
                             <Crown className="h-4 w-4 text-amber-500" />
-                          ) : item.value.startsWith(
-                              t(
-                                "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
-                                {
-                                  defaultValue: "Upgrade to Basic",
-                                },
-                              ),
-                            ) ? (
+                          ) : item.value.startsWith("Upgrade to Basic") ? (
                             <Star className="h-4 w-4 text-blue-500" />
                           ) : (
                             <Shield className="h-4 w-4" />
@@ -12727,59 +12171,21 @@ export default function CreatorDashboard() {
               <div className="space-y-4">
                 <div className="rounded-3xl border border-[#D7E6F5] bg-gradient-to-br from-[#F9FCFF] to-[#EEF5FB] p-6">
                   <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                    {t(
-                      "creatorDashboard.settingsView.billingSummary.recommendedNextStep",
-                      {
-                        defaultValue: "Recommended next step",
-                      },
-                    )}
+                    Recommended next step
                   </div>
                   <div className="mt-2 text-2xl font-bold text-[#142033]">
                     {effectivePlanTier === "free"
-                      ? t(
-                          "creatorDashboard.settingsView.billingSummary.next.free",
-                          {
-                            defaultValue: "Move to Basic",
-                          },
-                        )
+                      ? "Move to Basic"
                       : effectivePlanTier === "basic"
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.next.basic",
-                            {
-                              defaultValue: "Move to Pro",
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.next.pro",
-                            {
-                              defaultValue: "You're fully unlocked",
-                            },
-                          )}
+                        ? "Move to Pro"
+                        : "You’re fully unlocked"}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[#5A6880]">
                     {effectivePlanTier === "free"
-                      ? t(
-                          "creatorDashboard.settingsView.billingSummary.descriptions.free",
-                          {
-                            defaultValue:
-                              "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts.",
-                          },
-                        )
+                      ? "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts."
                       : effectivePlanTier === "basic"
-                        ? t(
-                            "creatorDashboard.settingsView.billingSummary.descriptions.basic",
-                            {
-                              defaultValue:
-                                "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns.",
-                            },
-                          )
-                        : t(
-                            "creatorDashboard.settingsView.billingSummary.descriptions.pro",
-                            {
-                              defaultValue:
-                                "Your current plan includes the full creator workflow toolset.",
-                            },
-                          )}
+                        ? "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns."
+                        : "Your current plan includes the full creator workflow toolset."}
                   </p>
                   {effectivePlanTier !== "pro" && (
                     <Button
@@ -12790,20 +12196,10 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          {t(
-                            "creatorDashboard.settingsView.billingSummary.processing",
-                            {
-                              defaultValue: "Processing...",
-                            },
-                          )}
+                          Processing...
                         </>
                       ) : (
-                        t(
-                          "creatorDashboard.settingsView.billingSummary.viewDetails",
-                          {
-                            defaultValue: "View Details",
-                          },
-                        )
+                        "View Details"
                       )}
                     </Button>
                   )}
@@ -12814,21 +12210,12 @@ export default function CreatorDashboard() {
                   <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                     <div className="max-w-md text-center md:text-left">
                       <h4 className="text-2xl font-black tracking-tight">
-                        {t(
-                          "creatorDashboard.settingsView.billingSummary.lockInProTitle",
-                          {
-                            defaultValue: "Ready to lock in Pro?",
-                          },
-                        )}
+                        Ready to lock in Pro?
                       </h4>
                       <p className="mt-3 text-base text-indigo-100/100 leading-relaxed font-medium">
-                        {t(
-                          "creatorDashboard.settingsView.billingSummary.lockInProDescription",
-                          {
-                            defaultValue:
-                              "Your trial is active, but you can secure your professional workflow tools today. Get full marketplace priority and exclusive campaign access.",
-                          },
-                        )}
+                        Your trial is active, but you can secure your
+                        professional workflow tools today. Get full marketplace
+                        priority and exclusive campaign access.
                       </p>
                     </div>
                     <Button
@@ -12838,20 +12225,10 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-6 h-6 animate-spin mr-3" />
-                          {t(
-                            "creatorDashboard.settingsView.billingSummary.openingPortal",
-                            {
-                              defaultValue: "Opening Portal...",
-                            },
-                          )}
+                          Opening Portal...
                         </>
                       ) : (
-                        t(
-                          "creatorDashboard.settingsView.billingSummary.selectPlan",
-                          {
-                            defaultValue: "Select Plan",
-                          },
-                        )
+                        "Select Plan"
                       )}
                     </Button>
                   </div>
@@ -13356,27 +12733,11 @@ export default function CreatorDashboard() {
         >
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-              <DialogTitle>
-                {t("creatorDashboard.brandConnections.sendDeliverable", {
-                  defaultValue: "Send deliverable",
-                })}
-              </DialogTitle>
+              <DialogTitle>Send deliverable</DialogTitle>
               <DialogDescription>
                 {sendDeliverableRequestId
-                  ? t(
-                      "creatorDashboard.agencyConnections.uploadForAgencyRequest",
-                      {
-                        defaultValue:
-                          "Upload deliverables for the agency request.",
-                      },
-                    )
-                  : t(
-                      "creatorDashboard.brandConnections.uploadDeliverableDescription",
-                      {
-                        defaultValue:
-                          "Upload a deliverable, choose the connected brand, and select the campaign offer.",
-                      },
-                    )}
+                  ? "Upload deliverables for the agency request."
+                  : "Upload a deliverable, choose the connected brand, and select the campaign offer."}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -13418,13 +12779,8 @@ export default function CreatorDashboard() {
                   return (
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                       <span className="text-amber-700 text-sm font-semibold">
-                        {t(
-                          "creatorDashboard.brandConnections.awaitingPayment",
-                          {
-                            defaultValue:
-                              "Awaiting brand payment before deliverables can be uploaded.",
-                          },
-                        )}
+                        ⏳ Awaiting brand payment before deliverables can be
+                        uploaded.
                       </span>
                     </div>
                   );
@@ -13432,17 +12788,11 @@ export default function CreatorDashboard() {
                 return null;
               })()}
               <div className="space-y-2">
-                <Label htmlFor="deliverable-upload">
-                  {t("creatorDashboard.brandConnections.uploadDeliverables", {
-                    defaultValue: "Upload deliverables",
-                  })}
-                </Label>
+                <Label htmlFor="deliverable-upload">Upload deliverables</Label>
                 <Input
-                  ref={sendDeliverableInputRef}
                   id="deliverable-upload"
                   type="file"
                   multiple
-                  className="sr-only"
                   onChange={(e) => {
                     const selectedFiles = Array.from(e.target.files || []);
                     if (selectedFiles.length === 0) return;
@@ -13466,36 +12816,9 @@ export default function CreatorDashboard() {
                     e.target.value = "";
                   }}
                 />
-                <div className="flex items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-gray-300"
-                    onClick={() => sendDeliverableInputRef.current?.click()}
-                  >
-                    {t("creatorDashboard.brandConnections.chooseFiles", {
-                      defaultValue: "Choose Files",
-                    })}
-                  </Button>
-                  <span className="text-sm text-gray-600">
-                    {sendDeliverableFiles.length === 0
-                      ? t("creatorDashboard.brandConnections.noFileChosen", {
-                          defaultValue: "No file chosen",
-                        })
-                      : t("creatorDashboard.brandConnections.filesSelected", {
-                          count: sendDeliverableFiles.length,
-                          defaultValue:
-                            sendDeliverableFiles.length === 1
-                              ? "{{count}} file selected"
-                              : "{{count}} files selected",
-                        })}
-                  </span>
-                </div>
                 <p className="text-xs text-gray-500">
-                  {t("creatorDashboard.brandConnections.uploadedAssetsNotice", {
-                    defaultValue:
-                      "Uploaded assets will be stored and shared as downloadable links.",
-                  })}
+                  Uploaded assets will be stored and shared as downloadable
+                  links.
                 </p>
                 {sendDeliverableFiles.length > 0 && (
                   <div className="mt-2 space-y-2">
@@ -13543,9 +12866,7 @@ export default function CreatorDashboard() {
                               setSendDeliverablePreviewUrls(nextUrls);
                             }}
                           >
-                            {t("common.remove", {
-                              defaultValue: "Remove",
-                            })}
+                            Remove
                           </Button>
                         </div>
                       </div>
@@ -13556,11 +12877,7 @@ export default function CreatorDashboard() {
               {!sendDeliverableRequestId && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="deliverable-brand">
-                      {t("creatorDashboard.brandConnections.selectBrand", {
-                        defaultValue: "Select brand",
-                      })}
-                    </Label>
+                    <Label htmlFor="deliverable-brand">Select brand</Label>
                     <select
                       id="deliverable-brand"
                       value={sendDeliverableBrandId}
@@ -13570,14 +12887,7 @@ export default function CreatorDashboard() {
                       }}
                       className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      <option value="">
-                        {t(
-                          "creatorDashboard.brandConnections.selectConnectedBrand",
-                          {
-                            defaultValue: "Select connected brand",
-                          },
-                        )}
-                      </option>
+                      <option value="">Select connected brand</option>
                       {brandConnections.map((c: any) => (
                         <option
                           key={String(c?.brand_id || c?.id)}
@@ -13590,9 +12900,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="deliverable-campaign">
-                      {t("creatorDashboard.brandConnections.selectCampaign", {
-                        defaultValue: "Select campaign",
-                      })}
+                      Select campaign
                     </Label>
                     <select
                       id="deliverable-campaign"
@@ -13612,14 +12920,7 @@ export default function CreatorDashboard() {
                       }}
                       className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      <option value="">
-                        {t(
-                          "creatorDashboard.brandConnections.selectCampaignOffer",
-                          {
-                            defaultValue: "Select campaign offer",
-                          },
-                        )}
-                      </option>
+                      <option value="">Select campaign offer</option>
                       {campaignOptions.map((offer: any) => (
                         <option
                           key={String(offer?.id)}
@@ -13635,9 +12936,7 @@ export default function CreatorDashboard() {
                     </select>
                     {sendDeliverableBrandId && campaignOptions.length === 0 && (
                       <p className="text-xs text-amber-700">
-                        {t("creatorDashboard.brandConnections.noOffers", {
-                          defaultValue: "No offers yet.",
-                        })}
+                        No campaign offers found for this brand yet.
                       </p>
                     )}
                   </div>
@@ -13658,9 +12957,7 @@ export default function CreatorDashboard() {
                 }}
                 disabled={offerActionLoading}
               >
-                {t("common.cancel", {
-                  defaultValue: "Cancel",
-                })}
+                Cancel
               </Button>
               <Button
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -13680,11 +12977,7 @@ export default function CreatorDashboard() {
                     })())
                 }
               >
-                {offerActionLoading
-                  ? t("common.sending", {
-                      defaultValue: "Sending...",
-                    })
-                  : t("common.send", { defaultValue: "Send" })}
+                {offerActionLoading ? "Sending..." : "Send"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -14189,6 +13482,44 @@ export default function CreatorDashboard() {
                         {section.bestFor}
                       </p>
                     </div>
+
+                    <Card className="p-4 bg-gray-50 border border-gray-200">
+                      <h4 className="font-bold text-gray-900 mb-3">
+                        {t("creatorDashboard.uploadModal.requirementsTitle")}
+                      </h4>
+                      <div className="space-y-2 text-sm text-gray-700">
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>{t("creatorDashboard.uploadModal.resolution")}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>{t("creatorDashboard.uploadModal.faceVisible")}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>
+                            {t("creatorDashboard.uploadModal.goodLighting")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>{t("creatorDashboard.uploadModal.recentPhoto")}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>{t("creatorDashboard.uploadModal.noFilters")}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="w-4 h-4 text-green-600" />
+                          <p>
+                            {t(
+                              "creatorDashboard.uploadModal.professionalQuality",
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
 
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#32C8D1] transition-colors">
                       <input

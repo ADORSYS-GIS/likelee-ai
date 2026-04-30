@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatKycReason } from "@/utils/kycDisplay";
-import { useTranslation } from "react-i18next";
 import {
   Users,
   DollarSign,
@@ -55,15 +54,8 @@ const DashboardView = ({
   licensingPipeline,
   recentActivity,
 }: DashboardViewProps) => {
-  const { t } = useTranslation();
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const entityPluralLower = isSportsAgency ? "athletes" : "talent";
-  const entityLabel = isSportsAgency
-    ? t("agencyDashboard.dashboard.entities.athlete")
-    : t("agencyDashboard.dashboard.entities.talent");
-  const entityLabelPlural = isSportsAgency
-    ? t("agencyDashboard.dashboard.entities.athletePlural")
-    : t("agencyDashboard.dashboard.entities.talentPlural");
   const overviewRosterTotal = overview?.roster_health?.total_count;
   const overviewRosterActive = overview?.roster_health?.active_count;
   const overviewRosterPct = overview?.roster_health?.percentage;
@@ -108,51 +100,15 @@ const DashboardView = ({
   const timeAgo = (dateMs: number): string => {
     const diffMs = Date.now() - dateMs;
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    if (diffMins < 1) return t("agencyDashboard.dashboard.time.justNow");
-    if (diffMins < 60)
-      return t("agencyDashboard.dashboard.time.minutesAgo", {
-        count: diffMins,
-      });
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24)
-      return t("agencyDashboard.dashboard.time.hoursAgo", {
-        count: diffHours,
-      });
+      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7)
-      return t("agencyDashboard.dashboard.time.daysAgo", {
-        count: diffDays,
-      });
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
     const diffWeeks = Math.floor(diffDays / 7);
-    return t("agencyDashboard.dashboard.time.weeksAgo", {
-      count: diffWeeks,
-    });
-  };
-
-  const translateRecentActivityTitle = (title: unknown) => {
-    const raw = String(title || "").trim();
-    if (!raw) return raw;
-
-    if (raw.toLowerCase() === "new licensing request") {
-      return t("agencyDashboard.dashboard.recentActivity.newLicensingRequest", {
-        defaultValue: "New Licensing Request",
-      });
-    }
-
-    return raw;
-  };
-
-  const translateRecentActivityTime = (value: unknown) => {
-    const raw = String(value || "").trim();
-    if (!raw) return raw;
-
-    if (raw.toLowerCase() === "recently") {
-      return t("agencyDashboard.dashboard.time.recently", {
-        defaultValue: "Recently",
-      });
-    }
-
-    return raw;
+    return `${diffWeeks} week${diffWeeks === 1 ? "" : "s"} ago`;
   };
 
   const recentTalents = React.useMemo(() => {
@@ -201,49 +157,43 @@ const DashboardView = ({
   const formattedKycReason = formatKycReason(kycRejectionReason);
   const hasPendingFollowUp = isKycPending && formattedKycReason.length > 0;
   const kycTitle = isKycApproved
-    ? t("agencyDashboard.dashboard.kyc.completedTitle")
+    ? "KYC completed"
     : hasPendingFollowUp
-      ? t("agencyDashboard.dashboard.kyc.additionalVerificationTitle")
+      ? "Additional verification needed"
       : isKycPending
-        ? t("agencyDashboard.dashboard.kyc.inProgressTitle")
+        ? "KYC verification in progress"
         : isKycRejected
-          ? t("agencyDashboard.dashboard.kyc.rejectedTitle")
-          : t("agencyDashboard.dashboard.kyc.requiredTitle");
+          ? "Verification was not approved"
+          : "KYC verification required";
   const kycDescription = isKycApproved
-    ? t("agencyDashboard.dashboard.kyc.completedDescription")
+    ? "Your agency identity verification is complete."
     : hasPendingFollowUp
-      ? t("agencyDashboard.dashboard.kyc.additionalVerificationDescription", {
-          entityPlural: entityLabelPlural,
-        })
+      ? `Veriff requested one more step before approval. Continue below so payouts and licensing can stay available for your ${entityPluralLower}.`
       : isKycPending
         ? canResumeKyc
-          ? t("agencyDashboard.dashboard.kyc.resumeDescription")
-          : t("agencyDashboard.dashboard.kyc.startNewDescription")
+          ? "Your verification is still in progress. If the window was closed, resume it below, or refresh once you've finished."
+          : "Your verification is still in progress. If the earlier link expired, start a new session below, or refresh once you've finished."
         : isKycRejected
-          ? t("agencyDashboard.dashboard.kyc.rejectedDescription", {
-              entityPlural: entityLabelPlural,
-            })
-          : t("agencyDashboard.dashboard.kyc.requiredDescription", {
-              entitySingular: entityLabel,
-            });
+          ? `Your last verification was not approved. Review the reason below, then retry so payouts and licensing can stay available for your ${entityPluralLower}.`
+          : `To enable payouts and licensing for your ${entitySingularLower}, please complete your agency's identity verification.`;
   const kycBadgeLabel = isKycApproved
-    ? t("agencyDashboard.dashboard.kyc.badges.approved")
+    ? "Approved"
     : hasPendingFollowUp
-      ? t("agencyDashboard.dashboard.kyc.badges.actionNeeded")
+      ? "Action needed"
       : isKycPending
-        ? t("agencyDashboard.dashboard.kyc.badges.pending")
+        ? "Pending"
         : isKycRejected
-          ? t("agencyDashboard.dashboard.kyc.badges.rejected")
-          : t("agencyDashboard.dashboard.kyc.badges.notStarted");
+          ? "Rejected"
+          : "Not started";
   const kycButtonLabel = isKycPending
     ? canResumeKyc
       ? hasPendingFollowUp
-        ? t("agencyDashboard.dashboard.kyc.actions.continue")
-        : t("agencyDashboard.dashboard.kyc.actions.resume")
-      : t("agencyDashboard.dashboard.kyc.actions.startNew")
+        ? "Continue KYC"
+        : "Resume KYC"
+      : "Start New KYC"
     : isKycRejected
-      ? t("agencyDashboard.dashboard.kyc.actions.retry")
-      : t("agencyDashboard.dashboard.kyc.actions.complete");
+      ? "Retry KYC"
+      : "Complete KYC";
   const KycIcon = isKycApproved
     ? CheckCircle2
     : hasPendingFollowUp || isKycRejected
@@ -301,9 +251,7 @@ const DashboardView = ({
               {(hasPendingFollowUp || isKycRejected) && formattedKycReason && (
                 <div className="mt-3 max-w-2xl rounded-2xl bg-white/90 px-4 py-3 text-sm text-rose-700 ring-1 ring-rose-100">
                   <span className="font-semibold">
-                    {hasPendingFollowUp
-                      ? t("agencyDashboard.dashboard.kyc.veriffNote")
-                      : t("agencyDashboard.dashboard.kyc.reason")}
+                    {hasPendingFollowUp ? "Veriff note:" : "Reason:"}
                   </span>{" "}
                   {formattedKycReason}
                 </div>
@@ -323,7 +271,7 @@ const DashboardView = ({
                     <RefreshCw
                       className={`mr-2 h-4 w-4 ${refreshLoading ? "animate-spin" : ""}`}
                     />
-                    {t("agencyDashboard.dashboard.kyc.refreshStatus")}
+                    Refresh status
                   </Button>
                 </div>
               )}
@@ -350,7 +298,7 @@ const DashboardView = ({
             <TrendingUp className="w-4 h-4 text-green-500" />
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            {t("agencyDashboard.dashboard.cards.rosterHealth")}
+            Roster Health
           </h3>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-gray-900">
@@ -363,7 +311,7 @@ const DashboardView = ({
               : totalTalent > 0
                 ? Math.round((activeTalent / totalTalent) * 100)
                 : 0}
-            {t("agencyDashboard.dashboard.cards.activePercentSuffix")}
+            % active
           </p>
         </Card>
 
@@ -376,7 +324,7 @@ const DashboardView = ({
             <TrendingUp className="w-4 h-4 text-green-500" />
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            {t("agencyDashboard.dashboard.cards.revenueThisMonth")}
+            Revenue This Month
           </h3>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-gray-900">
@@ -386,9 +334,7 @@ const DashboardView = ({
           {monthlyRevenueGrowth !== null ? (
             <p className="text-xs text-green-600 font-medium mt-1">
               {monthlyRevenueGrowth >= 0 ? "+" : ""}
-              {t("agencyDashboard.dashboard.cards.growthVsLastMonth", {
-                value: `${monthlyRevenueGrowth}%`,
-              })}
+              {monthlyRevenueGrowth}% vs last month
             </p>
           ) : null}
         </Card>
@@ -409,20 +355,16 @@ const DashboardView = ({
             )}
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            {t("agencyDashboard.dashboard.cards.pendingActions")}
+            Pending Actions
           </h3>
           <div className="space-y-1">
             <p className="text-xs text-gray-600">
-              •{" "}
-              {t("agencyDashboard.dashboard.cards.licensingRequests", {
-                count: pendingLicensingRequests,
-              })}
+              • {pendingLicensingRequests} licensing request
+              {pendingLicensingRequests === 1 ? "" : "s"}
             </p>
             <p className="text-xs text-gray-600">
-              •{" "}
-              {t("agencyDashboard.dashboard.cards.expiringLicenses", {
-                count: expiringLicenses,
-              })}
+              • {expiringLicenses} expiring license
+              {expiringLicenses === 1 ? "" : "s"}
             </p>
           </div>
         </Card>
@@ -435,7 +377,7 @@ const DashboardView = ({
             </div>
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
-            {t("agencyDashboard.dashboard.cards.platformRanking")}
+            Platform Ranking
           </h3>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-blue-600">
@@ -453,7 +395,7 @@ const DashboardView = ({
       {/* Talent Performance Summary */}
       <Card className="p-8 rounded-xl border border-gray-200 shadow-sm bg-white">
         <h2 className="text-xl font-bold text-gray-900 mb-8">
-          {t("agencyDashboard.dashboard.sections.talentPerformanceSummary")}
+          Talent Performance Summary
         </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -462,7 +404,7 @@ const DashboardView = ({
             <div className="flex items-center gap-2 mb-4">
               <Trophy className="w-5 h-5 text-yellow-500" />
               <h3 className="text-sm font-bold text-gray-900">
-                {t("agencyDashboard.dashboard.sections.topRevenueGenerators")}
+                Top 3 Revenue Generators
               </h3>
             </div>
 
@@ -506,16 +448,13 @@ const DashboardView = ({
             <div className="flex items-center gap-2 mb-4">
               <AlertCircle className="w-5 h-5 text-orange-500" />
               <h3 className="text-sm font-bold text-gray-900">
-                {t("agencyDashboard.dashboard.sections.needsActivation", {
-                  count: rosterData.filter((t) => t.status !== "active").length,
-                })}
+                Needs Activation (
+                {rosterData.filter((t) => t.status !== "active").length})
               </h3>
             </div>
             {rosterData.filter((t) => t.status !== "active").length === 0 ? (
               <p className="text-sm text-gray-500 italic">
-                {t("agencyDashboard.dashboard.sections.allActivelyEarning", {
-                  entityPlural: entityLabelPlural,
-                })}
+                {`All ${entityPluralLower} actively earning!`}
               </p>
             ) : (
               rosterData
@@ -544,35 +483,34 @@ const DashboardView = ({
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-5 h-5 text-blue-600" />
               <h3 className="text-sm font-bold text-gray-900">
-                {t("agencyDashboard.dashboard.sections.newTalentPerformance")}
+                New Talent Performance
               </h3>
             </div>
 
             <div className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4">
               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                {t("agencyDashboard.dashboard.sections.onboardedRecently")}
+                Onboarded recently
               </p>
               {Array.isArray(talentPerformance?.new_talent_performance) &&
               talentPerformance.new_talent_performance.length ? (
                 talentPerformance.new_talent_performance
                   .slice(0, 1)
-                  .map((talent: any) => (
-                    <div key={talent.id} className="space-y-2">
+                  .map((t: any) => (
+                    <div key={t.id} className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-gray-900 text-sm">
-                          {talent.name}
+                          {t.name}
                         </span>
                         <Badge
                           variant="default"
                           className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
                         >
-                          {talent.status}
+                          {t.status}
                         </Badge>
                       </div>
                       <p className="text-xs text-gray-500">
-                        {t("agencyDashboard.dashboard.time.addedDaysAgo", {
-                          count: talent.days_since_added,
-                        })}
+                        Added {t.days_since_added} day
+                        {t.days_since_added === 1 ? "" : "s"} ago
                       </p>
                     </div>
                   ))
@@ -592,19 +530,13 @@ const DashboardView = ({
                   <p className="text-xs text-gray-500">
                     {(() => {
                       const ms = getTalentDateMs(newestTalent);
-                      return ms
-                        ? t("agencyDashboard.dashboard.time.addedRelative", {
-                            value: timeAgo(ms),
-                          })
-                        : t("agencyDashboard.dashboard.time.recentlyAdded");
+                      return ms ? `Added ${timeAgo(ms)}` : "Recently added";
                     })()}
                   </p>
                 </div>
               ) : (
                 <p className="text-sm text-gray-500 italic">
-                  {t("agencyDashboard.dashboard.sections.noEntityYet", {
-                    entitySingular: entityLabel,
-                  })}
+                  {`No ${entitySingularLower} yet`}
                 </p>
               )}
             </div>
@@ -614,14 +546,12 @@ const DashboardView = ({
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">
-            {t("agencyDashboard.dashboard.sections.revenueBreakdown")}
-          </h2>
+          <h2 className="text-lg font-bold text-gray-900">Revenue Breakdown</h2>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="p-6 border border-gray-100 rounded-xl">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-              {t("agencyDashboard.dashboard.sections.byCampaignType")}
+              By Campaign Type
             </h3>
             <div className="space-y-4">
               {(Array.isArray(revenueBreakdown?.by_campaign_type)
@@ -651,7 +581,7 @@ const DashboardView = ({
 
           <div className="p-6 border border-gray-100 rounded-xl">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-              {t("agencyDashboard.dashboard.sections.byBrandVertical")}
+              By Brand Vertical
             </h3>
             <div className="space-y-4">
               {(Array.isArray(revenueBreakdown?.by_brand_vertical)
@@ -681,7 +611,7 @@ const DashboardView = ({
 
           <div className="p-6 border border-gray-100 rounded-xl">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-              {t("agencyDashboard.dashboard.sections.byRegion")}
+              By Region
             </h3>
             <div className="space-y-4">
               {(Array.isArray(revenueBreakdown?.by_region)
@@ -714,7 +644,7 @@ const DashboardView = ({
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-lg font-bold text-gray-900">
-            {t("agencyDashboard.dashboard.sections.licensingPipeline")}
+            Licensing Pipeline
           </h2>
         </div>
         <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -736,7 +666,7 @@ const DashboardView = ({
                 </svg>
               </div>
               <span className="text-xs font-medium text-gray-500">
-                {t("agencyDashboard.dashboard.pipeline.pendingApproval")}
+                Pending Approval
               </span>
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-4">
@@ -748,7 +678,7 @@ const DashboardView = ({
               variant="default"
               className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
             >
-              {t("agencyDashboard.dashboard.pipeline.reviewNow")}
+              Review Now
             </Button>
           </Card>
 
@@ -769,9 +699,7 @@ const DashboardView = ({
                   />
                 </svg>
               </div>
-              <span className="text-xs font-medium text-gray-500">
-                {t("agencyDashboard.dashboard.pipeline.active")}
-              </span>
+              <span className="text-xs font-medium text-gray-500">Active</span>
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-4">
               {typeof licensingPipeline?.active === "number"
@@ -786,7 +714,7 @@ const DashboardView = ({
                 !
               </div>
               <span className="text-xs font-medium text-gray-500">
-                {t("agencyDashboard.dashboard.pipeline.expiringSoon30d")}
+                Expiring Soon (30d)
               </span>
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-4">
@@ -798,7 +726,7 @@ const DashboardView = ({
               variant="outline"
               className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
             >
-              {t("agencyDashboard.dashboard.pipeline.review")}
+              Review
             </Button>
           </Card>
 
@@ -820,7 +748,7 @@ const DashboardView = ({
                 </svg>
               </div>
               <span className="text-xs font-medium text-gray-500">
-                {t("agencyDashboard.dashboard.pipeline.totalThisMonth")}
+                Total This Month
               </span>
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-4">
@@ -834,9 +762,7 @@ const DashboardView = ({
 
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">
-            {t("agencyDashboard.dashboard.sections.recentActivity")}
-          </h2>
+          <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
         </div>
         <div className="p-8 space-y-10">
           {(Array.isArray(recentActivity?.activities)
@@ -849,22 +775,9 @@ const DashboardView = ({
                 return {
                   id: talent?.id || talent?.user_id || talent?.name,
                   type_name: "talent",
-                  title: t(
-                    "agencyDashboard.dashboard.recentActivity.rosterAdded",
-                    {
-                      name:
-                        talent?.name ||
-                        t(
-                          "agencyDashboard.dashboard.recentActivity.talentFallback",
-                        ),
-                    },
-                  ),
-                  subtitle: t(
-                    "agencyDashboard.dashboard.recentActivity.rosterAddition",
-                  ),
-                  relative_time: ms
-                    ? timeAgo(ms)
-                    : t("agencyDashboard.dashboard.time.recently"),
+                  title: `${talent?.name || "A talent"} added to roster`,
+                  subtitle: "Roster Addition",
+                  relative_time: ms ? timeAgo(ms) : "recently",
                 };
               })
           )
@@ -884,10 +797,10 @@ const DashboardView = ({
                 />
                 <div>
                   <p className="text-sm font-bold text-gray-900">
-                    {translateRecentActivityTitle(item.title)}
+                    {item.title}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {translateRecentActivityTime(item.relative_time) ?? ""}
+                    {item.relative_time ?? ""}
                   </p>
                 </div>
               </div>

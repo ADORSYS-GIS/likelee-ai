@@ -21,7 +21,6 @@ import {
   MarketplaceContractSummary,
 } from "@/api/marketplaceContracts";
 import { Loader2, ExternalLink } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 const REQUIRED_VARIABLES = [
   "{agency_name}",

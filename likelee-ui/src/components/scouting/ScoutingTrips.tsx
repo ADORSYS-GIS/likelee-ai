@@ -24,7 +24,6 @@ import { TripAnalytics } from "./TripAnalytics";
 import { scoutingService } from "@/services/scoutingService";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useTranslation } from "react-i18next";
 
 const PhotoLightbox = ({
   photos,
@@ -370,7 +369,6 @@ const TripCard = ({
 };
 
 export const ScoutingTrips = () => {
-  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTrip, setEditingTrip] = useState<ScoutingTrip | null>(null);
   const [trips, setTrips] = useState<ScoutingTrip[]>([]);
@@ -414,15 +412,9 @@ export const ScoutingTrips = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {t("agencyDashboard.scouting.trips.title", {
-              defaultValue: "Scouting Trips",
-            })}
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900">Scouting Trips</h2>
           <p className="text-sm text-gray-500 mt-1">
-            {t("agencyDashboard.scouting.trips.subtitle", {
-              defaultValue: "Manage and track your field scouting missions",
-            })}
+            Manage and track your field scouting missions
           </p>
         </div>
         <Button
@@ -433,9 +425,7 @@ export const ScoutingTrips = () => {
           className="bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 ring-1 ring-indigo-700/10 rounded-xl px-4 py-2 font-bold shadow-sm flex items-center gap-2 h-9"
         >
           <Plus className="w-4 h-4" />
-          {t("agencyDashboard.scouting.trips.actions.planNewTrip", {
-            defaultValue: "Plan New Trip",
-          })}
+          Plan New Trip
         </Button>
       </div>
 
@@ -443,9 +433,7 @@ export const ScoutingTrips = () => {
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
           <Loader2 className="w-10 h-10 text-indigo-600 animate-spin mb-4" />
           <p className="text-gray-500 font-medium">
-            {t("agencyDashboard.scouting.trips.states.loading", {
-              defaultValue: "Loading your scouting trips...",
-            })}
+            Loading your scouting trips...
           </p>
         </div>
       ) : (
@@ -463,23 +451,17 @@ export const ScoutingTrips = () => {
                   <Calendar className="w-8 h-8 text-gray-300" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  {t("agencyDashboard.scouting.trips.states.emptyTitle", {
-                    defaultValue: "No trips planned yet",
-                  })}
+                  No trips planned yet
                 </h3>
                 <p className="text-gray-500 max-w-xs mx-auto mt-1">
-                  {t("agencyDashboard.scouting.trips.states.emptyDescription", {
-                    defaultValue:
-                      "Start by planning your first scouting mission to discover new talent.",
-                  })}
+                  Start by planning your first scouting mission to discover new
+                  talent.
                 </p>
                 <Button
                   onClick={() => setIsModalOpen(true)}
                   className="mt-6 bg-indigo-50/70 hover:bg-indigo-100/80 text-indigo-700 ring-1 ring-indigo-700/10 rounded-xl px-4 py-2 font-bold shadow-sm flex mx-auto h-9"
                 >
-                  {t("agencyDashboard.scouting.trips.actions.planFirstTrip", {
-                    defaultValue: "Plan Your First Trip",
-                  })}
+                  Plan Your First Trip
                 </Button>
               </div>
             )}

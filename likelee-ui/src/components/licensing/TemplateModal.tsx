@@ -18,6 +18,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { CreateTemplateRequest, LicenseTemplate } from "@/api/licenseTemplates";
 import { ContractEditor } from "./ContractEditor";
+import { MandatoryHint } from "@/components/ui/field-hint";
 import {
   FileSignature,
   Calendar,
@@ -28,7 +29,6 @@ import {
   DollarSign,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { useTranslation } from "react-i18next";
 
 interface TemplateModalProps {
   isOpen: boolean;
@@ -93,7 +93,6 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   hideContract,
   readOnly = false,
 }) => {
-  const { t } = useTranslation();
   const {
     register,
     handleSubmit,
@@ -188,17 +187,15 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               <div>
                 <DialogTitle className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">
                   {readOnly
-                    ? t("agencyDashboard.licenseTemplates.modal.detailsTitle")
+                    ? "License Template Details"
                     : initialData
-                      ? t("agencyDashboard.licenseTemplates.modal.editTitle")
-                      : t("agencyDashboard.licenseTemplates.modal.newTitle")}
+                      ? "Edit License Template"
+                      : "New Contract Template"}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium tracking-tight">
                   {readOnly
-                    ? t(
-                        "agencyDashboard.licenseTemplates.modal.detailsSubtitle",
-                      )
-                    : t("agencyDashboard.licenseTemplates.modal.editSubtitle")}
+                    ? "View your standardized agency terms and details"
+                    : "Standardize your agency terms with dynamic placeholders"}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -208,9 +205,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   onClick={onClose}
                   className="text-slate-500 font-bold hover:bg-slate-50 rounded-xl px-4 sm:px-6 h-9 sm:h-10 text-sm"
                 >
-                  {readOnly
-                    ? t("agencyDashboard.roster.actions.close")
-                    : t("agencyDashboard.licenseTemplates.deleteModal.cancel")}
+                  {readOnly ? "Close" : "Cancel"}
                 </Button>
                 {!readOnly && (
                   <Button
@@ -220,14 +215,10 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm"
                   >
                     {isSubmitting
-                      ? t("agencyDashboard.licenseTemplates.modal.saving")
+                      ? "Saving..."
                       : initialData
-                        ? t(
-                            "agencyDashboard.licenseTemplates.modal.updateTemplate",
-                          )
-                        : t(
-                            "agencyDashboard.licenseTemplates.modal.createTemplate",
-                          )}
+                        ? "Update"
+                        : "Create"}
                   </Button>
                 )}
               </div>
@@ -243,60 +234,43 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     <FileSignature className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" />
                   </div>
                   <h3 className="font-bold text-slate-900">
-                    {t(
-                      "agencyDashboard.licenseTemplates.form.templateIdentity",
-                      {
-                        defaultValue: "Template Identity",
-                      },
-                    )}
+                    Template Identity
                   </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800 ml-1">
-                      {t("agencyDashboard.licenseTemplates.form.templateName", {
-                        defaultValue: "Template Name *",
-                      })}
-                    </Label>
+                    <div className="flex items-center justify-between gap-2 ml-1">
+                      <Label className="text-sm font-bold text-slate-800">
+                        Template Name *
+                      </Label>
+                      <MandatoryHint />
+                    </div>
                     <Input
                       {...register("template_name", { required: true })}
-                      placeholder={t(
-                        "agencyDashboard.licenseTemplates.form.templateNamePlaceholder",
-                        {
-                          defaultValue: "e.g. Standard Social Media",
-                        },
-                      )}
+                      placeholder="e.g. Standard Social Media"
                       disabled={readOnly}
                       className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                     />
                     {errors.template_name && (
-                      <span className="text-red-500 text-xs font-bold px-1">
-                        {t("agencyDashboard.licenseTemplates.form.required", {
-                          defaultValue: "This field is required",
-                        })}
+                      <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                        This field is mandatory.
                       </span>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800 ml-1">
-                      {t("agencyDashboard.licenseTemplates.form.category", {
-                        defaultValue: "Category *",
-                      })}
-                    </Label>
+                    <div className="flex items-center justify-between gap-2 ml-1">
+                      <Label className="text-sm font-bold text-slate-800">
+                        Category *
+                      </Label>
+                      <MandatoryHint />
+                    </div>
                     <Select
                       value={categoryValue}
                       onValueChange={(val) => setValue("category", val)}
                       disabled={readOnly}
                     >
                       <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
-                        <SelectValue
-                          placeholder={t(
-                            "agencyDashboard.licenseTemplates.form.selectCategory",
-                            {
-                              defaultValue: "Select category",
-                            },
-                          )}
-                        />
+                        <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-200">
                         {CATEGORIES.map((cat) => (
@@ -311,10 +285,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       </SelectContent>
                     </Select>
                     {errors.category && (
-                      <span className="text-red-500 text-xs font-bold px-1">
-                        {t("agencyDashboard.licenseTemplates.form.required", {
-                          defaultValue: "This field is required",
-                        })}
+                      <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
+                        This field is mandatory.
                       </span>
                     )}
                   </div>
@@ -323,18 +295,11 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-800 ml-1">
-                  {t("agencyDashboard.licenseTemplates.form.description", {
-                    defaultValue: "Description",
-                  })}
+                  Description
                 </Label>
                 <Textarea
                   {...register("description")}
-                  placeholder={t(
-                    "agencyDashboard.licenseTemplates.form.descriptionPlaceholder",
-                    {
-                      defaultValue: "Description of the template...",
-                    },
-                  )}
+                  placeholder="Description of the template..."
                   disabled={readOnly}
                   className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none disabled:opacity-75"
                 />
@@ -342,18 +307,11 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-800 ml-1">
-                  {t("agencyDashboard.licenseTemplates.form.usageScope", {
-                    defaultValue: "Usage Scope",
-                  })}
+                  Usage Scope
                 </Label>
                 <Input
                   {...register("usage_scope")}
-                  placeholder={t(
-                    "agencyDashboard.licenseTemplates.form.usageScopePlaceholder",
-                    {
-                      defaultValue: "e.g. Organic Social Media",
-                    },
-                  )}
+                  placeholder="e.g. Organic Social Media"
                   disabled={readOnly}
                   className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                 />
@@ -362,9 +320,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-slate-800 ml-1">
-                    {t("agencyDashboard.licenseTemplates.form.durationDays", {
-                      defaultValue: "Duration (days)",
-                    })}
+                    Duration (days)
                   </Label>
                   <Input
                     type="number"
@@ -375,9 +331,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-slate-800 ml-1">
-                    {t("agencyDashboard.licenseTemplates.form.territory", {
-                      defaultValue: "Territory",
-                    })}
+                    Territory
                   </Label>
                   <Input
                     {...register("territory")}
@@ -389,59 +343,38 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">
-                  {t("agencyDashboard.licenseTemplates.form.exclusivity", {
-                    defaultValue: "Exclusivity *",
-                  })}
-                </Label>
+                <div className="flex items-center justify-between gap-2 ml-1">
+                  <Label className="text-sm font-bold text-slate-800">
+                    Exclusivity *
+                  </Label>
+                  <MandatoryHint />
+                </div>
                 <Select
                   onValueChange={(val) => setValue("exclusivity", val)}
                   defaultValue={initialData?.exclusivity || "Non-exclusive"}
                   disabled={readOnly}
                 >
                   <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
-                    <SelectValue
-                      placeholder={t(
-                        "agencyDashboard.licenseTemplates.form.selectExclusivity",
-                        {
-                          defaultValue: "Select exclusivity",
-                        },
-                      )}
-                    />
+                    <SelectValue placeholder="Select exclusivity" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200">
                     <SelectItem
                       value="Non-exclusive"
                       className="rounded-lg font-medium"
                     >
-                      {t(
-                        "agencyDashboard.licenseTemplates.form.exclusivityOptions.nonExclusive",
-                        {
-                          defaultValue: "Non-exclusive",
-                        },
-                      )}
+                      Non-exclusive
                     </SelectItem>
                     <SelectItem
                       value="Category exclusive"
                       className="rounded-lg font-medium"
                     >
-                      {t(
-                        "agencyDashboard.licenseTemplates.form.exclusivityOptions.categoryExclusive",
-                        {
-                          defaultValue: "Category exclusive",
-                        },
-                      )}
+                      Category exclusive
                     </SelectItem>
                     <SelectItem
                       value="Full exclusivity"
                       className="rounded-lg font-medium"
                     >
-                      {t(
-                        "agencyDashboard.licenseTemplates.form.exclusivityOptions.fullExclusivity",
-                        {
-                          defaultValue: "Full exclusivity",
-                        },
-                      )}
+                      Full exclusivity
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -449,47 +382,31 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-800 ml-1">
-                  {t("agencyDashboard.licenseTemplates.form.licenseFee", {
-                    defaultValue: "License Fee ($)",
-                  })}
+                  License Fee ($)
                 </Label>
                 <div className="relative">
                   <Input
                     type="number"
                     step="0.01"
                     {...register("license_fee", { valueAsNumber: true })}
-                    placeholder={t(
-                      "agencyDashboard.licenseTemplates.form.licenseFeePlaceholder",
-                      {
-                        defaultValue: "Amount ($)",
-                      },
-                    )}
+                    placeholder="Amount ($)"
                     disabled={readOnly}
                     className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium pl-10 disabled:opacity-75"
                   />
                   <DollarSign className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
                 </div>
                 <p className="text-xs text-slate-500 ml-1">
-                  {t("agencyDashboard.licenseTemplates.form.licenseFeeHelp", {
-                    defaultValue: "Enter amount in dollars (e.g. 10.00)",
-                  })}
+                  Enter amount in dollars (e.g. 10.00)
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-800 ml-1">
-                  {t("agencyDashboard.licenseTemplates.form.customTerms", {
-                    defaultValue: "Custom Terms",
-                  })}
+                  Custom Terms
                 </Label>
                 <Textarea
                   {...register("custom_terms")}
-                  placeholder={t(
-                    "agencyDashboard.licenseTemplates.form.customTermsPlaceholder",
-                    {
-                      defaultValue: "Any extra conditions...",
-                    },
-                  )}
+                  placeholder="Any extra conditions..."
                   disabled={readOnly}
                   className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none disabled:opacity-75"
                 />
@@ -497,12 +414,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-800 ml-1">
-                  {t(
-                    "agencyDashboard.licenseTemplates.form.modificationsAllowed",
-                    {
-                      defaultValue: "Modifications Allowed",
-                    },
-                  )}
+                  Modifications Allowed
                 </Label>
                 <Select
                   onValueChange={(val) =>
@@ -512,21 +424,14 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   disabled={readOnly}
                 >
                   <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
-                    <SelectValue
-                      placeholder={t(
-                        "agencyDashboard.licenseTemplates.form.selectOption",
-                        {
-                          defaultValue: "Select option",
-                        },
-                      )}
-                    />
+                    <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200">
                     <SelectItem value="Yes" className="rounded-lg font-medium">
-                      {t("agencyDashboard.addTalent.attributes.yes")}
+                      Yes
                     </SelectItem>
                     <SelectItem value="No" className="rounded-lg font-medium">
-                      {t("agencyDashboard.addTalent.attributes.no")}
+                      No
                     </SelectItem>
                   </SelectContent>
                 </Select>

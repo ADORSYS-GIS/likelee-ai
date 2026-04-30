@@ -67,45 +67,49 @@ export default function BrandCompany() {
   const benefits = [
     {
       icon: CheckCircle2,
-      title: t("brandCompanyPage.whyLikelee.verifiedConsent.title"),
-      description: t("brandCompanyPage.whyLikelee.verifiedConsent.description"),
+      title: "Verified Consent",
+      description:
+        "Talent actively license their likeness—no scraping, no legal gray areas. Every permission is explicit and enforceable.",
     },
     {
       icon: Zap,
-      title: t("brandCompanyPage.whyLikelee.aiSpeed.title"),
-      description: t("brandCompanyPage.whyLikelee.aiSpeed.description"),
+      title: "AI-Native Speed",
+      description:
+        "Licensed assets delivered in <48 hours. Submit your brief, get talent permissions with your AI content, automatically.",
     },
     {
       icon: Shield,
-      title: t("brandCompanyPage.whyLikelee.legalCompliance.title"),
-      description: t("brandCompanyPage.whyLikelee.legalCompliance.description"),
+      title: "Legal Compliance Built-In",
+      description:
+        "Every license documents usage scope, territory, duration, and compensation. Transparent rights management with verified assets.",
     },
   ];
 
   const useCases = [
     {
-      title: t("brandCompanyPage.useCases.paidSocial.title"),
-      description: t("brandCompanyPage.useCases.paidSocial.description"),
+      title: "Paid Social & Performance",
+      description:
+        "AI-generated ad creative with licensed talent for campaigns, regions, duration",
     },
     {
-      title: t("brandCompanyPage.useCases.ecommerce.title"),
-      description: t("brandCompanyPage.useCases.ecommerce.description"),
+      title: "E-Commerce & Product",
+      description: "Verified talent on product pages and campaigns",
     },
     {
-      title: t("brandCompanyPage.useCases.ooh.title"),
-      description: t("brandCompanyPage.useCases.ooh.description"),
+      title: "OOH & Retail",
+      description: "Billboard and in-store with pre-cleared rights",
     },
     {
-      title: t("brandCompanyPage.useCases.content.title"),
-      description: t("brandCompanyPage.useCases.content.description"),
+      title: "Content & Gaming",
+      description: "Integrate likenesses into brand experiences",
     },
   ];
 
   const howItWorksSteps = [
-    t("brandCompanyPage.howItWorks.step1"),
-    t("brandCompanyPage.howItWorks.step2"),
-    t("brandCompanyPage.howItWorks.step3"),
-    t("brandCompanyPage.howItWorks.step4"),
+    "Talent or agencies set licensing terms",
+    "You browse and submit your brief",
+    "Talent approves in one click",
+    "You receive licensed assets + binding agreement",
   ];
 
   return (
@@ -114,15 +118,14 @@ export default function BrandCompany() {
       <section className="relative px-6 pt-24 pb-16 bg-white">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-7xl font-bold tracking-tight text-gray-900 mb-6">
-            {t("brandCompanyPage.hero.title")}
+            License Talent Likenesses for AI Content.
           </h1>
           <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-8">
-            <span className="text-[#26B7B9]">
-              {t("brandCompanyPage.hero.subtitle")}
-            </span>
+            <span className="text-[#26B7B9]">Legally. Instantly.</span>
           </h2>
           <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-12">
-            {t("brandCompanyPage.hero.description")}
+            Brand-safe AI creative with verified talent consent in &lt;48 hours.
+            Work with independent talent or their agencies.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -131,13 +134,13 @@ export default function BrandCompany() {
               }
               className="h-14 px-12 font-bold bg-[#26B7B9] hover:bg-[#1e9596] text-white transition-all rounded-none text-lg border-2 border-[#26B7B9]"
             >
-              {t("brandCompanyPage.hero.getStartedButton")}
+              Get Started
             </Button>
             <Button
               onClick={() => navigate(createBookDemoUrl("brand_company_hero"))}
               className="h-14 px-12 font-bold bg-white text-gray-900 hover:bg-gray-50 border-2 border-gray-900 rounded-none text-lg"
             >
-              {t("brandCompanyPage.hero.bookDemoButton")}
+              Book a Demo
             </Button>
           </div>
         </div>
@@ -147,7 +150,7 @@ export default function BrandCompany() {
       <section className="px-6 py-20 bg-[#f0f9fa]">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16">
-            {t("brandCompanyPage.whyLikelee.title")}
+            Why Likelee
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             {benefits.map((benefit, index) => {
@@ -177,7 +180,7 @@ export default function BrandCompany() {
       <section className="px-6 py-20 bg-white">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16">
-            {t("brandCompanyPage.useCases.title")}
+            Use Cases
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             {useCases.map((useCase, index) => (
@@ -201,7 +204,7 @@ export default function BrandCompany() {
       <section className="px-6 py-20 bg-white">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16 px-4">
-            {t("brandCompanyPage.howItWorks.title")}
+            How Likelee Works
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {howItWorksSteps.map((step, index) => (
@@ -224,7 +227,7 @@ export default function BrandCompany() {
       <section className="px-6 py-24 bg-gradient-to-r from-[#2BB7B9] via-[#1495a0] to-[#2BB7B9]">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-12">
-            {t("brandCompanyPage.pilot.title")}
+            Join Our Pilot Program
           </h2>
           <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
             <Button
@@ -233,13 +236,13 @@ export default function BrandCompany() {
               }
               className="h-14 px-12 font-bold bg-white text-[#26B7B9] hover:bg-gray-100 rounded-none text-lg border-none"
             >
-              {t("brandCompanyPage.pilot.getStartedButton")}
+              Get Started
             </Button>
             <Button
               onClick={() => navigate(createBookDemoUrl("brand_company_cta"))}
               className="h-14 px-12 font-bold border-2 border-white text-white hover:bg-white/10 rounded-none text-lg bg-transparent"
             >
-              {t("brandCompanyPage.pilot.bookDemoButton")}
+              Book a Demo
             </Button>
           </div>
         </div>

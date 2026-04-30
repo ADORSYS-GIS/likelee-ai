@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
@@ -24,7 +23,6 @@ import {
 } from "@/lib/emailOtp";
 
 export default function AgencyInviteLanding() {
-  const { t } = useTranslation();
   const { token } = useParams();
   const navigate = useNavigate();
   const { authenticated, profile, refreshProfile, supabase } = useAuth();
@@ -468,16 +466,10 @@ export default function AgencyInviteLanding() {
         open={otpDialogOpen}
         onOpenChange={setOtpDialogOpen}
         email={email}
-        title={t("auth.emailOtp.title", "Verify your email")}
-        description={t(
-          "auth.emailOtp.description",
-          "Stay here, check your inbox, and enter the 6-digit code to keep onboarding on the same tab.",
-        )}
-        helperText={t(
-          "auth.emailOtp.helperText",
-          "If the code does not arrive right away, use resend and check your spam folder.",
-        )}
-        verifyLabel={t("auth.emailOtp.continueButton", "Continue")}
+        title="Verify your email"
+        description="Enter the 6-digit code from your inbox to finish joining this agency without leaving the page."
+        helperText="If the code does not arrive right away, resend it from this dialog."
+        verifyLabel="Verify & continue"
         onVerify={handleInviteOtpVerify}
         onResend={handleInviteOtpResend}
       />

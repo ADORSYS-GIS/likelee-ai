@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
+  ChevronDown,
   Search,
   Filter,
   X,
@@ -57,7 +58,6 @@ import {
   rejectAgencyCreatorDisconnectRequest,
 } from "@/api/creatorAgencyConnection";
 import { MarketplaceContractSummary } from "@/api/marketplaceContracts";
-import { useTranslation } from "react-i18next";
 
 export type MarketplaceProfile = {
   id: string;
@@ -143,7 +143,6 @@ type MarketplaceSectionProps = {
   connectLocked?: boolean;
   connectLockedReason?: string;
   onConnectLocked?: () => void;
-  translationPrefix?: string;
 };
 
 const parseApiErrorPayload = (error: any) => {
@@ -221,23 +220,16 @@ export function MarketplaceSection({
   connectLocked = false,
   connectLockedReason = "",
   onConnectLocked,
-  translationPrefix = "agencyDashboard.marketplace",
 }: MarketplaceSectionProps) {
-  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const entityLabel = entityType === "agency" ? "agency" : "creator";
   const entityLabelTitle = entityType === "agency" ? "Agency" : "Creator";
-  const entityLabelTranslated = t(
-    `agencyDashboard.marketplace.entities.${entityLabel}`,
-    { defaultValue: entityLabel },
-  );
-  const entityLabelTitleTranslated = t(
-    `agencyDashboard.marketplace.entities.${entityLabel.toLowerCase()}Title`,
-    { defaultValue: entityLabelTitle },
-  );
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [pendingConnectKeys, setPendingConnectKeys] = useState<Set<string>>(
     new Set(),
   );
@@ -261,24 +253,6 @@ export function MarketplaceSection({
   const [sortBy, setSortBy] = useState<"recent" | "name" | "followers">(
     entityType === "agency" ? "recent" : "followers",
   );
-  const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(
-    new Set(),
-  );
-
-  const formatCampaignStatus = (status: string) => {
-    const statusLower = status.toLowerCase();
-    if (statusLower === "completed") {
-      return t(`${translationPrefix}.details.completed`, {
-        defaultValue: "Completed",
-      });
-    }
-    if (statusLower === "confirmed") {
-      return t(`${translationPrefix}.details.confirmed`, {
-        defaultValue: "Confirmed",
-      });
-    }
-    return status;
-  };
 
   const activeFilterCount =
     Number(categoryFilter !== "all") +
@@ -292,48 +266,19 @@ export function MarketplaceSection({
   const lockedHighlights =
     entityType === "agency"
       ? [
-          t(`${translationPrefix}.locked.highlights.connectAgencies`, {
-            defaultValue: "Connect with agencies",
-          }),
-          t(`${translationPrefix}.locked.highlights.collaboratorWorkflows`, {
-            defaultValue: "Unlock collaborator workflows",
-          }),
-          t(`${translationPrefix}.locked.highlights.campaignHandoff`, {
-            defaultValue: "Launch full campaign handoff",
-          }),
+          "Connect with agencies",
+          "Unlock collaborator workflows",
+          "Launch full campaign handoff",
         ]
       : [
-          t(`${translationPrefix}.locked.highlights.connectCreators`, {
-            defaultValue: "Connect with creators",
-          }),
-          t(`${translationPrefix}.locked.highlights.requestLicenses`, {
-            defaultValue: "Request licenses",
-          }),
-          t(`${translationPrefix}.locked.highlights.collaboratorWorkflows`, {
-            defaultValue: "Unlock collaborator workflows",
-          }),
+          "Connect with creators",
+          "Request licenses",
+          "Unlock collaborator workflows",
         ];
   const selectedProfileId = String(selectedProfile?.id || "").trim();
   const selectedProfileType = selectedProfile?.profile_type || entityType;
   const canFetchDetails = detailsOpen && selectedProfileId.length > 0;
   const isDisconnectBusy = disconnectActionLoading !== null;
-  const getConnectionStatusLabel = (
-    status:
-      | "none"
-      | "waiting"
-      | "pending"
-      | "connected"
-      | "declined"
-      | "disconnected",
-  ) =>
-    t(`agencyDashboard.marketplace.status.${status}`, {
-      defaultValue:
-        status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " "),
-    });
-  const getOwnershipLabel = (ownership: "agency_owned" | "regular") =>
-    t(`agencyDashboard.marketplace.ownership.${ownership}`, {
-      defaultValue: ownership === "agency_owned" ? "Agency-Owned" : "Regular",
-    });
 
   const formatMoney = (amountCents: any, currency: any = "USD") => {
     const n = Number(amountCents || 0);
@@ -425,14 +370,10 @@ export function MarketplaceSection({
   useEffect(() => {
     if (!marketplaceQuery.error) return;
     toast({
-      title: t(`${translationPrefix}.toasts.loadFailedTitle`, {
-        defaultValue: "Failed to load marketplace profiles",
-      }),
+      title: "Failed to load marketplace profiles",
       description: parseApiErrorMessage(
         marketplaceQuery.error,
-        t(`${translationPrefix}.toasts.tryAgain`, {
-          defaultValue: "Please try again.",
-        }),
+        "Please try again.",
         entityLabel,
       ),
       variant: "destructive" as any,
@@ -542,8 +483,8 @@ export function MarketplaceSection({
   }, [marketplaceQuery.data, categoryFilter, profileType, sortBy, entityType]);
 
   return (
-    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+    <Card className="px-0 sm:px-8 py-4 sm:py-8 bg-white border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 sm:mb-8 px-4 sm:px-0">
         <div>
           <h2 className="text-xl font-bold text-gray-900">{title}</h2>
           <p className="text-sm text-gray-500 font-medium">{subtitle}</p>
@@ -556,7 +497,7 @@ export function MarketplaceSection({
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 px-4 sm:px-0">
         {actionsLocked && (
           <div className="relative overflow-hidden rounded-[28px] border border-[#F3C46B] bg-[linear-gradient(135deg,#FFF8E6_0%,#FFF2D8_40%,#FFE2B3_100%)] px-5 py-5 shadow-[0_22px_55px_rgba(247,183,80,0.18)] ring-1 ring-[#FFE7BA]">
             <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[#F7B750]/20 blur-3xl" />
@@ -568,9 +509,7 @@ export function MarketplaceSection({
                 </div>
                 <div>
                   <Badge className="border border-[#F5D497] bg-white/80 text-[#B86B05] hover:bg-white/80">
-                    {t(`${translationPrefix}.locked.previewMode`, {
-                      defaultValue: "Preview mode",
-                    })}
+                    Preview mode
                   </Badge>
                   <p className="mt-3 text-lg font-bold tracking-tight text-[#7A3D00]">
                     {lockedTitle}
@@ -601,10 +540,7 @@ export function MarketplaceSection({
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <p className="text-center text-xs font-semibold text-[#B16B12]">
-                  {t(`${translationPrefix}.locked.previewFootnote`, {
-                    defaultValue:
-                      "Visible in preview. Pro makes every action live.",
-                  })}
+                  Visible in preview. Pro makes every action live.
                 </p>
               </div>
             </div>
@@ -640,9 +576,7 @@ export function MarketplaceSection({
                     : "text-slate-500"
               }`}
             />
-            {t(`${translationPrefix}.filters.button`, {
-              defaultValue: "Filters",
-            })}
+            Filters
             {hasActiveFilters && (
               <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[11px] font-semibold text-white">
                 {activeFilterCount}
@@ -651,9 +585,7 @@ export function MarketplaceSection({
             {hasActiveFilters && (
               <span
                 role="button"
-                aria-label={t(`${translationPrefix}.filters.resetAllAria`, {
-                  defaultValue: "Reset all filters",
-                })}
+                aria-label="Reset all filters"
                 className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-red-600 hover:bg-red-50 hover:text-red-700"
                 onClick={(e) => {
                   e.preventDefault();
@@ -674,9 +606,7 @@ export function MarketplaceSection({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                {t(`${translationPrefix}.filters.optionsTitle`, {
-                  defaultValue: "Filter Options",
-                })}
+                Filter Options
               </p>
               {hasActiveFilters && (
                 <button
@@ -688,9 +618,7 @@ export function MarketplaceSection({
                     setSortBy(entityType === "agency" ? "recent" : "followers");
                   }}
                 >
-                  {t(`${translationPrefix}.filters.reset`, {
-                    defaultValue: "Reset filters",
-                  })}
+                  Reset filters
                 </button>
               )}
             </div>
@@ -700,23 +628,14 @@ export function MarketplaceSection({
                 onValueChange={(v) => setCategoryFilter(v || "all")}
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                  <SelectValue
-                    placeholder={t(
-                      `${translationPrefix}.filters.allCategories`,
-                      {
-                        defaultValue: "All Categories",
-                      },
-                    )}
-                  />
+                  <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="all"
                   >
-                    {t(`${translationPrefix}.filters.allCategories`, {
-                      defaultValue: "All Categories",
-                    })}
+                    All Categories
                   </SelectItem>
                   {entityType === "creator" ? (
                     <>
@@ -724,33 +643,25 @@ export function MarketplaceSection({
                         className={marketplaceSelectItemClass}
                         value="models"
                       >
-                        {t(`${translationPrefix}.categories.models`, {
-                          defaultValue: "Models",
-                        })}
+                        Models
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="actors"
                       >
-                        {t(`${translationPrefix}.categories.actors`, {
-                          defaultValue: "Actors",
-                        })}
+                        Actors
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="influencers"
                       >
-                        {t(`${translationPrefix}.categories.influencers`, {
-                          defaultValue: "Influencers",
-                        })}
+                        Influencers
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="athletes"
                       >
-                        {t(`${translationPrefix}.categories.athletes`, {
-                          defaultValue: "Athletes",
-                        })}
+                        Athletes
                       </SelectItem>
                     </>
                   ) : (
@@ -759,17 +670,13 @@ export function MarketplaceSection({
                         className={marketplaceSelectItemClass}
                         value="talent_agency"
                       >
-                        {t(`${translationPrefix}.categories.talentAgencies`, {
-                          defaultValue: "Talent Agencies",
-                        })}
+                        Talent Agencies
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="sports_agency"
                       >
-                        {t(`${translationPrefix}.categories.sportsAgencies`, {
-                          defaultValue: "Sports Agencies",
-                        })}
+                        Sports Agencies
                       </SelectItem>
                     </>
                   )}
@@ -789,48 +696,32 @@ export function MarketplaceSection({
                 }
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                  <SelectValue
-                    placeholder={t(`${translationPrefix}.filters.all`, {
-                      defaultValue: "All",
-                    })}
-                  />
+                  <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="all"
                   >
-                    {t(`${translationPrefix}.filters.all`, {
-                      defaultValue: "All",
-                    })}
+                    All
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value={entityType}
                   >
-                    {entityType === "agency"
-                      ? t(`${translationPrefix}.filters.verifiedAgencies`, {
-                          defaultValue: "Verified Agencies",
-                        })
-                      : t(`${translationPrefix}.filters.verifiedCreators`, {
-                          defaultValue: "Verified Creators",
-                        })}
+                    {`Verified ${entityType === "agency" ? "Agencies" : "Creators"}`}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="connected"
                   >
-                    {t(`${translationPrefix}.filters.connected`, {
-                      defaultValue: "Connected",
-                    })}
+                    Connected
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="waiting"
                   >
-                    {t(`${translationPrefix}.filters.waiting`, {
-                      defaultValue: "Waiting",
-                    })}
+                    Waiting
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -846,13 +737,7 @@ export function MarketplaceSection({
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
                   <SelectValue
                     placeholder={
-                      entityType === "agency"
-                        ? t(`${translationPrefix}.sort.recent`, {
-                            defaultValue: "Recently Updated",
-                          })
-                        : t(`${translationPrefix}.sort.followers`, {
-                            defaultValue: "Followers",
-                          })
+                      entityType === "agency" ? "Recently Updated" : "Followers"
                     }
                   />
                 </SelectTrigger>
@@ -862,26 +747,20 @@ export function MarketplaceSection({
                       className={marketplaceSelectItemClass}
                       value="followers"
                     >
-                      {t(`${translationPrefix}.sort.followers`, {
-                        defaultValue: "Followers",
-                      })}
+                      Followers
                     </SelectItem>
                   )}
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="name"
                   >
-                    {t(`${translationPrefix}.sort.name`, {
-                      defaultValue: "Name",
-                    })}
+                    Name
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="recent"
                   >
-                    {t(`${translationPrefix}.sort.recent`, {
-                      defaultValue: "Recently Updated",
-                    })}
+                    Recently Updated
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -893,10 +772,7 @@ export function MarketplaceSection({
           <div className="border border-dashed border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center mt-4">
             <Loader2 className="w-6 h-6 text-gray-400 animate-spin mb-4" />
             <p className="text-sm text-gray-500 font-medium">
-              {t(`${translationPrefix}.states.loadingProfiles`, {
-                entityLabel,
-                defaultValue: "Loading verified {{entityLabel}}s...",
-              })}
+              {`Loading verified ${entityLabel}s...`}
             </p>
           </div>
         ) : profiles.length === 0 ? (
@@ -905,27 +781,15 @@ export function MarketplaceSection({
               <Globe className="w-10 h-10 text-gray-300" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              {t(`${translationPrefix}.states.noProfilesTitle`, {
-                defaultValue: "No verified profiles found",
-              })}
+              No verified profiles found
             </h3>
             <p className="text-gray-500 max-w-md font-medium">
-              {t(`${translationPrefix}.states.noProfilesDescription`, {
-                role:
-                  entityType === "agency"
-                    ? t(`${translationPrefix}.roles.agencies`, {
-                        defaultValue: "agencies",
-                      })
-                    : t(`${translationPrefix}.roles.creators`, {
-                        defaultValue: "creators",
-                      }),
-                defaultValue:
-                  "Try adjusting your search terms or filters to discover more {{role}}.",
-              })}
+              Try adjusting your search terms or filters to discover more
+              {entityType === "agency" ? " agencies." : " creators."}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-6 gap-x-4 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-0 sm:gap-y-6 sm:gap-x-4 mt-2 -mx-4 sm:mx-0">
             {profiles.map((profile) => {
               const profileKey = `${profile.profile_type}:${profile.id}`;
               const isPendingConnect = pendingConnectKeys.has(profileKey);
@@ -954,15 +818,13 @@ export function MarketplaceSection({
                 connectLocked;
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
-              const roleLabel = `${t(`${translationPrefix}.labels.verified`, {
-                defaultValue: "Verified",
-              })} ${entityLabelTitleTranslated}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
+              const roleLabel = `Verified ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
               const ownershipLabel =
                 profile.profile_type === "creator" &&
                 profile.talent_ownership === "agency_owned"
-                  ? getOwnershipLabel("agency_owned")
+                  ? "Agency-Owned"
                   : profile.profile_type === "creator"
-                    ? getOwnershipLabel("regular")
+                    ? "Regular"
                     : null;
               const ownershipBadgeClass =
                 profile.talent_ownership === "agency_owned"
@@ -1003,26 +865,20 @@ export function MarketplaceSection({
                         )}
                         {profile.is_connected && (
                           <Badge className="h-5 px-2 rounded-md bg-blue-50/95 text-blue-700 border border-blue-200 text-[10px] font-semibold shadow-sm">
-                            {t(`${translationPrefix}.statuses.connected`, {
-                              defaultValue: "Connected",
-                            })}
+                            Connected
                           </Badge>
                         )}
                         {!profile.is_connected &&
                           (connectionStatus === "waiting" ||
                             connectionStatus === "pending") && (
                             <Badge className="h-5 px-2 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[10px] font-semibold shadow-sm">
-                              {t(`${translationPrefix}.statuses.waiting`, {
-                                defaultValue: "Waiting",
-                              })}
+                              Waiting
                             </Badge>
                           )}
                         {!profile.is_connected &&
                           connectionStatus === "declined" && (
                             <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
-                              {t(`${translationPrefix}.statuses.declined`, {
-                                defaultValue: "Declined",
-                              })}
+                              Declined
                             </Badge>
                           )}
                         <div className="h-5 w-5 rounded-md bg-white/90 border border-slate-200 shadow-sm flex items-center justify-center">
@@ -1064,12 +920,8 @@ export function MarketplaceSection({
                     >
                       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                         {expandedCardIds.has(profile.id)
-                          ? t(`${translationPrefix}.card.lessInfo`, {
-                              defaultValue: "Less info",
-                            })
-                          : t(`${translationPrefix}.card.moreInfo`, {
-                              defaultValue: "More info",
-                            })}
+                          ? "Less info"
+                          : "More info"}
                       </span>
                       <ChevronDown
                         className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
@@ -1090,9 +942,7 @@ export function MarketplaceSection({
                         )}
                         {!(profile.tagline || profile.bio) && (
                           <p className="text-xs text-slate-400 min-h-[32px]">
-                            {t(`${translationPrefix}.states.noBio`, {
-                              defaultValue: "No bio available yet.",
-                            })}
+                            No bio available yet.
                           </p>
                         )}
 
@@ -1118,12 +968,8 @@ export function MarketplaceSection({
                           <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                             <p className="text-slate-500 text-[11px] font-medium">
                               {entityType === "agency"
-                                ? t(`${translationPrefix}.card.agencyType`, {
-                                    defaultValue: "Agency Type",
-                                  })
-                                : t(`${translationPrefix}.card.followers`, {
-                                    defaultValue: "Followers",
-                                  })}
+                                ? "Agency Type"
+                                : "Followers"}
                             </p>
                             <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                               {entityType === "agency"
@@ -1136,9 +982,7 @@ export function MarketplaceSection({
                           {entityType === "agency" && (
                             <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                               <p className="text-slate-500 text-[11px] font-medium">
-                                {t(`${translationPrefix}.card.services`, {
-                                  defaultValue: "Services",
-                                })}
+                                Services
                               </p>
                               <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                                 {(profile.skills || []).length || "N/A"}
@@ -1208,56 +1052,19 @@ export function MarketplaceSection({
                                 );
                                 if (status === "declined") {
                                   toast({
-                                    title: t(
-                                      `${translationPrefix}.toasts.requestAlreadyDeclinedTitle`,
-                                      {
-                                        defaultValue:
-                                          "Request already declined",
-                                      },
-                                    ),
-                                    description: t(
-                                      `${translationPrefix}.toasts.requestAlreadyDeclinedDescription`,
-                                      {
-                                        entityLabel:
-                                          entityLabelTranslated.toLowerCase(),
-                                        defaultValue:
-                                          "This connection was declined previously. You can re-invite this {{entityLabel}}.",
-                                      },
-                                    ),
+                                    title: "Request already declined",
+                                    description: `This connection was declined previously. You can re-invite this ${entityLabel}.`,
                                   });
                                 } else if (status === "connected") {
                                   toast({
-                                    title: t(
-                                      `${translationPrefix}.toasts.alreadyConnectedTitle`,
-                                      {
-                                        defaultValue: "Already connected",
-                                      },
-                                    ),
-                                    description: t(
-                                      `${translationPrefix}.toasts.alreadyConnectedDescription`,
-                                      {
-                                        defaultValue:
-                                          "This profile is already in your network.",
-                                      },
-                                    ),
+                                    title: "Already connected",
+                                    description:
+                                      "This profile is already in your network.",
                                   });
                                 } else {
                                   toast({
-                                    title: t(
-                                      `${translationPrefix}.toasts.connectionRequestSentTitle`,
-                                      {
-                                        defaultValue: "Connection request sent",
-                                      },
-                                    ),
-                                    description: t(
-                                      `${translationPrefix}.toasts.connectionRequestSentDescription`,
-                                      {
-                                        entityLabel:
-                                          entityLabelTranslated.toLowerCase(),
-                                        defaultValue:
-                                          "Waiting for {{entityLabel}} response. You will be notified after they accept or decline.",
-                                      },
-                                    ),
+                                    title: "Connection request sent",
+                                    description: `Waiting for ${entityLabel} response. You will be notified after they accept or decline.`,
                                   });
                                   setPendingConnectKeys((prev) =>
                                     new Set(prev).add(profileKey),
@@ -1281,21 +1088,8 @@ export function MarketplaceSection({
                                     new Set(prev).add(profileKey),
                                   );
                                   toast({
-                                    title: t(
-                                      `${translationPrefix}.toasts.requestPendingTitle`,
-                                      {
-                                        defaultValue: "Request already pending",
-                                      },
-                                    ),
-                                    description: t(
-                                      `${translationPrefix}.toasts.requestPendingDescription`,
-                                      {
-                                        entityLabel:
-                                          entityLabelTranslated.toLowerCase(),
-                                        defaultValue:
-                                          "Waiting for {{entityLabel}} response.",
-                                      },
-                                    ),
+                                    title: "Request already pending",
+                                    description: `Waiting for ${entityLabel} response.`,
                                   });
                                   await queryClient.invalidateQueries({
                                     queryKey: [queryScope],
@@ -1303,23 +1097,11 @@ export function MarketplaceSection({
                                   return;
                                 }
                                 toast({
-                                  title: t(
-                                    `${translationPrefix}.toasts.failedConnectionRequestTitle`,
-                                    {
-                                      defaultValue:
-                                        "Failed to send connection request",
-                                    },
-                                  ),
+                                  title: "Failed to send connection request",
                                   description: parseApiErrorMessage(
                                     e,
-                                    t(
-                                      `${translationPrefix}.toasts.failedConnectionRequestDescription`,
-                                      {
-                                        defaultValue:
-                                          "Unable to send connection request right now.",
-                                      },
-                                    ),
-                                    entityLabelTranslated.toLowerCase(),
+                                    "Unable to send connection request right now.",
+                                    entityLabel,
                                   ),
                                   variant: "destructive" as any,
                                 });
@@ -1333,30 +1115,13 @@ export function MarketplaceSection({
                             }}
                           >
                             {isRequestingConnect
-                              ? t(`${translationPrefix}.actions.sending`, {
-                                  defaultValue: "Sending...",
-                                })
+                              ? "Sending..."
                               : actionsLocked || connectLocked
-                                ? t(
-                                    `${translationPrefix}.actions.upgradeToConnect`,
-                                    {
-                                      defaultValue: "Upgrade to Connect",
-                                    },
-                                  )
+                                ? "Upgrade to Connect"
                                 : connectionStatus === "pending" ||
                                     connectionStatus === "waiting"
-                                  ? t(
-                                      `${translationPrefix}.actions.waitingForResponse`,
-                                      {
-                                        entityLabel:
-                                          entityLabelTranslated.toLowerCase(),
-                                        defaultValue:
-                                          "Waiting for {{entityLabel}} response",
-                                      },
-                                    )
-                                  : t(`${translationPrefix}.actions.connect`, {
-                                      defaultValue: "Connect",
-                                    })}
+                                  ? `Waiting for ${entityLabel} response`
+                                  : "Connect"}
                           </Button>
                           {connectLockedReason ? (
                             <span className="text-[10px] font-semibold text-amber-700">
@@ -1383,20 +1148,10 @@ export function MarketplaceSection({
           const profileKey = `${contractConnectProfile.profile_type}:${contractConnectProfile.id}`;
           setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
           toast({
-            title: t(`${translationPrefix}.toasts.contractSentTitle`, {
-              defaultValue: "Contract sent",
-            }),
+            title: "Contract sent",
             description: contract?.agency_sign_url
-              ? t(
-                  `${translationPrefix}.toasts.contractSentWithLinkDescription`,
-                  {
-                    defaultValue:
-                      "The contract has been sent for signature and the agency signing link opened in a new tab.",
-                  },
-                )
-              : t(`${translationPrefix}.toasts.contractSentDescription`, {
-                  defaultValue: "The contract has been sent for signature.",
-                }),
+              ? "The contract has been sent for signature and the agency signing link opened in a new tab."
+              : "The contract has been sent for signature.",
           });
           queryClient.invalidateQueries({
             queryKey: [queryScope],
@@ -1416,52 +1171,36 @@ export function MarketplaceSection({
             <div className="absolute inset-0 z-50 bg-white/75 backdrop-blur-[1px] flex items-center justify-center">
               <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm text-sm font-medium text-slate-700">
                 <Loader2 className="h-4 w-4 animate-spin text-cyan-600" />
-                {t(`${translationPrefix}.details.processingDisconnect`, {
-                  defaultValue: "Processing disconnect request...",
-                })}
+                Processing disconnect request...
               </div>
             </div>
           ) : null}
           <SheetHeader>
             <SheetTitle>
-              {selectedProfile?.display_name ||
-                t(`${translationPrefix}.details.marketplaceProfile`, {
-                  defaultValue: "Marketplace Profile",
-                })}
+              {selectedProfile?.display_name || "Marketplace Profile"}
             </SheetTitle>
             <SheetDescription>
               {selectedProfile?.profile_type === "agency"
-                ? t(`${translationPrefix}.details.agencyDescription`, {
-                    defaultValue: "Agency profile and connection status",
-                  })
-                : t(`${translationPrefix}.details.creatorDescription`, {
-                    defaultValue:
-                      "Availability, rates, portfolio, and campaign history",
-                  })}
+                ? "Agency profile and connection status"
+                : "Availability, rates, portfolio, and campaign history"}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-6">
             {detailsQuery.isLoading ? (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                {t(`${translationPrefix}.details.loading`, {
-                  defaultValue: "Loading profile details...",
-                })}
+                Loading profile details...
               </div>
             ) : detailsQuery.error ? (
               <Card className="p-4 border border-rose-200 bg-rose-50 rounded-xl">
                 <div className="text-sm font-semibold text-rose-900">
-                  {t(`${translationPrefix}.details.loadFailedTitle`, {
-                    defaultValue: "Failed to load profile details",
-                  })}
+                  Failed to load profile details
                 </div>
                 <div className="text-sm text-rose-800 mt-1">
                   {parseApiErrorMessage(
                     detailsQuery.error,
-                    t(`${translationPrefix}.details.tryAgain`, {
-                      defaultValue: "Please try again.",
-                    }),
-                    entityLabelTranslated.toLowerCase(),
+                    "Please try again.",
+                    entityLabel,
                   )}
                 </div>
               </Card>
@@ -1508,9 +1247,7 @@ export function MarketplaceSection({
                         <div className="space-y-4">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 mb-2">
-                              {t(`${translationPrefix}.details.servicesLabel`, {
-                                defaultValue: "Services",
-                              })}
+                              Services
                             </h4>
                             {services.length ? (
                               <div className="flex flex-wrap gap-2">
@@ -1525,42 +1262,21 @@ export function MarketplaceSection({
                               </div>
                             ) : (
                               <p className="text-sm text-gray-500">
-                                {t(
-                                  `${translationPrefix}.details.noServicesShared`,
-                                  { defaultValue: "No services shared yet." },
-                                )}
+                                No services shared yet.
                               </p>
                             )}
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                             <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <p className="text-gray-500">
-                                {t(`${translationPrefix}.details.website`, {
-                                  defaultValue: "Website",
-                                })}
-                              </p>
+                              <p className="text-gray-500">Website</p>
                               <p className="font-semibold text-gray-900 mt-1 break-all">
-                                {profile?.website ||
-                                  t(
-                                    `${translationPrefix}.details.notSpecified`,
-                                    { defaultValue: "Not specified" },
-                                  )}
+                                {profile?.website || "Not specified"}
                               </p>
                             </div>
                             <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <p className="text-gray-500">
-                                {t(
-                                  `${translationPrefix}.details.connectionStatusLabel`,
-                                  {
-                                    defaultValue: "Connection Status",
-                                  },
-                                )}
-                              </p>
+                              <p className="text-gray-500">Connection Status</p>
                               <p className="font-semibold text-gray-900 mt-1 capitalize">
-                                {getConnectionStatusLabel(
-                                  detailsQuery.data?.connection_status ||
-                                    "none",
-                                )}
+                                {detailsQuery.data?.connection_status || "none"}
                               </p>
                             </div>
                           </div>
@@ -1575,9 +1291,7 @@ export function MarketplaceSection({
                         <div className="space-y-5">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 mb-2">
-                              {t(`${translationPrefix}.details.openToWork`, {
-                                defaultValue: "Open to work",
-                              })}
+                              Open to work
                             </h4>
                             {openToWork.length ? (
                               <div className="flex flex-wrap gap-2">
@@ -1592,22 +1306,14 @@ export function MarketplaceSection({
                               </div>
                             ) : (
                               <p className="text-sm text-gray-500">
-                                {t(
-                                  `${translationPrefix}.details.noOpenWorkPreferences`,
-                                  {
-                                    defaultValue:
-                                      "No open-work preferences shared yet.",
-                                  },
-                                )}
+                                No open-work preferences shared yet.
                               </p>
                             )}
                           </div>
 
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 mb-2">
-                              {t(`${translationPrefix}.details.industries`, {
-                                defaultValue: "Industries",
-                              })}
+                              Industries
                             </h4>
                             {industries.length ? (
                               <div className="flex flex-wrap gap-2">
@@ -1623,10 +1329,7 @@ export function MarketplaceSection({
                               </div>
                             ) : (
                               <p className="text-sm text-gray-500">
-                                {t(
-                                  `${translationPrefix}.details.noIndustriesShared`,
-                                  { defaultValue: "No industries shared yet." },
-                                )}
+                                No industries shared yet.
                               </p>
                             )}
                           </div>
@@ -1637,28 +1340,15 @@ export function MarketplaceSection({
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900">
-                              {t(`${translationPrefix}.details.licensingRate`, {
-                                defaultValue: "Licensing rate",
-                              })}
+                              Licensing rate
                             </h4>
                             <p className="text-xs text-gray-500 mt-1">
-                              {t(`${translationPrefix}.details.baseRate`, {
-                                defaultValue: "Base rate from public profile",
-                              })}
+                              Base rate from public profile
                             </p>
                             <p className="text-xs text-emerald-700 mt-2 font-medium">
                               {openToNegotiations
-                                ? t(
-                                    `${translationPrefix}.details.openToNegotiations`,
-                                    { defaultValue: "Open to negotiations" },
-                                  )
-                                : t(
-                                    `${translationPrefix}.details.negotiationPreferences`,
-                                    {
-                                      defaultValue:
-                                        "Negotiation preferences not specified",
-                                    },
-                                  )}
+                                ? "Open to negotiations"
+                                : "Negotiation preferences not specified"}
                             </p>
                           </div>
                           <div className="text-right">
@@ -1667,11 +1357,7 @@ export function MarketplaceSection({
                                 ? formatMoney(baseRateCents, rateCurrency)
                                 : "N/A"}
                             </p>
-                            <p className="text-xs text-gray-500">
-                              {t(`${translationPrefix}.details.perMonth`, {
-                                defaultValue: "/month",
-                              })}
-                            </p>
+                            <p className="text-xs text-gray-500">/month</p>
                           </div>
                         </div>
                       </Card>
@@ -1687,18 +1373,12 @@ export function MarketplaceSection({
                           {selectedProfile?.display_name || "Profile"}
                         </h4>
                         <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
-                          {t(`${translationPrefix}.details.verified`, {
-                            defaultValue: "Verified",
-                          })}
+                          Verified
                         </Badge>
                         {/* Regular/Agency-Owned badge removed to keep layout clean */}
                       </div>
                       <p className="text-xs font-medium text-slate-500">
-                        {selectedProfile?.location ||
-                          t(
-                            `${translationPrefix}.details.locationNotSpecified`,
-                            { defaultValue: "Location not specified" },
-                          )}
+                        {selectedProfile?.location || "Location not specified"}
                       </p>
                       <p className="text-sm text-slate-600 mt-3 break-words whitespace-pre-line">
                         {selectedProfile?.tagline ||
@@ -1715,18 +1395,8 @@ export function MarketplaceSection({
                         <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
                           <p className="text-slate-500 font-medium">
                             {selectedProfile?.profile_type === "agency"
-                              ? t(
-                                  `${translationPrefix}.details.agencyTypeLabel`,
-                                  {
-                                    defaultValue: "Agency Type",
-                                  },
-                                )
-                              : t(
-                                  `${translationPrefix}.details.followersLabel`,
-                                  {
-                                    defaultValue: "Followers",
-                                  },
-                                )}
+                              ? "Agency Type"
+                              : "Followers"}
                           </p>
                           <p className="text-slate-900 font-bold mt-0.5">
                             {selectedProfile?.profile_type === "agency"
@@ -1741,9 +1411,7 @@ export function MarketplaceSection({
                         {selectedProfile?.profile_type === "agency" && (
                           <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
                             <p className="text-slate-500 font-medium">
-                              {t(`${translationPrefix}.details.servicesLabel`, {
-                                defaultValue: "Services",
-                              })}
+                              Services
                             </p>
                             <p className="text-slate-900 font-bold mt-0.5">
                               {(selectedProfile?.skills || []).length || "N/A"}
@@ -1795,32 +1463,16 @@ export function MarketplaceSection({
                             <div className="flex items-start justify-between gap-3">
                               <div>
                                 <h4 className="text-sm font-bold text-gray-900">
-                                  {t(
-                                    `${translationPrefix}.details.marketplaceContract`,
-                                    {
-                                      defaultValue: "Marketplace contract",
-                                    },
-                                  )}
+                                  Marketplace contract
                                 </h4>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  {t(
-                                    `${translationPrefix}.details.contractTermsDescription`,
-                                    {
-                                      defaultValue:
-                                        "Contract terms for this agency-creator connection.",
-                                    },
-                                  )}
+                                  Contract terms for this agency-creator
+                                  connection.
                                 </p>
                               </div>
                               {pendingDisconnect ? (
                                 <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
-                                  {t(
-                                    `${translationPrefix}.details.creatorRequestedDisconnect`,
-                                    {
-                                      defaultValue:
-                                        "Creator requested disconnect",
-                                    },
-                                  )}
+                                  Creator requested disconnect
                                 </Badge>
                               ) : null}
                             </div>
@@ -1829,12 +1481,7 @@ export function MarketplaceSection({
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <Percent className="w-3 h-3" />
-                                  {t(
-                                    `${translationPrefix}.details.commission`,
-                                    {
-                                      defaultValue: "Commission",
-                                    },
-                                  )}
+                                  Commission
                                 </div>
                                 <p className="font-semibold text-gray-900 mt-1">
                                   {Number(
@@ -1844,11 +1491,7 @@ export function MarketplaceSection({
                                 </p>
                               </div>
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                                <div className="text-gray-500">
-                                  {t(`${translationPrefix}.details.status`, {
-                                    defaultValue: "Status",
-                                  })}
-                                </div>
+                                <div className="text-gray-500">Status</div>
                                 <p className="font-semibold text-gray-900 mt-1 capitalize">
                                   {String(
                                     marketplaceContract?.status || "unknown",
@@ -1941,18 +1584,11 @@ export function MarketplaceSection({
 
                     <Card className="p-4 border border-gray-200 rounded-xl">
                       <h4 className="text-sm font-bold text-gray-900 mb-3">
-                        {t(
-                          `${translationPrefix}.details.availabilityAndRates`,
-                          { defaultValue: "Availability & Rates" },
-                        )}
+                        Availability & Rates
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                         <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                          <p className="text-gray-500">
-                            {t(`${translationPrefix}.details.willingToTravel`, {
-                              defaultValue: "Willing to Travel",
-                            })}
-                          </p>
+                          <p className="text-gray-500">Willing to Travel</p>
                           <p className="font-semibold text-gray-900 mt-1">
                             {typeof detailsQuery.data?.availability
                               ?.willing_to_travel === "boolean"
@@ -1960,23 +1596,14 @@ export function MarketplaceSection({
                                   ?.willing_to_travel
                                 ? "Yes"
                                 : "No"
-                              : t(`${translationPrefix}.details.notSpecified`, {
-                                  defaultValue: "Not specified",
-                                })}
+                              : "Not specified"}
                           </p>
                         </div>
                         <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                          <p className="text-gray-500">
-                            {t(
-                              `${translationPrefix}.details.connectionStatus`,
-                              { defaultValue: "Connection Status" },
-                            )}
-                          </p>
+                          <p className="text-gray-500">Connection Status</p>
                           <div className="flex flex-col">
                             <p className="font-semibold text-gray-900 mt-1 capitalize leading-none">
-                              {getConnectionStatusLabel(
-                                detailsQuery.data?.connection_status || "none",
-                              )}
+                              {detailsQuery.data?.connection_status || "none"}
                             </p>
                             {selectedProfile?.talent_ownership ===
                               "agency_owned" && (
@@ -2008,10 +1635,7 @@ export function MarketplaceSection({
                           ))}
                         {(detailsQuery.data?.rates || []).length === 0 && (
                           <p className="text-sm text-gray-500">
-                            {t(
-                              `${translationPrefix}.details.noRatesPublished`,
-                              { defaultValue: "No rates published yet." },
-                            )}
+                            No rates published yet.
                           </p>
                         )}
                       </div>
@@ -2022,9 +1646,7 @@ export function MarketplaceSection({
                 {selectedProfile?.profile_type === "creator" && (
                   <Card className="p-4 border border-gray-200 rounded-xl">
                     <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      {t(`${translationPrefix}.details.portfolio`, {
-                        defaultValue: "Portfolio",
-                      })}
+                      Portfolio
                     </h4>
                     {!!detailsQuery.data?.profile?.portfolio_link && (
                       <a
@@ -2033,9 +1655,7 @@ export function MarketplaceSection({
                         rel="noreferrer"
                         className="mb-3 inline-flex items-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-100"
                       >
-                        {t(`${translationPrefix}.details.openPortfolioLink`, {
-                          defaultValue: "Open portfolio link",
-                        })}
+                        Open portfolio link
                       </a>
                     )}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -2070,16 +1690,8 @@ export function MarketplaceSection({
                       {(detailsQuery.data?.portfolio || []).length === 0 && (
                         <p className="text-sm text-gray-500">
                           {detailsQuery.data?.profile?.portfolio_link
-                            ? t(
-                                `${translationPrefix}.details.noUploadedPortfolioMedia`,
-                                {
-                                  defaultValue:
-                                    "No uploaded portfolio media yet.",
-                                },
-                              )
-                            : t(`${translationPrefix}.details.noPortfolio`, {
-                                defaultValue: "No portfolio items yet.",
-                              })}
+                            ? "No uploaded portfolio media yet."
+                            : "No portfolio items yet."}
                         </p>
                       )}
                     </div>
@@ -2089,9 +1701,7 @@ export function MarketplaceSection({
                 {selectedProfile?.profile_type === "creator" && (
                   <Card className="p-4 border border-gray-200 rounded-xl">
                     <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      {t(`${translationPrefix}.details.pastCampaigns`, {
-                        defaultValue: "Past Campaigns",
-                      })}
+                      Past Campaigns
                     </h4>
                     <div className="space-y-2">
                       {(detailsQuery.data?.campaigns || [])
@@ -2109,9 +1719,7 @@ export function MarketplaceSection({
                                 variant="secondary"
                                 className="text-[10px] bg-gray-100 text-gray-700"
                               >
-                                {formatCampaignStatus(
-                                  String(c?.status || "Unknown"),
-                                )}
+                                {String(c?.status || "Unknown")}
                               </Badge>
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
@@ -2147,26 +1755,15 @@ export function MarketplaceSection({
                           </div>
                           <div className="min-w-0">
                             <h4 className="text-sm font-bold text-amber-900">
-                              {t(
-                                `${translationPrefix}.details.readyToLicense`,
-                                {
-                                  defaultValue: "Ready to license this talent?",
-                                },
-                              )}
+                              Ready to license this talent?
                             </h4>
                             <p className="mt-1 text-sm font-semibold text-slate-900 truncate">
                               {representedAgencyName}
                             </p>
                             <p className="text-xs text-amber-700 mt-1">
                               {representedAgencyLocation
-                                ? `${representedAgencyLocation} • ${t(`${translationPrefix}.details.sendLicensingRequest`, { defaultValue: "Send your licensing request directly to this agency." })}`
-                                : t(
-                                    `${translationPrefix}.details.sendLicensingRequestAgency`,
-                                    {
-                                      defaultValue:
-                                        "Send your licensing request directly to this represented agency.",
-                                    },
-                                  )}
+                                ? `${representedAgencyLocation} • Send your licensing request directly to this agency.`
+                                : "Send your licensing request directly to this represented agency."}
                             </p>
                           </div>
                         </div>
@@ -2186,13 +1783,8 @@ export function MarketplaceSection({
                           disabled={actionsLocked && !onLockedAction}
                         >
                           {actionsLocked
-                            ? t(
-                                `${translationPrefix}.details.upgradeToRequestLicense`,
-                                { defaultValue: "Upgrade to Request License" },
-                              )
-                            : t(`${translationPrefix}.details.requestLicense`, {
-                                defaultValue: "Request License",
-                              })}
+                            ? "Upgrade to Request License"
+                            : "Request License"}
                         </Button>
                       </div>
                     </Card>

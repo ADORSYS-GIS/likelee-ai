@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +30,6 @@ import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserFriendlyError } from "@/utils";
 import WalletTransactionsDialog from "@/components/WalletTransactionsDialog";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   generate as studioGenerate,
   getJobStatus,
@@ -131,7 +129,6 @@ const imageSizes = [
 ];
 
 export default function StudioImage() {
-  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -327,7 +324,7 @@ export default function StudioImage() {
               className="text-gray-400 hover:text-white hover:bg-white/5 transition-all"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("studio.image.backToStudio")}
+              Studio
             </Button>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#32C8D1] to-[#6366F1] flex items-center justify-center shadow-[0_0_20px_rgba(50,200,209,0.3)]">
@@ -338,10 +335,10 @@ export default function StudioImage() {
                   className="text-xl font-bold tracking-tight text-white"
                   style={{ textShadow: "0 0 20px rgba(50,200,209,0.3)" }}
                 >
-                  {t("studio.image.title")}
+                  AI Image Generator
                 </h1>
                 <p className="text-[10px] text-[#32C8D1] font-bold uppercase tracking-widest opacity-80">
-                  {t("studio.image.subtitle")}
+                  Premium Studio
                 </p>
               </div>
             </div>
@@ -357,19 +354,18 @@ export default function StudioImage() {
               </span>
             </div>
             <div className="w-px h-6 bg-white/10" />
-            <LanguageSwitcher />
             <Button
               variant="ghost"
               onClick={() => setShowTransactions(true)}
               className="text-gray-400 hover:text-white hover:bg-white/5"
             >
-              {t("studio.image.ui.recentArtifacts")}
+              History
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("StudioSubscribe"))}
               className="bg-white text-black hover:bg-gray-200 font-bold px-6 rounded-full transition-all hover:scale-105 active:scale-95 shadow-[0_4px_15px_rgba(255,255,255,0.2)]"
             >
-              {t("studio.image.topUp")}
+              Top Up
             </Button>
           </div>
         </div>
@@ -389,14 +385,14 @@ export default function StudioImage() {
               <div className="flex items-center gap-2 mb-6">
                 <Settings2 className="w-5 h-5 text-[#32C8D1]" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">
-                  {t("studio.image.ui.settings")}
+                  Settings
                 </h3>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    {t("studio.image.ui.intelligence")}
+                    Intelligence
                   </label>
                   <Select
                     value={selectedModel}
@@ -428,13 +424,13 @@ export default function StudioImage() {
 
                 <div className="space-y-3">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    {t("studio.image.ui.visualPrompt")}
+                    Visual Prompt
                   </label>
                   <div className="relative group">
                     <Textarea
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder={t("studio.image.ui.visualPromptPlaceholder")}
+                      placeholder="Surreal landscape with floating islands..."
                       className="bg-white/5 border-white/10 text-white min-h-[160px] rounded-2xl resize-none text-sm p-4 focus:ring-[#32C8D1]/30 transition-all group-hover:bg-white/[0.08]"
                     />
                     <div className="absolute top-3 right-3 opacity-30 group-hover:opacity-100 transition-opacity">
@@ -445,7 +441,7 @@ export default function StudioImage() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    {t("studio.image.ui.canvasSize")}
+                    Canvas Size
                   </label>
                   <Select value={imageSize} onValueChange={setImageSize}>
                     <SelectTrigger className="bg-white/5 border-white/10 text-white h-11 rounded-xl hover:bg-white/10 transition-all">
@@ -470,7 +466,7 @@ export default function StudioImage() {
                 <div className="space-y-4 pt-2">
                   <div className="flex justify-between items-end">
                     <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                      {t("studio.image.ui.batchCount")}
+                      Batch Count
                     </label>
                     <span className="text-xl font-bold bg-gradient-to-t from-[#32C8D1] to-white bg-clip-text text-transparent">
                       {numImages}
@@ -489,7 +485,7 @@ export default function StudioImage() {
                 <details className="overflow-hidden">
                   <summary className="cursor-pointer text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-[#32C8D1] transition-colors py-2 flex items-center gap-2">
                     <Layers className="w-3 h-3" />
-                    {t("studio.image.ui.fineTuneParameters")}
+                    Fine-tune Parameters
                   </summary>
                   <div className="mt-4 space-y-6 p-4 bg-black/20 rounded-2xl border border-white/5 animate-in slide-in-from-top-2 duration-300">
                     <div className="space-y-3">
@@ -544,14 +540,12 @@ export default function StudioImage() {
                   {generateMutation.isPending || generatingJobId ? (
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 border-2 border-[#32C8D1]/30 border-t-[#32C8D1] rounded-full animate-spin" />
-                      <span>{t("studio.image.ui.evolving")}</span>
+                      <span>Evolving...</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Wand2 className="w-5 h-5" />
-                      <span>
-                        {t("studio.image.ui.synthesize", { count: totalCost })}
-                      </span>
+                      <span>Synthesize ({totalCost})</span>
                     </div>
                   )}
                 </Button>
@@ -564,10 +558,11 @@ export default function StudioImage() {
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-gray-500 mb-1">
-                  {t("studio.image.ui.notice")}
+                  Notice
                 </p>
                 <p className="text-[11px] text-gray-400 leading-relaxed">
-                  {t("studio.image.ui.noticeText")}
+                  Higher guidance scales follow prompts strictly but may reduce
+                  overall realism.
                 </p>
               </div>
             </div>
@@ -576,7 +571,7 @@ export default function StudioImage() {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
                 <History className="w-6 h-6 text-[#6366F1]" />
-                {t("studio.image.ui.recentArtifacts")}
+                Recent Artifacts
               </h2>
               <div className="flex gap-2">
                 <Badge
@@ -616,7 +611,7 @@ export default function StudioImage() {
                               className="bg-white text-black hover:bg-white/90 rounded-full font-bold px-6 shadow-2xl"
                             >
                               <Download className="w-3 h-3 mr-2" />
-                              {t("studio.image.ui.expand")}
+                              Expand
                             </Button>
                           </div>
                         </div>

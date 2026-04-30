@@ -32,14 +32,12 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { catalogApi } from "@/api/catalogs";
 import { CatalogBuilderWizard } from "./CatalogBuilderWizard";
-import { useTranslation } from "react-i18next";
 
 export function CatalogsView({
   isSportsAgency = false,
 }: {
   isSportsAgency?: boolean;
 }) {
-  const { t } = useTranslation();
   const entityPluralTitle = isSportsAgency ? "Athletes" : "Talents";
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -58,19 +56,13 @@ export function CatalogsView({
   const deleteMutation = useMutation({
     mutationFn: (id: string) => catalogApi.remove(id),
     onSuccess: () => {
-      toast({
-        title: t("agencyDashboard.catalogs.toasts.deleted", {
-          defaultValue: "Catalog deleted",
-        }),
-      });
+      toast({ title: "Catalog deleted" });
       queryClient.invalidateQueries({ queryKey: ["agency-catalogs"] });
       setDeleteId(null);
     },
     onError: (e: any) => {
       toast({
-        title: t("agencyDashboard.catalogs.toasts.deleteFailedTitle", {
-          defaultValue: "Failed to delete catalog",
-        }),
+        title: "Failed to delete catalog",
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -80,11 +72,7 @@ export function CatalogsView({
   const copyLink = (token: string) => {
     const url = `${window.location.origin}/share/catalog/${token}`;
     navigator.clipboard.writeText(url);
-    toast({
-      title: t("agencyDashboard.catalogs.toasts.linkCopied", {
-        defaultValue: "Link copied to clipboard!",
-      }),
-    });
+    toast({ title: "Link copied to clipboard!" });
   };
 
   const catalogs: any[] = Array.isArray(catalogsQuery.data)
@@ -102,16 +90,10 @@ export function CatalogsView({
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {t("agencyDashboard.catalogs.title", {
-              defaultValue: "Asset Catalogs",
-            })}
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900">Asset Catalogs</h2>
           <p className="text-gray-500 font-medium text-sm mt-0.5">
-            {t("agencyDashboard.catalogs.subtitle", {
-              defaultValue:
-                "Deliver licensed assets and voice recordings to clients after payment.",
-            })}
+            Deliver licensed assets and voice recordings to clients after
+            payment.
           </p>
         </div>
         <Button
@@ -119,31 +101,20 @@ export function CatalogsView({
           onClick={() => setShowBuilder(true)}
         >
           <Plus className="w-4 h-4" />
-          {t("agencyDashboard.catalogs.actions.newCatalog", {
-            defaultValue: "New Catalog",
-          })}
+          New Catalog
         </Button>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {[
+          { label: "Total Catalogs", value: catalogs.length },
           {
-            label: t("agencyDashboard.catalogs.stats.totalCatalogs", {
-              defaultValue: "Total Catalogs",
-            }),
-            value: catalogs.length,
-          },
-          {
-            label: t("agencyDashboard.catalogs.stats.sent", {
-              defaultValue: "Sent",
-            }),
+            label: "Sent",
             value: catalogs.filter((c: any) => c.sent_at).length,
           },
           {
-            label: t("agencyDashboard.catalogs.stats.pendingDelivery", {
-              defaultValue: "Pending Delivery",
-            }),
+            label: "Pending Delivery",
             value: catalogs.filter((c: any) => !c.sent_at).length,
           },
         ].map((stat) => (
@@ -170,24 +141,18 @@ export function CatalogsView({
             <Archive className="w-8 h-8 text-indigo-400" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mb-1">
-            {t("agencyDashboard.catalogs.empty.title", {
-              defaultValue: "No catalogs yet",
-            })}
+            No catalogs yet
           </h3>
           <p className="text-sm text-gray-500 font-medium mb-6">
-            {t("agencyDashboard.catalogs.empty.description", {
-              defaultValue:
-                "After a licensing payment clears, create a catalog to deliver the assets and recordings to your client.",
-            })}
+            After a licensing payment clears, create a catalog to deliver the
+            assets and recordings to your client.
           </p>
           <Button
             onClick={() => setShowBuilder(true)}
             className="rounded-xl font-bold"
           >
             <Plus className="w-4 h-4 mr-2" />
-            {t("agencyDashboard.catalogs.actions.createCatalog", {
-              defaultValue: "Create Catalog",
-            })}
+            Create Catalog
           </Button>
         </Card>
       ) : (
@@ -227,7 +192,7 @@ export function CatalogsView({
                         )}
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {t("agencyDashboard.catalogs.meta.created")}{" "}
+                        Created{" "}
                         {new Date(catalog.created_at).toLocaleDateString(
                           "en-US",
                           {
@@ -240,7 +205,7 @@ export function CatalogsView({
                           <>
                             {" • "}
                             <span className="text-orange-500 font-medium">
-                              {t("agencyDashboard.catalogs.meta.expires")}{" "}
+                              Expires{" "}
                               {new Date(
                                 catalog.expires_at,
                               ).toLocaleDateString()}
@@ -261,13 +226,7 @@ export function CatalogsView({
                             : "bg-amber-50 text-amber-700 border-amber-100"
                         }
                       >
-                        {isPaid
-                          ? t("agencyDashboard.catalogs.status.paid", {
-                              defaultValue: "Paid",
-                            })
-                          : t("agencyDashboard.catalogs.status.unpaid", {
-                              defaultValue: "Unpaid",
-                            })}
+                        {isPaid ? "Paid" : "Unpaid"}
                       </Badge>
                     )}
                     <Badge
@@ -281,16 +240,10 @@ export function CatalogsView({
                       }
                     >
                       {isExpired
-                        ? t("agencyDashboard.catalogs.status.expired", {
-                            defaultValue: "Expired",
-                          })
+                        ? "Expired"
                         : catalog.sent_at
-                          ? t("agencyDashboard.catalogs.status.sent", {
-                              defaultValue: "Sent",
-                            })
-                          : t("agencyDashboard.catalogs.status.draft", {
-                              defaultValue: "Draft",
-                            })}
+                          ? "Sent"
+                          : "Draft"}
                     </Badge>
                     <Button
                       size="sm"
@@ -302,9 +255,7 @@ export function CatalogsView({
                       }}
                     >
                       <Copy className="w-3.5 h-3.5" />
-                      {t("agencyDashboard.catalogs.actions.copyLink", {
-                        defaultValue: "Copy Link",
-                      })}
+                      Copy Link
                     </Button>
                     <Button
                       size="sm"
@@ -344,36 +295,20 @@ export function CatalogsView({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("agencyDashboard.catalogs.deleteDialog.title", {
-                defaultValue: "Delete Catalog?",
-              })}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Delete Catalog?</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("agencyDashboard.catalogs.deleteDialog.description", {
-                defaultValue:
-                  "This will permanently remove the catalog and its share link. This cannot be undone.",
-              })}
+              This will permanently remove the catalog and its share link. This
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>
-              {t("agencyDashboard.catalogs.actions.cancel", {
-                defaultValue: "Cancel",
-              })}
-            </AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700 font-bold"
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
               disabled={deleteMutation.isPending}
             >
-              {deleteMutation.isPending
-                ? t("agencyDashboard.catalogs.states.deleting", {
-                    defaultValue: "Deleting…",
-                  })
-                : t("agencyDashboard.catalogs.actions.delete", {
-                    defaultValue: "Delete",
-                  })}
+              {deleteMutation.isPending ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -388,15 +323,10 @@ export function CatalogsView({
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
               <Library className="w-5 h-5 text-indigo-600" />
-              {t("agencyDashboard.catalogs.preview.title", {
-                defaultValue: "Catalog Preview",
-              })}
+              Catalog Preview
             </DialogTitle>
             <DialogDescription>
-              {t("agencyDashboard.catalogs.preview.description", {
-                defaultValue:
-                  "Summary of the distribution settings for this catalog.",
-              })}
+              Summary of the distribution settings for this catalog.
             </DialogDescription>
           </DialogHeader>
 
@@ -424,9 +354,7 @@ export function CatalogsView({
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3 text-sm">
                     <div className="flex justify-between items-start">
                       <span className="text-gray-500 font-medium shrink-0">
-                        {t("agencyDashboard.catalogs.preview.fields.title", {
-                          defaultValue: "Title",
-                        })}
+                        Title
                       </span>
                       <span className="font-bold text-gray-900 text-right uppercase tracking-tight">
                         {previewCatalog.title}
@@ -434,9 +362,7 @@ export function CatalogsView({
                     </div>
                     <div className="flex justify-between items-start">
                       <span className="text-gray-500 font-medium shrink-0">
-                        {t("agencyDashboard.catalogs.preview.fields.client", {
-                          defaultValue: "Client",
-                        })}
+                        Client
                       </span>
                       <span className="font-semibold text-gray-900 text-right">
                         {previewCatalog.client_name || "—"}
@@ -444,12 +370,7 @@ export function CatalogsView({
                     </div>
                     <div className="flex justify-between items-start">
                       <span className="text-gray-500 font-medium shrink-0">
-                        {t(
-                          "agencyDashboard.catalogs.preview.fields.recipient",
-                          {
-                            defaultValue: "Recipient",
-                          },
-                        )}
+                        Recipient
                       </span>
                       <span className="font-semibold text-gray-900 text-right">
                         {previewCatalog.client_email || "—"}
@@ -458,25 +379,14 @@ export function CatalogsView({
                     {previewCatalog.licensing_request_id && (
                       <div className="flex justify-between items-start">
                         <span className="text-gray-500 font-medium shrink-0">
-                          {t(
-                            "agencyDashboard.catalogs.preview.fields.payment",
-                            {
-                              defaultValue: "Payment",
-                            },
-                          )}
+                          Payment
                         </span>
                         <span
                           className={`font-bold text-right ${
                             isPaid ? "text-emerald-600" : "text-amber-600"
                           }`}
                         >
-                          {isPaid
-                            ? t("agencyDashboard.catalogs.status.paid", {
-                                defaultValue: "Paid",
-                              })
-                            : t("agencyDashboard.catalogs.status.unpaid", {
-                                defaultValue: "Unpaid",
-                              })}
+                          {isPaid ? "Paid" : "Unpaid"}
                         </span>
                       </div>
                     )}
@@ -493,9 +403,7 @@ export function CatalogsView({
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          {t("agencyDashboard.catalogs.preview.fields.assets", {
-                            defaultValue: "Assets",
-                          })}
+                          Assets
                         </span>
                         <span className="font-bold text-gray-900">
                           {assetCount}
@@ -503,9 +411,7 @@ export function CatalogsView({
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          {t("agencyDashboard.catalogs.preview.fields.voice", {
-                            defaultValue: "Voice",
-                          })}
+                          Voice
                         </span>
                         <span className="font-bold text-gray-900">
                           {recordingCount}
@@ -517,37 +423,21 @@ export function CatalogsView({
 
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium">
-                        {t(
-                          "agencyDashboard.catalogs.preview.fields.linkedReceipt",
-                          {
-                            defaultValue: "Linked Receipt",
-                          },
-                        )}
+                        Linked Receipt
                       </span>
                       <span
                         className={`font-bold ${isExpired ? "text-red-600" : previewCatalog.licensing_request_id ? "text-green-600" : "text-gray-400"}`}
                       >
                         {isExpired
-                          ? t("agencyDashboard.catalogs.status.expired", {
-                              defaultValue: "Expired",
-                            })
+                          ? "Expired"
                           : previewCatalog.licensing_request_id
-                            ? t("agencyDashboard.catalogs.status.active", {
-                                defaultValue: "Active",
-                              })
-                            : t("agencyDashboard.catalogs.status.no", {
-                                defaultValue: "No",
-                              })}
+                            ? "Active"
+                            : "No"}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium">
-                        {t(
-                          "agencyDashboard.catalogs.preview.fields.createdOn",
-                          {
-                            defaultValue: "Created On",
-                          },
-                        )}
+                        Created On
                       </span>
                       <span className="font-semibold text-gray-900">
                         {new Date(previewCatalog.created_at).toLocaleString()}
@@ -555,22 +445,12 @@ export function CatalogsView({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500 font-medium text-orange-600">
-                        {t(
-                          "agencyDashboard.catalogs.preview.fields.expiration",
-                          {
-                            defaultValue: "Expiration",
-                          },
-                        )}
+                        Expiration
                       </span>
                       <span className="font-bold text-orange-600">
                         {previewCatalog.expires_at
                           ? new Date(previewCatalog.expires_at).toLocaleString()
-                          : t(
-                              "agencyDashboard.catalogs.preview.missingExpiration",
-                              {
-                                defaultValue: "Mandatory (Missing)",
-                              },
-                            )}
+                          : "Mandatory (Missing)"}
                       </span>
                     </div>
                   </div>
@@ -580,12 +460,7 @@ export function CatalogsView({
               {previewCatalog.notes && (
                 <div className="space-y-1.5">
                   <span className="text-xs font-black uppercase tracking-widest text-gray-400">
-                    {t(
-                      "agencyDashboard.catalogs.preview.fields.internalNotes",
-                      {
-                        defaultValue: "Internal Notes",
-                      },
-                    )}
+                    Internal Notes
                   </span>
                   <div className="p-4 bg-white border border-gray-100 rounded-xl text-sm text-gray-600 italic">
                     “{previewCatalog.notes}”
@@ -599,9 +474,7 @@ export function CatalogsView({
                   onClick={() => setPreviewCatalog(null)}
                   className="rounded-xl font-bold"
                 >
-                  {t("agencyDashboard.catalogs.actions.close", {
-                    defaultValue: "Close",
-                  })}
+                  Close
                 </Button>
                 <Button
                   onClick={() => {
@@ -611,9 +484,7 @@ export function CatalogsView({
                   className="bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold flex items-center gap-2"
                 >
                   <Copy className="w-4 h-4" />
-                  {t("agencyDashboard.catalogs.actions.copyLink", {
-                    defaultValue: "Copy Link",
-                  })}
+                  Copy Link
                 </Button>
               </div>
             </div>

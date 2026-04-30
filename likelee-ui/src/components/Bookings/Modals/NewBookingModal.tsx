@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { useTranslation } from "react-i18next";
 import {
   Building2,
   Calendar as CalendarIcon,
@@ -70,7 +69,6 @@ export const NewBookingModal = ({
   isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
-  const { t } = useTranslation("agency");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
 
@@ -1243,10 +1241,7 @@ export const NewBookingModal = ({
                   onClick={() => setShowCampaignModal(true)}
                   className="flex items-center gap-2 p-2 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-100 font-bold text-xs"
                 >
-                  <Plus className="w-3.5 h-3.5" />{" "}
-                  {t("agencyDashboard.bookings.campaignModal.titleCreate", {
-                    defaultValue: "Create New Campaign",
-                  })}
+                  <Plus className="w-3.5 h-3.5" /> Create New Campaign
                 </div>
               </div>
               {selectedCampaign && (

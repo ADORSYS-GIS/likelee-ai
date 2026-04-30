@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -37,7 +36,6 @@ const ActiveLicensesView = ({
   onRenew: (license: ComplianceRenewableLicense) => void;
   isSportsAgency?: boolean;
 }) => {
-  const { t } = useTranslation();
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [searchTerm, setSearchTerm] = useState("");
@@ -124,10 +122,11 @@ const ActiveLicensesView = ({
           <Lock className="w-10 h-10 text-red-600" />
         </div>
         <h2 className="text-2xl font-black text-gray-900 mb-2">
-          {t("agencyDashboard.activeLicenses.accessRestricted")}
+          Access Restricted
         </h2>
         <p className="text-gray-500 font-medium max-w-md mx-auto">
-          {t("agencyDashboard.activeLicenses.accessRestrictedDescription")}
+          You do not have the required permissions to view active licenses.
+          Please contact your administrator if you believe this is an error.
         </p>
       </div>
     );
@@ -139,11 +138,9 @@ const ActiveLicensesView = ({
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
-            <p className="font-bold text-amber-800">
-              {t("agencyDashboard.activeLicenses.viewOnlyMode")}
-            </p>
+            <p className="font-bold text-amber-800">View Only Mode</p>
             <p className="text-sm text-amber-700">
-              {t("agencyDashboard.activeLicenses.viewOnlyModeDescription")}
+              Your role allows viewing licenses but not managing them.
             </p>
           </div>
         </div>
@@ -151,12 +148,10 @@ const ActiveLicensesView = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
           <h2 className="text-3xl font-black text-gray-900 mb-2">
-            {t("agencyDashboard.activeLicenses.title")}
+            Active Licenses
           </h2>
           <p className="text-gray-500 font-medium">
-            {t("agencyDashboard.activeLicenses.description", {
-              entity: entitySingularLower,
-            })}
+            {`Manage all ${entitySingularLower} licensing agreements`}
           </p>
         </div>
         <Button
@@ -207,16 +202,15 @@ const ActiveLicensesView = ({
             URL.revokeObjectURL(url);
           }}
         >
-          <Download className="w-4 h-4" />{" "}
-          {t("agencyDashboard.activeLicenses.exportReport")}
+          <Download className="w-4 h-4" /> Export Report
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
         {[
           {
             icon: CheckCircle2,
-            label: t("agencyDashboard.activeLicenses.stats.activeLicenses"),
+            label: "Active Licenses",
             value: stats?.active || "0",
             color: "text-green-600",
             bg: "bg-green-50",
@@ -224,7 +218,7 @@ const ActiveLicensesView = ({
           },
           {
             icon: Clock,
-            label: t("agencyDashboard.activeLicenses.stats.expiringSoon"),
+            label: "Expiring Soon",
             value: stats?.expiring || "0",
             color: "text-orange-600",
             bg: "bg-orange-50",
@@ -232,7 +226,7 @@ const ActiveLicensesView = ({
           },
           {
             icon: AlertCircle,
-            label: t("agencyDashboard.activeLicenses.stats.expired"),
+            label: "Expired",
             value: stats?.expired || "0",
             color: "text-red-600",
             bg: "bg-red-50",
@@ -240,7 +234,7 @@ const ActiveLicensesView = ({
           },
           {
             icon: DollarSign,
-            label: t("agencyDashboard.activeLicenses.stats.totalValue"),
+            label: "Total Value",
             value: formatMoney(stats?.total_value || 0),
             color: "text-indigo-600",
             bg: "bg-indigo-50",
@@ -250,7 +244,7 @@ const ActiveLicensesView = ({
         ].map((card, i) => (
           <Card
             key={i}
-            className={`p-6 bg-white border ${card.border} shadow-sm rounded-2xl`}
+            className={`p-4 sm:p-6 bg-white border ${card.border} shadow-sm rounded-2xl min-h-[150px] sm:min-h-0`}
           >
             <div className="flex items-center gap-3 mb-4">
               <div
@@ -260,7 +254,9 @@ const ActiveLicensesView = ({
               </div>
               <p className={`text-sm font-bold ${card.color}`}>{card.label}</p>
             </div>
-            <p className="text-3xl font-black text-gray-900">{card.value}</p>
+            <p className="text-2xl sm:text-3xl font-black text-gray-900 break-words">
+              {card.value}
+            </p>
           </Card>
         ))}
       </div>
@@ -273,38 +269,19 @@ const ActiveLicensesView = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder={t(
-                "agencyDashboard.activeLicenses.searchPlaceholder",
-              )}
+              placeholder={`Search by ${entitySingularLower}, brand, or license type...`}
               className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
             />
           </div>
           <div className="w-full sm:w-auto overflow-x-auto">
             <div className="flex w-max bg-gray-100 p-1 rounded-lg sm:ml-auto">
-              {[
-                {
-                  value: "All",
-                  label: t("agencyDashboard.activeLicenses.filter.all"),
-                },
-                {
-                  value: "Active",
-                  label: t("agencyDashboard.activeLicenses.filter.active"),
-                },
-                {
-                  value: "Expiring",
-                  label: t("agencyDashboard.activeLicenses.filter.expiring"),
-                },
-                {
-                  value: "Expired",
-                  label: t("agencyDashboard.activeLicenses.filter.expired"),
-                },
-              ].map((filter) => (
+              {["All", "Active", "Expiring", "Expired"].map((filter) => (
                 <button
-                  key={filter.value}
-                  onClick={() => setFilterStatus(filter.value)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-md whitespace-nowrap transition-all ${filterStatus === filter.value ? "bg-indigo-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                  key={filter}
+                  onClick={() => setFilterStatus(filter)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md whitespace-nowrap transition-all ${filterStatus === filter ? "bg-indigo-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                 >
-                  {filter.label}
+                  {filter}
                 </button>
               ))}
             </div>
@@ -319,25 +296,25 @@ const ActiveLicensesView = ({
                   {entitySingularTitle}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {t("agencyDashboard.activeLicenses.headers.licenseType")}
+                  License Type
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {t("agencyDashboard.activeLicenses.headers.brand")}
+                  Brand
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {t("agencyDashboard.activeLicenses.headers.deadline")}
+                  Deadline
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {t("agencyDashboard.activeLicenses.headers.usageScope")}
+                  Usage Scope
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {t("agencyDashboard.activeLicenses.headers.value")}
+                  Value
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {t("agencyDashboard.activeLicenses.headers.status")}
+                  Status
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {t("agencyDashboard.activeLicenses.headers.actions")}
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -350,16 +327,10 @@ const ActiveLicensesView = ({
                         <FileText className="w-6 h-6 text-gray-400" />
                       </div>
                       <p className="text-gray-900 font-medium">
-                        {t("agencyDashboard.activeLicenses.noLicenses")}
+                        No active licenses found
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
-                        {t(
-                          "agencyDashboard.activeLicenses.tryAdjustingFilters",
-                          {
-                            defaultValue:
-                              "Try adjusting your filters or search terms",
-                          },
-                        )}
+                        Try adjusting your filters or search terms
                       </p>
                     </div>
                   </td>
@@ -394,14 +365,12 @@ const ActiveLicensesView = ({
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900 leading-tight max-w-[150px]">
-                      {lic.license_type ||
-                        t("agencyDashboard.activeLicenses.unknownLicense")}
+                      {lic.license_type || "Unknown License"}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900">
-                      {lic.brand ||
-                        t("agencyDashboard.activeLicenses.unknownBrand")}
+                      {lic.brand || "Unknown Brand"}
                     </p>
                   </td>
                   <td className="px-6 py-8">
@@ -435,20 +404,16 @@ const ActiveLicensesView = ({
                           lic.days_left !== undefined && (
                             <p className="text-[10px] font-bold text-gray-400 italic">
                               {lic.days_left > 0
-                                ? t("agencyDashboard.activeLicenses.daysLeft", {
-                                    days: lic.days_left,
-                                  })
+                                ? `${lic.days_left} days left`
                                 : lic.days_left === 0
-                                  ? t(
-                                      "agencyDashboard.activeLicenses.expiresToday",
-                                    )
-                                  : t("agencyDashboard.activeLicenses.expired")}
+                                  ? "Expires today"
+                                  : "Expired"}
                             </p>
                           )}
                       </>
                     ) : (
                       <p className="text-xs font-medium text-gray-400">
-                        {t("agencyDashboard.activeLicenses.ongoing")}
+                        Ongoing
                       </p>
                     )}
                   </td>
@@ -465,8 +430,7 @@ const ActiveLicensesView = ({
                     </p>
                     {lic.auto_renew && (
                       <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold w-fit border border-blue-100">
-                        <RefreshCw className="w-3.5 h-3.5" />{" "}
-                        {t("agencyDashboard.activeLicenses.autoRenew")}
+                        <RefreshCw className="w-3.5 h-3.5" /> Auto-renew
                       </div>
                     )}
                   </td>
@@ -489,24 +453,13 @@ const ActiveLicensesView = ({
                                   onClick={() => handleRenew(lic)}
                                   disabled={!canManageLicenses}
                                 >
-                                  <RefreshCw className="w-3.5 h-3.5" />{" "}
-                                  {t(
-                                    "agencyDashboard.activeLicenses.actions.renew",
-                                  )}
+                                  <RefreshCw className="w-3.5 h-3.5" /> Renew
                                 </Button>
                               </span>
                             </TooltipTrigger>
                             {!canManageLicenses && (
                               <TooltipContent>
-                                <p>
-                                  {t(
-                                    "agencyDashboard.activeLicenses.noRenewPermission",
-                                    {
-                                      defaultValue:
-                                        "Your role cannot renew licenses",
-                                    },
-                                  )}
-                                </p>
+                                <p>Your role cannot renew licenses</p>
                               </TooltipContent>
                             )}
                           </Tooltip>
