@@ -22047,72 +22047,72 @@ export default function AgencyDashboard() {
                   }}
                 />
               )}
-              {activeTab === "messages" &&
-                (hasProAccess ? (
-                  <CommunicationHub
-                    initialCreatorId={messagingCreatorId}
-                    onInitialCreatorHandled={() =>
-                      setMessagingCreatorId(undefined)
-                    }
-                  />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Messaging is available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeTab === "client-crm" && <ClientCRMView />}
-              {activeTab === "file-storage" && <FileStorageView />}
-              {activeTab === "bookings" && (
-                <BookingsView
-                  activeSubTab={activeSubTab}
-                  bookings={bookings}
-                  onAddBooking={onAddBooking}
-                  onUpdateBooking={onUpdateBooking}
-                  onCancelBooking={onCancelBooking}
-                  bookOuts={bookOuts}
-                  onAddBookOut={onAddBookOut}
-                  onRemoveBookOut={onRemoveBookOut}
-                  isSportsAgency={isSportsAgency}
-                  agencyMode={effectiveAgencyMode}
-                  licenseComplianceData={LICENSE_COMPLIANCE_DATA}
-                  talentData={TALENT_DATA}
+            {activeTab === "messages" &&
+              (hasProAccess ? (
+                <CommunicationHub
+                  initialCreatorId={messagingCreatorId}
+                  onInitialCreatorHandled={() =>
+                    setMessagingCreatorId(undefined)
+                  }
                 />
-              )}
-              {activeTab === "analytics" &&
-                activeSubTab === "Analytics Dashboard" &&
-                (hasProAccess ? (
-                  <ScoutingAnalyticsTab />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Advanced Analytics is available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Messaging is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "client-crm" && <ClientCRMView />}
+            {activeTab === "file-storage" && <FileStorageView />}
+            {activeTab === "bookings" && (
+              <BookingsView
+                activeSubTab={activeSubTab}
+                bookings={bookings}
+                onAddBooking={onAddBooking}
+                onUpdateBooking={onUpdateBooking}
+                onCancelBooking={onCancelBooking}
+                bookOuts={bookOuts}
+                onAddBookOut={onAddBookOut}
+                onRemoveBookOut={onRemoveBookOut}
+                isSportsAgency={isSportsAgency}
+                agencyMode={effectiveAgencyMode}
+                licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                talentData={TALENT_DATA}
+              />
+            )}
+            {activeTab === "analytics" &&
+              activeSubTab === "Analytics Dashboard" &&
+              (hasProAccess ? (
+                <ScoutingAnalyticsTab />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Advanced Analytics is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button
+                      className="rounded-xl font-bold"
+                      onClick={() => navigate("/agencysubscribe")}
+                    >
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             {activeTab === "analytics" &&
               activeSubTab === "Royalties & Payouts" && (
                 <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />

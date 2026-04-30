@@ -4640,9 +4640,7 @@ pub async fn sync_offer_contract(
                     let creator_signed = is_submitter_signed(&second_submitter_status);
                     if brand_signed && creator_signed {
                         "completed"
-                    } else if brand_signed || creator_signed {
-                        "opened"
-                    } else if any_opened {
+                    } else if brand_signed || creator_signed || any_opened {
                         "opened"
                     } else {
                         "sent"
