@@ -1279,9 +1279,9 @@ export default function AgencySubscribe() {
           className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto"
         >
           {/* Card: Basic */}
-          <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#3B82F6] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
+          <Card className="rounded-2xl border-x border-b border-t-4 border-t-green-500 border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
             <div className="absolute top-6 left-8 flex justify-between items-center w-[calc(100%-4rem)]">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded-full uppercase">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-600 font-bold text-[10px] tracking-[0.15em] rounded-full uppercase">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="11"
@@ -1293,8 +1293,7 @@ export default function AgencySubscribe() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
                 Basic
               </span>
