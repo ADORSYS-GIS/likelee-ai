@@ -137,6 +137,7 @@ import {
   ImageIcon,
   Loader2,
   Mic,
+  ExternalLink,
   Link as LinkIcon,
   Pencil,
   Play,
@@ -10705,6 +10706,8 @@ const ScoutingHubView = ({
   setIsProspectModalOpen,
   prospectToEdit,
   setProspectToEdit,
+  isSavingEvent,
+  setIsSavingEvent,
 }: {
   isSportsAgency?: boolean;
   activeTab: string;
@@ -10719,7 +10722,12 @@ const ScoutingHubView = ({
   setIsProspectModalOpen: (open: boolean) => void;
   prospectToEdit: ScoutingProspect | null;
   setProspectToEdit: (prospect: ScoutingProspect | null) => void;
+  isSavingEvent: boolean;
+  setIsSavingEvent: (saving: boolean) => void;
 }) => {
+  const [eventToDelete, setEventToDelete] = useState<ScoutingEvent | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -19145,6 +19153,14 @@ export default function AgencyDashboard() {
     return "";
   })();
   const [agencyTrialCountdown, setAgencyTrialCountdown] = useState("");
+  const agencyTrialTierLabel = useMemo(() => {
+    if (!agencyTrialActive) return "";
+    const tier = String(agencyBilling?.trial_tier || agencyPlanTier || "").trim();
+    if (tier === "pro") return "PRO";
+    if (tier === "basic") return "BASIC";
+    if (tier === "enterprise") return "ENTERPRISE";
+    return tier.toUpperCase() || "AGENCY";
+  }, [agencyTrialActive, agencyBilling?.trial_tier, agencyPlanTier]);
 
   useEffect(() => {
     let cancelled = false;
@@ -19499,6 +19515,7 @@ export default function AgencyDashboard() {
   const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<any>(null);
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
 
   // Ensure valid sub-tab for Scouting to avoid blank screen
   useEffect(() => {
@@ -22195,9 +22212,8 @@ export default function AgencyDashboard() {
               />
             )}
             {activeTab === "talent-packages" && (
-              <TalentPackagesView
+              <PackagesView
                 isSportsAgency={isSportsAgency}
-                agencyId={profile?.id}
               />
             )}
             {activeTab === "marketplace" && (
