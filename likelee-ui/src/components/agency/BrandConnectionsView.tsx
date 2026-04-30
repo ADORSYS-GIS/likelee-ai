@@ -2410,8 +2410,8 @@ const BrandConnectionsView = ({
                                   </Button>
                                 );
                               })()}
+                          </div>
                         </div>
-                      </div>
 
                         {/* Brief & Scope body */}
                         <div className="px-6 py-5 space-y-5">
