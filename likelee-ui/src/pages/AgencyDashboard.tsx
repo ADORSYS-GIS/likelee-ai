@@ -20585,6 +20585,8 @@ export default function AgencyDashboard() {
             label: t("agencyDashboard.tabs.roster", { defaultValue: "Roster" }),
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "messages",
@@ -20618,9 +20620,17 @@ export default function AgencyDashboard() {
                   ? pendingLicensingRequestsCount
                   : undefined,
             },
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "client-crm",
+            label: "Client CRM",
+            icon: Building2,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "protection",
             label: "Protection & Usage",
@@ -20636,19 +20646,36 @@ export default function AgencyDashboard() {
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabledSubItems: {
-              "Analytics Dashboard": !hasProAccess,
-            },
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
-          { id: "packages", label: packagesTabLabel, icon: Package },
-          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
-          { id: "catalogs", label: "Catalogs", icon: Library },
+          {
+            id: "packages",
+            label: packagesTabLabel,
+            icon: Package,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            icon: FolderCheck,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "catalogs",
+            label: "Catalogs",
+            icon: Library,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
-            disabled: !agencyCanUseBrandConnections,
-            disabledReason: "Requires a paid plan",
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -20683,6 +20710,8 @@ export default function AgencyDashboard() {
             label: t("agencyDashboard.tabs.roster", { defaultValue: "Roster" }),
             icon: Users,
             subItems: [rosterPrimarySubTab, "Performance Tiers"],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
           },
           {
             id: "messages",
@@ -20722,6 +20751,8 @@ export default function AgencyDashboard() {
               "Management & Analytics",
               "Campaigns",
             ],
+            disabled: !irlAddonEntitlement,
+            disabledReason: "Requires IRL Booking add-on",
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           {
@@ -20737,6 +20768,8 @@ export default function AgencyDashboard() {
               "Expense Tracking",
               "Connect Bank",
             ],
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
             disabledSubItems: {
               "Financial Reports": !hasProAccess,
               "Expense Tracking": !hasProAccess,
@@ -20747,19 +20780,36 @@ export default function AgencyDashboard() {
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabledSubItems: {
-              "Analytics Dashboard": !hasProAccess,
-            },
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
-          { id: "packages", label: packagesTabLabel, icon: Package },
-          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
-          { id: "catalogs", label: "Catalogs", icon: Library },
+          {
+            id: "packages",
+            label: packagesTabLabel,
+            icon: Package,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "deliverables",
+            label: "Deliverables",
+            icon: FolderCheck,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
+          {
+            id: "catalogs",
+            label: "Catalogs",
+            icon: Library,
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
+          },
           {
             id: "brand-connections",
             label: "Brand Connections",
             icon: Link,
-            disabled: !agencyCanUseBrandConnections,
-            disabledReason: "Requires a paid plan",
+            disabled: agencySubscriptionLocked,
+            disabledReason: "Choose a plan",
             badge:
               pendingBrandConnectionCount > 0
                 ? pendingBrandConnectionCount
@@ -21107,10 +21157,31 @@ export default function AgencyDashboard() {
                       )}
                     {item.disabled && (
                       <span
-                        className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold transition-opacity duration-150"
+                        className={`flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold transition-opacity duration-150 shrink-0 ${
+                          item.disabledReason === "Choose a plan" || item.disabledReason === "Requires a paid plan"
+                            ? "bg-blue-50 text-blue-700" 
+                            : item.disabledReason === "Requires IRL Booking add-on"
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-amber-100 text-amber-700"
+                        }`}
                         style={{ opacity: labelOpacity }}
                       >
-                        Pro
+                        {item.disabledReason === "Choose a plan" || item.disabledReason === "Requires a paid plan" ? (
+                          <>
+                            <Briefcase className="w-3 h-3" strokeWidth={2.5} />
+                            Basic
+                          </>
+                        ) : item.disabledReason === "Requires IRL Booking add-on" ? (
+                          <>
+                            <Crown className="w-3 h-3" strokeWidth={2.5} />
+                            IRL
+                          </>
+                        ) : (
+                          <>
+                            <Crown className="w-3 h-3" strokeWidth={2.5} />
+                            Pro
+                          </>
+                        )}
                       </span>
                     )}
                     {item.subItems && (
@@ -21134,8 +21205,9 @@ export default function AgencyDashboard() {
                         key={subItem}
                         onClick={() => {
                           if (
-                            item.disabledSubItems &&
-                            item.disabledSubItems[subItem]
+                            item.disabled ||
+                            (item.disabledSubItems &&
+                              item.disabledSubItems[subItem])
                           ) {
                             navigate("/AgencySubscribe");
                             setSidebarOpen(false);
@@ -21166,7 +21238,7 @@ export default function AgencyDashboard() {
                           activeTab === item.id && activeSubTab === subItem
                             ? "text-indigo-700 bg-indigo-50 font-bold"
                             : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                        } ${item.disabled || (item.disabledSubItems && item.disabledSubItems[subItem]) ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         <span className="truncate">
                           {getSidebarSubItemLabel(subItem)}
@@ -21174,7 +21246,8 @@ export default function AgencyDashboard() {
                         <span className="flex items-center gap-2">
                           {item.disabledSubItems &&
                             item.disabledSubItems[subItem] && (
-                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              <span className="flex items-center gap-1 bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0">
+                                <Crown className="w-3 h-3" strokeWidth={2.5} />
                                 Pro
                               </span>
                             )}
