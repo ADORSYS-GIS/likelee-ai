@@ -1990,48 +1990,6 @@ const BrandConnectionsView = ({
                                 </span>
                               </div>
                             )}
-                          {(() => {
-                            const pay = String(
-                              offer?.payment_status || "unpaid",
-                            ).toLowerCase();
-                            const canEdit =
-                              pay !== "processing" &&
-                              pay !== "paid" &&
-                              !assignmentLockedForSelectedOffer;
-                            return (
-                              <Button
-                                variant="outline"
-                                className="border-indigo-200 text-indigo-700 font-bold"
-                                disabled={!canEdit}
-                                onClick={() =>
-                                  setAssignDialog({
-                                    open: true,
-                                    offerId: selectedOfferId,
-                                    talentId: "",
-                                  })
-                                }
-                                title={
-                                  assignmentLockedForSelectedOffer
-                                    ? selectedOfferContractSigned
-                                      ? "Contract is already signed. Assigned talents can’t be changed."
-                                      : "Assignments are locked after the contract is sent."
-                                    : undefined
-                                }
-                              >
-                                <User className="h-4 w-4 mr-2" />
-                                {tBrand("contractHub.assignTalent", {
-                                  defaultValue: "Assign Talent",
-                                })}
-                              </Button>
-                            );
-                          })()}
-                          {assignmentLockedForSelectedOffer && (
-                            <p className="text-xs text-gray-500">
-                              {selectedOfferContractSigned
-                                ? "Contract is already signed and you can’t change assigned talents."
-                                : "Talent assignments are locked because the contract was already sent."}
-                            </p>
-                          )}
                         </div>
 
                         <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
@@ -2095,30 +2053,11 @@ const BrandConnectionsView = ({
                                           <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => {
-                                              if (
-                                                creatorId &&
-                                                onMessageTalent
-                                              ) {
-                                                onMessageTalent(creatorId);
-                                              } else {
-                                                // Fallback: open asset request dialog
-                                                setMessageDialog({
-                                                  open: true,
-                                                  offerId: selectedOfferId,
-                                                  talentId: tid,
-                                                  title: "",
-                                                  message: "",
-                                                  file: null,
-                                                  sending: false,
-                                                });
-                                              }
-                                            }}
+                                            onClick={() => navigate("/AgencyDashboard?tab=messages")}
                                           >
-                                            Send Message
+                                            Messages
                                           </Button>
                                         </div>
-                                      </div>
                                     );
                                   })}
                                 </div>
@@ -2466,27 +2405,6 @@ const BrandConnectionsView = ({
                                   </Button>
                                 );
                               })()}
-                            {isFullySigned && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-indigo-200 text-indigo-700 font-bold"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setAssignDialog({
-                                    open: true,
-                                    offerId,
-                                    talentId: "",
-                                  });
-                                }}
-                              >
-                                <User className="h-4 w-4 mr-2" />
-                                {tBrand("contractHub.assignTalent", {
-                                  defaultValue: "Assign Talent",
-                                })}
-                              </Button>
-                            )}
-                          </div>
                         </div>
 
                         {/* Brief & Scope body */}

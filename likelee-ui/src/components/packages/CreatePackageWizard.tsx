@@ -681,6 +681,18 @@ export function CreatePackageWizard({
         .map((it: any) => String(it?.talent_id || it?.id || "").trim())
         .filter(Boolean);
 
+      // Resolve the connected brand's name/email to use as the client identity
+      // so the "Sending as" section on the package view shows the real brand.
+      const selectedBrandConnection = (connectedBrands || []).find(
+        (c: any) => String(c?.brand_id || "").trim() === selectedBrandId.trim(),
+      );
+      const brandClientName = String(
+        selectedBrandConnection?.brands?.company_name || "",
+      ).trim();
+      const brandClientEmail = String(
+        selectedBrandConnection?.brands?.email || "",
+      ).trim();
+
       const standardPackagePayload = {
         ...formData,
         is_template: false,
@@ -698,9 +710,8 @@ export function CreatePackageWizard({
           wizard_source: "talent_packages",
           offer_id: offerContext.offerId,
         },
-        // Offer mode: bypass legacy email system and set neutral client name for logs
-        client_email: "",
-        client_name: "Brand Portal",
+        client_email: brandClientEmail,
+        client_name: brandClientName,
       };
 
       const offerPayload = {

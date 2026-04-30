@@ -989,3 +989,108 @@ pub async fn get_brand_storage_analytics(
         by_mime_type,
     }))
 }
+
+/// Lightweight upload endpoint for campaign brief assets (reference images and brand guideline PDFs).
+/// Stores the file in brand storage and returns `{ url }` so the campaign brief builder can
+/// embed the public URL directly in the brief snapshot.
+pub async fn upload_brand_brief_asset(
+    State(state): State<AppState>,
+    user: AuthUser,
+    mut multipart: Multipart,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_brand_access(&state, &user).await?;
+    let brand_id = access.organization_id;
+
+    let mut file_name: Option<String> = None;
+    let mut mime_type: Option<String> = None;
+    let mut bytes: Vec<u8> = vec![];
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+    {
+        if field.name().unwrap_or("") == "file" {
+            file_name = field.file_name().map(|s| s.to_string());
+            mime_type = field.content_type().map(|s| s.to_string());
+            let data = field
+                .bytes()
+                .await
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+            bytes = data.to_vec();
+        }
+    }
+
+    if bytes.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file".into()));
+    }
+
+    let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
+    let sanitized = sanitize_file_name(&fname);
+    let path = canonical_object_path(
+        &format!("brands/{brand_id}/brief-assets"),
+        &sanitized,
+        chrono::Utc::now().timestamp_millis(),
+    );
+
+    // Brief assets are public so they can be embedded in brief snapshots viewed by creators/agencies.
+    let uploaded =
+        upload_object(&state, StorageVisibility::Public, &path, bytes.clone(), mime_type.as_deref())
+            .await?;
+    let public_url = uploaded.public_url.clone();
+
+    // Record in brand_files for storage quota tracking
+    let new_size = bytes.len() as i64;
+    let insert = serde_json::json!({
+        "brand_id": brand_id,
+        "file_name": fname,
+        "storage_bucket": uploaded.bucket,
+        "storage_path": uploaded.path,
+        "public_url": public_url,
+        "size_bytes": new_size,
+        "mime_type": mime_type,
+        "source_type": "brief_asset",
+    });
+    let resp = state
+        .pg
+        .from("brand_files")
+        .insert(insert.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let id = arr
+        .first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let storage_record = StorageAssetRecord {
+        owner_type: StorageOwnerType::Brand,
+        owner_id: brand_id.clone(),
+        context_type: StorageContextType::BrandStorage,
+        context_id: None,
+        visibility: StorageVisibility::Public,
+        object_path: uploaded.path.clone(),
+        original_file_name: Some(fname.clone()),
+        mime_type: mime_type.clone(),
+        size_bytes: Some(new_size),
+        checksum_sha256: None,
+        source_table: Some("brand_files".to_string()),
+        source_id: if id.is_empty() { None } else { Some(id.clone()) },
+        created_by: Some(user.id.clone()),
+        counts_toward_quota: true,
+    };
+    if let Err(err) = insert_asset_record(&state, &storage_record).await {
+        warn!(brand_id = %brand_id, error = %err.1, "failed to mirror brief asset into storage_assets");
+    }
+
+    info!(brand_id = %brand_id, file_id = %id, size_bytes = new_size, "brand_brief_asset_uploaded");
+
+    Ok(Json(serde_json::json!({ "url": public_url, "id": id, "file_name": fname })))
+}

@@ -1190,6 +1190,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::brand_storage::upload_brand_storage_file),
         )
         .route(
+            "/api/brand/brief-assets/upload",
+            post(crate::brand_storage::upload_brand_brief_asset),
+        )
+        .route(
             "/api/brand/storage/files/:file_id",
             delete(crate::brand_storage::delete_brand_storage_file),
         )
