@@ -3775,6 +3775,23 @@
             "bookingConfirmation": "Buchungsbestätigung",
             "invoiceEmail": "Rechnungs-E-Mail",
             "paymentReminder": "Zahlungserinnerung"
+          },
+          "defaults": {
+            "bookingConfirmation": {
+              "name": "Buchungsbestätigung",
+              "subject": "Buchung bestätigt - {client_name}",
+              "body": "Hallo {talent_name},\n\nIhre Buchung mit {client_name} am {booking_date} um {call_time} wurde bestätigt.\n\nOrt: {location}\nTarif: {rate}\n\nMit freundlichen Grüßen,\n{agency_name}"
+            },
+            "invoiceEmail": {
+              "name": "Rechnungs-E-Mail",
+              "subject": "Rechnung {invoice_number} von {agency_name}",
+              "body": "Sehr geehrte/r {client_name},\n\nAnbei finden Sie die Rechnung {invoice_number} über den Betrag von {invoice_total}.\n\nZahlungsbedingungen: {payment_terms}\n\nVielen Dank für Ihr Geschäft.\n\n{agency_name}"
+            },
+            "paymentReminder": {
+              "name": "Zahlungserinnerung",
+              "subject": "Zahlungserinnerung - Rechnung {invoice_number}",
+              "body": "Sehr geehrte/r {client_name},\n\nDies ist eine freundliche Erinnerung, dass die Rechnung {invoice_number} über {invoice_total} am {due_date} fällig ist.\n\nFalls Sie die Zahlung bereits geleistet haben, ignorieren Sie bitte diese Nachricht.\n\nVielen Dank,\n{agency_name}"
+            }
           }
         },
         "fileStorage": {

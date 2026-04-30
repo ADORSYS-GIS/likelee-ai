@@ -3738,6 +3738,23 @@
             "bookingConfirmation": "Confirmation de réservation",
             "invoiceEmail": "E-mail de facture",
             "paymentReminder": "Rappel de paiement"
+          },
+          "defaults": {
+            "bookingConfirmation": {
+              "name": "Confirmation de réservation",
+              "subject": "Réservation confirmée - {client_name}",
+              "body": "Bonjour {talent_name},\n\nVotre réservation avec {client_name} le {booking_date} à {call_time} a été confirmée.\n\nLieu : {location}\nTarif : {rate}\n\nCordialement,\n{agency_name}"
+            },
+            "invoiceEmail": {
+              "name": "E-mail de facture",
+              "subject": "Facture {invoice_number} de {agency_name}",
+              "body": "Cher/Chère {client_name},\n\nVeuillez trouver ci-joint la facture {invoice_number} pour le montant de {invoice_total}.\n\nConditions de paiement : {payment_terms}\n\nMerci pour votre collaboration.\n\n{agency_name}"
+            },
+            "paymentReminder": {
+              "name": "Rappel de paiement",
+              "subject": "Rappel de paiement - Facture {invoice_number}",
+              "body": "Cher/Chère {client_name},\n\nCeci est un rappel amical que la facture {invoice_number} pour {invoice_total} est due le {due_date}.\n\nSi vous avez déjà effectué le paiement, veuillez ignorer ce message.\n\nMerci,\n{agency_name}"
+            }
           }
         },
         "fileStorage": {
