@@ -114,7 +114,6 @@ const BrandConnectionsView = ({
 }: {
   onMessageTalent?: (creatorId: string) => void;
 }) => {
-const BrandConnectionsView = () => {
   const { t } = useTranslation();
   const tBrand = (path: string, options?: Record<string, any>) => {
     const fallback = t(

@@ -21871,169 +21871,6 @@ export default function AgencyDashboard() {
                   </div>
                 </div>
               </div>
-            )}
-            <Suspense fallback={<TabSkeleton />}>
-              {activeTab === "dashboard" && (
-                <AgencyDashboardView
-                  isSportsAgency={isSportsAgency}
-                  onKYC={handleKYC}
-                  agencyName={agencyName}
-                  rosterData={rosterTalents}
-                  licensingRequestsCount={pendingLicensingRequestsCount}
-                  overview={dashboardOverviewQuery.data}
-                  talentPerformance={talentPerformanceQuery.data}
-                  revenueBreakdown={revenueBreakdownQuery.data}
-                  licensingPipeline={licensingPipelineQuery.data}
-                  recentActivity={recentActivityQuery.data}
-                  kycStatus={agencyKycStatus}
-                  kycRejectionReason={agencyKycRejectionReason}
-                  kycLoading={kycLoading}
-                  onRefreshStatus={refreshAgencyKycStatus}
-                  refreshLoading={kycStatusRefreshing}
-                  canResumeKyc={
-                    String(agencyKycStatus || "")
-                      .trim()
-                      .toLowerCase() === "pending" && !!savedKycSessionUrl
-                  }
-                />
-              )}
-              {activeTab === "roster" && isRosterPrimarySubTab && (
-                <AgencyRosterView
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                  statusFilter={statusFilter}
-                  setStatusFilter={setStatusFilter}
-                  categoryFilter={categoryFilter}
-                  setCategoryFilter={setCategoryFilter}
-                  sortConfig={sortConfig}
-                  setSortConfig={setSortConfig}
-                  agencyMode={effectiveAgencyMode}
-                  rosterData={rosterTalents}
-                  activeCampaigns={activeCampaigns}
-                  earnings30dTotalCents={earnings30dTotalCents}
-                  earningsPrev30dTotalCents={earningsPrev30dTotalCents}
-                  agencyName={agencyName}
-                  agencyEmail={agencyEmail}
-                  agencyWebsite={agencyWebsite}
-                  logoUrl={agencyLogoUrl}
-                  kycStatus={agencyKycStatus}
-                  onEditProfile={goToEditProfile}
-                  onViewMarketplace={goToMarketplace}
-                  seatsLimit={seatsLimit}
-                  isLoading={rosterQuery.isLoading}
-                  onRosterChanged={() => rosterQuery.refetch()}
-                  isSportsAgency={isSportsAgency}
-                  initialOpenTalentId={openTalentId}
-                  onInitialTalentOpened={() => {
-                    setOpenTalentId(undefined);
-                    // Remove openTalentId from URL without triggering a re-render loop
-                    setSearchParams(
-                      (prev) => {
-                        const next = new URLSearchParams(prev);
-                        next.delete("openTalentId");
-                        return next;
-                      },
-                      { replace: true, preventScrollReset: true },
-                    );
-                  }}
-                />
-              )}
-              {activeTab === "roster" &&
-                activeSubTab === "Performance Tiers" && (
-                  <PerformanceTiers isSportsAgency={isSportsAgency} />
-                )}
-              {activeTab === "jobs" &&
-                activeSubTab === "Job Invites" &&
-                (hasProAccess ? (
-                  <AgencyJobInvitesView />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Jobs are available on the Pro plan.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeTab === "licensing" &&
-                activeSubTab === "Licensing Requests" && (
-                  <LicensingRequestsView
-                    isSportsAgency={isSportsAgency}
-                    onBrandRequestAccepted={(ctx) => {
-                      console.log("Brand request accepted, context:", ctx);
-                      setBrandRequestContext(ctx);
-                      setActiveView("licensing", "License Templates");
-                    }}
-                  />
-                )}
-              {activeTab === "licensing" &&
-                activeSubTab === "Brand Connections" &&
-                (agencyCanUseBrandConnections ? (
-                  <BrandConnectionsView
-                    onMessageTalent={(creatorId) => {
-                      setMessagingCreatorId(creatorId);
-                      setActiveTab("messages");
-                    }}
-                  />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Brand Connections are available on paid agency plans only.
-                    </div>
-                    <div className="mt-4">
-                      <Button
-                        className="rounded-xl font-bold"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        View plans
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              {activeTab === "brand-connections" &&
-                (agencyCanUseBrandConnections ? (
-                  <BrandConnectionsView
-                    onMessageTalent={(creatorId) => {
-                      setMessagingCreatorId(creatorId);
-                      setActiveTab("messages");
-                    }}
-                  />
-                ) : (
-                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">
-                      Upgrade required
-                    </div>
-                    <div className="text-gray-500 font-medium mt-1">
-                      Brand Connections are available on paid agency plans only.
-                    </div>
-                  )}
-
-                  {!agencyBillingLoading &&
-                    agencySubscriptionLocked &&
-                    !agencyTrialActive && (
-                      <Button
-                        type="button"
-                        className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
-                        onClick={() => navigate("/agencysubscribe")}
-                      >
-                        {t("agencyDashboard.navigation.choosePlan")}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    )}
-                </div>
-              </div>
             </div>
           )}
           <Suspense fallback={<TabSkeleton />}>
@@ -22253,24 +22090,29 @@ export default function AgencyDashboard() {
                   licenseComplianceData={LICENSE_COMPLIANCE_DATA}
                   talentData={TALENT_DATA}
                 />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Advanced Analytics is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+              )}
+              {activeTab === "analytics" &&
+                activeSubTab === "Analytics Dashboard" &&
+                (hasProAccess ? (
+                  <ScoutingAnalyticsTab />
+                ) : (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">
+                      Upgrade required
+                    </div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Advanced Analytics is available on the Pro plan.
+                    </div>
+                    <div className="mt-4">
+                      <Button
+                        className="rounded-xl font-bold"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        View plans
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
             {activeTab === "analytics" &&
               activeSubTab === "Royalties & Payouts" && (
                 <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
