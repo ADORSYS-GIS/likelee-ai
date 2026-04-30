@@ -19282,8 +19282,8 @@ export default function AgencyDashboard() {
 
     return null;
   }, [agencyProfileQuery.data, profile]);
-  const hasIrlBookingAddon = irlAddonEntitlement === true || agencyTrialActive;
-  const irlAddonLocked = irlAddonEntitlement === false && !agencyTrialActive;
+  const hasIrlBookingAddon = irlAddonEntitlement === true;
+  const irlAddonLocked = irlAddonEntitlement !== true;
   const effectiveAgencyMode: "AI" | "IRL" =
     agencyMode === "IRL" && hasIrlBookingAddon ? "IRL" : "AI";
   const isMobile = useIsMobile();
