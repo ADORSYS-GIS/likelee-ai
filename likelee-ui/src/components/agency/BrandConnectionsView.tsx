@@ -2053,11 +2053,16 @@ const BrandConnectionsView = ({
                                           <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={() => navigate("/AgencyDashboard?tab=messages")}
+                                            onClick={() =>
+                                              navigate(
+                                                "/AgencyDashboard?tab=messages",
+                                              )
+                                            }
                                           >
                                             Messages
                                           </Button>
                                         </div>
+                                      </div>
                                     );
                                   })}
                                 </div>
@@ -2406,6 +2411,7 @@ const BrandConnectionsView = ({
                                 );
                               })()}
                         </div>
+                      </div>
 
                         {/* Brief & Scope body */}
                         <div className="px-6 py-5 space-y-5">
