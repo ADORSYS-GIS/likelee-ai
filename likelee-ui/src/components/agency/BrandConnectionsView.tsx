@@ -63,6 +63,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
+import { DashboardSectionHeader } from "@/components/dashboard/DashboardResponsive";
+import { DashboardTabRail } from "@/components/dashboard/DashboardResponsive";
 
 const extractFirstNumber = (value: unknown): number => {
   const raw = String(value ?? "").trim();

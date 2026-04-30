@@ -144,6 +144,7 @@ import {
   FolderCheck,
   Gift,
   MessageSquare,
+  ExternalLink,
 } from "lucide-react";
 import { useUnreadMessages } from "@/hooks/useChat";
 import i18n from "@/i18n";
@@ -22190,8 +22191,6 @@ export default function AgencyDashboard() {
                 setIsProspectModalOpen={setIsProspectModalOpen}
                 prospectToEdit={prospectToEdit}
                 setProspectToEdit={setProspectToEdit}
-                isSavingEvent={isSavingEvent}
-                setIsSavingEvent={setIsSavingEvent}
               />
             )}
             {activeTab === "talent-packages" && (
