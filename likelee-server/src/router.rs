@@ -945,6 +945,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::reset_monthly_budget_alerts),
         )
         .route(
+            "/api/cron/license-expiration-alerts",
+            post(crate::billing::check_license_expiration_alerts_cron),
+        )
+        .route(
             "/api/brand/campaigns",
             post(crate::brand_campaigns::create_campaign)
                 .get(crate::brand_campaigns::list_campaigns),

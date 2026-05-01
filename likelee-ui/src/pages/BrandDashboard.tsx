@@ -57,6 +57,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import {
   Search,
   Bell,
@@ -756,6 +757,16 @@ export default function BrandDashboard() {
   const [contractSearch, setContractSearch] = useState("");
   const [contractSort, setContractSort] = useState("newest");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
+  const [notificationPrefs, setNotificationPrefs] = useState<
+    Record<string, boolean>
+  >({
+    newProjectAlerts: true,
+    deliverableSubmissions: true,
+    approvalReminders: true,
+    licenseExpirationAlerts: true,
+  });
+  const [isSavingNotificationPrefs, setIsSavingNotificationPrefs] =
+    useState(false);
   const { toast } = useToast();
   const brandPlanTier = normalizeBrandPlanTier(profile?.plan_tier);
   const brandSummaryTheme = brandPlanSummaryTheme(brandPlanTier);
@@ -1130,6 +1141,18 @@ export default function BrandDashboard() {
           contact_email: profile?.email || prev?.contact_email,
           logo: profile?.logo_url || "",
         }));
+        if (
+          profile?.notification_prefs &&
+          typeof profile.notification_prefs === "object"
+        ) {
+          const prefs = profile.notification_prefs as Record<string, boolean>;
+          setNotificationPrefs({
+            newProjectAlerts: prefs.newProjectAlerts ?? true,
+            deliverableSubmissions: prefs.deliverableSubmissions ?? true,
+            approvalReminders: prefs.approvalReminders ?? true,
+            licenseExpirationAlerts: prefs.licenseExpirationAlerts ?? true,
+          });
+        }
       } catch {
         // Keep mock fallback on failure.
       }
@@ -2465,6 +2488,31 @@ export default function BrandDashboard() {
 
   const handleSaveProfile = () => {
     toast({ title: "Success", description: "Profile updated! (Demo mode)" });
+  };
+
+  const handleToggleNotificationPref = async (
+    prefId: string,
+    value: boolean,
+  ) => {
+    const newPrefs = { ...notificationPrefs, [prefId]: value };
+    setNotificationPrefs(newPrefs);
+    setIsSavingNotificationPrefs(true);
+    try {
+      await base44.post("/api/brand-profile", { notification_prefs: newPrefs });
+      toast({
+        title: "Preference saved",
+        description: "Your notification setting has been updated.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to save preference",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+      setNotificationPrefs(notificationPrefs);
+    } finally {
+      setIsSavingNotificationPrefs(false);
+    }
   };
 
   const handleShareBrief = (campaignId) => {
@@ -9826,28 +9874,28 @@ export default function BrandDashboard() {
             <div className="space-y-2">
               {[
                 {
+                  id: "newProjectAlerts",
                   title: "New Project Alerts",
-                  desc: "When talent accepts or delivers assets",
+                  desc: "When offers are sent, accepted, or contracts are ready to sign",
                 },
                 {
+                  id: "deliverableSubmissions",
                   title: "Deliverable Submissions",
-                  desc: "When creators submit work for approval",
+                  desc: "When creators submit deliverables directly to the brand",
                 },
                 {
+                  id: "approvalReminders",
                   title: "Approval Reminders",
-                  desc: "48-hour countdown notifications",
+                  desc: "When deliverables are ready for your review",
                 },
                 {
+                  id: "licenseExpirationAlerts",
                   title: "License Expiration Alerts",
-                  desc: "30-day advance notice",
+                  desc: "10-day advance notice",
                 },
-                {
-                  title: "Monthly Analytics Summary",
-                  desc: "Monthly performance email report",
-                },
-              ].map((pref, i) => (
+              ].map((pref) => (
                 <div
-                  key={i}
+                  key={pref.id}
                   className="flex items-center justify-between py-6 border-b border-gray-100 last:border-0"
                 >
                   <div className="pr-12">
@@ -9858,7 +9906,14 @@ export default function BrandDashboard() {
                       {pref.desc}
                     </p>
                   </div>
-                  <Checkbox className="w-6 h-6 rounded-none border-2 border-gray-300 data-[state=checked]:bg-[#F7B750] data-[state=checked]:border-[#F7B750]" />
+                  <Switch
+                    checked={notificationPrefs[pref.id] ?? true}
+                    onCheckedChange={(val) =>
+                      handleToggleNotificationPref(pref.id, val)
+                    }
+                    disabled={isSavingNotificationPrefs}
+                    className="data-[state=checked]:bg-[#F7B750]"
+                  />
                 </div>
               ))}
             </div>
