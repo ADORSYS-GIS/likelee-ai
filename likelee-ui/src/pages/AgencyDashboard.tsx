@@ -20409,7 +20409,7 @@ export default function AgencyDashboard() {
                       >
                         {agencyTrialActive ? (
                           <span className="inline-flex items-center gap-2">
-                            <span>{agencyTrialTierLabel} TRIAL</span>
+                            <span>{agencyDisplayPlanLabel} TRIAL</span>
                             {agencyTrialCountdown ? (
                               <span className="text-[11px] font-black tracking-normal opacity-95">
                                 {agencyTrialCountdown}
