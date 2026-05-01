@@ -652,8 +652,11 @@ pub async fn create_builder_token(
                     .iter()
                     .any(|r| r.trim().eq_ignore_ascii_case("second party"));
 
-                let document_html =
-                    render_contract_to_html(&rendered_contract, &contract_body_format, include_second_party);
+                let document_html = render_contract_to_html(
+                    &rendered_contract,
+                    &contract_body_format,
+                    include_second_party,
+                );
 
                 let docuseal = DocuSealClient::new(
                     state.docuseal_api_key.clone(),
