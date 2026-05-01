@@ -64,6 +64,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
+import { useAuth } from "@/auth/AuthProvider";
 import {
   DashboardSectionHeader,
   DashboardTabRail,
@@ -116,12 +117,23 @@ const extractDeliverableCount = (value: unknown): number => {
 
 const BrandConnectionsView = ({
   onMessageTalent,
+  requestsCount,
+  offersCount,
+  feedbackCount,
 }: {
   onMessageTalent?: (creatorId: string) => void;
+  requestsCount?: number;
+  offersCount?: number;
+  feedbackCount?: number;
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const tBrand = (path: string, options?: Record<string, unknown>) =>
+    t(`agencyDashboard.analytics.brandConnections.${path}`, options);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const { hasPermission, loading: accessLoading } = useTeamAccess("agency");
   const canViewConnections = hasPermission("view_brand_connections");
   const canManageConnections = hasPermission("manage_brand_connections");

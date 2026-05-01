@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 type TabItem = {
   id: string;
-  label: string;
+  label: React.ReactNode;
   onClick: () => void;
   active?: boolean;
 };
