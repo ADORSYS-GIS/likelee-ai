@@ -12820,77 +12820,56 @@ export default function BrandDashboard() {
                 ) : (
                   <ul className="space-y-1">
                     {(() => {
-                      // Fallback chain for selected talent IDs:
-                      // 1. Public package interactions (type "selected") — set by brand in PublicPackageView
-                      // 2. meta.selected_talent_ids — set by older packages or direct API calls
-                      // 3. All items in package_snapshot — last resort for legacy packages
                       const publicPkg = confirmingDonePkgPublicData;
 
-                      const fromInteractions = (publicPkg?.interactions || [])
+                      // Selected IDs come exclusively from the public package
+                      // interactions (type "selected") — these are written when
+                      // the brand clicks the ✓ button in PublicPackageView.
+                      // meta.selected_talent_ids is only written AFTER brand-done
+                      // is called, so it's never available at this point.
+                      const selectedIds = (publicPkg?.interactions || [])
                         .filter((i: any) => i?.type === "selected")
                         .map((i: any) => String(i?.talent_id || "").trim())
                         .filter(Boolean);
 
-                      const fromMeta: string[] = Array.isArray(
-                        confirmingDonePkg?.meta?.selected_talent_ids,
-                      )
-                        ? confirmingDonePkg.meta.selected_talent_ids
-                            .map((id: any) => String(id || "").trim())
-                            .filter(Boolean)
+                      if (selectedIds.length === 0) {
+                        return (
+                          <li className="text-sm italic text-gray-500">
+                            No talent selected yet. Open the package, select
+                            the talent you want, then come back to confirm.
+                          </li>
+                        );
+                      }
+
+                      // Resolve names from the public package items — these come
+                      // from agency_users and have stage_name / full_legal_name.
+                      // The package_snapshot.items only carry a stale talent_name
+                      // string and must not be used as the primary source.
+                      const publicItems: any[] = Array.isArray(publicPkg?.items)
+                        ? publicPkg.items
                         : [];
 
-                      // Use whichever source has data, in priority order
-                      const selectedIds =
-                        fromInteractions.length > 0
-                          ? fromInteractions
-                          : fromMeta.length > 0
-                            ? fromMeta
-                            : [];
-
-                      const pkgItems: any[] = Array.isArray(publicPkg?.items)
-                        ? publicPkg.items
-                        : Array.isArray(
-                              confirmingDonePkg?.package_snapshot?.items,
-                            )
-                          ? confirmingDonePkg.package_snapshot.items
-                          : [];
-
-                      // When selectedIds is empty (fetch failed or legacy package with no
-                      // interactions), show all talents from the snapshot so the brand
-                      // can still confirm — never block on a fetch error.
-                      const itemsToShow =
-                        selectedIds.length > 0
-                          ? pkgItems.filter((item: any) => {
-                              const id = String(
-                                item?.talent_id || item?.id || "",
-                              ).trim();
-                              return id && selectedIds.includes(id);
-                            })
-                          : pkgItems;
-
-                      const selectedNames = itemsToShow.map(
-                        (item: any) =>
-                          item?.talent_name ||
+                      // Build a lookup: talent_id → best display name
+                      const nameById = new Map<string, string>();
+                      for (const item of publicItems) {
+                        const id = String(item?.talent_id || item?.id || "").trim();
+                        if (!id) continue;
+                        const name =
                           item?.talent?.stage_name ||
                           item?.talent?.full_legal_name ||
                           item?.talent?.full_name ||
-                          "Unnamed Talent",
-                      );
+                          item?.talent_name ||
+                          null;
+                        if (name) nameById.set(id, name);
+                      }
 
-                      if (selectedNames.length === 0)
-                        return (
-                          <li className="text-sm italic text-gray-500">
-                            No talent selected yet. Open the package and select
-                            talents before confirming.
-                          </li>
-                        );
-                      return selectedNames.map((name: string, idx: number) => (
+                      return selectedIds.map((id: string, idx: number) => (
                         <li
                           key={idx}
                           className="text-sm font-medium text-gray-900 flex items-center gap-2"
                         >
                           <CheckCircle2 className="w-3 h-3 text-green-600" />
-                          {name}
+                          {nameById.get(id) || id}
                         </li>
                       ));
                     })()}
@@ -12910,39 +12889,24 @@ export default function BrandDashboard() {
             </AlertDialogCancel>
             <AlertDialogAction
               className="rounded-none bg-black hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loadingConfirmingDonePkgPublicData}
+              disabled={loadingConfirmingDonePkgPublicData || (() => {
+                const selectedIds = (confirmingDonePkgPublicData?.interactions || [])
+                  .filter((i: any) => i?.type === "selected")
+                  .map((i: any) => String(i?.talent_id || "").trim())
+                  .filter(Boolean);
+                return selectedIds.length === 0;
+              })()}
               onClick={async () => {
                 const pkg = confirmingDonePkg;
                 if (!pkg) return;
                 try {
-                  // Fallback chain for selected_talent_ids (mirrors display logic above)
-                  const publicPkg = confirmingDonePkgPublicData;
-                  const fromInteractions = (publicPkg?.interactions || [])
+                  // selected_talent_ids come from the public package interactions
+                  // (type "selected") — the only reliable source before brand-done
+                  // is called. meta.selected_talent_ids doesn't exist yet at this point.
+                  const selectedTalentIds = (confirmingDonePkgPublicData?.interactions || [])
                     .filter((i: any) => i?.type === "selected")
                     .map((i: any) => String(i?.talent_id || "").trim())
                     .filter(Boolean);
-                  const fromMeta: string[] = Array.isArray(
-                    pkg?.meta?.selected_talent_ids,
-                  )
-                    ? pkg.meta.selected_talent_ids
-                        .map((id: any) => String(id || "").trim())
-                        .filter(Boolean)
-                    : [];
-                  const fromSnapshot: string[] = Array.isArray(
-                    pkg?.package_snapshot?.items,
-                  )
-                    ? pkg.package_snapshot.items
-                        .map((item: any) =>
-                          String(item?.talent_id || item?.id || "").trim(),
-                        )
-                        .filter(Boolean)
-                    : [];
-                  const selectedTalentIds =
-                    fromInteractions.length > 0
-                      ? fromInteractions
-                      : fromMeta.length > 0
-                        ? fromMeta
-                        : fromSnapshot;
 
                   await base44.post(
                     `/api/campaign-offers/${encodeURIComponent(String(pkg?.offer_id || ""))}/packages/brand-done`,

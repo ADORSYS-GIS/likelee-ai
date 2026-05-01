@@ -247,14 +247,21 @@ export function CreatePackageWizard({
             : Array.isArray(it?.asset_ids)
               ? it.asset_ids
               : [];
+          // Resolve the best display name from all available sources.
+          const resolvedName =
+            embeddedTalent?.stage_name ||
+            embeddedTalent?.full_legal_name ||
+            embeddedTalent?.full_name ||
+            it?.talent_name ||
+            null;
           return {
             ...it,
             talent_id: talentId,
             assets,
             talent:
               embeddedTalent ||
-              (it?.talent_name
-                ? { id: talentId, full_name: it.talent_name }
+              (resolvedName
+                ? { id: talentId, full_name: resolvedName }
                 : null),
           };
         })
@@ -374,7 +381,7 @@ export function CreatePackageWizard({
     for (const t of rows) {
       const creatorKey = norm((t as any)?.creator_id);
       const emailKey = norm((t as any)?.email);
-      const nameKey = norm((t as any)?.full_name);
+      const nameKey = norm((t as any)?.stage_name || (t as any)?.full_legal_name || (t as any)?.full_name);
       const idKey = norm((t as any)?.id);
       const key = creatorKey || emailKey || nameKey || idKey;
       const existing = byKey.get(key);
@@ -710,7 +717,11 @@ export function CreatePackageWizard({
           consent_items: normalizedConsentItems,
           items: itemsArray.map((item: any) => ({
             talent_id: item.talent_id || item.id,
-            talent_name: item?.talent?.full_name || item?.talent_name,
+            talent_name:
+              item?.talent?.stage_name ||
+              item?.talent?.full_legal_name ||
+              item?.talent?.full_name ||
+              item?.talent_name,
             asset_ids: (item.assets || []).map((asset: any) => ({
               asset_id: asset.asset_id || asset.id,
               asset_type: asset.asset_type || asset.type || "image",
@@ -1024,10 +1035,17 @@ export function CreatePackageWizard({
                           const resolvedTalent = item?.talent ||
                             (tid ? talentById.get(tid) : null) || {
                               id: tid,
-                              full_name: item?.talent_name || "Talent",
+                              full_name:
+                                item?.talent?.stage_name ||
+                                item?.talent?.full_legal_name ||
+                                item?.talent?.full_name ||
+                                item?.talent_name ||
+                                "Talent",
                             };
                           const talentName = String(
-                            resolvedTalent?.full_name ||
+                            resolvedTalent?.stage_name ||
+                              resolvedTalent?.full_legal_name ||
+                              resolvedTalent?.full_name ||
                               item?.talent_name ||
                               "Talent",
                           ).trim();
@@ -1737,7 +1755,7 @@ export function CreatePackageWizard({
                       </div>
                       <div className="min-w-0 flex-1">
                         <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
-                          {talent.full_name}
+                          {talent.stage_name || talent.full_legal_name || talent.full_name}
                         </h6>
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
                           {talent.categories?.[0] || "Member"}
@@ -1834,7 +1852,7 @@ export function CreatePackageWizard({
               </h3>
               <p className="text-sm text-gray-500 mt-2 leading-relaxed">
                 <span className="font-bold text-gray-700">
-                  {inviteRequiredTalent?.full_name || "This talent"}
+                  {inviteRequiredTalent?.stage_name || inviteRequiredTalent?.full_legal_name || inviteRequiredTalent?.full_name || "This talent"}
                 </span>{" "}
                 hasn't accepted their portal invite yet. They need to complete
                 onboarding before they can be added to a package or assigned to
