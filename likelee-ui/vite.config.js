@@ -22,6 +22,9 @@ export default async ({ mode }) => {
         injectManifest: {
           minify: false,
           maximumFileSizeToCacheInBytes: 20000000,
+          globDirectory: "dist",
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff,woff2}"],
+          globIgnores: ["**/node_modules/**", "sw.js", "sw.mjs"],
         },
         registerType: "autoUpdate",
         injectRegister: "auto",
