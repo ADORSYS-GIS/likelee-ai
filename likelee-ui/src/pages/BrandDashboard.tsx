@@ -1135,11 +1135,11 @@ export default function BrandDashboard() {
         const profile = await getBrandProfile();
         if (!mounted || !profile) return;
         setBrand((prev) => ({
-          ...prev,
-          name: profile?.company_name || profile?.name || prev.name || "Brand",
-          industry: profile?.industry || prev.industry,
-          website: profile?.website || prev.website,
-          contact_email: profile?.email || prev.contact_email,
+          ...(prev ?? {}),
+          name: profile?.company_name || profile?.name || prev?.name || "Brand",
+          industry: profile?.industry || prev?.industry,
+          website: profile?.website || prev?.website,
+          contact_email: profile?.email || prev?.contact_email,
           logo: profile?.logo_url || "",
         }));
       } catch {

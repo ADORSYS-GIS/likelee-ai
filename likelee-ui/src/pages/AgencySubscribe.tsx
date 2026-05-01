@@ -1279,12 +1279,35 @@ export default function AgencySubscribe() {
           className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto"
         >
           {/* Card: Basic */}
-          <Card className="rounded-2xl border-x border-b border-t-4 border-t-[#3B82F6] border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
+          <Card className="rounded-2xl border-x border-b border-t-4 border-t-green-500 border-x-gray-200 border-b-gray-200 bg-white p-8 relative flex flex-col shadow-sm">
             <div className="absolute top-6 left-8 flex justify-between items-center w-[calc(100%-4rem)]">
-              <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-600 font-bold text-[10px] tracking-[0.15em] rounded-full uppercase">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
                 Basic
               </span>
-              <span className="px-2 py-1 bg-blue-50 text-blue-600 font-bold text-[10px] tracking-[0.15em] rounded uppercase">
+              <span className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-600 font-bold text-[10px] tracking-[0.15em] rounded-full uppercase">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="10"
+                  height="10"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  stroke="none"
+                >
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
                 Most Popular
               </span>
             </div>
@@ -1401,7 +1424,6 @@ export default function AgencySubscribe() {
                 "Licensing Requests",
                 "Active Licenses",
                 "License Templates",
-                "Basic Analytics Dashboard",
                 "Invoice Generation & Management",
                 "Payment Tracking",
                 "Talent Statements",
