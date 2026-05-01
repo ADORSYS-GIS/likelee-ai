@@ -1793,14 +1793,16 @@ export default function BrandCampaignDashboard({
         files.map(async (file) => {
           const formData = new FormData();
           formData.append("file", file);
-          const res = await fetch(api("/api/brand/brief-assets/upload"), {
+          formData.append("visibility", "public");
+          formData.append("source_type", "brief_reference_image");
+          const res = await fetch(api("/api/brand/storage/files/upload"), {
             method: "POST",
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
             body: formData,
           });
           if (!res.ok) throw new Error(await res.text());
           const data = await res.json();
-          return { name: file.name, url: data.url };
+          return { name: file.name, url: data.public_url };
         }),
       );
 
@@ -1840,14 +1842,16 @@ export default function BrandCampaignDashboard({
         files.map(async (file) => {
           const formData = new FormData();
           formData.append("file", file);
-          const res = await fetch(api("/api/brand/brief-assets/upload"), {
+          formData.append("visibility", "public");
+          formData.append("source_type", "brief_brand_guideline");
+          const res = await fetch(api("/api/brand/storage/files/upload"), {
             method: "POST",
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
             body: formData,
           });
           if (!res.ok) throw new Error(await res.text());
           const data = await res.json();
-          return { name: file.name, size: file.size, url: data.url };
+          return { name: file.name, size: file.size, url: data.public_url };
         }),
       );
 
