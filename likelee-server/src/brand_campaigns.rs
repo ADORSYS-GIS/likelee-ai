@@ -5268,7 +5268,10 @@ pub struct OfferPackageInteractionsPath {
 pub async fn get_brand_package_interactions(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(OfferPackageInteractionsPath { offer_id, package_id }): Path<OfferPackageInteractionsPath>,
+    Path(OfferPackageInteractionsPath {
+        offer_id,
+        package_id,
+    }): Path<OfferPackageInteractionsPath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // 1. Verify the caller is a brand and owns this offer.
     let offer = ensure_offer_access(&state, &user, &offer_id).await?;
@@ -5300,10 +5303,10 @@ pub async fn get_brand_package_interactions(
         return Err(sanitize_db_error(pkg_status.as_u16(), pkg_text));
     }
     let pkg_rows: Vec<serde_json::Value> = serde_json::from_str(&pkg_text).unwrap_or_default();
-    let pkg = pkg_rows.first().cloned().ok_or((
-        StatusCode::NOT_FOUND,
-        "package not found".to_string(),
-    ))?;
+    let pkg = pkg_rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "package not found".to_string()))?;
 
     // 3. Resolve the linked agency_talent_packages id from meta.
     //    The agency_package_id is written when the agency sends the package
@@ -5338,8 +5341,7 @@ pub async fn get_brand_package_interactions(
     if !int_status.is_success() {
         return Err(sanitize_db_error(int_status.as_u16(), int_text));
     }
-    let interactions: Vec<serde_json::Value> =
-        serde_json::from_str(&int_text).unwrap_or_default();
+    let interactions: Vec<serde_json::Value> = serde_json::from_str(&int_text).unwrap_or_default();
 
     // 5. Also fetch the package items so the frontend can resolve talent names
     //    without a second round-trip.

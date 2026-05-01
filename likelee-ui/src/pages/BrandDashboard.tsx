@@ -12838,8 +12838,8 @@ export default function BrandDashboard() {
                       if (selectedIds.length === 0) {
                         return (
                           <li className="text-sm italic text-gray-500">
-                            No talent selected yet. Open the package, select
-                            the talent you want, then come back to confirm.
+                            No talent selected yet. Open the package, select the
+                            talent you want, then come back to confirm.
                           </li>
                         );
                       }
@@ -12855,7 +12855,9 @@ export default function BrandDashboard() {
                       // Build a lookup: talent_id → best display name
                       const nameById = new Map<string, string>();
                       for (const item of publicItems) {
-                        const id = String(item?.talent_id || item?.id || "").trim();
+                        const id = String(
+                          item?.talent_id || item?.id || "",
+                        ).trim();
                         if (!id) continue;
                         const name =
                           item?.talent?.stage_name ||
@@ -12892,13 +12894,18 @@ export default function BrandDashboard() {
             </AlertDialogCancel>
             <AlertDialogAction
               className="rounded-none bg-black hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={loadingConfirmingDonePkgPublicData || (() => {
-                const selectedIds = (confirmingDonePkgPublicData?.interactions || [])
-                  .filter((i: any) => i?.type === "selected")
-                  .map((i: any) => String(i?.talent_id || "").trim())
-                  .filter(Boolean);
-                return selectedIds.length === 0;
-              })()}
+              disabled={
+                loadingConfirmingDonePkgPublicData ||
+                (() => {
+                  const selectedIds = (
+                    confirmingDonePkgPublicData?.interactions || []
+                  )
+                    .filter((i: any) => i?.type === "selected")
+                    .map((i: any) => String(i?.talent_id || "").trim())
+                    .filter(Boolean);
+                  return selectedIds.length === 0;
+                })()
+              }
               onClick={async () => {
                 const pkg = confirmingDonePkg;
                 if (!pkg) return;
@@ -12906,7 +12913,9 @@ export default function BrandDashboard() {
                   // selected_talent_ids come from the public package interactions
                   // (type "selected") — the only reliable source before brand-done
                   // is called. meta.selected_talent_ids doesn't exist yet at this point.
-                  const selectedTalentIds = (confirmingDonePkgPublicData?.interactions || [])
+                  const selectedTalentIds = (
+                    confirmingDonePkgPublicData?.interactions || []
+                  )
                     .filter((i: any) => i?.type === "selected")
                     .map((i: any) => String(i?.talent_id || "").trim())
                     .filter(Boolean);

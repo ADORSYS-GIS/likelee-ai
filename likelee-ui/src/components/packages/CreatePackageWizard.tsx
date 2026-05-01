@@ -260,9 +260,7 @@ export function CreatePackageWizard({
             assets,
             talent:
               embeddedTalent ||
-              (resolvedName
-                ? { id: talentId, full_name: resolvedName }
-                : null),
+              (resolvedName ? { id: talentId, full_name: resolvedName } : null),
           };
         })
         .filter(Boolean);
@@ -381,7 +379,11 @@ export function CreatePackageWizard({
     for (const t of rows) {
       const creatorKey = norm((t as any)?.creator_id);
       const emailKey = norm((t as any)?.email);
-      const nameKey = norm((t as any)?.stage_name || (t as any)?.full_legal_name || (t as any)?.full_name);
+      const nameKey = norm(
+        (t as any)?.stage_name ||
+          (t as any)?.full_legal_name ||
+          (t as any)?.full_name,
+      );
       const idKey = norm((t as any)?.id);
       const key = creatorKey || emailKey || nameKey || idKey;
       const existing = byKey.get(key);
@@ -1755,7 +1757,9 @@ export function CreatePackageWizard({
                       </div>
                       <div className="min-w-0 flex-1">
                         <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
-                          {talent.stage_name || talent.full_legal_name || talent.full_name}
+                          {talent.stage_name ||
+                            talent.full_legal_name ||
+                            talent.full_name}
                         </h6>
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
                           {talent.categories?.[0] || "Member"}
@@ -1852,7 +1856,10 @@ export function CreatePackageWizard({
               </h3>
               <p className="text-sm text-gray-500 mt-2 leading-relaxed">
                 <span className="font-bold text-gray-700">
-                  {inviteRequiredTalent?.stage_name || inviteRequiredTalent?.full_legal_name || inviteRequiredTalent?.full_name || "This talent"}
+                  {inviteRequiredTalent?.stage_name ||
+                    inviteRequiredTalent?.full_legal_name ||
+                    inviteRequiredTalent?.full_name ||
+                    "This talent"}
                 </span>{" "}
                 hasn't accepted their portal invite yet. They need to complete
                 onboarding before they can be added to a package or assigned to
