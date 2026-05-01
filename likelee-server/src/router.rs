@@ -1044,6 +1044,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::list_brand_inbox_packages),
         )
         .route(
+            "/api/campaign-offers/:offer_id/packages/:package_id/interactions",
+            get(crate::brand_campaigns::get_brand_package_interactions),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/packages/brand-done",
             post(crate::brand_campaigns::mark_brand_package_done),
         )

@@ -5249,6 +5249,128 @@ pub async fn send_offer_package(
     Ok(Json(json!({"status":"ok","package": row})))
 }
 
+/// GET /api/campaign-offers/:offer_id/packages/:package_id/interactions
+///
+/// Returns the interactions (favorites, callbacks, selections) recorded on the
+/// linked agency_talent_package for a specific offer package.
+///
+/// This is the authenticated counterpart to the public package endpoint.
+/// A brand user who owns the offer can fetch interactions without supplying
+/// the package password — their JWT is sufficient proof of ownership.
+/// This is the correct long-term pattern: password gates are for anonymous
+/// public viewers, not for the authenticated party who sent the offer.
+#[derive(Debug, Deserialize)]
+pub struct OfferPackageInteractionsPath {
+    pub offer_id: String,
+    pub package_id: String,
+}
+
+pub async fn get_brand_package_interactions(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferPackageInteractionsPath { offer_id, package_id }): Path<OfferPackageInteractionsPath>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Verify the caller is a brand and owns this offer.
+    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let brand_id = offer
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    // 2. Fetch the campaign_offer_packages row — must belong to this brand + offer.
+    let pkg_resp = state
+        .pg
+        .from("campaign_offer_packages")
+        .select("id,meta,agency_id,status")
+        .eq("id", &package_id)
+        .eq("offer_id", &offer_id)
+        .eq("brand_id", &brand_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let pkg_status = pkg_resp.status();
+    let pkg_text = pkg_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !pkg_status.is_success() {
+        return Err(sanitize_db_error(pkg_status.as_u16(), pkg_text));
+    }
+    let pkg_rows: Vec<serde_json::Value> = serde_json::from_str(&pkg_text).unwrap_or_default();
+    let pkg = pkg_rows.first().cloned().ok_or((
+        StatusCode::NOT_FOUND,
+        "package not found".to_string(),
+    ))?;
+
+    // 3. Resolve the linked agency_talent_packages id from meta.
+    //    The agency_package_id is written when the agency sends the package
+    //    via CreatePackageWizard and links it to the offer.
+    let agency_package_id = pkg
+        .get("meta")
+        .and_then(|m| m.get("agency_package_id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "no linked agency package found for this offer package".to_string(),
+        ))?;
+
+    // 4. Fetch interactions directly — no password check needed because the
+    //    brand is authenticated and owns the offer this package belongs to.
+    let interactions_resp = state
+        .pg
+        .from("agency_talent_package_interactions")
+        .select("talent_id,type,content,client_name,client_email,created_at")
+        .eq("package_id", &agency_package_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let int_status = interactions_resp.status();
+    let int_text = interactions_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !int_status.is_success() {
+        return Err(sanitize_db_error(int_status.as_u16(), int_text));
+    }
+    let interactions: Vec<serde_json::Value> =
+        serde_json::from_str(&int_text).unwrap_or_default();
+
+    // 5. Also fetch the package items so the frontend can resolve talent names
+    //    without a second round-trip.
+    let items_resp = state
+        .pg
+        .from("agency_talent_package_items")
+        .select("id,talent_id,creator_id,relationship_id,sort_order,talent:agency_users(id,stage_name,full_legal_name,profile_photo_url)")
+        .eq("package_id", &agency_package_id)
+        .order("sort_order.asc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let items_status = items_resp.status();
+    let items_text = items_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let items: Vec<serde_json::Value> = if items_status.is_success() {
+        serde_json::from_str(&items_text).unwrap_or_default()
+    } else {
+        vec![]
+    };
+
+    Ok(Json(json!({
+        "interactions": interactions,
+        "items": items,
+        "agency_package_id": agency_package_id,
+    })))
+}
+
 pub async fn list_brand_inbox_packages(
     State(state): State<AppState>,
     user: AuthUser,

@@ -4532,21 +4532,24 @@ export default function BrandDashboard() {
                       onClick={async () => {
                         setConfirmingDonePkg(pkg);
                         setConfirmingDonePkgPublicData(null);
-                        // Fetch the linked agency_talent_packages record to get
-                        // the brand's talent selections (stored as interactions
-                        // with type "selected" on the public package).
-                        const token = pkg?.meta?.agency_package_token;
-                        if (token) {
+                        // Fetch interactions via the authenticated brand endpoint.
+                        // This bypasses the public package password gate — the brand
+                        // is already authenticated and owns this offer, so their JWT
+                        // is sufficient. The public endpoint would 401 for
+                        // password-protected packages even though the brand has rights.
+                        const offerId = String(
+                          pkg?.offer_id || pkg?.campaign_offers?.id || "",
+                        ).trim();
+                        const packageId = String(pkg?.id || "").trim();
+                        if (offerId && packageId) {
                           setLoadingConfirmingDonePkgPublicData(true);
                           try {
                             const resp = await base44.get<any>(
-                              `/api/public/packages/${encodeURIComponent(token)}`,
+                              `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/${encodeURIComponent(packageId)}/interactions`,
                             );
-                            const publicPkg =
-                              resp?.package || resp?.data || resp;
-                            setConfirmingDonePkgPublicData(publicPkg);
+                            setConfirmingDonePkgPublicData(resp);
                           } catch {
-                            // non-fatal — dialog will show empty selection
+                            // non-fatal — dialog will show "no talent selected" message
                           } finally {
                             setLoadingConfirmingDonePkgPublicData(false);
                           }
