@@ -20,6 +20,8 @@ import {
 interface DashboardViewProps {
   isSportsAgency?: boolean;
   onKYC: () => void;
+  onReviewPendingApprovals?: () => void;
+  onReviewExpiringLicenses?: () => void;
   agencyName: string;
   rosterData: any[];
   kycStatus?: string | null;
@@ -39,6 +41,8 @@ interface DashboardViewProps {
 const DashboardView = ({
   isSportsAgency = false,
   onKYC,
+  onReviewPendingApprovals,
+  onReviewExpiringLicenses,
   agencyName,
   rosterData,
   kycStatus,
@@ -677,6 +681,7 @@ const DashboardView = ({
             <Button
               variant="default"
               className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
+              onClick={onReviewPendingApprovals}
             >
               Review Now
             </Button>
@@ -725,6 +730,7 @@ const DashboardView = ({
             <Button
               variant="outline"
               className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
+              onClick={onReviewExpiringLicenses}
             >
               Review
             </Button>

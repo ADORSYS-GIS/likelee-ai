@@ -20437,6 +20437,12 @@ export default function AgencyDashboard() {
                 <AgencyDashboardView
                   isSportsAgency={isSportsAgency}
                   onKYC={handleKYC}
+                  onReviewPendingApprovals={() =>
+                    setActiveView("licensing", "Licensing Requests")
+                  }
+                  onReviewExpiringLicenses={() =>
+                    setActiveView("licensing", "Active Licenses")
+                  }
                   agencyName={agencyName}
                   rosterData={rosterTalents}
                   licensingRequestsCount={pendingLicensingRequestsCount}
