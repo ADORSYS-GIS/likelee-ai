@@ -15,27 +15,7 @@ use chrono::{Duration, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::sync::{Mutex, OnceLock};
-use std::time::{Duration as StdDuration, Instant};
 use tracing::info;
-
-const LICENSE_EXPIRATION_CHECK_THROTTLE: StdDuration = StdDuration::from_secs(300);
-static LICENSE_EXPIRATION_CHECKS: OnceLock<Mutex<HashMap<String, Instant>>> = OnceLock::new();
-
-fn should_run_license_expiration_check(brand_id: &str) -> bool {
-    let now = Instant::now();
-    let cache = LICENSE_EXPIRATION_CHECKS.get_or_init(|| Mutex::new(HashMap::new()));
-    let mut guard = cache.lock().unwrap_or_else(|e| e.into_inner());
-
-    if let Some(last) = guard.get(brand_id) {
-        if now.duration_since(*last) < LICENSE_EXPIRATION_CHECK_THROTTLE {
-            return false;
-        }
-    }
-
-    guard.insert(brand_id.to_string(), now);
-    true
-}
 
 #[derive(Serialize, Clone)]
 pub struct LicensingRequestTalent {
@@ -550,16 +530,6 @@ pub async fn list_for_brand(
 
     let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
-    let state_for_notify = state.clone();
-    let brand_id_for_notify = effective_brand_id.clone();
-    tokio::spawn(async move {
-        if let Err(e) =
-            notify_brand_license_expirations_lazy(&state_for_notify, &brand_id_for_notify).await
-        {
-            tracing::warn!(error = %e, brand_id = %brand_id_for_notify, "license expiration check failed");
-        }
-    });
-
     let resp = state
         .pg
         .from("licensing_requests")
@@ -587,9 +557,6 @@ pub async fn notify_brand_license_expirations_lazy(
     state: &AppState,
     brand_id: &str,
 ) -> Result<(), String> {
-    if !should_run_license_expiration_check(brand_id) {
-        return Ok(());
-    }
     let today = Utc::now().date_naive();
     let end_window = today + Duration::days(10);
 
@@ -762,6 +729,39 @@ pub async fn notify_brand_license_expirations_lazy(
     }
 
     Ok(())
+}
+
+pub async fn check_license_expiration_alerts_all_brands(
+    state: &AppState,
+) -> Result<(usize, usize), String> {
+    let resp = state
+        .pg
+        .from("brands")
+        .select("id")
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if !resp.status().is_success() {
+        return Err(resp.text().await.unwrap_or_default());
+    }
+
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let brands: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let brands_count = brands.len();
+    let mut brands_checked = 0;
+
+    for brand in brands {
+        let brand_id = match brand.get("id").and_then(|v| v.as_str()) {
+            Some(id) if !id.trim().is_empty() => id.to_string(),
+            _ => continue,
+        };
+
+        let _ = notify_brand_license_expirations_lazy(state, &brand_id).await;
+        brands_checked += 1;
+    }
+
+    Ok((brands_count, brands_checked))
 }
 
 pub async fn update_status_bulk(

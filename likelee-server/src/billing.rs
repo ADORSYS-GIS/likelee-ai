@@ -5334,6 +5334,23 @@ pub async fn reset_monthly_budget_alerts(
     })))
 }
 
+pub async fn check_license_expiration_alerts_cron(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    verify_cron_auth(&headers, &state.cron_secret)?;
+
+    match crate::licensing_requests::check_license_expiration_alerts_all_brands(&state).await {
+        Ok((brands_checked, alerts_sent)) => Ok(Json(json!({
+            "success": true,
+            "alerts_sent": alerts_sent,
+            "brands_checked": brands_checked
+        }))),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
+    }
+}
+
 // ============================================================================
 // BRAND PAYMENT METHOD HANDLERS
 // ============================================================================
