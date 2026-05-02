@@ -645,12 +645,11 @@ pub async fn create_builder_token(
                 // Include a second-party signature block only when the caller explicitly
                 // requests it via builder_roles.  Defaulting to two-party would silently
                 // turn agency-only templates into two-signer DocuSeal templates.
-                let include_second_party = req
-                    .builder_roles
-                    .as_deref()
-                    .unwrap_or(&[])
-                    .iter()
-                    .any(|r| r.trim().eq_ignore_ascii_case("second party"));
+                let include_second_party =
+                    req.builder_roles.as_deref().unwrap_or(&[]).iter().any(|r| {
+                        let normalized = r.trim().to_lowercase().replace(' ', "");
+                        normalized == "secondparty"
+                    });
 
                 let document_html = render_contract_to_html(
                     &rendered_contract,
