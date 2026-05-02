@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { DocusealBuilder } from "@docuseal/react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { DocusealBuilder, DocusealBuilderSubmitter, DocusealBuilderField } from "@docuseal/react";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,10 @@ interface DocuSealBuilderModalProps {
   onSave: (docusealTemplateId: number) => void;
   onSend?: () => void;
   isSending?: boolean;
+  firstPartyName?: string;
+  firstPartyEmail?: string;
+  secondPartyName?: string;
+  secondPartyEmail?: string;
 }
 
 export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
@@ -36,13 +40,20 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
   onSave,
   onSend,
   isSending,
+  firstPartyName,
+  firstPartyEmail,
+  secondPartyName,
+  secondPartyEmail,
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [prefillValues, setPrefillValues] = useState<any>(null);
   const [docusealUserEmail, setDocusealUserEmail] = useState<string | null>(
     null,
   );
+  const [returnedSubmitters, setReturnedSubmitters] = useState<DocusealBuilderSubmitter[]>([]);
+  const [returnedFields, setReturnedFields] = useState<DocusealBuilderField[]>([]);
   const [loading, setLoading] = useState(false);
+  const [savedTemplateId, setSavedTemplateId] = useState<number | null>(null);
   const { toast } = useToast();
   const hasSecondPartyRole = React.useMemo(
     () =>
@@ -95,6 +106,110 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
     return fields.length > 0 ? fields : undefined;
   }, [prefillValues]);
 
+  const builderSubmitters = useMemo((): DocusealBuilderSubmitter[] => {
+    if (returnedSubmitters.length > 0) {
+      return returnedSubmitters;
+    }
+    const submitters: DocusealBuilderSubmitter[] = [];
+    submitters.push({
+      role: "First Party",
+      name: firstPartyName,
+      email: firstPartyEmail,
+    });
+    if (hasSecondPartyRole) {
+      submitters.push({
+        role: "Second Party",
+        name: secondPartyName,
+        email: secondPartyEmail,
+      });
+    }
+    return submitters;
+  }, [returnedSubmitters, firstPartyName, firstPartyEmail, hasSecondPartyRole, secondPartyName, secondPartyEmail]);
+
+  const builderFields = useMemo((): DocusealBuilderField[] => {
+    if (returnedFields.length > 0) {
+      return returnedFields;
+    }
+    const fields: DocusealBuilderField[] = [];
+    if (firstPartyName) {
+      fields.push({
+        name: "Agency Name",
+        role: "First Party",
+        type: "text",
+        default_value: firstPartyName,
+        readonly: true,
+      });
+    }
+    if (firstPartyEmail) {
+      fields.push({
+        name: "Agency Email",
+        role: "First Party",
+        type: "text",
+        default_value: firstPartyEmail,
+        readonly: true,
+      });
+    }
+    fields.push({
+      name: "Agency Date",
+      role: "First Party",
+      type: "date",
+      readonly: true,
+    });
+    fields.push({
+      name: "Agency Signature",
+      role: "First Party",
+      type: "signature",
+      required: true,
+    });
+    if (hasSecondPartyRole) {
+      if (secondPartyName) {
+        fields.push({
+          name: "Client Name",
+          role: "Second Party",
+          type: "text",
+          default_value: secondPartyName,
+          readonly: true,
+        });
+      }
+      if (secondPartyEmail) {
+        fields.push({
+          name: "Client Email",
+          role: "Second Party",
+          type: "text",
+          default_value: secondPartyEmail,
+          readonly: true,
+        });
+      }
+      fields.push({
+        name: "Client Date",
+        role: "Second Party",
+        type: "date",
+        readonly: true,
+      });
+      fields.push({
+        name: "Client Signature",
+        role: "Second Party",
+        type: "signature",
+        required: true,
+      });
+    }
+    return fields;
+  }, [returnedFields, firstPartyName, firstPartyEmail, hasSecondPartyRole, secondPartyName, secondPartyEmail]);
+
+  const handleBuilderLoad = useCallback((detail: any) => {
+    console.log("DocuSeal Builder onLoad:", detail);
+    if (detail?.id || detail?.template_id) {
+      setSavedTemplateId(detail.id || detail.template_id);
+    }
+  }, []);
+
+  const handleBuilderChange = useCallback((detail: any) => {
+    console.log("DocuSeal Builder onChange:", detail);
+    if (detail?.id || detail?.template_id) {
+      setSavedTemplateId(detail.id || detail.template_id);
+    }
+  }, []);
+
   useEffect(() => {
     if (open) {
       setLoading(true);
@@ -111,6 +226,15 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
           setToken(res.token);
           setPrefillValues(res.values);
           setDocusealUserEmail(res.docuseal_user_email);
+          if (res.submitters && Array.isArray(res.submitters)) {
+            setReturnedSubmitters(res.submitters);
+          }
+          if (res.fields && Array.isArray(res.fields)) {
+            setReturnedFields(res.fields);
+          }
+          if (res.template_id) {
+            setSavedTemplateId(res.template_id);
+          }
         })
         .catch((err) => {
           toast({
@@ -125,6 +249,9 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
       setToken(null);
       setPrefillValues(null);
       setDocusealUserEmail(null);
+      setReturnedSubmitters([]);
+      setReturnedFields([]);
+      setSavedTemplateId(null);
     }
   }, [
     open,
@@ -210,7 +337,8 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
             ) : token ? (
               <DocusealBuilder
                 token={token}
-                fields={prefillFields}
+                fields={builderFields.length > 0 ? builderFields : prefillFields}
+                submitters={builderSubmitters.length > 0 ? builderSubmitters : undefined}
                 roles={
                   builderRoles && builderRoles.length
                     ? builderRoles
@@ -220,6 +348,8 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
                 withSendButton={false}
                 withSignYourselfButton={false}
                 className="w-full h-full"
+                onChange={handleBuilderChange}
+                onLoad={handleBuilderLoad}
               />
             ) : null}
           </div>

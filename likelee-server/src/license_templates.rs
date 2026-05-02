@@ -678,6 +678,72 @@ pub async fn create_builder_token(
         state.docuseal_base_url.clone(),
     );
 
+    let has_second_party = req.builder_roles.as_ref().map(|roles| {
+        roles.iter().any(|r| r.to_lowercase().trim() == "second party")
+    }).unwrap_or(false);
+
+    let mut submitters: Vec<serde_json::Value> = vec![
+        json!({
+            "role": "First Party",
+        })
+    ];
+    let mut fields: Vec<serde_json::Value> = vec![
+        json!({
+            "name": "Agency Name",
+            "role": "First Party",
+            "type": "text",
+            "readonly": true
+        }),
+        json!({
+            "name": "Agency Email",
+            "role": "First Party",
+            "type": "text",
+            "readonly": true
+        }),
+        json!({
+            "name": "Agency Date",
+            "role": "First Party",
+            "type": "date",
+            "readonly": true
+        }),
+        json!({
+            "name": "Agency Signature",
+            "role": "First Party",
+            "type": "signature",
+            "required": true
+        }),
+    ];
+
+    if has_second_party {
+        submitters.push(json!({
+            "role": "Second Party",
+        }));
+        fields.push(json!({
+            "name": "Client Name",
+            "role": "Second Party",
+            "type": "text",
+            "readonly": true
+        }));
+        fields.push(json!({
+            "name": "Client Email",
+            "role": "Second Party",
+            "type": "text",
+            "readonly": true
+        }));
+        fields.push(json!({
+            "name": "Client Date",
+            "role": "Second Party",
+            "type": "date",
+            "readonly": true
+        }));
+        fields.push(json!({
+            "name": "Client Signature",
+            "role": "Second Party",
+            "type": "signature",
+            "required": true
+        }));
+    }
+
     let token = docuseal
         .create_builder_token_with_external_id(
             target_email.clone(),
@@ -685,29 +751,16 @@ pub async fn create_builder_token(
             target_email.clone(),
             Some(docuseal_template_id),
             req.external_id,
-            None, // No values - we pre-fill in the PDF itself
-            req.builder_roles.clone().map(|roles| {
-                let mut normalized: Vec<String> = Vec::new();
-                for role in roles {
-                    let with_spaces = role.trim().to_string();
-                    if !with_spaces.is_empty() && !normalized.contains(&with_spaces) {
-                        normalized.push(with_spaces.clone());
-                    }
-                    let compact = with_spaces.replace(' ', "");
-                    if !compact.is_empty() && !normalized.contains(&compact) {
-                        normalized.push(compact);
-                    }
-                }
-                json!(normalized
-                    .into_iter()
-                    .map(|role| json!({ "role": role }))
-                    .collect::<Vec<_>>())
-            }),
+            None,
+            Some(json!(submitters.clone())),
         )
         .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     Ok(Json(json!({
         "token": token,
-        "docuseal_user_email": state.docuseal_user_email.clone()
+        "docuseal_user_email": state.docuseal_user_email.clone(),
+        "template_id": docuseal_template_id,
+        "submitters": submitters,
+        "fields": fields
     })))
 }
