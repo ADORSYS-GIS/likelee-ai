@@ -14,6 +14,8 @@ import {
   createBrandLicensingRequest,
   createAgencyBrandLicensingRequest,
   getBrandLicensingRequests,
+  updateBrandLicensingRequestsStatus,
+  deleteBrandLicensingRequests,
   getBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
@@ -674,6 +676,9 @@ export default function BrandDashboard() {
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<any>(null);
+  const [showDeletePackageDialog, setShowDeletePackageDialog] = useState(false);
+  const [packageToDelete, setPackageToDelete] = useState<any>(null);
+  const [deletingPackage, setDeletingPackage] = useState(false);
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
     new Set(),
   );
@@ -724,6 +729,14 @@ export default function BrandDashboard() {
   );
   const [loadingBrandLicensingRequests, setLoadingBrandLicensingRequests] =
     useState(false);
+  const [activeLicensingTab, setActiveLicensingTab] = useState<
+    "Active" | "Archive"
+  >("Active");
+  const [deletingRequestId, setDeletingRequestId] = useState<string | null>(
+    null,
+  );
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [requestToDelete, setRequestToDelete] = useState<any>(null);
   const [licenseRequestForm, setLicenseRequestForm] = useState({
     start_date: new Date().toISOString().slice(0, 10),
     license_fee: "",
@@ -2076,6 +2089,41 @@ export default function BrandDashboard() {
     }
 
     setAssetToDelete(null);
+  };
+
+  const handleDeletePackage = async (pkg: any) => {
+    setPackageToDelete(pkg);
+    setShowDeletePackageDialog(true);
+  };
+
+  const confirmDeletePackage = async () => {
+    if (!packageToDelete) return;
+    setShowDeletePackageDialog(false);
+    setDeletingPackage(true);
+
+    try {
+      const offerId = String(packageToDelete?.offer_id || "");
+      const packageId = String(packageToDelete?.id || "");
+      await base44.post(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/brand-delete`,
+        { package_id: packageId },
+      );
+
+      setInboxPackages((prev) => prev.filter((p) => p.id !== packageId));
+      toast({
+        title: "Package deleted",
+        description: `"${packageToDelete.title || "Package"}" has been removed.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error?.message || "Could not delete the package.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingPackage(false);
+      setPackageToDelete(null);
+    }
   };
 
   useEffect(() => {
@@ -4169,252 +4217,412 @@ export default function BrandDashboard() {
     );
   };
 
-  const renderBrandLicensingRequests = () => (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-            Licensing Requests
-          </h2>
-          <p className="text-gray-600">
-            Track licensing requests you have sent to agencies.
-          </p>
+  const handleArchiveRequest = async (req: any) => {
+    try {
+      await updateBrandLicensingRequestsStatus({
+        licensing_request_ids: [req.id],
+        status: "archived",
+      });
+      const resp = await getBrandLicensingRequests();
+      const rows = (resp as any)?.requests || resp?.data || [];
+      setBrandLicensingRequests(Array.isArray(rows) ? rows : []);
+      toast({
+        title: "Archived",
+        description: "Licensing request has been archived.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Archive failed",
+        description: e?.message || "Could not archive licensing request",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const handleDeleteRequest = async (req: any) => {
+    setDeletingRequestId(req.id);
+    try {
+      await deleteBrandLicensingRequests({
+        licensing_request_ids: [req.id],
+      });
+      const resp = await getBrandLicensingRequests();
+      const rows = (resp as any)?.requests || resp?.data || [];
+      setBrandLicensingRequests(Array.isArray(rows) ? rows : []);
+      toast({
+        title: "Deleted",
+        description: "Licensing request permanently deleted.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Delete failed",
+        description: e?.message || "Could not delete licensing request",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setDeletingRequestId(null);
+      setShowDeleteConfirm(false);
+      setRequestToDelete(null);
+    }
+  };
+
+  const renderBrandLicensingRequests = () => {
+    const isArchived = (req: any) =>
+      ["rejected", "declined", "archived"].includes(req?.status || "");
+
+    const filteredRequests = brandLicensingRequests.filter((req: any) => {
+      if (activeLicensingTab === "Active") return !isArchived(req);
+      return isArchived(req);
+    });
+
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Licensing Requests
+            </h2>
+            <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
+              {["Active", "Archive"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveLicensingTab(tab as any)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeLicensingTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {loadingBrandLicensingRequests && (
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600">Loading licensing requests...</p>
-        </Card>
-      )}
-
-      {!loadingBrandLicensingRequests &&
-        brandLicensingRequests.length === 0 && (
-          <Card className="p-4 sm:p-8 text-center text-sm text-gray-600">
-            No licensing requests yet.
+        {loadingBrandLicensingRequests && (
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600">
+              Loading licensing requests...
+            </p>
           </Card>
         )}
 
-      {!loadingBrandLicensingRequests &&
-        brandLicensingRequests.map((req: any) => {
-          const agencyName =
-            req?.agencies?.agency_name || req?.agency_name || "Agency";
-          const status = formatLicenseStatus(req?.status || "pending");
-          const statusClass =
-            status === "Approved"
-              ? "bg-green-100 text-green-700 border-green-200"
-              : status === "Declined"
-                ? "bg-red-100 text-red-700 border-red-200"
-                : "bg-amber-100 text-amber-700 border-amber-200";
+        {!loadingBrandLicensingRequests && filteredRequests.length === 0 && (
+          <Card className="p-4 sm:p-8 text-center text-sm text-gray-600">
+            {activeLicensingTab === "Active"
+              ? "No active licensing requests"
+              : "No archived licensing requests"}
+          </Card>
+        )}
 
-          const licenseFeeValue = req?.license_fee;
-          const licenseFee = licenseFeeValue
-            ? `$${Number(licenseFeeValue).toLocaleString()}`
-            : "\u2014";
+        {!loadingBrandLicensingRequests &&
+          filteredRequests.map((req: any) => {
+            const agencyName =
+              req?.agencies?.agency_name || req?.agency_name || "Agency";
+            const status = formatLicenseStatus(req?.status || "pending");
+            const statusClass =
+              status === "Approved"
+                ? "bg-green-100 text-green-700 border-green-200"
+                : status === "Declined" || status === "Archived"
+                  ? "bg-red-100 text-red-700 border-red-200"
+                  : "bg-amber-100 text-amber-700 border-amber-200";
 
-          // Submissions can come from either join path depending on whether the
-          // brand request was linked by submission_id directly or via brand_request_id.
-          let submissions = req?.license_submissions;
-          if (submissions && !Array.isArray(submissions)) {
-            submissions = [submissions];
-          }
-          const directSubmission = req?.license_submission;
-          if (directSubmission) {
-            const directSubmissionList = Array.isArray(directSubmission)
-              ? directSubmission
-              : [directSubmission];
-            const existingIds = new Set(
-              (submissions || [])
-                .map((sub: any) => String(sub?.id || "").trim())
-                .filter(Boolean),
-            );
-            submissions = [
-              ...directSubmissionList.filter((sub: any) => {
-                const id = String(sub?.id || "").trim();
-                return id ? !existingIds.has(id) : true;
-              }),
-              ...(submissions || []),
-            ];
-          }
+            const licenseFeeValue = req?.license_fee;
+            const licenseFee = licenseFeeValue
+              ? `$${Number(licenseFeeValue).toLocaleString()}`
+              : "\u2014";
 
-          const submission = Array.isArray(submissions)
-            ? submissions
-                .filter((sub: any) => sub?.status !== "draft")
-                .sort((a: any, b: any) => {
-                  const linkedSubmissionId = String(
-                    req?.submission_id || "",
-                  ).trim();
-                  const aId = String(a?.id || "").trim();
-                  const bId = String(b?.id || "").trim();
-                  const aMatchesLinked = linkedSubmissionId
-                    ? aId === linkedSubmissionId
-                    : false;
-                  const bMatchesLinked = linkedSubmissionId
-                    ? bId === linkedSubmissionId
-                    : false;
+            let submissions = req?.license_submissions;
+            if (submissions && !Array.isArray(submissions)) {
+              submissions = [submissions];
+            }
+            const directSubmission = req?.license_submission;
+            if (directSubmission) {
+              const directSubmissionList = Array.isArray(directSubmission)
+                ? directSubmission
+                : [directSubmission];
+              const existingIds = new Set(
+                (submissions || [])
+                  .map((sub: any) => String(sub?.id || "").trim())
+                  .filter(Boolean),
+              );
+              submissions = [
+                ...directSubmissionList.filter((sub: any) => {
+                  const id = String(sub?.id || "").trim();
+                  return id ? !existingIds.has(id) : true;
+                }),
+                ...(submissions || []),
+              ];
+            }
 
-                  if (aMatchesLinked && !bMatchesLinked) return -1;
-                  if (!aMatchesLinked && bMatchesLinked) return 1;
+            const submission = Array.isArray(submissions)
+              ? submissions
+                  .filter((sub: any) => sub?.status !== "draft")
+                  .sort((a: any, b: any) => {
+                    const linkedSubmissionId = String(
+                      req?.submission_id || "",
+                    ).trim();
+                    const aId = String(a?.id || "").trim();
+                    const bId = String(b?.id || "").trim();
+                    const aMatchesLinked = linkedSubmissionId
+                      ? aId === linkedSubmissionId
+                      : false;
+                    const bMatchesLinked = linkedSubmissionId
+                      ? bId === linkedSubmissionId
+                      : false;
 
-                  const aHasUrl = !!(
-                    a?.client_submitter_slug || a?.docuseal_slug
-                  );
-                  const bHasUrl = !!(
-                    b?.client_submitter_slug || b?.docuseal_slug
-                  );
+                    if (aMatchesLinked && !bMatchesLinked) return -1;
+                    if (!aMatchesLinked && bMatchesLinked) return 1;
 
-                  if (aHasUrl && !bHasUrl) return -1;
-                  if (!aHasUrl && bHasUrl) return 1;
+                    const aHasUrl = !!(
+                      a?.client_submitter_slug || a?.docuseal_slug
+                    );
+                    const bHasUrl = !!(
+                      b?.client_submitter_slug || b?.docuseal_slug
+                    );
 
-                  const aDate = new Date(a?.created_at || 0);
-                  const bDate = new Date(b?.created_at || 0);
-                  return bDate.getTime() - aDate.getTime();
-                })[0]
-            : null;
+                    if (aHasUrl && !bHasUrl) return -1;
+                    if (!aHasUrl && bHasUrl) return 1;
 
-          const slug =
-            submission?.client_submitter_slug || submission?.docuseal_slug;
-          const signingUrl = slug ? `https://docuseal.co/s/${slug}` : "";
-          const declineReason = String(req?.decline_reason || "").trim();
+                    const aDate = new Date(a?.created_at || 0);
+                    const bDate = new Date(b?.created_at || 0);
+                    return bDate.getTime() - aDate.getTime();
+                  })[0]
+              : null;
 
-          return (
-            <Card
-              key={req?.id}
-              className="p-6 bg-white border border-gray-200 rounded-xl"
-            >
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      {req?.campaign_title || "Licensing Request"}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Agency: {agencyName}
-                      {req?.talent_name ? ` • Talent: ${req.talent_name}` : ""}
-                    </p>
-                  </div>
-                  <Badge className={`border ${statusClass}`}>{status}</Badge>
-                </div>
+            const slug =
+              submission?.client_submitter_slug || submission?.docuseal_slug;
+            const signingUrl = slug ? `https://docuseal.co/s/${slug}` : "";
+            const declineReason = String(req?.decline_reason || "").trim();
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Start Date</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.license_start_date
-                        ? new Date(req.license_start_date).toLocaleDateString()
-                        : "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">End Date</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.license_end_date
-                        ? new Date(req.license_end_date).toLocaleDateString()
-                        : "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Duration (Days)</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.duration_days || "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">License Fee</p>
-                    <p className="font-semibold text-gray-900">{licenseFee}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.territory || req?.regions || "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Exclusivity</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.exclusivity || req?.usage_scope || "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Modifications Allowed</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.modifications_allowed || "\u2014"}
-                    </p>
-                  </div>
-                </div>
-
-                {req?.custom_terms && (
-                  <div className="text-sm">
-                    <p className="text-gray-500">Additional Terms</p>
-                    <p className="font-semibold text-gray-900">
-                      {String(req.custom_terms)}
-                    </p>
-                  </div>
-                )}
-
-                {req?.description && (
-                  <div className="text-sm">
-                    <p className="text-gray-500">Description</p>
-                    <p className="font-semibold text-gray-900">
-                      {String(req.description)}
-                    </p>
-                  </div>
-                )}
-
-                {declineReason && status === "Declined" && (
-                  <div className="text-sm bg-red-50 border border-red-100 rounded-lg p-3 text-red-700 mt-2">
-                    <span className="font-semibold">Decline reason: </span>
-                    {declineReason}
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-3 mt-2">
-                  {signingUrl && submission?.status !== "completed" ? (
-                    <Button
-                      className="text-white"
-                      style={{ backgroundColor: "#E9A23B" }}
-                      onMouseEnter={(e) =>
-                        (e.target.style.backgroundColor = "#D4941F")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.target.style.backgroundColor = "#E9A23B")
-                      }
-                      onClick={() => {
-                        setBrandSignUrl(signingUrl);
-                        setBrandSignOpen(true);
-                      }}
-                    >
-                      Sign Contract
-                    </Button>
-                  ) : submission?.status === "completed" ? (
-                    <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
-                      <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        Contract Signed
+            return (
+              <Card
+                key={req?.id}
+                className="p-6 bg-white border border-gray-200 rounded-xl"
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {req?.campaign_title || "Licensing Request"}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Agency: {agencyName}
+                        {req?.talent_name
+                          ? ` • Talent: ${req.talent_name}`
+                          : ""}
                       </p>
                     </div>
+                    <Badge className={`border ${statusClass}`}>{status}</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Start Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.license_start_date
+                          ? new Date(
+                              req.license_start_date,
+                            ).toLocaleDateString()
+                          : "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">End Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.license_end_date
+                          ? new Date(req.license_end_date).toLocaleDateString()
+                          : "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Duration (Days)</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.duration_days || "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">License Fee</p>
+                      <p className="font-semibold text-gray-900">
+                        {licenseFee}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Territory</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.territory || req?.regions || "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Exclusivity</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.exclusivity || req?.usage_scope || "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Modifications Allowed</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.modifications_allowed || "\u2014"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {req?.custom_terms && (
+                    <div className="text-sm">
+                      <p className="text-gray-500">Additional Terms</p>
+                      <p className="font-semibold text-gray-900">
+                        {String(req.custom_terms)}
+                      </p>
+                    </div>
+                  )}
+
+                  {req?.description && (
+                    <div className="text-sm">
+                      <p className="text-gray-500">Description</p>
+                      <p className="font-semibold text-gray-900">
+                        {String(req.description)}
+                      </p>
+                    </div>
+                  )}
+
+                  {declineReason && status === "Declined" && (
+                    <div className="text-sm bg-red-50 border border-red-100 rounded-lg p-3 text-red-700 mt-2">
+                      <span className="font-semibold">Decline reason: </span>
+                      {declineReason}
+                    </div>
+                  )}
+
+                  {activeLicensingTab === "Archive" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleArchiveRequest(req)}
+                        className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Recover to Active
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setRequestToDelete(req);
+                          setShowDeleteConfirm(true);
+                        }}
+                        disabled={deletingRequestId === req.id}
+                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                      >
+                        {deletingRequestId === req.id ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4" />
+                            Delete Permanently
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   ) : (
-                    <div className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-2 rounded-md text-xs font-medium">
-                      Awaiting contract from agency
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      {signingUrl && submission?.status !== "completed" ? (
+                        <Button
+                          className="text-white"
+                          style={{ backgroundColor: "#E9A23B" }}
+                          onMouseEnter={(e) =>
+                            (e.target.style.backgroundColor = "#D4941F")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.target.style.backgroundColor = "#E9A23B")
+                          }
+                          onClick={() => {
+                            setBrandSignUrl(signingUrl);
+                            setBrandSignOpen(true);
+                          }}
+                        >
+                          Sign Contract
+                        </Button>
+                      ) : submission?.status === "completed" ? (
+                        <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                          <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            Contract Signed
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-2 rounded-md text-xs font-medium">
+                          Awaiting contract from agency
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              </div>
-            </Card>
-          );
-        })}
-    </div>
-  );
+              </Card>
+            );
+          })}
+
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Licensing Request</DialogTitle>
+              <DialogDescription>
+                This will permanently delete this archived licensing request.
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete the licensing request for{" "}
+                <span className="font-semibold">
+                  {requestToDelete?.campaign_title || "Unknown campaign"}
+                </span>
+                ?
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setRequestToDelete(null);
+                }}
+                className="font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteRequest(requestToDelete)}
+                disabled={deletingRequestId === requestToDelete?.id}
+                className="font-bold"
+              >
+                {deletingRequestId === requestToDelete?.id ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Permanently
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
 
   const renderInboxSubtab = () => {
     if (!canViewInbox) {
@@ -4595,6 +4803,7 @@ export default function BrandDashboard() {
                       variant="outline"
                       className="border border-gray-300 rounded-none flex-shrink-0"
                       disabled={!canManagePayOffers}
+                      onClick={() => handleDeletePackage(pkg)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -13171,6 +13380,39 @@ export default function BrandDashboard() {
             </Button>
             <Button variant="destructive" onClick={confirmDeleteAsset}>
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Package Confirmation Dialog */}
+      <Dialog
+        open={showDeletePackageDialog}
+        onOpenChange={setShowDeletePackageDialog}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Package</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "
+              {packageToDelete?.title || "this package"}"? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeletePackageDialog(false)}
+              disabled={deletingPackage}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeletePackage}
+              disabled={deletingPackage}
+            >
+              {deletingPackage ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
