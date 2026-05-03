@@ -7944,7 +7944,10 @@ async fn try_release_campaign_offer_escrow(
             released_now: false,
         });
     }
-    let total_text = total_deliverables_resp.text().await.map_err(|e| e.to_string())?;
+    let total_text = total_deliverables_resp
+        .text()
+        .await
+        .map_err(|e| e.to_string())?;
     let total_rows: Vec<serde_json::Value> = serde_json::from_str(&total_text).unwrap_or_default();
     let total_count = total_rows.len();
     if total_count == 0 {
@@ -7975,7 +7978,8 @@ async fn try_release_campaign_offer_escrow(
         });
     }
     let approved_text = approved_resp.text().await.map_err(|e| e.to_string())?;
-    let approved_rows: Vec<serde_json::Value> = serde_json::from_str(&approved_text).unwrap_or_default();
+    let approved_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&approved_text).unwrap_or_default();
     let approved_count = approved_rows.len();
 
     // More than half must be approved: approved_count > total_count / 2
@@ -8068,15 +8072,16 @@ async fn try_release_campaign_offer_escrow(
         let currency = "USD".to_string();
         let currency_enum = stripe_sdk::Currency::USD;
         let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-        let creator_account_id = get_creator_stripe_account(state, &creator_id).await
+        let creator_account_id = get_creator_stripe_account(state, &creator_id)
+            .await
             .map_err(|e| format!("Failed to get creator Stripe account: {}", e))?;
-        
+
         let metadata = std::collections::HashMap::from([
             ("offer_id".to_string(), offer_id.to_string()),
             ("creator_id".to_string(), creator_id.to_string()),
             ("type".to_string(), "creator_earnings".to_string()),
         ]);
-        
+
         crate::payouts::execute_and_record_stripe_transfer(
             state,
             &client,
@@ -8324,9 +8329,10 @@ async fn release_campaign_offer_transfers(
         .unwrap_or(0);
 
     if agency_amount_cents > 0 {
-        let agency_account_id = get_agency_stripe_account(state, agency_id).await
+        let agency_account_id = get_agency_stripe_account(state, agency_id)
+            .await
             .map_err(|e| format!("Failed to get agency Stripe account: {}", e))?;
-        
+
         let metadata = std::collections::HashMap::from([
             ("offer_id".to_string(), offer_id.to_string()),
             ("agency_id".to_string(), agency_id.to_string()),
@@ -8397,9 +8403,10 @@ async fn release_campaign_offer_transfers(
             Err("missing_creator_id".to_string())
         };
 
-        let talent_account_id = get_creator_stripe_account(state, &creator_id).await
+        let talent_account_id = get_creator_stripe_account(state, &creator_id)
+            .await
             .map_err(|e| format!("Failed to get creator Stripe account for split: {}", e))?;
-        
+
         let mut metadata = std::collections::HashMap::from([
             ("offer_id".to_string(), offer_id.to_string()),
             ("creator_id".to_string(), creator_id.to_string()),

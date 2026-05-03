@@ -2241,7 +2241,11 @@ export default function BrandDashboard() {
     // Use the currency with the highest total
     const primaryCurrency =
       Object.entries(currencies).sort((a, b) => b[1] - a[1])[0]?.[0] || "USD";
-    return { escrowTotal: total, escrowProjects: projects, escrowCurrency: primaryCurrency };
+    return {
+      escrowTotal: total,
+      escrowProjects: projects,
+      escrowCurrency: primaryCurrency,
+    };
   }, [brandOfferItems]);
 
   const formatEscrowCurrency = (amount: number) => {
@@ -2921,7 +2925,8 @@ export default function BrandDashboard() {
                         </Badge>
                         {project.status === "releasing" && (
                           <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                            Funds are being transferred to the creator. This may take 1-3 business days to complete.
+                            Funds are being transferred to the creator. This may
+                            take 1-3 business days to complete.
                             <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                           </div>
                         )}
@@ -5739,8 +5744,8 @@ export default function BrandDashboard() {
                                 </div>
                                 <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
                                   <p className="text-sm font-semibold text-amber-900">
-                                    Approving more than half of deliverables triggers escrow
-                                    payout (once).
+                                    Approving more than half of deliverables
+                                    triggers escrow payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
                                     After you approve a deliverable, Downloading
@@ -9304,7 +9309,7 @@ export default function BrandDashboard() {
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">In Escrow</p>
           <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-              {formatEscrowCurrency(escrowTotal)}
+            {formatEscrowCurrency(escrowTotal)}
           </p>
           <p className="text-xs text-gray-500 mt-1">Pending delivery</p>
         </Card>
