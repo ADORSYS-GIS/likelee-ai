@@ -331,6 +331,9 @@ async fn main() {
     tokio::spawn(likelee_server::jobs::start_agency_payout_scheduler(
         state.clone(),
     ));
+    tokio::spawn(likelee_server::jobs::start_auto_archive_licensing_requests(
+        state.clone(),
+    ));
 
     let app = likelee_server::router::build_router(state);
 

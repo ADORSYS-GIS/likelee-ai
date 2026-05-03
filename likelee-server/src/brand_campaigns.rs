@@ -305,6 +305,11 @@ pub struct PackageDoneRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct PackageDeleteRequest {
+    pub package_id: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct SubmitDeliverableRequest {
     pub asset_url: String,
     pub asset_type: Option<String>,
@@ -5670,6 +5675,43 @@ pub async fn mark_brand_package_done(
         "assignments": assignments,
         "assignment_errors": [],
     })))
+}
+
+pub async fn delete_brand_inbox_package(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferPath { offer_id }): Path<OfferPath>,
+    Json(payload): Json<PackageDeleteRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    if offer.get("brand_id").and_then(|v| v.as_str()) != Some(user.id.as_str()) {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let resp = state
+        .pg
+        .from("campaign_offer_packages")
+        .eq("id", &payload.package_id)
+        .eq("offer_id", &offer_id)
+        .eq("brand_id", &user.id)
+        .delete()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(json!({"status":"ok","message":"Package deleted"})))
 }
 
 pub async fn list_agency_offer_packages(

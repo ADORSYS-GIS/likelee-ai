@@ -16,7 +16,7 @@ All team members share the organization's profile instead of having their own in
 
 #### User Profile (Individual)
 
-Stored in: `auth.users` and `public.creator_profiles` (or new table)
+Stored in: `auth.users` and `public.creators` (or a dedicated user profile table)
 
 **Fields:**
 

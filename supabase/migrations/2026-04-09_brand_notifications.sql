@@ -46,6 +46,6 @@ CREATE POLICY "Brands can delete own activity events" ON public.brand_activity_e
 FOR DELETE
 USING (public.is_brand_team_member(brand_id));
 
-ALTER TABLE public.brands ADD COLUMN IF NOT EXISTS notification_prefs jsonb DEFAULT '{"newProjectAlerts": true, "deliverableSubmissions": true, "approvalReminders": true, "licenseExpirationAlerts": true, "monthlyAnalyticsSummary": false}'::jsonb;
+ALTER TABLE public.brands ADD COLUMN IF NOT EXISTS notification_prefs jsonb DEFAULT '{"newProjectAlerts": true, "deliverableSubmissions": true, "approvalReminders": true, "licenseExpirationAlerts": true}'::jsonb;
 
 COMMIT;

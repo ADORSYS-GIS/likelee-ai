@@ -41,12 +41,6 @@ export const BrandSettingsNotifications = ({
           title: "License Expiration Alerts",
           desc: "10-day advance notice",
         },
-        {
-          id: "monthlyAnalyticsSummary",
-          title: "Monthly Analytics Summary",
-          desc: "Monthly performance email report",
-          comingSoon: true,
-        },
       ].map((pref) => (
         <div
           key={pref.id}
