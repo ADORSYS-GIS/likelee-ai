@@ -66,8 +66,8 @@ pub struct CacheConfig {
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            l2_ttl: Duration::from_secs(300),           // 5 min
-            l3_ttl: Duration::from_secs(900),           // 15 min
+            l2_ttl: Duration::from_secs(300), // 5 min
+            l3_ttl: Duration::from_secs(900), // 15 min
             l2_max_entries: 5_000,
             l3_max_entries: 2_000,
             idempotency_ttl: Duration::from_secs(3600), // 1 hour

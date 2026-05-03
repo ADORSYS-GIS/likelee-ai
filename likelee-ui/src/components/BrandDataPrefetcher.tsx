@@ -36,10 +36,7 @@ export function BrandDataPrefetcher() {
           ...queryOptions.moderate,
         });
       } catch (error) {
-        console.error(
-          "[BrandDataPrefetcher] Failed to prefetch jobs:",
-          error,
-        );
+        console.error("[BrandDataPrefetcher] Failed to prefetch jobs:", error);
       }
     };
 
@@ -64,10 +61,7 @@ export function BrandDataPrefetcher() {
           ...queryOptions.frequent,
         });
       } catch (error) {
-        console.error(
-          "[BrandDataPrefetcher] Failed to prefetch inbox:",
-          error,
-        );
+        console.error("[BrandDataPrefetcher] Failed to prefetch inbox:", error);
       }
     };
 
@@ -255,21 +249,17 @@ export function BrandDataPrefetcher() {
           queryClient.prefetchQuery({
             queryKey: brandKeys.studio.files,
             queryFn: async () => {
-              const { listBrandStorageFilesPaged } = await import(
-                "@/api/functions"
-              );
-              return listBrandStorageFilesPaged({ limit: 100 }).catch(
-                () => [],
-              );
+              const { listBrandStorageFilesPaged } =
+                await import("@/api/functions");
+              return listBrandStorageFilesPaged({ limit: 100 }).catch(() => []);
             },
             ...queryOptions.moderate,
           }),
           queryClient.prefetchQuery({
             queryKey: brandKeys.studio.folders,
             queryFn: async () => {
-              const { listBrandStorageFoldersPaged } = await import(
-                "@/api/functions"
-              );
+              const { listBrandStorageFoldersPaged } =
+                await import("@/api/functions");
               return listBrandStorageFoldersPaged().catch(() => []);
             },
             ...queryOptions.moderate,

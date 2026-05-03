@@ -1451,7 +1451,10 @@ export default function BrandCampaignDashboard({
     const timer = setTimeout(fetchCreators, 250);
 
     const pollTimer = setInterval(() => {
-      if (creatorFetchRequestIdRef.current === requestId && showNewCampaignModal) {
+      if (
+        creatorFetchRequestIdRef.current === requestId &&
+        showNewCampaignModal
+      ) {
         void fetchCreators();
       }
     }, 20000);

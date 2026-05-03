@@ -25,7 +25,10 @@ import {
   listAgencyOfferPackages,
   getAgencyDigitals,
 } from "@/api/functions";
-import { listCreatorAgencyInvites, listCreatorAgencyConnections } from "@/api/creatorAgencyConnection";
+import {
+  listCreatorAgencyInvites,
+  listCreatorAgencyConnections,
+} from "@/api/creatorAgencyConnection";
 import { useAuth } from "@/auth/AuthProvider";
 import { agencyKeys } from "@/lib/queryKeys";
 import { queryOptions } from "@/lib/queryClient";
