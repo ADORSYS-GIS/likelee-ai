@@ -8397,11 +8397,6 @@ async fn release_campaign_offer_transfers(
         if creator_id.is_empty() {
             continue;
         }
-        let talent_account_id_result = if !creator_id.is_empty() {
-            get_creator_stripe_account(state, &creator_id).await
-        } else {
-            Err("missing_creator_id".to_string())
-        };
 
         let talent_account_id = get_creator_stripe_account(state, &creator_id)
             .await
