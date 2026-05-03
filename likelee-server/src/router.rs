@@ -1074,6 +1074,8 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/campaign-offers/:offer_id/packages/:package_id/dismiss",
             post(crate::brand_campaigns::dismiss_brand_inbox_package),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/packages/brand-delete",
             post(crate::brand_campaigns::delete_brand_inbox_package),
         )
