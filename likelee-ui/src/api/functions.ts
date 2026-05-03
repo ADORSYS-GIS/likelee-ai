@@ -789,6 +789,10 @@ export const updateAgencyLicensingRequestsStatus = (data: {
   notes?: string;
 }) => base44Client.post(`/agency/licensing-requests/status`, data);
 
+export const deleteAgencyLicensingRequests = (data: {
+  licensing_request_ids: string[];
+}) => base44Client.post(`/agency/licensing-requests/delete`, data);
+
 // Payment Links (Agency)
 export const generateAgencyPaymentLink = (data: {
   licensing_request_ids: string[];
@@ -1344,6 +1348,16 @@ export const createAgencyBrandLicensingRequest = (payload: {
 
 export const getBrandLicensingRequests = () =>
   base44Client.get<{ requests: any[] }>("/api/brand/brand-license-requests");
+
+export const updateBrandLicensingRequestsStatus = (payload: {
+  licensing_request_ids: string[];
+  status: string;
+  notes?: string;
+}) => base44Client.post("/api/brand/licensing-requests/status", payload);
+
+export const deleteBrandLicensingRequests = (payload: {
+  licensing_request_ids: string[];
+}) => base44Client.post("/api/brand/licensing-requests/delete", payload);
 
 export const getAgencyBrandLicenseRequests = () =>
   base44Client.get<{ requests: any[] }>("/api/agency/brand-license-requests");

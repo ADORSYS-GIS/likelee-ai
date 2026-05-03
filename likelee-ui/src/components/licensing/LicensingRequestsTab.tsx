@@ -11,6 +11,8 @@ import {
   Send,
   Copy,
   CheckCircle,
+  X,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,8 +28,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
+  deleteAgencyLicensingRequests,
   sendLicensingRequestPaymentLink,
 } from "@/api/functions";
 
@@ -56,9 +66,22 @@ export const LicensingRequestsTab = ({
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
   const [groupToCounter, setGroupToCounter] = useState<any>(null);
+  const [sendingCounterOffer, setSendingCounterOffer] = useState(false);
   const [activeRequestTab, setActiveRequestTab] = useState<
     "Active" | "Archive"
   >("Active");
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterMinLicenseFee, setFilterMinLicenseFee] = useState<string>("");
+  const [filterMaxLicenseFee, setFilterMaxLicenseFee] = useState<string>("");
+  const [filterMinDuration, setFilterMinDuration] = useState<string>("");
+  const [filterMaxDuration, setFilterMaxDuration] = useState<string>("");
+  const [deletingGroup, setDeletingGroup] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<any>(null);
+  const [decliningGroup, setDecliningGroup] = useState<string | null>(null);
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
+  const [groupToDecline, setGroupToDecline] = useState<any>(null);
 
   const statusStyle = (status: string) => {
     if (status === "approved") return "bg-green-100 text-green-700";
@@ -74,6 +97,70 @@ export const LicensingRequestsTab = ({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
+  };
+
+  const handleDecline = async (group: any) => {
+    setDecliningGroup(group.group_key);
+    try {
+      await updateAgencyLicensingRequestsStatus({
+        licensing_request_ids: (group?.talents || [])
+          .map((t: any) => t.licensing_request_id)
+          .filter(Boolean),
+        status: "rejected",
+      });
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+      toast({
+        title: "Request declined",
+        description: "The licensing request has been declined.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Decline failed",
+        description: e?.message || "Could not decline licensing request",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setDecliningGroup(null);
+      setShowDeclineConfirm(false);
+      setGroupToDecline(null);
+    }
+  };
+
+  const handleSendCounterOffer = async () => {
+    if (!groupToCounter || !counterOfferMessage.trim()) return;
+    setSendingCounterOffer(true);
+    try {
+      const ids = (groupToCounter?.talents || [])
+        .map((t: any) => t.licensing_request_id)
+        .filter(Boolean);
+      await updateAgencyLicensingRequestsStatus({
+        licensing_request_ids: ids,
+        status: "negotiating",
+        notes: counterOfferMessage,
+      });
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+      toast({
+        title: "Counter offer sent",
+        description: "The client has been notified.",
+      });
+      setCounterOfferModalOpen(false);
+      setCounterOfferMessage("");
+      setGroupToCounter(null);
+    } catch (e: any) {
+      toast({
+        title: "Failed to send counter offer",
+        description: e?.message || "Could not send counter offer",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setSendingCounterOffer(false);
+    }
   };
 
   const updateGroupStatus = async (
@@ -92,7 +179,8 @@ export const LicensingRequestsTab = ({
         status,
         notes,
       });
-      await queryClient.invalidateQueries({
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
       if (status === "negotiating") {
@@ -128,7 +216,8 @@ export const LicensingRequestsTab = ({
     try {
       const resp = await sendLicensingRequestPaymentLink(licensingRequestId);
       const emailSent = (resp as any)?.email_sent;
-      await queryClient.invalidateQueries({
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
       toast({
@@ -172,12 +261,145 @@ export const LicensingRequestsTab = ({
     }
   };
 
+  const handleDeleteGroup = async (group: any) => {
+    const ids = (group?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    setDeletingGroup(group.group_key);
+    try {
+      await deleteAgencyLicensingRequests({
+        licensing_request_ids: ids,
+      });
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+      toast({
+        title: "Deleted",
+        description: "Licensing request(s) permanently deleted.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Delete failed",
+        description: e?.message || "Could not delete licensing request",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setDeletingGroup(null);
+      setShowDeleteConfirm(false);
+      setGroupToDelete(null);
+    }
+  };
+
+  const getRequestDurationDays = (group: any) => {
+    const startDateRaw = group?.license_start_date
+      ? new Date(group.license_start_date)
+      : null;
+    const endDateRaw = group?.license_end_date
+      ? new Date(group.license_end_date)
+      : null;
+
+    if (
+      startDateRaw &&
+      !Number.isNaN(startDateRaw.getTime()) &&
+      endDateRaw &&
+      !Number.isNaN(endDateRaw.getTime())
+    ) {
+      return Math.max(
+        0,
+        Math.ceil(
+          (endDateRaw.getTime() - startDateRaw.getTime()) /
+            (1000 * 60 * 60 * 24),
+        ) + 1,
+      );
+    }
+
+    const deadlineRaw = group?.deadline ? new Date(group.deadline) : null;
+    if (deadlineRaw && !Number.isNaN(deadlineRaw.getTime())) {
+      return Math.max(
+        0,
+        Math.ceil((deadlineRaw.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+      );
+    }
+
+    return null;
+  };
+
   const filteredData = (data || []).filter((group: any) => {
     const isArchived = ["rejected", "declined", "archived"].includes(
       group.status,
     );
-    return activeRequestTab === "Active" ? !isArchived : isArchived;
+    if (activeRequestTab === "Active" ? isArchived : !isArchived) return false;
+
+    if (filterStatus !== "all" && group.status !== filterStatus) return false;
+
+    const fee = Number(group?.license_fee);
+    if (filterMinLicenseFee.trim()) {
+      const min = Number(filterMinLicenseFee);
+      if (Number.isFinite(min) && Number.isFinite(fee) && fee < min) {
+        return false;
+      }
+      if (Number.isFinite(min) && !Number.isFinite(fee)) return false;
+    }
+
+    if (filterMaxLicenseFee.trim()) {
+      const max = Number(filterMaxLicenseFee);
+      if (Number.isFinite(max) && Number.isFinite(fee) && fee > max) {
+        return false;
+      }
+      if (Number.isFinite(max) && !Number.isFinite(fee)) return false;
+    }
+
+    const durationDays = getRequestDurationDays(group);
+    if (filterMinDuration.trim()) {
+      const min = Number(filterMinDuration);
+      if (Number.isFinite(min)) {
+        if (durationDays === null || durationDays < min) return false;
+      }
+    }
+
+    if (filterMaxDuration.trim()) {
+      const max = Number(filterMaxDuration);
+      if (Number.isFinite(max)) {
+        if (durationDays === null || durationDays > max) return false;
+      }
+    }
+
+    return true;
   });
+
+  const clearFilters = () => {
+    setFilterStatus("all");
+    setFilterMinLicenseFee("");
+    setFilterMaxLicenseFee("");
+    setFilterMinDuration("");
+    setFilterMaxDuration("");
+  };
+
+  const hasActiveFilters =
+    filterStatus !== "all" ||
+    filterMinLicenseFee ||
+    filterMaxLicenseFee ||
+    filterMinDuration ||
+    filterMaxDuration;
+
+  const feePresets = [
+    { label: "Any", min: "", max: "" },
+    { label: "< $1k", min: "", max: "999" },
+    { label: "$1k - $5k", min: "1000", max: "5000" },
+    { label: "$5k - $10k", min: "5001", max: "10000" },
+    { label: "$10k+", min: "10001", max: "" },
+  ];
+
+  const durationPresets = [
+    { label: "Any", min: "", max: "" },
+    { label: "0-7 days", min: "0", max: "7" },
+    { label: "8-30 days", min: "8", max: "30" },
+    { label: "31-90 days", min: "31", max: "90" },
+    { label: "90+ days", min: "91", max: "" },
+  ];
 
   return (
     <>
@@ -199,12 +421,38 @@ export const LicensingRequestsTab = ({
               ))}
             </div>
           </div>
-          <Button
-            variant="outline"
-            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white"
-          >
-            <Filter className="w-4 h-4" /> Filter
-          </Button>
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-3 h-3 mr-1" /> Clear
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className={`flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white ${hasActiveFilters ? "border-indigo-300 bg-indigo-50" : ""}`}
+              onClick={() => setShowFilterDialog(true)}
+            >
+              <Filter className="w-4 h-4" /> Filter
+              {hasActiveFilters && (
+                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-indigo-500 text-white rounded-full">
+                  {
+                    [
+                      filterStatus !== "all",
+                      filterMinLicenseFee,
+                      filterMaxLicenseFee,
+                      filterMinDuration,
+                      filterMaxDuration,
+                    ].filter(Boolean).length
+                  }
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
@@ -339,7 +587,7 @@ export const LicensingRequestsTab = ({
                   </Button>
                 </div>
               ) : activeRequestTab === "Archive" ? (
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Button
                     variant="outline"
                     onClick={() => updateGroupStatus(group, "pending")}
@@ -347,6 +595,27 @@ export const LicensingRequestsTab = ({
                   >
                     <RefreshCw className="w-4 h-4" />
                     Recover to Active
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setGroupToDelete(group);
+                      setShowDeleteConfirm(true);
+                    }}
+                    disabled={deletingGroup === group.group_key}
+                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                  >
+                    {deletingGroup === group.group_key ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        Delete Permanently
+                      </>
+                    )}
                   </Button>
                 </div>
               ) : (
@@ -379,13 +648,26 @@ export const LicensingRequestsTab = ({
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => updateGroupStatus(group, "rejected")}
+                    onClick={() => {
+                      setGroupToDecline(group);
+                      setShowDeclineConfirm(true);
+                    }}
+                    disabled={decliningGroup === group.group_key}
                     className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
                   >
-                    <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                      <span className="text-[10px]">✕</span>
-                    </div>
-                    Decline
+                    {decliningGroup === group.group_key ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Declining...
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                          <span className="text-[10px]">✕</span>
+                        </div>
+                        Decline
+                      </>
+                    )}
                   </Button>
                 </div>
               )}
@@ -428,17 +710,219 @@ export const LicensingRequestsTab = ({
                 Cancel
               </Button>
               <Button
-                onClick={() =>
-                  updateGroupStatus(
-                    groupToCounter,
-                    "negotiating",
-                    counterOfferMessage,
-                  )
-                }
-                disabled={!counterOfferMessage.trim()}
+                onClick={handleSendCounterOffer}
+                disabled={!counterOfferMessage.trim() || sendingCounterOffer}
                 className="bg-indigo-500 hover:bg-indigo-500 text-white font-bold"
               >
-                Send Counter Offer
+                {sendingCounterOffer ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Counter Offer"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Filter Dialog */}
+        <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Filter Licensing Requests</DialogTitle>
+              <DialogDescription>
+                Narrow down your licensing requests by status, license fee, and
+                duration.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="negotiating">Negotiating</SelectItem>
+                    <SelectItem value="declined">Declined</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>License Fee</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {feePresets.map((preset) => {
+                    const active =
+                      filterMinLicenseFee === preset.min &&
+                      filterMaxLicenseFee === preset.max;
+                    return (
+                      <Button
+                        key={preset.label}
+                        type="button"
+                        variant={active ? "default" : "outline"}
+                        onClick={() => {
+                          setFilterMinLicenseFee(preset.min);
+                          setFilterMaxLicenseFee(preset.max);
+                        }}
+                        className={`justify-center font-bold ${active ? "bg-indigo-600 text-white hover:bg-indigo-600" : "border-gray-200 text-gray-700"}`}
+                      >
+                        {preset.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Duration</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {durationPresets.map((preset) => {
+                    const active =
+                      filterMinDuration === preset.min &&
+                      filterMaxDuration === preset.max;
+                    return (
+                      <Button
+                        key={preset.label}
+                        type="button"
+                        variant={active ? "default" : "outline"}
+                        onClick={() => {
+                          setFilterMinDuration(preset.min);
+                          setFilterMaxDuration(preset.max);
+                        }}
+                        className={`justify-center font-bold ${active ? "bg-indigo-600 text-white hover:bg-indigo-600" : "border-gray-200 text-gray-700"}`}
+                      >
+                        {preset.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="font-bold"
+              >
+                Clear Filters
+              </Button>
+              <Button onClick={() => setShowFilterDialog(false)}>
+                Apply Filters
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Licensing Request</DialogTitle>
+              <DialogDescription>
+                This will permanently delete this licensing request. This action
+                cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete the licensing request for{" "}
+                <span className="font-semibold">
+                  {groupToDelete?.brand_name || "Unknown brand"}
+                </span>
+                ?
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setGroupToDelete(null);
+                }}
+                className="font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteGroup(groupToDelete)}
+                disabled={deletingGroup === groupToDelete?.group_key}
+                className="font-bold"
+              >
+                {deletingGroup === groupToDelete?.group_key ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Permanently
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Decline Confirmation Dialog */}
+        <Dialog open={showDeclineConfirm} onOpenChange={setShowDeclineConfirm}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Decline</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to decline this licensing request? This
+                action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <p className="text-sm text-gray-600">
+                You are about to decline the request from{" "}
+                <span className="font-semibold">
+                  {groupToDecline?.brand_name || "this brand"}
+                </span>
+                .
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeclineConfirm(false);
+                  setGroupToDecline(null);
+                }}
+                className="font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDecline(groupToDecline)}
+                disabled={decliningGroup === groupToDecline?.group_key}
+                className="font-bold"
+              >
+                {decliningGroup === groupToDecline?.group_key ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Declining...
+                  </>
+                ) : (
+                  "Yes, Decline"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
