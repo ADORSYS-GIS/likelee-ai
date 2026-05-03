@@ -2190,12 +2190,17 @@ export default function BrandDashboard() {
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
-  const { escrowTotal, escrowProjects } = useMemo(() => {
+  const { escrowTotal, escrowProjects, escrowCurrency } = useMemo(() => {
     const projects: any[] = [];
     let total = 0;
+    const currencies: Record<string, number> = {};
     brandOfferItems.forEach((offer: any) => {
       const escrowStatus = String(offer?.escrow_status || "").toLowerCase();
-      if (escrowStatus === "holding" || escrowStatus === "releasing") {
+      const paymentStatus = String(offer?.payment_status || "").toLowerCase();
+      if (
+        (escrowStatus === "holding" || escrowStatus === "releasing") &&
+        paymentStatus === "paid"
+      ) {
         const budgetSnap = offer?.budget_snapshot || {};
         // Support multiple possible keys: budget_total (new offers), total_amount (legacy/drafts), amount (fallback)
         const rawAmount =
@@ -2210,38 +2215,42 @@ export default function BrandDashboard() {
             ? parseFloat(rawAmount.replace(/[$,\s]/g, "")) || 0
             : Number(rawAmount) || 0;
 
+        const currency = budgetSnap?.currency_code || "USD";
+        currencies[currency] = (currencies[currency] || 0) + normalizedAmount;
+
         if (normalizedAmount > 0) {
           total += normalizedAmount;
+          const creatorName =
+            offer?.target_name ||
+            offer?.creators?.full_name ||
+            offer?.agencies?.agency_name ||
+            (offer?.target_type === "creator" ? offer.target_id : "Unknown");
           projects.push({
             id: offer.id,
             name:
               offer?.brand_campaigns?.name || offer?.offer_title || "Campaign",
             status: escrowStatus === "holding" ? "in_progress" : "releasing",
             amount: normalizedAmount,
-            creator:
-              offer?.target_type === "creator" ? offer.target_id : "Unknown",
-            // For independent creators, we can usually resolve their name from brand_creator_connections if available,
-            // but for now we fallback to ID if unknown.
+            creator: creatorName,
             dueDate: budgetSnap?.budget_submission_deadline || "TBD",
-            currency: budgetSnap?.currency_code || "USD",
+            currency,
           });
         }
       }
     });
-    return { escrowTotal: total, escrowProjects: projects };
+    // Use the currency with the highest total
+    const primaryCurrency =
+      Object.entries(currencies).sort((a, b) => b[1] - a[1])[0]?.[0] || "USD";
+    return { escrowTotal: total, escrowProjects: projects, escrowCurrency: primaryCurrency };
   }, [brandOfferItems]);
 
-  const formatCompactCurrencyFromCents = (amountCents: number) => {
-    const dollars = (Number(amountCents) || 0) / 100;
-    if (dollars >= 1000) {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-        notation: "compact",
-        maximumFractionDigits: 1,
-      }).format(dollars);
-    }
-    return currencyFormatter.format(dollars);
+  const formatEscrowCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: escrowCurrency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(amount);
   };
 
   const homeCurrentMonthSpendLabel = loadingBillingData
@@ -2795,7 +2804,7 @@ export default function BrandDashboard() {
               Active Escrow
             </h3>
             <p className="text-6xl font-black text-blue-600">
-              ${(escrowTotal / 1000).toFixed(2)}K
+              {formatEscrowCurrency(escrowTotal)}
             </p>
             <p className="text-blue-800 mt-2 font-medium">
               Protecting {escrowProjects.length}{" "}
@@ -2885,20 +2894,38 @@ export default function BrandDashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-5 text-right font-mono font-bold text-gray-900">
-                      ${project.amount.toLocaleString()}
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: project.currency || escrowCurrency,
+                      }).format(project.amount)}
                     </td>
                     <td className="px-6 py-5">
-                      <Badge
-                        className={
+                      <div
+                        className="relative group"
+                        title={
                           project.status === "releasing"
-                            ? "bg-amber-100 text-amber-700 border-amber-200"
-                            : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                            ? "Funds are being transferred to the creator. This may take 1-3 business days to complete."
+                            : "Funds are securely held in escrow until deliverables are approved."
                         }
                       >
-                        {project.status === "releasing"
-                          ? "Process Started"
-                          : "Protected"}
-                      </Badge>
+                        <Badge
+                          className={
+                            project.status === "releasing"
+                              ? "bg-amber-100 text-amber-700 border-amber-200"
+                              : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                          }
+                        >
+                          {project.status === "releasing"
+                            ? "Release in Progress"
+                            : "Protected"}
+                        </Badge>
+                        {project.status === "releasing" && (
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                            Funds are being transferred to the creator. This may take 1-3 business days to complete.
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <span className="text-sm text-gray-600">
@@ -2955,7 +2982,7 @@ export default function BrandDashboard() {
               <DollarSign className="w-5 h-5 text-gray-400" />
             </div>
             <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-              ${(escrowTotal / 1000).toFixed(1)}K
+              {formatEscrowCurrency(escrowTotal)}
             </p>
             <p className="text-sm text-blue-600 mt-1 font-medium">
               Click for details →
@@ -5712,7 +5739,7 @@ export default function BrandDashboard() {
                                 </div>
                                 <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
                                   <p className="text-sm font-semibold text-amber-900">
-                                    Approving any 1 deliverable triggers escrow
+                                    Approving more than half of deliverables triggers escrow
                                     payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
@@ -9277,7 +9304,7 @@ export default function BrandDashboard() {
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">In Escrow</p>
           <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-            ${(escrowTotal / 1000).toFixed(1)}K
+              {formatEscrowCurrency(escrowTotal)}
           </p>
           <p className="text-xs text-gray-500 mt-1">Pending delivery</p>
         </Card>
@@ -9608,7 +9635,7 @@ export default function BrandDashboard() {
           releases to the creator.
         </p>
         <p className="text-sm font-semibold text-blue-900">
-          Current Escrow: ${(escrowTotal / 1000).toFixed(1)}K across{" "}
+          Current Escrow: {formatEscrowCurrency(escrowTotal / 1000)} across{" "}
           {escrowProjects.length} projects
         </p>
       </Card>
@@ -12990,8 +13017,11 @@ export default function BrandDashboard() {
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-black text-gray-900 leading-none">
                   {escrowReleasedModal.amount
-                    ? `$${(escrowReleasedModal.amount / 100).toLocaleString()}`
-                    : "$ --"}
+                    ? new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: escrowReleasedModal.currency || "USD",
+                      }).format(escrowReleasedModal.amount / 100)
+                    : "--"}
                 </span>
                 <span className="text-xs font-bold text-gray-500 uppercase">
                   {escrowReleasedModal.currency}

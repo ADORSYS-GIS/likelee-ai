@@ -1629,7 +1629,7 @@
           "includedRevisions": "2 Runden kleiner Anpassungen (Farbkorrektur, Textänderungen, Musikaustausch)",
           "majorChanges": "Erfordern ein neues Briefing und zusätzliches Budget (z. B. Re-Shoot, kompletter Re-Edit)",
           "revisionTurnaround": "24-48 Stunden je nach Umfang",
-          "approvalProcess": "1 Creator reicht Deliverables auf der Plattform ein\n2 Die Marke hat 48 Stunden Zeit, zu prüfen und freizugeben/Überarbeitungen anzufordern\n3 Nach Freigabe werden die Mittel aus dem Escrow an den Creator freigegeben (3 Werktage)\n4 Wenn keine Aktion erfolgt, wird die Zahlung nach 48 Stunden automatisch freigegeben",
+          "approvalProcess": "1 Creator reicht Deliverables auf der Plattform ein\n2 Die Marke prüft und gibt frei oder fordert Überarbeitungen an\n3 Nach Freigabe werden die Mittel aus dem Escrow an den Creator via Stripe freigegeben",
           "watermarkProtection": "Alle gelieferten Assets enthalten ein eingebettetes Likelee-Wasserzeichen zur Lizenzprüfung und Nutzungsverfolgung.\nDMCA-Schutz: Automatische Takedown-Hinweise, wenn Assets außerhalb des genehmigten Rahmens genutzt werden.",
           "legalTerms": "• Creator behält das Urheberrecht; die Marke erhält die angegebene Nutzungslizenz\n• SAG-AFTRA-konforme Bedingungen und faire Vergütungsstandards\n• Creator hat das Recht, die finale Nutzung vor Veröffentlichung zu genehmigen\n• Die Marke darf ohne Zustimmung des Creators keine Unterlizenz vergeben\n• Nutzung ist auf genehmigte Kanäle, Gebiete und Dauer beschränkt"
         }
