@@ -60,7 +60,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { DocusealForm } from "@docuseal/react";
-import { MandatoryHint } from "@/components/ui/field-hint";
 
 interface SubmissionWizardProps {
   isOpen: boolean;
@@ -304,7 +303,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       // Fetch agency talents
       getAgencyTalents()
         .then((res) => {
-          setTalents(res || []);
+          // Deduplicate talents by id to prevent duplicates in dropdown
+          const seen = new Set<string>();
+          const uniqueTalents = (res || []).filter((t: any) => {
+            if (!t.id || seen.has(t.id)) return false;
+            seen.add(t.id);
+            return true;
+          });
+          setTalents(uniqueTalents);
         })
         .catch((err) => {
           console.error(`Failed to fetch ${entityPluralLower}:`, err);
@@ -429,6 +435,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         setIsSyncing(false);
       }
     } else if (step === 2) {
+      // Validate contract body before proceeding
+      if (!currentData.contract_body || !currentData.contract_body.trim()) {
+        toast({
+          title: "Contract Body Required",
+          description:
+            "The contract body cannot be empty. Please ensure the template has contract content or add content before proceeding.",
+          variant: "warning",
+        });
+        return;
+      }
       // Transition to Step 3: DocuSeal Sync
       handleSyncToDocuSeal();
     }
@@ -676,7 +692,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     </div>
                   </div>
                 )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center">
@@ -686,14 +702,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         Identification
                       </h3>
                     </div>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2 ml-1">
-                          <Label className="text-sm font-bold text-slate-800">
-                            Brand Name *
-                          </Label>
-                          <MandatoryHint />
-                        </div>
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-bold text-slate-800 ml-1">
+                          Brand Name *
+                        </Label>
                         <Input
                           {...register("client_name", { required: true })}
                           placeholder="e.g. Nike, Spotify"
@@ -705,13 +718,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           </p>
                         )}
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between gap-2 ml-1">
-                          <Label className="text-sm font-bold text-slate-800">
-                            {`${entitySingularTitle} Name *`}
-                          </Label>
-                          <MandatoryHint />
-                        </div>
+                      <div className="space-y-3">
+                        <Label className="text-sm font-bold text-slate-800 ml-1">
+                          {`${entitySingularTitle} Name *`}
+                        </Label>
                         <input
                           type="hidden"
                           {...register("talent_name", { required: true })}
@@ -803,11 +813,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                           t.full_legal_name ||
                                           t.email ||
                                           `Unknown ${entitySingularTitle}`;
-                                        const isSelected = formData.talent_name
-                                          ? formData.talent_name
-                                              .split(", ")
-                                              .includes(talentName)
-                                          : false;
+                                        // Check selection by ID to handle duplicate names
+                                        const isSelected =
+                                          t.id &&
+                                          selectedTalentIds.includes(t.id);
                                         return (
                                           <CommandItem
                                             key={t.id}
@@ -908,14 +917,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           </span>
                         )}
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="flex items-start justify-between ml-1 gap-2">
-                          <div className="flex items-center gap-2">
-                            <Label className="text-sm font-bold text-slate-800 whitespace-nowrap mt-1">
-                              Client Email*
-                            </Label>
-                            <MandatoryHint />
-                          </div>
+                          <Label className="text-sm font-bold text-slate-800 whitespace-nowrap">
+                            Client Email *
+                          </Label>
                           {brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
                               <Label
@@ -1036,9 +1042,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <h3 className="font-bold text-slate-900">Commercials</h3>
                     </div>
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-3">
                           <Label className="text-sm font-bold text-slate-800 ml-1">
                             Duration (days)
                           </Label>
@@ -1050,7 +1056,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium"
                           />
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <Label className="text-sm font-bold text-slate-800 ml-1">
                             Territory
                           </Label>
@@ -1060,7 +1066,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           Exclusivity
                         </Label>
@@ -1084,7 +1090,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           Modifications Allowed
                         </Label>
@@ -1094,7 +1100,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           License Fee ($)
                         </Label>
@@ -1116,7 +1122,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   <Textarea
                     {...register("custom_terms")}
                     placeholder="Describe any other conditions for this specific deal..."
-                    className="min-h-[120px] bg-slate-50 border-slate-200 rounded-2xl font-medium p-6"
+                    className="min-h-[140px] bg-slate-50 border-slate-200 rounded-2xl font-medium p-6"
                   />
                 </div>
               </div>

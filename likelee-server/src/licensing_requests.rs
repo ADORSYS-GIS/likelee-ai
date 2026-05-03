@@ -553,6 +553,189 @@ pub async fn list_for_brand(
     Ok(Json(rows))
 }
 
+#[derive(Deserialize)]
+pub struct UpdateBrandLicensingRequestStatusBody {
+    pub licensing_request_ids: Vec<String>,
+    pub status: String,
+    pub notes: Option<String>,
+}
+
+pub async fn update_status_for_brand(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<UpdateBrandLicensingRequestStatusBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
+
+    if payload.licensing_request_ids.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "No licensing_request_ids".to_string(),
+        ));
+    }
+
+    let status = payload.status.trim().to_lowercase();
+    if status != "pending"
+        && status != "approved"
+        && status != "rejected"
+        && status != "negotiating"
+        && status != "declined"
+        && status != "archived"
+    {
+        return Err((StatusCode::BAD_REQUEST, "Invalid status".to_string()));
+    }
+
+    let decided_at = if status == "pending" {
+        serde_json::Value::Null
+    } else {
+        json!(Utc::now().to_rfc3339())
+    };
+
+    let mut v = json!({
+        "status": status,
+        "decided_at": decided_at,
+        "notes": payload.notes,
+    });
+
+    if let serde_json::Value::Object(ref mut map) = v {
+        let null_keys: Vec<String> = map
+            .iter()
+            .filter_map(|(k, val)| if val.is_null() { Some(k.clone()) } else { None })
+            .collect();
+        for k in null_keys {
+            map.remove(&k);
+        }
+    }
+
+    let ids: Vec<&str> = payload
+        .licensing_request_ids
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+
+    let resp = state
+        .pg
+        .from("licensing_requests")
+        .eq("brand_id", &effective_brand_id)
+        .in_("id", ids)
+        .update(v.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    Ok(Json(json!({"ok": true})))
+}
+
+#[derive(Deserialize)]
+pub struct DeleteBrandLicensingRequestsBody {
+    pub licensing_request_ids: Vec<String>,
+}
+
+pub async fn delete_archived_requests_for_brand(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<DeleteBrandLicensingRequestsBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
+
+    if payload.licensing_request_ids.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "No licensing_request_ids".to_string(),
+        ));
+    }
+
+    let ids: Vec<&str> = payload
+        .licensing_request_ids
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+
+    // Verify all requests belong to this brand and are archived
+    let verify_resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,status,archived_at")
+        .eq("brand_id", &effective_brand_id)
+        .in_("id", ids.clone())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !verify_resp.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            verify_resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    let verify_text = verify_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let verify_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&verify_text).unwrap_or_default();
+
+    for row in &verify_rows {
+        let status = row.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        let archived_at = row.get("archived_at");
+        let is_terminal = status == "archived" || status == "declined" || status == "rejected";
+        if !is_terminal {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Can only delete archived, declined, or rejected licensing requests".to_string(),
+            ));
+        }
+        if status == "archived" && (archived_at.is_none() || archived_at.unwrap().is_null()) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Archived requests must have an archived_at timestamp".to_string(),
+            ));
+        }
+    }
+
+    // Delete the archived requests
+    let delete_resp = state
+        .pg
+        .from("licensing_requests")
+        .eq("brand_id", &effective_brand_id)
+        .in_("id", ids)
+        .delete()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !delete_resp.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            delete_resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    info!(
+        brand_id = %effective_brand_id,
+        deleted_count = payload.licensing_request_ids.len(),
+        "Brand deleted archived licensing requests"
+    );
+
+    Ok(Json(
+        json!({"ok": true, "deleted_count": payload.licensing_request_ids.len()}),
+    ))
+}
+
 pub async fn notify_brand_license_expirations_lazy(
     state: &AppState,
     brand_id: &str,
@@ -785,6 +968,7 @@ pub async fn update_status_bulk(
         && status != "pending"
         && status != "negotiating"
         && status != "declined"
+        && status != "archived"
     {
         return Err((StatusCode::BAD_REQUEST, "Invalid status".to_string()));
     }
@@ -795,9 +979,16 @@ pub async fn update_status_bulk(
         json!(Utc::now().to_rfc3339())
     };
 
+    let archived_at = if status == "archived" {
+        json!(Utc::now().to_rfc3339())
+    } else {
+        serde_json::Value::Null
+    };
+
     let mut v = json!({
         "status": status,
         "decided_at": decided_at,
+        "archived_at": archived_at,
         "notes": payload.notes,
         "negotiation_reason": payload.notes, // Using notes as the reason for now
     });
@@ -2827,5 +3018,216 @@ pub async fn set_pay_split(
     Err((
         StatusCode::BAD_REQUEST,
         "Pay split is no longer configurable on campaigns".to_string(),
+    ))
+}
+
+pub async fn auto_archive_expired_licensing_requests(
+    state: &AppState,
+) -> Result<(usize, usize), String> {
+    let today = Utc::now().date_naive();
+    let mut total_checked: usize = 0;
+    let mut archived_count: usize = 0;
+
+    // Phase 1: Archive pending requests where deadline has passed
+    let resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,deadline,status")
+        .is("archived_at", "null")
+        .neq("status", "approved")
+        .neq("status", "rejected")
+        .neq("status", "declined")
+        .neq("status", "archived")
+        .lte("deadline", today.to_string())
+        .limit(500)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if resp.status().is_success() {
+        let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        total_checked += rows.len();
+
+        for row in rows {
+            let id = match row.get("id").and_then(|v| v.as_str()) {
+                Some(v) if !v.trim().is_empty() => v.to_string(),
+                _ => continue,
+            };
+
+            let update_json = json!({
+                "status": "archived",
+                "archived_at": Utc::now().to_rfc3339(),
+            });
+
+            let update_resp = state
+                .pg
+                .from("licensing_requests")
+                .eq("id", &id)
+                .update(update_json.to_string())
+                .execute()
+                .await;
+
+            if let Ok(r) = update_resp {
+                if r.status().is_success() {
+                    archived_count += 1;
+                    info!(licensing_request_id = %id, "Auto-archived expired pending licensing request");
+                }
+            }
+        }
+    }
+
+    // Phase 2: Archive approved licenses where license_end_date has passed
+    let resp2 = state
+        .pg
+        .from("licensing_requests")
+        .select("id,license_end_date,status")
+        .is("archived_at", "null")
+        .eq("status", "approved")
+        .not("license_end_date", "is", "null")
+        .lte("license_end_date", today.to_string())
+        .limit(500)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if resp2.status().is_success() {
+        let text2 = resp2.text().await.unwrap_or_else(|_| "[]".into());
+        let rows2: Vec<serde_json::Value> = serde_json::from_str(&text2).unwrap_or_default();
+        total_checked += rows2.len();
+
+        for row in rows2 {
+            let id = match row.get("id").and_then(|v| v.as_str()) {
+                Some(v) if !v.trim().is_empty() => v.to_string(),
+                _ => continue,
+            };
+
+            let update_json = json!({
+                "status": "archived",
+                "archived_at": Utc::now().to_rfc3339(),
+            });
+
+            let update_resp = state
+                .pg
+                .from("licensing_requests")
+                .eq("id", &id)
+                .update(update_json.to_string())
+                .execute()
+                .await;
+
+            if let Ok(r) = update_resp {
+                if r.status().is_success() {
+                    archived_count += 1;
+                    info!(licensing_request_id = %id, "Auto-archived expired approved licensing request (end date passed)");
+                }
+            }
+        }
+    }
+
+    Ok((total_checked, archived_count))
+}
+
+#[derive(Deserialize)]
+pub struct DeleteLicensingRequestsBody {
+    pub licensing_request_ids: Vec<String>,
+}
+
+pub async fn delete_archived_requests(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<DeleteLicensingRequestsBody>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access = require_agency_permission(&state, &user, Permission::ManageLicenses).await?;
+    let agency_id = &access.organization_id;
+
+    if payload.licensing_request_ids.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "No licensing_request_ids".to_string(),
+        ));
+    }
+
+    // Only allow deletion of archived requests
+    let ids: Vec<&str> = payload
+        .licensing_request_ids
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
+
+    // Verify all requests belong to this agency and are archived
+    let verify_resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,status,archived_at")
+        .eq("agency_id", agency_id)
+        .in_("id", ids.clone())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !verify_resp.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            verify_resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    let verify_text = verify_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let verify_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&verify_text).unwrap_or_default();
+
+    for row in &verify_rows {
+        let status = row.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        let is_terminal = status == "archived" || status == "declined" || status == "rejected";
+        if !is_terminal {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Can only delete archived, declined, or rejected licensing requests".to_string(),
+            ));
+        }
+    }
+
+    // Auto-archive any declined/rejected requests before deletion (single batch update)
+    let now = Utc::now().to_rfc3339();
+    let archive_update = json!({
+        "status": "archived",
+        "archived_at": now,
+    });
+    let _ = state
+        .pg
+        .from("licensing_requests")
+        .eq("agency_id", agency_id)
+        .in_("id", ids.clone())
+        .neq("status", "archived")
+        .update(archive_update.to_string())
+        .execute()
+        .await;
+
+    // Delete the archived requests
+    let delete_resp = state
+        .pg
+        .from("licensing_requests")
+        .eq("agency_id", agency_id)
+        .in_("id", ids)
+        .delete()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !delete_resp.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            delete_resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    info!(
+        agency_id = %agency_id,
+        deleted_count = payload.licensing_request_ids.len(),
+        "Deleted archived licensing requests"
+    );
+
+    Ok(Json(
+        json!({"ok": true, "deleted_count": payload.licensing_request_ids.len()}),
     ))
 }

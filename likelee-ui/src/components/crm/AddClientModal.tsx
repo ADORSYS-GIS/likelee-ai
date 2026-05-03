@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { MandatoryHint } from "@/components/ui/field-hint";
+
 import {
   Select,
   SelectContent,
@@ -134,35 +134,29 @@ const AddClientModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-none">
-        <div className="p-8 space-y-6">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-none">
+        <div className="p-10 space-y-8">
           <div className="flex justify-between items-center">
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Add New Client
             </DialogTitle>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Company Name *
-                </Label>
-                <MandatoryHint />
-              </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <Label className="text-sm font-bold text-gray-700">
+                Company Name *
+              </Label>
               <Input
                 placeholder="Company Inc."
-                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                className="h-12 bg-gray-50 border-gray-200 rounded-xl"
                 value={formData.company}
                 onChange={(e) =>
                   setFormData({ ...formData, company: e.target.value })
                 }
               />
-              <p className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
-                This field is mandatory.
-              </p>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label className="text-sm font-bold text-gray-700">
                 Industry
               </Label>
@@ -172,7 +166,7 @@ const AddClientModal = ({
                   setFormData({ ...formData, industry: val })
                 }
               >
-                <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectTrigger className="h-12 bg-gray-50 border-gray-200 rounded-xl">
                   <SelectValue placeholder="Select Industry" />
                 </SelectTrigger>
                 <SelectContent>
@@ -186,11 +180,11 @@ const AddClientModal = ({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="text-sm font-bold text-gray-700">Website</Label>
             <Input
               placeholder="company.com"
-              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              className="h-12 bg-gray-50 border-gray-200 rounded-xl"
               value={formData.website}
               onChange={(e) =>
                 setFormData({ ...formData, website: e.target.value })
@@ -198,7 +192,7 @@ const AddClientModal = ({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="text-sm font-bold text-gray-700">
               Pipeline Stage
             </Label>
@@ -206,7 +200,7 @@ const AddClientModal = ({
               value={formData.status}
               onValueChange={(val) => setFormData({ ...formData, status: val })}
             >
-              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+              <SelectTrigger className="h-12 bg-gray-50 border-gray-200 rounded-xl">
                 <SelectValue placeholder="Select stage" />
               </SelectTrigger>
               <SelectContent>
@@ -217,7 +211,7 @@ const AddClientModal = ({
             </Select>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <Label className="text-sm font-bold text-gray-700">Tags</Label>
             <div className="flex flex-wrap gap-2">
               {TAG_OPTIONS.map((tag) => {
@@ -242,13 +236,13 @@ const AddClientModal = ({
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="text-sm font-bold text-gray-700">
               Next Follow-up Date
             </Label>
             <Input
               type="date"
-              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              className="h-12 bg-gray-50 border-gray-200 rounded-xl"
               value={formData.next_follow_up_date}
               onChange={(e) =>
                 setFormData({
@@ -259,11 +253,11 @@ const AddClientModal = ({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label className="text-sm font-bold text-gray-700">Notes</Label>
             <Textarea
               placeholder="Add notes about this client..."
-              className="min-h-[100px] bg-gray-50 border-gray-200 rounded-xl resize-none"
+              className="min-h-[120px] bg-gray-50 border-gray-200 rounded-xl resize-none"
               value={formData.notes}
               onChange={(e) =>
                 setFormData({ ...formData, notes: e.target.value })
@@ -271,18 +265,18 @@ const AddClientModal = ({
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-4 pt-8">
             <Button
               variant="outline"
               onClick={onClose}
-              className="h-11 px-8 rounded-xl border-gray-200 font-bold"
+              className="h-12 px-10 rounded-xl border-gray-200 font-bold"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={mutation.isPending}
-              className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+              className="h-12 px-10 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
             >
               {mutation.isPending ? "Adding..." : "Add Client"}
             </Button>
