@@ -484,14 +484,36 @@ const LicensingRequestsView = ({
     return null;
   };
 
+  const isLicenseExpired = (group: any) => {
+    const now = new Date();
+    const endDateRaw = group?.license_end_date
+      ? new Date(group.license_end_date)
+      : null;
+    if (endDateRaw && !Number.isNaN(endDateRaw.getTime()) && endDateRaw < now) {
+      return true;
+    }
+    const deadlineRaw = group?.deadline ? new Date(group.deadline) : null;
+    if (
+      deadlineRaw &&
+      !Number.isNaN(deadlineRaw.getTime()) &&
+      deadlineRaw < now
+    ) {
+      return true;
+    }
+    return false;
+  };
+
   const filteredData = (data || []).filter((group: any) => {
     const isArchived = ["rejected", "declined", "archived"].includes(
       group.status,
     );
+    const isExpired = isLicenseExpired(group);
     const isBrandRequest = isBrandRequestGroup(group);
-    const matchesStatus =
-      activeRequestTab === "Active" ? !isArchived : isArchived;
-    if (!matchesStatus) return false;
+    if (activeRequestTab === "Active") {
+      if (isArchived || isExpired) return false;
+    } else {
+      if (!isArchived && !isExpired) return false;
+    }
     return !isBrandRequest;
   });
 
@@ -663,6 +685,28 @@ const LicensingRequestsView = ({
         </div>
 
         <div className="space-y-6">
+          {activeRequestTab === "Active" && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <svg
+                className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p className="text-xs text-amber-800">
+                Licensing requests past their end date are automatically moved
+                to the Archive tab.
+              </p>
+            </div>
+          )}
+
           {isLoading && (
             <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
               <div className="text-gray-500 font-medium">Loading...</div>
