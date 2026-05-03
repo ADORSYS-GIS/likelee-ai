@@ -105,7 +105,7 @@ export function AgencyDataPrefetcher() {
     const prefetchAgencyTalents = async () => {
       try {
         await queryClient.prefetchQuery({
-          queryKey: agencyKeys.roster(agencyId),
+          queryKey: agencyKeys.talents(agencyId),
           queryFn: async () => {
             const resp = await getAgencyTalents({});
             return Array.isArray(resp?.talents) ? resp.talents : [];
@@ -132,7 +132,7 @@ export function AgencyDataPrefetcher() {
             ...queryOptions.frequent,
           }),
           queryClient.prefetchQuery({
-            queryKey: agencyKeys.licenses(agencyId),
+            queryKey: agencyKeys.licensesStats(agencyId),
             queryFn: async () => {
               const resp = await getAgencyActiveLicensesStats();
               return resp?.stats || resp || null;
@@ -231,7 +231,7 @@ export function AgencyDataPrefetcher() {
     const prefetchBillingStatus = async () => {
       try {
         await queryClient.prefetchQuery({
-          queryKey: ["agency", "billing", "status", agencyId],
+          queryKey: agencyKeys.billingStatus(agencyId),
           queryFn: async () => {
             return getAgencyBillingStatus().catch(() => null);
           },
@@ -248,7 +248,7 @@ export function AgencyDataPrefetcher() {
     const prefetchTalentInvites = async () => {
       try {
         await queryClient.prefetchQuery({
-          queryKey: ["agency", "talent-invites", agencyId],
+          queryKey: agencyKeys.talentInvites(agencyId),
           queryFn: async () => {
             const resp = await listAgencyTalentInvites();
             return Array.isArray(resp?.invites) ? resp.invites : [];
@@ -266,7 +266,7 @@ export function AgencyDataPrefetcher() {
     const prefetchOfferPackages = async () => {
       try {
         await queryClient.prefetchQuery({
-          queryKey: ["agency", "offer-packages", agencyId],
+          queryKey: agencyKeys.offerPackages(agencyId),
           queryFn: async () => {
             const resp = await listAgencyOfferPackages();
             return Array.isArray(resp?.packages) ? resp.packages : [];
@@ -284,7 +284,7 @@ export function AgencyDataPrefetcher() {
     const prefetchAgencyProfile = async () => {
       try {
         await queryClient.prefetchQuery({
-          queryKey: ["agency", "profile", agencyId],
+          queryKey: agencyKeys.profile(agencyId),
           queryFn: async () => {
             const resp = await getAgencyProfile();
             return resp?.data || resp || null;
@@ -303,7 +303,7 @@ export function AgencyDataPrefetcher() {
       try {
         await Promise.all([
           queryClient.prefetchQuery({
-            queryKey: ["agency", "analytics", "performance", agencyId],
+            queryKey: agencyKeys.analytics.performance(agencyId),
             queryFn: async () => {
               const resp = await getAgencyTalentPerformance();
               return resp?.data || resp || null;
@@ -311,7 +311,7 @@ export function AgencyDataPrefetcher() {
             ...queryOptions.moderate,
           }),
           queryClient.prefetchQuery({
-            queryKey: ["agency", "analytics", "revenue", agencyId],
+            queryKey: agencyKeys.analytics.revenue(agencyId),
             queryFn: async () => {
               const resp = await getAgencyRevenueBreakdown();
               return resp?.data || resp || null;
@@ -319,7 +319,7 @@ export function AgencyDataPrefetcher() {
             ...queryOptions.moderate,
           }),
           queryClient.prefetchQuery({
-            queryKey: ["agency", "analytics", "pipeline", agencyId],
+            queryKey: agencyKeys.analytics.pipeline(agencyId),
             queryFn: async () => {
               const resp = await getAgencyLicensingPipeline();
               return resp?.data || resp || null;
@@ -338,7 +338,7 @@ export function AgencyDataPrefetcher() {
     const prefetchDigitals = async () => {
       try {
         await queryClient.prefetchQuery({
-          queryKey: ["agency", "digitals", agencyId],
+          queryKey: agencyKeys.digitals(agencyId),
           queryFn: async () => {
             const resp = await getAgencyDigitals();
             return Array.isArray(resp?.digitals) ? resp.digitals : [];
@@ -356,7 +356,7 @@ export function AgencyDataPrefetcher() {
     const prefetchRecentActivity = async () => {
       try {
         await queryClient.prefetchQuery({
-          queryKey: ["agency", "activity", agencyId],
+          queryKey: agencyKeys.activity(agencyId),
           queryFn: async () => {
             const resp = await getAgencyRecentActivity();
             return Array.isArray(resp?.activity) ? resp.activity : [];

@@ -77,6 +77,8 @@ export const agencyKeys = {
   dashboard: (agencyId: string) => ["agency", "dashboard", agencyId] as const,
   /** Agency roster (talent list) */
   roster: (agencyId: string) => ["agency", "roster", agencyId] as const,
+  /** Agency talents (detailed talent data) */
+  talents: (agencyId: string) => ["agency", "talents", agencyId] as const,
   /** Agency clients/CRM */
   clients: {
     all: (agencyId: string) => ["agency", "clients", agencyId] as const,
@@ -85,6 +87,9 @@ export const agencyKeys = {
   },
   /** Active licenses */
   licenses: (agencyId: string) => ["agency", "licenses", agencyId] as const,
+  /** Active licenses stats */
+  licensesStats: (agencyId: string) =>
+    ["agency", "licenses", agencyId, "stats"] as const,
   /** License templates */
   licenseTemplates: (agencyId: string) =>
     ["agency", "licenseTemplates", agencyId] as const,
@@ -99,6 +104,30 @@ export const agencyKeys = {
     ["agency", "brandConnections", agencyId] as const,
   /** Agency payouts */
   payouts: (agencyId: string) => ["agency", "payouts", agencyId] as const,
+  /** Agency billing status */
+  billingStatus: (agencyId: string) =>
+    ["agency", "billing", "status", agencyId] as const,
+  /** Agency talent invites */
+  talentInvites: (agencyId: string) =>
+    ["agency", "talent-invites", agencyId] as const,
+  /** Agency offer packages */
+  offerPackages: (agencyId: string) =>
+    ["agency", "offer-packages", agencyId] as const,
+  /** Agency profile */
+  profile: (agencyId: string) => ["agency", "profile", agencyId] as const,
+  /** Agency analytics */
+  analytics: {
+    performance: (agencyId: string) =>
+      ["agency", "analytics", "performance", agencyId] as const,
+    revenue: (agencyId: string) =>
+      ["agency", "analytics", "revenue", agencyId] as const,
+    pipeline: (agencyId: string) =>
+      ["agency", "analytics", "pipeline", agencyId] as const,
+  },
+  /** Agency digitals */
+  digitals: (agencyId: string) => ["agency", "digitals", agencyId] as const,
+  /** Agency recent activity */
+  activity: (agencyId: string) => ["agency", "activity", agencyId] as const,
 } as const;
 
 /**
