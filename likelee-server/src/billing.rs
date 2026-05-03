@@ -5351,6 +5351,23 @@ pub async fn check_license_expiration_alerts_cron(
     }
 }
 
+pub async fn auto_archive_expired_licensing_requests_cron(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    verify_cron_auth(&headers, &state.cron_secret)?;
+
+    match crate::licensing_requests::auto_archive_expired_licensing_requests(&state).await {
+        Ok((total_checked, archived_count)) => Ok(Json(json!({
+            "success": true,
+            "total_checked": total_checked,
+            "archived_count": archived_count
+        }))),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
+    }
+}
+
 // ============================================================================
 // BRAND PAYMENT METHOD HANDLERS
 // ============================================================================

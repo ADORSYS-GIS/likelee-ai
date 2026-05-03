@@ -3025,9 +3025,10 @@ pub async fn auto_archive_expired_licensing_requests(
     state: &AppState,
 ) -> Result<(usize, usize), String> {
     let today = Utc::now().date_naive();
+    let mut total_checked: usize = 0;
+    let mut archived_count: usize = 0;
 
-    // Find licensing requests where deadline has passed and they're not already archived
-    // and not in terminal states (approved, rejected, declined)
+    // Phase 1: Archive pending requests where deadline has passed
     let resp = state
         .pg
         .from("licensing_requests")
@@ -3043,42 +3044,82 @@ pub async fn auto_archive_expired_licensing_requests(
         .await
         .map_err(|e| e.to_string())?;
 
-    if !resp.status().is_success() {
-        return Err(resp.text().await.unwrap_or_default());
+    if resp.status().is_success() {
+        let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        total_checked += rows.len();
+
+        for row in rows {
+            let id = match row.get("id").and_then(|v| v.as_str()) {
+                Some(v) if !v.trim().is_empty() => v.to_string(),
+                _ => continue,
+            };
+
+            let update_json = json!({
+                "status": "archived",
+                "archived_at": Utc::now().to_rfc3339(),
+            });
+
+            let update_resp = state
+                .pg
+                .from("licensing_requests")
+                .eq("id", &id)
+                .update(update_json.to_string())
+                .execute()
+                .await;
+
+            if let Ok(r) = update_resp {
+                if r.status().is_success() {
+                    archived_count += 1;
+                    info!(licensing_request_id = %id, "Auto-archived expired pending licensing request");
+                }
+            }
+        }
     }
 
-    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    let total_checked = rows.len();
+    // Phase 2: Archive approved licenses where license_end_date has passed
+    let resp2 = state
+        .pg
+        .from("licensing_requests")
+        .select("id,license_end_date,status")
+        .is("archived_at", "null")
+        .eq("status", "approved")
+        .not("license_end_date", "is", "null")
+        .lte("license_end_date", today.to_string())
+        .limit(500)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
 
-    if rows.is_empty() {
-        return Ok((0, 0));
-    }
+    if resp2.status().is_success() {
+        let text2 = resp2.text().await.unwrap_or_else(|_| "[]".into());
+        let rows2: Vec<serde_json::Value> = serde_json::from_str(&text2).unwrap_or_default();
+        total_checked += rows2.len();
 
-    let mut archived_count = 0;
-    for row in rows {
-        let id = match row.get("id").and_then(|v| v.as_str()) {
-            Some(v) if !v.trim().is_empty() => v.to_string(),
-            _ => continue,
-        };
+        for row in rows2 {
+            let id = match row.get("id").and_then(|v| v.as_str()) {
+                Some(v) if !v.trim().is_empty() => v.to_string(),
+                _ => continue,
+            };
 
-        let update_json = json!({
-            "status": "archived",
-            "archived_at": Utc::now().to_rfc3339(),
-        });
+            let update_json = json!({
+                "status": "archived",
+                "archived_at": Utc::now().to_rfc3339(),
+            });
 
-        let update_resp = state
-            .pg
-            .from("licensing_requests")
-            .eq("id", &id)
-            .update(update_json.to_string())
-            .execute()
-            .await;
+            let update_resp = state
+                .pg
+                .from("licensing_requests")
+                .eq("id", &id)
+                .update(update_json.to_string())
+                .execute()
+                .await;
 
-        if let Ok(r) = update_resp {
-            if r.status().is_success() {
-                archived_count += 1;
-                info!(licensing_request_id = %id, "Auto-archived expired licensing request");
+            if let Ok(r) = update_resp {
+                if r.status().is_success() {
+                    archived_count += 1;
+                    info!(licensing_request_id = %id, "Auto-archived expired approved licensing request (end date passed)");
+                }
             }
         }
     }
