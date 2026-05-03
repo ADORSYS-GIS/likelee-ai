@@ -51,29 +51,26 @@ pub fn cache_key(namespace: &str, key: &str) -> String {
 /// Configuration for cache layers
 #[derive(Clone, Debug)]
 pub struct CacheConfig {
-    /// TTL for L2 session cache entries (default: 30 min)
+    /// TTL for L2 session cache entries (default: 5 min)
     pub l2_ttl: Duration,
-    /// TTL for L3 application cache entries (default: 1 hour)
+    /// TTL for L3 application cache entries (default: 15 min)
     pub l3_ttl: Duration,
-    /// Interval for L3 background refresh (default: 5 min)
-    pub l3_refresh_interval: Duration,
     /// Maximum entries in L2 cache
     pub l2_max_entries: usize,
     /// Maximum entries in L3 cache
     pub l3_max_entries: usize,
-    /// TTL for idempotency records (default: 24 hours)
+    /// TTL for idempotency records (default: 1 hour)
     pub idempotency_ttl: Duration,
 }
 
 impl Default for CacheConfig {
     fn default() -> Self {
         Self {
-            l2_ttl: Duration::from_secs(1800),             // 30 min
-            l3_ttl: Duration::from_secs(3600),             // 1 hour
-            l3_refresh_interval: Duration::from_secs(300), // 5 min
-            l2_max_entries: 10_000,
-            l3_max_entries: 1_000,
-            idempotency_ttl: Duration::from_secs(86400), // 24 hours
+            l2_ttl: Duration::from_secs(300),           // 5 min
+            l3_ttl: Duration::from_secs(900),           // 15 min
+            l2_max_entries: 5_000,
+            l3_max_entries: 2_000,
+            idempotency_ttl: Duration::from_secs(3600), // 1 hour
         }
     }
 }

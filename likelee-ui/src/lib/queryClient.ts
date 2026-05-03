@@ -8,8 +8,8 @@
  * - refetchOnMount: Only refetch if data is stale
  *
  * Default TTLs align with backend cache:
- * - Session data: 30 min (matches L2 cache)
- * - Application data: 60 min (matches L3 cache)
+ * - Session data: 5 min (matches L2 cache)
+ * - Application data: 15 min (matches L3 cache)
  */
 
 import { QueryClient } from "@tanstack/react-query";
@@ -17,17 +17,20 @@ import { persistQueryClient } from "./indexedDbPersister";
 
 // Default stale times (data is considered fresh)
 export const STALE_TIME = {
-  // Very short - for real-time data (e.g., job status)
+  // Very short - for real-time data (e.g., notifications, payment status)
   REALTIME: 5 * 1000, // 5 seconds
 
-  // Short - for frequently changing data (e.g., notifications)
-  SHORT: 30 * 1000, // 30 seconds
+  // Short - for frequently changing data (e.g., dashboard metrics)
+  FREQUENT: 10 * 1000, // 10 seconds
 
-  // Medium - for session-scoped data (matches backend L2 cache)
-  SESSION: 30 * 60 * 1000, // 30 minutes
+  // Medium - for lists (e.g., agencies, creators, jobs)
+  MODERATE: 30 * 1000, // 30 seconds
 
-  // Long - for application-scoped data (matches backend L3 cache)
-  APPLICATION: 60 * 60 * 1000, // 1 hour
+  // Session-scoped data (matches backend L2 cache)
+  SESSION: 5 * 60 * 1000, // 5 minutes
+
+  // Application-scoped data (matches backend L3 cache)
+  APPLICATION: 15 * 60 * 1000, // 15 minutes
 
   // Very long - for rarely changing data (e.g., config)
   CONFIG: 24 * 60 * 60 * 1000, // 24 hours
@@ -55,8 +58,8 @@ export function createQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        // Data is fresh for 30 seconds by default
-        staleTime: STALE_TIME.SHORT,
+        // Data is fresh for 10 seconds by default
+        staleTime: STALE_TIME.FREQUENT,
 
         // Keep unused data for 5 minutes
         gcTime: GC_TIME.DEFAULT,
@@ -108,11 +111,32 @@ export function createPersistedQueryClient(): QueryClient {
  * Query options presets for common use cases
  */
 export const queryOptions = {
-  // Real-time data (job status, live updates)
+  // Real-time data (notifications, payment status, live counters)
   realtime: {
     staleTime: STALE_TIME.REALTIME,
     gcTime: GC_TIME.DEFAULT,
     refetchInterval: 5 * 1000, // Poll every 5 seconds
+  },
+
+  // Dashboard metrics, campaign status
+  frequent: {
+    staleTime: STALE_TIME.FREQUENT,
+    gcTime: GC_TIME.DEFAULT,
+    refetchInterval: 15 * 1000, // Poll every 15 seconds
+  },
+
+  // Lists (agencies, creators, jobs)
+  moderate: {
+    staleTime: STALE_TIME.MODERATE,
+    gcTime: GC_TIME.DEFAULT,
+    refetchInterval: 30 * 1000, // Poll every 30 seconds
+  },
+
+  // Revenue breakdowns, analytics
+  slow: {
+    staleTime: STALE_TIME.MODERATE,
+    gcTime: GC_TIME.SESSION,
+    refetchInterval: 60 * 1000, // Poll every 60 seconds
   },
 
   // Session-scoped data (user profile, settings)
