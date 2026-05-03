@@ -1718,6 +1718,7 @@ pub async fn get_brand_analytics(
         turnaround_sum: f64,
         turnaround_count: i64,
         success_count: i64,
+        total_cost_cents: i64,
     }
 
     let mut ytd_projects: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -1805,8 +1806,25 @@ pub async fn get_brand_analytics(
             turnaround_sum: 0.0,
             turnaround_count: 0,
             success_count: 0,
+            total_cost_cents: 0,
         });
         entry.projects.insert(campaign_key.clone());
+
+        let payment_status = offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+
+        if payment_status == "paid" {
+            if let Some(budget_snapshot) = offer.get("budget_snapshot") {
+                let budget_cents = parse_budget_cents(budget_snapshot);
+                if budget_cents > 0 {
+                    entry.total_cost_cents += budget_cents;
+                }
+            }
+        }
 
         if let (Some(completed_at), true) = (completed_at.as_deref(), !start_date.is_empty()) {
             if let (Ok(start), Ok(done)) = (
@@ -1970,7 +1988,7 @@ pub async fn get_brand_analytics(
                 "projects_count": projects_count,
                 "avg_turnaround_hours": avg_turnaround_hours,
                 "success_rate_pct": success_rate_pct,
-                "total_cost_cents": serde_json::Value::Null,
+                "total_cost_cents": entry.total_cost_cents,
                 "avg_rating": serde_json::Value::Null
             })
         })
