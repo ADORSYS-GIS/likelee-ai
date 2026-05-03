@@ -1,5 +1,5 @@
 /**
- * React Query Configuration for Multi-Level Caching
+ * React Query Configuration for Client-Side Caching
  *
  * Cache Strategy:
  * - staleTime: Data is fresh for this duration (no refetch on mount/window focus)
@@ -7,9 +7,12 @@
  * - refetchOnWindowFocus: Only refetch if data is stale
  * - refetchOnMount: Only refetch if data is stale
  *
- * Default TTLs align with backend cache:
- * - Session data: 5 min (matches L2 cache)
- * - Application data: 15 min (matches L3 cache)
+ * Data Persistence:
+ * - React Query cache (in-memory): Primary fast access
+ * - IndexedDB (disk): Large datasets for page refresh survival
+ * - localStorage (disk): Small settings only
+ *
+ * Server-side: In-memory DashMap caches (no Redis), see docs/DATA_STORAGE_ARCHITECTURE.md
  */
 
 import { QueryClient } from "@tanstack/react-query";
