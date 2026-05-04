@@ -281,6 +281,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
         description:
           "The expired license is not linked to an available template.",
         variant: "destructive",
+        duration: 3000,
       });
       onRenewalLaunchHandled?.();
       return;

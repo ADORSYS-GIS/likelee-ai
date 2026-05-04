@@ -1220,7 +1220,7 @@ const AnalyticsDashboardView = ({
           const verificationPct = totalTalents
             ? Math.min(Math.round((verifiedCount / totalTalents) * 100), 100)
             : 0;
-          const expiredContractsCount = analytics.consent_status.expiring;
+          const expiredContractsCount = analytics.consent_status.expiring_current_month;
           const consentExpiredCount = analytics.consent_status.expiring;
           const missingCount = analytics.consent_status.missing;
           const completePct = activePct;
@@ -1281,7 +1281,8 @@ const AnalyticsDashboardView = ({
           const effectiveExpired: any[] = expiredLicensesFromDB.map(
             (x: any) => ({
               id: x.id,
-              template_id: x.id,
+              template_id: x.template_id,
+              talent_id: x.talent_id,
               talent_name: x.talent_name ?? x.talent ?? "Unknown",
               talent_avatar: x.talent_avatar ?? null,
               brand: x.brand_name ?? x.client_name ?? "—",

@@ -86,6 +86,7 @@ pub struct ConsentStatusBreakdown {
     pub complete: i64,
     pub missing: i64,
     pub expiring: i64,
+    pub expiring_current_month: i64,
     pub total: i64,
     pub verified: i64,
     pub total_talents: i64,
@@ -579,6 +580,18 @@ pub async fn get_analytics_dashboard(
                 .count() as i64;
         }
 
+        // Count expired licenses in current month
+        let month_start = now.format("%Y-%m-01").to_string();
+        let ai_expired_current_month = requests_data
+            .iter()
+            .filter(|r| {
+                let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
+                let deadline = r.get("deadline").and_then(|v| v.as_str()).unwrap_or("");
+                // Expired if approved and deadline is past but within current month
+                status == "approved" && deadline < today.as_str() && deadline >= month_start.as_str()
+            })
+            .count() as i64;
+
         let avg_value_cents = if active_licenses_count > 0 {
             total_earnings_cents / active_licenses_count
         } else {
@@ -616,6 +629,7 @@ pub async fn get_analytics_dashboard(
                 complete: ai_consent_complete,
                 missing: ai_consent_missing,
                 expiring: ai_consent_expired,
+                expiring_current_month: ai_expired_current_month,
                 total: ai_total_contracts,
                 verified: ai_verified_count,
                 total_talents: talents_data.len() as i64,
@@ -1003,6 +1017,7 @@ pub async fn get_analytics_dashboard(
             complete: consent_complete,
             missing: consent_missing,
             expiring,
+            expiring_current_month: expiring,
             total: total_talents,
             verified: verified_count,
             total_talents,
@@ -2429,22 +2444,27 @@ pub async fn get_royalties_payouts(
     }))
 }
 /// GET /api/agency/analytics/expired-licenses
-/// Returns approved licensing_requests whose `deadline` has already passed.
+/// Returns approved licensing_requests whose `deadline` has already passed in the current month.
 pub async fn get_expired_licenses(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
-    let today = Utc::now().format("%Y-%m-%d").to_string();
+    let now = Utc::now();
+    let today = now.format("%Y-%m-%d").to_string();
 
-    // Fetch expired approved requests
+    // Get first day of current month
+    let month_start = now.format("%Y-%m-01").to_string();
+
+    // Fetch expired approved requests from current month only
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id, talent_id, deadline, client_name, status")
+        .select("id, talent_id, deadline, client_name, status, template_id")
         .eq("agency_id", &auth_user.id)
         .eq("status", "approved")
         .lt("deadline", &today)
+        .gte("deadline", &month_start)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -2515,6 +2535,7 @@ pub async fn get_expired_licenses(
                 "brand_name": r.get("client_name").and_then(|v| v.as_str()).unwrap_or("—"),
                 "deadline": r.get("deadline").and_then(|v| v.as_str()).unwrap_or(""),
                 "status": r.get("status").and_then(|v| v.as_str()).unwrap_or("approved"),
+                "template_id": r.get("template_id").and_then(|v| v.as_str()),
             })
         })
         .collect();

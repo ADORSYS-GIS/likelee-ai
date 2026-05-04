@@ -18682,6 +18682,7 @@ export default function AgencyDashboard() {
         title: "Missing template",
         description: "This license is not linked to a template for renewal.",
         variant: "destructive",
+        duration: 3000,
       });
       return;
     }
@@ -18709,6 +18710,7 @@ export default function AgencyDashboard() {
     toast({
       title: "Redirecting...",
       description: `Opening template for ${license.talent_name} renewal.`,
+      duration: 3000,
     });
   };
 
