@@ -149,14 +149,18 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
+export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?: "AI" | "IRL" }> = ({
   isSportsAgency = false,
+  agencyMode = "AI",
 }) => {
   const queryClient = useQueryClient();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const entitySingular = isSportsAgency ? "athlete" : "talent";
   const entityPlural = isSportsAgency ? "Athletes" : "Talent";
   const allTalentSubTab = isSportsAgency ? "All Athletes" : "All Talent";
+  // In AI mode bookings are not relevant — creators earn through licensing deals,
+  // not IRL bookings. Only earnings drive tier classification.
+  const isAiMode = agencyMode === "AI";
 
   const [configForm, setConfigForm] = useState<
     Record<string, { min_earnings: number; min_bookings: number }>
@@ -164,11 +168,12 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
 
   const { data, isLoading, error } =
     useIndexedDbQuery<PerformanceTiersResponse>({
-      queryKey: ["performance-tiers"],
+      queryKey: ["performance-tiers", agencyMode],
       queryFn: async () => {
         try {
           const resp = await base44.get<PerformanceTiersResponse>(
             "/agency/dashboard/performance-tiers",
+            { params: { agency_mode: agencyMode } },
           );
           return resp;
         } catch (err: any) {
@@ -363,7 +368,9 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
           let thresholdStr = cfg.thresholds;
           if (data?.config && data.config[group.name]) {
             const c = data.config[group.name];
-            thresholdStr = `≥ ${currencyFormatter.format(c.min_earnings)}/mo • ≥ ${c.min_bookings} bookings`;
+            thresholdStr = isAiMode
+              ? `≥ ${currencyFormatter.format(c.min_earnings)}/mo`
+              : `≥ ${currencyFormatter.format(c.min_earnings)}/mo • ≥ ${c.min_bookings} bookings`;
           } else if (group.name === "Inactive") {
             thresholdStr =
               "Includes all roster profiles that don't meet Tier 3 requirements";
@@ -528,7 +535,9 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                             <span className="text-gray-300">•</span>
                             <span className="flex items-center gap-1 group-hover:text-indigo-500 transition-colors">
                               <TrendingUp className="w-3.5 h-3.5" />{" "}
-                              {talent.bookings_this_month} {talent.bookings_this_month === 1 ? "booking" : "bookings"}
+                              {isAiMode
+                                ? "Licensing deals"
+                                : `${talent.bookings_this_month} ${talent.bookings_this_month === 1 ? "booking" : "bookings"}`}
                             </span>
                           </div>
                         </div>
@@ -595,7 +604,9 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
               Configure Performance Tier Thresholds
             </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium pt-1">
-              Set minimum earnings and booking requirements for each tier
+              {isAiMode
+                ? "Set minimum earnings requirements for each tier"
+                : "Set minimum earnings and booking requirements for each tier"}
             </DialogDescription>
           </DialogHeader>
 
@@ -639,6 +650,8 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                       )}
                     />
                   </div>
+                  {/* In AI mode bookings are irrelevant — hide the bookings threshold */}
+                  {!isAiMode && (
                   <div className="space-y-3">
                     <Label className="text-[13px] font-bold text-gray-600 ml-1">
                       Min Bookings/Month
@@ -661,6 +674,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                       )}
                     />
                   </div>
+                  )}
                 </div>
               </div>
             ))}

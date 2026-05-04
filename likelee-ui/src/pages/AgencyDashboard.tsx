@@ -22102,7 +22102,7 @@ export default function AgencyDashboard() {
               />
             )}
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-              <PerformanceTiers isSportsAgency={isSportsAgency} />
+              <PerformanceTiers isSportsAgency={isSportsAgency} agencyMode={effectiveAgencyMode} />
             )}
             {activeTab === "jobs" &&
               activeSubTab === "Job Invites" &&

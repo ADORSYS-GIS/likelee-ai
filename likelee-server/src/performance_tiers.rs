@@ -2,7 +2,7 @@ use crate::{
     auth::{AuthUser, RoleGuard},
     config::AppState,
 };
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::{Query, State}, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
@@ -234,14 +234,27 @@ pub async fn configure_performance_tiers(
     Ok(Json(json!({ "ok": true })))
 }
 
+#[derive(Deserialize)]
+pub struct PerformanceTiersQuery {
+    pub agency_mode: Option<String>,
+}
+
 pub async fn get_performance_tiers(
     State(state): State<AppState>,
     auth_user: AuthUser,
+    Query(query): Query<PerformanceTiersQuery>,
 ) -> Result<Json<PerformanceTiersResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let start_total = Instant::now();
     let agency_id = auth_user.effective_org_id();
     let today = today_iso();
+    // In AI mode bookings are irrelevant — creators earn through licensing deals.
+    // Tier classification uses only earnings; min_monthly_bookings is treated as 0.
+    let is_ai_mode = query
+        .agency_mode
+        .as_deref()
+        .map(|m| m.eq_ignore_ascii_case("AI"))
+        .unwrap_or(true); // default to AI mode
 
     // Parallelize calls
     let (
@@ -617,9 +630,10 @@ pub async fn get_performance_tiers(
 
         let mut assigned_tier = &tiers_json[tiers_json.len() - 1];
         for rule in &tiers_json {
-            if earnings >= rule.min_monthly_earnings
-                && booking_count >= rule.min_monthly_bookings as i64
-            {
+            // In AI mode bookings are irrelevant — only earnings drive tier placement.
+            // In IRL mode both earnings and bookings must meet the threshold.
+            let meets_bookings = is_ai_mode || booking_count >= rule.min_monthly_bookings as i64;
+            if earnings >= rule.min_monthly_earnings && meets_bookings {
                 assigned_tier = rule;
                 break;
             }
