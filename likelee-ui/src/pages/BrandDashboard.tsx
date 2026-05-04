@@ -8126,11 +8126,24 @@ export default function BrandDashboard() {
             variant="outline"
             className="border-2 border-gray-300"
             onClick={() => {
+              const sanitizeCsvField = (value: string): string => {
+                const needsQuoting =
+                  /[,"\n\r]/.test(value) || /^[=+\-@]/.test(value.trim());
+                if (needsQuoting) {
+                  const safeValue = /^[=+\-@]/.test(value.trim())
+                    ? `'${value}`
+                    : value;
+                  return `"${safeValue.replace(/"/g, '""')}"`;
+                }
+                return value;
+              };
               const header =
                 "Metric,Value\nTotal Projects (YTD),{projects}\nTotal Spend (YTD),{spend}\nAvg Cost/Project,{avgCost}\n\nTalent,Projects,Success Rate (%),Total Cost ($)\n";
               const talentRows = brandAnalytics.talent_performance
                 .map((t: any) => {
-                  const name = String(t?.name || "Talent").replace(/,/g, ";");
+                  const name = sanitizeCsvField(
+                    String(t?.name || "Talent"),
+                  );
                   const projects = Number(t?.projects_count || 0);
                   const successRate = Number(t?.success_rate_pct || 0);
                   const totalCostCents = Number(t?.total_cost_cents || 0);
@@ -8144,7 +8157,8 @@ export default function BrandDashboard() {
                   ? "\n\nMonth,Spend ($)\n" +
                     brandSpendData.monthly_spend
                       .map(
-                        (d: any) => `${d.month},${(d.spend / 100).toFixed(2)}`,
+                        (d: any) =>
+                          `${sanitizeCsvField(d.month)},${(d.spend / 100).toFixed(2)}`,
                       )
                       .join("\n")
                   : "";
@@ -9887,13 +9901,24 @@ export default function BrandDashboard() {
             className="border-2 border-gray-300"
             disabled={brandInvoices.length === 0}
             onClick={() => {
+              const sanitizeCsvField = (value: string): string => {
+                const needsQuoting =
+                  /[,"\n\r]/.test(value) || /^[=+\-@]/.test(value.trim());
+                if (needsQuoting) {
+                  const safeValue = /^[=+\-@]/.test(value.trim())
+                    ? `'${value}`
+                    : value;
+                  return `"${safeValue.replace(/"/g, '""')}"`;
+                }
+                return value;
+              };
               const header = "ID,Number,Amount,Currency,Status,Date\n";
               const rows = brandInvoices.map((inv) => {
                 const amountDollars = ((inv.amount || 0) / 100).toFixed(2);
                 const date = inv.created_at
                   ? new Date(inv.created_at).toLocaleDateString()
                   : "";
-                return `${inv.id},${inv.number || ""},${amountDollars},${inv.currency},${inv.status},${date}`;
+                return `${inv.id},${sanitizeCsvField(inv.number || "")},${amountDollars},${inv.currency},${inv.status},${date}`;
               });
               const csv = header + rows.join("\n");
               const blob = new Blob([csv], { type: "text/csv" });
