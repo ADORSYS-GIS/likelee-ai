@@ -341,8 +341,21 @@ const AnalyticsDashboardView = ({
                       <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.overview.active_campaigns}
                       </h3>
-                      <p className="text-xs font-bold text-indigo-600 flex items-center gap-1.5 mt-2">
-                        <TrendingUp className="w-3.5 h-3.5" /> +12% growth
+                      <p
+                        className={`text-xs font-bold flex items-center gap-1.5 mt-2 ${
+                          analytics.overview
+                            .active_campaigns_growth_percentage >= 0
+                            ? "text-indigo-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />{" "}
+                        {analytics.overview
+                          .active_campaigns_growth_percentage >= 0
+                          ? "+"
+                          : ""}
+                        {analytics.overview.active_campaigns_growth_percentage}%
+                        vs last period
                       </p>
                     </div>
                     <div className="w-16 h-16 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
@@ -363,7 +376,11 @@ const AnalyticsDashboardView = ({
                         {analytics.ai_usage.total_usages_30d}
                       </h3>
                       <p className="text-xs font-bold text-purple-600 flex items-center gap-1.5 mt-2">
-                        <TrendingUp className="w-3.5 h-3.5" /> +18% vs last
+                        <TrendingUp className="w-3.5 h-3.5" />{" "}
+                        {analytics.ai_usage.usages_growth_percentage >= 0
+                          ? "+"
+                          : ""}
+                        {analytics.ai_usage.usages_growth_percentage}% vs last
                         period
                       </p>
                     </div>
@@ -629,14 +646,23 @@ const AnalyticsDashboardView = ({
                   <ResponsiveContainer width="100%" height="100%">
                     {(() => {
                       const total = analytics.consent_status.total || 1;
-                      const completePct = Math.round(
-                        (analytics.consent_status.complete / total) * 100,
+                      const completePct = Math.min(
+                        Math.round(
+                          (analytics.consent_status.complete / total) * 100,
+                        ),
+                        100,
                       );
-                      const missingPct = Math.round(
-                        (analytics.consent_status.missing / total) * 100,
+                      const missingPct = Math.min(
+                        Math.round(
+                          (analytics.consent_status.missing / total) * 100,
+                        ),
+                        100,
                       );
-                      const expiredPct = Math.round(
-                        (analytics.consent_status.expiring / total) * 100,
+                      const expiredPct = Math.min(
+                        Math.round(
+                          (analytics.consent_status.expiring / total) * 100,
+                        ),
+                        100,
                       );
                       const otherPct = Math.max(
                         0,
@@ -710,7 +736,10 @@ const AnalyticsDashboardView = ({
                     },
                   ].map((item) => {
                     const total = analytics.consent_status.total || 1;
-                    const pct = Math.round((item.value / total) * 100);
+                    const pct = Math.min(
+                      Math.round((item.value / total) * 100),
+                      100,
+                    );
                     return (
                       <div
                         key={item.name}
@@ -1181,21 +1210,25 @@ const AnalyticsDashboardView = ({
         )
       ) : activeTab === "Compliance" ? (
         (() => {
-          const totalTalents = analytics.consent_status.total;
+          const totalContracts = analytics.consent_status.total;
+          const totalTalents = analytics.consent_status.total_talents;
           const activeCount = analytics.consent_status.complete;
-          const activePct = totalTalents
-            ? Math.round((activeCount / totalTalents) * 100)
+          const activePct = totalContracts
+            ? Math.min(Math.round((activeCount / totalContracts) * 100), 100)
             : 0;
           const verifiedCount = analytics.consent_status.verified;
           const verificationPct = totalTalents
-            ? Math.round((verifiedCount / totalTalents) * 100)
+            ? Math.min(Math.round((verifiedCount / totalTalents) * 100), 100)
             : 0;
           const expiredContractsCount = analytics.consent_status.expiring;
           const consentExpiredCount = analytics.consent_status.expiring;
           const missingCount = analytics.consent_status.missing;
           const completePct = activePct;
-          const expiredPct = totalTalents
-            ? Math.round((consentExpiredCount / totalTalents) * 100)
+          const expiredPct = totalContracts
+            ? Math.min(
+                Math.round((consentExpiredCount / totalContracts) * 100),
+                100,
+              )
             : 0;
           const missingPct = Math.max(100 - completePct - expiredPct, 0);
 
@@ -1274,7 +1307,7 @@ const AnalyticsDashboardView = ({
                     icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
                     label: "Active Consents",
                     value: `${activePct}%`,
-                    sub: `${activeCount} of ${totalTalents} complete`,
+                    sub: `${activeCount} of ${totalContracts} complete`,
                     pct: activePct,
                     barColor: "bg-gray-400",
                   },

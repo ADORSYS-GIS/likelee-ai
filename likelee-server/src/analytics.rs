@@ -43,6 +43,7 @@ pub struct OverviewMetrics {
     pub total_earnings_formatted: String,
     pub earnings_growth_percentage: f64,
     pub active_campaigns: i64,
+    pub active_campaigns_growth_percentage: f64,
     pub total_value_cents: i64,
     pub avg_value_cents: i64,
     pub avg_value_formatted: String,
@@ -59,6 +60,7 @@ pub struct CampaignStatusBreakdown {
 #[derive(Debug, Serialize)]
 pub struct AIUsageMetrics {
     pub total_usages_30d: i64,
+    pub usages_growth_percentage: f64,
     pub avg_campaign_value_cents: i64,
     pub avg_campaign_value_formatted: String,
     pub usage_by_type: AIUsageByType,
@@ -86,6 +88,7 @@ pub struct ConsentStatusBreakdown {
     pub expiring: i64,
     pub total: i64,
     pub verified: i64,
+    pub total_talents: i64,
 }
 
 /// GET /api/agency/analytics/dashboard
@@ -152,6 +155,31 @@ pub async fn get_analytics_dashboard(
             })
             .count() as i64;
 
+        // Calculate previous month's active licenses for growth percentage
+        let thirty_days_ago_date = (now - chrono::Duration::days(30))
+            .format("%Y-%m-%d")
+            .to_string();
+        let prev_active_licenses_count = requests_data
+            .iter()
+            .filter(|r| {
+                let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
+                let deadline = r.get("deadline").and_then(|v| v.as_str()).unwrap_or("");
+                // Active if approved and deadline was valid 30 days ago
+                status == "approved" && deadline >= thirty_days_ago_date.as_str()
+            })
+            .count() as i64;
+
+        let active_campaigns_growth_percentage = if prev_active_licenses_count > 0 {
+            let growth = ((active_licenses_count - prev_active_licenses_count) as f64
+                / prev_active_licenses_count as f64)
+                * 100.0;
+            growth.clamp(-100.0, 100.0)
+        } else if active_licenses_count > 0 {
+            100.0
+        } else {
+            0.0
+        };
+
         // A. OVERVIEW & GROWTH (Payouts in last 30d vs prev 30d)
         let total_earnings_cents: i64 = payouts_data
             .iter()
@@ -172,8 +200,10 @@ pub async fn get_analytics_dashboard(
             .sum();
 
         let earnings_growth_percentage = if prev_earnings_cents > 0 {
-            ((total_earnings_cents - prev_earnings_cents) as f64 / prev_earnings_cents as f64)
-                * 100.0
+            let growth = ((total_earnings_cents - prev_earnings_cents) as f64
+                / prev_earnings_cents as f64)
+                * 100.0;
+            growth.min(100.0)
         } else if total_earnings_cents > 0 {
             100.0
         } else {
@@ -224,30 +254,50 @@ pub async fn get_analytics_dashboard(
         let total_earnings_formatted = format_currency(total_earnings_cents);
 
         // B. AI USAGE — Calculate from catalogs sent to clients
-        let catalogs_resp = state
+        // Count total assets (not catalogs) and calculate growth
+        let catalogs_30d_resp = state
             .pg
             .from("agency_catalogs")
-            .select("id,sent_at")
+            .select("id,sent_at,created_at")
             .eq("agency_id", agency_id)
-            .not("sent_at", "is", "null")
+            .gte("created_at", &thirty_days_ago)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let catalogs_text = catalogs_resp
+        let catalogs_30d_text = catalogs_30d_resp
             .text()
             .await
             .unwrap_or_else(|_| "[]".to_string());
-        let catalogs_data: Vec<serde_json::Value> =
-            serde_json::from_str(&catalogs_text).unwrap_or(vec![]);
+        let catalogs_30d_data: Vec<serde_json::Value> =
+            serde_json::from_str(&catalogs_30d_text).unwrap_or(vec![]);
 
-        let total_usages_30d = catalogs_data.len() as i64;
+        // Get catalogs from previous 30 days for growth calculation
+        let catalogs_prev_resp = state
+            .pg
+            .from("agency_catalogs")
+            .select("id")
+            .eq("agency_id", agency_id)
+            .gte("created_at", &sixty_days_ago)
+            .lt("created_at", &thirty_days_ago)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let catalogs_prev_text = catalogs_prev_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let catalogs_prev_data: Vec<serde_json::Value> =
+            serde_json::from_str(&catalogs_prev_text).unwrap_or(vec![]);
 
-        // Calculate asset type distribution from catalogs
+        // Calculate asset type distribution and total asset count
         let mut video_total = 0.0;
         let mut voice_total = 0.0;
         let mut image_total = 0.0;
+        let mut total_assets_30d = 0i64;
+        let mut total_assets_prev = 0i64;
 
-        for catalog in &catalogs_data {
+        // Process current period catalogs
+        for catalog in &catalogs_30d_data {
             let catalog_id = catalog.get("id").and_then(|v| v.as_str()).unwrap_or("");
 
             // Get catalog items
@@ -263,7 +313,6 @@ pub async fn get_analytics_dashboard(
             let items_data: Vec<serde_json::Value> =
                 serde_json::from_str(&items_text).unwrap_or(vec![]);
 
-            // Get all asset types for this catalog
             let mut has_video = false;
             let mut has_voice = false;
             let mut has_image = false;
@@ -271,7 +320,7 @@ pub async fn get_analytics_dashboard(
             for item in &items_data {
                 let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
 
-                // Get assets for this item
+                // Count assets
                 let assets_resp = state
                     .pg
                     .from("agency_catalog_assets")
@@ -286,6 +335,8 @@ pub async fn get_analytics_dashboard(
                     .unwrap_or_else(|_| "[]".to_string());
                 let assets_data: Vec<serde_json::Value> =
                     serde_json::from_str(&assets_text).unwrap_or(vec![]);
+
+                total_assets_30d += assets_data.len() as i64;
 
                 for asset in &assets_data {
                     let asset_type = asset
@@ -302,7 +353,7 @@ pub async fn get_analytics_dashboard(
                     }
                 }
 
-                // Also check recordings (voice)
+                // Count recordings
                 let recordings_resp = state
                     .pg
                     .from("agency_catalog_recordings")
@@ -317,6 +368,8 @@ pub async fn get_analytics_dashboard(
                     .unwrap_or_else(|_| "[]".to_string());
                 let recordings_data: Vec<serde_json::Value> =
                     serde_json::from_str(&recordings_text).unwrap_or(vec![]);
+
+                total_assets_30d += recordings_data.len() as i64;
 
                 if !recordings_data.is_empty() {
                     has_voice = true;
@@ -339,8 +392,74 @@ pub async fn get_analytics_dashboard(
             }
         }
 
+        // Count assets from previous period for growth calculation
+        for catalog in &catalogs_prev_data {
+            let catalog_id = catalog.get("id").and_then(|v| v.as_str()).unwrap_or("");
+
+            let items_resp = state
+                .pg
+                .from("agency_catalog_items")
+                .select("id")
+                .eq("catalog_id", catalog_id)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let items_text = items_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+            let items_data: Vec<serde_json::Value> =
+                serde_json::from_str(&items_text).unwrap_or(vec![]);
+
+            for item in &items_data {
+                let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
+
+                let assets_resp = state
+                    .pg
+                    .from("agency_catalog_assets")
+                    .select("asset_type")
+                    .eq("catalog_item_id", item_id)
+                    .execute()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let assets_text = assets_resp
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "[]".to_string());
+                let assets_data: Vec<serde_json::Value> =
+                    serde_json::from_str(&assets_text).unwrap_or(vec![]);
+
+                total_assets_prev += assets_data.len() as i64;
+
+                let recordings_resp = state
+                    .pg
+                    .from("agency_catalog_recordings")
+                    .select("recording_id")
+                    .eq("catalog_item_id", item_id)
+                    .execute()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let recordings_text = recordings_resp
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "[]".to_string());
+                let recordings_data: Vec<serde_json::Value> =
+                    serde_json::from_str(&recordings_text).unwrap_or(vec![]);
+
+                total_assets_prev += recordings_data.len() as i64;
+            }
+        }
+
+        // Calculate growth percentage (capped at 100%)
+        let usages_growth_percentage = if total_assets_prev > 0 {
+            let growth =
+                ((total_assets_30d - total_assets_prev) as f64 / total_assets_prev as f64) * 100.0;
+            growth.min(100.0)
+        } else if total_assets_30d > 0 {
+            100.0
+        } else {
+            0.0
+        };
+
         // Calculate final percentages
-        let catalog_count = catalogs_data.len() as f64;
+        let catalog_count = catalogs_30d_data.len() as f64;
         let (video_pct, voice_pct, image_pct) = if catalog_count > 0.0 {
             (
                 (video_total / catalog_count).round() as i64,
@@ -402,8 +521,63 @@ pub async fn get_analytics_dashboard(
             }
         }
 
-        // Verification count: Count active contracts as verified connections
-        let ai_verified_count = ai_consent_complete;
+        // Verification count:
+        // Count all talents in agency_users who have access to talent portal (have creator_id)
+        // AND whose creator has kyc_status='approved'
+        let talents_resp = state
+            .pg
+            .from("agency_users")
+            .select("id, creator_id")
+            .eq("agency_id", agency_id)
+            .eq("role", "talent")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let talents_text = talents_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let talents_data: Vec<serde_json::Value> =
+            serde_json::from_str(&talents_text).unwrap_or(vec![]);
+
+        // Collect all creator_ids from talents
+        let creator_ids: Vec<String> = talents_data
+            .iter()
+            .filter_map(|t| t.get("creator_id").and_then(|v| v.as_str()))
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .collect();
+
+        let mut ai_verified_count = 0i64;
+
+        if !creator_ids.is_empty() {
+            // Fetch creators and check kyc_status
+            let creators_resp = state
+                .pg
+                .from("creators")
+                .select("id, kyc_status")
+                .in_("id", creator_ids)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let creators_text = creators_resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "[]".to_string());
+            let creators_data: Vec<serde_json::Value> =
+                serde_json::from_str(&creators_text).unwrap_or(vec![]);
+
+            // Count creators with kyc_status='approved'
+            ai_verified_count = creators_data
+                .iter()
+                .filter(|c| {
+                    c.get("kyc_status")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s == "approved")
+                        .unwrap_or(false)
+                })
+                .count() as i64;
+        }
 
         let avg_value_cents = if active_licenses_count > 0 {
             total_earnings_cents / active_licenses_count
@@ -417,6 +591,9 @@ pub async fn get_analytics_dashboard(
                 total_earnings_formatted,
                 earnings_growth_percentage: (earnings_growth_percentage * 10.0).round() / 10.0,
                 active_campaigns: active_licenses_count,
+                active_campaigns_growth_percentage: (active_campaigns_growth_percentage * 10.0)
+                    .round()
+                    / 10.0,
                 total_value_cents: total_earnings_cents,
                 avg_value_cents,
                 avg_value_formatted: format_currency(avg_value_cents),
@@ -428,7 +605,8 @@ pub async fn get_analytics_dashboard(
                 completed: 0,
             },
             ai_usage: AIUsageMetrics {
-                total_usages_30d,
+                total_usages_30d: total_assets_30d,
+                usages_growth_percentage: (usages_growth_percentage * 10.0).round() / 10.0,
                 avg_campaign_value_cents: 0,
                 avg_campaign_value_formatted: format_currency(0),
                 usage_by_type,
@@ -440,6 +618,7 @@ pub async fn get_analytics_dashboard(
                 expiring: ai_consent_expired,
                 total: ai_total_contracts,
                 verified: ai_verified_count,
+                total_talents: talents_data.len() as i64,
             },
         }));
     }
@@ -561,7 +740,10 @@ pub async fn get_analytics_dashboard(
         .sum();
 
     let earnings_growth_percentage = if prev_earnings_cents > 0 {
-        ((total_earnings_cents - prev_earnings_cents) as f64 / prev_earnings_cents as f64) * 100.0
+        let growth = ((total_earnings_cents - prev_earnings_cents) as f64
+            / prev_earnings_cents as f64)
+            * 100.0;
+        growth.min(100.0)
     } else if total_earnings_cents > 0 {
         100.0
     } else {
@@ -574,6 +756,7 @@ pub async fn get_analytics_dashboard(
     let mut ready_to_launch = 0i64;
     let mut completed = 0i64;
     let mut scope_counts: HashMap<String, i64> = HashMap::new();
+    let mut prev_active_campaigns = 0i64;
 
     for c in campaigns_data.iter() {
         let status = c.get("status").and_then(|v| v.as_str()).unwrap_or("");
@@ -583,6 +766,11 @@ pub async fn get_analytics_dashboard(
         if status == "ongoing" {
             active_campaigns += 1;
             in_progress += 1;
+
+            // Count if it was also active 30 days ago (created before 30 days ago)
+            if created_at < thirty_days_ago.as_str() {
+                prev_active_campaigns += 1;
+            }
         }
 
         // Ready to Launch (Created)
@@ -608,6 +796,18 @@ pub async fn get_analytics_dashboard(
         .max_by_key(|(_, count)| *count)
         .map(|(scope, _)| scope)
         .unwrap_or_else(|| "Social Media".to_string());
+
+    // Calculate active campaigns growth percentage
+    let active_campaigns_growth_percentage = if prev_active_campaigns > 0 {
+        let growth = ((active_campaigns - prev_active_campaigns) as f64
+            / prev_active_campaigns as f64)
+            * 100.0;
+        growth.clamp(-100.0, 100.0)
+    } else if active_campaigns > 0 {
+        100.0
+    } else {
+        0.0
+    };
 
     // C. AVG VALUE
     let avg_value_cents = if active_campaigns > 0 {
@@ -685,16 +885,18 @@ pub async fn get_analytics_dashboard(
     //                       verification rate = talents with is_verified_talent=true
     let mut consent_complete = 0i64;
     let mut consent_missing = 0i64;
-    let mut verified_count = 0i64;
     let total_talents = talents_data.len() as i64;
 
+    // Collect creator_ids for verification check
+    let mut creator_ids_for_verification: Vec<String> = Vec::new();
+
     for t in talents_data.iter() {
-        let is_verified = t
-            .get("is_verified_talent")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        if is_verified {
-            verified_count += 1;
+        // Track connected creators for verification
+        let creator_id = t.get("creator_id").and_then(|v| v.as_str());
+        if let Some(cid) = creator_id {
+            if !cid.is_empty() {
+                creator_ids_for_verification.push(cid.to_string());
+            }
         }
 
         let consent = t
@@ -706,6 +908,35 @@ pub async fn get_analytics_dashboard(
         } else {
             consent_missing += 1;
         }
+    }
+
+    // Verification count: Count talents with creator_id whose kyc_status='approved'
+    let mut verified_count = 0i64;
+    if !creator_ids_for_verification.is_empty() {
+        let creators_resp = state
+            .pg
+            .from("creators")
+            .select("id, kyc_status")
+            .in_("id", creator_ids_for_verification)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let creators_text = creators_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let creators_data: Vec<serde_json::Value> =
+            serde_json::from_str(&creators_text).unwrap_or(vec![]);
+
+        verified_count = creators_data
+            .iter()
+            .filter(|c| {
+                c.get("kyc_status")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s == "approved")
+                    .unwrap_or(false)
+            })
+            .count() as i64;
     }
 
     // 4. EXPIRING REQUESTS — approved requests with deadline within 10 days
@@ -748,6 +979,8 @@ pub async fn get_analytics_dashboard(
             total_earnings_formatted,
             earnings_growth_percentage: (earnings_growth_percentage * 10.0).round() / 10.0,
             active_campaigns,
+            active_campaigns_growth_percentage: (active_campaigns_growth_percentage * 10.0).round()
+                / 10.0,
             total_value_cents: total_earnings_cents,
             avg_value_cents,
             avg_value_formatted,
@@ -760,6 +993,7 @@ pub async fn get_analytics_dashboard(
         },
         ai_usage: AIUsageMetrics {
             total_usages_30d,
+            usages_growth_percentage: 0.0,
             avg_campaign_value_cents,
             avg_campaign_value_formatted,
             usage_by_type,
@@ -771,6 +1005,7 @@ pub async fn get_analytics_dashboard(
             expiring,
             total: total_talents,
             verified: verified_count,
+            total_talents,
         },
     }))
 }
