@@ -317,6 +317,13 @@ pub struct ServerConfig {
     /// Brand trial period in days (default: 14)
     #[envconfig(from = "BRAND_TRIAL_DAYS", default = "14")]
     pub brand_trial_days: u32,
+
+    // Apify Integration (Instagram Profile Scraper)
+    #[envconfig(from = "APIFY_API_TOKEN", default = "")]
+    pub apify_api_token: String,
+
+    #[envconfig(from = "APIFY_INSTAGRAM_PROFILE_SCRAPER_ACTOR_ID", default = "apify/instagram-profile-scraper")]
+    pub apify_scraper_actor_id: String,
 }
 
 #[derive(Clone)]
@@ -435,6 +442,10 @@ pub struct AppState {
 
     // Brand trial configuration
     pub brand_trial_days: u32,
+
+    // Apify Integration
+    pub apify_api_token: String,
+    pub apify_scraper_actor_id: String,
 
     // JWKS cache for JWT Signing Keys (Supabase)
     pub jwks_cache: std::sync::Arc<crate::auth::JwksCache>,

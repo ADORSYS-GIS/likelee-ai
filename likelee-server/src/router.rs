@@ -940,6 +940,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::get_brand_spend_analytics),
         )
         .route(
+            "/api/brand/billing/escrow-summary",
+            get(crate::brand_campaigns::get_brand_escrow_summary),
+        )
+        .route(
             "/api/brand/billing/invoices",
             get(crate::billing::list_brand_invoices),
         )
@@ -1404,6 +1408,16 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/webhooks/brand-contracts",
             post(crate::brand_campaigns::handle_webhook),
+        )
+        // --- Instagram Scraper (Apify) ---
+        .route(
+            "/api/instagram/scrape",
+            post(crate::instagram_scraper::scrape_instagram_profile)
+                .get(crate::instagram_scraper::scrape_instagram_profile_query),
+        )
+        .route(
+            "/api/instagram/webhook",
+            post(crate::instagram_scraper::handle_apify_webhook),
         )
         // --- Integrations & Misc ---
         .route(

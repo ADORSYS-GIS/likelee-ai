@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-import { createAgencyTalent } from "@/api/functions";
+import { createAgencyTalent, scrapeInstagramProfile } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
 import { DobInput } from "@/components/ui/DobInput";
@@ -75,6 +75,7 @@ export default function AddTalent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingVoice, setUploadingVoice] = useState(false);
+  const [fetchingInstagram, setFetchingInstagram] = useState(false);
   const totalSteps = 3;
   const [duplicateConflict, setDuplicateConflict] = useState<{
     open: boolean;
@@ -124,6 +125,7 @@ export default function AddTalent() {
 
     // Social
     instagram_handle: "",
+    instagram_followers: 0,
 
     // Notes
     bio: "",
@@ -282,6 +284,48 @@ export default function AddTalent() {
         return { ...prev, ethnicity: [...prev.ethnicity, ethnicity] };
       }
     });
+  };
+
+  const fetchInstagramData = async () => {
+    if (!formData.instagram_handle) {
+      toast({
+        title: "Error",
+        description: "Please enter an Instagram handle first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFetchingInstagram(true);
+    try {
+      const data = await scrapeInstagramProfile(formData.instagram_handle);
+
+      if (data?.success && data?.profile) {
+        setFormData((prev) => ({
+          ...prev,
+          instagram_followers: data.profile?.followers || 0,
+        }));
+        toast({
+          title: "Success",
+          description: `Found ${data.profile?.followers?.toLocaleString() || "0"} followers`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description:
+            data?.error || "Could not fetch Instagram data",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Failed to connect to Instagram service",
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingInstagram(false);
+    }
   };
 
   const toggleRoleCategory = (category) => {
@@ -1578,20 +1622,46 @@ export default function AddTalent() {
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
                   Instagram Account
                 </Label>
-                <div className="relative">
-                  <Instagram className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <Input
-                    value={formData.instagram_handle}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        instagram_handle: e.target.value,
-                      })
-                    }
-                    placeholder="@handle"
-                    className="pl-10 h-12"
-                  />
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Instagram className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Input
+                      value={formData.instagram_handle}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          instagram_handle: e.target.value,
+                        })
+                      }
+                      placeholder="@handle"
+                      className="pl-10 h-12"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={fetchInstagramData}
+                    disabled={fetchingInstagram || !formData.instagram_handle}
+                    className="h-12 whitespace-nowrap"
+                  >
+                    {fetchingInstagram ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Fetching...
+                      </>
+                    ) : (
+                      <>
+                        <Instagram className="w-4 h-4 mr-2" />
+                        Fetch from Instagram
+                      </>
+                    )}
+                  </Button>
                 </div>
+                {formData.instagram_followers > 0 && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Followers: {formData.instagram_followers.toLocaleString()}
+                  </p>
+                )}
               </div>
 
               <Alert className="bg-blue-50 border-2 border-blue-200">

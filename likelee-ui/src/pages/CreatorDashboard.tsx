@@ -24,6 +24,7 @@ import {
   listTalentLicenses,
   listTalentLicensingRequests,
   markTalentAssetRequestViewed,
+  scrapeInstagramProfile,
 } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -975,6 +976,7 @@ export default function CreatorDashboard() {
   const [licenses, setLicenses] = useState<any[]>([]);
   const [licensingRequests, setLicensingRequests] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [instagramSyncing, setInstagramSyncing] = useState(false);
 
   const baseMonthlyRate = Number.isFinite(Number(creator.price_per_month))
     ? Number(creator.price_per_month)
@@ -5850,6 +5852,52 @@ export default function CreatorDashboard() {
       await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
     } finally {
       setSavingSocialLinks(false);
+    }
+  };
+
+  const syncInstagram = async () => {
+    if (!creator.instagram_handle) {
+      toast({
+        title: "Error",
+        description: "Please enter your Instagram handle first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setInstagramSyncing(true);
+    try {
+      const data = await scrapeInstagramProfile(creator.instagram_handle);
+
+      if (data?.success && data?.profile) {
+        setCreator((prev: any) => ({
+          ...prev,
+          instagram_connected: true,
+          instagram_followers: data.profile?.followers || 0,
+        }));
+
+        await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
+
+        toast({
+          title: "Success",
+          description: "Instagram profile synced successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description:
+            data?.error || "Could not sync Instagram data",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Failed to sync Instagram profile",
+        variant: "destructive",
+      });
+    } finally {
+      setInstagramSyncing(false);
     }
   };
 
@@ -11649,16 +11697,42 @@ export default function CreatorDashboard() {
                   <Instagram className="w-4 h-4 inline mr-2" />
                   {t("creatorDashboard.settingsView.profile.instagram")}
                 </Label>
-                <Input
-                  value={creator.instagram_handle || ""}
-                  onChange={(e) =>
-                    setCreator({ ...creator, instagram_handle: e.target.value })
-                  }
-                  className="border-2 border-gray-300"
-                  placeholder={t(
-                    "creatorDashboard.settingsView.profile.placeholders.instagram",
-                  )}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={creator.instagram_handle || ""}
+                    onChange={(e) =>
+                      setCreator({ ...creator, instagram_handle: e.target.value })
+                    }
+                    className="border-2 border-gray-300 flex-1"
+                    placeholder={t(
+                      "creatorDashboard.settingsView.profile.placeholders.instagram",
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={syncInstagram}
+                    disabled={instagramSyncing || !creator.instagram_handle}
+                    className="h-10 whitespace-nowrap"
+                  >
+                    {instagramSyncing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <Instagram className="w-4 h-4 mr-2" />
+                        Connect & Sync
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {creator.instagram_followers > 0 && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Followers: {creator.instagram_followers.toLocaleString()}
+                  </p>
+                )}
               </div>
 
               <div>

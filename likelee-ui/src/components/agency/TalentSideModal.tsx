@@ -32,6 +32,7 @@ import {
   getTalentCampaigns,
   updateAgencyTalent,
   uploadTalentAsset,
+  scrapeInstagramProfile,
 } from "@/api/functions";
 
 interface TalentSideModalProps {
@@ -65,6 +66,7 @@ const TalentSideModal = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [fetchingInstagram, setFetchingInstagram] = useState(false);
   const [inviteSending, setInviteSending] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
@@ -222,6 +224,45 @@ const TalentSideModal = ({
       );
     } else {
       setField("role_types", [...current, category]);
+    }
+  };
+
+  const fetchInstagramData = async () => {
+    if (!editForm.instagram_handle) {
+      toast({
+        title: "Error",
+        description: "Please enter an Instagram handle first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setFetchingInstagram(true);
+    try {
+      const data = await scrapeInstagramProfile(editForm.instagram_handle);
+
+      if (data?.success && data?.profile) {
+        setField("instagram_followers", data.profile?.followers || 0);
+        toast({
+          title: "Success",
+          description: `Found ${data.profile?.followers?.toLocaleString() || "0"} followers`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description:
+            data?.error || "Could not fetch Instagram data",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Failed to connect to Instagram service",
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingInstagram(false);
     }
   };
 
@@ -543,12 +584,35 @@ const TalentSideModal = ({
                     <div className="text-xs font-bold text-gray-700">
                       Instagram
                     </div>
-                    <Input
-                      value={editForm.instagram_handle}
-                      onChange={(e) =>
-                        setField("instagram_handle", e.target.value)
-                      }
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        value={editForm.instagram_handle}
+                        onChange={(e) =>
+                          setField("instagram_handle", e.target.value)
+                        }
+                        placeholder="@handle"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchInstagramData}
+                        disabled={fetchingInstagram || !editForm.instagram_handle}
+                        className="whitespace-nowrap"
+                      >
+                        {fetchingInstagram ? (
+                          <>
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            Fetching...
+                          </>
+                        ) : (
+                          <>
+                            <Instagram className="w-3 h-3 mr-1" />
+                            Fetch
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-gray-700">
