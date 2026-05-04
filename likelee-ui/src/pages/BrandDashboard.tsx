@@ -5219,10 +5219,10 @@ export default function BrandDashboard() {
         <div className="space-y-3">
           {loadingBrandOfferItems ? (
             <Card className="p-6 bg-white border border-gray-300 rounded-none">
-              <div className="flex items-center gap-3">
-                <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
-                <p className="text-sm text-gray-500">
-                  Loading agency offers...
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-sm text-gray-600 font-medium">
+                  Loading agency contracts...
                 </p>
               </div>
             </Card>
@@ -5230,9 +5230,20 @@ export default function BrandDashboard() {
               (offer: any) => offer?.target_type === "agency",
             ).length === 0 ? (
             <Card className="p-6 bg-white border border-gray-300 rounded-none">
-              <p className="text-sm text-gray-500">
-                No agency contracts available yet.
-              </p>
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                  <Building2 className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No Agency Contracts Yet
+                </h3>
+                <p className="text-sm text-gray-600 text-center max-w-md mb-4">
+                  Agency contracts will appear here once you send campaign offers to agencies and they sign the agreements.
+                </p>
+                <p className="text-xs text-gray-500 text-center">
+                  Tip: Connect with agencies from the marketplace to get started!
+                </p>
+              </div>
             </Card>
           ) : null}
           {brandOfferItems
@@ -5519,16 +5530,30 @@ export default function BrandDashboard() {
       {contractHubSubTab === "creator" && (
         <Card className="p-4 bg-white border border-gray-300 rounded-none">
           {loadingContractHubRows ? (
-            <p className="text-sm text-gray-500">
-              Loading creator contracts...
-            </p>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+              <p className="text-sm text-gray-600 font-medium">
+                Loading creator contracts...
+              </p>
+            </div>
           ) : contractHubRows.filter((row: any) => {
               const offer = offerMap.get(String(row?.offer_id));
               return offer?.target_type === "creator";
             }).length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No creator contract submissions yet.
-            </p>
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Creator Contracts Yet
+              </h3>
+              <p className="text-sm text-gray-600 text-center max-w-md mb-4">
+                Creator contracts will appear here once you send campaign offers to individual creators and they sign the agreements.
+              </p>
+              <p className="text-xs text-gray-500 text-center">
+                Tip: Send offers from your campaigns to get started!
+              </p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm text-left text-gray-700">
