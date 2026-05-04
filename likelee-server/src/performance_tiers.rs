@@ -461,7 +461,9 @@ pub async fn get_performance_tiers(
     }
 
     // Process signed licensing deals this month (AI mode deal count).
-    // Covers single-talent (talent_id) and multi-talent (talent_ids array).
+    // Use talent_ids array when non-empty (preferred, covers multi-talent).
+    // Fall back to talent_id only when talent_ids is absent or empty.
+    // Never count both for the same submission to avoid double-counting.
     let text_licensing_deals = resp_licensing_deals
         .text()
         .await
@@ -470,21 +472,25 @@ pub async fn get_performance_tiers(
         serde_json::from_str(&text_licensing_deals).unwrap_or_default();
     let mut licensing_deals_map: HashMap<String, i64> = HashMap::new();
     for row in &licensing_deal_rows {
-        // Single-talent path
-        if let Some(tid) = row.get("talent_id").and_then(|v| v.as_str()) {
-            let tid = tid.trim();
-            if !tid.is_empty() {
-                *licensing_deals_map.entry(tid.to_string()).or_insert(0) += 1;
-            }
-        }
-        // Multi-talent path — unnest talent_ids array
-        if let Some(arr) = row.get("talent_ids").and_then(|v| v.as_array()) {
-            for item in arr {
+        // Prefer talent_ids array — it's the authoritative multi-talent list.
+        let arr = row.get("talent_ids").and_then(|v| v.as_array());
+        let used_array = arr.map(|a| !a.is_empty()).unwrap_or(false);
+
+        if used_array {
+            for item in arr.unwrap() {
                 if let Some(tid) = item.as_str() {
                     let tid = tid.trim();
                     if !tid.is_empty() {
                         *licensing_deals_map.entry(tid.to_string()).or_insert(0) += 1;
                     }
+                }
+            }
+        } else {
+            // Single-talent path — only when talent_ids is absent/empty
+            if let Some(tid) = row.get("talent_id").and_then(|v| v.as_str()) {
+                let tid = tid.trim();
+                if !tid.is_empty() {
+                    *licensing_deals_map.entry(tid.to_string()).or_insert(0) += 1;
                 }
             }
         }
