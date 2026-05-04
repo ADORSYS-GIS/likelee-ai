@@ -976,10 +976,26 @@ pub async fn upload_agency_storage_file(
         return Err((StatusCode::BAD_REQUEST, "missing file".into()));
     }
 
+    let new_size = bytes.len() as i64;
+
+    // Check for 20MB limit on package cover images
+    // Package cover images are typically uploaded with visibility=public and no folder_id
+    let is_likely_cover_image = visibility == StorageVisibility::Public && folder_id.is_none();
+    let max_cover_size = 20 * 1024 * 1024; // 20MB in bytes
+
+    if is_likely_cover_image && new_size > max_cover_size {
+        return Err((
+            StatusCode::PAYLOAD_TOO_LARGE,
+            format!(
+                "Package cover image size exceeds the maximum limit of 20MB. Your file is {:.2}MB. Please compress or resize your image and try again.",
+                new_size as f64 / (1024.0 * 1024.0)
+            ),
+        ));
+    }
+
     // Quota enforcement
     let limit = ensure_storage_settings_row(&state, &agency_id).await?;
     let used = get_agency_used_storage_bytes(&state, &agency_id).await?;
-    let new_size = bytes.len() as i64;
     if used + new_size > limit {
         return Err((
             StatusCode::PAYLOAD_TOO_LARGE,

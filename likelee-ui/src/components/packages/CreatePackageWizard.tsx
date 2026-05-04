@@ -873,6 +873,23 @@ export function CreatePackageWizard({
                                 });
                                 return;
                               }
+
+                              // Check file size (20MB limit)
+                              const maxSize = 20 * 1024 * 1024; // 20MB in bytes
+                              if (file.size > maxSize) {
+                                const fileSizeMB = (
+                                  file.size /
+                                  (1024 * 1024)
+                                ).toFixed(2);
+                                toast({
+                                  title: "File too large",
+                                  description: `Package cover image must be 20MB or less. Your file is ${fileSizeMB}MB. Please compress or resize your image and try again.`,
+                                  variant: "destructive",
+                                });
+                                e.target.value = "";
+                                return;
+                              }
+
                               setCoverUploading(true);
                               try {
                                 const fd = new FormData();
