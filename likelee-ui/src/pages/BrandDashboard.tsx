@@ -5238,10 +5238,12 @@ export default function BrandDashboard() {
                   No Agency Contracts Yet
                 </h3>
                 <p className="text-sm text-gray-600 text-center max-w-md mb-4">
-                  Agency contracts will appear here once you send campaign offers to agencies and they sign the agreements.
+                  Agency contracts will appear here once you send campaign
+                  offers to agencies and they sign the agreements.
                 </p>
                 <p className="text-xs text-gray-500 text-center">
-                  Tip: Connect with agencies from the marketplace to get started!
+                  Tip: Connect with agencies from the marketplace to get
+                  started!
                 </p>
               </div>
             </Card>
@@ -5548,7 +5550,8 @@ export default function BrandDashboard() {
                 No Creator Contracts Yet
               </h3>
               <p className="text-sm text-gray-600 text-center max-w-md mb-4">
-                Creator contracts will appear here once you send campaign offers to individual creators and they sign the agreements.
+                Creator contracts will appear here once you send campaign offers
+                to individual creators and they sign the agreements.
               </p>
               <p className="text-xs text-gray-500 text-center">
                 Tip: Send offers from your campaigns to get started!
