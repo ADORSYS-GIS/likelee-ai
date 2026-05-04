@@ -739,6 +739,30 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* External client route hint — shown only when the agency
+                    initiates the contract themselves (no brand request context).
+                    Explains why all fields are open and reminds the agency of
+                    the natural workflow they should have completed first. */}
+                {!brandRequestBrandId && !isRenewalPrefill && (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 rounded-xl bg-white/80 p-2 text-slate-500 shadow-sm shrink-0">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">
+                          Creating a contract for an external client
+                        </p>
+                        <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
+                          You're initiating this contract directly — all fields are open for you to fill in. Enter the client's details and select the {entitySingularLower} you've agreed to license, typically based on the package you sent and the client's selection from it.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
                     <div className="flex items-center gap-3 mb-2">
