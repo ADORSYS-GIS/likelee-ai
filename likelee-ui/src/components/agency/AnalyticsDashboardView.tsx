@@ -1279,19 +1279,49 @@ const AnalyticsDashboardView = ({
             talentData.find((t: any) => t.name === pipelineTalentName) ||
             talentData.find((t: any) => t.id === "julia");
 
+          // Map expired licenses and add numbering for duplicates
+          const brandNameCounts: Record<string, number> = {};
           const effectiveExpired: any[] = expiredLicensesFromDB.map(
-            (x: any) => ({
-              id: x.id,
-              template_id: x.template_id,
-              talent_id: x.talent_id,
-              talent_name: x.talent_name ?? x.talent ?? "Unknown",
-              talent_avatar: x.talent_avatar ?? null,
-              brand: x.brand_name ?? x.client_name ?? "—",
-              end_date:
-                x.deadline ?? x.effective_end_date ?? x.end_date ?? null,
-              client_name: x.brand_name ?? x.client_name ?? "—",
-            }),
+            (x: any) => {
+              const brandName = x.brand_name ?? x.client_name ?? "Unknown License";
+              
+              // Track count for this brand name
+              brandNameCounts[brandName] = (brandNameCounts[brandName] || 0) + 1;
+              const count = brandNameCounts[brandName];
+              
+              // Add number suffix if there are duplicates
+              const displayName = count > 1 ? `${brandName} #${count}` : brandName;
+              
+              return {
+                id: x.id,
+                template_id: x.template_id,
+                talent_id: x.talent_id,
+                talent_name: x.talent_name ?? x.talent ?? "Unknown",
+                talent_avatar: x.talent_avatar ?? null,
+                brand: displayName,
+                end_date:
+                  x.deadline ?? x.effective_end_date ?? x.end_date ?? null,
+                client_name: displayName,
+              };
+            },
           );
+
+          // Add #1 suffix to first occurrence if there are duplicates
+          const finalBrandCounts: Record<string, number> = {};
+          expiredLicensesFromDB.forEach((x: any) => {
+            const brandName = x.brand_name ?? x.client_name ?? "Unknown License";
+            finalBrandCounts[brandName] = (finalBrandCounts[brandName] || 0) + 1;
+          });
+          
+          effectiveExpired.forEach((license, index) => {
+            const originalBrand = expiredLicensesFromDB[index].brand_name ?? 
+                                  expiredLicensesFromDB[index].client_name ?? 
+                                  "Unknown License";
+            if (finalBrandCounts[originalBrand] > 1 && !license.brand.includes('#')) {
+              license.brand = `${originalBrand} #1`;
+              license.client_name = `${originalBrand} #1`;
+            }
+          });
 
           return (
             <div className="space-y-6 animate-in fade-in duration-500">
@@ -1392,7 +1422,7 @@ const AnalyticsDashboardView = ({
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-black text-gray-900 truncate">
-                              {license.talent_name || "Assigned Talent"}
+                              {license.brand || license.client_name || "Unknown License"}
                             </p>
                             <p className="text-xs font-bold text-gray-500 truncate">
                               Expired on {formatLicenseDate(license.end_date)}

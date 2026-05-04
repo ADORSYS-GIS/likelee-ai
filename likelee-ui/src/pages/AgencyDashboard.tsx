@@ -18709,7 +18709,7 @@ export default function AgencyDashboard() {
 
     toast({
       title: "Redirecting...",
-      description: `Opening template for ${license.talent_name} renewal.`,
+      description: `Opening template for ${license.client_name || license.brand || "license"} renewal.`,
       duration: 3000,
     });
   };

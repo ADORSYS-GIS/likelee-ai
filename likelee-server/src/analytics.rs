@@ -2459,10 +2459,19 @@ pub async fn get_expired_licenses(
     let month_start = now.format("%Y-%m-01").to_string();
 
     // Fetch expired approved requests from current month only
+    // Join with license_submissions to get template_id and requires_agency_signature
+    //
+    // KNOWN LIMITATION: Renewed licenses will continue to appear here until their
+    // status is manually updated. To properly handle renewals, the system would need:
+    // 1. A "renewed" status in licensing_requests, OR
+    // 2. A parent_license_id/renewed_by column to track renewal relationships
+    //
+    // Current workaround: Agencies can manually update the status of renewed licenses
+    // to "renewed" or "superseded" in the database to remove them from this list.
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id, talent_id, deadline, client_name, status, template_id")
+        .select("id, talent_id, deadline, client_name, status, submission_id, license_submissions!licensing_requests_submission_id_fkey(template_id,requires_agency_signature)")
         .eq("agency_id", &auth_user.id)
         .eq("status", "approved")
         .lt("deadline", &today)
@@ -2522,12 +2531,25 @@ pub async fn get_expired_licenses(
                         .and_then(|v| v.as_str())
                         .or_else(|| t.get("stage_name").and_then(|v| v.as_str()))
                 })
-                .unwrap_or("Unknown")
+                .unwrap_or("")
                 .to_string();
 
             let talent_avatar = talent
                 .and_then(|t| t.get("profile_photo_url").and_then(|v| v.as_str()))
                 .map(|s| s.to_string());
+
+            // Extract template_id and requires_agency_signature from nested license_submissions object
+            let license_submission = r.get("license_submissions").and_then(|v| v.as_object());
+
+            let template_id = license_submission
+                .and_then(|obj| obj.get("template_id"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            let requires_agency_signature = license_submission
+                .and_then(|obj| obj.get("requires_agency_signature"))
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
 
             json!({
                 "id": r.get("id").and_then(|v| v.as_str()).unwrap_or_default(),
@@ -2537,7 +2559,9 @@ pub async fn get_expired_licenses(
                 "brand_name": r.get("client_name").and_then(|v| v.as_str()).unwrap_or("—"),
                 "deadline": r.get("deadline").and_then(|v| v.as_str()).unwrap_or(""),
                 "status": r.get("status").and_then(|v| v.as_str()).unwrap_or("approved"),
-                "template_id": r.get("template_id").and_then(|v| v.as_str()),
+                "template_id": template_id,
+                "submission_id": r.get("submission_id").and_then(|v| v.as_str()),
+                "requires_agency_signature": requires_agency_signature,
             })
         })
         .collect();
