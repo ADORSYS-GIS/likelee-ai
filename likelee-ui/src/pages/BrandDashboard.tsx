@@ -8335,7 +8335,7 @@ export default function BrandDashboard() {
       </div>
 
       {/* Top KPI Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         <Card className="p-4 sm:p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Projects (YTD)</p>
           <p className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -8343,20 +8343,22 @@ export default function BrandDashboard() {
           </p>
         </Card>
         <Card className="p-4 sm:p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Avg Turnaround</p>
+          <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
           <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-            {campaignMetrics.avg_turnaround_hours > 0
-              ? `${campaignMetrics.avg_turnaround_hours}h`
-              : "—"}
+            {billingYtdSpend > 0
+              ? currencyFormatter.format(billingYtdSpend / 100)
+              : "$0"}
           </p>
         </Card>
         <Card className="p-4 sm:p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">$45.2K</p>
-        </Card>
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Cost/Project</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">$3.8K</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {billingYtdSpend > 0 && brandAnalytics.total_projects_ytd > 0
+              ? currencyFormatter.format(
+                  billingYtdSpend / 100 / brandAnalytics.total_projects_ytd,
+                )
+              : "$0"}
+          </p>
         </Card>
       </div>
 
@@ -8366,7 +8368,69 @@ export default function BrandDashboard() {
           <h3 className="text-xl font-bold text-gray-900">
             Talent Performance
           </h3>
-          <Button variant="outline" className="border-2 border-gray-300">
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={() => {
+              const sanitizeCsvField = (value: string): string => {
+                const needsQuoting =
+                  /[,"\n\r]/.test(value) || /^[=+\-@]/.test(value.trim());
+                if (needsQuoting) {
+                  const safeValue = /^[=+\-@]/.test(value.trim())
+                    ? `'${value}`
+                    : value;
+                  return `"${safeValue.replace(/"/g, '""')}"`;
+                }
+                return value;
+              };
+              const header =
+                "Metric,Value\nTotal Projects (YTD),{projects}\nTotal Spend (YTD),{spend}\nAvg Cost/Project,{avgCost}\n\nTalent,Projects,Success Rate (%),Total Cost ($)\n";
+              const talentRows = brandAnalytics.talent_performance
+                .map((t: any) => {
+                  const name = sanitizeCsvField(String(t?.name || "Talent"));
+                  const projects = Number(t?.projects_count || 0);
+                  const successRate = Number(t?.success_rate_pct || 0);
+                  const totalCostCents = Number(t?.total_cost_cents || 0);
+                  const totalCostDollars = (totalCostCents / 100).toFixed(2);
+                  return `${name},${projects},${successRate},${totalCostDollars}`;
+                })
+                .join("\n");
+              const monthlyRows =
+                brandSpendData?.monthly_spend &&
+                brandSpendData.monthly_spend.length > 0
+                  ? "\n\nMonth,Spend ($)\n" +
+                    brandSpendData.monthly_spend
+                      .map(
+                        (d: any) =>
+                          `${sanitizeCsvField(d.month)},${(d.spend / 100).toFixed(2)}`,
+                      )
+                      .join("\n")
+                  : "";
+              const totalProjects = brandAnalytics.total_projects_ytd;
+              const totalSpend =
+                billingYtdSpend > 0
+                  ? (billingYtdSpend / 100).toFixed(2)
+                  : "0.00";
+              const avgCost =
+                billingYtdSpend > 0 && totalProjects > 0
+                  ? (billingYtdSpend / 100 / totalProjects).toFixed(2)
+                  : "0.00";
+              const csv =
+                header
+                  .replace("{projects}", String(totalProjects))
+                  .replace("{spend}", totalSpend)
+                  .replace("{avgCost}", avgCost) +
+                talentRows +
+                monthlyRows;
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `brand-analytics-report-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
@@ -8382,9 +8446,6 @@ export default function BrandDashboard() {
                   Projects
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Avg Turnaround
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                   Success Rate
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
@@ -8395,7 +8456,7 @@ export default function BrandDashboard() {
             <tbody className="divide-y divide-gray-200">
               {brandAnalytics.loading && (
                 <tr>
-                  <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
+                  <td className="px-4 py-4 text-sm text-gray-600" colSpan={4}>
                     Loading talent performance...
                   </td>
                 </tr>
@@ -8403,7 +8464,7 @@ export default function BrandDashboard() {
               {!brandAnalytics.loading &&
                 brandAnalytics.talent_performance.length === 0 && (
                   <tr>
-                    <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
+                    <td className="px-4 py-4 text-sm text-gray-600" colSpan={4}>
                       No talent performance data yet.
                     </td>
                   </tr>
@@ -8414,9 +8475,6 @@ export default function BrandDashboard() {
                     const name = String(talent?.name || "Talent");
                     const imageUrl = String(talent?.image_url || "").trim();
                     const projectsCount = Number(talent?.projects_count || 0);
-                    const avgTurnaround = Number(
-                      talent?.avg_turnaround_hours || 0,
-                    );
                     const successRate = Number(talent?.success_rate_pct || 0);
                     return (
                       <tr
@@ -8451,13 +8509,17 @@ export default function BrandDashboard() {
                         <td className="px-4 py-4 text-gray-900">
                           {projectsCount}
                         </td>
-                        <td className="px-4 py-4 text-gray-900">
-                          {avgTurnaround > 0 ? `${avgTurnaround}h` : "—"}
-                        </td>
                         <td className="px-4 py-4 text-green-600 font-semibold">
                           {projectsCount > 0 ? `${successRate}%` : "—"}
                         </td>
-                        <td className="px-4 py-4 font-bold text-gray-900">—</td>
+                        <td className="px-4 py-4 font-bold text-gray-900">
+                          {talent.total_cost_cents != null &&
+                          Number(talent.total_cost_cents) > 0
+                            ? currencyFormatter.format(
+                                Number(talent.total_cost_cents) / 100,
+                              )
+                            : "—"}
+                        </td>
                       </tr>
                     );
                   },
@@ -8505,32 +8567,38 @@ export default function BrandDashboard() {
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           Budget Forecast
         </h3>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">YTD Spend</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {billingYtdSpend > 0
-                ? `$${(billingYtdSpend / 100).toLocaleString()}`
-                : "$0"}
-            </p>
+        {loadingBillingData ? (
+          <div className="p-4 text-center text-gray-500">
+            Loading budget forecast...
           </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Monthly Avg</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {billingMonthlyAvg > 0
-                ? `$${(billingMonthlyAvg / 100).toLocaleString()}`
-                : "$0"}
-            </p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">YTD Spend</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {billingYtdSpend > 0
+                  ? currencyFormatter.format(billingYtdSpend / 100)
+                  : "$0"}
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">Monthly Avg</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {billingMonthlyAvg > 0
+                  ? currencyFormatter.format(billingMonthlyAvg / 100)
+                  : "$0"}
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {billingProjectedEoy > 0
+                  ? currencyFormatter.format(billingProjectedEoy / 100)
+                  : "$0"}
+              </p>
+            </div>
           </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {billingProjectedEoy > 0
-                ? `$${(billingProjectedEoy / 100000).toFixed(1)}K`
-                : "$0"}
-            </p>
-          </div>
-        </div>
+        )}
       </Card>
     </div>
   );
@@ -10077,13 +10145,24 @@ export default function BrandDashboard() {
             className="border-2 border-gray-300"
             disabled={brandInvoices.length === 0}
             onClick={() => {
+              const sanitizeCsvField = (value: string): string => {
+                const needsQuoting =
+                  /[,"\n\r]/.test(value) || /^[=+\-@]/.test(value.trim());
+                if (needsQuoting) {
+                  const safeValue = /^[=+\-@]/.test(value.trim())
+                    ? `'${value}`
+                    : value;
+                  return `"${safeValue.replace(/"/g, '""')}"`;
+                }
+                return value;
+              };
               const header = "ID,Number,Amount,Currency,Status,Date\n";
               const rows = brandInvoices.map((inv) => {
                 const amountDollars = ((inv.amount || 0) / 100).toFixed(2);
                 const date = inv.created_at
                   ? new Date(inv.created_at).toLocaleDateString()
                   : "";
-                return `${inv.id},${inv.number || ""},${amountDollars},${inv.currency},${inv.status},${date}`;
+                return `${inv.id},${sanitizeCsvField(inv.number || "")},${amountDollars},${inv.currency},${inv.status},${date}`;
               });
               const csv = header + rows.join("\n");
               const blob = new Blob([csv], { type: "text/csv" });
