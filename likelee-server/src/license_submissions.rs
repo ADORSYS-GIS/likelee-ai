@@ -591,6 +591,7 @@ pub struct FinalizeSubmissionRequest {
     pub talent_names: Option<String>,
     pub requires_agency_signature: Option<bool>,
     pub licensing_request_id: Option<String>,
+    pub old_license_id: Option<String>, // ID of expired license being renewed
 }
 
 /// POST /api/license-submissions/:id/finalize - Finalize and send a draft submission
@@ -1167,6 +1168,44 @@ pub async fn finalize(
                     "Created licensing_request for submission {} (multi-talent)",
                     submission.id
                 );
+
+                // If this is a renewal, mark the old license as "renewed"
+                if let Some(old_license_id) = &req.old_license_id {
+                    let update_old_license = json!({
+                        "status": "renewed",
+                        "updated_at": chrono::Utc::now().to_rfc3339()
+                    });
+
+                    let update_result = state
+                        .pg
+                        .from("licensing_requests")
+                        .update(update_old_license.to_string())
+                        .eq("id", old_license_id)
+                        .eq("agency_id", &agency_id)
+                        .execute()
+                        .await;
+
+                    match update_result {
+                        Ok(update_resp) if update_resp.status().is_success() => {
+                            tracing::info!("Marked old license {} as renewed", old_license_id);
+                        }
+                        Ok(update_resp) => {
+                            let body = update_resp.text().await.unwrap_or_default();
+                            tracing::warn!(
+                                "Failed to mark old license {} as renewed: {}",
+                                old_license_id,
+                                body
+                            );
+                        }
+                        Err(e) => {
+                            tracing::warn!(
+                                "Error marking old license {} as renewed: {}",
+                                old_license_id,
+                                e
+                            );
+                        }
+                    }
+                }
             } else {
                 let body = resp.text().await.unwrap_or_default();
                 tracing::error!(
@@ -1522,6 +1561,7 @@ pub async fn resend(
         talent_names: req.talent_names,
         requires_agency_signature: req.requires_agency_signature,
         licensing_request_id: req.licensing_request_id,
+        old_license_id: None, // Not a renewal in this flow
     };
 
     finalize(

@@ -83,6 +83,7 @@ interface SubmissionWizardProps {
     modifications_allowed?: string;
   } | null;
   isRenewalPrefill?: boolean;
+  oldLicenseId?: string; // ID of expired license being renewed
   brandRequestContext?: {
     brand_id: string;
     brand_name?: string;
@@ -137,6 +138,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   isSportsAgency = false,
   initialValues,
   isRenewalPrefill = false,
+  oldLicenseId,
   brandRequestContext,
 }) => {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
@@ -520,6 +522,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         talent_names: currentData.talent_name,
         requires_agency_signature: requiresAgencySignature,
         licensing_request_id: brandRequestContext?.licensing_request_id,
+        old_license_id: oldLicenseId, // Pass the old license ID for renewal tracking
       });
 
       const finalizedSubmissionId = (finalizeResult as any)?.id || submissionId;
