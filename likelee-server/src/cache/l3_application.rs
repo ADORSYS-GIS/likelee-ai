@@ -1,19 +1,18 @@
 //! Level 3: Application-Scoped Cache
 //!
 //! Cache global, shared data for the lifetime of the application.
-//! Preloaded at startup and refreshed periodically in the background.
+//! Preloaded at startup with TTL-based eviction.
 //! Shared across all users and sessions.
 //!
 //! **Scope**: Application lifetime (all users/sessions)
-//! **TTL**: Configurable (default: 1 hour)
-//! **Invalidation**: TTL expiry + background refresh + manual invalidation
+//! **TTL**: Configurable (default: 15 min)
+//! **Invalidation**: TTL expiry + manual invalidation
 //! **Thread Safety**: Arc<RwLock> for read-heavy access pattern
 
 use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tracing::debug;
 
 /// Entry in the application cache with TTL tracking
 #[derive(Debug, Clone)]
@@ -26,20 +25,11 @@ pub struct ApplicationCacheEntry {
     pub ttl: Duration,
 }
 
-/// Function type for background refresh
-/// Returns a boxed future that resolves to an optional cached value
-#[allow(dead_code)]
-pub type RefreshFn = Box<
-    dyn Fn() -> std::pin::Pin<Box<dyn std::future::Future<Output = Option<Arc<[u8]>>> + Send>>
-        + Send
-        + Sync,
->;
-
 /// Application-level cache for global shared data.
 ///
 /// Supports:
 /// - Preloading at startup
-/// - Background refresh without downtime
+/// - TTL-based expiry
 /// - Manual invalidation on config changes
 pub struct ApplicationCache {
     /// Inner map with RwLock for read-heavy pattern
@@ -48,20 +38,15 @@ pub struct ApplicationCache {
     default_ttl: Duration,
     /// Maximum entries
     max_entries: usize,
-    /// Stop signal for background refresh task
-    stop_tx: Option<tokio::sync::watch::Sender<bool>>,
 }
 
 impl ApplicationCache {
     /// Create a new application cache with the given configuration
     pub fn new(default_ttl: Duration, max_entries: usize) -> Self {
-        let (stop_tx, _) = tokio::sync::watch::channel(false);
-
         Self {
             inner: RwLock::new(HashMap::new()),
             default_ttl,
             max_entries,
-            stop_tx: Some(stop_tx),
         }
     }
 
@@ -193,86 +178,6 @@ impl ApplicationCache {
     /// Get all keys (for debugging/metrics)
     pub fn keys(&self) -> Vec<String> {
         self.inner.read().keys().cloned().collect()
-    }
-
-    /// Stop background refresh task
-    pub fn stop(&self) {
-        if let Some(tx) = &self.stop_tx {
-            let _ = tx.send(true);
-        }
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn stop_rx(&self) -> Option<tokio::sync::watch::Receiver<bool>> {
-        self.stop_tx.as_ref().map(|tx| tx.subscribe())
-    }
-}
-
-impl Drop for ApplicationCache {
-    fn drop(&mut self) {
-        self.stop();
-    }
-}
-
-/// Background refresh task for application cache
-#[allow(dead_code)]
-pub struct CacheRefreshTask {
-    /// Cache reference
-    cache: Arc<ApplicationCache>,
-    /// Refresh interval
-    interval: Duration,
-    /// Keys to refresh with their refresh functions
-    refreshers: HashMap<String, RefreshFn>,
-}
-
-#[allow(dead_code)]
-impl CacheRefreshTask {
-    /// Create a new refresh task
-    pub fn new(cache: Arc<ApplicationCache>, interval: Duration) -> Self {
-        Self {
-            cache,
-            interval,
-            refreshers: HashMap::new(),
-        }
-    }
-
-    /// Register a refresh function for a key
-    pub fn register<F, Fut>(&mut self, key: &str, refresh_fn: F)
-    where
-        F: Fn() -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Option<Arc<[u8]>>> + Send + 'static,
-    {
-        self.refreshers
-            .insert(key.to_string(), Box::new(move || Box::pin(refresh_fn())));
-    }
-
-    /// Start the background refresh loop
-    pub fn start(self) -> tokio::task::JoinHandle<()> {
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(self.interval);
-            let mut stop_rx = self
-                .cache
-                .stop_rx()
-                .expect("ApplicationCache stop channel missing");
-            loop {
-                tokio::select! {
-                    _ = interval.tick() => {}
-                    _ = stop_rx.changed() => {
-                        if *stop_rx.borrow() {
-                            break;
-                        }
-                    }
-                }
-
-                // Refresh each registered key
-                for (key, refresher) in &self.refreshers {
-                    if let Some(value) = refresher().await {
-                        self.cache.set(key, value, None);
-                        debug!(key = %key, "Application cache refreshed");
-                    }
-                }
-            }
-        })
     }
 }
 

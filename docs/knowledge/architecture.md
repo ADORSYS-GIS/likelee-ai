@@ -93,11 +93,11 @@ graph TB
 
 ### Cache Flow
 
-The system uses a three-level caching strategy for performance optimization:
+The system uses a three-level **in-memory** caching strategy (no Redis):
 
-1. **L1 (Request Cache)**: Per-request scoped cache in memory
-2. **L2 (Session Cache)**: User session-scoped cache with 5-30 min TTL
-3. **L3 (Application Cache)**: Application-wide cache with 1-60 min TTL
+1. **L1 (Request Cache)**: Per-request scoped cache using `RwLock<HashMap>`
+2. **L2 (Session Cache)**: User session-scoped cache using `DashMap` with 5-30 min TTL
+3. **L3 (Application Cache)**: Application-wide shared cache using `DashMap` with 1-60 min TTL
 
 **Key Cache Invalidation Points**:
 
@@ -105,7 +105,7 @@ The system uses a three-level caching strategy for performance optimization:
 - Connection changes → `invalidate_brand_agency_connection_cache()` (L3)
 - Security events → `invalidate_session()` (L2)
 
-See [Cache Invalidation System](../CACHE_INVALIDATION.md) for detailed documentation.
+See [Cache Invalidation System](../CACHE_INVALIDATION.md) and [Data Storage Architecture](../DATA_STORAGE_ARCHITECTURE.md) for detailed documentation.
 
 ### Webhook Flow
 

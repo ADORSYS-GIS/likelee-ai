@@ -1319,6 +1319,8 @@ export default function BrandCampaignDashboard({
   };
 
   useEffect(() => {
+    let mounted = true;
+
     const loadConnectedAgencies = async () => {
       setLoadingConnectedAgencies(true);
       try {
@@ -1326,18 +1328,44 @@ export default function BrandCampaignDashboard({
           status?: string;
           agencies?: any[];
         }>("/api/brand/connected-agencies");
+        if (!mounted) return;
         setConnectedAgencies(
           Array.isArray(response?.agencies) ? response.agencies : [],
         );
       } catch {
+        if (!mounted) return;
         setConnectedAgencies([]);
       } finally {
+        if (!mounted) return;
         setLoadingConnectedAgencies(false);
       }
     };
 
-    loadConnectedAgencies();
-    void loadCampaignCards();
+    const refreshData = async () => {
+      if (!mounted) return;
+      await loadConnectedAgencies();
+      await loadCampaignCards();
+    };
+
+    void refreshData();
+
+    const campaignTimer = setInterval(() => {
+      if (mounted) {
+        void loadCampaignCards();
+      }
+    }, 15000);
+
+    const agencyTimer = setInterval(() => {
+      if (mounted) {
+        void loadConnectedAgencies();
+      }
+    }, 30000);
+
+    return () => {
+      mounted = false;
+      clearInterval(campaignTimer);
+      clearInterval(agencyTimer);
+    };
   }, []);
 
   const filteredConnectedAgencies = useMemo(() => {
@@ -1394,7 +1422,7 @@ export default function BrandCampaignDashboard({
     previousCollaboratorTypeRef.current = collaboratorType;
     setLoadingMarketplaceCreators(true);
 
-    const timer = setTimeout(async () => {
+    const fetchCreators = async () => {
       try {
         const response = await base44.get<{
           items?: any[];
@@ -1418,9 +1446,23 @@ export default function BrandCampaignDashboard({
         if (creatorFetchRequestIdRef.current !== requestId) return;
         setLoadingMarketplaceCreators(false);
       }
-    }, 250);
+    };
 
-    return () => clearTimeout(timer);
+    const timer = setTimeout(fetchCreators, 250);
+
+    const pollTimer = setInterval(() => {
+      if (
+        creatorFetchRequestIdRef.current === requestId &&
+        showNewCampaignModal
+      ) {
+        void fetchCreators();
+      }
+    }, 20000);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(pollTimer);
+    };
   }, [
     creatorSearch,
     brandCampaignId,

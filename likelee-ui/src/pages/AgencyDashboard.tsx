@@ -18734,7 +18734,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 15 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -18748,7 +18748,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 20 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -18762,7 +18762,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 5 * 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 30 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -18776,7 +18776,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 15 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -18790,7 +18790,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 10 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -19502,7 +19502,6 @@ export default function AgencyDashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
-    if (activeTab !== "roster") return;
     if (!isRosterPrimarySubTab) return;
     if (!rosterQuery.data) {
       rosterQuery.refetch();

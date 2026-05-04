@@ -355,8 +355,35 @@ export default function BrandDashboard() {
   const billingSuccessProcessedRef = useRef(false);
 
   useEffect(() => {
-    activeSectionRef.current = activeSection;
-  }, [activeSection]);
+    let mounted = true;
+    const loadPackages = async () => {
+      try {
+        setLoadingInboxPackages(true);
+        const response = await base44.get<{ packages?: any[] }>(
+          "/api/brand/inbox/packages",
+        );
+        if (!mounted) return;
+        const pkgs = Array.isArray(response?.packages) ? response.packages : [];
+        setInboxPackages(pkgs);
+        setInboxPendingCount(
+          pkgs.filter((p: any) => String(p?.status || "") === "sent").length,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        setInboxPackages([]);
+        setInboxPendingCount(0);
+      } finally {
+        if (!mounted) return;
+        setLoadingInboxPackages(false);
+      }
+    };
+    loadPackages();
+    const timer = setInterval(loadPackages, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     campaignHubTabRef.current = campaignHubTab;
@@ -1025,11 +1052,17 @@ export default function BrandDashboard() {
     if (typeof window !== "undefined") {
       window.addEventListener("focus", onFocus);
     }
+    const timer = setInterval(() => {
+      if (mounted) {
+        void loadMetrics();
+      }
+    }, 15000);
     return () => {
       mounted = false;
       if (typeof window !== "undefined") {
         window.removeEventListener("focus", onFocus);
       }
+      clearInterval(timer);
     };
   }, []);
 
@@ -1160,8 +1193,14 @@ export default function BrandDashboard() {
       }
     };
     loadActivityEvents();
+    const timer = setInterval(() => {
+      if (mounted) {
+        void loadActivityEvents();
+      }
+    }, 30000);
     return () => {
       mounted = false;
+      clearInterval(timer);
     };
   }, []);
 
@@ -1202,7 +1241,6 @@ export default function BrandDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeSection !== "campaigns-inbox") return;
     let mounted = true;
     const loadPackages = async () => {
       try {
@@ -1231,10 +1269,9 @@ export default function BrandDashboard() {
       mounted = false;
       clearInterval(timer);
     };
-  }, [activeSection]);
+  }, []);
 
   useEffect(() => {
-    if (campaignHubTab !== "jobs") return;
     let mounted = true;
     (async () => {
       try {
@@ -1254,7 +1291,7 @@ export default function BrandDashboard() {
     return () => {
       mounted = false;
     };
-  }, [campaignHubTab]);
+  }, []);
 
   const updateJobStatus = async (jobId: string, status: string) => {
     try {
@@ -1443,38 +1480,45 @@ export default function BrandDashboard() {
         );
         if (!mounted) return;
         const offers = Array.isArray(response?.offers) ? response.offers : [];
-        const withDeliverables = await Promise.all(
-          offers.map(async (offer: any) => {
-            const offerId = String(offer?.id || "").trim();
-            if (!offerId) return offer;
-            try {
-              const [delResp, contractsResp] = await Promise.all([
-                listOfferDeliverables(offerId),
-                base44
-                  .get<{
-                    contracts?: any[];
-                  }>(`/api/campaign-offers/${offerId}/contracts`)
-                  .catch(() => ({ contracts: [] })),
-              ]);
-              const deliverables = Array.isArray(delResp?.deliverables)
-                ? delResp.deliverables
-                : [];
-              const contracts = Array.isArray(contractsResp?.contracts)
-                ? contractsResp.contracts
-                : [];
-              return {
-                ...offer,
-                offer_deliverables: deliverables,
-                offer_contracts: contracts,
-              };
-            } catch {
-              return offer;
-            }
-          }),
-        );
-        if (!mounted) return;
-        setBrandOfferItems(withDeliverables);
+        setBrandOfferItems(offers);
         hasLoadedOffersRef.current = true;
+        setLoadingBrandOfferItems(false);
+
+        void (async () => {
+          if (!mounted) return;
+          const enriched = await Promise.all(
+            offers.map(async (offer: any) => {
+              const offerId = String(offer?.id || "").trim();
+              if (!offerId) return offer;
+              try {
+                const [delResp, contractsResp] = await Promise.all([
+                  listOfferDeliverables(offerId),
+                  base44
+                    .get<{
+                      contracts?: any[];
+                    }>(`/api/campaign-offers/${offerId}/contracts`)
+                    .catch(() => ({ contracts: [] })),
+                ]);
+                if (!mounted) return offer;
+                const deliverables = Array.isArray(delResp?.deliverables)
+                  ? delResp.deliverables
+                  : [];
+                const contracts = Array.isArray(contractsResp?.contracts)
+                  ? contractsResp.contracts
+                  : [];
+                return {
+                  ...offer,
+                  offer_deliverables: deliverables,
+                  offer_contracts: contracts,
+                };
+              } catch {
+                return offer;
+              }
+            }),
+          );
+          if (!mounted) return;
+          setBrandOfferItems(enriched);
+        })();
       } catch {
         if (!mounted) return;
         setBrandOfferItems([]);
