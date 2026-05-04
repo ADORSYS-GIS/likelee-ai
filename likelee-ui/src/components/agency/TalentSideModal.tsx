@@ -517,29 +517,41 @@ const TalentSideModal = ({
               <div className="space-y-5">
                 {/* Identity */}
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Identity</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
+                    Identity
+                  </h4>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Full name</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Full name
+                        </label>
                         <Input
                           value={editForm.full_name}
-                          onChange={(e) => setField("full_name", e.target.value)}
+                          onChange={(e) =>
+                            setField("full_name", e.target.value)
+                          }
                           className="h-9"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Stage name</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Stage name
+                        </label>
                         <Input
                           value={editForm.stage_name}
-                          onChange={(e) => setField("stage_name", e.target.value)}
+                          onChange={(e) =>
+                            setField("stage_name", e.target.value)
+                          }
                           className="h-9"
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Email</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Email
+                        </label>
                         <Input
                           type="email"
                           value={editForm.email}
@@ -548,7 +560,9 @@ const TalentSideModal = ({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Phone</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Phone
+                        </label>
                         <Input
                           value={editForm.phone}
                           onChange={(e) => setField("phone", e.target.value)}
@@ -561,10 +575,14 @@ const TalentSideModal = ({
 
                 {/* Social */}
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Social</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
+                    Social
+                  </h4>
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Instagram</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        Instagram
+                      </label>
                       <div className="relative">
                         <Input
                           value={editForm.instagram_handle}
@@ -572,7 +590,10 @@ const TalentSideModal = ({
                             setField("instagram_handle", e.target.value)
                           }
                           onBlur={() => {
-                            if (editForm.instagram_handle && !fetchingInstagram) {
+                            if (
+                              editForm.instagram_handle &&
+                              !fetchingInstagram
+                            ) {
                               fetchInstagramData();
                             }
                           }}
@@ -582,12 +603,16 @@ const TalentSideModal = ({
                         {fetchingInstagram ? (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2 py-1 bg-indigo-50 rounded-md">
                             <Loader2 className="w-3 h-3 text-indigo-500 animate-spin" />
-                            <span className="text-[11px] font-medium text-indigo-600">Syncing</span>
+                            <span className="text-[11px] font-medium text-indigo-600">
+                              Syncing
+                            </span>
                           </div>
                         ) : editForm.instagram_followers > 0 ? (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-green-50 rounded-md">
                             <span className="text-[11px] font-medium text-green-700">
-                              {(editForm.instagram_followers as number).toLocaleString()}
+                              {(
+                                editForm.instagram_followers as number
+                              ).toLocaleString()}
                             </span>
                           </div>
                         ) : null}
@@ -595,7 +620,9 @@ const TalentSideModal = ({
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Followers</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Followers
+                        </label>
                         <Input
                           type="number"
                           min="0"
@@ -609,7 +636,9 @@ const TalentSideModal = ({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Engagement rate (%)</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Engagement rate (%)
+                        </label>
                         <Input
                           type="number"
                           min="0"
@@ -629,7 +658,9 @@ const TalentSideModal = ({
 
                 {/* Categories */}
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Categories</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
+                    Categories
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     {roleCategories.map((v) => {
                       const selected = Array.isArray(
@@ -662,11 +693,15 @@ const TalentSideModal = ({
 
                 {/* Appearance */}
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Appearance</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
+                    Appearance
+                  </h4>
                   <div className="space-y-3">
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Gender</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Gender
+                        </label>
                         <Input
                           value={editForm.gender_identity}
                           onChange={(e) =>
@@ -676,34 +711,48 @@ const TalentSideModal = ({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Hair color</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Hair color
+                        </label>
                         <Input
                           value={editForm.hair_color}
-                          onChange={(e) => setField("hair_color", e.target.value)}
+                          onChange={(e) =>
+                            setField("hair_color", e.target.value)
+                          }
                           className="h-9"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Eye color</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Eye color
+                        </label>
                         <Input
                           value={editForm.eye_color}
-                          onChange={(e) => setField("eye_color", e.target.value)}
+                          onChange={(e) =>
+                            setField("eye_color", e.target.value)
+                          }
                           className="h-9"
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Height (ft)</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Height (ft)
+                        </label>
                         <Input
                           type="number"
                           value={editForm.height_feet}
-                          onChange={(e) => setField("height_feet", e.target.value)}
+                          onChange={(e) =>
+                            setField("height_feet", e.target.value)
+                          }
                           className="h-9"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Height (in)</label>
+                        <label className="text-xs font-semibold text-gray-600">
+                          Height (in)
+                        </label>
                         <Input
                           type="number"
                           value={editForm.height_inches}
@@ -715,7 +764,9 @@ const TalentSideModal = ({
                       </div>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Race / Ethnicity</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        Race / Ethnicity
+                      </label>
                       <Input
                         value={(editForm.race_ethnicity || []).join(", ")}
                         onChange={(e) =>
@@ -735,10 +786,14 @@ const TalentSideModal = ({
 
                 {/* Details */}
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Details</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
+                    Details
+                  </h4>
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Bio</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        Bio
+                      </label>
                       <Textarea
                         value={editForm.bio}
                         onChange={(e) => setField("bio", e.target.value)}
@@ -746,10 +801,14 @@ const TalentSideModal = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Special skills</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        Special skills
+                      </label>
                       <Input
                         value={editForm.special_skills}
-                        onChange={(e) => setField("special_skills", e.target.value)}
+                        onChange={(e) =>
+                          setField("special_skills", e.target.value)
+                        }
                         className="h-9"
                       />
                     </div>
@@ -758,10 +817,14 @@ const TalentSideModal = ({
 
                 {/* Location */}
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Location</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
+                    Location
+                  </h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">City</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        City
+                      </label>
                       <Input
                         value={editForm.city}
                         onChange={(e) => setField("city", e.target.value)}
@@ -769,7 +832,9 @@ const TalentSideModal = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">State</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        State
+                      </label>
                       <Input
                         value={editForm.state_province}
                         onChange={(e) =>
@@ -779,7 +844,9 @@ const TalentSideModal = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Country</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        Country
+                      </label>
                       <Input
                         value={editForm.country}
                         onChange={(e) => setField("country", e.target.value)}
@@ -791,10 +858,14 @@ const TalentSideModal = ({
 
                 {/* Business */}
                 <div>
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Business</h4>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
+                    Business
+                  </h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Licensing rate (USD/mo)</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        Licensing rate (USD/mo)
+                      </label>
                       <Input
                         type="number"
                         min="1"
@@ -807,7 +878,9 @@ const TalentSideModal = ({
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Negotiation</label>
+                      <label className="text-xs font-semibold text-gray-600">
+                        Negotiation
+                      </label>
                       <label className="inline-flex items-center gap-2 text-sm text-gray-700 mt-1">
                         <input
                           type="checkbox"

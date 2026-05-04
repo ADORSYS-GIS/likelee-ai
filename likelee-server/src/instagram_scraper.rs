@@ -3,11 +3,11 @@ use crate::{
     config::AppState,
     services::apify::{ApifyService, InstagramProfileData},
 };
+use axum::http::StatusCode;
 use axum::{
     extract::{Query, State},
     Json,
 };
-use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -34,11 +34,17 @@ pub async fn scrape_instagram_profile(
     Json(req): Json<ScrapeRequest>,
 ) -> Result<Json<ScrapeResponse>, (StatusCode, String)> {
     if !["agency", "creator", "talent", "brand"].contains(&user.role.as_str()) {
-        return Err((StatusCode::FORBIDDEN, "Insufficient permissions".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Insufficient permissions".to_string(),
+        ));
     }
 
     if state.apify_api_token.is_empty() {
-        return Err((StatusCode::SERVICE_UNAVAILABLE, "Instagram scraping is not configured".to_string()));
+        return Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Instagram scraping is not configured".to_string(),
+        ));
     }
 
     let service = ApifyService::new(
@@ -46,10 +52,17 @@ pub async fn scrape_instagram_profile(
         state.apify_scraper_actor_id.clone(),
     );
 
-    let handle = req.instagram_handle.trim().trim_start_matches('@').to_string();
+    let handle = req
+        .instagram_handle
+        .trim()
+        .trim_start_matches('@')
+        .to_string();
 
     if handle.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "Instagram handle is required".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Instagram handle is required".to_string(),
+        ));
     }
 
     match service.scrape_and_wait(handle.clone()).await {
@@ -127,11 +140,17 @@ pub async fn scrape_instagram_profile_query(
     Query(q): Query<ScrapeQuery>,
 ) -> Result<Json<ScrapeResponse>, (StatusCode, String)> {
     if !["agency", "creator", "talent", "brand"].contains(&user.role.as_str()) {
-        return Err((StatusCode::FORBIDDEN, "Insufficient permissions".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Insufficient permissions".to_string(),
+        ));
     }
 
     if state.apify_api_token.is_empty() {
-        return Err((StatusCode::SERVICE_UNAVAILABLE, "Instagram scraping is not configured".to_string()));
+        return Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Instagram scraping is not configured".to_string(),
+        ));
     }
 
     let service = ApifyService::new(
@@ -142,7 +161,10 @@ pub async fn scrape_instagram_profile_query(
     let handle = q.handle.trim().trim_start_matches('@').to_string();
 
     if handle.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "Instagram handle is required".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Instagram handle is required".to_string(),
+        ));
     }
 
     match service.scrape_and_wait(handle.clone()).await {
@@ -230,7 +252,9 @@ pub async fn handle_apify_webhook(
 
     if handle.is_empty() {
         tracing::warn!("apify webhook: no username in payload");
-        return Ok(Json(json!({"status": "ok", "note": "no username in payload"})));
+        return Ok(Json(
+            json!({"status": "ok", "note": "no username in payload"}),
+        ));
     }
 
     let followers = payload

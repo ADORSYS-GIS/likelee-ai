@@ -3532,8 +3532,8 @@ export default function CreatorDashboard() {
           instagram_handle: profile.instagram_handle
             ? `@${profile.instagram_handle}`
             : profile.platform_handle
-            ? `@${profile.platform_handle}`
-            : prev.instagram_handle,
+              ? `@${profile.platform_handle}`
+              : prev.instagram_handle,
           birthday: profile.birthdate ?? prev.birthday,
           gender: profile.gender ?? prev.gender,
           ethnicity: profile.ethnicity ?? prev.ethnicity,
@@ -5806,9 +5806,14 @@ export default function CreatorDashboard() {
             typeof savedProfile.height_cm === "number"
               ? String(savedProfile.height_cm)
               : prev.height_cm,
-          instagram_handle: savedProfile.instagram_handle ?? savedProfile.platform_handle ?? prev.instagram_handle,
-          instagram_followers: savedProfile.instagram_followers ?? prev.instagram_followers,
-          instagram_connected: savedProfile.instagram_connected ?? prev.instagram_connected,
+          instagram_handle:
+            savedProfile.instagram_handle ??
+            savedProfile.platform_handle ??
+            prev.instagram_handle,
+          instagram_followers:
+            savedProfile.instagram_followers ?? prev.instagram_followers,
+          instagram_connected:
+            savedProfile.instagram_connected ?? prev.instagram_connected,
           tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
@@ -5896,8 +5901,7 @@ export default function CreatorDashboard() {
       } else {
         toast({
           title: "Error",
-          description:
-            data?.error || "Could not sync Instagram data",
+          description: data?.error || "Could not sync Instagram data",
           variant: "destructive",
         });
       }
@@ -11712,7 +11716,10 @@ export default function CreatorDashboard() {
                   <Input
                     value={creator.instagram_handle || ""}
                     onChange={(e) =>
-                      setCreator({ ...creator, instagram_handle: e.target.value })
+                      setCreator({
+                        ...creator,
+                        instagram_handle: e.target.value,
+                      })
                     }
                     className="border-2 border-gray-300 flex-1"
                     placeholder={t(

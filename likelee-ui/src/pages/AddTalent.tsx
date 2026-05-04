@@ -1622,7 +1622,9 @@ export default function AddTalent() {
                   {fetchingInstagram && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                       <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-                      <span className="text-xs font-medium text-indigo-500">Fetching...</span>
+                      <span className="text-xs font-medium text-indigo-500">
+                        Fetching...
+                      </span>
                     </div>
                   )}
                 </div>
