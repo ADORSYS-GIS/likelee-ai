@@ -707,11 +707,19 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           Brand Name *
                         </Label>
-                        <Input
-                          {...register("client_name", { required: true })}
-                          placeholder="e.g. Nike, Spotify"
-                          className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
-                        />
+                        {brandRequestBrandId ? (
+                          // Locked — brand is fixed when coming from a brand request
+                          <div className="h-12 bg-slate-100 border border-slate-200 rounded-xl font-medium px-3 flex items-center gap-2 text-slate-700">
+                            <span className="flex-1 truncate">{formData.client_name || brandRequestBrandName}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">Locked</span>
+                          </div>
+                        ) : (
+                          <Input
+                            {...register("client_name", { required: true })}
+                            placeholder="e.g. Nike, Spotify"
+                            className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
+                          />
+                        )}
                         {errors.client_name && (
                           <p className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
                             This field is mandatory.
@@ -726,6 +734,28 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           type="hidden"
                           {...register("talent_name", { required: true })}
                         />
+                        {brandRequestTalentId ? (
+                          // Locked — talent is fixed when coming from a brand request.
+                          // The brand selected this specific talent; the agency must not
+                          // be able to swap them out.
+                          <div className="h-auto min-h-[48px] bg-slate-100 border border-slate-200 rounded-xl font-medium px-3 py-2 flex items-center gap-2">
+                            <div className="flex flex-wrap gap-1.5 flex-1">
+                              {(formData.talent_name || brandRequestTalentName)
+                                .split(", ")
+                                .filter(Boolean)
+                                .map((name) => (
+                                  <Badge
+                                    key={name}
+                                    variant="secondary"
+                                    className="bg-white text-indigo-600 border-indigo-100 rounded-lg px-2 py-0.5"
+                                  >
+                                    {name}
+                                  </Badge>
+                                ))}
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">Locked</span>
+                          </div>
+                        ) : (
                         <Popover
                           open={talentPopoverOpen}
                           onOpenChange={setTalentPopoverOpen}
@@ -911,6 +941,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             )}
                           </PopoverContent>
                         </Popover>
+                        )}
                         {errors.talent_name && (
                           <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
                             {`This ${entitySingularLower} is mandatory.`}
@@ -922,7 +953,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           <Label className="text-sm font-bold text-slate-800 whitespace-nowrap">
                             Client Email *
                           </Label>
-                          {brandOptions.length > 0 && (
+                          {!brandRequestBrandId && brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
                               <Label
                                 htmlFor="allow-brand-change-wizard"
@@ -939,7 +970,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           )}
                         </div>
 
-                        {brandOptions.length > 0 && allowBrandChange ? (
+                        {brandRequestBrandId ? (
+                          // Locked — client email is fixed when coming from a brand request
+                          <div className="h-12 bg-slate-100 border border-slate-200 rounded-xl font-medium px-3 flex items-center gap-2 text-slate-700">
+                            <span className="flex-1 truncate">{formData.client_email || brandRequestBrandEmail}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">Locked</span>
+                          </div>
+                        ) : brandOptions.length > 0 && allowBrandChange ? (
                           <>
                             <input
                               type="hidden"
