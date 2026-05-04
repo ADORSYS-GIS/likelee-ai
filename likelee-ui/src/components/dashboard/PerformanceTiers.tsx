@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Trophy,
@@ -154,7 +153,6 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
   isSportsAgency = false,
 }) => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const entitySingular = isSportsAgency ? "athlete" : "talent";
   const entityPlural = isSportsAgency ? "Athletes" : "Talent";
@@ -565,11 +563,6 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                           variant="outline"
                           size="sm"
                           className="w-full sm:w-auto h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-                          onClick={() =>
-                            navigate(
-                              `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent(allTalentSubTab)}&openTalentId=${encodeURIComponent(talent.id)}`,
-                            )
-                          }
                         >
                           View
                         </Button>
