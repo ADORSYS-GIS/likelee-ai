@@ -1055,12 +1055,14 @@ export default function BrandDashboard() {
       hasLoadedBillingDataRef.current = true;
       setLoadingBillingData(true);
       try {
-        const [statusRes, spendRes, invoicesRes, escrowRes] = await Promise.all([
-          getBrandBillingStatus(),
-          getBrandSpendAnalytics(),
-          listBrandInvoices(),
-          getBrandEscrowSummary().catch(() => null),
-        ]);
+        const [statusRes, spendRes, invoicesRes, escrowRes] = await Promise.all(
+          [
+            getBrandBillingStatus(),
+            getBrandSpendAnalytics(),
+            listBrandInvoices(),
+            getBrandEscrowSummary().catch(() => null),
+          ],
+        );
         if (!mounted) return;
         if (statusRes) {
           setBrandBillingStatus({
@@ -9685,8 +9687,8 @@ export default function BrandDashboard() {
           releases to the creator.
         </p>
         <p className="text-sm font-semibold text-blue-900">
-          Current Escrow: {loadingBillingData ? "..." : escrowSummary.breakdown} across{" "}
-          {escrowSummary.projectCount} projects
+          Current Escrow: {loadingBillingData ? "..." : escrowSummary.breakdown}{" "}
+          across {escrowSummary.projectCount} projects
         </p>
       </Card>
 
