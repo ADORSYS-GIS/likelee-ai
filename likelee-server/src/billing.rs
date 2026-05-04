@@ -4817,7 +4817,7 @@ pub async fn get_brand_billing_status(
     let resp = state
         .pg
         .from("brands")
-        .select("id,plan_tier,subscription_status,stripe_customer_id,stripe_subscription_id,subscription_current_period_end,stripe_cancel_at_period_end,trial_ends_at")
+        .select("id,plan_tier,subscription_status,stripe_customer_id,stripe_subscription_id,subscription_current_period_end,subscription_cancel_at_period_end,subscription_trial_end")
         .eq("id", &brand_id)
         .limit(1)
         .execute()
@@ -4868,11 +4868,15 @@ pub async fn get_brand_billing_status(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
         cancel_at_period_end: row
-            .get("stripe_cancel_at_period_end")
+            .get("subscription_cancel_at_period_end")
             .and_then(|v| v.as_bool())
             .unwrap_or(false),
         trial_active,
-        trial_ends_at: trial_ends_at_str.map(|s| s.to_string()),
+        trial_ends_at: row
+            .get("subscription_trial_end")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or(trial_ends_at_str.map(|s| s.to_string())),
     }))
 }
 
@@ -5328,6 +5332,40 @@ pub async fn reset_monthly_budget_alerts(
         "success": true,
         "message": "Monthly budget alert flags reset"
     })))
+}
+
+pub async fn check_license_expiration_alerts_cron(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    verify_cron_auth(&headers, &state.cron_secret)?;
+
+    match crate::licensing_requests::check_license_expiration_alerts_all_brands(&state).await {
+        Ok((brands_checked, alerts_sent)) => Ok(Json(json!({
+            "success": true,
+            "alerts_sent": alerts_sent,
+            "brands_checked": brands_checked
+        }))),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
+    }
+}
+
+pub async fn auto_archive_expired_licensing_requests_cron(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(_params): Query<CronQueryParams>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    verify_cron_auth(&headers, &state.cron_secret)?;
+
+    match crate::licensing_requests::auto_archive_expired_licensing_requests(&state).await {
+        Ok((total_checked, archived_count)) => Ok(Json(json!({
+            "success": true,
+            "total_checked": total_checked,
+            "archived_count": archived_count
+        }))),
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
+    }
 }
 
 // ============================================================================
