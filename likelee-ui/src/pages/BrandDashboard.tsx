@@ -8141,9 +8141,7 @@ export default function BrandDashboard() {
                 "Metric,Value\nTotal Projects (YTD),{projects}\nTotal Spend (YTD),{spend}\nAvg Cost/Project,{avgCost}\n\nTalent,Projects,Success Rate (%),Total Cost ($)\n";
               const talentRows = brandAnalytics.talent_performance
                 .map((t: any) => {
-                  const name = sanitizeCsvField(
-                    String(t?.name || "Talent"),
-                  );
+                  const name = sanitizeCsvField(String(t?.name || "Talent"));
                   const projects = Number(t?.projects_count || 0);
                   const successRate = Number(t?.success_rate_pct || 0);
                   const totalCostCents = Number(t?.total_cost_cents || 0);
