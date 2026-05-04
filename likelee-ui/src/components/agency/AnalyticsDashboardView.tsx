@@ -106,6 +106,7 @@ const AnalyticsDashboardView = ({
       : null,
   );
   const [expiredLicensesFromDB, setExpiredLicensesFromDB] = useState<any[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [loading, setLoading] = useState(!initialHasWarmCache);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,7 +129,7 @@ const AnalyticsDashboardView = ({
     return () => {
       active = false;
     };
-  }, [activeTab]);
+  }, [activeTab, refreshTrigger]);
 
   const subTabs =
     agencyMode === "AI"
@@ -1396,9 +1397,19 @@ const AnalyticsDashboardView = ({
               </div>
 
               <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
-                  License Expiry Pipeline
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">
+                    License Expiry Pipeline
+                  </h3>
+                  <button
+                    onClick={() => setRefreshTrigger((prev) => prev + 1)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="Refresh expired licenses"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Refresh
+                  </button>
+                </div>
                 <div className="space-y-3">
                   {effectiveExpired.length === 0 ? (
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
