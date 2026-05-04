@@ -20258,9 +20258,13 @@ export default function AgencyDashboard() {
       markAsRead(notif.id);
     }
 
-    // Navigate to the appropriate tab/page
+    // Navigate to the appropriate tab/page with sub-tab if needed
     if (notif.navigateTo) {
-      setActiveTab(notif.navigateTo);
+      if (notif.navigateToSubTab) {
+        setActiveView(notif.navigateTo, notif.navigateToSubTab);
+      } else {
+        setActiveTab(notif.navigateTo);
+      }
       setShowNotifications(false);
     }
   };
@@ -20306,7 +20310,7 @@ export default function AgencyDashboard() {
         }),
         color: "indigo",
         isSummary: true,
-        navigateTo: "jobs", // Fixed: Navigate to jobs tab for brand connections
+        navigateTo: "brand-connections", // Navigate to brand-connections tab
       });
     }
     if (pendingLicensingRequestsCount > 0) {
@@ -20327,7 +20331,8 @@ export default function AgencyDashboard() {
         }),
         color: "indigo",
         isSummary: true,
-        navigateTo: "licensing", // Add navigation target
+        navigateTo: "licensing", // Navigate to licensing tab
+        navigateToSubTab: "Licensing Requests", // Navigate to specific sub-tab
       });
     }
     if (pendingJobInvitesCount > 0) {
@@ -20345,7 +20350,8 @@ export default function AgencyDashboard() {
         }),
         color: "blue",
         isSummary: true,
-        navigateTo: "jobs", // Add navigation target
+        navigateTo: "jobs", // Navigate to jobs tab
+        navigateToSubTab: "Job Invites", // Navigate to specific sub-tab
       });
     }
     alerts.push({
@@ -21608,21 +21614,6 @@ export default function AgencyDashboard() {
                         </button>
                       ))
                     )}
-                  </div>
-                  <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
-                    <button
-                      onClick={() => {
-                        toast({
-                          title: "View all notifications",
-                          description:
-                            "Navigating to full notifications page...",
-                        });
-                        setShowNotifications(false);
-                      }}
-                      className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                      View all notifications
-                    </button>
                   </div>
                 </div>
               )}
