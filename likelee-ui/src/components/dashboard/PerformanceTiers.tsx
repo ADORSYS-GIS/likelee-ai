@@ -530,7 +530,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                             <span className="text-gray-300">•</span>
                             <span className="flex items-center gap-1 group-hover:text-indigo-500 transition-colors">
                               <TrendingUp className="w-3.5 h-3.5" />{" "}
-                              {talent.bookings_this_month} campaigns
+                              {talent.bookings_this_month} {talent.bookings_this_month === 1 ? "booking" : "bookings"}
                             </span>
                           </div>
                         </div>
@@ -539,12 +539,24 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                             <div
                               className="h-full bg-gray-900 rounded-none"
                               style={{
-                                width:
-                                  talent.tier.tier_name === "Premium"
-                                    ? "85%"
-                                    : talent.tier.tier_name === "Core"
-                                      ? "65%"
-                                      : "45%",
+                                // Progress toward the NEXT tier up.
+                                // Tier order (ascending): Inactive(4) → Growth(3) → Core(2) → Premium(1)
+                                // Find the tier one level above the talent's current tier and
+                                // show how close their earnings are to that threshold.
+                                // Premium (level 1) is the top — show 100%.
+                                width: (() => {
+                                  const earned = talent.earnings_30d;
+                                  const currentLevel = talent.tier.tier_level;
+                                  if (currentLevel <= 1) return "100%"; // already Premium
+                                  // Tier name for the next level up
+                                  const tierOrder = ["Premium", "Core", "Growth", "Inactive"];
+                                  // currentLevel is 1-based; index in tierOrder = level - 1
+                                  const nextTierName = tierOrder[currentLevel - 2]; // one step up
+                                  const target = nextTierName && data?.config?.[nextTierName]?.min_earnings;
+                                  if (!target || target <= 0) return `${Math.max(2, Math.min(100, Math.round((earned / 500) * 100)))}%`;
+                                  const pct = Math.min(100, Math.round((earned / target) * 100));
+                                  return `${Math.max(2, pct)}%`; // min 2% so bar is always visible
+                                })(),
                               }}
                             ></div>
                           </div>
