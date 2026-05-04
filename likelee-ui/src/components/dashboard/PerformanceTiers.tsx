@@ -118,6 +118,8 @@ interface TalentPerformance {
   photo_url: string | null;
   earnings_30d: number;
   bookings_this_month: number;
+  /** Signed licensing deals this month — used in AI mode instead of bookings_this_month */
+  licensing_deals_this_month: number;
   tier: TierRule;
   commission_rate: number;
   is_custom_rate: boolean;
@@ -536,7 +538,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
                             <span className="flex items-center gap-1 group-hover:text-indigo-500 transition-colors">
                               <TrendingUp className="w-3.5 h-3.5" />{" "}
                               {isAiMode
-                                ? "Licensing deals"
+                                ? `${talent.licensing_deals_this_month} ${talent.licensing_deals_this_month === 1 ? "deal" : "deals"}`
                                 : `${talent.bookings_this_month} ${talent.bookings_this_month === 1 ? "booking" : "bookings"}`}
                             </span>
                           </div>

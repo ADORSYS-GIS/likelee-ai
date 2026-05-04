@@ -44,6 +44,8 @@ pub struct TalentPerformance {
     pub photo_url: Option<String>,
     pub earnings_30d: f64,
     pub bookings_this_month: i64,
+    /// Signed licensing deals this month (AI mode equivalent of bookings_this_month).
+    pub licensing_deals_this_month: i64,
     pub tier: TierRule,
     pub commission_rate: f64,
     pub is_custom_rate: bool,
@@ -264,6 +266,7 @@ pub async fn get_performance_tiers(
         resp_stats,
         resp_agency,
         resp_marketplace_contracts,
+        resp_licensing_deals,
     ) = tokio::try_join!(
         state
             .pg
@@ -320,7 +323,24 @@ pub async fn get_performance_tiers(
             .eq("status", "active")
             .lte("valid_from", &today)
             .gte("valid_until", &today)
-            .execute()
+            .execute(),
+        // Fetch signed licensing deals this month for AI mode deal count.
+        // Counts license_submissions with status='completed' and signed_at >= month start.
+        // Covers both single-talent (talent_id) and multi-talent (talent_ids array) submissions.
+        async {
+            let now = chrono::Utc::now();
+            let month_start = now.format("%Y-%m-01").to_string();
+            state
+                .pg
+                .from("license_submissions")
+                .select("talent_id,talent_ids")
+                .eq("agency_id", agency_id)
+                .eq("status", "completed")
+                .gte("signed_at", &month_start)
+                .limit(1000)
+                .execute()
+                .await
+        }
     )
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -438,6 +458,36 @@ pub async fn get_performance_tiers(
     for s in stats {
         earnings_map.insert(s.talent_id.clone(), s.earnings_cents as f64 / 100.0);
         bookings_map.insert(s.talent_id, s.booking_count);
+    }
+
+    // Process signed licensing deals this month (AI mode deal count).
+    // Covers single-talent (talent_id) and multi-talent (talent_ids array).
+    let text_licensing_deals = resp_licensing_deals
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let licensing_deal_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&text_licensing_deals).unwrap_or_default();
+    let mut licensing_deals_map: HashMap<String, i64> = HashMap::new();
+    for row in &licensing_deal_rows {
+        // Single-talent path
+        if let Some(tid) = row.get("talent_id").and_then(|v| v.as_str()) {
+            let tid = tid.trim();
+            if !tid.is_empty() {
+                *licensing_deals_map.entry(tid.to_string()).or_insert(0) += 1;
+            }
+        }
+        // Multi-talent path — unnest talent_ids array
+        if let Some(arr) = row.get("talent_ids").and_then(|v| v.as_array()) {
+            for item in arr {
+                if let Some(tid) = item.as_str() {
+                    let tid = tid.trim();
+                    if !tid.is_empty() {
+                        *licensing_deals_map.entry(tid.to_string()).or_insert(0) += 1;
+                    }
+                }
+            }
+        }
     }
 
     // Process Talents
@@ -688,6 +738,7 @@ pub async fn get_performance_tiers(
                 photo_url: photo,
                 earnings_30d: earnings,
                 bookings_this_month: booking_count,
+                licensing_deals_this_month: *licensing_deals_map.get(&id).unwrap_or(&0),
                 tier: assigned_tier.clone(),
                 commission_rate: final_rate,
                 is_custom_rate,
@@ -782,6 +833,7 @@ pub async fn get_performance_tiers(
                 photo_url: photo,
                 earnings_30d: 0.0,
                 bookings_this_month: 0,
+                licensing_deals_this_month: *licensing_deals_map.get(&creator_id).unwrap_or(&0),
                 tier: assigned_tier.clone(),
                 commission_rate: final_rate,
                 is_custom_rate,
