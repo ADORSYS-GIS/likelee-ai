@@ -841,6 +841,18 @@ export default function BrandDashboard() {
     useState<string>("");
   const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
   const [loadingBrandOfferItems, setLoadingBrandOfferItems] = useState(false);
+
+  // Memoized offer map for O(1) lookups instead of O(n) find() calls
+  const offerMap = useMemo(() => {
+    const map = new Map<string, any>();
+    brandOfferItems.forEach((offer: any) => {
+      if (offer?.id) {
+        map.set(String(offer.id), offer);
+      }
+    });
+    return map;
+  }, [brandOfferItems]);
+
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
   const [payingOfferId, setPayingOfferId] = useState<string | null>(null);
   const [expandedCampaignHubId, setExpandedCampaignHubId] =
@@ -5187,17 +5199,13 @@ export default function BrandDashboard() {
         >
           Creator Contracts
           {contractHubRows.filter((row: any) => {
-            const offer = brandOfferItems.find(
-              (offer: any) => String(offer?.id) === String(row?.offer_id),
-            );
+            const offer = offerMap.get(String(row?.offer_id));
             return offer?.target_type === "creator";
           }).length > 0 && (
             <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
               {
                 contractHubRows.filter((row: any) => {
-                  const offer = brandOfferItems.find(
-                    (offer: any) => String(offer?.id) === String(row?.offer_id),
-                  );
+                  const offer = offerMap.get(String(row?.offer_id));
                   return offer?.target_type === "creator";
                 }).length
               }
@@ -5449,15 +5457,15 @@ export default function BrandDashboard() {
                                       size="sm"
                                       className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                                       onClick={() => {
-                                        const subId =
-                                          contract?.docuseal_slug ||
-                                          contract?.docuseal_submission_id;
-                                        if (subId) {
-                                          window.open(
-                                            `https://docuseal.com/s/${subId}`,
-                                            "_blank",
-                                          );
+                                        // Check if backend provides a signing URL
+                                        const signingUrl =
+                                          contract?.signing_url ||
+                                          contract?.docuseal_signing_url;
+
+                                        if (signingUrl) {
+                                          window.open(signingUrl, "_blank");
                                         } else {
+                                          // Fallback: inform user to check email
                                           toast({
                                             title: "Check your email",
                                             description:
@@ -5515,9 +5523,7 @@ export default function BrandDashboard() {
               Loading creator contracts...
             </p>
           ) : contractHubRows.filter((row: any) => {
-              const offer = brandOfferItems.find(
-                (offer: any) => String(offer?.id) === String(row?.offer_id),
-              );
+              const offer = offerMap.get(String(row?.offer_id));
               return offer?.target_type === "creator";
             }).length === 0 ? (
             <p className="text-sm text-gray-500">
@@ -5539,17 +5545,11 @@ export default function BrandDashboard() {
                 <tbody>
                   {contractHubRows
                     .filter((row: any) => {
-                      const offer = brandOfferItems.find(
-                        (offer: any) =>
-                          String(offer?.id) === String(row?.offer_id),
-                      );
+                      const offer = offerMap.get(String(row?.offer_id));
                       return offer?.target_type === "creator";
                     })
                     .map((row: any) => {
-                      const offer = brandOfferItems.find(
-                        (offer: any) =>
-                          String(offer?.id) === String(row?.offer_id),
-                      );
+                      const offer = offerMap.get(String(row?.offer_id));
                       return (
                         <tr
                           key={String(row?.id)}
