@@ -8169,9 +8169,16 @@ async fn try_release_campaign_offer_escrow(
             .and_then(|v| v.as_str())
             .filter(|s| !s.trim().is_empty())
             .map(|s| s.trim().to_string())
-            .ok_or_else(|| "Escrow release blocked: missing currency_code in budget_snapshot".to_string())?;
-        let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase())
-            .map_err(|_| format!("Escrow release blocked: unsupported currency '{}'", currency))?;
+            .ok_or_else(|| {
+                "Escrow release blocked: missing currency_code in budget_snapshot".to_string()
+            })?;
+        let currency_enum =
+            stripe_sdk::Currency::from_str(&currency.to_lowercase()).map_err(|_| {
+                format!(
+                    "Escrow release blocked: unsupported currency '{}'",
+                    currency
+                )
+            })?;
         let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
         let creator_account_id = get_creator_stripe_account(state, &creator_id)
             .await
