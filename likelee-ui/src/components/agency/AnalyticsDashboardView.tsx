@@ -1283,15 +1283,18 @@ const AnalyticsDashboardView = ({
           const brandNameCounts: Record<string, number> = {};
           const effectiveExpired: any[] = expiredLicensesFromDB.map(
             (x: any) => {
-              const brandName = x.brand_name ?? x.client_name ?? "Unknown License";
-              
+              const brandName =
+                x.brand_name ?? x.client_name ?? "Unknown License";
+
               // Track count for this brand name
-              brandNameCounts[brandName] = (brandNameCounts[brandName] || 0) + 1;
+              brandNameCounts[brandName] =
+                (brandNameCounts[brandName] || 0) + 1;
               const count = brandNameCounts[brandName];
-              
+
               // Add number suffix if there are duplicates
-              const displayName = count > 1 ? `${brandName} #${count}` : brandName;
-              
+              const displayName =
+                count > 1 ? `${brandName} #${count}` : brandName;
+
               return {
                 id: x.id,
                 template_id: x.template_id,
@@ -1309,15 +1312,21 @@ const AnalyticsDashboardView = ({
           // Add #1 suffix to first occurrence if there are duplicates
           const finalBrandCounts: Record<string, number> = {};
           expiredLicensesFromDB.forEach((x: any) => {
-            const brandName = x.brand_name ?? x.client_name ?? "Unknown License";
-            finalBrandCounts[brandName] = (finalBrandCounts[brandName] || 0) + 1;
+            const brandName =
+              x.brand_name ?? x.client_name ?? "Unknown License";
+            finalBrandCounts[brandName] =
+              (finalBrandCounts[brandName] || 0) + 1;
           });
-          
+
           effectiveExpired.forEach((license, index) => {
-            const originalBrand = expiredLicensesFromDB[index].brand_name ?? 
-                                  expiredLicensesFromDB[index].client_name ?? 
-                                  "Unknown License";
-            if (finalBrandCounts[originalBrand] > 1 && !license.brand.includes('#')) {
+            const originalBrand =
+              expiredLicensesFromDB[index].brand_name ??
+              expiredLicensesFromDB[index].client_name ??
+              "Unknown License";
+            if (
+              finalBrandCounts[originalBrand] > 1 &&
+              !license.brand.includes("#")
+            ) {
               license.brand = `${originalBrand} #1`;
               license.client_name = `${originalBrand} #1`;
             }
@@ -1422,7 +1431,9 @@ const AnalyticsDashboardView = ({
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-black text-gray-900 truncate">
-                              {license.brand || license.client_name || "Unknown License"}
+                              {license.brand ||
+                                license.client_name ||
+                                "Unknown License"}
                             </p>
                             <p className="text-xs font-bold text-gray-500 truncate">
                               Expired on {formatLicenseDate(license.end_date)}
