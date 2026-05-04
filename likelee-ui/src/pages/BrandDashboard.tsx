@@ -767,6 +767,7 @@ export default function BrandDashboard() {
   const [showContractHub, setShowContractHub] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractHubTab, setContractHubTab] = useState("active");
+  const [contractHubSubTab, setContractHubSubTab] = useState("agency"); // New sub-tab state
   const [contractSearch, setContractSearch] = useState("");
   const [contractSort, setContractSort] = useState("newest");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
@@ -5152,455 +5153,565 @@ export default function BrandDashboard() {
         </h2>
         <p className="text-gray-600">Campaign contracts and signing status.</p>
       </div>
-      <div className="space-y-3">
-        {loadingBrandOfferItems ? (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <div className="flex items-center gap-3">
-              <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
-              <p className="text-sm text-gray-500">Loading offers...</p>
-            </div>
-          </Card>
-        ) : brandOfferItems.length === 0 ? (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <p className="text-sm text-gray-500">
-              No offer contracts available yet.
-            </p>
-          </Card>
-        ) : null}
-        {brandOfferItems.map((offer: any) => {
-          const offerId = String(offer?.id || "");
-          const expanded = selectedOfferHubId === offerId;
-          const contractsForStatus = expanded
-            ? selectedOfferHubContracts
-            : offer?.offer_contracts;
-          const hasCompletedContract = Array.isArray(contractsForStatus)
-            ? contractsForStatus.some((c: any) => {
-                const st = String(
-                  c?.docuseal_status || c?.status || "",
-                ).toLowerCase();
-                return st === "completed" || st === "signed";
-              })
-            : false;
-          const isFullySigned =
-            Boolean(offer?.is_fully_signed) || hasCompletedContract;
-          const downloadedDeliverables = selectedOfferHubDeliverables.filter(
-            (d: any) =>
-              Boolean(d?.meta?.brand_downloaded_at) &&
-              ["approved", "accepted"].includes(
-                String(d?.status || "").toLowerCase(),
-              ),
-          );
-          const approvedCount = downloadedDeliverables.filter(
-            (d: any) => String(d?.status || "").toLowerCase() === "approved",
-          ).length;
-          const totalCount = downloadedDeliverables.length;
-          const progressPct =
-            totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
-          return (
-            <Card
-              key={offerId}
-              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
-            >
-              {/* Payment Pending Banner */}
-              {isFullySigned && offer?.payment_status !== "paid" && (
-                <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                  <span className="text-amber-700 text-xs font-semibold">
-                    ⏳ Contract signed. Payment required before deliverables can
-                    start.
-                  </span>
-                  {canManagePayOffers ? (
+
+      {/* Sub-navigation tabs */}
+      <div className="flex gap-1 border-b border-gray-200">
+        <button
+          onClick={() => setContractHubSubTab("agency")}
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            contractHubSubTab === "agency"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          Agency Contracts
+          {brandOfferItems.filter(
+            (offer: any) => offer?.target_type === "agency",
+          ).length > 0 && (
+            <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+              {
+                brandOfferItems.filter(
+                  (offer: any) => offer?.target_type === "agency",
+                ).length
+              }
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setContractHubSubTab("creator")}
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            contractHubSubTab === "creator"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          Creator Contracts
+          {contractHubRows.filter((row: any) => {
+            const offer = brandOfferItems.find(
+              (offer: any) => String(offer?.id) === String(row?.offer_id),
+            );
+            return offer?.target_type === "creator";
+          }).length > 0 && (
+            <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+              {
+                contractHubRows.filter((row: any) => {
+                  const offer = brandOfferItems.find(
+                    (offer: any) => String(offer?.id) === String(row?.offer_id),
+                  );
+                  return offer?.target_type === "creator";
+                }).length
+              }
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Agency Contracts Tab Content */}
+      {contractHubSubTab === "agency" && (
+        <div className="space-y-3">
+          {loadingBrandOfferItems ? (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+                <p className="text-sm text-gray-500">
+                  Loading agency offers...
+                </p>
+              </div>
+            </Card>
+          ) : brandOfferItems.filter(
+              (offer: any) => offer?.target_type === "agency",
+            ).length === 0 ? (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <p className="text-sm text-gray-500">
+                No agency contracts available yet.
+              </p>
+            </Card>
+          ) : null}
+          {brandOfferItems
+            .filter((offer: any) => offer?.target_type === "agency")
+            .map((offer: any) => {
+              const offerId = String(offer?.id || "");
+              const expanded = selectedOfferHubId === offerId;
+              const contractsForStatus = expanded
+                ? selectedOfferHubContracts
+                : offer?.offer_contracts;
+              const hasCompletedContract = Array.isArray(contractsForStatus)
+                ? contractsForStatus.some((c: any) => {
+                    const st = String(
+                      c?.docuseal_status || c?.status || "",
+                    ).toLowerCase();
+                    return st === "completed" || st === "signed";
+                  })
+                : false;
+              const isFullySigned =
+                Boolean(offer?.is_fully_signed) || hasCompletedContract;
+              const downloadedDeliverables =
+                selectedOfferHubDeliverables.filter(
+                  (d: any) =>
+                    Boolean(d?.meta?.brand_downloaded_at) &&
+                    ["approved", "accepted"].includes(
+                      String(d?.status || "").toLowerCase(),
+                    ),
+                );
+              const approvedCount = downloadedDeliverables.filter(
+                (d: any) =>
+                  String(d?.status || "").toLowerCase() === "approved",
+              ).length;
+              const totalCount = downloadedDeliverables.length;
+              const progressPct =
+                totalCount > 0
+                  ? Math.round((approvedCount / totalCount) * 100)
+                  : 0;
+              return (
+                <Card
+                  key={offerId}
+                  className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
+                >
+                  {/* Payment Pending Banner */}
+                  {isFullySigned && offer?.payment_status !== "paid" && (
+                    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                      <span className="text-amber-700 text-xs font-semibold">
+                        ⏳ Contract signed. Payment required before deliverables
+                        can start.
+                      </span>
+                      {canManagePayOffers ? (
+                        <Button
+                          size="sm"
+                          className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
+                          disabled={payingOfferId === offerId}
+                          onClick={async () => {
+                            setPayingOfferId(offerId);
+                            try {
+                              const data: any = await base44.post(
+                                `/api/brand/campaign-offers/${offerId}/checkout`,
+                                {},
+                              );
+                              if (data?.url) {
+                                window.location.href = data.url;
+                              } else {
+                                toast({
+                                  title: "Payment Error",
+                                  description:
+                                    data?.message ||
+                                    "Could not start checkout.",
+                                  variant: "destructive",
+                                });
+                              }
+                            } catch (e: any) {
+                              const msg = String(e?.message || "");
+                              toast({
+                                title: msg.includes("no_talents_assigned")
+                                  ? "Talent assignment required"
+                                  : "Payment Error",
+                                description: msg.includes("no_talents_assigned")
+                                  ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                                  : msg || "Could not start checkout.",
+                                variant: "destructive" as any,
+                              });
+                            } finally {
+                              setPayingOfferId(null);
+                            }
+                          }}
+                        >
+                          {payingOfferId === offerId
+                            ? "Redirecting…"
+                            : "💳 Pay Offer"}
+                        </Button>
+                      ) : (
+                        <span className="ml-auto text-xs text-amber-600 italic">
+                          View only - payment requires admin or project manager
+                          role
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {isFullySigned && offer?.payment_status === "paid" && (
+                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
+                      <span className="text-emerald-700 text-xs font-semibold">
+                        ✅ Payment confirmed — deliverables can be submitted.
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {offer?.brand_campaigns?.name || "Campaign offer"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Agency:{" "}
+                        {offer?.agencies?.agency_name || "Unknown Agency"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {String(offer?.status || "sent").replace(/_/g, " ")}
+                      </p>
+                    </div>
                     <Button
-                      size="sm"
-                      className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
-                      disabled={payingOfferId === offerId}
+                      variant="outline"
+                      className="border border-gray-300 rounded-none"
                       onClick={async () => {
-                        setPayingOfferId(offerId);
-                        try {
-                          const data: any = await base44.post(
-                            `/api/brand/campaign-offers/${offerId}/checkout`,
-                            {},
-                          );
-                          if (data?.url) {
-                            window.location.href = data.url;
-                          } else {
-                            toast({
-                              title: "Payment Error",
-                              description:
-                                data?.message || "Could not start checkout.",
-                              variant: "destructive",
-                            });
-                          }
-                        } catch (e: any) {
-                          const msg = String(e?.message || "");
-                          toast({
-                            title: msg.includes("no_talents_assigned")
-                              ? "Talent assignment required"
-                              : "Payment Error",
-                            description: msg.includes("no_talents_assigned")
-                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                              : msg || "Could not start checkout.",
-                            variant: "destructive" as any,
-                          });
-                        } finally {
-                          setPayingOfferId(null);
-                        }
+                        const next = expanded ? "" : offerId;
+                        setSelectedOfferHubId(next);
+                        await loadOfferHubDetails(next);
                       }}
                     >
-                      {payingOfferId === offerId
-                        ? "Redirecting…"
-                        : "💳 Pay Offer"}
+                      {expanded ? "Hide" : "View Contracts"}
                     </Button>
-                  ) : (
-                    <span className="ml-auto text-xs text-amber-600 italic">
-                      View only - payment requires admin or project manager role
-                    </span>
-                  )}
-                </div>
-              )}
-              {isFullySigned && offer?.payment_status === "paid" && (
-                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
-                  <span className="text-emerald-700 text-xs font-semibold">
-                    ✅ Payment confirmed — deliverables can be submitted.
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {offer?.brand_campaigns?.name || "Campaign offer"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {String(offer?.status || "sent").replace(/_/g, " ")}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border border-gray-300 rounded-none"
-                  onClick={async () => {
-                    const next = expanded ? "" : offerId;
-                    setSelectedOfferHubId(next);
-                    await loadOfferHubDetails(next);
-                  }}
-                >
-                  {expanded ? "Hide" : "View Contracts"}
-                </Button>
-              </div>
-              {expanded && (
-                <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
-                  {loadingOfferHubDetails ? (
-                    <div className="p-8 text-center bg-white">
-                      <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
-                      <p className="text-sm text-gray-500 font-medium">
-                        Loading contracts...
-                      </p>
-                    </div>
-                  ) : selectedOfferHubContracts.filter(
-                      (c: any) =>
-                        c?.docuseal_status && c.docuseal_status !== "draft",
-                    ).length === 0 ? (
-                    <div className="p-8 text-center bg-white">
-                      <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500 font-medium">
-                        No active contracts
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Contracts requiring your attention will appear here.
-                      </p>
-                    </div>
-                  ) : (
-                    selectedOfferHubContracts
-                      .filter(
-                        (c: any) =>
-                          c?.docuseal_status && c.docuseal_status !== "draft",
-                      )
-                      .map((contract: any) => {
-                        const isCompleted =
-                          contract?.docuseal_status === "completed";
-                        const isPending =
-                          contract?.docuseal_status === "sent" ||
-                          contract?.docuseal_status === "opened";
-                        // Calculate signing URL from submission ID
-                        const submissionId = contract?.docuseal_submission_id;
-                        // Based on standard DocuSeal flow, though typically we'd fetch this from backend
-                        // For now we'll link to a placeholder or rely on email if URL isn't directly available,
-                        // but ideally we'd have the signing_url. We'll add a realistic button.
+                  </div>
+                  {expanded && (
+                    <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
+                      {loadingOfferHubDetails ? (
+                        <div className="p-8 text-center bg-white">
+                          <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
+                          <p className="text-sm text-gray-500 font-medium">
+                            Loading contracts...
+                          </p>
+                        </div>
+                      ) : selectedOfferHubContracts.filter(
+                          (c: any) =>
+                            c?.docuseal_status && c.docuseal_status !== "draft",
+                        ).length === 0 ? (
+                        <div className="p-8 text-center bg-white">
+                          <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                          <p className="text-sm text-gray-500 font-medium">
+                            No active contracts
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Contracts requiring your attention will appear here.
+                          </p>
+                        </div>
+                      ) : (
+                        selectedOfferHubContracts
+                          .filter(
+                            (c: any) =>
+                              c?.docuseal_status &&
+                              c.docuseal_status !== "draft",
+                          )
+                          .map((contract: any) => {
+                            const isCompleted =
+                              contract?.docuseal_status === "completed";
+                            const isPending =
+                              contract?.docuseal_status === "sent" ||
+                              contract?.docuseal_status === "opened";
 
-                        return (
-                          <div
-                            key={String(contract?.id)}
-                            className="bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-4">
+                            return (
                               <div
-                                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                  isCompleted ? "bg-green-50" : "bg-blue-50"
-                                }`}
+                                key={String(contract?.id)}
+                                className="bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50/50 transition-colors"
                               >
-                                {isCompleted ? (
-                                  <CheckCircle className="w-5 h-5 text-green-500" />
-                                ) : (
-                                  <FileText className="w-5 h-5 text-blue-500" />
-                                )}
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-semibold text-gray-900">
-                                  {String(
-                                    contract?.title || "Contract Document",
-                                  )}
-                                </h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span
-                                    className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
-                                      isCompleted
-                                        ? "bg-green-100 text-green-700"
-                                        : isPending
-                                          ? "bg-blue-100 text-blue-700"
-                                          : "bg-gray-100 text-gray-700"
+                                <div className="flex items-center gap-4">
+                                  <div
+                                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                      isCompleted ? "bg-green-50" : "bg-blue-50"
                                     }`}
                                   >
-                                    {String(
-                                      contract?.docuseal_status || "Unknown",
-                                    ).replace(/_/g, " ")}
-                                  </span>
-                                  {contract?.updated_at && (
-                                    <span className="text-xs text-gray-500">
-                                      Updated{" "}
-                                      {new Date(
-                                        contract.updated_at,
-                                      ).toLocaleDateString()}
-                                    </span>
+                                    {isCompleted ? (
+                                      <CheckCircle className="w-5 h-5 text-green-500" />
+                                    ) : (
+                                      <FileText className="w-5 h-5 text-blue-500" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-900">
+                                      {String(
+                                        contract?.title || "Contract Document",
+                                      )}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span
+                                        className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
+                                          isCompleted
+                                            ? "bg-green-100 text-green-700"
+                                            : isPending
+                                              ? "bg-blue-100 text-blue-700"
+                                              : "bg-gray-100 text-gray-700"
+                                        }`}
+                                      >
+                                        {String(
+                                          contract?.docuseal_status ||
+                                            "Unknown",
+                                        ).replace(/_/g, " ")}
+                                      </span>
+                                      {contract?.updated_at && (
+                                        <span className="text-xs text-gray-500">
+                                          Updated{" "}
+                                          {new Date(
+                                            contract.updated_at,
+                                          ).toLocaleDateString()}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {isPending && (
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                                      onClick={() => {
+                                        const subId =
+                                          contract?.docuseal_slug ||
+                                          contract?.docuseal_submission_id;
+                                        if (subId) {
+                                          window.open(
+                                            `https://docuseal.com/s/${subId}`,
+                                            "_blank",
+                                          );
+                                        } else {
+                                          toast({
+                                            title: "Check your email",
+                                            description:
+                                              "A secure DocuSeal signing link has been sent to your email address.",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Review & Sign
+                                    </Button>
+                                  )}
+                                  {isCompleted && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="border-gray-200 text-gray-600"
+                                      onClick={() => {
+                                        if (contract?.signed_document_url) {
+                                          window.open(
+                                            contract.signed_document_url,
+                                            "_blank",
+                                          );
+                                        } else {
+                                          toast({
+                                            title: "Download Unavailable",
+                                            description:
+                                              "The signed document URL is not available yet.",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <Download className="w-4 h-4 mr-2" />
+                                      Download
+                                    </Button>
                                   )}
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {isPending && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                                  onClick={() => {
-                                    const subId =
-                                      contract?.docuseal_slug ||
-                                      contract?.docuseal_submission_id;
-                                    if (subId) {
-                                      window.open(
-                                        `https://docuseal.com/s/${subId}`,
-                                        "_blank",
-                                      );
-                                    } else {
-                                      toast({
-                                        title: "Check your email",
-                                        description:
-                                          "A secure DocuSeal signing link has been sent to your email address.",
-                                      });
-                                    }
-                                  }}
-                                >
-                                  Review & Sign
-                                </Button>
-                              )}
-                              {isCompleted && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="border-gray-200 text-gray-600"
-                                  onClick={() => {
-                                    if (contract?.signed_document_url) {
-                                      window.open(
-                                        contract.signed_document_url,
-                                        "_blank",
-                                      );
-                                    } else {
-                                      toast({
-                                        title: "Download Unavailable",
-                                        description:
-                                          "The signed document URL is not available yet.",
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  Download
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                  )}
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
-      <Card className="p-4 bg-white border border-gray-300 rounded-none">
-        {loadingContractHubRows ? (
-          <p className="text-sm text-gray-500">Loading submissions</p>
-        ) : contractHubRows.length === 0 ? (
-          <p className="text-sm text-gray-500">No contract submissions yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm text-left text-gray-700">
-              <thead className="border-b border-gray-200 text-gray-800">
-                <tr>
-                  <th className="px-2 py-2">Campaign Name</th>
-                  <th className="px-2 py-2">Template</th>
-                  <th className="px-2 py-2">Status</th>
-                  <th className="px-2 py-2">Sent Date</th>
-                  <th className="px-2 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contractHubRows.map((row: any) => (
-                  <tr
-                    key={String(row?.id)}
-                    className="border-b border-gray-100"
-                  >
-                    <td className="px-2 py-2 font-medium text-gray-900">
-                      {String(row?.campaign_name || "Campaign offer")}
-                    </td>
-                    <td className="px-2 py-2 text-gray-700">
-                      {String(
-                        row?.title ||
-                          `Template ${String(
-                            row?.docuseal_template_id || "N/A",
-                          )}`,
+                            );
+                          })
                       )}
-                    </td>
-                    <td className="px-2 py-2">
-                      <span
-                        className={contractStatusBadgeClass(
-                          row?.docuseal_status,
-                        )}
-                      >
-                        {String(row?.docuseal_status || "").toLowerCase() ===
-                          "sent" && <Mail className="h-3.5 w-3.5 mr-1.5" />}
-                        {String(row?.docuseal_status || "").toLowerCase() ===
-                          "signed" && (
-                          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                        )}
-                        {formatContractStatusLabel(row?.docuseal_status)}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2">
-                      {formatHubDate(row?.sent_at || row?.created_at)}
-                    </td>
-                    <td className="px-2 py-2">
-                      <div className="flex items-center gap-3">
-                        <button
-                          className="text-blue-600 hover:text-blue-700"
-                          title="Resend"
-                          aria-label="Resend"
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await base44.post(
-                                `/api/campaign-offers/${encodeURIComponent(
-                                  String(row?.offer_id || ""),
-                                )}/contracts/send`,
-                                { contract_id: String(row?.id || "") },
-                              );
-                              const refreshed = await base44.get<{
-                                contracts?: any[];
-                              }>(
-                                `/api/campaign-offers/${encodeURIComponent(
-                                  String(row?.offer_id || ""),
-                                )}/contracts`,
-                              );
-                              const refreshedContracts = Array.isArray(
-                                refreshed?.contracts,
-                              )
-                                ? refreshed.contracts
-                                : [];
-                              setContractHubRows((prev) =>
-                                prev.map((existing: any) => {
-                                  if (String(existing?.id) !== String(row?.id))
-                                    return existing;
-                                  const fresh = refreshedContracts.find(
-                                    (c: any) =>
-                                      String(c?.id) === String(row?.id),
-                                  );
-                                  return fresh
-                                    ? {
-                                        ...fresh,
-                                        offer_id: existing?.offer_id,
-                                        campaign_name: existing?.campaign_name,
-                                      }
-                                    : existing;
-                                }),
-                              );
-                              toast({ title: "Contract resent" });
-                            } catch (e: any) {
-                              toast({
-                                title: "Resend failed",
-                                description: e?.message || "Please try again.",
-                                variant: "destructive" as any,
-                              });
-                            }
-                          }}
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="text-red-600 hover:text-red-700"
-                          title="Archive"
-                          aria-label="Archive"
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await base44.post(
-                                `/api/campaign-offers/${encodeURIComponent(
-                                  String(row?.offer_id || ""),
-                                )}/contracts/${encodeURIComponent(
-                                  String(row?.id || ""),
-                                )}/archive`,
-                                {},
-                              );
-                              setContractHubRows((prev) =>
-                                prev.filter(
-                                  (x: any) => String(x?.id) !== String(row?.id),
-                                ),
-                              );
-                              toast({ title: "Contract archived" });
-                            } catch (e: any) {
-                              toast({
-                                title: "Archive failed",
-                                description: e?.message || "Please try again.",
-                                variant: "destructive" as any,
-                              });
-                            }
-                          }}
-                        >
-                          <Archive className="h-4 w-4" />
-                        </button>
-                        {row?.meta?.docuseal_document_url && (
-                          <a
-                            href={String(row.meta.docuseal_document_url)}
-                            target="_blank"
-                            rel="noreferrer"
-                            download
-                            title="Download"
-                            aria-label="Download"
-                            className="text-blue-700 hover:text-blue-800"
-                          >
-                            <Download className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                    </td>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+        </div>
+      )}
+
+      {/* Creator Contracts Tab Content */}
+      {contractHubSubTab === "creator" && (
+        <Card className="p-4 bg-white border border-gray-300 rounded-none">
+          {loadingContractHubRows ? (
+            <p className="text-sm text-gray-500">
+              Loading creator contracts...
+            </p>
+          ) : contractHubRows.filter((row: any) => {
+              const offer = brandOfferItems.find(
+                (offer: any) => String(offer?.id) === String(row?.offer_id),
+              );
+              return offer?.target_type === "creator";
+            }).length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No creator contract submissions yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left text-gray-700">
+                <thead className="border-b border-gray-200 text-gray-800">
+                  <tr>
+                    <th className="px-2 py-2">Campaign Name</th>
+                    <th className="px-2 py-2">Creator</th>
+                    <th className="px-2 py-2">Template</th>
+                    <th className="px-2 py-2">Status</th>
+                    <th className="px-2 py-2">Sent Date</th>
+                    <th className="px-2 py-2">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                </thead>
+                <tbody>
+                  {contractHubRows
+                    .filter((row: any) => {
+                      const offer = brandOfferItems.find(
+                        (offer: any) =>
+                          String(offer?.id) === String(row?.offer_id),
+                      );
+                      return offer?.target_type === "creator";
+                    })
+                    .map((row: any) => {
+                      const offer = brandOfferItems.find(
+                        (offer: any) =>
+                          String(offer?.id) === String(row?.offer_id),
+                      );
+                      return (
+                        <tr
+                          key={String(row?.id)}
+                          className="border-b border-gray-100"
+                        >
+                          <td className="px-2 py-2 font-medium text-gray-900">
+                            {String(row?.campaign_name || "Campaign offer")}
+                          </td>
+                          <td className="px-2 py-2 text-gray-700">
+                            {offer?.creators?.full_name || "Unknown Creator"}
+                          </td>
+                          <td className="px-2 py-2 text-gray-700">
+                            {String(
+                              row?.title ||
+                                `Template ${String(
+                                  row?.docuseal_template_id || "N/A",
+                                )}`,
+                            )}
+                          </td>
+                          <td className="px-2 py-2">
+                            <span
+                              className={contractStatusBadgeClass(
+                                row?.docuseal_status,
+                              )}
+                            >
+                              {String(
+                                row?.docuseal_status || "",
+                              ).toLowerCase() === "sent" && (
+                                <Mail className="h-3.5 w-3.5 mr-1.5" />
+                              )}
+                              {String(
+                                row?.docuseal_status || "",
+                              ).toLowerCase() === "signed" && (
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                              )}
+                              {formatContractStatusLabel(row?.docuseal_status)}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2">
+                            {formatHubDate(row?.sent_at || row?.created_at)}
+                          </td>
+                          <td className="px-2 py-2">
+                            <div className="flex items-center gap-3">
+                              <button
+                                className="text-blue-600 hover:text-blue-700"
+                                title="Resend"
+                                aria-label="Resend"
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await base44.post(
+                                      `/api/campaign-offers/${encodeURIComponent(
+                                        String(row?.offer_id || ""),
+                                      )}/contracts/send`,
+                                      { contract_id: String(row?.id || "") },
+                                    );
+                                    const refreshed = await base44.get<{
+                                      contracts?: any[];
+                                    }>(
+                                      `/api/campaign-offers/${encodeURIComponent(
+                                        String(row?.offer_id || ""),
+                                      )}/contracts`,
+                                    );
+                                    const refreshedContracts = Array.isArray(
+                                      refreshed?.contracts,
+                                    )
+                                      ? refreshed.contracts
+                                      : [];
+                                    setContractHubRows((prev) =>
+                                      prev.map((existing: any) => {
+                                        if (
+                                          String(existing?.id) !==
+                                          String(row?.id)
+                                        )
+                                          return existing;
+                                        const fresh = refreshedContracts.find(
+                                          (c: any) =>
+                                            String(c?.id) === String(row?.id),
+                                        );
+                                        return fresh
+                                          ? {
+                                              ...fresh,
+                                              offer_id: existing?.offer_id,
+                                              campaign_name:
+                                                existing?.campaign_name,
+                                            }
+                                          : existing;
+                                      }),
+                                    );
+                                    toast({ title: "Contract resent" });
+                                  } catch (e: any) {
+                                    toast({
+                                      title: "Resend failed",
+                                      description:
+                                        e?.message || "Please try again.",
+                                      variant: "destructive" as any,
+                                    });
+                                  }
+                                }}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </button>
+                              <button
+                                className="text-red-600 hover:text-red-700"
+                                title="Archive"
+                                aria-label="Archive"
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await base44.post(
+                                      `/api/campaign-offers/${encodeURIComponent(
+                                        String(row?.offer_id || ""),
+                                      )}/contracts/${encodeURIComponent(
+                                        String(row?.id || ""),
+                                      )}/archive`,
+                                      {},
+                                    );
+                                    setContractHubRows((prev) =>
+                                      prev.filter(
+                                        (x: any) =>
+                                          String(x?.id) !== String(row?.id),
+                                      ),
+                                    );
+                                    toast({ title: "Contract archived" });
+                                  } catch (e: any) {
+                                    toast({
+                                      title: "Archive failed",
+                                      description:
+                                        e?.message || "Please try again.",
+                                      variant: "destructive" as any,
+                                    });
+                                  }
+                                }}
+                              >
+                                <Archive className="h-4 w-4" />
+                              </button>
+                              {row?.meta?.docuseal_document_url && (
+                                <a
+                                  href={String(row.meta.docuseal_document_url)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  download
+                                  title="Download"
+                                  aria-label="Download"
+                                  className="text-blue-700 hover:text-blue-800"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
-
   const renderCampaignDeliverablesHub = () => (
     <div className="space-y-6">
       <div>
