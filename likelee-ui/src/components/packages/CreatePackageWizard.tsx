@@ -59,6 +59,10 @@ import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
 
+// Maximum file size for package cover images (20MB) - must match backend constant
+const MAX_PACKAGE_COVER_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_PACKAGE_COVER_IMAGE_MB = 20;
+
 export type CreatePackageWizardMode =
   | "template"
   | "package"
@@ -148,75 +152,6 @@ export function CreatePackageWizard({
     client_name: "",
     client_email: "",
     items: [] as any[],
-  };
-
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e?.target;
-    const file = (input?.files?.[0] as File | undefined) ?? undefined;
-    if (input) input.value = "";
-    if (!file) return;
-
-    if (!supabase || !user?.id) {
-      toast({
-        title: "Upload unavailable",
-        description: "Please sign in again and retry the upload.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!file.type?.startsWith("image/")) {
-      toast({
-        title: "Invalid file",
-        description: "Please choose an image file.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUploadingCover(true);
-    try {
-      const safeName = (file.name || "cover")
-        .toString()
-        .replace(/[^a-zA-Z0-9_.-]/g, "_");
-      const ext = safeName.includes(".")
-        ? safeName.split(".").pop()
-        : file.type?.includes("png")
-          ? "png"
-          : "jpg";
-      const rand =
-        (globalThis as any)?.crypto?.randomUUID?.() ||
-        `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-      const path = `agency/${user.id}/packages/covers/cover_${rand}.${ext}`;
-
-      const { error } = await supabase.storage
-        .from("likelee-public")
-        .upload(path, file, {
-          upsert: true,
-          contentType: file.type || "image/jpeg",
-        });
-      if (error) throw error;
-
-      const { data } = supabase.storage
-        .from("likelee-public")
-        .getPublicUrl(path);
-      const publicUrl = data?.publicUrl || "";
-      if (!publicUrl) {
-        throw new Error("missing_public_url");
-      }
-
-      setFormData((prev) => ({ ...prev, cover_image_url: publicUrl }));
-      toast({ title: "Cover image uploaded" });
-    } catch (err: any) {
-      const msg = String(err?.message || err);
-      toast({
-        title: "Cover upload failed",
-        description: msg,
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploadingCover(false);
-    }
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -856,6 +791,10 @@ export function CreatePackageWizard({
                       <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">
                         Cover Image
                       </Label>
+                      <p className="text-xs text-gray-500">
+                        JPG, PNG, or GIF. Maximum {MAX_PACKAGE_COVER_IMAGE_MB}
+                        MB.
+                      </p>
                       <div className="flex gap-3">
                         <Input
                           placeholder="https://images.unsplash.com/..."
@@ -893,10 +832,27 @@ export function CreatePackageWizard({
                                 });
                                 return;
                               }
+
+                              // Check file size (20MB limit)
+                              if (file.size > MAX_PACKAGE_COVER_IMAGE_BYTES) {
+                                const fileSizeMB = (
+                                  file.size /
+                                  (1024 * 1024)
+                                ).toFixed(2);
+                                toast({
+                                  title: "File too large",
+                                  description: `Package cover image must be ${MAX_PACKAGE_COVER_IMAGE_MB}MB or less. Your file is ${fileSizeMB}MB. Please compress or resize your image and try again.`,
+                                  variant: "destructive",
+                                });
+                                e.target.value = "";
+                                return;
+                              }
+
                               setCoverUploading(true);
                               try {
                                 const fd = new FormData();
                                 fd.append("visibility", "public");
+                                fd.append("source_type", "package_cover");
                                 fd.append("file", file);
                                 const resp = await base44.post<{
                                   file_url?: string;
