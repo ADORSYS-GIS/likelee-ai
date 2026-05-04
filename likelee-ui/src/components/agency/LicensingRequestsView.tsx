@@ -354,24 +354,43 @@ const LicensingRequestsView = ({
           : "Payment link sent.",
       });
     } catch (e: any) {
-      try {
-        const parsed = JSON.parse(String(e?.message || ""));
-        if (
-          parsed &&
-          typeof parsed === "object" &&
-          parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
-        ) {
-          // Show the professional readiness modal instead of a red toast
-          setPaymentReadinessModal({
-            open: true,
-            missingTalents: Array.isArray(parsed.missing) ? parsed.missing : [],
-            action: String(parsed.action || ""),
-          });
-          return;
+      // The base44Client extracts only the message string into e.message,
+      // but preserves the full raw error payload on e.data.
+      // Check e.data first for the structured MISSING_TALENT_STRIPE_CONNECT payload.
+      const rawData = e?.data;
+      const normalizedData =
+        rawData && typeof rawData === "object"
+          ? rawData
+          : (() => {
+              try {
+                return JSON.parse(String(rawData || ""));
+              } catch {
+                return null;
+              }
+            })();
+
+      // Also try parsing e.message in case the client serialized it there
+      const parsedMessage = (() => {
+        try {
+          return JSON.parse(String(e?.message || ""));
+        } catch {
+          return null;
         }
-      } catch {
-        // not a structured error — fall through to generic toast
+      })();
+
+      const structured = normalizedData || parsedMessage;
+
+      if (structured?.code === "MISSING_TALENT_STRIPE_CONNECT") {
+        setPaymentReadinessModal({
+          open: true,
+          missingTalents: Array.isArray(structured.missing)
+            ? structured.missing
+            : [],
+          action: String(structured.action || ""),
+        });
+        return;
       }
+
       toast({
         title: "Send payment link failed",
         description: e?.message || "Could not generate/send payment link",
