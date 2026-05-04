@@ -223,12 +223,138 @@ pub async fn get_analytics_dashboard(
 
         let total_earnings_formatted = format_currency(total_earnings_cents);
 
-        // Mock AI Usage
-        let total_usages_30d = 73;
+        // B. AI USAGE — Calculate from catalogs sent to clients
+        let catalogs_resp = state
+            .pg
+            .from("agency_catalogs")
+            .select("id,sent_at")
+            .eq("agency_id", agency_id)
+            .not("sent_at", "is", "null")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let catalogs_text = catalogs_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let catalogs_data: Vec<serde_json::Value> =
+            serde_json::from_str(&catalogs_text).unwrap_or(vec![]);
+
+        let total_usages_30d = catalogs_data.len() as i64;
+
+        // Calculate asset type distribution from catalogs
+        let mut video_total = 0.0;
+        let mut voice_total = 0.0;
+        let mut image_total = 0.0;
+
+        for catalog in &catalogs_data {
+            let catalog_id = catalog.get("id").and_then(|v| v.as_str()).unwrap_or("");
+
+            // Get catalog items
+            let items_resp = state
+                .pg
+                .from("agency_catalog_items")
+                .select("id")
+                .eq("catalog_id", catalog_id)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let items_text = items_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+            let items_data: Vec<serde_json::Value> =
+                serde_json::from_str(&items_text).unwrap_or(vec![]);
+
+            // Get all asset types for this catalog
+            let mut has_video = false;
+            let mut has_voice = false;
+            let mut has_image = false;
+
+            for item in &items_data {
+                let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
+
+                // Get assets for this item
+                let assets_resp = state
+                    .pg
+                    .from("agency_catalog_assets")
+                    .select("asset_type")
+                    .eq("catalog_item_id", item_id)
+                    .execute()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let assets_text = assets_resp
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "[]".to_string());
+                let assets_data: Vec<serde_json::Value> =
+                    serde_json::from_str(&assets_text).unwrap_or(vec![]);
+
+                for asset in &assets_data {
+                    let asset_type = asset
+                        .get("asset_type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_lowercase();
+                    if asset_type.contains("video") {
+                        has_video = true;
+                    } else if asset_type.contains("voice") || asset_type.contains("audio") {
+                        has_voice = true;
+                    } else if asset_type.contains("image") || asset_type.contains("photo") {
+                        has_image = true;
+                    }
+                }
+
+                // Also check recordings (voice)
+                let recordings_resp = state
+                    .pg
+                    .from("agency_catalog_recordings")
+                    .select("recording_id")
+                    .eq("catalog_item_id", item_id)
+                    .execute()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let recordings_text = recordings_resp
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "[]".to_string());
+                let recordings_data: Vec<serde_json::Value> =
+                    serde_json::from_str(&recordings_text).unwrap_or(vec![]);
+
+                if !recordings_data.is_empty() {
+                    has_voice = true;
+                }
+            }
+
+            // Calculate percentage for this catalog
+            let asset_count = (has_video as i32 + has_voice as i32 + has_image as i32) as f64;
+            if asset_count > 0.0 {
+                let percentage_per_type = 100.0 / asset_count;
+                if has_video {
+                    video_total += percentage_per_type;
+                }
+                if has_voice {
+                    voice_total += percentage_per_type;
+                }
+                if has_image {
+                    image_total += percentage_per_type;
+                }
+            }
+        }
+
+        // Calculate final percentages
+        let catalog_count = catalogs_data.len() as f64;
+        let (video_pct, voice_pct, image_pct) = if catalog_count > 0.0 {
+            (
+                (video_total / catalog_count).round() as i64,
+                (voice_total / catalog_count).round() as i64,
+                (image_total / catalog_count).round() as i64,
+            )
+        } else {
+            (0, 0, 0)
+        };
+
         let usage_by_type = AIUsageByType {
-            image: 45,
-            video: 38,
-            voice: 17,
+            image: image_pct,
+            video: video_pct,
+            voice: voice_pct,
         };
 
         // C. CONSENT STATUS — based on agency_creator_marketplace_contracts (external creators only)
