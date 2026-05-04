@@ -20354,14 +20354,19 @@ export default function AgencyDashboard() {
         navigateToSubTab: "Job Invites", // Navigate to specific sub-tab
       });
     }
-    alerts.push({
-      id: "welcome",
-      title: "System Alert",
-      message:
-        "Your verification was successfully processed. Welcome to Likelee!",
-      time: "Just now",
-      color: "blue",
-    });
+
+    // Only show system alert if it hasn't been dismissed
+    if (!dismissedNotificationIds.includes("welcome")) {
+      alerts.push({
+        id: "welcome",
+        title: "System Alert",
+        message:
+          "Your verification was successfully processed. Welcome to Likelee!",
+        time: "System notification",
+        color: "blue",
+      });
+    }
+
     return alerts;
   }, [
     pendingBrandConnectionCount,
