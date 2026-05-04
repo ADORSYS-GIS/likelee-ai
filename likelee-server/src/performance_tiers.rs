@@ -476,17 +476,19 @@ pub async fn get_performance_tiers(
     creator_ids.sort();
     creator_ids.dedup();
 
-    // Fetch kyc_status for all creators so we can mark verified talent.
-    // A talent is "verified" only when they have completed portal onboarding
-    // (creator_id is set) AND their KYC is approved.
+    // Fetch kyc_status and profile_photo_url for all creators so we can:
+    // 1. Mark verified talent (kyc_status = 'approved')
+    // 2. Fall back to creators.profile_photo_url when agency_users has no photo
     let mut kyc_approved_creators: std::collections::HashSet<String> =
         std::collections::HashSet::new();
+    let mut creator_photo_by_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
     if !creator_ids.is_empty() {
         let kyc_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
         if let Ok(kyc_resp) = state
             .pg
             .from("creators")
-            .select("id,kyc_status")
+            .select("id,kyc_status,profile_photo_url")
             .in_("id", kyc_refs)
             .execute()
             .await
@@ -501,14 +503,24 @@ pub async fn get_performance_tiers(
                         .and_then(|v| v.as_str())
                         .unwrap_or("")
                         .trim();
+                    if cid.is_empty() {
+                        continue;
+                    }
                     let status = r
                         .get("kyc_status")
                         .and_then(|v| v.as_str())
                         .unwrap_or("")
                         .trim()
                         .to_lowercase();
-                    if !cid.is_empty() && status == "approved" {
+                    if status == "approved" {
                         kyc_approved_creators.insert(cid.to_string());
+                    }
+                    if let Some(photo) = r
+                        .get("profile_photo_url")
+                        .and_then(|v| v.as_str())
+                        .filter(|s| !s.trim().is_empty())
+                    {
+                        creator_photo_by_id.insert(cid.to_string(), photo.to_string());
                     }
                 }
             }
@@ -591,7 +603,15 @@ pub async fn get_performance_tiers(
         let photo = t
             .get("profile_photo_url")
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.to_string())
+            // Fall back to creators.profile_photo_url when agency_users has no photo
+            .or_else(|| {
+                creator_id
+                    .as_ref()
+                    .and_then(|cid| creator_photo_by_id.get(cid))
+                    .cloned()
+            });
         let earnings = *earnings_map.get(&id).unwrap_or(&0.0);
         let booking_count = *bookings_map.get(&id).unwrap_or(&0);
 

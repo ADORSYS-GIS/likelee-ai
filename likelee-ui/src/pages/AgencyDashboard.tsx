@@ -18608,6 +18608,16 @@ export default function AgencyDashboard() {
   const [openTalentId, setOpenTalentId] = useState<string | undefined>(
     searchParams.get("openTalentId") || undefined,
   );
+
+  // Sync openTalentId from URL whenever searchParams changes (e.g. when
+  // navigating from Performance Tiers View button to All Talent/Athletes).
+  // useState initializer only runs at mount so we need this effect too.
+  useEffect(() => {
+    const fromUrl = searchParams.get("openTalentId") || undefined;
+    if (fromUrl && fromUrl !== openTalentId) {
+      setOpenTalentId(fromUrl);
+    }
+  }, [searchParams]);
   const normalizeSubTab = (value: string | null | undefined) => {
     const cleaned = String(value || "")
       .trim()
