@@ -2162,6 +2162,101 @@ pub async fn get_brand_spend_analytics(
     }))
 }
 
+#[derive(Debug, Serialize)]
+pub struct EscrowSummary {
+    pub currencies: std::collections::HashMap<String, f64>,
+    pub project_count: usize,
+}
+
+pub async fn get_brand_escrow_summary(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<EscrowSummary>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let brand_access = team::require_brand_access(&state, &user).await?;
+    let brand_id = brand_access.organization_id;
+
+    let offers_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,budget_snapshot,payment_status,escrow_status")
+        .eq("brand_id", &brand_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let offers_status = offers_resp.status();
+    let offers_text = offers_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !offers_status.is_success() {
+        return Err(sanitize_db_error(offers_status.as_u16(), offers_text));
+    }
+    let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
+
+    let mut currencies: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+    let mut project_count: usize = 0;
+
+    for offer in offers {
+        let escrow_status = offer
+            .get("escrow_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+        let payment_status = offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+
+        if (escrow_status != "holding" && escrow_status != "releasing") || payment_status != "paid"
+        {
+            continue;
+        }
+
+        let budget_snapshot = offer
+            .get("budget_snapshot")
+            .and_then(|v| v.as_object())
+            .cloned()
+            .unwrap_or_default();
+
+        let raw_amount = budget_snapshot
+            .get("budget_total")
+            .or_else(|| budget_snapshot.get("total_amount"))
+            .or_else(|| budget_snapshot.get("amount"));
+
+        let normalized_amount = match raw_amount {
+            Some(v) => match v.as_str() {
+                Some(s) => s.replace(",", "").parse::<f64>().unwrap_or(0.0),
+                None => v.as_f64().unwrap_or(0.0),
+            },
+            None => 0.0,
+        };
+
+        if normalized_amount <= 0.0 {
+            continue;
+        }
+
+        let currency = budget_snapshot
+            .get("currency_code")
+            .and_then(|v| v.as_str())
+            .unwrap_or("USD")
+            .to_string();
+
+        *currencies.entry(currency).or_insert(0.0) += normalized_amount;
+        project_count += 1;
+    }
+
+    Ok(Json(EscrowSummary {
+        currencies,
+        project_count,
+    }))
+}
+
 pub async fn get_campaign(
     State(state): State<AppState>,
     user: AuthUser,
@@ -8069,8 +8164,13 @@ async fn try_release_campaign_offer_escrow(
         }
 
         // Trigger the Stripe transfer to the creator (failures are now properly handled).
-        let currency = "USD".to_string();
-        let currency_enum = stripe_sdk::Currency::USD;
+        let currency = budget_snapshot
+            .get("currency_code")
+            .and_then(|v| v.as_str())
+            .unwrap_or("USD")
+            .to_string();
+        let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase())
+            .unwrap_or(stripe_sdk::Currency::USD);
         let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
         let creator_account_id = get_creator_stripe_account(state, &creator_id)
             .await
@@ -8942,6 +9042,11 @@ pub async fn ensure_campaign_billing_stub(
                 .unwrap_or("0")
                 .replace(",", "");
             let budget_total: f64 = budget_str.parse().unwrap_or(0.0);
+            let currency_code = budget_snapshot
+                .get("currency_code")
+                .and_then(|v| v.as_str())
+                .unwrap_or("USD")
+                .to_string();
             let assignments_resp = state
                 .pg
                 .from("offer_talent_assignments")
@@ -8975,7 +9080,7 @@ pub async fn ensure_campaign_billing_stub(
                     "creator_id": cid,
                     "campaign_id": if brand_campaign_id.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(brand_campaign_id.to_string()) },
                     "status": "pending",
-                    "currency_code": "USD",
+                    "currency_code": currency_code,
                     "gross_cents": split_cents,
                     "licensing_request_id": existing_id,
                 });
@@ -9033,6 +9138,12 @@ pub async fn ensure_campaign_billing_stub(
     let budget_str = budget_str.replace(",", "");
     let budget_total: f64 = budget_str.parse().unwrap_or(0.0);
     let _amount_cents = (budget_total * 100.0).round() as i64;
+
+    let currency_code = budget_snapshot
+        .get("currency_code")
+        .and_then(|v| v.as_str())
+        .unwrap_or("USD")
+        .to_string();
 
     let assignments_resp = state
         .pg
@@ -9130,7 +9241,7 @@ pub async fn ensure_campaign_billing_stub(
             "creator_id": cid,
             "campaign_id": if brand_campaign_id.is_empty() { None } else { Some(brand_campaign_id.to_string()) },
             "status": "pending",
-            "currency_code": "USD",
+            "currency_code": currency_code,
             "gross_cents": split_cents,
             "licensing_request_id": lr_id,
         });

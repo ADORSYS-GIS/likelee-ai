@@ -19,6 +19,7 @@ import {
   reviewOfferDeliverable,
   getBrandBillingStatus,
   getBrandSpendAnalytics,
+  getBrandEscrowSummary,
   listBrandInvoices,
   getBrandBudgetSettings,
   updateBrandBudgetSettings,
@@ -338,6 +339,7 @@ export default function BrandDashboard() {
   const [jobStatusFilter, setJobStatusFilter] = useState("all");
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
   const hasLoadedOffersRef = useRef(false);
+  const hasLoadedBillingDataRef = useRef(false);
   const hasLoadedBrandAnalyticsRef = useRef(false);
   const deliverableReviewBusyRef = useRef<Set<string>>(new Set());
   const [activityEvents, setActivityEvents] = useState<any[]>([]);
@@ -440,6 +442,10 @@ export default function BrandDashboard() {
   const [billingCurrentMonthSpend, setBillingCurrentMonthSpend] = useState(0);
   const [billingProjectedEoy, setBillingProjectedEoy] = useState(0);
   const [billingMonthlyAvg, setBillingMonthlyAvg] = useState(0);
+  const [escrowSummary, setEscrowSummary] = useState<{
+    breakdown: string;
+    projectCount: number;
+  }>({ breakdown: "$0", projectCount: 0 });
   const [budgetLimit, setBudgetLimit] = useState<number | null>(null);
   const [budgetAlertEnabled, setBudgetAlertEnabled] = useState(false);
   const [savingBudgetSettings, setSavingBudgetSettings] = useState(false);
@@ -1042,15 +1048,18 @@ export default function BrandDashboard() {
       activeSection !== "usage-rights"
     )
       return;
+    if (hasLoadedBillingDataRef.current) return;
     let mounted = true;
 
     const loadBillingData = async () => {
+      hasLoadedBillingDataRef.current = true;
       setLoadingBillingData(true);
       try {
-        const [statusRes, spendRes, invoicesRes] = await Promise.all([
+        const [statusRes, spendRes, invoicesRes, escrowRes] = await Promise.all([
           getBrandBillingStatus(),
           getBrandSpendAnalytics(),
           listBrandInvoices(),
+          getBrandEscrowSummary().catch(() => null),
         ]);
         if (!mounted) return;
         if (statusRes) {
@@ -1083,6 +1092,37 @@ export default function BrandDashboard() {
           setBrandInvoices(
             Array.isArray(invoicesRes.invoices) ? invoicesRes.invoices : [],
           );
+        }
+        if (escrowRes) {
+          const entries = Object.entries(escrowRes.currencies || {});
+          let breakdown: string;
+          if (entries.length === 0) {
+            breakdown = "$0";
+          } else if (entries.length === 1) {
+            const curr = entries[0][0];
+            const total = Number(entries[0][1]);
+            breakdown = new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: curr,
+              notation: "compact",
+              maximumFractionDigits: 1,
+            }).format(total);
+          } else {
+            breakdown = entries
+              .map(([curr, total]) =>
+                new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: curr,
+                  notation: "compact",
+                  maximumFractionDigits: 1,
+                }).format(Number(total)),
+              )
+              .join(", ");
+          }
+          setEscrowSummary({
+            breakdown,
+            projectCount: escrowRes.project_count || 0,
+          });
         }
       } catch (e) {
         if (!mounted) return;
@@ -2190,9 +2230,8 @@ export default function BrandDashboard() {
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
-  const { escrowTotal, escrowProjects, escrowCurrency } = useMemo(() => {
+  const { escrowBreakdown, escrowProjects } = useMemo(() => {
     const projects: any[] = [];
-    let total = 0;
     const currencies: Record<string, number> = {};
     brandOfferItems.forEach((offer: any) => {
       const escrowStatus = String(offer?.escrow_status || "").toLowerCase();
@@ -2202,14 +2241,12 @@ export default function BrandDashboard() {
         paymentStatus === "paid"
       ) {
         const budgetSnap = offer?.budget_snapshot || {};
-        // Support multiple possible keys: budget_total (new offers), total_amount (legacy/drafts), amount (fallback)
         const rawAmount =
           budgetSnap?.budget_total ||
           budgetSnap?.total_amount ||
           budgetSnap?.amount ||
           "0";
 
-        // Robust parsing: strip $ and , and handle strings vs numbers
         const normalizedAmount =
           typeof rawAmount === "string"
             ? parseFloat(rawAmount.replace(/[$,\s]/g, "")) || 0
@@ -2219,7 +2256,6 @@ export default function BrandDashboard() {
         currencies[currency] = (currencies[currency] || 0) + normalizedAmount;
 
         if (normalizedAmount > 0) {
-          total += normalizedAmount;
           const creatorName =
             offer?.target_name ||
             offer?.creators?.full_name ||
@@ -2238,24 +2274,33 @@ export default function BrandDashboard() {
         }
       }
     });
-    // Use the currency with the highest total
-    const primaryCurrency =
-      Object.entries(currencies).sort((a, b) => b[1] - a[1])[0]?.[0] || "USD";
-    return {
-      escrowTotal: total,
-      escrowProjects: projects,
-      escrowCurrency: primaryCurrency,
-    };
-  }, [brandOfferItems]);
 
-  const formatEscrowCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: escrowCurrency,
-      notation: "compact",
-      maximumFractionDigits: 1,
-    }).format(amount);
-  };
+    const entries = Object.entries(currencies);
+    let breakdown: string;
+    if (entries.length === 0) {
+      breakdown = "$0";
+    } else if (entries.length === 1) {
+      breakdown = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: entries[0][0],
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(entries[0][1]);
+    } else {
+      breakdown = entries
+        .map(([curr, total]) =>
+          new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: curr,
+            notation: "compact",
+            maximumFractionDigits: 1,
+          }).format(total),
+        )
+        .join(", ");
+    }
+
+    return { escrowBreakdown: breakdown, escrowProjects: projects };
+  }, [brandOfferItems]);
 
   const homeCurrentMonthSpendLabel = loadingBillingData
     ? "..."
@@ -2808,7 +2853,7 @@ export default function BrandDashboard() {
               Active Escrow
             </h3>
             <p className="text-6xl font-black text-blue-600">
-              {formatEscrowCurrency(escrowTotal)}
+              {escrowBreakdown}
             </p>
             <p className="text-blue-800 mt-2 font-medium">
               Protecting {escrowProjects.length}{" "}
@@ -2900,7 +2945,7 @@ export default function BrandDashboard() {
                     <td className="px-6 py-5 text-right font-mono font-bold text-gray-900">
                       {new Intl.NumberFormat("en-US", {
                         style: "currency",
-                        currency: project.currency || escrowCurrency,
+                        currency: project.currency || "USD",
                       }).format(project.amount)}
                     </td>
                     <td className="px-6 py-5">
@@ -2987,7 +3032,7 @@ export default function BrandDashboard() {
               <DollarSign className="w-5 h-5 text-gray-400" />
             </div>
             <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-              {formatEscrowCurrency(escrowTotal)}
+              {loadingBillingData ? "..." : escrowSummary.breakdown}
             </p>
             <p className="text-sm text-blue-600 mt-1 font-medium">
               Click for details →
@@ -9309,7 +9354,7 @@ export default function BrandDashboard() {
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">In Escrow</p>
           <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-            {formatEscrowCurrency(escrowTotal)}
+            {loadingBillingData ? "..." : escrowSummary.breakdown}
           </p>
           <p className="text-xs text-gray-500 mt-1">Pending delivery</p>
         </Card>
@@ -9640,8 +9685,8 @@ export default function BrandDashboard() {
           releases to the creator.
         </p>
         <p className="text-sm font-semibold text-blue-900">
-          Current Escrow: {formatEscrowCurrency(escrowTotal / 1000)} across{" "}
-          {escrowProjects.length} projects
+          Current Escrow: {loadingBillingData ? "..." : escrowSummary.breakdown} across{" "}
+          {escrowSummary.projectCount} projects
         </p>
       </Card>
 
