@@ -13093,9 +13093,14 @@ export default function BrandDashboard() {
                       // the brand clicks the ✓ button in PublicPackageView.
                       // meta.selected_talent_ids is only written AFTER brand-done
                       // is called, so it's never available at this point.
+                      //
+                      // Independent connected creators have talent_id = null and
+                      // creator_id set instead — use whichever is present.
                       const selectedIds = (publicPkg?.interactions || [])
                         .filter((i: any) => i?.type === "selected")
-                        .map((i: any) => String(i?.talent_id || "").trim())
+                        .map((i: any) =>
+                          String(i?.talent_id || i?.creator_id || "").trim(),
+                        )
                         .filter(Boolean);
 
                       if (selectedIds.length === 0) {
@@ -13115,11 +13120,13 @@ export default function BrandDashboard() {
                         ? publicPkg.items
                         : [];
 
-                      // Build a lookup: talent_id → best display name
+                      // Build a lookup keyed on whichever identity is present:
+                      // talent_id (agency_users.id) for onboarded roster talent,
+                      // creator_id (creators.id) for independent connected creators.
                       const nameById = new Map<string, string>();
                       for (const item of publicItems) {
                         const id = String(
-                          item?.talent_id || item?.id || "",
+                          item?.talent_id || item?.creator_id || item?.id || "",
                         ).trim();
                         if (!id) continue;
                         const name =
@@ -13164,7 +13171,9 @@ export default function BrandDashboard() {
                     confirmingDonePkgPublicData?.interactions || []
                   )
                     .filter((i: any) => i?.type === "selected")
-                    .map((i: any) => String(i?.talent_id || "").trim())
+                    .map((i: any) =>
+                      String(i?.talent_id || i?.creator_id || "").trim(),
+                    )
                     .filter(Boolean);
                   return selectedIds.length === 0;
                 })()
@@ -13176,11 +13185,15 @@ export default function BrandDashboard() {
                   // selected_talent_ids come from the public package interactions
                   // (type "selected") — the only reliable source before brand-done
                   // is called. meta.selected_talent_ids doesn't exist yet at this point.
+                  // Use talent_id when present (agency_users.id), otherwise creator_id
+                  // (creators.id) for independent connected creators.
                   const selectedTalentIds = (
                     confirmingDonePkgPublicData?.interactions || []
                   )
                     .filter((i: any) => i?.type === "selected")
-                    .map((i: any) => String(i?.talent_id || "").trim())
+                    .map((i: any) =>
+                      String(i?.talent_id || i?.creator_id || "").trim(),
+                    )
                     .filter(Boolean);
 
                   await base44.post(

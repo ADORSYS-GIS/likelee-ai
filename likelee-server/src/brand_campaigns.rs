@@ -5330,7 +5330,7 @@ pub async fn get_brand_package_interactions(
     let interactions_resp = state
         .pg
         .from("agency_talent_package_interactions")
-        .select("talent_id,type,content,client_name,client_email,created_at")
+        .select("talent_id,creator_id,type,content,client_name,client_email,created_at")
         .eq("package_id", &agency_package_id)
         .execute()
         .await
@@ -5363,11 +5363,84 @@ pub async fn get_brand_package_interactions(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let items: Vec<serde_json::Value> = if items_status.is_success() {
+    let mut items: Vec<serde_json::Value> = if items_status.is_success() {
         serde_json::from_str(&items_text).unwrap_or_default()
     } else {
         vec![]
     };
+
+    // 6. For independent connected creators (talent_id = null, creator_id set),
+    //    the agency_users join above returns nothing.  Fetch their names from the
+    //    creators table and merge them in so the frontend can display a name
+    //    instead of a raw UUID.
+    let independent_creator_ids: Vec<String> = items
+        .iter()
+        .filter(|item| item.get("talent_id").map(|v| v.is_null()).unwrap_or(true))
+        .filter_map(|item| {
+            item.get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
+        .collect();
+
+    if !independent_creator_ids.is_empty() {
+        let creator_id_refs: Vec<&str> =
+            independent_creator_ids.iter().map(|s| s.as_str()).collect();
+        let creators_resp = state
+            .pg
+            .from("creators")
+            .select("id,full_name,profile_photo_url")
+            .in_("id", creator_id_refs)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let creators_text = creators_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let creator_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&creators_text).unwrap_or_default();
+
+        // Build a lookup: creator_id → creator row
+        let mut creators_by_id: std::collections::HashMap<String, serde_json::Value> =
+            std::collections::HashMap::new();
+        for row in creator_rows {
+            if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+                creators_by_id.insert(id.to_string(), row);
+            }
+        }
+
+        // Merge creator data into items that have no agency_users talent join
+        for item in items.iter_mut() {
+            let has_talent = item.get("talent").map(|v| !v.is_null()).unwrap_or(false);
+            if has_talent {
+                continue;
+            }
+            let creator_id = item
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            if let Some(ref cid) = creator_id {
+                if let Some(creator) = creators_by_id.get(cid) {
+                    // Inject a synthetic talent object so the frontend name
+                    // resolution path (item.talent.full_name) works uniformly.
+                    if let Some(obj) = item.as_object_mut() {
+                        obj.insert(
+                            "talent".to_string(),
+                            json!({
+                                "id": creator.get("id"),
+                                "stage_name": null,
+                                "full_legal_name": null,
+                                "full_name": creator.get("full_name"),
+                                "profile_photo_url": creator.get("profile_photo_url"),
+                            }),
+                        );
+                    }
+                }
+            }
+        }
+    }
 
     Ok(Json(json!({
         "interactions": interactions,
