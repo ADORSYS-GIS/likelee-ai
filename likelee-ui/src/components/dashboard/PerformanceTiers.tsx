@@ -357,7 +357,7 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
           const avgBookings =
             group.talents.length > 0
               ? group.talents.reduce(
-                  (acc, t) => acc + t.bookings_this_month,
+                  (acc, t) => acc + (isAiMode ? t.licensing_deals_this_month : t.bookings_this_month),
                   0,
                 ) / group.talents.length
               : 0;
@@ -443,13 +443,13 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
                       <Calendar className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      Avg Booking Frequency
+                      {isAiMode ? "Avg Deal Frequency" : "Avg Booking Frequency"}
                     </span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
                     {avgBookings.toFixed(1)}{" "}
                     <span className="text-sm font-medium text-gray-500">
-                      campaigns/month
+                      {isAiMode ? "deals/month" : "campaigns/month"}
                     </span>
                   </div>
                 </div>
