@@ -1391,3 +1391,23 @@ export const getAgencyBillingStatus = () =>
     stripe_current_period_end?: string | null;
     stripe_cancel_at_period_end: boolean;
   }>(`/api/agency/billing/status`);
+
+export const scrapeInstagramProfile = (instagram_handle: string) =>
+  base44Client.post<{
+    success: boolean;
+    profile?: {
+      username: string;
+      followers?: number;
+      following?: number;
+      bio?: string;
+      profile_pic_url?: string;
+      external_url?: string;
+      posts_count?: number;
+      engagement_rate?: number;
+      avg_likes?: number;
+      avg_comments?: number;
+      is_verified?: boolean;
+      is_private?: boolean;
+    };
+    error?: string;
+  }>(`/api/instagram/scrape`, { instagram_handle });

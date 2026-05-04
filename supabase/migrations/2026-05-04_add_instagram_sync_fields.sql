@@ -4,8 +4,9 @@
 
 BEGIN;
 
--- Add instagram_followers to creators (if not exists)
+-- Add instagram fields to creators (if not exists)
 ALTER TABLE public.creators
+  ADD COLUMN IF NOT EXISTS instagram_handle text,
   ADD COLUMN IF NOT EXISTS instagram_followers bigint DEFAULT 0,
   ADD COLUMN IF NOT EXISTS instagram_connected boolean DEFAULT false,
   ADD COLUMN IF NOT EXISTS instagram_last_synced timestamptz;

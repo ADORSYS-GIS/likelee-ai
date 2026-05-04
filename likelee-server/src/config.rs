@@ -322,7 +322,7 @@ pub struct ServerConfig {
     #[envconfig(from = "APIFY_API_TOKEN", default = "")]
     pub apify_api_token: String,
 
-    #[envconfig(from = "APIFY_INSTAGRAM_PROFILE_SCRAPER_ACTOR_ID", default = "apify/instagram-profile-scraper")]
+    #[envconfig(from = "APIFY_INSTAGRAM_PROFILE_SCRAPER_ACTOR_ID", default = "apify~instagram-profile-scraper")]
     pub apify_scraper_actor_id: String,
 }
 

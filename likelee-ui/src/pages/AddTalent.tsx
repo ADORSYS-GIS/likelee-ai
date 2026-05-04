@@ -287,42 +287,21 @@ export default function AddTalent() {
   };
 
   const fetchInstagramData = async () => {
-    if (!formData.instagram_handle) {
-      toast({
-        title: "Error",
-        description: "Please enter an Instagram handle first",
-        variant: "destructive",
-      });
-      return;
-    }
+    const handle = formData.instagram_handle?.trim().replace("@", "");
+    if (!handle) return;
 
     setFetchingInstagram(true);
     try {
-      const data = await scrapeInstagramProfile(formData.instagram_handle);
+      const data = await scrapeInstagramProfile(handle);
 
       if (data?.success && data?.profile) {
         setFormData((prev) => ({
           ...prev,
           instagram_followers: data.profile?.followers || 0,
         }));
-        toast({
-          title: "Success",
-          description: `Found ${data.profile?.followers?.toLocaleString() || "0"} followers`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description:
-            data?.error || "Could not fetch Instagram data",
-          variant: "destructive",
-        });
       }
     } catch (e) {
-      toast({
-        title: "Error",
-        description: "Failed to connect to Instagram service",
-        variant: "destructive",
-      });
+      // Silently fail - user can proceed without Instagram data
     } finally {
       setFetchingInstagram(false);
     }
@@ -525,8 +504,8 @@ export default function AddTalent() {
         role_type: formData.role_types,
         status: "inactive",
         instagram_handle: formData.instagram_handle,
-        instagram_followers: 0,
-        engagement_rate: 0,
+        instagram_followers: formData.instagram_followers || 0,
+        engagement_rate: formData.engagement_rate || 0,
         profile_photo_url: profilePhotoUrl || heroMediaUrl,
         photo_urls: galleryPhotoUrls,
         video_url:
@@ -1622,44 +1601,34 @@ export default function AddTalent() {
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
                   Instagram Account
                 </Label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Instagram className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <Input
-                      value={formData.instagram_handle}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          instagram_handle: e.target.value,
-                        })
+                <div className="relative">
+                  <Instagram className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Input
+                    value={formData.instagram_handle}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        instagram_handle: e.target.value,
+                      })
+                    }
+                    onBlur={() => {
+                      if (formData.instagram_handle && !fetchingInstagram) {
+                        fetchInstagramData();
                       }
-                      placeholder="@handle"
-                      className="pl-10 h-12"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={fetchInstagramData}
-                    disabled={fetchingInstagram || !formData.instagram_handle}
-                    className="h-12 whitespace-nowrap"
-                  >
-                    {fetchingInstagram ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Fetching...
-                      </>
-                    ) : (
-                      <>
-                        <Instagram className="w-4 h-4 mr-2" />
-                        Fetch from Instagram
-                      </>
-                    )}
-                  </Button>
+                    }}
+                    placeholder="@handle"
+                    className={`pl-10 h-12 pr-10 ${fetchingInstagram ? "border-indigo-400 ring-2 ring-indigo-100" : ""}`}
+                  />
+                  {fetchingInstagram && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                      <span className="text-xs font-medium text-indigo-500">Fetching...</span>
+                    </div>
+                  )}
                 </div>
-                {formData.instagram_followers > 0 && (
+                {formData.instagram_followers > 0 && !fetchingInstagram && (
                   <p className="text-sm text-gray-500 mt-2">
-                    Followers: {formData.instagram_followers.toLocaleString()}
+                    {formData.instagram_followers.toLocaleString()} followers
                   </p>
                 )}
               </div>

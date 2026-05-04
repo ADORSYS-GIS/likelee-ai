@@ -1,16 +1,16 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ````````````````````````````````````use reqwest::Client;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use tracing::info;
 
 #[derive(Debug, Serialize)]
 pub struct InstagramScraperInput {
+    #[serde(rename = "usernames")]
     pub handles: Vec<String>,
     pub results_limit: Option<i32>,
 }
 
 #[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct InstagramProfileData {
-    pub username: String,
+    pub username: Option<String>,
     #[serde(default)]
     pub followers: Option<i64>,
     #[serde(default)]
@@ -35,12 +35,79 @@ pub struct InstagramProfileData {
     pub is_private: Option<bool>,
 }
 
+impl InstagramProfileData {
+    pub fn from_apify_raw(raw: &serde_json::Value) -> Self {
+        let get_str = |key: &str| -> Option<String> {
+            raw.get(key)
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        };
+
+        let get_i64 = |key: &str| -> Option<i64> {
+            raw.get(key).and_then(|v| v.as_i64())
+        };
+
+        let get_i64_from_string_or_number = |key: &str| -> Option<i64> {
+            raw.get(key).and_then(|v| {
+                if let Some(n) = v.as_i64() {
+                    Some(n)
+                } else if let Some(s) = v.as_str() {
+                    s.parse::<i64>().ok()
+                } else if let Some(f) = v.as_f64() {
+                    Some(f as i64)
+                } else {
+                    None
+                }
+            })
+        };
+
+        let get_f64 = |key: &str| -> Option<f64> {
+            raw.get(key).and_then(|v| v.as_f64())
+        };
+
+        let get_bool = |key: &str| -> Option<bool> {
+            raw.get(key).and_then(|v| v.as_bool())
+        };
+
+        Self {
+            username: get_str("username")
+                .or_else(|| get_str("ownerUsername"))
+                .or_else(|| get_str("fullName")),
+            followers: get_i64_from_string_or_number("followers")
+                .or_else(|| get_i64_from_string_or_number("followersCount")),
+            following: get_i64_from_string_or_number("following")
+                .or_else(|| get_i64_from_string_or_number("followsCount")),
+            bio: get_str("bio")
+                .or_else(|| get_str("biography")),
+            profile_pic_url: get_str("profile_pic_url")
+                .or_else(|| get_str("profilePicUrl"))
+                .or_else(|| get_str("profilePicUrlHD")),
+            external_url: get_str("external_url")
+                .or_else(|| get_str("externalUrl")),
+            posts_count: get_i64_from_string_or_number("posts_count")
+                .or_else(|| get_i64_from_string_or_number("postsCount")),
+            engagement_rate: get_f64("engagement_rate"),
+            avg_likes: get_i64("avg_likes"),
+            avg_comments: get_i64("avg_comments"),
+            is_verified: get_bool("is_verified")
+                .or_else(|| get_bool("verified")),
+            is_private: get_bool("is_private")
+                .or_else(|| get_bool("private")),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize)]
-pub struct ApifyRunResponse {
+pub struct ApifyRunData {
     pub id: String,
     pub status: String,
     #[serde(default)]
     pub default_dataset_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ApifyRunResponse {
+    pub data: ApifyRunData,
 }
 
 pub struct ApifyService {
@@ -85,10 +152,14 @@ impl ApifyService {
             return Err(format!("Apify API error: {}", body));
         }
 
-        response
-            .json::<ApifyRunResponse>()
+        let text = response
+            .text()
             .await
-            .map_err(|e| format!("Failed to parse Apify response: {}", e))
+            .map_err(|e| format!("Failed to read response body: {}", e))?;
+
+
+        serde_json::from_str::<ApifyRunResponse>(&text)
+            .map_err(|e| format!("Failed to parse Apify response: {}. Raw: {}", e, text))
     }
 
     pub async fn get_run_results(
@@ -112,17 +183,22 @@ impl ApifyService {
             return Err(format!("Apify API error: {}", body));
         }
 
-        response
-            .json::<Vec<InstagramProfileData>>()
+        let text = response
+            .text()
             .await
-            .map_err(|e| format!("Failed to parse Apify results: {}", e))
+            .map_err(|e| format!("Failed to read response body: {}", e))?;
+
+
+        let raw_items: Vec<serde_json::Value> = serde_json::from_str(&text)
+            .map_err(|e| format!("Failed to parse Apify results: {}. Raw: {}", e, text))?;
+
+        Ok(raw_items.iter().map(|v| InstagramProfileData::from_apify_raw(v)).collect())
     }
 
     pub async fn scrape_and_wait(
         &self,
         handle: String,
     ) -> Result<Option<InstagramProfileData>, String> {
-        info!(%handle, "Starting Instagram profile scrape");
 
         let run = self.scrape_profiles(vec![handle.clone()]).await?;
 
@@ -134,7 +210,7 @@ impl ApifyService {
 
             let status_url = format!(
                 "https://api.apify.com/v2/actor-runs/{}?token={}",
-                run.id, self.api_token
+                run.data.id, self.api_token
             );
 
             let status_resp = self
@@ -164,7 +240,7 @@ impl ApifyService {
                         .get("data")
                         .and_then(|d| d.get("defaultDatasetId"))
                         .and_then(|d| d.as_str())
-                        .unwrap_or(&run.default_dataset_id.as_deref().unwrap_or(""));
+                        .unwrap_or(&run.data.default_dataset_id.as_deref().unwrap_or(""));
 
                     if dataset_id.is_empty() {
                         return Err("No dataset ID available".to_string());
@@ -177,7 +253,6 @@ impl ApifyService {
                     return Err(format!("Apify run ended with status: {}", current_status));
                 }
                 _ => {
-                    info!(%current_status, attempt, "Run still in progress");
                 }
             }
         }

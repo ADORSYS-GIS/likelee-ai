@@ -3529,7 +3529,9 @@ export default function CreatorDashboard() {
           profile_photo: profile.profile_photo_url || prev.profile_photo,
           location: [profile.city, profile.state].filter(Boolean).join(", "),
           bio: profile.bio || prev.bio,
-          instagram_handle: profile.platform_handle
+          instagram_handle: profile.instagram_handle
+            ? `@${profile.instagram_handle}`
+            : profile.platform_handle
             ? `@${profile.platform_handle}`
             : prev.instagram_handle,
           birthday: profile.birthdate ?? prev.birthday,
@@ -5735,7 +5737,9 @@ export default function CreatorDashboard() {
           ? creator.eye_color.trim()
           : undefined,
       height_cm: parseOptionalInt(creator.height_cm),
-      platform_handle: creator.instagram_handle?.replace("@", ""),
+      instagram_handle: creator.instagram_handle?.replace("@", ""),
+      instagram_followers: parseOptionalInt(creator.instagram_followers),
+      instagram_connected: creator.instagram_connected,
       tiktok_handle: normalizedTiktok,
       portfolio_link: normalizedPortfolio,
       accept_negotiations:
@@ -5802,6 +5806,9 @@ export default function CreatorDashboard() {
             typeof savedProfile.height_cm === "number"
               ? String(savedProfile.height_cm)
               : prev.height_cm,
+          instagram_handle: savedProfile.instagram_handle ?? savedProfile.platform_handle ?? prev.instagram_handle,
+          instagram_followers: savedProfile.instagram_followers ?? prev.instagram_followers,
+          instagram_connected: savedProfile.instagram_connected ?? prev.instagram_connected,
           tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
@@ -5856,7 +5863,8 @@ export default function CreatorDashboard() {
   };
 
   const syncInstagram = async () => {
-    if (!creator.instagram_handle) {
+    const handle = creator.instagram_handle || creator.platform_handle;
+    if (!handle) {
       toast({
         title: "Error",
         description: "Please enter your Instagram handle first",
@@ -5867,11 +5875,14 @@ export default function CreatorDashboard() {
 
     setInstagramSyncing(true);
     try {
-      const data = await scrapeInstagramProfile(creator.instagram_handle);
+      const cleanHandle = handle.replace("@", "");
+      const data = await scrapeInstagramProfile(cleanHandle);
 
       if (data?.success && data?.profile) {
         setCreator((prev: any) => ({
           ...prev,
+          instagram_handle: prev.instagram_handle || cleanHandle,
+          platform_handle: cleanHandle,
           instagram_connected: true,
           instagram_followers: data.profile?.followers || 0,
         }));

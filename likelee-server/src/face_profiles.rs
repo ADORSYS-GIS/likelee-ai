@@ -661,7 +661,7 @@ pub async fn search_marketplace_profiles(
             let mut request = state
                 .pg
                 .from("creators")
-                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,plan_tier")
+                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,plan_tier,instagram_followers")
                 .eq("role", "creator")
                 .eq("kyc_status", "approved")
                 .limit(limit);
@@ -824,6 +824,16 @@ pub async fn search_marketplace_profiles(
                 .map(|summary| serde_json::to_value(summary).unwrap_or(serde_json::Value::Null))
                 .unwrap_or(serde_json::Value::Null);
 
+            let raw_instagram_followers = row.get("instagram_followers");
+            let agency_followers = followers_by_creator_id.get(creator_id);
+            tracing::debug!(
+                creator_id = %creator_id,
+                full_name = %full_name,
+                raw_instagram_followers = ?raw_instagram_followers,
+                agency_followers = ?agency_followers,
+                "marketplace creator followers debug"
+            );
+
             results.push(serde_json::json!({
                 "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
                 "profile_type": "creator",
@@ -840,7 +850,9 @@ pub async fn search_marketplace_profiles(
                 "skills": row.get("facial_features").cloned().unwrap_or(serde_json::json!([])),
                 "followers": followers_by_creator_id
                     .get(creator_id)
+                    .filter(|v| **v > 0)
                     .map(|v| serde_json::json!(v))
+                    .or_else(|| row.get("instagram_followers").and_then(|v| v.as_i64()).filter(|v| *v > 0).map(|v| serde_json::json!(v)))
                     .unwrap_or(serde_json::Value::Null),
                 "engagement_rate": engagement_by_creator_id
                     .get(creator_id)

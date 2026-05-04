@@ -406,9 +406,9 @@ async fn hydrate_creator_from_agency_row(
         }
     }
 
-    if is_missing_field(&creator_row, "instagram_handle") {
+    if is_missing_field(&creator_row, "platform_handle") {
         if let Some(v) = parse_non_empty_string(agency_row.get("instagram_handle")) {
-            optional_patch.insert("instagram_handle".to_string(), Value::String(v));
+            patch.insert("platform_handle".to_string(), Value::String(v));
         }
     }
 

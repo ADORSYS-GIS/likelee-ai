@@ -228,39 +228,18 @@ const TalentSideModal = ({
   };
 
   const fetchInstagramData = async () => {
-    if (!editForm.instagram_handle) {
-      toast({
-        title: "Error",
-        description: "Please enter an Instagram handle first",
-        variant: "destructive",
-      });
-      return;
-    }
+    const handle = editForm.instagram_handle?.trim().replace("@", "");
+    if (!handle) return;
 
     setFetchingInstagram(true);
     try {
-      const data = await scrapeInstagramProfile(editForm.instagram_handle);
+      const data = await scrapeInstagramProfile(handle);
 
       if (data?.success && data?.profile) {
         setField("instagram_followers", data.profile?.followers || 0);
-        toast({
-          title: "Success",
-          description: `Found ${data.profile?.followers?.toLocaleString() || "0"} followers`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description:
-            data?.error || "Could not fetch Instagram data",
-          variant: "destructive",
-        });
       }
     } catch (e) {
-      toast({
-        title: "Error",
-        description: "Failed to connect to Instagram service",
-        variant: "destructive",
-      });
+      // Silently fail - user can proceed without Instagram data
     } finally {
       setFetchingInstagram(false);
     }
@@ -535,282 +514,311 @@ const TalentSideModal = ({
             )}
 
             {isEditing && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Full name
+              <div className="space-y-5">
+                {/* Identity */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Identity</h4>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Full name</label>
+                        <Input
+                          value={editForm.full_name}
+                          onChange={(e) => setField("full_name", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Stage name</label>
+                        <Input
+                          value={editForm.stage_name}
+                          onChange={(e) => setField("stage_name", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
                     </div>
-                    <Input
-                      value={editForm.full_name}
-                      onChange={(e) => setField("full_name", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Stage name
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Email</label>
+                        <Input
+                          type="email"
+                          value={editForm.email}
+                          onChange={(e) => setField("email", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Phone</label>
+                        <Input
+                          value={editForm.phone}
+                          onChange={(e) => setField("phone", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
                     </div>
-                    <Input
-                      value={editForm.stage_name}
-                      onChange={(e) => setField("stage_name", e.target.value)}
-                    />
                   </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">Email</div>
-                    <Input
-                      value={editForm.email}
-                      onChange={(e) => setField("email", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">Phone</div>
-                    <Input
-                      value={editForm.phone}
-                      onChange={(e) => setField("phone", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Gender
-                    </div>
-                    <Input
-                      value={editForm.gender_identity}
-                      onChange={(e) =>
-                        setField("gender_identity", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Instagram
-                    </div>
-                    <div className="flex gap-2">
-                      <Input
-                        value={editForm.instagram_handle}
-                        onChange={(e) =>
-                          setField("instagram_handle", e.target.value)
-                        }
-                        placeholder="@handle"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchInstagramData}
-                        disabled={fetchingInstagram || !editForm.instagram_handle}
-                        className="whitespace-nowrap"
-                      >
+                </div>
+
+                {/* Social */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Social</h4>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">Instagram</label>
+                      <div className="relative">
+                        <Input
+                          value={editForm.instagram_handle}
+                          onChange={(e) =>
+                            setField("instagram_handle", e.target.value)
+                          }
+                          onBlur={() => {
+                            if (editForm.instagram_handle && !fetchingInstagram) {
+                              fetchInstagramData();
+                            }
+                          }}
+                          placeholder="@handle"
+                          className="h-9 pr-20"
+                        />
                         {fetchingInstagram ? (
-                          <>
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                            Fetching...
-                          </>
-                        ) : (
-                          <>
-                            <Instagram className="w-3 h-3 mr-1" />
-                            Fetch
-                          </>
-                        )}
-                      </Button>
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2 py-1 bg-indigo-50 rounded-md">
+                            <Loader2 className="w-3 h-3 text-indigo-500 animate-spin" />
+                            <span className="text-[11px] font-medium text-indigo-600">Syncing</span>
+                          </div>
+                        ) : editForm.instagram_followers > 0 ? (
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-green-50 rounded-md">
+                            <span className="text-[11px] font-medium text-green-700">
+                              {(editForm.instagram_followers as number).toLocaleString()}
+                            </span>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Instagram followers
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Followers</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          placeholder="e.g. 12500"
+                          value={editForm.instagram_followers}
+                          onChange={(e) =>
+                            setField("instagram_followers", e.target.value)
+                          }
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Engagement rate (%)</label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          placeholder="e.g. 3.5"
+                          value={editForm.engagement_rate}
+                          onChange={(e) =>
+                            setField("engagement_rate", e.target.value)
+                          }
+                          className="h-9"
+                        />
+                      </div>
                     </div>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="1"
-                      placeholder="e.g. 12500"
-                      value={editForm.instagram_followers}
-                      onChange={(e) =>
-                        setField("instagram_followers", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Engagement rate (%)
-                    </div>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      placeholder="e.g. 3.5"
-                      value={editForm.engagement_rate}
-                      onChange={(e) =>
-                        setField("engagement_rate", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Categories
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {roleCategories.map((v) => {
-                        const selected = Array.isArray(
-                          (editForm as any).role_types,
-                        )
-                          ? ((editForm as any).role_types as string[]).includes(
-                              v,
-                            )
-                          : false;
-                        return (
-                          <button
-                            key={v}
-                            type="button"
-                            onClick={() => toggleRoleCategory(v)}
-                            className="rounded-lg"
-                          >
-                            <Badge
-                              variant="secondary"
-                              className={
-                                selected
-                                  ? "bg-indigo-600 text-white border-none font-bold"
-                                  : "bg-gray-100 text-gray-700 border-none font-bold"
-                              }
-                            >
-                              {v}
-                            </Badge>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Hair color
-                    </div>
-                    <Input
-                      value={editForm.hair_color}
-                      onChange={(e) => setField("hair_color", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Eye color
-                    </div>
-                    <Input
-                      value={editForm.eye_color}
-                      onChange={(e) => setField("eye_color", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Height (ft)
-                    </div>
-                    <Input
-                      type="number"
-                      value={editForm.height_feet}
-                      onChange={(e) => setField("height_feet", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Height (in)
-                    </div>
-                    <Input
-                      type="number"
-                      value={editForm.height_inches}
-                      onChange={(e) =>
-                        setField("height_inches", e.target.value)
-                      }
-                    />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-gray-700">Bio</div>
-                  <Textarea
-                    value={editForm.bio}
-                    onChange={(e) => setField("bio", e.target.value)}
-                    className="min-h-[110px]"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-gray-700">
-                    Race / Ethnicity (comma separated)
-                  </div>
-                  <Input
-                    value={(editForm.race_ethnicity || []).join(", ")}
-                    onChange={(e) =>
-                      setField(
-                        "race_ethnicity",
-                        e.target.value
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean),
+
+                {/* Categories */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Categories</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {roleCategories.map((v) => {
+                      const selected = Array.isArray(
+                        (editForm as any).role_types,
                       )
-                    }
-                  />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-gray-700">
-                    Special skills (comma separated)
-                  </div>
-                  <Input
-                    value={editForm.special_skills}
-                    onChange={(e) => setField("special_skills", e.target.value)}
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">City</div>
-                    <Input
-                      value={editForm.city}
-                      onChange={(e) => setField("city", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">State</div>
-                    <Input
-                      value={editForm.state_province}
-                      onChange={(e) =>
-                        setField("state_province", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Country
-                    </div>
-                    <Input
-                      value={editForm.country}
-                      onChange={(e) => setField("country", e.target.value)}
-                    />
+                        ? ((editForm as any).role_types as string[]).includes(v)
+                        : false;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => toggleRoleCategory(v)}
+                          className="rounded-lg"
+                        >
+                          <Badge
+                            variant="secondary"
+                            className={
+                              selected
+                                ? "bg-indigo-600 text-white border-none font-bold"
+                                : "bg-gray-100 text-gray-700 border-none font-bold"
+                            }
+                          >
+                            {v}
+                          </Badge>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Licensing rate (USD/month)
+
+                {/* Appearance */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Appearance</h4>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Gender</label>
+                        <Input
+                          value={editForm.gender_identity}
+                          onChange={(e) =>
+                            setField("gender_identity", e.target.value)
+                          }
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Hair color</label>
+                        <Input
+                          value={editForm.hair_color}
+                          onChange={(e) => setField("hair_color", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Eye color</label>
+                        <Input
+                          value={editForm.eye_color}
+                          onChange={(e) => setField("eye_color", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
                     </div>
-                    <Input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={editForm.licensing_rate_monthly_usd}
-                      onChange={(e) =>
-                        setField("licensing_rate_monthly_usd", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="text-xs font-bold text-gray-700">
-                      Negotiation
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Height (ft)</label>
+                        <Input
+                          type="number"
+                          value={editForm.height_feet}
+                          onChange={(e) => setField("height_feet", e.target.value)}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-gray-600">Height (in)</label>
+                        <Input
+                          type="number"
+                          value={editForm.height_inches}
+                          onChange={(e) =>
+                            setField("height_inches", e.target.value)
+                          }
+                          className="h-9"
+                        />
+                      </div>
                     </div>
-                    <label className="inline-flex items-center gap-2 text-sm text-gray-700 mt-2">
-                      <input
-                        type="checkbox"
-                        checked={!!editForm.accept_negotiations}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">Race / Ethnicity</label>
+                      <Input
+                        value={(editForm.race_ethnicity || []).join(", ")}
                         onChange={(e) =>
-                          setField("accept_negotiations", e.target.checked)
+                          setField(
+                            "race_ethnicity",
+                            e.target.value
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean),
+                          )
                         }
+                        className="h-9"
                       />
-                      Open to negotiations
-                    </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Details</h4>
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">Bio</label>
+                      <Textarea
+                        value={editForm.bio}
+                        onChange={(e) => setField("bio", e.target.value)}
+                        className="min-h-[80px] resize-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">Special skills</label>
+                      <Input
+                        value={editForm.special_skills}
+                        onChange={(e) => setField("special_skills", e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Location</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">City</label>
+                      <Input
+                        value={editForm.city}
+                        onChange={(e) => setField("city", e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">State</label>
+                      <Input
+                        value={editForm.state_province}
+                        onChange={(e) =>
+                          setField("state_province", e.target.value)
+                        }
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">Country</label>
+                      <Input
+                        value={editForm.country}
+                        onChange={(e) => setField("country", e.target.value)}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Business */}
+                <div>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">Business</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">Licensing rate (USD/mo)</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={editForm.licensing_rate_monthly_usd}
+                        onChange={(e) =>
+                          setField("licensing_rate_monthly_usd", e.target.value)
+                        }
+                        className="h-9"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600">Negotiation</label>
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-700 mt-1">
+                        <input
+                          type="checkbox"
+                          checked={!!editForm.accept_negotiations}
+                          onChange={(e) =>
+                            setField("accept_negotiations", e.target.checked)
+                          }
+                        />
+                        Open to negotiations
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
