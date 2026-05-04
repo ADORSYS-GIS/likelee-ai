@@ -772,7 +772,8 @@ export function CreatePackageWizard({
                         Cover Image
                       </Label>
                       <p className="text-xs text-gray-500">
-                        JPG, PNG, or GIF. Maximum {MAX_PACKAGE_COVER_IMAGE_MB}MB.
+                        JPG, PNG, or GIF. Maximum {MAX_PACKAGE_COVER_IMAGE_MB}
+                        MB.
                       </p>
                       <div className="flex gap-3">
                         <Input

@@ -993,21 +993,21 @@ pub async fn upload_agency_storage_file(
 
     // Validate package cover images
     let is_package_cover = source_type.as_deref() == Some("package_cover");
-    
+
     if is_package_cover {
         // Validate MIME type for cover images
         let is_image = mime_type
             .as_ref()
             .map(|m| m.starts_with("image/"))
             .unwrap_or(false);
-        
+
         if !is_image {
             return Err((
                 StatusCode::BAD_REQUEST,
                 "Package cover must be an image file (JPEG, PNG, etc.)".into(),
             ));
         }
-        
+
         // Enforce 20MB size limit for cover images
         if new_size > MAX_PACKAGE_COVER_IMAGE_BYTES {
             return Err((
