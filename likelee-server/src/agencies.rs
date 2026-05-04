@@ -25,6 +25,9 @@ use tracing::{info, warn};
 
 pub use crate::team::resolve_effective_agency_id;
 
+// Maximum file size for package cover images (20MB)
+const MAX_PACKAGE_COVER_IMAGE_BYTES: i64 = 20 * 1024 * 1024;
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct AgencyProfilePayload {
     pub agency_name: Option<String>,
@@ -931,6 +934,7 @@ pub async fn upload_agency_storage_file(
     let mut file_name = None;
     let mut mime_type = None;
     let mut folder_id: Option<String> = None;
+    let mut source_type: Option<String> = None;
     let mut visibility = StorageVisibility::Private;
     let mut bytes: Vec<u8> = vec![];
 
@@ -948,6 +952,15 @@ pub async fn upload_agency_storage_file(
                     .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
                 if !txt.trim().is_empty() {
                     folder_id = Some(txt);
+                }
+            }
+            "source_type" => {
+                let txt = field
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                if !txt.trim().is_empty() {
+                    source_type = Some(txt.trim().to_string());
                 }
             }
             "visibility" => {
@@ -978,19 +991,33 @@ pub async fn upload_agency_storage_file(
 
     let new_size = bytes.len() as i64;
 
-    // Check for 20MB limit on package cover images
-    // Package cover images are typically uploaded with visibility=public and no folder_id
-    let is_likely_cover_image = visibility == StorageVisibility::Public && folder_id.is_none();
-    let max_cover_size = 20 * 1024 * 1024; // 20MB in bytes
-
-    if is_likely_cover_image && new_size > max_cover_size {
-        return Err((
-            StatusCode::PAYLOAD_TOO_LARGE,
-            format!(
-                "Package cover image size exceeds the maximum limit of 20MB. Your file is {:.2}MB. Please compress or resize your image and try again.",
-                new_size as f64 / (1024.0 * 1024.0)
-            ),
-        ));
+    // Validate package cover images
+    let is_package_cover = source_type.as_deref() == Some("package_cover");
+    
+    if is_package_cover {
+        // Validate MIME type for cover images
+        let is_image = mime_type
+            .as_ref()
+            .map(|m| m.starts_with("image/"))
+            .unwrap_or(false);
+        
+        if !is_image {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Package cover must be an image file (JPEG, PNG, etc.)".into(),
+            ));
+        }
+        
+        // Enforce 20MB size limit for cover images
+        if new_size > MAX_PACKAGE_COVER_IMAGE_BYTES {
+            return Err((
+                StatusCode::PAYLOAD_TOO_LARGE,
+                format!(
+                    "Package cover image size exceeds the maximum limit of 20MB. Your file is {:.2}MB. Please compress or resize your image and try again.",
+                    new_size as f64 / (1024.0 * 1024.0)
+                ),
+            ));
+        }
     }
 
     // Quota enforcement
