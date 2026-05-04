@@ -50,6 +50,9 @@ pub struct TalentPerformance {
     pub relationship_type: String,
     pub commission_source: String,
     pub is_editable: bool,
+    /// True only when the talent has completed portal onboarding AND
+    /// their KYC is approved in the creators table.
+    pub is_verified: bool,
 }
 
 #[derive(Serialize)]
@@ -473,6 +476,45 @@ pub async fn get_performance_tiers(
     creator_ids.sort();
     creator_ids.dedup();
 
+    // Fetch kyc_status for all creators so we can mark verified talent.
+    // A talent is "verified" only when they have completed portal onboarding
+    // (creator_id is set) AND their KYC is approved.
+    let mut kyc_approved_creators: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
+    if !creator_ids.is_empty() {
+        let kyc_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        if let Ok(kyc_resp) = state
+            .pg
+            .from("creators")
+            .select("id,kyc_status")
+            .in_("id", kyc_refs)
+            .execute()
+            .await
+        {
+            if kyc_resp.status().is_success() {
+                let kyc_text = kyc_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let kyc_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&kyc_text).unwrap_or_default();
+                for r in kyc_rows {
+                    let cid = r
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim();
+                    let status = r
+                        .get("kyc_status")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
+                    if !cid.is_empty() && status == "approved" {
+                        kyc_approved_creators.insert(cid.to_string());
+                    }
+                }
+            }
+        }
+    }
+
     let mut custom_by_creator: HashMap<String, f64> = HashMap::new();
     if !creator_ids.is_empty() {
         let creator_id_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
@@ -618,6 +660,10 @@ pub async fn get_performance_tiers(
                 relationship_type,
                 commission_source,
                 is_editable,
+                is_verified: creator_id
+                    .as_ref()
+                    .map(|cid| kyc_approved_creators.contains(cid))
+                    .unwrap_or(false),
             });
         }
 
@@ -697,7 +743,7 @@ pub async fn get_performance_tiers(
         if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
             group.talents.push(TalentPerformance {
                 id: creator_id.clone(),
-                creator_id: Some(creator_id),
+                creator_id: Some(creator_id.clone()),
                 name,
                 photo_url: photo,
                 earnings_30d: 0.0,
@@ -708,6 +754,7 @@ pub async fn get_performance_tiers(
                 relationship_type,
                 commission_source,
                 is_editable,
+                is_verified: kyc_approved_creators.contains(&creator_id),
             });
         }
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Trophy,
@@ -113,6 +114,7 @@ interface TierRule {
 
 interface TalentPerformance {
   id: string;
+  creator_id: string | null;
   name: string;
   photo_url: string | null;
   earnings_30d: number;
@@ -120,6 +122,11 @@ interface TalentPerformance {
   tier: TierRule;
   commission_rate: number;
   is_custom_rate: boolean;
+  relationship_type: string; // "internal" | "marketplace_connected"
+  commission_source: string;
+  is_editable: boolean;
+  /** True only when the talent has completed portal onboarding AND KYC is approved. */
+  is_verified: boolean;
 }
 
 interface TierGroup {
@@ -147,9 +154,11 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
   isSportsAgency = false,
 }) => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const entitySingular = isSportsAgency ? "athlete" : "talent";
   const entityPlural = isSportsAgency ? "Athletes" : "Talent";
+  const allTalentSubTab = isSportsAgency ? "All Athletes" : "All Talent";
 
   const [configForm, setConfigForm] = useState<
     Record<string, { min_earnings: number; min_bookings: number }>
@@ -506,7 +515,13 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                             <span className="font-bold text-gray-900 text-[15px] truncate">
                               {talent.name}
                             </span>
-                            <CheckCircle2 className="w-4 h-4 text-green-500 fill-green-500/10" />
+                            {/* Show verification tick only when the talent has
+                                completed portal onboarding AND their KYC is
+                                approved. creator_id alone is not enough —
+                                they may have joined but not finished KYC. */}
+                            {talent.is_verified && (
+                              <CheckCircle2 className="w-4 h-4 text-green-500 fill-green-500/10 shrink-0" />
+                            )}
                           </div>
                           <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-gray-400">
                             <span className="text-gray-900 font-bold">
@@ -538,6 +553,11 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
                           variant="outline"
                           size="sm"
                           className="w-full sm:w-auto h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                          onClick={() =>
+                            navigate(
+                              `/AgencyDashboard?tab=roster&subTab=${encodeURIComponent(allTalentSubTab)}&talentId=${encodeURIComponent(talent.id)}`,
+                            )
+                          }
                         >
                           View
                         </Button>
