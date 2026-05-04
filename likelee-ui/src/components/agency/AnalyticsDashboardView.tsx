@@ -1220,7 +1220,8 @@ const AnalyticsDashboardView = ({
           const verificationPct = totalTalents
             ? Math.min(Math.round((verifiedCount / totalTalents) * 100), 100)
             : 0;
-          const expiredContractsCount = analytics.consent_status.expiring_current_month;
+          const expiredContractsCount =
+            analytics.consent_status.expiring_current_month;
           const consentExpiredCount = analytics.consent_status.expiring;
           const missingCount = analytics.consent_status.missing;
           const completePct = activePct;

@@ -588,7 +588,9 @@ pub async fn get_analytics_dashboard(
                 let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
                 let deadline = r.get("deadline").and_then(|v| v.as_str()).unwrap_or("");
                 // Expired if approved and deadline is past but within current month
-                status == "approved" && deadline < today.as_str() && deadline >= month_start.as_str()
+                status == "approved"
+                    && deadline < today.as_str()
+                    && deadline >= month_start.as_str()
             })
             .count() as i64;
 
