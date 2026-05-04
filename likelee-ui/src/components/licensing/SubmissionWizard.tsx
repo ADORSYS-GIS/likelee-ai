@@ -214,6 +214,21 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const brandRequestBrandEmail = brandRequestContext?.brand_email || "";
   const brandRequestTalentId = brandRequestContext?.talent_id || "";
   const brandRequestTalentName = brandRequestContext?.talent_name || "";
+
+  // Computed live: which key identity values are absent from the contract body.
+  // Updates as the agency types so the warning banner and Next button disable
+  // state stay in sync — including if they delete the names after inserting.
+  const missingIdentityFields = useMemo(() => {
+    if (step !== 2) return [];
+    const bodyLower = (formData.contract_body || "").toLowerCase();
+    const missing: string[] = [];
+    const talentVal = (formData.talent_name || "").trim().toLowerCase();
+    const clientVal = (formData.client_name || "").trim().toLowerCase();
+    if (talentVal && !bodyLower.includes(talentVal)) missing.push("talent_name_placeholder");
+    if (clientVal && !bodyLower.includes(clientVal)) missing.push("client_name_placeholder");
+    return missing;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, formData.contract_body, formData.talent_name, formData.client_name]);
   const builderExternalId = useMemo(
     () =>
       currentTemplate?.id
@@ -422,6 +437,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           },
         );
         setValue("contract_body", rendered);
+
+        // Detect which key identity placeholders were absent from the template.
+        // missingIdentityFields (computed) will handle the live warning in step 2.
+
         setStep(2);
       } catch (err: any) {
         toast({
@@ -442,6 +461,33 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           description:
             "The contract body cannot be empty. Please ensure the template has contract content or add content before proceeding.",
           variant: "warning",
+        });
+        return;
+      }
+
+      // Hard block: the rendered contract body must contain the talent name
+      // and client/brand name. This catches cases where:
+      //   - The template never used the placeholders (hardcoded text that
+      //     doesn't match the current deal), OR
+      //   - The agency edited the body in step 2 and removed the names.
+      // We check the actual values from step 1, not just placeholder presence.
+      const bodyLower = currentData.contract_body.toLowerCase();
+      const talentNameValue = (currentData.talent_name || "").trim().toLowerCase();
+      const clientNameValue = (currentData.client_name || "").trim().toLowerCase();
+      const identityErrors: string[] = [];
+
+      if (talentNameValue && !bodyLower.includes(talentNameValue)) {
+        identityErrors.push(`talent name "${currentData.talent_name}"`);
+      }
+      if (clientNameValue && !bodyLower.includes(clientNameValue)) {
+        identityErrors.push(`brand name "${currentData.client_name}"`);
+      }
+
+      if (identityErrors.length > 0) {
+        toast({
+          title: "Contract is missing required identity information",
+          description: `The contract body must include the ${identityErrors.join(" and ")}. Use the insert buttons below the editor to add them, or type them directly.`,
+          variant: "destructive",
         });
         return;
       }
@@ -633,8 +679,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 )}
                 <Button
                   onClick={handleNext}
-                  disabled={isSyncing}
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm"
+                  disabled={isSyncing || (step === 2 && missingIdentityFields.length > 0)}
+                  title={step === 2 && missingIdentityFields.length > 0 ? "Add the missing talent and brand names to the contract body before proceeding" : undefined}
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSyncing ? "..." : step === 3 ? "Finalize" : "Next"}
                   {!isSyncing && step < 3 && (
@@ -1179,21 +1226,79 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     placeholder="The contract content will appear here..."
                   />
                 </div>
-                <div className="mt-8 p-6 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-start gap-4">
-                  <div className="bg-indigo-500 p-2 rounded-xl mt-1">
-                    <FileText className="w-5 h-5 text-white" />
+
+                {missingIdentityFields.length > 0 ? (
+                  // ── Warning: key identity values are absent from the body ──
+                  <div className="mt-6 p-5 bg-amber-50 border border-amber-300 rounded-2xl space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-amber-400 p-1.5 rounded-lg mt-0.5 shrink-0">
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-bold text-amber-900 text-sm">
+                          Contract is missing required identity information
+                        </p>
+                        <p className="text-amber-800 text-xs mt-1 leading-relaxed">
+                          The contract body does not contain the{" "}
+                          {missingIdentityFields.includes("talent_name_placeholder") && missingIdentityFields.includes("client_name_placeholder")
+                            ? "talent name or brand name"
+                            : missingIdentityFields.includes("talent_name_placeholder")
+                              ? "talent name"
+                              : "brand name"}
+                          . You cannot proceed until these are present. Click
+                          below to insert them, or type them directly in the
+                          editor above.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pl-9">
+                      {missingIdentityFields.map((placeholder) => {
+                        const label = placeholder === "talent_name_placeholder" ? "Talent" : "Brand";
+                        const value = placeholder === "talent_name_placeholder"
+                          ? formData.talent_name
+                          : formData.client_name;
+                        return (
+                          <button
+                            key={placeholder}
+                            type="button"
+                            onClick={() => {
+                              const insertion = `\n\n**${label}:** ${value}`;
+                              setValue(
+                                "contract_body",
+                                (formData.contract_body || "") + insertion,
+                              );
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 text-xs font-bold rounded-lg transition-colors"
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            </svg>
+                            Insert {label} Name ({value})
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-indigo-900 mb-1">
-                      Pre-filled Data Applied
-                    </h4>
-                    <p className="text-sm text-indigo-800/80 leading-relaxed font-medium">
-                      We've automatically replaced all placeholders with your
-                      deal specifics. You can still make quick edits directly in
-                      the editor before finalizing.
-                    </p>
+                ) : (
+                  // ── Success: all key placeholders present ─────────────────
+                  <div className="mt-8 p-6 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-start gap-4">
+                    <div className="bg-indigo-500 p-2 rounded-xl mt-1">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-indigo-900 mb-1">
+                        Pre-filled Data Applied
+                      </h4>
+                      <p className="text-sm text-indigo-800/80 leading-relaxed font-medium">
+                        We've automatically replaced all placeholders with your
+                        deal specifics. You can still make quick edits directly
+                        in the editor before finalizing.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
