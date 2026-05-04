@@ -18689,11 +18689,15 @@ export default function AgencyDashboard() {
 
     setRenewalLaunchContext({
       templateId: license.template_id,
+      oldLicenseId: license.id, // Track the old license being renewed
       brandId: license.brand_id || undefined,
       talentId: license.talent_id || undefined,
       clientName: license.client_name || license.brand || "",
       clientEmail: license.client_email || "",
-      talentName: license.talent_name || "",
+      talentName:
+        license.talent_name && license.talent_name !== "Unknown"
+          ? license.talent_name
+          : "",
       durationDays: license.duration_days,
       startDate: license.start_date,
       customTerms: license.custom_terms || undefined,
@@ -18704,8 +18708,7 @@ export default function AgencyDashboard() {
       licenseFee: typeof license.value === "number" ? license.value : undefined,
     });
 
-    setActiveTabState("licensing");
-    setActiveSubTabState("License Templates");
+    setActiveView("licensing", "License Templates");
 
     toast({
       title: "Redirecting...",
