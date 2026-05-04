@@ -835,6 +835,18 @@ export default function BrandDashboard() {
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
+  const [finalizedPackageInfo, setFinalizedPackageInfo] = useState<{
+    title: string;
+    agencyName: string;
+  } | null>(null);
+  const [dismissingPkg, setDismissingPkg] = useState<any>(null);
+  const [dismissingBusy, setDismissingBusy] = useState(false);
+  const [confirmingDonePkgPublicData, setConfirmingDonePkgPublicData] =
+    useState<any>(null);
+  const [
+    loadingConfirmingDonePkgPublicData,
+    setLoadingConfirmingDonePkgPublicData,
+  ] = useState(false);
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [expandedInboxPackageId, setExpandedInboxPackageId] =
     useState<string>("");
@@ -4773,7 +4785,32 @@ export default function BrandDashboard() {
                           : "bg-black hover:bg-gray-800 text-white"
                       }`}
                       disabled={isExpired || isDone || !canManagePayOffers}
-                      onClick={() => setConfirmingDonePkg(pkg)}
+                      onClick={async () => {
+                        setConfirmingDonePkg(pkg);
+                        setConfirmingDonePkgPublicData(null);
+                        // Fetch interactions via the authenticated brand endpoint.
+                        // This bypasses the public package password gate — the brand
+                        // is already authenticated and owns this offer, so their JWT
+                        // is sufficient. The public endpoint would 401 for
+                        // password-protected packages even though the brand has rights.
+                        const offerId = String(
+                          pkg?.offer_id || pkg?.campaign_offers?.id || "",
+                        ).trim();
+                        const packageId = String(pkg?.id || "").trim();
+                        if (offerId && packageId) {
+                          setLoadingConfirmingDonePkgPublicData(true);
+                          try {
+                            const resp = await base44.get<any>(
+                              `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/${encodeURIComponent(packageId)}/interactions`,
+                            );
+                            setConfirmingDonePkgPublicData(resp);
+                          } catch {
+                            // non-fatal — dialog will show "no talent selected" message
+                          } finally {
+                            setLoadingConfirmingDonePkgPublicData(false);
+                          }
+                        }
+                      }}
                       title={
                         !canManagePayOffers
                           ? "You do not have permission to mark packages as done"
@@ -4801,9 +4838,35 @@ export default function BrandDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="border border-gray-300 rounded-none flex-shrink-0"
+                      className={`border rounded-none flex-shrink-0 transition-colors ${
+                        isDone
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50"
+                      }`}
                       disabled={!canManagePayOffers}
-                      onClick={() => handleDeletePackage(pkg)}
+                      title={
+                        !canManagePayOffers
+                          ? "You do not have permission to dismiss packages"
+                          : isDone
+                            ? "This package has been finalized"
+                            : "Dismiss from inbox"
+                      }
+                      onClick={() => {
+                        if (isDone) {
+                          setFinalizedPackageInfo({
+                            title:
+                              pkg?.title ||
+                              pkg?.campaign_offers?.offer_title ||
+                              pkg?.campaign_offers?.brand_campaigns?.name ||
+                              "Talent package",
+                            agencyName:
+                              pkg?.agencies?.agency_name || "the agency",
+                          });
+                          return;
+                        }
+                        // Open dismiss confirmation modal
+                        setDismissingPkg(pkg);
+                      }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -12818,10 +12881,189 @@ export default function BrandDashboard() {
           {activeSection === "settings" && renderSettings()}
         </div>
       </main>
+      {/* Dismiss Confirmation Modal */}
+      <Dialog
+        open={!!dismissingPkg}
+        onOpenChange={(open) => {
+          if (!open && !dismissingBusy) setDismissingPkg(null);
+        }}
+      >
+        <DialogContent className="max-w-sm bg-white rounded-2xl border-none shadow-2xl p-8">
+          <div className="flex flex-col items-center gap-5 text-center">
+            {/* Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+              <Trash2 className="w-7 h-7 text-gray-500" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                Remove from Inbox
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                You are about to remove{" "}
+                <span className="font-semibold text-gray-800">
+                  {dismissingPkg?.title ||
+                    dismissingPkg?.campaign_offers?.offer_title ||
+                    dismissingPkg?.campaign_offers?.brand_campaigns?.name ||
+                    "this package"}
+                </span>{" "}
+                from{" "}
+                <span className="font-semibold text-gray-800">
+                  {dismissingPkg?.agencies?.agency_name || "the agency"}
+                </span>{" "}
+                from your inbox.
+              </p>
+            </div>
+
+            <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-left">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+                Good to know
+              </p>
+              <ul className="text-xs text-gray-600 space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  The agency keeps their copy — this only affects your view
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  No talent assignments or contracts are affected
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  You can still receive new packages from this agency
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full mt-1">
+              <Button
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold"
+                disabled={dismissingBusy}
+                onClick={async () => {
+                  const pkg = dismissingPkg;
+                  if (!pkg) return;
+                  const offerId = String(
+                    pkg?.offer_id || pkg?.campaign_offers?.id || "",
+                  ).trim();
+                  const packageId = String(pkg?.id || "").trim();
+                  if (!offerId || !packageId) return;
+                  setDismissingBusy(true);
+                  try {
+                    await base44.post(
+                      `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/${encodeURIComponent(packageId)}/dismiss`,
+                      {},
+                    );
+                    setInboxPackages((prev: any[]) =>
+                      prev.filter((p: any) => p.id !== packageId),
+                    );
+                    setDismissingPkg(null);
+                    toast({
+                      title: "Package removed",
+                      description: "Removed from your inbox.",
+                    });
+                  } catch (e: any) {
+                    const msg = String(e?.message || "");
+                    toast({
+                      title: "Could not remove package",
+                      description: msg.includes(
+                        "cannot_dismiss_finalized_package",
+                      )
+                        ? "This package has been finalized and cannot be removed."
+                        : msg || "Please try again.",
+                      variant: "destructive" as any,
+                    });
+                  } finally {
+                    setDismissingBusy(false);
+                  }
+                }}
+              >
+                {dismissingBusy ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : null}
+                Yes, Remove It
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
+                disabled={dismissingBusy}
+                onClick={() => setDismissingPkg(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Finalized Package — Cannot Dismiss Modal */}
+      <Dialog
+        open={!!finalizedPackageInfo}
+        onOpenChange={(open) => !open && setFinalizedPackageInfo(null)}
+      >
+        <DialogContent className="max-w-sm bg-white rounded-2xl border-none shadow-2xl p-8">
+          <div className="flex flex-col items-center gap-5 text-center">
+            {/* Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+              <FileText className="w-8 h-8 text-gray-500" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                Package in Progress
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                <span className="font-semibold text-gray-700">
+                  {finalizedPackageInfo?.title}
+                </span>{" "}
+                from{" "}
+                <span className="font-semibold text-gray-700">
+                  {finalizedPackageInfo?.agencyName}
+                </span>{" "}
+                has already been finalized. Talent assignments and contracts are
+                in progress and this package cannot be removed from your inbox.
+              </p>
+            </div>
+
+            <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-left space-y-2">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest">
+                What you can do
+              </p>
+              <ul className="text-xs text-gray-600 space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  View the contract in the Contract Hub
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  Track deliverables once the contract is signed
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  This package will automatically disappear from your inbox once
+                  its expiry date passes
+                </li>
+              </ul>
+            </div>
+
+            <Button
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold"
+              onClick={() => setFinalizedPackageInfo(null)}
+            >
+              Got it
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Confirmation Dialog for Mark Done */}
       <AlertDialog
         open={!!confirmingDonePkg}
-        onOpenChange={(open) => !open && setConfirmingDonePkg(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmingDonePkg(null);
+            setConfirmingDonePkgPublicData(null);
+          }
+        }}
       >
         <AlertDialogContent className="bg-white rounded-none border border-gray-300 shadow-2xl">
           <AlertDialogHeader>
@@ -12837,33 +13079,77 @@ export default function BrandDashboard() {
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
                   Selected Talents:
                 </p>
-                <ul className="space-y-1">
-                  {(() => {
-                    const selectedIds =
-                      confirmingDonePkg?.meta?.selected_talent_ids || [];
-                    const items =
-                      confirmingDonePkg?.package_snapshot?.items || [];
-                    const selectedNames = items
-                      .filter((item: any) =>
-                        selectedIds.includes(String(item.talent_id || item.id)),
-                      )
-                      .map((item: any) => item.talent_name || "Unnamed Talent");
+                {loadingConfirmingDonePkgPublicData ? (
+                  <p className="text-sm text-gray-500 italic">
+                    Loading selections...
+                  </p>
+                ) : (
+                  <ul className="space-y-1">
+                    {(() => {
+                      const publicPkg = confirmingDonePkgPublicData;
 
-                    if (selectedNames.length === 0)
-                      return (
-                        <li className="text-sm italic">No talent selected</li>
-                      );
-                    return selectedNames.map((name: string, idx: number) => (
-                      <li
-                        key={idx}
-                        className="text-sm font-medium text-gray-900 flex items-center gap-2"
-                      >
-                        <CheckCircle2 className="w-3 h-3 text-green-600" />
-                        {name}
-                      </li>
-                    ));
-                  })()}
-                </ul>
+                      // Selected IDs come exclusively from the public package
+                      // interactions (type "selected") — these are written when
+                      // the brand clicks the ✓ button in PublicPackageView.
+                      // meta.selected_talent_ids is only written AFTER brand-done
+                      // is called, so it's never available at this point.
+                      //
+                      // Independent connected creators have talent_id = null and
+                      // creator_id set instead — use whichever is present.
+                      const selectedIds = (publicPkg?.interactions || [])
+                        .filter((i: any) => i?.type === "selected")
+                        .map((i: any) =>
+                          String(i?.talent_id || i?.creator_id || "").trim(),
+                        )
+                        .filter(Boolean);
+
+                      if (selectedIds.length === 0) {
+                        return (
+                          <li className="text-sm italic text-gray-500">
+                            No talent selected yet. Open the package, select the
+                            talent you want, then come back to confirm.
+                          </li>
+                        );
+                      }
+
+                      // Resolve names from the public package items — these come
+                      // from agency_users and have stage_name / full_legal_name.
+                      // The package_snapshot.items only carry a stale talent_name
+                      // string and must not be used as the primary source.
+                      const publicItems: any[] = Array.isArray(publicPkg?.items)
+                        ? publicPkg.items
+                        : [];
+
+                      // Build a lookup keyed on whichever identity is present:
+                      // talent_id (agency_users.id) for onboarded roster talent,
+                      // creator_id (creators.id) for independent connected creators.
+                      const nameById = new Map<string, string>();
+                      for (const item of publicItems) {
+                        const id = String(
+                          item?.talent_id || item?.creator_id || item?.id || "",
+                        ).trim();
+                        if (!id) continue;
+                        const name =
+                          item?.talent?.stage_name ||
+                          item?.talent?.full_legal_name ||
+                          item?.talent?.full_name ||
+                          item?.talent_name ||
+                          null;
+                        if (name) nameById.set(id, name);
+                      }
+
+                      return selectedIds.map((id: string, idx: number) => (
+                        <li
+                          key={idx}
+                          className="text-sm font-medium text-gray-900 flex items-center gap-2"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-green-600" />
+                          {nameById.get(id) || id}
+                        </li>
+                      ));
+                    })()}
+                  </ul>
+                )}
               </div>
               <p className="text-sm font-medium text-red-600 bg-red-50 p-3 border border-red-100 italic">
                 Note: Once you click "Confirm", you will not be able to modify
@@ -12877,17 +13163,45 @@ export default function BrandDashboard() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-none bg-black hover:bg-gray-800 text-white"
+              className="rounded-none bg-black hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={
+                loadingConfirmingDonePkgPublicData ||
+                (() => {
+                  const selectedIds = (
+                    confirmingDonePkgPublicData?.interactions || []
+                  )
+                    .filter((i: any) => i?.type === "selected")
+                    .map((i: any) =>
+                      String(i?.talent_id || i?.creator_id || "").trim(),
+                    )
+                    .filter(Boolean);
+                  return selectedIds.length === 0;
+                })()
+              }
               onClick={async () => {
                 const pkg = confirmingDonePkg;
                 if (!pkg) return;
                 try {
+                  // selected_talent_ids come from the public package interactions
+                  // (type "selected") — the only reliable source before brand-done
+                  // is called. meta.selected_talent_ids doesn't exist yet at this point.
+                  // Use talent_id when present (agency_users.id), otherwise creator_id
+                  // (creators.id) for independent connected creators.
+                  const selectedTalentIds = (
+                    confirmingDonePkgPublicData?.interactions || []
+                  )
+                    .filter((i: any) => i?.type === "selected")
+                    .map((i: any) =>
+                      String(i?.talent_id || i?.creator_id || "").trim(),
+                    )
+                    .filter(Boolean);
+
                   await base44.post(
                     `/api/campaign-offers/${encodeURIComponent(String(pkg?.offer_id || ""))}/packages/brand-done`,
                     {
                       package_id: String(pkg?.id || ""),
                       feedback_note: "Brand completed package selection.",
-                      selected_talent_ids: pkg?.meta?.selected_talent_ids || [],
+                      selected_talent_ids: selectedTalentIds,
                     },
                   );
                   const response = await base44.get<{ packages?: any[] }>(
@@ -12902,13 +13216,25 @@ export default function BrandDashboard() {
                       "Your package selection was submitted to the agency.",
                   });
                 } catch (e: any) {
+                  const msg = String(e?.message || "");
+                  // Surface assignment errors from the backend clearly
+                  let description = msg || "Please try again.";
+                  try {
+                    const parsed = JSON.parse(msg);
+                    if (parsed?.error === "assignment_errors") {
+                      description = parsed.message || description;
+                    }
+                  } catch {
+                    // not JSON — use raw message
+                  }
                   toast({
                     title: "Unable to submit package",
-                    description: e?.message || "Please try again.",
+                    description,
                     variant: "destructive" as any,
                   });
                 } finally {
                   setConfirmingDonePkg(null);
+                  setConfirmingDonePkgPublicData(null);
                 }
               }}
             >

@@ -1320,7 +1320,8 @@ pub async fn get_public_package(
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DeleteInteractionRequest {
-    pub talent_id: String,
+    pub talent_id: Option<String>,
+    pub creator_id: Option<String>,
     #[serde(rename = "type")]
     pub r#type: String,
 }
@@ -1364,17 +1365,32 @@ pub async fn delete_interaction(
         .as_str()
         .ok_or((StatusCode::NOT_FOUND, "Package ID missing".to_string()))?;
 
-    // 2. Delete the interaction
-    let delete_resp = state
+    // 2. Delete the interaction — match on whichever identity column is set.
+    //    Onboarded roster talent: talent_id is set.
+    //    Independent connected creator: talent_id is null, creator_id is set.
+    let delete_query = state
         .pg
         .from("agency_talent_package_interactions")
         .delete()
         .eq("package_id", package_id)
-        .eq("talent_id", &payload.talent_id)
-        .eq("type", &payload.r#type)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .eq("type", &payload.r#type);
+
+    let delete_resp = if let Some(ref tid) = payload.talent_id {
+        if !tid.trim().is_empty() {
+            delete_query.eq("talent_id", tid.trim()).execute().await
+        } else if let Some(ref cid) = payload.creator_id {
+            delete_query.eq("creator_id", cid.trim()).execute().await
+        } else {
+            return Ok(StatusCode::NO_CONTENT);
+        }
+    } else if let Some(ref cid) = payload.creator_id {
+        delete_query.eq("creator_id", cid.trim()).execute().await
+    } else {
+        return Ok(StatusCode::NO_CONTENT);
+    };
+
+    let delete_resp =
+        delete_resp.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !delete_resp.status().is_success() {
         let status = delete_resp.status();

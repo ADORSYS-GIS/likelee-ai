@@ -174,16 +174,38 @@ export function PublicPackageView() {
 
   const rawPackageData = packageData as any;
 
-  const getTalentId = (item: any) => {
-    const talent =
-      item?.talent || item?.agency_users || item?.creator || item || {};
+  // Returns the stable identity key for a package item.
+  // Items have two identity paths:
+  //   - Onboarded roster talent:       talent_id = agency_users.id  (non-null)
+  //   - Independent connected creator: talent_id = null, creator_id = creators.id
+  //
+  // We use talent_id when present, otherwise creator_id.  This value is used as
+  // the key for local state (favorites, callbacks, selections) AND is sent to the
+  // backend as talent_id in the interaction payload.  The backend upsert function
+  // and the DB unique index both use COALESCE(talent_id, creator_id) so either
+  // path resolves correctly.
+  const getTalentId = (item: any): string => {
+    // Prefer the raw column values from the item row over the joined talent object,
+    // because the talent object's `id` can be a creators.id (from the fallback join)
+    // which does NOT match the agency_users FK that older rows expect.
     const id =
-      talent?.id ||
-      item?.talent_id ||
-      item?.creator_id ||
+      item?.talent_id || // agency_users.id — present for onboarded roster talent
+      item?.creator_id || // creators.id — present for independent connected creators
       item?.relationship_id ||
+      item?.talent?.id || // last resort: joined object id
       item?.id;
     return String(id || "").trim();
+  };
+
+  // Returns the creator_id for a package item when the talent is an independent
+  // connected creator (talent_id is null).  Used to populate the creator_id field
+  // in interaction payloads so the backend can store it correctly.
+  const getTalentCreatorId = (item: any): string | undefined => {
+    // Only return creator_id when talent_id is absent — if talent_id is present
+    // the talent is an agency_users row and creator_id is redundant for interactions.
+    const hasTalentId = !!item?.talent_id;
+    if (hasTalentId) return undefined;
+    return item?.creator_id ? String(item.creator_id).trim() : undefined;
   };
 
   const getTalentName = (item: any) => {
@@ -295,12 +317,19 @@ export function PublicPackageView() {
       const initialCalls = new Set<string>();
       const initialSelected = new Set<string>();
       (packageData.interactions || []).forEach((interaction: any) => {
+        // Use the same identity key as getTalentId: talent_id when present,
+        // otherwise creator_id. This keeps initial and selected sets in sync
+        // for independent connected creators (who have talent_id = null).
+        const id = String(
+          interaction?.talent_id || interaction?.creator_id || "",
+        ).trim();
+        if (!id) return;
         if (interaction.type === "favorite") {
-          initialFavs.add(interaction.talent_id);
+          initialFavs.add(id);
         } else if (interaction.type === "callback") {
-          initialCalls.add(interaction.talent_id);
+          initialCalls.add(id);
         } else if (interaction.type === "selected") {
-          initialSelected.add(interaction.talent_id);
+          initialSelected.add(id);
         }
       });
       setInitialFavorites(initialFavs);
@@ -375,8 +404,20 @@ export function PublicPackageView() {
     refetch();
   };
 
-  const submitInteractions = async (talentId: string) => {
+  const submitInteractions = async (talentId: string, creatorId?: string) => {
     const promises: Promise<any>[] = [];
+
+    // Build the base identity payload.
+    // For onboarded roster talent: talent_id is set, creator_id is undefined.
+    // For independent connected creators: talent_id is the creator_id value
+    // (used as the local state key) and we also pass creator_id explicitly so
+    // the backend can store it in the correct column.
+    const identityPayload = creatorId
+      ? { talent_id: null, creator_id: creatorId }
+      : { talent_id: talentId };
+
+    // deleteIdentityPayload is used for deletes — same identity fields as insert.
+    const deleteIdentityPayload = identityPayload;
 
     // Determine changes for favorites
     const isFavoriteInitially = initialFavorites.has(talentId);
@@ -384,14 +425,14 @@ export function PublicPackageView() {
     if (isFavoriteCurrently && !isFavoriteInitially) {
       promises.push(
         interactionMutation.mutateAsync({
-          talent_id: talentId,
+          ...identityPayload,
           type: "favorite",
         }),
       );
     } else if (!isFavoriteCurrently && isFavoriteInitially) {
       promises.push(
         deleteInteractionMutation.mutateAsync({
-          talent_id: talentId,
+          ...deleteIdentityPayload,
           type: "favorite",
         }),
       );
@@ -403,14 +444,14 @@ export function PublicPackageView() {
     if (isCallbackCurrently && !isCallbackInitially) {
       promises.push(
         interactionMutation.mutateAsync({
-          talent_id: talentId,
+          ...identityPayload,
           type: "callback",
         }),
       );
     } else if (!isCallbackCurrently && isCallbackInitially) {
       promises.push(
         deleteInteractionMutation.mutateAsync({
-          talent_id: talentId,
+          ...deleteIdentityPayload,
           type: "callback",
         }),
       );
@@ -422,14 +463,14 @@ export function PublicPackageView() {
     if (isSelectedCurrently && !isSelectedInitially) {
       promises.push(
         interactionMutation.mutateAsync({
-          talent_id: talentId,
+          ...identityPayload,
           type: "selected",
         }),
       );
     } else if (!isSelectedCurrently && isSelectedInitially) {
       promises.push(
         deleteInteractionMutation.mutateAsync({
-          talent_id: talentId,
+          ...deleteIdentityPayload,
           type: "selected",
         }),
       );
@@ -440,7 +481,7 @@ export function PublicPackageView() {
     if (pending?.comment) {
       promises.push(
         interactionMutation.mutateAsync({
-          talent_id: talentId,
+          ...identityPayload,
           type: "comment",
           content: pending.comment,
           client_name: pending.clientName,
@@ -1218,7 +1259,7 @@ export function PublicPackageView() {
                       if (!selectedItem) return;
                       const id = getTalentId(selectedItem);
                       if (!id) return;
-                      submitInteractions(id);
+                      submitInteractions(id, getTalentCreatorId(selectedItem));
                     }}
                   >
                     {interactionMutation.isPending ||
