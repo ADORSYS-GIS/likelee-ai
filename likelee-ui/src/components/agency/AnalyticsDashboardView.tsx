@@ -635,12 +635,12 @@ const AnalyticsDashboardView = ({
                       const missingPct = Math.round(
                         (analytics.consent_status.missing / total) * 100,
                       );
-                      const expiringPct = Math.round(
+                      const expiredPct = Math.round(
                         (analytics.consent_status.expiring / total) * 100,
                       );
                       const otherPct = Math.max(
                         0,
-                        100 - completePct - missingPct - expiringPct,
+                        100 - completePct - missingPct - expiredPct,
                       );
                       const pieData = [
                         {
@@ -654,8 +654,8 @@ const AnalyticsDashboardView = ({
                           color: "#f59e0b",
                         },
                         {
-                          name: "Expiring",
-                          value: expiringPct,
+                          name: "Expired",
+                          value: expiredPct,
                           color: "#facc15",
                         },
                         ...(otherPct > 0
@@ -704,7 +704,7 @@ const AnalyticsDashboardView = ({
                       color: "text-amber-600",
                     },
                     {
-                      name: "Expiring",
+                      name: "Expired",
                       value: analytics.consent_status.expiring,
                       color: "text-yellow-500",
                     },
@@ -1190,14 +1190,14 @@ const AnalyticsDashboardView = ({
           const verificationPct = totalTalents
             ? Math.round((verifiedCount / totalTalents) * 100)
             : 0;
-          const expiringSoonLicensesCount = analytics.consent_status.expiring;
-          const consentExpiringCount = analytics.consent_status.expiring;
+          const expiredContractsCount = analytics.consent_status.expiring;
+          const consentExpiredCount = analytics.consent_status.expiring;
           const missingCount = analytics.consent_status.missing;
           const completePct = activePct;
-          const expiringPct = totalTalents
-            ? Math.round((consentExpiringCount / totalTalents) * 100)
+          const expiredPct = totalTalents
+            ? Math.round((consentExpiredCount / totalTalents) * 100)
             : 0;
-          const missingPct = Math.max(100 - completePct - expiringPct, 0);
+          const missingPct = Math.max(100 - completePct - expiredPct, 0);
 
           const parseUsDate = (v: string) => {
             if (!v || v === "—" || v === "N/A") return null;
@@ -1280,9 +1280,9 @@ const AnalyticsDashboardView = ({
                   },
                   {
                     icon: <AlertCircle className="w-5 h-5 text-orange-600" />,
-                    label: "Expiring Soon",
-                    value: String(expiringSoonLicensesCount),
-                    sub: "Next 10 days",
+                    label: "Expired Contracts",
+                    value: String(expiredContractsCount),
+                    sub: "Terminated or expired",
                     pct: null,
                     barColor: "",
                   },
@@ -1395,9 +1395,9 @@ const AnalyticsDashboardView = ({
                           barClass: "bg-gray-900",
                         },
                         {
-                          label: "Expiring",
-                          count: consentExpiringCount,
-                          pct: expiringPct,
+                          label: "Expired",
+                          count: consentExpiredCount,
+                          pct: expiredPct,
                           labelColor: "text-orange-600",
                           barClass: "bg-[#FB923C]/30",
                         },

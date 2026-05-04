@@ -231,64 +231,53 @@ pub async fn get_analytics_dashboard(
             voice: 17,
         };
 
-        // C. CONSENT STATUS — real data from agency_users
-        let ai_talents_resp = state
+        // C. CONSENT STATUS — based on agency_creator_marketplace_contracts (external creators only)
+        let contracts_resp = state
             .pg
-            .from("agency_users")
-            .select("id, consent_status, is_verified_talent")
+            .from("agency_creator_marketplace_contracts")
+            .select("id, status, docuseal_status, valid_until")
             .eq("agency_id", agency_id)
-            .eq("role", "talent")
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let ai_talents_text = ai_talents_resp
+        let contracts_text = contracts_resp
             .text()
             .await
             .unwrap_or_else(|_| "[]".to_string());
-        let ai_talents_data: Vec<serde_json::Value> =
-            serde_json::from_str(&ai_talents_text).unwrap_or(vec![]);
+        let contracts_data: Vec<serde_json::Value> =
+            serde_json::from_str(&contracts_text).unwrap_or(vec![]);
 
-        let ai_total_talents = ai_talents_data.len() as i64;
+        let ai_total_contracts = contracts_data.len() as i64;
         let mut ai_consent_complete = 0i64;
         let mut ai_consent_missing = 0i64;
-        let mut ai_verified_count = 0i64;
-        for t in ai_talents_data.iter() {
-            if t.get("is_verified_talent")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false)
-            {
-                ai_verified_count += 1;
-            }
-            let consent = t
-                .get("consent_status")
+        let mut ai_consent_expired = 0i64;
+
+        for contract in contracts_data.iter() {
+            let status = contract
+                .get("status")
                 .and_then(|v| v.as_str())
-                .unwrap_or("missing");
-            if consent == "complete" {
+                .unwrap_or("draft");
+            let docuseal_status = contract
+                .get("docuseal_status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+
+            // Complete: Both parties signed (status = "active")
+            if status == "active" {
                 ai_consent_complete += 1;
-            } else {
+            }
+            // Expired: Contract has expired or terminated
+            else if status == "expired" || status == "terminated" {
+                ai_consent_expired += 1;
+            }
+            // Missing: Contract sent but creator hasn't responded or declined
+            else if status == "draft" || status == "pending" || docuseal_status == "declined" {
                 ai_consent_missing += 1;
             }
         }
 
-        // D. EXPIRING SOON — licensing_requests approved and deadline within 10 days
-        let ai_expiring_resp = state
-            .pg
-            .from("licensing_requests")
-            .select("talent_id")
-            .eq("agency_id", agency_id)
-            .eq("status", "approved")
-            .gte("deadline", &today)
-            .lte("deadline", &ten_days_hence)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let ai_expiring_text = ai_expiring_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string());
-        let ai_expiring_data: Vec<serde_json::Value> =
-            serde_json::from_str(&ai_expiring_text).unwrap_or(vec![]);
-        let ai_expiring = ai_expiring_data.len() as i64;
+        // Verification count: Count active contracts as verified connections
+        let ai_verified_count = ai_consent_complete;
 
         let avg_value_cents = if active_licenses_count > 0 {
             total_earnings_cents / active_licenses_count
@@ -322,8 +311,8 @@ pub async fn get_analytics_dashboard(
             consent_status: ConsentStatusBreakdown {
                 complete: ai_consent_complete,
                 missing: ai_consent_missing,
-                expiring: ai_expiring,
-                total: ai_total_talents,
+                expiring: ai_consent_expired,
+                total: ai_total_contracts,
                 verified: ai_verified_count,
             },
         }));

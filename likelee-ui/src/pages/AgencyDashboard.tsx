@@ -22278,6 +22278,25 @@ export default function AgencyDashboard() {
               />
             )}
             {activeTab === "analytics" &&
+              activeSubTab === "Analytics Dashboard" &&
+              (hasProAccess ? (
+                <AnalyticsDashboardView
+                  onRenewLicense={handleRenew}
+                  agencyMode={effectiveAgencyMode}
+                  licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                  talentData={TALENT_DATA}
+                />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Analytics Dashboard is available on the Pro plan.
+                  </div>
+                </Card>
+              ))}
+            {activeTab === "analytics" &&
               activeSubTab === "Royalties & Payouts" && (
                 <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
               )}
