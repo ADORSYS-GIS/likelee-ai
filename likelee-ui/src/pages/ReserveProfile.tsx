@@ -703,7 +703,7 @@ export default function ReserveProfile() {
       bio: data.bio || null,
       city: data.city || "",
       state: data.state || "",
-      birthdate: data.birthdate || "",
+      birthdate: data.birthdate || null,
       ethnicity: data.ethnicity || [],
       gender: data.gender || "",
       vibes: data.vibes || [],
