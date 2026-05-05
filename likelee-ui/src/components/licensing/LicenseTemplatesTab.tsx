@@ -119,6 +119,9 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     talent_name?: string;
   } | null>(null);
   const [wizardIsRenewalPrefill, setWizardIsRenewalPrefill] = useState(false);
+  const [wizardOldLicenseId, setWizardOldLicenseId] = useState<
+    string | undefined
+  >(undefined);
   const [isViewOnly, setIsViewOnly] = useState(false);
 
   const [templateToDelete, setTemplateToDelete] = useState<{
@@ -281,6 +284,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
         description:
           "The expired license is not linked to an available template.",
         variant: "destructive",
+        duration: 3000,
       });
       onRenewalLaunchHandled?.();
       return;
@@ -288,6 +292,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
 
     setWizardTemplate(linkedTemplate);
     setWizardIsRenewalPrefill(true);
+    setWizardOldLicenseId(renewalLaunchContext.oldLicenseId);
     setWizardInitialValues({
       client_name: renewalLaunchContext.clientName,
       client_email: renewalLaunchContext.clientEmail,
@@ -303,7 +308,28 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       exclusivity: renewalLaunchContext.exclusivity,
       modifications_allowed: renewalLaunchContext.modificationsAllowed,
     });
-    setWizardBrandContext(null);
+    // Set the brand context with the original brand request ID for renewal linking
+    if (renewalLaunchContext.brandRequestId) {
+      console.log(
+        "🔄 Setting brand context for renewal with brandRequestId:",
+        renewalLaunchContext.brandRequestId,
+      );
+      setWizardBrandContext({
+        brand_id: renewalLaunchContext.brandId || "",
+        brand_name: renewalLaunchContext.clientName,
+        brand_email: renewalLaunchContext.clientEmail,
+        licensing_request_id: renewalLaunchContext.brandRequestId,
+        talent_id: renewalLaunchContext.talentId,
+        talent_name: renewalLaunchContext.talentName,
+      });
+    } else {
+      console.log(
+        "⚠️ No brandRequestId found in renewal context, will create new brand request during renewal",
+      );
+      // For renewals without brandRequestId, we'll create a new brand request
+      // The renewal logic in the backend will handle this case
+      setWizardBrandContext(null);
+    }
     onRenewalLaunchHandled?.();
   }, [
     renewalLaunchContext,
@@ -612,11 +638,13 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
             setWizardInitialValues({});
             setWizardBrandContext(null);
             setWizardIsRenewalPrefill(false);
+            setWizardOldLicenseId(undefined);
           }}
           isSportsAgency={isSportsAgency}
           template={wizardTemplate}
           initialValues={wizardInitialValues}
           isRenewalPrefill={wizardIsRenewalPrefill}
+          oldLicenseId={wizardOldLicenseId}
           brandRequestContext={
             wizardBrandContext
               ? {
@@ -633,6 +661,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
             setWizardInitialValues({});
             setWizardBrandContext(null);
             setWizardIsRenewalPrefill(false);
+            setWizardOldLicenseId(undefined);
             queryClient.invalidateQueries({ queryKey: ["license-templates"] });
             queryClient.invalidateQueries({
               queryKey: ["license-submissions"],

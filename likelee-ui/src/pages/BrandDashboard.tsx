@@ -1602,6 +1602,11 @@ export default function BrandDashboard() {
           "getBrandLicensingRequests raw response:",
           JSON.stringify(resp, null, 2),
         );
+        console.log("🔍 Brand user profile:", profile);
+        console.log(
+          "🔍 Fetching licensing requests for brand_id:",
+          profile?.id,
+        );
         if (!mounted) return;
         const rows = Array.isArray(resp) ? resp : resp?.requests || [];
         setBrandLicensingRequests(Array.isArray(rows) ? rows : []);
@@ -5546,7 +5551,9 @@ export default function BrandDashboard() {
                       </p>
                       <p className="text-xs text-gray-500">
                         Agency:{" "}
-                        {offer?.agencies?.agency_name || "Unknown Agency"}
+                        {offer?.target_name ||
+                          offer?.agencies?.agency_name ||
+                          "Agency"}
                       </p>
                       <p className="text-xs text-gray-500">
                         {String(offer?.status || "sent").replace(/_/g, " ")}
@@ -5656,8 +5663,13 @@ export default function BrandDashboard() {
                                       size="sm"
                                       className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                                       onClick={() => {
-                                        // Check if backend provides a signing URL
+                                        // Resolve signing URL — backend stores it in
+                                        // meta.brand_signing_url (primary) or
+                                        // meta.docuseal_signing_url (fallback).
                                         const signingUrl =
+                                          contract?.meta?.brand_signing_url ||
+                                          contract?.meta
+                                            ?.docuseal_signing_url ||
                                           contract?.signing_url ||
                                           contract?.docuseal_signing_url;
 

@@ -1314,7 +1314,7 @@ pub async fn get_marketplace_profile_details(
         let creator_resp = state
             .pg
             .from("creators")
-            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility,plan_tier")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,pricing_updated_at,created_at,updated_at,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility,plan_tier")
             .eq("id", &profile_id)
             .limit(1)
             .execute()

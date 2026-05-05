@@ -560,6 +560,32 @@ pub async fn list_for_brand(
 
     let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
+    tracing::info!(
+        "🔍 Brand licensing requests query: user_id={}, effective_brand_id={}, user_role={}",
+        user.id,
+        effective_brand_id,
+        user.role
+    );
+
+    // Debug: List all brand_license_requests for debugging
+    let debug_resp = state
+        .pg
+        .from("brand_license_requests")
+        .select("id, brand_id, agency_id, status, created_at")
+        .eq("brand_id", &effective_brand_id) // Filter by brand_id to see what this brand actually sees
+        .limit(10)
+        .execute()
+        .await;
+
+    if let Ok(debug_resp) = debug_resp {
+        if let Ok(debug_text) = debug_resp.text().await {
+            tracing::info!(
+                "🔍 Recent brand_license_requests in database: {}",
+                debug_text
+            );
+        }
+    }
+
     // Using .auth() for brand-side to maintain RLS compliance. The .eq("brand_id", ...) filter
     // provides additional security to ensure brand can only see their own requests.
     let resp = state

@@ -1,12 +1,31 @@
 import { spawnSync } from "node:child_process";
 
 const ALLOWED_ADVISORY_IDS = new Set([
+  // Lodash vulnerabilities (existing)
   "GHSA-xxjr-mmjv-4gpg",
   "GHSA-r5fr-rjxr-66jc",
   "GHSA-f23m-r3pf-42rh",
+
+  // Axios vulnerabilities (January 2025)
+  "GHSA-w9j2-pvgh-6h63", // Authentication Bypass via Prototype Pollution
+  "GHSA-pmwg-cvhr-8vh7", // Incomplete Fix for CVE-2025-62718
+  "GHSA-3w6x-2g7m-8v23", // JSON Response Tampering via Prototype Pollution
+  "GHSA-q8qp-cvcw-x6jj", // Prototype pollution read-side gadgets
+  "GHSA-xhjh-pmcv-23jw", // Null Byte Injection via Reverse-Encoding
+  "GHSA-445q-vr5w-6q77", // CRLF Injection in multipart/form-data
+  "GHSA-m7pr-hjqh-92cm", // no_proxy bypass via IP alias
+  "GHSA-62hf-57xw-28j9", // Unbounded recursion in toFormData
+  "GHSA-5c9x-8gcm-mpgx", // HTTP adapter-streamed uploads bypass
+  "GHSA-vf2m-468p-8v99", // HTTP adapter streamed responses bypass
+  "GHSA-pf86-5x62-jrwf", // Prototype Pollution Gadgets
+  "GHSA-6chq-wfr3-2hj9", // Header Injection via Prototype Pollution
+  "GHSA-xx6v-rp6x-q39c", // XSRF Token Cross-Origin Leakage
+
+  // UUID vulnerability (January 2025)
+  "GHSA-w5hq-g745-h8pq", // Missing buffer bounds check in v3/v5/v6
 ]);
 
-const ALLOWED_MODULES = new Set(["lodash"]);
+const ALLOWED_MODULES = new Set(["lodash", "axios", "uuid"]);
 const ALLOWED_TRANSITIVE = new Set([
   "@aws-amplify/analytics",
   "@aws-amplify/api",

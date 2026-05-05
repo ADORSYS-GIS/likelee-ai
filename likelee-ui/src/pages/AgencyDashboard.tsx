@@ -12505,12 +12505,14 @@ const DashboardView = ({
   kycLoading,
   onRefreshStatus,
   refreshLoading,
+  onNavigateToLicensing,
 }: {
   onKYC: () => void;
   kycStatus?: string | null;
   kycLoading?: boolean;
   onRefreshStatus?: () => void;
   refreshLoading?: boolean;
+  onNavigateToLicensing?: () => void;
 }) => (
   <div className="space-y-8">
     {/* KYC Verification Alert */}
@@ -12878,6 +12880,7 @@ const DashboardView = ({
           <Button
             variant="default"
             className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
+            onClick={onNavigateToLicensing}
           >
             Review Now
           </Button>
@@ -18682,17 +18685,22 @@ export default function AgencyDashboard() {
         title: "Missing template",
         description: "This license is not linked to a template for renewal.",
         variant: "destructive",
+        duration: 3000,
       });
       return;
     }
 
     setRenewalLaunchContext({
       templateId: license.template_id,
+      oldLicenseId: license.id, // Track the old license being renewed
       brandId: license.brand_id || undefined,
       talentId: license.talent_id || undefined,
       clientName: license.client_name || license.brand || "",
       clientEmail: license.client_email || "",
-      talentName: license.talent_name || "",
+      talentName:
+        license.talent_name && license.talent_name !== "Unknown"
+          ? license.talent_name
+          : "",
       durationDays: license.duration_days,
       startDate: license.start_date,
       customTerms: license.custom_terms || undefined,
@@ -18701,14 +18709,15 @@ export default function AgencyDashboard() {
       exclusivity: license.exclusivity || undefined,
       modificationsAllowed: license.modifications_allowed || undefined,
       licenseFee: typeof license.value === "number" ? license.value : undefined,
+      brandRequestId: license.brand_request_id || undefined, // Include the original brand request ID
     });
 
-    setActiveTabState("licensing");
-    setActiveSubTabState("License Templates");
+    setActiveView("licensing", "License Templates");
 
     toast({
       title: "Redirecting...",
-      description: `Opening template for ${license.talent_name} renewal.`,
+      description: `Opening template for ${license.client_name || license.brand || "license"} renewal.`,
+      duration: 3000,
     });
   };
 
@@ -18777,6 +18786,21 @@ export default function AgencyDashboard() {
     agencyId: user?.id,
     maxAge: 60 * 1000,
     syncInterval: 15 * 1000,
+    staleWhileRevalidate: true,
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+  });
+
+  // Query for licensing stats to ensure dashboard matches Active Licenses tab
+  const licensingStatsQuery = useIndexedDbQuery({
+    queryKey: ["agency", "active-licenses", "stats", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyActiveLicensesStats();
+      return resp as any;
+    },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -22035,6 +22059,12 @@ export default function AgencyDashboard() {
               <AgencyDashboardView
                 isSportsAgency={isSportsAgency}
                 onKYC={handleKYC}
+                onReviewPendingApprovals={() =>
+                  setActiveView("licensing", "Licensing Requests")
+                }
+                onReviewExpiringLicenses={() =>
+                  setActiveView("licensing", "Active Licenses")
+                }
                 agencyName={agencyName}
                 rosterData={rosterTalents}
                 licensingRequestsCount={pendingLicensingRequestsCount}
@@ -22042,6 +22072,7 @@ export default function AgencyDashboard() {
                 talentPerformance={talentPerformanceQuery.data}
                 revenueBreakdown={revenueBreakdownQuery.data}
                 licensingPipeline={licensingPipelineQuery.data}
+                licensingStats={licensingStatsQuery.data}
                 recentActivity={recentActivityQuery.data}
                 kycStatus={agencyKycStatus}
                 kycRejectionReason={agencyKycRejectionReason}
@@ -22097,7 +22128,10 @@ export default function AgencyDashboard() {
               />
             )}
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-              <PerformanceTiers isSportsAgency={isSportsAgency} />
+              <PerformanceTiers
+                isSportsAgency={isSportsAgency}
+                agencyMode={effectiveAgencyMode}
+              />
             )}
             {activeTab === "jobs" &&
               activeSubTab === "Job Invites" &&
@@ -22126,7 +22160,6 @@ export default function AgencyDashboard() {
                 <LicensingRequestsView
                   isSportsAgency={isSportsAgency}
                   onBrandRequestAccepted={(ctx) => {
-                    console.log("Brand request accepted, context:", ctx);
                     setBrandRequestContext(ctx);
                     setActiveView("licensing", "License Templates");
                   }}
@@ -22272,6 +22305,25 @@ export default function AgencyDashboard() {
                 talentData={TALENT_DATA}
               />
             )}
+            {activeTab === "analytics" &&
+              activeSubTab === "Analytics Dashboard" &&
+              (hasProAccess ? (
+                <AnalyticsDashboardView
+                  onRenewLicense={handleRenew}
+                  agencyMode={effectiveAgencyMode}
+                  licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                  talentData={TALENT_DATA}
+                />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">
+                    Upgrade required
+                  </div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Analytics Dashboard is available on the Pro plan.
+                  </div>
+                </Card>
+              ))}
             {activeTab === "analytics" &&
               activeSubTab === "Royalties & Payouts" && (
                 <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />

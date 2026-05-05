@@ -20,6 +20,8 @@ import {
 interface DashboardViewProps {
   isSportsAgency?: boolean;
   onKYC: () => void;
+  onReviewPendingApprovals?: () => void;
+  onReviewExpiringLicenses?: () => void;
   agencyName: string;
   rosterData: any[];
   kycStatus?: string | null;
@@ -34,11 +36,20 @@ interface DashboardViewProps {
   revenueBreakdown?: any;
   licensingPipeline?: any;
   recentActivity?: any;
+  // Licensing stats from getAgencyActiveLicensesStats for consistent data
+  licensingStats?: {
+    active?: number;
+    expiring?: number;
+    expired?: number;
+    total_value?: number;
+  };
 }
 
 const DashboardView = ({
   isSportsAgency = false,
   onKYC,
+  onReviewPendingApprovals,
+  onReviewExpiringLicenses,
   agencyName,
   rosterData,
   kycStatus,
@@ -53,6 +64,7 @@ const DashboardView = ({
   revenueBreakdown,
   licensingPipeline,
   recentActivity,
+  licensingStats,
 }: DashboardViewProps) => {
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const entityPluralLower = isSportsAgency ? "athletes" : "talent";
@@ -147,6 +159,33 @@ const DashboardView = ({
       ? pendingLicensingRequestsFromOverview
       : Math.max(0, licensingRequestsCount ?? 0);
   const pendingActionsTotal = pendingLicensingRequests + expiringLicenses;
+  // Use licensingStats (from getAgencyActiveLicensesStats) as primary source for accurate data
+  // Fall back to licensingPipeline or computed values if stats not available
+  const pendingApprovalCount =
+    typeof licensingStats?.expired === "number"
+      ? licensingStats.expired // Expired licenses need review/renewal
+      : typeof licensingPipeline?.pending_approval === "number"
+        ? licensingPipeline.pending_approval
+        : pendingLicensingRequests;
+  const expiringSoonCount =
+    typeof licensingStats?.expiring === "number"
+      ? licensingStats.expiring
+      : typeof licensingPipeline?.expiring_soon === "number"
+        ? licensingPipeline.expiring_soon
+        : expiringLicenses;
+  // Active licenses from stats for consistency with Active Licenses tab
+  const activeLicensesCount =
+    typeof licensingStats?.active === "number"
+      ? licensingStats.active
+      : typeof licensingPipeline?.active === "number"
+        ? licensingPipeline.active
+        : rosterData.filter(
+            (t) =>
+              t.license_status === "active" || t.licenseStatus === "active",
+          ).length;
+  // Total this month: sum of active + expiring + expired (to review)
+  const totalThisMonthCount =
+    activeLicensesCount + expiringSoonCount + pendingApprovalCount;
   const normalizedKycStatus = String(kycStatus || "")
     .trim()
     .toLowerCase();
@@ -670,15 +709,16 @@ const DashboardView = ({
               </span>
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-4">
-              {typeof licensingPipeline?.pending_approval === "number"
-                ? licensingPipeline.pending_approval
-                : pendingLicensingRequests}
+              {pendingApprovalCount}
             </div>
             <Button
               variant="default"
               className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
+              onClick={() => onReviewPendingApprovals?.()}
             >
-              Review Now
+              {pendingApprovalCount > 0
+                ? `Review ${pendingApprovalCount}`
+                : "No Pending"}
             </Button>
           </Card>
 
@@ -702,9 +742,7 @@ const DashboardView = ({
               <span className="text-xs font-medium text-gray-500">Active</span>
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-4">
-              {typeof licensingPipeline?.active === "number"
-                ? licensingPipeline.active
-                : 0}
+              {activeLicensesCount}
             </div>
           </Card>
 
@@ -718,15 +756,16 @@ const DashboardView = ({
               </span>
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-4">
-              {typeof licensingPipeline?.expiring_soon === "number"
-                ? licensingPipeline.expiring_soon
-                : expiringLicenses}
+              {expiringSoonCount}
             </div>
             <Button
               variant="outline"
               className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
+              onClick={() => onReviewExpiringLicenses?.()}
             >
-              Review
+              {expiringSoonCount > 0
+                ? `Review ${expiringSoonCount}`
+                : "None Expiring"}
             </Button>
           </Card>
 
@@ -752,9 +791,7 @@ const DashboardView = ({
               </span>
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-4">
-              {typeof licensingPipeline?.total_this_month === "number"
-                ? licensingPipeline.total_this_month
-                : 0}
+              {totalThisMonthCount}
             </div>
           </Card>
         </div>
