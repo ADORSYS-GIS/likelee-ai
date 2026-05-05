@@ -179,9 +179,13 @@ const DashboardView = ({
       ? licensingStats.active
       : typeof licensingPipeline?.active === "number"
         ? licensingPipeline.active
-        : rosterData.filter((t) => t.license_status === "active" || t.licenseStatus === "active").length;
+        : rosterData.filter(
+            (t) =>
+              t.license_status === "active" || t.licenseStatus === "active",
+          ).length;
   // Total this month: sum of active + expiring + expired (to review)
-  const totalThisMonthCount = activeLicensesCount + expiringSoonCount + pendingApprovalCount;
+  const totalThisMonthCount =
+    activeLicensesCount + expiringSoonCount + pendingApprovalCount;
   const normalizedKycStatus = String(kycStatus || "")
     .trim()
     .toLowerCase();
@@ -712,7 +716,9 @@ const DashboardView = ({
               className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
               onClick={() => onReviewPendingApprovals?.()}
             >
-              {pendingApprovalCount > 0 ? `Review ${pendingApprovalCount}` : "No Pending"}
+              {pendingApprovalCount > 0
+                ? `Review ${pendingApprovalCount}`
+                : "No Pending"}
             </Button>
           </Card>
 
@@ -757,7 +763,9 @@ const DashboardView = ({
               className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
               onClick={() => onReviewExpiringLicenses?.()}
             >
-              {expiringSoonCount > 0 ? `Review ${expiringSoonCount}` : "None Expiring"}
+              {expiringSoonCount > 0
+                ? `Review ${expiringSoonCount}`
+                : "None Expiring"}
             </Button>
           </Card>
 
