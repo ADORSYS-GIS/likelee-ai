@@ -2382,7 +2382,9 @@ export default function TalentPortal({
                           variant="outline"
                           size="sm"
                           onClick={syncInstagram}
-                          disabled={instagramSyncing || !profileForm.instagram_handle}
+                          disabled={
+                            instagramSyncing || !profileForm.instagram_handle
+                          }
                           className="whitespace-nowrap"
                         >
                           {instagramSyncing ? (
@@ -2397,7 +2399,8 @@ export default function TalentPortal({
                       </div>
                       {profileForm.instagram_followers > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
-                          {profileForm.instagram_followers.toLocaleString()} followers
+                          {profileForm.instagram_followers.toLocaleString()}{" "}
+                          followers
                         </p>
                       )}
                     </div>

@@ -615,7 +615,9 @@ const TalentSideModal = ({
                           variant="outline"
                           size="sm"
                           onClick={fetchInstagramData}
-                          disabled={fetchingInstagram || !editForm.instagram_handle}
+                          disabled={
+                            fetchingInstagram || !editForm.instagram_handle
+                          }
                           className="h-9 whitespace-nowrap"
                         >
                           {fetchingInstagram ? (
