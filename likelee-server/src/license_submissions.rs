@@ -1835,6 +1835,7 @@ pub async fn finalize(
                                     }
 
                                     // Log the current submission data to debug DocuSeal integration
+                                    // This helps verify that the renewal has proper signing URLs for the brand
                                     tracing::info!(
                                         "📋 Current submission data for debugging: docuseal_submission_id={:?}, client_submitter_slug={:?}, status={}",
                                         submission.docuseal_submission_id,
