@@ -18778,6 +18778,21 @@ export default function AgencyDashboard() {
     refetchOnWindowFocus: false,
   });
 
+  // Query for licensing stats to ensure dashboard matches Active Licenses tab
+  const licensingStatsQuery = useIndexedDbQuery({
+    queryKey: ["agency", "active-licenses", "stats", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyActiveLicensesStats();
+      return resp as any;
+    },
+    agencyId: user?.id,
+    maxAge: 60 * 1000,
+    syncInterval: 60 * 1000,
+    staleWhileRevalidate: true,
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+  });
+
   const recentActivityQuery = useIndexedDbQuery({
     queryKey: ["agency-dashboard-recent-activity", user?.id],
     queryFn: async () => {
@@ -22048,6 +22063,7 @@ export default function AgencyDashboard() {
                 talentPerformance={talentPerformanceQuery.data}
                 revenueBreakdown={revenueBreakdownQuery.data}
                 licensingPipeline={licensingPipelineQuery.data}
+                licensingStats={licensingStatsQuery.data}
                 recentActivity={recentActivityQuery.data}
                 kycStatus={agencyKycStatus}
                 kycRejectionReason={agencyKycRejectionReason}
