@@ -1751,6 +1751,8 @@ pub async fn finalize(
                                 })
                             };
 
+                            // Create brand_license_requests entry for the renewal
+                            // This entry will appear in the brand dashboard for signing
                             let brand_license_result = state
                                 .pg
                                 .from("brand_license_requests")
