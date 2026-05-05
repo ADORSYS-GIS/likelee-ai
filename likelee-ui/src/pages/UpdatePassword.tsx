@@ -18,7 +18,7 @@ function isNotFoundError(error: any): boolean {
 }
 
 export default function UpdatePassword() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("auth");
   const { supabase } = useAuth();
   const location = useLocation();
   const [password, setPassword] = useState("");
@@ -43,13 +43,20 @@ export default function UpdatePassword() {
 
   return (
     <div className="max-w-md mx-auto px-6 py-16">
-      <h1 className="text-2xl font-bold mb-4">Update your password</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        {t("updatePassword.title", "Update your password")}
+      </h1>
       <form
         className="space-y-4"
         onSubmit={async (e) => {
           e.preventDefault();
           if (password !== confirmPassword) {
-            setError("Passwords do not match");
+            setError(
+              t(
+                "updatePassword.errors.passwordMismatch",
+                "Passwords do not match",
+              ),
+            );
             return;
           }
           setError(null);
@@ -121,7 +128,12 @@ export default function UpdatePassword() {
 
             setTimeout(() => navigate(nextPath), 700);
           } catch (err: any) {
-            const msg = err?.message ?? "Failed to update password";
+            const msg =
+              err?.message ??
+              t(
+                "updatePassword.errors.updateFailed",
+                "Failed to update password",
+              );
             setError(msg);
             toast({
               title: t("common.error"),
@@ -134,7 +146,9 @@ export default function UpdatePassword() {
         }}
       >
         <div>
-          <label className="block text-sm font-medium mb-1">New Password</label>
+          <label className="block text-sm font-medium mb-1">
+            {t("updatePassword.newPasswordLabel", "New Password")}
+          </label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -154,7 +168,7 @@ export default function UpdatePassword() {
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">
-            Confirm New Password
+            {t("updatePassword.confirmPasswordLabel", "Confirm New Password")}
           </label>
           <div className="relative">
             <input
@@ -183,7 +197,9 @@ export default function UpdatePassword() {
             disabled={loading}
             className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
           >
-            {loading ? "Updating…" : "Update Password"}
+            {loading
+              ? t("updatePassword.updating", "Updating…")
+              : t("updatePassword.updateButton", "Update Password")}
           </button>
         </div>
       </form>
