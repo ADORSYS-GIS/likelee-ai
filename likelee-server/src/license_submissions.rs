@@ -977,7 +977,9 @@ pub async fn finalize(
                 docuseal_submission.submitters.get(1)
             } else {
                 // For single submitter scenarios (renewals), the first submitter is the client
-                tracing::info!("Single submitter detected - using first submitter as client for renewal");
+                tracing::info!(
+                    "Single submitter detected - using first submitter as client for renewal"
+                );
                 docuseal_submission.submitters.first()
             }
         });
@@ -1537,13 +1539,15 @@ pub async fn finalize(
                                     Ok(resp) if resp.status().is_success() => {
                                         match resp.text().await {
                                             Ok(text) => {
-                                                match serde_json::from_str::<serde_json::Value>(&text) {
+                                                match serde_json::from_str::<serde_json::Value>(
+                                                    &text,
+                                                ) {
                                                     Ok(row) => {
                                                         let resolved_creator_id = row
                                                             .get("creator_id")
                                                             .and_then(|v| v.as_str())
                                                             .unwrap_or("");
-                                                        
+
                                                         if !resolved_creator_id.is_empty() {
                                                             tracing::info!(
                                                                 "Resolved creator_id from agency_users: {} -> {}",
@@ -1556,7 +1560,7 @@ pub async fn finalize(
                                                                 "Agency user {} has no creator_id, checking if talent_id exists in creators table",
                                                                 submission_talent_id
                                                             );
-                                                            
+
                                                             // Check if the talent_id exists directly in creators table
                                                             match state
                                                                 .pg
@@ -1567,7 +1571,11 @@ pub async fn finalize(
                                                                 .execute()
                                                                 .await
                                                             {
-                                                                Ok(creator_resp) if creator_resp.status().is_success() => {
+                                                                Ok(creator_resp)
+                                                                    if creator_resp
+                                                                        .status()
+                                                                        .is_success() =>
+                                                                {
                                                                     tracing::info!(
                                                                         "Found talent_id {} directly in creators table",
                                                                         submission_talent_id
@@ -1591,7 +1599,10 @@ pub async fn finalize(
                                                 }
                                             }
                                             Err(e) => {
-                                                tracing::warn!("Failed to read agency_users response: {}", e);
+                                                tracing::warn!(
+                                                    "Failed to read agency_users response: {}",
+                                                    e
+                                                );
                                                 "".to_string()
                                             }
                                         }
@@ -1602,7 +1613,7 @@ pub async fn finalize(
                                             "Agency user lookup failed: status={}, checking creators table directly",
                                             status
                                         );
-                                        
+
                                         // Check if the talent_id exists directly in creators table
                                         match state
                                             .pg
@@ -1613,7 +1624,9 @@ pub async fn finalize(
                                             .execute()
                                             .await
                                         {
-                                            Ok(creator_resp) if creator_resp.status().is_success() => {
+                                            Ok(creator_resp)
+                                                if creator_resp.status().is_success() =>
+                                            {
                                                 tracing::info!(
                                                     "Found talent_id {} directly in creators table",
                                                     submission_talent_id
@@ -1654,17 +1667,21 @@ pub async fn finalize(
                                 .to_string();
 
                             // Calculate end date from start date + duration
-                            let end_date = if let Ok(start_naive) = chrono::NaiveDate::parse_from_str(&start_date, "%Y-%m-%d") {
+                            let end_date = if let Ok(start_naive) =
+                                chrono::NaiveDate::parse_from_str(&start_date, "%Y-%m-%d")
+                            {
                                 let duration_days = submission_data["duration_days"]
                                     .as_i64()
                                     .map(|d| d as i32)
                                     .unwrap_or(license_template.duration_days);
-                                let end_naive = start_naive + chrono::Duration::days(duration_days as i64);
+                                let end_naive =
+                                    start_naive + chrono::Duration::days(duration_days as i64);
                                 end_naive.to_string()
                             } else {
                                 // Fallback to deadline if start date parsing fails
                                 deadline.map(|d| d.to_string()).unwrap_or_else(|| {
-                                    let fallback_end = chrono::Utc::now().date_naive() + chrono::Duration::days(90);
+                                    let fallback_end = chrono::Utc::now().date_naive()
+                                        + chrono::Duration::days(90);
                                     fallback_end.to_string()
                                 })
                             };
@@ -1674,7 +1691,7 @@ pub async fn finalize(
                                 .as_i64()
                                 .map(|d| d as i32)
                                 .unwrap_or(license_template.duration_days);
-                            
+
                             let license_fee = submission_data["license_fee"]
                                 .as_i64()
                                 .or(license_template.license_fee);
@@ -1751,21 +1768,25 @@ pub async fn finalize(
                                         "✅ Successfully created new brand_license_requests entry for renewal. Response: {}",
                                         response_text
                                     );
-                                    
+
                                     // Extract the brand_request_id from the response and update the license_submissions table
-                                    if let Ok(response_json) = serde_json::from_str::<serde_json::Value>(&response_text) {
-                                        if let Some(brand_request_id) = response_json.get("id").and_then(|v| v.as_str()) {
+                                    if let Ok(response_json) =
+                                        serde_json::from_str::<serde_json::Value>(&response_text)
+                                    {
+                                        if let Some(brand_request_id) =
+                                            response_json.get("id").and_then(|v| v.as_str())
+                                        {
                                             tracing::info!(
                                                 "🔗 Updating license_submissions {} with brand_request_id {}",
                                                 submission.id,
                                                 brand_request_id
                                             );
-                                            
+
                                             let update_submission = json!({
                                                 "brand_request_id": brand_request_id,
                                                 "updated_at": chrono::Utc::now().to_rfc3339()
                                             });
-                                            
+
                                             let update_result = state
                                                 .pg
                                                 .from("license_submissions")
@@ -1774,9 +1795,11 @@ pub async fn finalize(
                                                 .eq("id", &submission.id)
                                                 .execute()
                                                 .await;
-                                                
+
                                             match update_result {
-                                                Ok(update_resp) if update_resp.status().is_success() => {
+                                                Ok(update_resp)
+                                                    if update_resp.status().is_success() =>
+                                                {
                                                     tracing::info!(
                                                         "✅ Successfully linked license_submission {} to brand_license_request {}",
                                                         submission.id,
@@ -1785,7 +1808,10 @@ pub async fn finalize(
                                                 }
                                                 Ok(update_resp) => {
                                                     let status = update_resp.status();
-                                                    let body = update_resp.text().await.unwrap_or_default();
+                                                    let body = update_resp
+                                                        .text()
+                                                        .await
+                                                        .unwrap_or_default();
                                                     tracing::warn!(
                                                         "Failed to update license_submission with brand_request_id: status={}, body={}",
                                                         status,
@@ -1805,7 +1831,7 @@ pub async fn finalize(
                                     } else {
                                         tracing::warn!("Could not parse brand_license_requests response as JSON: {}", response_text);
                                     }
-                                    
+
                                     // Log the current submission data to debug DocuSeal integration
                                     tracing::info!(
                                         "📋 Current submission data for debugging: docuseal_submission_id={:?}, client_submitter_slug={:?}, status={}",
