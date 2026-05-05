@@ -734,7 +734,10 @@ export const NewBookingModal = ({
       const bookingRequests = selectedTalents.map(async (talent) => {
         const payload: any = {
           booking_type: bookingType,
-          status: "pending",
+          // Map booking_type to the appropriate status.
+          // 'confirmed' booking_type → status 'confirmed' (counts in performance stats)
+          // All other types (casting, option, test-shoot, etc.) → status 'pending'
+          status: bookingType === "confirmed" ? "confirmed" : "pending",
           client_id: selectedClient?.id,
           talent_id: talent.id,
           creator_id: talent.creator_id || undefined,
