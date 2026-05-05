@@ -14,6 +14,7 @@ export interface ComplianceRenewableLicense {
 
 export interface RenewalLaunchContext {
   templateId: string;
+  oldLicenseId?: string; // ID of the expired license being renewed
   brandId?: string;
   talentId?: string;
   clientName: string;
@@ -27,4 +28,5 @@ export interface RenewalLaunchContext {
   exclusivity?: string;
   modificationsAllowed?: string;
   licenseFee?: number;
+  brandRequestId?: string; // ID of the original brand request to update
 }

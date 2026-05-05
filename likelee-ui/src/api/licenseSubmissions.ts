@@ -94,6 +94,7 @@ export const finalizeLicenseSubmission = async (
     talent_ids?: string[];
     talent_names?: string;
     requires_agency_signature?: boolean;
+    old_license_id?: string; // ID of expired license being renewed
   },
 ): Promise<LicenseSubmission> => {
   return await base44.post<LicenseSubmission>(

@@ -106,6 +106,8 @@ const AnalyticsDashboardView = ({
       : null,
   );
   const [expiredLicensesFromDB, setExpiredLicensesFromDB] = useState<any[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isRefreshingExpired, setIsRefreshingExpired] = useState(false);
   const [loading, setLoading] = useState(!initialHasWarmCache);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,22 +115,63 @@ const AnalyticsDashboardView = ({
   useEffect(() => {
     if (activeTab !== "Compliance") return;
     let active = true;
-    (async () => {
-      const session = (await supabase?.auth.getSession())?.data?.session;
-      const token = session?.access_token;
-      if (!token) return;
-      const res = await fetch(`/api/agency/analytics/expired-licenses`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok && active) {
-        const data = await res.json();
-        setExpiredLicensesFromDB(Array.isArray(data) ? data : []);
+
+    const fetchExpiredLicenses = async () => {
+      setIsRefreshingExpired(true);
+      try {
+        const session = (await supabase?.auth.getSession())?.data?.session;
+        const token = session?.access_token;
+        if (!token) return;
+
+        // Add cache-busting parameter when manually refreshing
+        const cacheBuster = refreshTrigger > 0 ? `?_t=${Date.now()}` : "";
+        const res = await fetch(
+          `/api/agency/analytics/expired-licenses${cacheBuster}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
+          },
+        );
+
+        if (res.ok && active) {
+          const data = await res.json();
+          setExpiredLicensesFromDB(Array.isArray(data) ? data : []);
+
+          // Show success toast when refresh is triggered manually
+          if (refreshTrigger > 0) {
+            toast({
+              title: "Refreshed",
+              description: `License expiry pipeline updated successfully. Found ${Array.isArray(data) ? data.length : 0} expired licenses.`,
+              duration: 2000,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching expired licenses:", error);
+        if (refreshTrigger > 0) {
+          toast({
+            title: "Refresh failed",
+            description: "Failed to update license expiry pipeline.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+      } finally {
+        if (active) {
+          setIsRefreshingExpired(false);
+        }
       }
-    })();
+    };
+
+    fetchExpiredLicenses();
+
     return () => {
       active = false;
     };
-  }, [activeTab]);
+  }, [activeTab, refreshTrigger, toast]);
 
   const subTabs =
     agencyMode === "AI"
@@ -341,8 +384,21 @@ const AnalyticsDashboardView = ({
                       <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.overview.active_campaigns}
                       </h3>
-                      <p className="text-xs font-bold text-indigo-600 flex items-center gap-1.5 mt-2">
-                        <TrendingUp className="w-3.5 h-3.5" /> +12% growth
+                      <p
+                        className={`text-xs font-bold flex items-center gap-1.5 mt-2 ${
+                          analytics.overview
+                            .active_campaigns_growth_percentage >= 0
+                            ? "text-indigo-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />{" "}
+                        {analytics.overview
+                          .active_campaigns_growth_percentage >= 0
+                          ? "+"
+                          : ""}
+                        {analytics.overview.active_campaigns_growth_percentage}%
+                        vs last period
                       </p>
                     </div>
                     <div className="w-16 h-16 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
@@ -363,7 +419,11 @@ const AnalyticsDashboardView = ({
                         {analytics.ai_usage.total_usages_30d}
                       </h3>
                       <p className="text-xs font-bold text-purple-600 flex items-center gap-1.5 mt-2">
-                        <TrendingUp className="w-3.5 h-3.5" /> +18% vs last
+                        <TrendingUp className="w-3.5 h-3.5" />{" "}
+                        {analytics.ai_usage.usages_growth_percentage >= 0
+                          ? "+"
+                          : ""}
+                        {analytics.ai_usage.usages_growth_percentage}% vs last
                         period
                       </p>
                     </div>
@@ -629,19 +689,29 @@ const AnalyticsDashboardView = ({
                   <ResponsiveContainer width="100%" height="100%">
                     {(() => {
                       const total = analytics.consent_status.total || 1;
-                      const completePct = Math.round(
-                        (analytics.consent_status.complete / total) * 100,
-                      );
-                      const missingPct = Math.round(
-                        (analytics.consent_status.missing / total) * 100,
-                      );
-                      const expiringPct = Math.round(
-                        (analytics.consent_status.expiring / total) * 100,
-                      );
-                      const otherPct = Math.max(
-                        0,
-                        100 - completePct - missingPct - expiringPct,
-                      );
+                      // Calculate percentages ensuring they sum to 100%
+                      const completeRaw =
+                        (analytics.consent_status.complete / total) * 100;
+                      const missingRaw =
+                        (analytics.consent_status.missing / total) * 100;
+                      const expiredRaw =
+                        (analytics.consent_status.expiring / total) * 100;
+
+                      const totalRaw = completeRaw + missingRaw + expiredRaw;
+
+                      let completePct, missingPct, expiredPct;
+
+                      if (totalRaw > 0) {
+                        // Normalize to ensure sum equals 100%
+                        completePct = Math.round(
+                          (completeRaw / totalRaw) * 100,
+                        );
+                        missingPct = Math.round((missingRaw / totalRaw) * 100);
+                        expiredPct = 100 - completePct - missingPct; // Ensure sum = 100
+                      } else {
+                        completePct = missingPct = expiredPct = 0;
+                      }
+
                       const pieData = [
                         {
                           name: "Complete",
@@ -654,19 +724,10 @@ const AnalyticsDashboardView = ({
                           color: "#f59e0b",
                         },
                         {
-                          name: "Expiring",
-                          value: expiringPct,
+                          name: "Expired",
+                          value: expiredPct,
                           color: "#facc15",
                         },
-                        ...(otherPct > 0
-                          ? [
-                              {
-                                name: "No Consent Data",
-                                value: otherPct,
-                                color: "#e5e7eb",
-                              },
-                            ]
-                          : []),
                       ];
                       return (
                         <PieChart>
@@ -692,26 +753,51 @@ const AnalyticsDashboardView = ({
                   </ResponsiveContainer>
                 </div>
                 <div className="w-full mt-8 flex flex-col gap-3 text-right">
-                  {[
-                    {
-                      name: "Complete",
-                      value: analytics.consent_status.complete,
-                      color: "text-green-600",
-                    },
-                    {
-                      name: "Missing",
-                      value: analytics.consent_status.missing,
-                      color: "text-amber-600",
-                    },
-                    {
-                      name: "Expiring",
-                      value: analytics.consent_status.expiring,
-                      color: "text-yellow-500",
-                    },
-                  ].map((item) => {
+                  {(() => {
                     const total = analytics.consent_status.total || 1;
-                    const pct = Math.round((item.value / total) * 100);
-                    return (
+                    // Calculate percentages ensuring they sum to 100%
+                    const completeRaw =
+                      (analytics.consent_status.complete / total) * 100;
+                    const missingRaw =
+                      (analytics.consent_status.missing / total) * 100;
+                    const expiredRaw =
+                      (analytics.consent_status.expiring / total) * 100;
+
+                    const totalRaw = completeRaw + missingRaw + expiredRaw;
+
+                    let completePct, missingPct, expiredPct;
+
+                    if (totalRaw > 0) {
+                      // Normalize to ensure sum equals 100%
+                      completePct = Math.round((completeRaw / totalRaw) * 100);
+                      missingPct = Math.round((missingRaw / totalRaw) * 100);
+                      expiredPct = 100 - completePct - missingPct; // Ensure sum = 100
+                    } else {
+                      completePct = missingPct = expiredPct = 0;
+                    }
+
+                    const items = [
+                      {
+                        name: "Complete",
+                        value: analytics.consent_status.complete,
+                        pct: completePct,
+                        color: "text-green-600",
+                      },
+                      {
+                        name: "Missing",
+                        value: analytics.consent_status.missing,
+                        pct: missingPct,
+                        color: "text-amber-600",
+                      },
+                      {
+                        name: "Expired",
+                        value: analytics.consent_status.expiring,
+                        pct: expiredPct,
+                        color: "text-yellow-500",
+                      },
+                    ];
+
+                    return items.map((item) => (
                       <div
                         key={item.name}
                         className="flex items-center justify-between"
@@ -723,11 +809,11 @@ const AnalyticsDashboardView = ({
                         </span>
                         <span className="text-xs font-bold text-gray-900">
                           {item.value} of {analytics.consent_status.total} (
-                          {pct}%)
+                          {item.pct}%)
                         </span>
                       </div>
-                    );
-                  })}
+                    ));
+                  })()}
                 </div>
               </div>
             </Card>
@@ -1181,23 +1267,43 @@ const AnalyticsDashboardView = ({
         )
       ) : activeTab === "Compliance" ? (
         (() => {
-          const totalTalents = analytics.consent_status.total;
+          const totalContracts = analytics.consent_status.total;
+          const totalTalents = analytics.consent_status.total_talents;
           const activeCount = analytics.consent_status.complete;
-          const activePct = totalTalents
-            ? Math.round((activeCount / totalTalents) * 100)
+          const activePct = totalContracts
+            ? Math.min(Math.round((activeCount / totalContracts) * 100), 100)
             : 0;
           const verifiedCount = analytics.consent_status.verified;
           const verificationPct = totalTalents
-            ? Math.round((verifiedCount / totalTalents) * 100)
+            ? Math.min(Math.round((verifiedCount / totalTalents) * 100), 100)
             : 0;
-          const expiringSoonLicensesCount = analytics.consent_status.expiring;
-          const consentExpiringCount = analytics.consent_status.expiring;
+          const expiredContractsCount =
+            analytics.consent_status.expiring_current_month;
+          const consentExpiredCount = analytics.consent_status.expiring;
           const missingCount = analytics.consent_status.missing;
-          const completePct = activePct;
-          const expiringPct = totalTalents
-            ? Math.round((consentExpiringCount / totalTalents) * 100)
+          // Calculate consent status percentages ensuring they sum to 100%
+          const completeRaw = totalContracts
+            ? (activeCount / totalContracts) * 100
             : 0;
-          const missingPct = Math.max(100 - completePct - expiringPct, 0);
+          const expiredRaw = totalContracts
+            ? (consentExpiredCount / totalContracts) * 100
+            : 0;
+          const missingRaw = totalContracts
+            ? (missingCount / totalContracts) * 100
+            : 0;
+
+          const totalRaw = completeRaw + expiredRaw + missingRaw;
+
+          let completePct, expiredPct, missingPct;
+
+          if (totalRaw > 0) {
+            // Normalize to ensure sum equals 100%
+            completePct = Math.round((completeRaw / totalRaw) * 100);
+            expiredPct = Math.round((expiredRaw / totalRaw) * 100);
+            missingPct = 100 - completePct - expiredPct; // Ensure sum = 100
+          } else {
+            completePct = expiredPct = missingPct = 0;
+          }
 
           const parseUsDate = (v: string) => {
             if (!v || v === "—" || v === "N/A") return null;
@@ -1245,18 +1351,58 @@ const AnalyticsDashboardView = ({
             talentData.find((t: any) => t.name === pipelineTalentName) ||
             talentData.find((t: any) => t.id === "julia");
 
+          // Map expired licenses and add numbering for duplicates
+          const brandNameCounts: Record<string, number> = {};
           const effectiveExpired: any[] = expiredLicensesFromDB.map(
-            (x: any) => ({
-              id: x.id,
-              template_id: x.id,
-              talent_name: x.talent_name ?? x.talent ?? "Unknown",
-              talent_avatar: x.talent_avatar ?? null,
-              brand: x.brand_name ?? x.client_name ?? "—",
-              end_date:
-                x.deadline ?? x.effective_end_date ?? x.end_date ?? null,
-              client_name: x.brand_name ?? x.client_name ?? "—",
-            }),
+            (x: any) => {
+              const brandName =
+                x.brand_name ?? x.client_name ?? "Unknown License";
+
+              // Track count for this brand name
+              brandNameCounts[brandName] =
+                (brandNameCounts[brandName] || 0) + 1;
+              const count = brandNameCounts[brandName];
+
+              // Add number suffix if there are duplicates
+              const displayName =
+                count > 1 ? `${brandName} #${count}` : brandName;
+
+              return {
+                id: x.id,
+                template_id: x.template_id,
+                talent_id: x.talent_id,
+                talent_name: x.talent_name ?? x.talent ?? "Unknown",
+                talent_avatar: x.talent_avatar ?? null,
+                brand: displayName,
+                end_date:
+                  x.deadline ?? x.effective_end_date ?? x.end_date ?? null,
+                client_name: displayName,
+              };
+            },
           );
+
+          // Add #1 suffix to first occurrence if there are duplicates
+          const finalBrandCounts: Record<string, number> = {};
+          expiredLicensesFromDB.forEach((x: any) => {
+            const brandName =
+              x.brand_name ?? x.client_name ?? "Unknown License";
+            finalBrandCounts[brandName] =
+              (finalBrandCounts[brandName] || 0) + 1;
+          });
+
+          effectiveExpired.forEach((license, index) => {
+            const originalBrand =
+              expiredLicensesFromDB[index].brand_name ??
+              expiredLicensesFromDB[index].client_name ??
+              "Unknown License";
+            if (
+              finalBrandCounts[originalBrand] > 1 &&
+              !license.brand.includes("#")
+            ) {
+              license.brand = `${originalBrand} #1`;
+              license.client_name = `${originalBrand} #1`;
+            }
+          });
 
           return (
             <div className="space-y-6 animate-in fade-in duration-500">
@@ -1274,15 +1420,15 @@ const AnalyticsDashboardView = ({
                     icon: <CheckCircle2 className="w-5 h-5 text-green-600" />,
                     label: "Active Consents",
                     value: `${activePct}%`,
-                    sub: `${activeCount} of ${totalTalents} complete`,
+                    sub: `${activeCount} of ${totalContracts} complete`,
                     pct: activePct,
                     barColor: "bg-gray-400",
                   },
                   {
                     icon: <AlertCircle className="w-5 h-5 text-orange-600" />,
-                    label: "Expiring Soon",
-                    value: String(expiringSoonLicensesCount),
-                    sub: "Next 10 days",
+                    label: "Expired Contracts",
+                    value: String(expiredContractsCount),
+                    sub: "Terminated or expired",
                     pct: null,
                     barColor: "",
                   },
@@ -1322,9 +1468,30 @@ const AnalyticsDashboardView = ({
               </div>
 
               <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
-                  License Expiry Pipeline
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">
+                    License Expiry Pipeline
+                  </h3>
+                  <button
+                    onClick={() => setRefreshTrigger((prev) => prev + 1)}
+                    disabled={isRefreshingExpired}
+                    className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold border rounded-lg transition-all ${
+                      isRefreshingExpired
+                        ? "text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed"
+                        : "text-gray-600 hover:text-gray-900 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                    }`}
+                    title={
+                      isRefreshingExpired
+                        ? "Refreshing..."
+                        : "Refresh expired licenses"
+                    }
+                  >
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 ${isRefreshingExpired ? "animate-spin" : ""}`}
+                    />
+                    {isRefreshingExpired ? "Refreshing..." : "Refresh"}
+                  </button>
+                </div>
                 <div className="space-y-3">
                   {effectiveExpired.length === 0 ? (
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
@@ -1357,7 +1524,9 @@ const AnalyticsDashboardView = ({
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-black text-gray-900 truncate">
-                              {license.talent_name || "Assigned Talent"}
+                              {license.brand ||
+                                license.client_name ||
+                                "Unknown License"}
                             </p>
                             <p className="text-xs font-bold text-gray-500 truncate">
                               Expired on {formatLicenseDate(license.end_date)}
@@ -1395,9 +1564,9 @@ const AnalyticsDashboardView = ({
                           barClass: "bg-gray-900",
                         },
                         {
-                          label: "Expiring",
-                          count: consentExpiringCount,
-                          pct: expiringPct,
+                          label: "Expired",
+                          count: consentExpiredCount,
+                          pct: expiredPct,
                           labelColor: "text-orange-600",
                           barClass: "bg-[#FB923C]/30",
                         },

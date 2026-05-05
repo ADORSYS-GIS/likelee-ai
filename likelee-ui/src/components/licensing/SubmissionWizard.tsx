@@ -83,6 +83,7 @@ interface SubmissionWizardProps {
     modifications_allowed?: string;
   } | null;
   isRenewalPrefill?: boolean;
+  oldLicenseId?: string; // ID of expired license being renewed
   brandRequestContext?: {
     brand_id: string;
     brand_name?: string;
@@ -137,6 +138,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   isSportsAgency = false,
   initialValues,
   isRenewalPrefill = false,
+  oldLicenseId,
   brandRequestContext,
 }) => {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
@@ -400,16 +402,6 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
       setIsSyncing(true);
       try {
-        // Debug: log what we're sending
-        console.log(
-          "Creating draft with brandRequestContext:",
-          brandRequestContext,
-        );
-        console.log(
-          "licensing_request_id being sent:",
-          brandRequestContext?.licensing_request_id,
-        );
-
         // 1. Create/Update draft in Likelee DB to persist client info early
         const draft = await createLicenseSubmissionDraft({
           template_id: currentTemplate.id,
@@ -577,6 +569,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         talent_names: currentData.talent_name,
         requires_agency_signature: requiresAgencySignature,
         licensing_request_id: brandRequestContext?.licensing_request_id,
+        old_license_id: oldLicenseId, // Pass the old license ID for renewal tracking
       });
 
       const finalizedSubmissionId = (finalizeResult as any)?.id || submissionId;
