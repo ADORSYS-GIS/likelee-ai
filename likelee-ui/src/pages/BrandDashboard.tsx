@@ -5662,8 +5662,7 @@ export default function BrandDashboard() {
                                         // meta.brand_signing_url (primary) or
                                         // meta.docuseal_signing_url (fallback).
                                         const signingUrl =
-                                          contract?.meta
-                                            ?.brand_signing_url ||
+                                          contract?.meta?.brand_signing_url ||
                                           contract?.meta
                                             ?.docuseal_signing_url ||
                                           contract?.signing_url ||
