@@ -3,6 +3,7 @@ export function createPageUrl(pageName: string): string {
 }
 
 export { getUserFriendlyError } from "./error-utils";
+export { createBookDemoUrl } from "./bookDemo";
 export function clampAndSnapCommissionPct(value: number): number {
   if (!Number.isFinite(value)) return 0;
   const clamped = Math.max(0, Math.min(100, value));
