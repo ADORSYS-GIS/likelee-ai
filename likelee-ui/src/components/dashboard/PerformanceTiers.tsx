@@ -608,13 +608,6 @@ export const PerformanceTiers: React.FC<{
                             ></div>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full sm:w-auto h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-                        >
-                          View
-                        </Button>
                       </div>
                     ))
                   ) : (
