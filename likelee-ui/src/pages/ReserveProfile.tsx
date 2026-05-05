@@ -1776,7 +1776,7 @@ export default function ReserveProfile() {
                   }
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Download
+                  {t("reserveProfile.terms.download")}
                 </Button>
               </div>
 
@@ -1795,16 +1795,16 @@ export default function ReserveProfile() {
                       htmlFor="terms"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      I agree to the{" "}
+                      {t("reserveProfile.terms.agreeTo")}{" "}
                       <a
                         href="https://likelee.ai/privacypolicy"
                         target="_blank"
                         rel="noreferrer"
                         className="text-indigo-600 underline"
                       >
-                        Privacy Policy
+                        {t("reserveProfile.terms.policyLink")}
                       </a>{" "}
-                      and Terms of Service.
+                      {t("reserveProfile.terms.andTerms")}
                     </label>
                     <p className="text-sm text-gray-500">
                       {t(
