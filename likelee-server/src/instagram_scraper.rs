@@ -3,7 +3,7 @@ use crate::{
     config::AppState,
     services::apify::{ApifyService, InstagramProfileData},
 };
-use axum::http::{HeaderMap, StatusCode};
+use axum::http::StatusCode;
 use axum::{
     extract::{Query, State},
     Json,
@@ -278,89 +278,9 @@ pub async fn scrape_instagram_profile_query(
 }
 
 pub async fn handle_apify_webhook(
-    State(state): State<AppState>,
-    headers: HeaderMap,
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let webhook_secret = &state.apify_webhook_secret;
-    if webhook_secret.is_empty() {
-        tracing::warn!("apify webhook secret not configured");
-        return Err((
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Webhook processing not configured".to_string(),
-        ));
-    }
+    tracing::info!(?payload, "apify webhook received (placeholder - webhook integration deferred)");
 
-    let provided_secret = headers
-        .get("x-webhook-secret")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-
-    if provided_secret != webhook_secret {
-        tracing::warn!("apify webhook: invalid secret");
-        return Err((StatusCode::UNAUTHORIZED, "Invalid webhook secret".to_string()));
-    }
-
-    tracing::info!(?payload, "apify webhook received");
-
-    let handle = payload
-        .get("username")
-        .or_else(|| payload.get("ownerUsername"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-
-    if handle.is_empty() {
-        tracing::warn!("apify webhook: no username in payload");
-        return Ok(Json(
-            json!({"status": "ok", "note": "no username in payload"}),
-        ));
-    }
-
-    let followers = payload
-        .get("followers")
-        .or_else(|| payload.get("followersCount"))
-        .and_then(|v| v.as_i64())
-        .or_else(|| {
-            payload
-                .get("followers")
-                .or_else(|| payload.get("followersCount"))
-                .and_then(|v| v.as_str())
-                .and_then(|s| s.parse::<i64>().ok())
-        });
-
-    if let Some(follower_count) = followers {
-        tracing::info!(
-            handle = %handle,
-            followers = %follower_count,
-            "updating creator instagram_followers from webhook"
-        );
-
-        let update_body = json!({
-            "instagram_followers": follower_count,
-            "instagram_connected": true,
-            "instagram_last_synced": chrono::Utc::now().to_rfc3339(),
-        });
-
-        let body_str = serde_json::to_string(&update_body)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let _ = state
-            .pg
-            .from("creators")
-            .eq("instagram_handle", &handle)
-            .update(&body_str)
-            .execute()
-            .await;
-
-        let _ = state
-            .pg
-            .from("creators")
-            .eq("platform_handle", &handle)
-            .update(&body_str)
-            .execute()
-            .await;
-    }
-
-    Ok(Json(json!({"status": "ok"})))
+    Ok(Json(json!({"status": "ok", "note": "webhook integration deferred in favor of synchronous request-response"})))
 }

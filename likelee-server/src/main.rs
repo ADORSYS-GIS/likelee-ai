@@ -321,7 +321,6 @@ async fn main() {
         // Apify Integration
         apify_api_token: cfg.apify_api_token.clone(),
         apify_scraper_actor_id: cfg.apify_scraper_actor_id.clone(),
-        apify_webhook_secret: cfg.apify_webhook_secret.clone(),
 
         // JWKS cache for JWT Signing Keys
         jwks_cache: jwks_cache.clone(),

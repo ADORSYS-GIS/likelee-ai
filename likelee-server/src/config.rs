@@ -327,9 +327,6 @@ pub struct ServerConfig {
         default = "apify~instagram-profile-scraper"
     )]
     pub apify_scraper_actor_id: String,
-
-    #[envconfig(from = "APIFY_WEBHOOK_SECRET", default = "")]
-    pub apify_webhook_secret: String,
 }
 
 #[derive(Clone)]
@@ -452,7 +449,6 @@ pub struct AppState {
     // Apify Integration
     pub apify_api_token: String,
     pub apify_scraper_actor_id: String,
-    pub apify_webhook_secret: String,
 
     // JWKS cache for JWT Signing Keys (Supabase)
     pub jwks_cache: std::sync::Arc<crate::auth::JwksCache>,
