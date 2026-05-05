@@ -535,7 +535,8 @@
       "mustAgreeTitle": "Accord requis",
       "mustAgree": "Vous devez accepter les conditions pour terminer votre inscription.",
       "submitting": "Soumission...",
-      "completeRegistration": "Terminer l'inscription"
+      "completeRegistration": "Terminer l'inscription",
+      "download": "Télécharger"
     }
   },
   "faces": {

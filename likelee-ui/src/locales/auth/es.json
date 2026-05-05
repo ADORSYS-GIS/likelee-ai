@@ -619,7 +619,8 @@
       "mustAgreeTitle": "Acuerdo requerido",
       "mustAgree": "Debes aceptar los términos para completar tu registro.",
       "submitting": "Enviando...",
-      "completeRegistration": "Completar registro"
+      "completeRegistration": "Completar registro",
+      "download": "Descargar"
     }
   },
   "creatorSignupOptions.main.title": "What type of creator are you?",
