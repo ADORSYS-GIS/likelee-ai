@@ -1819,6 +1819,7 @@ pub async fn finalize(
                                                         status,
                                                         body
                                                     );
+                                                    // Note: This failure doesn't break the renewal flow, but may affect brand dashboard display
                                                 }
                                                 Err(e) => {
                                                     tracing::error!(
