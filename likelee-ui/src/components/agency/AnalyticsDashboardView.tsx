@@ -1,8 +1,14 @@
-import React, { useEffect, useMemo, useState } from "react";
+                                                                                                                                                                                                                                                                                    import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   DollarSign,
   TrendingUp,
@@ -13,6 +19,8 @@ import {
   CheckCircle2,
   ShieldCheck,
   Download,
+  FileText,
+  ChevronDown,
   Settings,
 } from "lucide-react";
 import { RefreshCw } from "lucide-react";
@@ -178,6 +186,365 @@ const AnalyticsDashboardView = ({
       ? ["Overview", "Roster Insights", "Clients & Campaigns", "Compliance"]
       : ["Overview", "Roster Insights", "Clients & Campaigns"];
 
+  const handleExportReport = useCallback(() => {
+    const now = new Date();
+    const dateStr = format(now, "yyyy-MM-dd");
+    const esc = (v: any) => {
+      const s = String(v ?? "");
+      return s.includes(",") || s.includes('"') || s.includes("\n")
+        ? `"${s.replace(/"/g, '""')}"`
+        : s;
+    };
+    const row = (...cols: any[]) => cols.map(esc).join(",");
+    const lines: string[] = [];
+
+    lines.push(row("ANALYTICS REPORT"));
+    lines.push(row("Generated", now.toLocaleString()));
+    lines.push(row("Mode", agencyMode));
+    lines.push("");
+
+    // ── OVERVIEW ─────────────────────────────────────────────────────────────
+    if (analytics) {
+      lines.push(row("=== OVERVIEW ==="));
+      lines.push(row("Metric", "Value", "vs Last Period"));
+      lines.push(row(
+        "Total Earnings (30d)",
+        analytics.overview?.total_earnings_formatted ?? "",
+        `${analytics.overview?.earnings_growth_percentage ?? 0}%`,
+      ));
+      lines.push(row(
+        agencyMode === "AI" ? "Active Licenses" : "Active Campaigns",
+        analytics.overview?.active_campaigns ?? 0,
+        `${analytics.overview?.active_campaigns_growth_percentage ?? 0}%`,
+      ));
+      if (agencyMode === "AI") {
+        lines.push(row(
+          "AI Usages (30d)",
+          analytics.ai_usage?.total_usages_30d ?? 0,
+          `${analytics.ai_usage?.usages_growth_percentage ?? 0}%`,
+        ));
+        lines.push(row("AI Usage — Image", `${analytics.ai_usage?.usage_by_type?.image ?? 0}%`));
+        lines.push(row("AI Usage — Video", `${analytics.ai_usage?.usage_by_type?.video ?? 0}%`));
+        lines.push(row("AI Usage — Voice", `${analytics.ai_usage?.usage_by_type?.voice ?? 0}%`));
+      } else {
+        lines.push(row("Avg Campaign Value", analytics.overview?.avg_value_formatted ?? ""));
+        lines.push(row("Top Scope", analytics.overview?.top_scope ?? ""));
+      }
+      lines.push("");
+
+      lines.push(row("Campaign Status", "Count"));
+      lines.push(row("In Progress", analytics.campaign_status?.in_progress ?? 0));
+      lines.push(row("Ready to Launch", analytics.campaign_status?.ready_to_launch ?? 0));
+      lines.push(row("Completed", analytics.campaign_status?.completed ?? 0));
+      lines.push("");
+
+      if (Array.isArray(analytics.monthly_trends) && analytics.monthly_trends.length > 0) {
+        lines.push(row("Monthly Performance Trends"));
+        lines.push(row("Month", "Earnings ($)", agencyMode === "AI" ? "Licenses" : "Campaigns", "AI Usages"));
+        for (const m of analytics.monthly_trends) {
+          lines.push(row(m.month ?? "", m.earnings ?? 0, m.campaigns ?? 0, m.usages ?? 0));
+        }
+        lines.push("");
+      }
+
+      if (analytics.consent_status) {
+        const cs = analytics.consent_status;
+        lines.push(row("Consent Status Summary", "Count"));
+        lines.push(row("Total Talents", cs.total_talents ?? 0));
+        lines.push(row("Verified", cs.verified ?? 0));
+        lines.push(row("Complete Consents", cs.complete ?? 0));
+        lines.push(row("Missing Consents", cs.missing ?? 0));
+        lines.push(row("Expiring Consents", cs.expiring ?? 0));
+        lines.push(row("Expiring This Month", cs.expiring_current_month ?? 0));
+        lines.push("");
+      }
+    }
+
+    // ── ROSTER INSIGHTS ───────────────────────────────────────────────────────
+    if (rosterInsights) {
+      lines.push(row("=== ROSTER INSIGHTS ==="));
+      const highlights: Array<[string, any]> = [
+        ["Top Performer", rosterInsights.top_performer],
+        ["Most Active", rosterInsights.most_active],
+        ["Highest Engagement", rosterInsights.highest_engagement],
+      ];
+      lines.push(row("Highlight", "Talent", "Value", "Detail"));
+      for (const [label, h] of highlights) {
+        if (h) lines.push(row(label, h.talent_name ?? "", h.value ?? "", h.sub_text ?? ""));
+      }
+      lines.push("");
+
+      if (Array.isArray(rosterInsights.talent_metrics) && rosterInsights.talent_metrics.length > 0) {
+        lines.push(row("Talent Performance (30d)"));
+        lines.push(row("Talent", "Earnings (30d)", "Projected Earnings", agencyMode === "AI" ? "Licenses" : "Campaigns", "Avg Value", "Status"));
+        for (const t of rosterInsights.talent_metrics) {
+          lines.push(row(
+            t.talent_name ?? "",
+            t.earnings_30d_formatted ?? `$${((t.earnings_30d_cents ?? 0) / 100).toFixed(2)}`,
+            t.projected_earnings_formatted ?? `$${((t.projected_earnings_cents ?? 0) / 100).toFixed(2)}`,
+            t.campaigns_count_30d ?? 0,
+            t.avg_value_formatted ?? "",
+            t.status ?? "",
+          ));
+        }
+        lines.push("");
+      }
+    }
+
+    // ── CLIENTS & CAMPAIGNS ───────────────────────────────────────────────────
+    if (clientsAnalytics) {
+      lines.push(row("=== CLIENTS & CAMPAIGNS ==="));
+      lines.push(row("Metric", "Value"));
+      lines.push(row("Repeat Client Rate", `${clientsAnalytics.repeat_client_rate ?? 0}%`));
+      if (agencyMode === "IRL") {
+        lines.push(row("Avg Campaign Duration", `${clientsAnalytics.avg_campaign_duration ?? 0} days`));
+      }
+      lines.push(row("New Client Acquisitions", clientsAnalytics.client_acquisition ?? 0));
+      lines.push("");
+
+      if (Array.isArray(clientsAnalytics.top_clients_performance) && clientsAnalytics.top_clients_performance.length > 0) {
+        lines.push(row("Top Clients Performance"));
+        lines.push(row("Client", agencyMode === "AI" ? "Licenses" : "Campaigns", "Budget", "% of Total"));
+        for (const c of clientsAnalytics.top_clients_performance) {
+          lines.push(row(c.name ?? "", c.campaigns ?? 0, c.budget ?? "", `${c.percentage ?? 0}%`));
+        }
+        lines.push("");
+      }
+
+      if (Array.isArray(clientsAnalytics.earnings_by_client) && clientsAnalytics.earnings_by_client.length > 0) {
+        lines.push(row("Earnings by Client"));
+        lines.push(row("Client", "Budget"));
+        for (const c of clientsAnalytics.earnings_by_client) {
+          lines.push(row(c.name ?? "", c.budget ?? ""));
+        }
+        lines.push("");
+      }
+
+      if (Array.isArray(clientsAnalytics.geographic_distribution) && clientsAnalytics.geographic_distribution.length > 0) {
+        lines.push(row("Geographic Distribution"));
+        lines.push(row("Region", "Value"));
+        for (const g of clientsAnalytics.geographic_distribution) {
+          lines.push(row(g.name ?? "", g.value ?? 0));
+        }
+        lines.push("");
+      }
+    }
+
+    // ── COMPLIANCE ────────────────────────────────────────────────────────────
+    if (agencyMode === "AI") {
+      lines.push(row("=== COMPLIANCE ==="));
+      if (Array.isArray(expiredLicensesFromDB) && expiredLicensesFromDB.length > 0) {
+        lines.push(row("License Expiry Pipeline"));
+        lines.push(row("Talent", "Brand / Client", "Expiry Date"));
+        for (const l of expiredLicensesFromDB) {
+          lines.push(row(
+            l.talent_name ?? "",
+            l.brand_name ?? l.client_name ?? l.brand ?? "",
+            formatLicenseDate(l.end_date ?? l.effective_end_date ?? l.deadline),
+          ));
+        }
+        lines.push("");
+      }
+      if (Array.isArray(licenseComplianceData) && licenseComplianceData.length > 0) {
+        lines.push(row("License Compliance Details"));
+        lines.push(row("Talent", "License", "Status", "Expiry", "Auto-Renew"));
+        for (const l of licenseComplianceData) {
+          lines.push(row(l.talent ?? "", l.license ?? "", l.status ?? "", l.expiry ?? "", l.auto ? "Yes" : "No"));
+        }
+        lines.push("");
+      }
+    }
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `analytics-report-${dateStr}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Report exported", description: `analytics-report-${dateStr}.csv` });
+  }, [analytics, rosterInsights, clientsAnalytics, expiredLicensesFromDB, talentData, licenseComplianceData, agencyMode, toast]);
+
+  const handleExportPdf = useCallback(() => {
+    const now = new Date();
+    const dateStr = format(now, "yyyy-MM-dd");
+
+    const mkTable = (headers: string[], rows: any[][], title: string) => {
+      if (!rows.length) return "";
+      const ths = headers.map((h) => `<th>${h}</th>`).join("");
+      const trs = rows
+        .map((r) => `<tr>${r.map((c) => `<td>${String(c ?? "")}</td>`).join("")}</tr>`)
+        .join("");
+      return `<h3>${title}</h3><table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+    };
+
+    const kpi = (label: string, value: string, sub = "") =>
+      `<div class="kpi"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ""}</div>`;
+
+    const overviewHtml = analytics ? (() => {
+      const campaignTable = mkTable(["Status", "Count"], [
+        ["In Progress", analytics.campaign_status?.in_progress ?? 0],
+        ["Ready to Launch", analytics.campaign_status?.ready_to_launch ?? 0],
+        ["Completed", analytics.campaign_status?.completed ?? 0],
+      ], "Campaign Status");
+
+      const trendsTable = Array.isArray(analytics.monthly_trends) && analytics.monthly_trends.length
+        ? mkTable(
+            ["Month", "Earnings ($)", agencyMode === "AI" ? "Licenses" : "Campaigns", "AI Usages"],
+            analytics.monthly_trends.map((m: any) => [m.month ?? "", m.earnings ?? 0, m.campaigns ?? 0, m.usages ?? 0]),
+            "Monthly Performance Trends",
+          )
+        : "";
+
+      const aiUsageTable = agencyMode === "AI" && analytics.ai_usage?.usage_by_type
+        ? mkTable(["Type", "Percentage"], [
+            ["Image", (analytics.ai_usage.usage_by_type.image ?? 0) + "%"],
+            ["Video", (analytics.ai_usage.usage_by_type.video ?? 0) + "%"],
+            ["Voice", (analytics.ai_usage.usage_by_type.voice ?? 0) + "%"],
+          ], "AI Usage Type Distribution")
+        : "";
+
+      const consentTable = analytics.consent_status
+        ? mkTable(["Metric", "Count"], [
+            ["Total Talents", analytics.consent_status.total_talents ?? 0],
+            ["Verified", analytics.consent_status.verified ?? 0],
+            ["Complete Consents", analytics.consent_status.complete ?? 0],
+            ["Missing Consents", analytics.consent_status.missing ?? 0],
+            ["Expiring Consents", analytics.consent_status.expiring ?? 0],
+            ["Expiring This Month", analytics.consent_status.expiring_current_month ?? 0],
+          ], "Consent Status Summary")
+        : "";
+
+      const kpi1 = kpi("Total Earnings (30d)", analytics.overview?.total_earnings_formatted ?? "—", (analytics.overview?.earnings_growth_percentage ?? 0) + "% vs last period");
+      const kpi2 = kpi(agencyMode === "AI" ? "Active Licenses" : "Active Campaigns", String(analytics.overview?.active_campaigns ?? 0), (analytics.overview?.active_campaigns_growth_percentage ?? 0) + "% vs last period");
+      const kpi3 = agencyMode === "AI"
+        ? kpi("AI Usages (30d)", String(analytics.ai_usage?.total_usages_30d ?? 0), (analytics.ai_usage?.usages_growth_percentage ?? 0) + "% vs last period")
+        : kpi("Avg Campaign Value", analytics.overview?.avg_value_formatted ?? "—");
+
+      return `<div class="section"><h2>Overview</h2><div class="kpi-grid">${kpi1}${kpi2}${kpi3}</div>${campaignTable}${trendsTable}${aiUsageTable}${consentTable}</div>`;
+    })() : "";
+
+    const rosterHtml = rosterInsights ? (() => {
+      const highlights = [["Top Performer", rosterInsights.top_performer], ["Most Active", rosterInsights.most_active], ["Highest Engagement", rosterInsights.highest_engagement]]
+        .filter(([, h]) => !!h)
+        .map(([label, h]: any) => kpi(String(label), h.talent_name ?? "", (h.value ?? "") + " · " + (h.sub_text ?? "")))
+        .join("");
+
+      const talentTable = Array.isArray(rosterInsights.talent_metrics) && rosterInsights.talent_metrics.length
+        ? mkTable(
+            ["Talent", "Earnings (30d)", "Projected", agencyMode === "AI" ? "Licenses" : "Campaigns", "Avg Value", "Status"],
+            rosterInsights.talent_metrics.map((t: any) => [
+              t.talent_name ?? "",
+              t.earnings_30d_formatted ?? "$" + ((t.earnings_30d_cents ?? 0) / 100).toFixed(2),
+              t.projected_earnings_formatted ?? "$" + ((t.projected_earnings_cents ?? 0) / 100).toFixed(2),
+              t.campaigns_count_30d ?? 0,
+              t.avg_value_formatted ?? "",
+              t.status ?? "",
+            ]),
+            "Talent Performance (30d)",
+          )
+        : "";
+
+      return `<div class="section"><h2>Roster Insights</h2><div class="kpi-grid">${highlights}</div>${talentTable}</div>`;
+    })() : "";
+
+    const clientsHtml = clientsAnalytics ? (() => {
+      const kpis = kpi("Repeat Client Rate", (clientsAnalytics.repeat_client_rate ?? 0) + "%")
+        + (agencyMode === "IRL" ? kpi("Avg Campaign Duration", (clientsAnalytics.avg_campaign_duration ?? 0) + " days") : "")
+        + kpi("New Client Acquisitions", String(clientsAnalytics.client_acquisition ?? 0));
+
+      const topClientsTable = Array.isArray(clientsAnalytics.top_clients_performance) && clientsAnalytics.top_clients_performance.length
+        ? mkTable(
+            ["Client", agencyMode === "AI" ? "Licenses" : "Campaigns", "Budget", "% of Total"],
+            clientsAnalytics.top_clients_performance.map((c: any) => [c.name ?? "", c.campaigns ?? 0, c.budget ?? "", (c.percentage ?? 0) + "%"]),
+            "Top Clients Performance",
+          )
+        : "";
+
+      const earningsTable = Array.isArray(clientsAnalytics.earnings_by_client) && clientsAnalytics.earnings_by_client.length
+        ? mkTable(["Client", "Budget"], clientsAnalytics.earnings_by_client.map((c: any) => [c.name ?? "", c.budget ?? ""]), "Earnings by Client")
+        : "";
+
+      const geoTable = Array.isArray(clientsAnalytics.geographic_distribution) && clientsAnalytics.geographic_distribution.length
+        ? mkTable(["Region", "Value"], clientsAnalytics.geographic_distribution.map((g: any) => [g.name ?? "", g.value ?? 0]), "Geographic Distribution")
+        : "";
+
+      return `<div class="section"><h2>Clients &amp; Campaigns</h2><div class="kpi-grid">${kpis}</div>${topClientsTable}${earningsTable}${geoTable}</div>`;
+    })() : "";
+
+    const complianceHtml = agencyMode === "AI" ? (() => {
+      const expiryTable = Array.isArray(expiredLicensesFromDB) && expiredLicensesFromDB.length
+        ? mkTable(
+            ["Talent", "Brand / Client", "Expiry Date"],
+            expiredLicensesFromDB.map((l: any) => [
+              l.talent_name ?? "",
+              l.brand_name ?? l.client_name ?? l.brand ?? "",
+              formatLicenseDate(l.end_date ?? l.effective_end_date ?? l.deadline),
+            ]),
+            "License Expiry Pipeline",
+          )
+        : "<p>No expired licenses found.</p>";
+
+      const complianceTable = Array.isArray(licenseComplianceData) && licenseComplianceData.length
+        ? mkTable(
+            ["Talent", "License", "Status", "Expiry", "Auto-Renew"],
+            licenseComplianceData.map((l: any) => [l.talent ?? "", l.license ?? "", l.status ?? "", l.expiry ?? "", l.auto ? "Yes" : "No"]),
+            "License Compliance Details",
+          )
+        : "";
+
+      return `<div class="section"><h2>Compliance</h2>${expiryTable}${complianceTable}</div>`;
+    })() : "";
+
+    const styles = [
+      "*{box-sizing:border-box;margin:0;padding:0}",
+      "body{font-family:Arial,sans-serif;padding:32px;color:#111827;font-size:12px;line-height:1.5}",
+      ".report-header{border-bottom:3px solid #111827;padding-bottom:16px;margin-bottom:24px}",
+      ".report-header h1{font-size:22px;font-weight:900;letter-spacing:-0.5px}",
+      ".report-header .meta{color:#6b7280;font-size:11px;margin-top:4px}",
+      ".section{margin-bottom:32px}",
+      "h2{font-size:15px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;border-bottom:2px solid #111827;padding-bottom:6px;margin:28px 0 14px}",
+      "h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#374151;margin:16px 0 8px}",
+      ".kpi-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}",
+      ".kpi{flex:1;min-width:130px;border:1px solid #e5e7eb;border-radius:8px;padding:12px 14px;background:#f9fafb}",
+      ".kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:4px}",
+      ".kpi-value{font-size:18px;font-weight:900;color:#111827}",
+      ".kpi-sub{font-size:10px;color:#6b7280;margin-top:2px}",
+      "table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px}",
+      "thead tr{background:#111827;color:#fff}",
+      "th{text-align:left;padding:7px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}",
+      "td{padding:6px 10px;border-bottom:1px solid #e5e7eb}",
+      "tr:nth-child(even) td{background:#f9fafb}",
+      "p{color:#6b7280;font-size:11px;margin:8px 0}",
+      "@media print{body{padding:16px}.section{page-break-inside:avoid}h2{page-break-after:avoid}}",
+    ].join("");
+
+    const html = [
+      "<!doctype html><html><head><meta charset=\"utf-8\"/>",
+      "<title>Analytics Report</title>",
+      "<style>" + styles + "</style>",
+      "</head><body>",
+      "<div class=\"report-header\"><h1>Analytics Report</h1>",
+      "<div class=\"meta\">Generated: " + now.toLocaleString() + " &nbsp;&middot;&nbsp; Mode: " + agencyMode + "</div></div>",
+      overviewHtml,
+      rosterHtml,
+      clientsHtml,
+      complianceHtml,
+      "</body></html>",
+    ].join("");
+
+    const win = window.open("", "_blank");
+    if (!win) {
+      toast({ title: "Popup blocked", description: "Allow popups for this site and try again.", variant: "destructive" });
+      return;
+    }
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 400);
+    toast({ title: "PDF export ready", description: "Use 'Save as PDF' in the print dialog." });
+  }, [analytics, rosterInsights, clientsAnalytics, expiredLicensesFromDB, talentData, licenseComplianceData, agencyMode, toast]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -315,12 +682,35 @@ const AnalyticsDashboardView = ({
         <DashboardSectionHeader
           title="Analytics Dashboard"
           actions={
-            <Button
-              variant="outline"
-              className="w-full gap-2 border-gray-200 bg-white px-4 text-sm font-bold transition-all hover:bg-gray-50 sm:w-auto"
-            >
-              <Download className="w-4 h-4" /> Export Report
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-gray-200 bg-white px-4 text-sm font-bold transition-all hover:bg-gray-50 sm:w-auto"
+                  disabled={loading}
+                >
+                  <Download className="w-4 h-4" />
+                  Export Report
+                  <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={handleExportReport}
+                >
+                  <Download className="w-4 h-4 text-gray-500" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={handleExportPdf}
+                >
+                  <FileText className="w-4 h-4 text-gray-500" />
+                  Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           }
         />
         <DashboardTabRail
