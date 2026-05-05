@@ -107,6 +107,7 @@ const AnalyticsDashboardView = ({
   );
   const [expiredLicensesFromDB, setExpiredLicensesFromDB] = useState<any[]>([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isRefreshingExpired, setIsRefreshingExpired] = useState(false);
   const [loading, setLoading] = useState(!initialHasWarmCache);
   const [error, setError] = useState<string | null>(null);
 
@@ -114,22 +115,54 @@ const AnalyticsDashboardView = ({
   useEffect(() => {
     if (activeTab !== "Compliance") return;
     let active = true;
-    (async () => {
-      const session = (await supabase?.auth.getSession())?.data?.session;
-      const token = session?.access_token;
-      if (!token) return;
-      const res = await fetch(`/api/agency/analytics/expired-licenses`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok && active) {
-        const data = await res.json();
-        setExpiredLicensesFromDB(Array.isArray(data) ? data : []);
+
+    const fetchExpiredLicenses = async () => {
+      setIsRefreshingExpired(true);
+      try {
+        const session = (await supabase?.auth.getSession())?.data?.session;
+        const token = session?.access_token;
+        if (!token) return;
+
+        const res = await fetch(`/api/agency/analytics/expired-licenses`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok && active) {
+          const data = await res.json();
+          setExpiredLicensesFromDB(Array.isArray(data) ? data : []);
+
+          // Show success toast when refresh is triggered manually
+          if (refreshTrigger > 0) {
+            toast({
+              title: "Refreshed",
+              description: "License expiry pipeline updated successfully.",
+              duration: 2000,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching expired licenses:", error);
+        if (refreshTrigger > 0) {
+          toast({
+            title: "Refresh failed",
+            description: "Failed to update license expiry pipeline.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+      } finally {
+        if (active) {
+          setIsRefreshingExpired(false);
+        }
       }
-    })();
+    };
+
+    fetchExpiredLicenses();
+
     return () => {
       active = false;
     };
-  }, [activeTab, refreshTrigger]);
+  }, [activeTab, refreshTrigger, toast]);
 
   const subTabs =
     agencyMode === "AI"
@@ -1432,11 +1465,22 @@ const AnalyticsDashboardView = ({
                   </h3>
                   <button
                     onClick={() => setRefreshTrigger((prev) => prev + 1)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    title="Refresh expired licenses"
+                    disabled={isRefreshingExpired}
+                    className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold border rounded-lg transition-all ${
+                      isRefreshingExpired
+                        ? "text-gray-400 border-gray-200 bg-gray-50 cursor-not-allowed"
+                        : "text-gray-600 hover:text-gray-900 border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                    }`}
+                    title={
+                      isRefreshingExpired
+                        ? "Refreshing..."
+                        : "Refresh expired licenses"
+                    }
                   >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Refresh
+                    <RefreshCw
+                      className={`w-3.5 h-3.5 ${isRefreshingExpired ? "animate-spin" : ""}`}
+                    />
+                    {isRefreshingExpired ? "Refreshing..." : "Refresh"}
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -1477,6 +1521,11 @@ const AnalyticsDashboardView = ({
                             </p>
                             <p className="text-xs font-bold text-gray-500 truncate">
                               Expired on {formatLicenseDate(license.end_date)}
+                            </p>
+                            {/* Debug info - shows license ID and status */}
+                            <p className="text-xs text-gray-400 mt-1 font-mono">
+                              ID: {license.id} • Status:{" "}
+                              {license.status || "N/A"}
                             </p>
                           </div>
                         </div>

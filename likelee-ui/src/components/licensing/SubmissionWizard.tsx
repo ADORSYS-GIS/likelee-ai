@@ -512,6 +512,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       }
 
       // Step 2: Finalize the submission (this creates the licensing_request)
+      console.log("📝 Finalizing license submission with renewal info:", {
+        old_license_id: oldLicenseId,
+        submission_id: submissionId,
+        client_name: currentData.client_name,
+        isRenewal: !!oldLicenseId,
+      });
+
       let finalizeResult = await finalizeLicenseSubmission(submissionId, {
         docuseal_template_id: currentTemplate.docuseal_template_id,
         client_name: currentData.client_name,

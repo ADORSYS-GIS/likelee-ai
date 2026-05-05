@@ -2526,6 +2526,7 @@ pub async fn get_royalties_payouts(
 }
 /// GET /api/agency/analytics/expired-licenses
 /// Returns approved licensing_requests whose `deadline` has already passed in the current month.
+/// Excludes licenses that have been renewed (status = "renewed").
 pub async fn get_expired_licenses(
     State(state): State<AppState>,
     auth_user: AuthUser,
@@ -2537,16 +2538,40 @@ pub async fn get_expired_licenses(
     // Get first day of current month
     let month_start = now.format("%Y-%m-01").to_string();
 
-    // Fetch expired approved requests from current month only
-    // Join with license_submissions to get template_id and requires_agency_signature
-    //
-    // KNOWN LIMITATION: Renewed licenses will continue to appear here until their
-    // status is manually updated. To properly handle renewals, the system would need:
-    // 1. A "renewed" status in licensing_requests, OR
-    // 2. A parent_license_id/renewed_by column to track renewal relationships
-    //
-    // Current workaround: Agencies can manually update the status of renewed licenses
-    // to "renewed" or "superseded" in the database to remove them from this list.
+    // First, let's check all expired licenses (including renewed ones) for debugging
+    let all_expired_resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id, talent_id, deadline, client_name, status, submission_id")
+        .eq("agency_id", &auth_user.id)
+        .lt("deadline", &today)
+        .gte("deadline", &month_start)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let all_expired_text = all_expired_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let all_expired: Vec<serde_json::Value> =
+        serde_json::from_str(&all_expired_text).unwrap_or(vec![]);
+
+    tracing::info!(
+        "Total expired licenses in current month: {}",
+        all_expired.len()
+    );
+    for license in &all_expired {
+        if let (Some(id), Some(status), Some(client)) = (
+            license.get("id").and_then(|v| v.as_str()),
+            license.get("status").and_then(|v| v.as_str()),
+            license.get("client_name").and_then(|v| v.as_str()),
+        ) {
+            tracing::info!("License {}: {} - status: {}", id, client, status);
+        }
+    }
+
+    // Now fetch only approved (non-renewed) expired licenses
     let resp = state
         .pg
         .from("licensing_requests")

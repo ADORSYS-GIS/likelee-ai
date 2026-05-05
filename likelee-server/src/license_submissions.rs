@@ -1171,6 +1171,11 @@ pub async fn finalize(
 
                 // If this is a renewal, mark the old license as "renewed"
                 if let Some(old_license_id) = &req.old_license_id {
+                    tracing::info!(
+                        "Processing renewal: marking old license {} as renewed",
+                        old_license_id
+                    );
+
                     let update_old_license = json!({
                         "status": "renewed",
                         "updated_at": chrono::Utc::now().to_rfc3339()
@@ -1187,24 +1192,31 @@ pub async fn finalize(
 
                     match update_result {
                         Ok(update_resp) if update_resp.status().is_success() => {
-                            tracing::info!("Marked old license {} as renewed", old_license_id);
+                            tracing::info!(
+                                "Successfully marked old license {} as renewed",
+                                old_license_id
+                            );
                         }
                         Ok(update_resp) => {
+                            let status = update_resp.status();
                             let body = update_resp.text().await.unwrap_or_default();
                             tracing::warn!(
-                                "Failed to mark old license {} as renewed: {}",
+                                "Failed to mark old license {} as renewed: status={}, body={}",
                                 old_license_id,
+                                status,
                                 body
                             );
                         }
                         Err(e) => {
-                            tracing::warn!(
+                            tracing::error!(
                                 "Error marking old license {} as renewed: {}",
                                 old_license_id,
                                 e
                             );
                         }
                     }
+                } else {
+                    tracing::info!("Not a renewal - no old_license_id provided");
                 }
             } else {
                 let body = resp.text().await.unwrap_or_default();

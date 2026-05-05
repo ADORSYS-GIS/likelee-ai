@@ -18677,6 +18677,14 @@ export default function AgencyDashboard() {
   }, [sidebarWidth]);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const handleRenew = (license: ComplianceRenewableLicense) => {
+    console.log("🔄 Initiating renewal for license:", {
+      id: license.id,
+      template_id: license.template_id,
+      client_name: license.client_name,
+      brand: license.brand,
+      status: (license as any).status,
+    });
+
     if (!license.template_id) {
       toast({
         title: "Missing template",
@@ -18708,6 +18716,7 @@ export default function AgencyDashboard() {
       licenseFee: typeof license.value === "number" ? license.value : undefined,
     });
 
+    console.log("🔄 Renewal context set, navigating to License Templates");
     setActiveView("licensing", "License Templates");
 
     toast({
