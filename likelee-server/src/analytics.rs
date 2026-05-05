@@ -156,19 +156,31 @@ pub async fn get_analytics_dashboard(
             })
             .count() as i64;
 
-        // Calculate previous month's active licenses for growth percentage
+        // Calculate active licenses count 30 days ago using proper DB query
         let thirty_days_ago_date = (now - chrono::Duration::days(30))
             .format("%Y-%m-%d")
             .to_string();
-        let prev_active_licenses_count = requests_data
-            .iter()
-            .filter(|r| {
-                let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
-                let deadline = r.get("deadline").and_then(|v| v.as_str()).unwrap_or("");
-                // Active if approved and deadline was valid 30 days ago
-                status == "approved" && deadline >= thirty_days_ago_date.as_str()
-            })
-            .count() as i64;
+
+        // Query for licenses that were active 30 days ago
+        let prev_requests_resp = state
+            .pg
+            .from("licensing_requests")
+            .select("id, status, deadline")
+            .eq("agency_id", agency_id)
+            .eq("status", "approved")
+            .gte("deadline", &thirty_days_ago_date)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let prev_requests_text = prev_requests_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let prev_requests_data: Vec<serde_json::Value> =
+            serde_json::from_str(&prev_requests_text).unwrap_or(vec![]);
+
+        let prev_active_licenses_count = prev_requests_data.len() as i64;
 
         let active_campaigns_growth_percentage = if prev_active_licenses_count > 0 {
             let growth = ((active_licenses_count - prev_active_licenses_count) as f64
@@ -204,7 +216,7 @@ pub async fn get_analytics_dashboard(
             let growth = ((total_earnings_cents - prev_earnings_cents) as f64
                 / prev_earnings_cents as f64)
                 * 100.0;
-            growth.min(100.0)
+            growth.clamp(-100.0, 100.0)
         } else if total_earnings_cents > 0 {
             100.0
         } else {
@@ -254,12 +266,14 @@ pub async fn get_analytics_dashboard(
 
         let total_earnings_formatted = format_currency(total_earnings_cents);
 
-        // B. AI USAGE — Calculate from catalogs sent to clients
+        // B. AI USAGE — Calculate from catalogs sent to clients using aggregated queries
         // Count total assets (not catalogs) and calculate growth
+
+        // Get all catalog IDs for the last 30 days in one query
         let catalogs_30d_resp = state
             .pg
             .from("agency_catalogs")
-            .select("id,sent_at,created_at")
+            .select("id")
             .eq("agency_id", agency_id)
             .gte("created_at", &thirty_days_ago)
             .execute()
@@ -272,7 +286,7 @@ pub async fn get_analytics_dashboard(
         let catalogs_30d_data: Vec<serde_json::Value> =
             serde_json::from_str(&catalogs_30d_text).unwrap_or(vec![]);
 
-        // Get catalogs from previous 30 days for growth calculation
+        // Get all catalog IDs for the previous 30 days in one query
         let catalogs_prev_resp = state
             .pg
             .from("agency_catalogs")
@@ -290,161 +304,215 @@ pub async fn get_analytics_dashboard(
         let catalogs_prev_data: Vec<serde_json::Value> =
             serde_json::from_str(&catalogs_prev_text).unwrap_or(vec![]);
 
-        // Calculate asset type distribution and total asset count
+        let mut total_assets_30d = 0i64;
+        let mut total_assets_prev = 0i64;
         let mut video_total = 0.0;
         let mut voice_total = 0.0;
         let mut image_total = 0.0;
-        let mut total_assets_30d = 0i64;
-        let mut total_assets_prev = 0i64;
 
-        // Process current period catalogs
-        for catalog in &catalogs_30d_data {
-            let catalog_id = catalog.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        // Process current period catalogs with bulk queries
+        if !catalogs_30d_data.is_empty() {
+            let catalog_ids_30d: Vec<String> = catalogs_30d_data
+                .iter()
+                .filter_map(|c| c.get("id").and_then(|v| v.as_str()))
+                .map(|s| s.to_string())
+                .collect();
 
-            // Get catalog items
-            let items_resp = state
-                .pg
-                .from("agency_catalog_items")
-                .select("id")
-                .eq("catalog_id", catalog_id)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let items_text = items_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-            let items_data: Vec<serde_json::Value> =
-                serde_json::from_str(&items_text).unwrap_or(vec![]);
-
-            let mut has_video = false;
-            let mut has_voice = false;
-            let mut has_image = false;
-
-            for item in &items_data {
-                let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
-
-                // Count assets
-                let assets_resp = state
+            if !catalog_ids_30d.is_empty() {
+                // Get all catalog items for these catalogs in one query
+                let items_resp = state
                     .pg
-                    .from("agency_catalog_assets")
-                    .select("asset_type")
-                    .eq("catalog_item_id", item_id)
+                    .from("agency_catalog_items")
+                    .select("id, catalog_id")
+                    .in_("catalog_id", catalog_ids_30d)
                     .execute()
                     .await
                     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-                let assets_text = assets_resp
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| "[]".to_string());
-                let assets_data: Vec<serde_json::Value> =
-                    serde_json::from_str(&assets_text).unwrap_or(vec![]);
+                let items_text = items_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+                let items_data: Vec<serde_json::Value> =
+                    serde_json::from_str(&items_text).unwrap_or(vec![]);
 
-                total_assets_30d += assets_data.len() as i64;
+                if !items_data.is_empty() {
+                    let item_ids: Vec<String> = items_data
+                        .iter()
+                        .filter_map(|i| i.get("id").and_then(|v| v.as_str()))
+                        .map(|s| s.to_string())
+                        .collect();
 
-                for asset in &assets_data {
-                    let asset_type = asset
-                        .get("asset_type")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_lowercase();
-                    if asset_type.contains("video") {
-                        has_video = true;
-                    } else if asset_type.contains("voice") || asset_type.contains("audio") {
-                        has_voice = true;
-                    } else if asset_type.contains("image") || asset_type.contains("photo") {
-                        has_image = true;
+                    if !item_ids.is_empty() {
+                        // Get all assets for these items in one query
+                        let assets_resp = state
+                            .pg
+                            .from("agency_catalog_assets")
+                            .select("catalog_item_id, asset_type")
+                            .in_("catalog_item_id", &item_ids)
+                            .execute()
+                            .await
+                            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                        let assets_text = assets_resp
+                            .text()
+                            .await
+                            .unwrap_or_else(|_| "[]".to_string());
+                        let assets_data: Vec<serde_json::Value> =
+                            serde_json::from_str(&assets_text).unwrap_or(vec![]);
+
+                        // Get all recordings for these items in one query
+                        let recordings_resp = state
+                            .pg
+                            .from("agency_catalog_recordings")
+                            .select("catalog_item_id, recording_id")
+                            .in_("catalog_item_id", &item_ids)
+                            .execute()
+                            .await
+                            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                        let recordings_text = recordings_resp
+                            .text()
+                            .await
+                            .unwrap_or_else(|_| "[]".to_string());
+                        let recordings_data: Vec<serde_json::Value> =
+                            serde_json::from_str(&recordings_text).unwrap_or(vec![]);
+
+                        total_assets_30d = assets_data.len() as i64 + recordings_data.len() as i64;
+
+                        // Group assets by catalog to calculate asset type distribution
+                        use std::collections::{HashMap, HashSet};
+                        let mut catalog_asset_types: HashMap<String, HashSet<String>> =
+                            HashMap::new();
+
+                        // Map items to catalogs
+                        let mut item_to_catalog: HashMap<String, String> = HashMap::new();
+                        for item in &items_data {
+                            if let (Some(item_id), Some(catalog_id)) = (
+                                item.get("id").and_then(|v| v.as_str()),
+                                item.get("catalog_id").and_then(|v| v.as_str()),
+                            ) {
+                                item_to_catalog.insert(item_id.to_string(), catalog_id.to_string());
+                            }
+                        }
+
+                        // Process assets
+                        for asset in &assets_data {
+                            if let (Some(item_id), Some(asset_type)) = (
+                                asset.get("catalog_item_id").and_then(|v| v.as_str()),
+                                asset.get("asset_type").and_then(|v| v.as_str()),
+                            ) {
+                                if let Some(catalog_id) = item_to_catalog.get(item_id) {
+                                    let asset_types =
+                                        catalog_asset_types.entry(catalog_id.clone()).or_default();
+                                    let asset_type_lower = asset_type.to_lowercase();
+                                    if asset_type_lower.contains("video") {
+                                        asset_types.insert("video".to_string());
+                                    } else if asset_type_lower.contains("voice")
+                                        || asset_type_lower.contains("audio")
+                                    {
+                                        asset_types.insert("voice".to_string());
+                                    } else if asset_type_lower.contains("image")
+                                        || asset_type_lower.contains("photo")
+                                    {
+                                        asset_types.insert("image".to_string());
+                                    }
+                                }
+                            }
+                        }
+
+                        // Process recordings (all count as voice)
+                        for recording in &recordings_data {
+                            if let Some(item_id) =
+                                recording.get("catalog_item_id").and_then(|v| v.as_str())
+                            {
+                                if let Some(catalog_id) = item_to_catalog.get(item_id) {
+                                    let asset_types =
+                                        catalog_asset_types.entry(catalog_id.clone()).or_default();
+                                    asset_types.insert("voice".to_string());
+                                }
+                            }
+                        }
+
+                        // Calculate percentages
+                        for asset_types in catalog_asset_types.values() {
+                            let asset_count = asset_types.len() as f64;
+                            if asset_count > 0.0 {
+                                let percentage_per_type = 100.0 / asset_count;
+                                if asset_types.contains("video") {
+                                    video_total += percentage_per_type;
+                                }
+                                if asset_types.contains("voice") {
+                                    voice_total += percentage_per_type;
+                                }
+                                if asset_types.contains("image") {
+                                    image_total += percentage_per_type;
+                                }
+                            }
+                        }
                     }
-                }
-
-                // Count recordings
-                let recordings_resp = state
-                    .pg
-                    .from("agency_catalog_recordings")
-                    .select("recording_id")
-                    .eq("catalog_item_id", item_id)
-                    .execute()
-                    .await
-                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-                let recordings_text = recordings_resp
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| "[]".to_string());
-                let recordings_data: Vec<serde_json::Value> =
-                    serde_json::from_str(&recordings_text).unwrap_or(vec![]);
-
-                total_assets_30d += recordings_data.len() as i64;
-
-                if !recordings_data.is_empty() {
-                    has_voice = true;
-                }
-            }
-
-            // Calculate percentage for this catalog
-            let asset_count = (has_video as i32 + has_voice as i32 + has_image as i32) as f64;
-            if asset_count > 0.0 {
-                let percentage_per_type = 100.0 / asset_count;
-                if has_video {
-                    video_total += percentage_per_type;
-                }
-                if has_voice {
-                    voice_total += percentage_per_type;
-                }
-                if has_image {
-                    image_total += percentage_per_type;
                 }
             }
         }
 
-        // Count assets from previous period for growth calculation
-        for catalog in &catalogs_prev_data {
-            let catalog_id = catalog.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        // Process previous period catalogs with bulk queries for growth calculation
+        if !catalogs_prev_data.is_empty() {
+            let catalog_ids_prev: Vec<String> = catalogs_prev_data
+                .iter()
+                .filter_map(|c| c.get("id").and_then(|v| v.as_str()))
+                .map(|s| s.to_string())
+                .collect();
 
-            let items_resp = state
-                .pg
-                .from("agency_catalog_items")
-                .select("id")
-                .eq("catalog_id", catalog_id)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let items_text = items_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-            let items_data: Vec<serde_json::Value> =
-                serde_json::from_str(&items_text).unwrap_or(vec![]);
-
-            for item in &items_data {
-                let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
-
-                let assets_resp = state
+            if !catalog_ids_prev.is_empty() {
+                // Get all catalog items for previous period catalogs
+                let items_resp = state
                     .pg
-                    .from("agency_catalog_assets")
-                    .select("asset_type")
-                    .eq("catalog_item_id", item_id)
+                    .from("agency_catalog_items")
+                    .select("id")
+                    .in_("catalog_id", catalog_ids_prev)
                     .execute()
                     .await
                     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-                let assets_text = assets_resp
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| "[]".to_string());
-                let assets_data: Vec<serde_json::Value> =
-                    serde_json::from_str(&assets_text).unwrap_or(vec![]);
+                let items_text = items_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+                let items_data: Vec<serde_json::Value> =
+                    serde_json::from_str(&items_text).unwrap_or(vec![]);
 
-                total_assets_prev += assets_data.len() as i64;
+                if !items_data.is_empty() {
+                    let item_ids: Vec<String> = items_data
+                        .iter()
+                        .filter_map(|i| i.get("id").and_then(|v| v.as_str()))
+                        .map(|s| s.to_string())
+                        .collect();
 
-                let recordings_resp = state
-                    .pg
-                    .from("agency_catalog_recordings")
-                    .select("recording_id")
-                    .eq("catalog_item_id", item_id)
-                    .execute()
-                    .await
-                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-                let recordings_text = recordings_resp
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| "[]".to_string());
-                let recordings_data: Vec<serde_json::Value> =
-                    serde_json::from_str(&recordings_text).unwrap_or(vec![]);
+                    if !item_ids.is_empty() {
+                        // Count assets and recordings for previous period
+                        let assets_resp = state
+                            .pg
+                            .from("agency_catalog_assets")
+                            .select("catalog_item_id")
+                            .in_("catalog_item_id", &item_ids)
+                            .execute()
+                            .await
+                            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                        let assets_text = assets_resp
+                            .text()
+                            .await
+                            .unwrap_or_else(|_| "[]".to_string());
+                        let assets_data: Vec<serde_json::Value> =
+                            serde_json::from_str(&assets_text).unwrap_or(vec![]);
 
-                total_assets_prev += recordings_data.len() as i64;
+                        let recordings_resp = state
+                            .pg
+                            .from("agency_catalog_recordings")
+                            .select("catalog_item_id")
+                            .in_("catalog_item_id", &item_ids)
+                            .execute()
+                            .await
+                            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                        let recordings_text = recordings_resp
+                            .text()
+                            .await
+                            .unwrap_or_else(|_| "[]".to_string());
+                        let recordings_data: Vec<serde_json::Value> =
+                            serde_json::from_str(&recordings_text).unwrap_or(vec![]);
+
+                        total_assets_prev = assets_data.len() as i64 + recordings_data.len() as i64;
+                    }
+                }
             }
         }
 
@@ -452,7 +520,7 @@ pub async fn get_analytics_dashboard(
         let usages_growth_percentage = if total_assets_prev > 0 {
             let growth =
                 ((total_assets_30d - total_assets_prev) as f64 / total_assets_prev as f64) * 100.0;
-            growth.min(100.0)
+            growth.clamp(-100.0, 100.0)
         } else if total_assets_30d > 0 {
             100.0
         } else {
@@ -759,7 +827,7 @@ pub async fn get_analytics_dashboard(
         let growth = ((total_earnings_cents - prev_earnings_cents) as f64
             / prev_earnings_cents as f64)
             * 100.0;
-        growth.min(100.0)
+        growth.clamp(-100.0, 100.0)
     } else if total_earnings_cents > 0 {
         100.0
     } else {
