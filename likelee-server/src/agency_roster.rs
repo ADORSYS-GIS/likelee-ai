@@ -1925,6 +1925,7 @@ pub async fn update_talent(
         .from("agency_users")
         .eq("id", &id)
         .eq("role", "talent")
+        .select("id,creator_id")
         .update(v.to_string())
         .execute()
         .await
@@ -1939,6 +1940,29 @@ pub async fn update_talent(
     let updated_val: serde_json::Value = serde_json::from_str(&updated_text).unwrap_or(json!([]));
     if let Some(first) = updated_val.as_array().and_then(|arr| arr.first()) {
         let creator_id = first.get("creator_id").and_then(|v| v.as_str());
+        
+        if let Some(cid) = creator_id {
+            if !cid.trim().is_empty() {
+                let mut creator_update = json!({});
+                if let Some(ref handle) = payload.instagram_handle {
+                    creator_update["instagram_handle"] = json!(handle);
+                    creator_update["platform_handle"] = json!(handle);
+                }
+                if let Some(followers) = payload.instagram_followers {
+                    creator_update["instagram_followers"] = json!(followers);
+                }
+                if !creator_update.is_null() && creator_update.as_object().map(|m| !m.is_empty()).unwrap_or(false) {
+                    let _ = state
+                        .pg
+                        .from("creators")
+                        .eq("id", cid)
+                        .update(creator_update.to_string())
+                        .execute()
+                        .await;
+                }
+            }
+        }
+        
         let next_status = payload
             .status
             .as_deref()
