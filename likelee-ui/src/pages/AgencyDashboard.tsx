@@ -18695,6 +18695,13 @@ export default function AgencyDashboard() {
       return;
     }
 
+    console.log("🔄 Setting renewal context for license:", {
+      id: license.id,
+      template_id: license.template_id,
+      brand_request_id: license.brand_request_id,
+      client_name: license.client_name,
+    });
+
     setRenewalLaunchContext({
       templateId: license.template_id,
       oldLicenseId: license.id, // Track the old license being renewed
@@ -18714,6 +18721,7 @@ export default function AgencyDashboard() {
       exclusivity: license.exclusivity || undefined,
       modificationsAllowed: license.modifications_allowed || undefined,
       licenseFee: typeof license.value === "number" ? license.value : undefined,
+      brandRequestId: license.brand_request_id || undefined, // Include the original brand request ID
     });
 
     console.log("🔄 Renewal context set, navigating to License Templates");

@@ -123,9 +123,18 @@ const AnalyticsDashboardView = ({
         const token = session?.access_token;
         if (!token) return;
 
-        const res = await fetch(`/api/agency/analytics/expired-licenses`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // Add cache-busting parameter when manually refreshing
+        const cacheBuster = refreshTrigger > 0 ? `?_t=${Date.now()}` : "";
+        const res = await fetch(
+          `/api/agency/analytics/expired-licenses${cacheBuster}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
+          },
+        );
 
         if (res.ok && active) {
           const data = await res.json();
@@ -135,7 +144,7 @@ const AnalyticsDashboardView = ({
           if (refreshTrigger > 0) {
             toast({
               title: "Refreshed",
-              description: "License expiry pipeline updated successfully.",
+              description: `License expiry pipeline updated successfully. Found ${Array.isArray(data) ? data.length : 0} expired licenses.`,
               duration: 2000,
             });
           }

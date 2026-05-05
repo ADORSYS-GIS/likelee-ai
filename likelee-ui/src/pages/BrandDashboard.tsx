@@ -1503,6 +1503,11 @@ export default function BrandDashboard() {
           "getBrandLicensingRequests raw response:",
           JSON.stringify(resp, null, 2),
         );
+        console.log("🔍 Brand user profile:", profile);
+        console.log(
+          "🔍 Fetching licensing requests for brand_id:",
+          profile?.id,
+        );
         if (!mounted) return;
         const rows = Array.isArray(resp) ? resp : resp?.requests || [];
         setBrandLicensingRequests(Array.isArray(rows) ? rows : []);

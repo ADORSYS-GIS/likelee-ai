@@ -28,4 +28,5 @@ export interface RenewalLaunchContext {
   exclusivity?: string;
   modificationsAllowed?: string;
   licenseFee?: number;
+  brandRequestId?: string; // ID of the original brand request to update
 }

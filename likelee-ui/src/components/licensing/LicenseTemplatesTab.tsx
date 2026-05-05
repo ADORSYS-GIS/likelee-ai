@@ -308,7 +308,28 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       exclusivity: renewalLaunchContext.exclusivity,
       modifications_allowed: renewalLaunchContext.modificationsAllowed,
     });
-    setWizardBrandContext(null);
+    // Set the brand context with the original brand request ID for renewal linking
+    if (renewalLaunchContext.brandRequestId) {
+      console.log(
+        "🔄 Setting brand context for renewal with brandRequestId:",
+        renewalLaunchContext.brandRequestId,
+      );
+      setWizardBrandContext({
+        brand_id: renewalLaunchContext.brandId || "",
+        brand_name: renewalLaunchContext.clientName,
+        brand_email: renewalLaunchContext.clientEmail,
+        licensing_request_id: renewalLaunchContext.brandRequestId,
+        talent_id: renewalLaunchContext.talentId,
+        talent_name: renewalLaunchContext.talentName,
+      });
+    } else {
+      console.log(
+        "⚠️ No brandRequestId found in renewal context, will create new brand request during renewal",
+      );
+      // For renewals without brandRequestId, we'll create a new brand request
+      // The renewal logic in the backend will handle this case
+      setWizardBrandContext(null);
+    }
     onRenewalLaunchHandled?.();
   }, [
     renewalLaunchContext,

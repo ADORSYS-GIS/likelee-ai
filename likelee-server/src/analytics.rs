@@ -2575,7 +2575,7 @@ pub async fn get_expired_licenses(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id, talent_id, deadline, client_name, status, submission_id, license_submissions!licensing_requests_submission_id_fkey(template_id,requires_agency_signature)")
+        .select("id, talent_id, deadline, client_name, status, submission_id")
         .eq("agency_id", &auth_user.id)
         .eq("status", "approved")
         .lt("deadline", &today)
@@ -2586,6 +2586,76 @@ pub async fn get_expired_licenses(
 
     let requests_text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
     let requests: Vec<serde_json::Value> = serde_json::from_str(&requests_text).unwrap_or(vec![]);
+
+    tracing::info!(
+        "Filtered expired licenses (approved only): {}",
+        requests.len()
+    );
+    for license in &requests {
+        if let (Some(id), Some(status), Some(client)) = (
+            license.get("id").and_then(|v| v.as_str()),
+            license.get("status").and_then(|v| v.as_str()),
+            license.get("client_name").and_then(|v| v.as_str()),
+        ) {
+            tracing::info!(
+                "Approved expired license {}: {} - status: {}",
+                id,
+                client,
+                status
+            );
+        }
+    }
+
+    // Collect submission_ids to fetch license_submissions data
+    let submission_ids: Vec<String> = requests
+        .iter()
+        .filter_map(|r| r.get("submission_id").and_then(|v| v.as_str()))
+        .map(|s| s.to_string())
+        .collect();
+
+    let mut submission_map: HashMap<String, serde_json::Value> = HashMap::new();
+    if !submission_ids.is_empty() {
+        let submissions_resp = state
+            .pg
+            .from("license_submissions")
+            .select("id, template_id, requires_agency_signature, brand_request_id")
+            .in_("id", submission_ids)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let submissions_text = submissions_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let submissions: Vec<serde_json::Value> =
+            serde_json::from_str(&submissions_text).unwrap_or(vec![]);
+
+        for s in submissions {
+            if let Some(id) = s.get("id").and_then(|v| v.as_str()) {
+                submission_map.insert(id.to_string(), s);
+            }
+        }
+    }
+
+    tracing::info!(
+        "Filtered expired licenses (approved only): {}",
+        requests.len()
+    );
+    for license in &requests {
+        if let (Some(id), Some(status), Some(client)) = (
+            license.get("id").and_then(|v| v.as_str()),
+            license.get("status").and_then(|v| v.as_str()),
+            license.get("client_name").and_then(|v| v.as_str()),
+        ) {
+            tracing::info!(
+                "Approved expired license {}: {} - status: {}",
+                id,
+                client,
+                status
+            );
+        }
+    }
 
     // Collect talent_ids for name/avatar lookup
     let talent_ids: Vec<String> = requests
@@ -2642,8 +2712,9 @@ pub async fn get_expired_licenses(
                 .and_then(|t| t.get("profile_photo_url").and_then(|v| v.as_str()))
                 .map(|s| s.to_string());
 
-            // Extract template_id and requires_agency_signature from nested license_submissions object
-            let license_submission = r.get("license_submissions").and_then(|v| v.as_object());
+            // Get license_submissions data from submission_map
+            let submission_id = r.get("submission_id").and_then(|v| v.as_str()).unwrap_or("");
+            let license_submission = submission_map.get(submission_id);
 
             let template_id = license_submission
                 .and_then(|obj| obj.get("template_id"))
@@ -2654,6 +2725,34 @@ pub async fn get_expired_licenses(
                 .and_then(|obj| obj.get("requires_agency_signature"))
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
+
+            let brand_request_id = license_submission
+                .and_then(|obj| obj.get("brand_request_id"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            tracing::info!(
+                "License {}: submission_id={}, brand_request_id={:?}",
+                r.get("id").and_then(|v| v.as_str()).unwrap_or("unknown"),
+                submission_id,
+                brand_request_id
+            );
+
+            // If no brand_request_id, try to find it by matching client_name and other fields
+            let final_brand_request_id = if brand_request_id.is_none() {
+                let client_name = r.get("client_name").and_then(|v| v.as_str()).unwrap_or("");
+                if !client_name.is_empty() {
+                    tracing::info!(
+                        "No brand_request_id found for license {}, trying to find by client_name: {}",
+                        r.get("id").and_then(|v| v.as_str()).unwrap_or("unknown"),
+                        client_name
+                    );
+                    // We could add a lookup here, but for now just log it
+                }
+                brand_request_id
+            } else {
+                brand_request_id
+            };
 
             json!({
                 "id": r.get("id").and_then(|v| v.as_str()).unwrap_or_default(),
@@ -2666,6 +2765,7 @@ pub async fn get_expired_licenses(
                 "template_id": template_id,
                 "submission_id": r.get("submission_id").and_then(|v| v.as_str()),
                 "requires_agency_signature": requires_agency_signature,
+                "brand_request_id": final_brand_request_id,
             })
         })
         .collect();
