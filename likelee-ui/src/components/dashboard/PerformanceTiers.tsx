@@ -680,6 +680,10 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
                     />
                   </div>
                   )}
+                  {/* Commission/payout split — only relevant for AI mode (licensing deals).
+                      IRL bookings use a separate payment flow and don't use these rates. */}
+                  {isAiMode && (
+                  <>
                   <div className="space-y-3">
                     <Label className="text-[13px] font-bold text-gray-600 ml-1">
                       Talent Payout % (of net)
@@ -772,6 +776,8 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
                       </span>
                     </div>
                   </div>
+                  </>
+                  )}
                 </div>
               </div>
             ))}
