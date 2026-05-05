@@ -65,7 +65,15 @@ async fn persist_scraped_data(
 
     match user.role.as_str() {
         "creator" | "talent" => {
-            let creator_id = target_creator_id.unwrap_or(&user.id);
+            if let Some(target) = target_creator_id {
+                if target != user.id {
+                    return Err((
+                        StatusCode::FORBIDDEN,
+                        "Can only update your own creator profile".to_string(),
+                    ));
+                }
+            }
+            let creator_id = &user.id;
             let resp = state
                 .pg
                 .from("creators")

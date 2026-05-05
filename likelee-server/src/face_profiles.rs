@@ -824,16 +824,6 @@ pub async fn search_marketplace_profiles(
                 .map(|summary| serde_json::to_value(summary).unwrap_or(serde_json::Value::Null))
                 .unwrap_or(serde_json::Value::Null);
 
-            let raw_instagram_followers = row.get("instagram_followers");
-            let agency_followers = followers_by_creator_id.get(creator_id);
-            tracing::debug!(
-                creator_id = %creator_id,
-                full_name = %full_name,
-                raw_instagram_followers = ?raw_instagram_followers,
-                agency_followers = ?agency_followers,
-                "marketplace creator followers debug"
-            );
-
             results.push(serde_json::json!({
                 "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
                 "profile_type": "creator",
