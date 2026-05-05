@@ -1924,7 +1924,7 @@ pub async fn update_talent(
     let user_resp = state
         .pg
         .from("agency_users")
-        .select("id,creator_id")
+        .select("id,creator_id,instagram_handle,instagram_followers")
         .eq("id", &id)
         .eq("role", "talent")
         .limit(1)
@@ -1943,8 +1943,7 @@ pub async fn update_talent(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let user_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&user_text).unwrap_or_default();
+    let user_rows: Vec<serde_json::Value> = serde_json::from_str(&user_text).unwrap_or_default();
     let creator_id: Option<String> = user_rows
         .first()
         .and_then(|r| r.get("creator_id"))
