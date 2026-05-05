@@ -17,11 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { CreatorTermsContent } from "@/components/CreatorTermsContent";
 import {
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
   Upload,
+  Download,
   AlertCircle,
   Eye,
   EyeOff,
@@ -60,12 +63,13 @@ const getAiTools = (t: any) => [
 ];
 
 export default function CreatorSignup() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("auth");
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("signup_formData");
@@ -117,7 +121,7 @@ export default function CreatorSignup() {
     }
   }, [profileId]);
 
-  const totalSteps = 2;
+  const totalSteps = 3;
   const progress = (step / totalSteps) * 100;
 
   // Initial profile creation (Step 1)
@@ -148,8 +152,8 @@ export default function CreatorSignup() {
     onError: (error) => {
       console.error("Error creating initial profile:", error);
       toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
+        title: t("common.error"),
+        description: getFriendlyErrorMessage(error, t),
         variant: "destructive",
       });
     },
@@ -196,8 +200,8 @@ export default function CreatorSignup() {
     onError: (error) => {
       console.error("Error updating profile:", error);
       toast({
-        title: "Error",
-        description: getFriendlyErrorMessage(error),
+        title: t("common.error"),
+        description: getFriendlyErrorMessage(error, t),
         variant: "destructive",
       });
     },
@@ -212,16 +216,16 @@ export default function CreatorSignup() {
         !formData.confirmPassword
       ) {
         toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields.",
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.requiredFields"),
           variant: "destructive",
         });
         return;
       }
       if (formData.password !== formData.confirmPassword) {
         toast({
-          title: "Validation Error",
-          description: "Passwords do not match.",
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.passwordMismatch"),
           variant: "destructive",
         });
         return;
@@ -233,9 +237,8 @@ export default function CreatorSignup() {
         !formData.youtube_handle
       ) {
         toast({
-          title: "Validation Error",
-          description:
-            "Please provide at least one social media handle (Instagram, TikTok, or YouTube).",
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.socialRequired"),
           variant: "destructive",
         });
         return;
@@ -255,57 +258,128 @@ export default function CreatorSignup() {
   };
 
   const handleSubmit = () => {
+    if (step === 2) {
+      if (!formData.content_types.length && !formData.content_other) {
+        toast({
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.contentTypeRequired"),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (
+        formData.content_types.includes(
+          t("creatorSignup.options.contentTypes.other"),
+        ) &&
+        !formData.content_other.trim()
+      ) {
+        toast({
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.contentTypeOtherRequired"),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!formData.ai_tools.length && !formData.ai_tools_other) {
+        toast({
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.aiToolRequired"),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (
+        formData.ai_tools.includes(t("creatorSignup.options.aiTools.other")) &&
+        !formData.ai_tools_other.trim()
+      ) {
+        toast({
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.aiToolOtherRequired"),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!formData.city || !formData.state) {
+        toast({
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.locationRequired"),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!formData.experience) {
+        toast({
+          title: t("creatorSignup.validation.title"),
+          description: t("creatorSignup.validation.experienceRequired"),
+          variant: "destructive",
+        });
+        return;
+      }
+      setStep(3);
+      return;
+    }
+
+    if (!agreedToTerms) {
+      toast({
+        title: t("creatorSignup.terms.mustAgreeTitle"),
+        description: t("creatorSignup.terms.mustAgree"),
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!formData.content_types.length && !formData.content_other) {
       toast({
-        title: "Validation Error",
-        description:
-          "Please select at least one content type or specify 'Other'.",
+        title: t("creatorSignup.validation.title"),
+        description: t("creatorSignup.validation.contentTypeRequired"),
         variant: "destructive",
       });
       return;
     }
     if (
-      formData.content_types.includes("Other") &&
+      formData.content_types.includes(
+        t("creatorSignup.options.contentTypes.other"),
+      ) &&
       !formData.content_other.trim()
     ) {
       toast({
-        title: "Validation Error",
-        description: "Please specify your 'Other' content type.",
+        title: t("creatorSignup.validation.title"),
+        description: t("creatorSignup.validation.contentTypeOtherRequired"),
         variant: "destructive",
       });
       return;
     }
     if (!formData.ai_tools.length && !formData.ai_tools_other) {
       toast({
-        title: "Validation Error",
-        description: "Please select at least one AI tool or specify 'Other'.",
+        title: t("creatorSignup.validation.title"),
+        description: t("creatorSignup.validation.aiToolRequired"),
         variant: "destructive",
       });
       return;
     }
     if (
-      formData.ai_tools.includes("Other") &&
+      formData.ai_tools.includes(t("creatorSignup.options.aiTools.other")) &&
       !formData.ai_tools_other.trim()
     ) {
       toast({
-        title: "Validation Error",
-        description: "Please specify your 'Other' AI tool.",
+        title: t("creatorSignup.validation.title"),
+        description: t("creatorSignup.validation.aiToolOtherRequired"),
         variant: "destructive",
       });
       return;
     }
     if (!formData.city || !formData.state) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in your city and state/country.",
+        title: t("creatorSignup.validation.title"),
+        description: t("creatorSignup.validation.locationRequired"),
         variant: "destructive",
       });
       return;
     }
     if (!formData.experience) {
       toast({
-        title: "Validation Error",
-        description: "Please select your years of AI creative experience.",
+        title: t("creatorSignup.validation.title"),
+        description: t("creatorSignup.validation.experienceRequired"),
         variant: "destructive",
       });
       return;
@@ -359,25 +433,22 @@ export default function CreatorSignup() {
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            You're on the list for our next Creator cohort
+            {t("creatorSignup.submitted.title")}
           </h1>
           <p className="text-lg text-gray-700 leading-relaxed mb-8">
-            The first 200 Creator spots are filled. We're growing the Likelee
-            ecosystem carefully so every AI Creator gets real visibility and
-            paid opportunities. You're in the next cohort queue—we'll email you
-            as soon as we open the gate.
+            {t("creatorSignup.submitted.description")}
           </p>
           <div className="bg-gradient-to-br from-orange-50 to-pink-50 p-6 border-2 border-black rounded-none mb-8">
             <h3 className="text-xl font-bold text-gray-900 mb-3">
-              What's next:
+              {t("creatorSignup.submitted.nextTitle")}
             </h3>
             <p className="text-gray-700 leading-relaxed">
-              Watch for a welcome email with a quick profile checklist.
+              {t("creatorSignup.submitted.nextDescription")}
             </p>
           </div>
           <div className="space-y-4">
             <p className="text-lg font-semibold text-gray-900">
-              Follow updates →
+              {t("creatorSignup.submitted.followUpdates")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -412,10 +483,8 @@ export default function CreatorSignup() {
           <Alert className="mb-8 bg-amber-50 border-2 border-amber-500 rounded-none">
             <AlertCircle className="h-5 w-5 text-amber-600" />
             <AlertDescription className="text-amber-900 font-medium">
-              <strong>Heads-up:</strong> The first 200 Creator spots are filled.
-              We are onboarding in cohorts so every AI Creator gets an
-              opportunity for visibility! Continue to sign up to lock-in your
-              spot :)
+              <strong>{t("creatorSignup.alert.title")}</strong>{" "}
+              {t("creatorSignup.alert.description")}
             </AlertDescription>
           </Alert>
         )}
@@ -423,10 +492,10 @@ export default function CreatorSignup() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-900">
-              Join as Creator
+              {t("creatorSignup.header.title")}
             </h2>
             <Badge className="bg-orange-100 text-orange-700 border-2 border-black rounded-none">
-              Step {step} of {totalSteps}
+              {t("creatorSignup.header.step", { step, totalSteps })}
             </Badge>
           </div>
           <div className="w-full h-3 bg-gray-200 border-2 border-black">
@@ -442,10 +511,10 @@ export default function CreatorSignup() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Basic Details
+                  {t("creatorSignup.basic.title")}
                 </h3>
                 <p className="text-gray-600">
-                  Let's start with your information
+                  {t("creatorSignup.basic.subtitle")}
                 </p>
               </div>
 
@@ -558,9 +627,9 @@ export default function CreatorSignup() {
 
                 <div className="pt-4 border-t-2 border-gray-200">
                   <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                    Social Media Handles *{" "}
+                    {t("creatorSignup.basic.socialHandles")}{" "}
                     <span className="text-sm text-gray-500 font-normal">
-                      (At least 1 required)
+                      {t("creatorSignup.basic.atLeastOneRequired")}
                     </span>
                   </Label>
                   <div className="space-y-3">
@@ -646,7 +715,7 @@ export default function CreatorSignup() {
                     placeholder={t("common.agencyNamePlaceholder")}
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    If you're represented by an agency, enter their name here
+                    {t("creatorSignup.basic.agencyHelp")}
                   </p>
                 </div>
               </div>
@@ -657,8 +726,8 @@ export default function CreatorSignup() {
                 className="w-full h-12 bg-gradient-to-r from-[#F18B6A] to-pink-500 hover:from-[#E07A5A] hover:to-pink-600 text-white border-2 border-black rounded-none"
               >
                 {createInitialProfileMutation.isPending
-                  ? "Saving..."
-                  : "Continue"}
+                  ? t("common.saving")
+                  : t("common.continue")}
                 <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
             </div>
@@ -668,20 +737,20 @@ export default function CreatorSignup() {
             <div className="space-y-8">
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  Creator Profile Details
+                  {t("creatorSignup.profile.title")}
                 </h3>
                 <p className="text-gray-600">
-                  Tell us more about your creative work and experience.
+                  {t("creatorSignup.profile.subtitle")}
                 </p>
               </div>
 
               <div className="space-y-6 border-b pb-6 border-gray-200">
                 <h4 className="text-xl font-bold text-gray-900">
-                  Creative Focus
+                  {t("creatorSignup.profile.creativeFocus")}
                 </h4>
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    What kind of AI content do you create? *
+                    {t("creatorSignup.profile.contentTypesQuestion")}
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="col-span-1 md:col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
@@ -701,7 +770,7 @@ export default function CreatorSignup() {
                         htmlFor="select_all_content"
                         className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                       >
-                        Select All
+                        {t("common.selectAll")}
                       </label>
                     </div>
                     {getContentTypes(t).map((type) => (
@@ -743,7 +812,7 @@ export default function CreatorSignup() {
 
                 <div>
                   <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                    What AI tools do you primarily use? *
+                    {t("creatorSignup.profile.aiToolsQuestion")}
                   </Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
                     <div className="col-span-1 md:col-span-2 flex items-center space-x-2 p-3 border-2 border-black bg-gray-50 rounded-none mb-2">
@@ -761,7 +830,7 @@ export default function CreatorSignup() {
                         htmlFor="select_all_ai_tools"
                         className="text-sm font-bold text-gray-900 cursor-pointer flex-1"
                       >
-                        Select All
+                        {t("common.selectAll")}
                       </label>
                     </div>
                     {getAiTools(t).map((tool) => (
@@ -804,7 +873,7 @@ export default function CreatorSignup() {
 
               <div className="space-y-6 border-b pb-6 border-gray-200">
                 <h4 className="text-xl font-bold text-gray-900">
-                  Location & Experience
+                  {t("creatorSignup.profile.locationExperience")}
                 </h4>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -858,15 +927,25 @@ export default function CreatorSignup() {
                       }
                     >
                       <SelectTrigger className="border-2 border-gray-300 rounded-none">
-                        <SelectValue placeholder="Select experience level" />
+                        <SelectValue
+                          placeholder={t(
+                            "creatorSignup.profile.selectExperience",
+                          )}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="less_than_1">
-                          Less than 1 year
+                          {t("creatorSignup.profile.experience.lessThan1")}
                         </SelectItem>
-                        <SelectItem value="1_2">1 – 2 years</SelectItem>
-                        <SelectItem value="3_5">3 – 5 years</SelectItem>
-                        <SelectItem value="5_plus">5+ years</SelectItem>
+                        <SelectItem value="1_2">
+                          {t("creatorSignup.profile.experience.oneToTwo")}
+                        </SelectItem>
+                        <SelectItem value="3_5">
+                          {t("creatorSignup.profile.experience.threeToFive")}
+                        </SelectItem>
+                        <SelectItem value="5_plus">
+                          {t("creatorSignup.profile.experience.fivePlus")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -875,10 +954,10 @@ export default function CreatorSignup() {
 
               <div className="space-y-6 border-b pb-6 border-gray-200">
                 <h4 className="text-xl font-bold text-gray-900">
-                  Portfolio & Social
+                  {t("creatorSignup.profile.portfolioSocial")}
                 </h4>
                 <p className="text-gray-600">
-                  Optional: Share your work and social presence
+                  {t("creatorSignup.profile.portfolioSocialSubtitle")}
                 </p>
                 <div className="space-y-4">
                   <div>
@@ -926,10 +1005,10 @@ export default function CreatorSignup() {
 
               <div className="space-y-6">
                 <h4 className="text-xl font-bold text-gray-900">
-                  Upload Profile Photo
+                  {t("creatorSignup.profile.uploadPhoto")}
                 </h4>
                 <p className="text-gray-600">
-                  Add a professional photo to your profile
+                  {t("creatorSignup.profile.uploadPhotoSubtitle")}
                 </p>
                 <div className="space-y-4">
                   <div>
@@ -940,7 +1019,7 @@ export default function CreatorSignup() {
                       {t("common.profilePhotoOptional")}
                     </Label>
                     <p className="text-sm text-gray-500 mb-3">
-                      Minimum 800 × 800 px, JPG or PNG, maximum 5 MB
+                      {t("creatorSignup.profile.photoRequirements")}
                     </p>
                     <div className="border-2 border-dashed border-gray-300 rounded-none p-8 text-center hover:border-[#F18B6A] transition-colors">
                       <input
@@ -958,10 +1037,10 @@ export default function CreatorSignup() {
                         <p className="text-gray-700 font-medium mb-1">
                           {profilePhotoFile
                             ? profilePhotoFile.name
-                            : "Click to upload"}
+                            : t("creatorSignup.profile.clickToUpload")}
                         </p>
                         <p className="text-sm text-gray-500">
-                          or drag and drop
+                          {t("creatorSignup.profile.dragDrop")}
                         </p>
                       </label>
                     </div>
@@ -976,7 +1055,7 @@ export default function CreatorSignup() {
                   className="flex-1 h-12 border-2 border-black rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back
+                  {t("common.back")}
                 </Button>
                 <Button
                   onClick={handleSubmit}
@@ -984,8 +1063,94 @@ export default function CreatorSignup() {
                   className="flex-1 h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-2 border-black rounded-none"
                 >
                   {updateProfileMutation.isPending
-                    ? "Submitting..."
-                    : "Complete Sign Up"}
+                    ? t("creatorSignup.terms.submitting")
+                    : t("creatorSignup.profile.continueToTerms")}
+                  <CheckCircle2 className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {t("creatorSignup.terms.title")}
+                </h3>
+                <p className="text-gray-600">
+                  {t("creatorSignup.terms.subtitle")}
+                </p>
+              </div>
+
+              <ScrollArea className="h-[600px] border-2 border-gray-200 rounded-none p-4 bg-gray-50">
+                <CreatorTermsContent />
+              </ScrollArea>
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-2 border-black rounded-none"
+                  onClick={() => {
+                    window.open(
+                      "/LIKELEE AI — Creator & Talent Terms and Conditions.pdf",
+                      "_blank",
+                    );
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {t("creatorSignup.terms.download")}
+                </Button>
+              </div>
+
+              <div className="flex items-start space-x-3 p-4 border-2 border-black bg-gray-50 rounded-none">
+                <Checkbox
+                  id="creator-agree-terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={(checked) =>
+                    setAgreedToTerms(checked === true)
+                  }
+                  className="border-2 border-gray-900 mt-0.5"
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="creator-agree-terms"
+                    className="text-sm text-gray-700 cursor-pointer leading-relaxed"
+                  >
+                    {t("creatorSignup.terms.agreeTo")}{" "}
+                    <a
+                      href="https://likelee.ai/privacypolicy"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold underline text-indigo-600"
+                    >
+                      {t("creatorSignup.terms.policyLink")}
+                    </a>{" "}
+                    {t("creatorSignup.terms.andTerms")}
+                  </label>
+                  <p className="text-sm text-gray-500">
+                    {t("creatorSignup.terms.mustAgree")}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={() => setStep(2)}
+                  variant="outline"
+                  className="flex-1 h-12 border-2 border-black rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  {t("common.back")}
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!agreedToTerms || updateProfileMutation.isPending}
+                  className="flex-1 h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-2 border-black rounded-none"
+                >
+                  {updateProfileMutation.isPending
+                    ? t("creatorSignup.terms.submitting")
+                    : t("creatorSignup.terms.completeRegistration")}
                   <CheckCircle2 className="w-5 h-5 ml-2" />
                 </Button>
               </div>
