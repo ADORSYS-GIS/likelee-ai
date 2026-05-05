@@ -3,7 +3,6 @@
 pub mod admin;
 pub mod agency;
 pub mod auth;
-pub mod instagram_scraper;
 pub mod billing;
 pub mod booking;
 pub mod brand;

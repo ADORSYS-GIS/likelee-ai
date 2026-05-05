@@ -1415,12 +1415,12 @@ pub fn build_router(state: AppState) -> Router {
         // --- Instagram Scraper (Apify) ---
         .route(
             "/api/instagram/scrape",
-            post(crate::instagram_scraper::scrape_instagram_profile)
-                .get(crate::instagram_scraper::scrape_instagram_profile_query),
+            post(crate::services::instagram_scraper::scrape_instagram_profile)
+                .get(crate::services::instagram_scraper::scrape_instagram_profile_query),
         )
         .route(
             "/api/instagram/webhook",
-            post(crate::instagram_scraper::handle_apify_webhook),
+            post(crate::services::instagram_scraper::handle_apify_webhook),
         )
         // --- Integrations & Misc ---
         .route(
