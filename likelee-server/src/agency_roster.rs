@@ -1920,12 +1920,42 @@ pub async fn update_talent(
         }
     }
 
+    // First fetch the agency_user to get creator_id before updating
+    let user_resp = state
+        .pg
+        .from("agency_users")
+        .select("id,creator_id")
+        .eq("id", &id)
+        .eq("role", "talent")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !user_resp.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to fetch talent".to_string(),
+        ));
+    }
+
+    let user_text = user_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let user_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&user_text).unwrap_or_default();
+    let creator_id: Option<String> = user_rows
+        .first()
+        .and_then(|r| r.get("creator_id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
     let resp = state
         .pg
         .from("agency_users")
         .eq("id", &id)
         .eq("role", "talent")
-        .select("id,creator_id")
         .update(v.to_string())
         .execute()
         .await
@@ -1936,22 +1966,19 @@ pub async fn update_talent(
         return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
     }
 
-    let updated_text = resp.text().await.unwrap_or_default();
-    let updated_val: serde_json::Value = serde_json::from_str(&updated_text).unwrap_or(json!([]));
-    if let Some(first) = updated_val.as_array().and_then(|arr| arr.first()) {
-        let creator_id = first.get("creator_id").and_then(|v| v.as_str());
-        
-        if let Some(cid) = creator_id {
-            if !cid.trim().is_empty() {
-                let mut creator_update = json!({});
-                if let Some(ref handle) = payload.instagram_handle {
-                    creator_update["instagram_handle"] = json!(handle);
-                    creator_update["platform_handle"] = json!(handle);
-                }
-                if let Some(followers) = payload.instagram_followers {
-                    creator_update["instagram_followers"] = json!(followers);
-                }
-                if !creator_update.is_null() && creator_update.as_object().map(|m| !m.is_empty()).unwrap_or(false) {
+    // Sync instagram data to creators table if there's a linked creator
+    if let Some(ref cid) = creator_id {
+        if !cid.trim().is_empty() {
+            let mut creator_update = json!({});
+            if let Some(ref handle) = payload.instagram_handle {
+                creator_update["instagram_handle"] = json!(handle);
+                creator_update["platform_handle"] = json!(handle);
+            }
+            if let Some(followers) = payload.instagram_followers {
+                creator_update["instagram_followers"] = json!(followers);
+            }
+            if let Some(obj) = creator_update.as_object_mut() {
+                if !obj.is_empty() {
                     let _ = state
                         .pg
                         .from("creators")
@@ -1962,7 +1989,11 @@ pub async fn update_talent(
                 }
             }
         }
-        
+    }
+
+    let updated_text = resp.text().await.unwrap_or_default();
+    let updated_val: serde_json::Value = serde_json::from_str(&updated_text).unwrap_or(json!([]));
+    if let Some(_first) = updated_val.as_array().and_then(|arr| arr.first()) {
         let next_status = payload
             .status
             .as_deref()
@@ -1980,7 +2011,7 @@ pub async fn update_talent(
             AgencyTalentConnectionUpsert {
                 agency_id: &effective_agency_id,
                 talent_id: &id,
-                creator_id,
+                creator_id: creator_id.as_deref(),
                 status: next_status.as_str(),
                 licensing_rate_monthly_cents: payload.licensing_rate_monthly_cents,
                 accept_negotiations: next_accept_negotiations,
