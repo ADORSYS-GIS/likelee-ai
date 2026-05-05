@@ -1638,7 +1638,7 @@
           "includedRevisions": "2 cycles de modifications mineures (correction colorimetrique, changements de texte, remplacement de musique)",
           "majorChanges": "Necessitent un nouveau brief et un budget supplementaire (par ex. nouveau tournage, remontage complet)",
           "revisionTurnaround": "24-48 hours depending on scope",
-          "approvalProcess": "1 Le createur soumet les livrables sur la plateforme\n2 La marque dispose de 48 heures pour examiner et approuver/demander des revisions\n3 Une fois approuve, les fonds sont liberes de l'escrow vers le createur (3 jours ouvrables)\n4 Sans action, le paiement est automatiquement libere apres 48 heures",
+          "approvalProcess": "1 Le createur soumet les livrables sur la plateforme\n2 La marque examine et approuve ou demande des revisions\n3 Une fois approuve, les fonds sont liberes de l'escrow vers le createur via Stripe",
           "watermarkProtection": "Tous les assets livres incluent un filigrane Likelee integre pour la verification de licence et le suivi d'utilisation.\nProtection DMCA : avis de retrait automatiques si les assets sont utilises hors du perimetre approuve.",
           "legalTerms": "• Le createur conserve le droit d'auteur ; la marque recoit une licence d'utilisation selon les conditions specifiees\n• Conditions conformes SAG-AFTRA et standards de remuneration equitable\n• Le createur a le droit d'approuver l'utilisation finale avant publication\n• La marque ne peut pas sous-licencier sans le consentement du createur\n• Utilisation limitee aux canaux, territoires et durees approuves"
         }

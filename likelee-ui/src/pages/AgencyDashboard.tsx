@@ -18604,6 +18604,10 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
+  // openTalentId: when set, RosterView auto-opens that talent's side modal
+  const [openTalentId, setOpenTalentId] = useState<string | undefined>(
+    searchParams.get("openTalentId") || undefined,
+  );
   const normalizeSubTab = (value: string | null | undefined) => {
     const cleaned = String(value || "")
       .trim()
@@ -18730,7 +18734,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 15 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -18744,7 +18748,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 20 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -18758,7 +18762,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 5 * 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 30 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -18772,7 +18776,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 15 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -18786,7 +18790,7 @@ export default function AgencyDashboard() {
     },
     agencyId: user?.id,
     maxAge: 60 * 1000,
-    syncInterval: 60 * 1000,
+    syncInterval: 10 * 1000,
     staleWhileRevalidate: true,
     enabled: !!user?.id,
     refetchOnWindowFocus: false,
@@ -19498,7 +19502,6 @@ export default function AgencyDashboard() {
 
   useEffect(() => {
     if (!user?.id) return;
-    if (activeTab !== "roster") return;
     if (!isRosterPrimarySubTab) return;
     if (!rosterQuery.data) {
       rosterQuery.refetch();
@@ -19574,6 +19577,10 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
+  // Creator ID to auto-open a conversation with when navigating to Messages tab
+  const [messagingCreatorId, setMessagingCreatorId] = useState<
+    string | undefined
+  >(undefined);
 
   const goToEditProfile = () => {
     setActiveView("settings", "General Settings");
@@ -20258,9 +20265,13 @@ export default function AgencyDashboard() {
       markAsRead(notif.id);
     }
 
-    // Navigate to the appropriate tab/page
+    // Navigate to the appropriate tab/page with sub-tab if needed
     if (notif.navigateTo) {
-      setActiveTab(notif.navigateTo);
+      if (notif.navigateToSubTab) {
+        setActiveView(notif.navigateTo, notif.navigateToSubTab);
+      } else {
+        setActiveTab(notif.navigateTo);
+      }
       setShowNotifications(false);
     }
   };
@@ -20306,7 +20317,7 @@ export default function AgencyDashboard() {
         }),
         color: "indigo",
         isSummary: true,
-        navigateTo: "jobs", // Fixed: Navigate to jobs tab for brand connections
+        navigateTo: "brand-connections", // Navigate to brand-connections tab
       });
     }
     if (pendingLicensingRequestsCount > 0) {
@@ -20327,7 +20338,8 @@ export default function AgencyDashboard() {
         }),
         color: "indigo",
         isSummary: true,
-        navigateTo: "licensing", // Add navigation target
+        navigateTo: "licensing", // Navigate to licensing tab
+        navigateToSubTab: "Licensing Requests", // Navigate to specific sub-tab
       });
     }
     if (pendingJobInvitesCount > 0) {
@@ -20345,17 +20357,23 @@ export default function AgencyDashboard() {
         }),
         color: "blue",
         isSummary: true,
-        navigateTo: "jobs", // Add navigation target
+        navigateTo: "jobs", // Navigate to jobs tab
+        navigateToSubTab: "Job Invites", // Navigate to specific sub-tab
       });
     }
-    alerts.push({
-      id: "welcome",
-      title: "System Alert",
-      message:
-        "Your verification was successfully processed. Welcome to Likelee!",
-      time: "Just now",
-      color: "blue",
-    });
+
+    // Only show system alert if it hasn't been dismissed
+    if (!dismissedNotificationIds.includes("welcome")) {
+      alerts.push({
+        id: "welcome",
+        title: "System Alert",
+        message:
+          "Your verification was successfully processed. Welcome to Likelee!",
+        time: "System notification",
+        color: "blue",
+      });
+    }
+
     return alerts;
   }, [
     pendingBrandConnectionCount,
@@ -21609,21 +21627,6 @@ export default function AgencyDashboard() {
                       ))
                     )}
                   </div>
-                  <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
-                    <button
-                      onClick={() => {
-                        toast({
-                          title: "View all notifications",
-                          description:
-                            "Navigating to full notifications page...",
-                        });
-                        setShowNotifications(false);
-                      }}
-                      className="text-sm font-bold text-gray-600 hover:text-gray-900 transition-colors"
-                    >
-                      View all notifications
-                    </button>
-                  </div>
                 </div>
               )}
             </div>
@@ -21976,56 +21979,53 @@ export default function AgencyDashboard() {
                   <div className="text-lg font-black text-gray-900">
                     {t("agencyDashboard.dashboard.banner.title")}
                   </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    {t("agencyDashboard.dashboard.banner.subtitle")}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                  {!agencyBillingLoading && (
-                    <div
-                      className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
-                        agencyTrialActive
-                          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
-                          : agencyPlanTier === "pro"
-                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
-                            : agencyPlanTier === "basic" ||
-                                agencyPlanTier === "agency"
-                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
-                              : agencyPlanTier === "enterprise"
-                                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
-                                : "bg-white text-gray-900 ring-gray-200"
-                      }`}
-                      title={t("agencyDashboard.dashboard.banner.currentPlan")}
-                    >
-                      {agencyTrialActive ? (
-                        <span className="inline-flex items-center gap-2">
-                          <span>{agencyDisplayPlanLabel} TRIAL</span>
-                          {agencyTrialCountdown ? (
-                            <span className="text-[11px] font-black tracking-normal opacity-95">
-                              {agencyTrialCountdown}
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        String(agencyPlanTier || agencyDisplayPlanLabel || "")
-                          .trim()
-                          .toUpperCase()
-                      )}
-                    </div>
-                  )}
-
-                  {!agencyBillingLoading &&
-                    agencyPlanTier === "free" &&
-                    !agencyTrialActive && (
-                      <Button
-                        type="button"
-                        className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
-                        onClick={() => navigate("/agencysubscribe")}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                    {!agencyBillingLoading && (
+                      <div
+                        className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
+                          agencyTrialActive
+                            ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
+                            : agencyPlanTier === "pro"
+                              ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
+                              : agencyPlanTier === "basic" ||
+                                  agencyPlanTier === "agency"
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
+                                : agencyPlanTier === "enterprise"
+                                  ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
+                                  : "bg-white text-gray-900 ring-gray-200"
+                        }`}
+                        title="Current plan"
                       >
-                        Upgrade
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
+                        {agencyTrialActive ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span>{agencyDisplayPlanLabel} TRIAL</span>
+                            {agencyTrialCountdown ? (
+                              <span className="text-[11px] font-black tracking-normal opacity-95">
+                                {agencyTrialCountdown}
+                              </span>
+                            ) : null}
+                          </span>
+                        ) : (
+                          String(agencyPlanTier || agencyDisplayPlanLabel || "")
+                            .trim()
+                            .toUpperCase()
+                        )}
+                      </div>
                     )}
+
+                    {!agencyBillingLoading &&
+                      agencyPlanTier === "free" &&
+                      !agencyTrialActive && (
+                        <Button
+                          type="button"
+                          className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          Upgrade
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -22081,6 +22081,19 @@ export default function AgencyDashboard() {
                 isLoading={rosterQuery.isLoading}
                 onRosterChanged={() => rosterQuery.refetch()}
                 isSportsAgency={isSportsAgency}
+                initialOpenTalentId={openTalentId}
+                onInitialTalentOpened={() => {
+                  setOpenTalentId(undefined);
+                  // Remove openTalentId from URL without triggering a re-render loop
+                  setSearchParams(
+                    (prev) => {
+                      const next = new URLSearchParams(prev);
+                      next.delete("openTalentId");
+                      return next;
+                    },
+                    { replace: true, preventScrollReset: true },
+                  );
+                }}
               />
             )}
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
@@ -22122,7 +22135,12 @@ export default function AgencyDashboard() {
             {activeTab === "licensing" &&
               activeSubTab === "Brand Connections" &&
               (agencyCanUseBrandConnections ? (
-                <BrandConnectionsView />
+                <BrandConnectionsView
+                  onMessageTalent={(creatorId) => {
+                    setMessagingCreatorId(creatorId);
+                    setActiveTab("messages");
+                  }}
+                />
               ) : (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                   <div className="text-lg font-black text-gray-900">
@@ -22143,7 +22161,12 @@ export default function AgencyDashboard() {
               ))}
             {activeTab === "brand-connections" &&
               (agencyCanUseBrandConnections ? (
-                <BrandConnectionsView />
+                <BrandConnectionsView
+                  onMessageTalent={(creatorId) => {
+                    setMessagingCreatorId(creatorId);
+                    setActiveTab("messages");
+                  }}
+                />
               ) : (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                   <div className="text-lg font-black text-gray-900">
@@ -22152,14 +22175,20 @@ export default function AgencyDashboard() {
                   <div className="text-gray-500 font-medium mt-1">
                     Brand Connections are available on paid agency plans only.
                   </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
+                  {!agencyBillingLoading &&
+                    agencyPlanTier === "free" &&
+                    !agencyTrialActive && (
+                      <div className="mt-4">
+                        <Button
+                          type="button"
+                          className="rounded-xl font-bold"
+                          onClick={() => navigate("/agencysubscribe")}
+                        >
+                          Upgrade
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                 </Card>
               ))}
             {activeTab === "licensing" &&
@@ -22195,38 +22224,17 @@ export default function AgencyDashboard() {
                       : null
                   }
                   onBrandRequestContextHandled={() => {
-                    console.log("Brand request context handled, clearing");
                     setBrandRequestContext(null);
                   }}
                 />
               )}
-            {activeTab === "protection" && (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Coming soon
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Protection & Usage is coming soon.
-                </div>
-              </Card>
-            )}
-            {activeTab === "analytics" &&
-              activeSubTab === "Analytics Dashboard" &&
-              (effectiveAgencyMode === "IRL" ? (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Coming soon
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Analytics Dashboard for IRL Mode is coming soon.
-                  </div>
-                </Card>
-              ) : hasProAccess ? (
-                <AnalyticsDashboardView
-                  onRenewLicense={handleRenew}
-                  agencyMode={effectiveAgencyMode}
-                  licenseComplianceData={LICENSE_COMPLIANCE_DATA}
-                  talentData={TALENT_DATA}
+            {activeTab === "messages" &&
+              (hasProAccess ? (
+                <CommunicationHub
+                  initialCreatorId={messagingCreatorId}
+                  onInitialCreatorHandled={() =>
+                    setMessagingCreatorId(undefined)
+                  }
                 />
               ) : (
                 <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
@@ -22234,7 +22242,7 @@ export default function AgencyDashboard() {
                     Upgrade required
                   </div>
                   <div className="text-gray-500 font-medium mt-1">
-                    Advanced Analytics is available on the Pro plan.
+                    Messaging is available on the Pro plan.
                   </div>
                   <div className="mt-4">
                     <Button
@@ -22246,12 +22254,29 @@ export default function AgencyDashboard() {
                   </div>
                 </Card>
               ))}
+            {activeTab === "client-crm" && <ClientCRMView />}
+            {activeTab === "file-storage" && <FileStorageView />}
+            {activeTab === "bookings" && (
+              <BookingsView
+                activeSubTab={activeSubTab}
+                bookings={bookings}
+                onAddBooking={onAddBooking}
+                onUpdateBooking={onUpdateBooking}
+                onCancelBooking={onCancelBooking}
+                bookOuts={bookOuts}
+                onAddBookOut={onAddBookOut}
+                onRemoveBookOut={onRemoveBookOut}
+                isSportsAgency={isSportsAgency}
+                agencyMode={effectiveAgencyMode}
+                licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                talentData={TALENT_DATA}
+              />
+            )}
             {activeTab === "analytics" &&
               activeSubTab === "Royalties & Payouts" && (
                 <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
               )}
             {activeTab === "deliverables" && <AgencyDeliverablesView />}
-
             {activeTab === "packages" && (
               <PackagesView isSportsAgency={isSportsAgency} />
             )}
@@ -22299,48 +22324,6 @@ export default function AgencyDashboard() {
               <MarketplaceTab
                 connectLocked={!agencyCanConnectMarketplace}
                 onConnectLocked={() => navigate("/agencysubscribe")}
-              />
-            )}
-            {activeTab === "messages" &&
-              (hasProAccess ? (
-                <CommunicationHub
-                  initialCreatorId={
-                    String(searchParams.get("openCreatorId") || "").trim() ||
-                    undefined
-                  }
-                />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">
-                    Upgrade required
-                  </div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Messaging is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      className="rounded-xl font-bold"
-                      onClick={() => navigate("/agencysubscribe")}
-                    >
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            {activeTab === "client-crm" && <ClientCRMView />}
-            {activeTab === "file-storage" && <FileStorageView />}
-            {activeTab === "bookings" && (
-              <BookingsView
-                activeSubTab={activeSubTab}
-                bookings={bookings}
-                onAddBooking={onAddBooking}
-                onUpdateBooking={onUpdateBooking}
-                onCancelBooking={onCancelBooking}
-                bookOuts={bookOuts}
-                onAddBookOut={onAddBookOut}
-                onRemoveBookOut={onRemoveBookOut}
-                isSportsAgency={isSportsAgency}
-                agencyMode={effectiveAgencyMode}
               />
             )}
             {activeTab === "accounting" && (

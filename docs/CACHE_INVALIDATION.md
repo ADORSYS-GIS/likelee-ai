@@ -2,7 +2,11 @@
 
 ## Overview
 
-The Likelee platform implements a multi-level caching strategy for performance optimization. This document describes the cache invalidation mechanisms that ensure data consistency when permissions, roles, or connections are modified.
+The Likelee platform implements a multi-level **in-memory** caching strategy for performance optimization. All server-side caching is done using Rust's `DashMap` (concurrent HashMap) - there is **no Redis** in the system.
+
+This document describes the cache invalidation mechanisms that ensure data consistency when permissions, roles, or connections are modified.
+
+> **Note**: For the complete data storage architecture (including browser-side IndexedDB and React Query caching), see [DATA_STORAGE_ARCHITECTURE.md](./DATA_STORAGE_ARCHITECTURE.md).
 
 ## Table of Contents
 

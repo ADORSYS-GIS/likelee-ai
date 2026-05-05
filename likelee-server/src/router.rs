@@ -1068,8 +1068,16 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::list_brand_inbox_packages),
         )
         .route(
+            "/api/campaign-offers/:offer_id/packages/:package_id/interactions",
+            get(crate::brand_campaigns::get_brand_package_interactions),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/packages/brand-done",
             post(crate::brand_campaigns::mark_brand_package_done),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/packages/:package_id/dismiss",
+            post(crate::brand_campaigns::dismiss_brand_inbox_package),
         )
         .route(
             "/api/campaign-offers/:offer_id/packages/brand-delete",
@@ -1090,12 +1098,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/campaign-offers/:offer_id/assignments",
-            get(crate::brand_campaigns::list_offer_talent_assignments)
-                .post(crate::brand_campaigns::create_offer_talent_assignment),
-        )
-        .route(
-            "/api/campaign-offers/:offer_id/assignments/:assignment_id",
-            delete(crate::brand_campaigns::delete_offer_talent_assignment),
+            get(crate::brand_campaigns::list_offer_talent_assignments),
         )
         .route(
             "/api/campaign-offers/:offer_id/asset-requests",

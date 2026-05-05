@@ -6,6 +6,9 @@ import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useAuth } from "@/auth/AuthProvider";
 import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
+import { BrandDataPrefetcher } from "@/components/BrandDataPrefetcher";
+import { AgencyDataPrefetcher } from "@/components/AgencyDataPrefetcher";
+import { CreatorDataPrefetcher } from "@/components/CreatorDataPrefetcher";
 
 export default function Layout({ children, currentPageName }) {
   const { t, i18n } = useTranslation();
@@ -280,6 +283,9 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-white">
+      <BrandDataPrefetcher />
+      <AgencyDataPrefetcher />
+      <CreatorDataPrefetcher />
       <noscript>
         <div
           style={{
