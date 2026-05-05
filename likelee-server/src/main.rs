@@ -318,6 +318,10 @@ async fn main() {
         // Brand trial configuration
         brand_trial_days: cfg.brand_trial_days,
 
+        // Apify Integration
+        apify_api_token: cfg.apify_api_token.clone(),
+        apify_scraper_actor_id: cfg.apify_scraper_actor_id.clone(),
+
         // JWKS cache for JWT Signing Keys
         jwks_cache: jwks_cache.clone(),
     };

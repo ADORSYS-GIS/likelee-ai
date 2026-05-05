@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-import { createAgencyTalent } from "@/api/functions";
+import { createAgencyTalent, scrapeInstagramProfile } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
 import { DobInput } from "@/components/ui/DobInput";
@@ -75,6 +75,7 @@ export default function AddTalent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingVoice, setUploadingVoice] = useState(false);
+  const [fetchingInstagram, setFetchingInstagram] = useState(false);
   const totalSteps = 3;
   const [duplicateConflict, setDuplicateConflict] = useState<{
     open: boolean;
@@ -124,6 +125,7 @@ export default function AddTalent() {
 
     // Social
     instagram_handle: "",
+    instagram_followers: 0,
 
     // Notes
     bio: "",
@@ -282,6 +284,27 @@ export default function AddTalent() {
         return { ...prev, ethnicity: [...prev.ethnicity, ethnicity] };
       }
     });
+  };
+
+  const fetchInstagramData = async () => {
+    const handle = formData.instagram_handle?.trim().replace("@", "");
+    if (!handle) return;
+
+    setFetchingInstagram(true);
+    try {
+      const data = await scrapeInstagramProfile(handle);
+
+      if (data?.success && data?.profile) {
+        setFormData((prev) => ({
+          ...prev,
+          instagram_followers: data.profile?.followers || 0,
+        }));
+      }
+    } catch (e) {
+      // Silently fail - user can proceed without Instagram data
+    } finally {
+      setFetchingInstagram(false);
+    }
   };
 
   const toggleRoleCategory = (category) => {
@@ -481,8 +504,8 @@ export default function AddTalent() {
         role_type: formData.role_types,
         status: "inactive",
         instagram_handle: formData.instagram_handle,
-        instagram_followers: 0,
-        engagement_rate: 0,
+        instagram_followers: formData.instagram_followers || 0,
+        engagement_rate: formData.engagement_rate || 0,
         profile_photo_url: profilePhotoUrl || heroMediaUrl,
         photo_urls: galleryPhotoUrls,
         video_url:
@@ -1588,10 +1611,28 @@ export default function AddTalent() {
                         instagram_handle: e.target.value,
                       })
                     }
+                    onBlur={() => {
+                      if (formData.instagram_handle && !fetchingInstagram) {
+                        fetchInstagramData();
+                      }
+                    }}
                     placeholder="@handle"
-                    className="pl-10 h-12"
+                    className={`pl-10 h-12 pr-10 ${fetchingInstagram ? "border-indigo-400 ring-2 ring-indigo-100" : ""}`}
                   />
+                  {fetchingInstagram && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                      <span className="text-xs font-medium text-indigo-500">
+                        Fetching...
+                      </span>
+                    </div>
+                  )}
                 </div>
+                {formData.instagram_followers > 0 && !fetchingInstagram && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    {formData.instagram_followers.toLocaleString()} followers
+                  </p>
+                )}
               </div>
 
               <Alert className="bg-blue-50 border-2 border-blue-200">

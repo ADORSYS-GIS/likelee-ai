@@ -191,6 +191,7 @@ pub struct TalentRow {
     pub licensing_rate_monthly_cents: Option<i64>,
     pub accept_negotiations: bool,
     pub rate_currency: String,
+    pub instagram_handle: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -224,7 +225,7 @@ pub async fn get_roster(
     let resp = state
         .pg
         .from("agency_talent_relationships")
-        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,performance_tier_name,agency_users(*),creators(full_name,email,profile_photo_url)")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_monthly_cents,accept_negotiations,rate_currency,performance_tier_name,agency_users(*),creators(full_name,email,profile_photo_url,instagram_handle)")
         .eq("agency_id", agency_id)
         .execute()
         .await
@@ -603,6 +604,10 @@ pub async fn get_roster(
                 .and_then(|v| v.as_str())
                 .unwrap_or("USD")
                 .to_string();
+            let instagram_handle = get_field("instagram_handle")
+                .or(creator.get("instagram_handle"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
             let creator_id_str = creator_id_raw;
 
             let roster_row = TalentRow {
@@ -682,6 +687,7 @@ pub async fn get_roster(
                 licensing_rate_monthly_cents,
                 accept_negotiations,
                 rate_currency,
+                instagram_handle,
             };
 
             roster.push(roster_row);
