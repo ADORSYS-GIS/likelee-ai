@@ -647,28 +647,29 @@ const AnalyticsDashboardView = ({
                   <ResponsiveContainer width="100%" height="100%">
                     {(() => {
                       const total = analytics.consent_status.total || 1;
-                      const completePct = Math.min(
-                        Math.round(
-                          (analytics.consent_status.complete / total) * 100,
-                        ),
-                        100,
-                      );
-                      const missingPct = Math.min(
-                        Math.round(
-                          (analytics.consent_status.missing / total) * 100,
-                        ),
-                        100,
-                      );
-                      const expiredPct = Math.min(
-                        Math.round(
-                          (analytics.consent_status.expiring / total) * 100,
-                        ),
-                        100,
-                      );
-                      const otherPct = Math.max(
-                        0,
-                        100 - completePct - missingPct - expiredPct,
-                      );
+                      // Calculate percentages ensuring they sum to 100%
+                      const completeRaw =
+                        (analytics.consent_status.complete / total) * 100;
+                      const missingRaw =
+                        (analytics.consent_status.missing / total) * 100;
+                      const expiredRaw =
+                        (analytics.consent_status.expiring / total) * 100;
+
+                      const totalRaw = completeRaw + missingRaw + expiredRaw;
+
+                      let completePct, missingPct, expiredPct;
+
+                      if (totalRaw > 0) {
+                        // Normalize to ensure sum equals 100%
+                        completePct = Math.round(
+                          (completeRaw / totalRaw) * 100,
+                        );
+                        missingPct = Math.round((missingRaw / totalRaw) * 100);
+                        expiredPct = 100 - completePct - missingPct; // Ensure sum = 100
+                      } else {
+                        completePct = missingPct = expiredPct = 0;
+                      }
+
                       const pieData = [
                         {
                           name: "Complete",
@@ -685,15 +686,6 @@ const AnalyticsDashboardView = ({
                           value: expiredPct,
                           color: "#facc15",
                         },
-                        ...(otherPct > 0
-                          ? [
-                              {
-                                name: "No Consent Data",
-                                value: otherPct,
-                                color: "#e5e7eb",
-                              },
-                            ]
-                          : []),
                       ];
                       return (
                         <PieChart>
@@ -1225,14 +1217,29 @@ const AnalyticsDashboardView = ({
             analytics.consent_status.expiring_current_month;
           const consentExpiredCount = analytics.consent_status.expiring;
           const missingCount = analytics.consent_status.missing;
-          const completePct = activePct;
-          const expiredPct = totalContracts
-            ? Math.min(
-                Math.round((consentExpiredCount / totalContracts) * 100),
-                100,
-              )
+          // Calculate consent status percentages ensuring they sum to 100%
+          const completeRaw = totalContracts
+            ? (activeCount / totalContracts) * 100
             : 0;
-          const missingPct = Math.max(100 - completePct - expiredPct, 0);
+          const expiredRaw = totalContracts
+            ? (consentExpiredCount / totalContracts) * 100
+            : 0;
+          const missingRaw = totalContracts
+            ? (missingCount / totalContracts) * 100
+            : 0;
+
+          const totalRaw = completeRaw + expiredRaw + missingRaw;
+
+          let completePct, expiredPct, missingPct;
+
+          if (totalRaw > 0) {
+            // Normalize to ensure sum equals 100%
+            completePct = Math.round((completeRaw / totalRaw) * 100);
+            expiredPct = Math.round((expiredRaw / totalRaw) * 100);
+            missingPct = 100 - completePct - expiredPct; // Ensure sum = 100
+          } else {
+            completePct = expiredPct = missingPct = 0;
+          }
 
           const parseUsDate = (v: string) => {
             if (!v || v === "—" || v === "N/A") return null;

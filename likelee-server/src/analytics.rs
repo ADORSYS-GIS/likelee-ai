@@ -527,14 +527,25 @@ pub async fn get_analytics_dashboard(
             0.0
         };
 
-        // Calculate final percentages
+        // Calculate final percentages - ensure they sum to 100%
         let catalog_count = catalogs_30d_data.len() as f64;
         let (video_pct, voice_pct, image_pct) = if catalog_count > 0.0 {
-            (
-                (video_total / catalog_count).round() as i64,
-                (voice_total / catalog_count).round() as i64,
-                (image_total / catalog_count).round() as i64,
-            )
+            let video_raw = video_total / catalog_count;
+            let voice_raw = voice_total / catalog_count;
+            let image_raw = image_total / catalog_count;
+
+            let total_raw = video_raw + voice_raw + image_raw;
+
+            if total_raw > 0.0 {
+                // Normalize to ensure sum equals 100%
+                let video_normalized = (video_raw / total_raw * 100.0).round() as i64;
+                let voice_normalized = (voice_raw / total_raw * 100.0).round() as i64;
+                let image_normalized = 100 - video_normalized - voice_normalized; // Ensure sum = 100
+
+                (video_normalized, voice_normalized, image_normalized)
+            } else {
+                (0, 0, 0)
+            }
         } else {
             (0, 0, 0)
         };
