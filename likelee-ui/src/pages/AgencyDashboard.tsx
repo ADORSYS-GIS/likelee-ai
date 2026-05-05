@@ -12505,12 +12505,14 @@ const DashboardView = ({
   kycLoading,
   onRefreshStatus,
   refreshLoading,
+  onNavigateToLicensing,
 }: {
   onKYC: () => void;
   kycStatus?: string | null;
   kycLoading?: boolean;
   onRefreshStatus?: () => void;
   refreshLoading?: boolean;
+  onNavigateToLicensing?: () => void;
 }) => (
   <div className="space-y-8">
     {/* KYC Verification Alert */}
@@ -12878,6 +12880,7 @@ const DashboardView = ({
           <Button
             variant="default"
             className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
+            onClick={onNavigateToLicensing}
           >
             Review Now
           </Button>
@@ -22097,7 +22100,10 @@ export default function AgencyDashboard() {
               />
             )}
             {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-              <PerformanceTiers isSportsAgency={isSportsAgency} />
+              <PerformanceTiers
+                isSportsAgency={isSportsAgency}
+                agencyMode={effectiveAgencyMode}
+              />
             )}
             {activeTab === "jobs" &&
               activeSubTab === "Job Invites" &&

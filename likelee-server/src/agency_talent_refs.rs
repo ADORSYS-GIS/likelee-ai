@@ -296,6 +296,17 @@ pub async fn list_agency_talent_refs(
         if key.is_empty() || by_key.contains_key(&key) {
             continue;
         }
+        // Also skip if this creator_id is already represented by an agency_users entry.
+        // An onboarded talent has both an agency_users row AND a relationship row;
+        // the agency_users loop already added them — don't add a duplicate.
+        if let Some(ref cid) = creator_id {
+            if by_key
+                .values()
+                .any(|v| v.creator_id.as_deref() == Some(cid))
+            {
+                continue;
+            }
+        }
         let creator_row = creator_id.as_ref().and_then(|cid| creators_by_id.get(cid));
         let full_name = preferred_name(
             None,
