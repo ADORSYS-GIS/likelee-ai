@@ -300,7 +300,10 @@ pub async fn list_agency_talent_refs(
         // An onboarded talent has both an agency_users row AND a relationship row;
         // the agency_users loop already added them — don't add a duplicate.
         if let Some(ref cid) = creator_id {
-            if by_key.values().any(|v| v.creator_id.as_deref() == Some(cid)) {
+            if by_key
+                .values()
+                .any(|v| v.creator_id.as_deref() == Some(cid))
+            {
                 continue;
             }
         }

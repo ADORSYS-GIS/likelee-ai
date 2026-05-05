@@ -2,7 +2,11 @@ use crate::{
     auth::{AuthUser, RoleGuard},
     config::AppState,
 };
-use axum::{extract::{Query, State}, http::StatusCode, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
@@ -567,11 +571,7 @@ pub async fn get_performance_tiers(
                 let kyc_rows: Vec<serde_json::Value> =
                     serde_json::from_str(&kyc_text).unwrap_or_default();
                 for r in kyc_rows {
-                    let cid = r
-                        .get("id")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .trim();
+                    let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
                     if cid.is_empty() {
                         continue;
                     }

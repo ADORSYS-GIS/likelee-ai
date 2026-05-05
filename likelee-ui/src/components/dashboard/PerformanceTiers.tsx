@@ -151,10 +151,10 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?: "AI" | "IRL" }> = ({
-  isSportsAgency = false,
-  agencyMode = "AI",
-}) => {
+export const PerformanceTiers: React.FC<{
+  isSportsAgency?: boolean;
+  agencyMode?: "AI" | "IRL";
+}> = ({ isSportsAgency = false, agencyMode = "AI" }) => {
   const queryClient = useQueryClient();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const entitySingular = isSportsAgency ? "athlete" : "talent";
@@ -165,7 +165,15 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
   const isAiMode = agencyMode === "AI";
 
   const [configForm, setConfigForm] = useState<
-    Record<string, { min_earnings: number; min_bookings: number; commission_rate: number; payout_percent: number }>
+    Record<
+      string,
+      {
+        min_earnings: number;
+        min_bookings: number;
+        commission_rate: number;
+        payout_percent: number;
+      }
+    >
   >({});
 
   const { data, isLoading, error } =
@@ -199,7 +207,12 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
     if (data?.config) {
       const next: Record<
         string,
-        { min_earnings: number; min_bookings: number; commission_rate: number; payout_percent: number }
+        {
+          min_earnings: number;
+          min_bookings: number;
+          commission_rate: number;
+          payout_percent: number;
+        }
       > = {};
       for (const tier of ["Premium", "Core", "Growth"]) {
         next[tier] = {
@@ -287,8 +300,12 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
           configForm?.[tier]?.min_earnings ?? existing?.[tier]?.min_earnings,
         min_bookings:
           configForm?.[tier]?.min_bookings ?? existing?.[tier]?.min_bookings,
-        commission_rate: configForm?.[tier]?.commission_rate ?? existing?.[tier]?.commission_rate,
-        payout_percent: configForm?.[tier]?.payout_percent ?? (existing?.[tier] as any)?.payout_percent,
+        commission_rate:
+          configForm?.[tier]?.commission_rate ??
+          existing?.[tier]?.commission_rate,
+        payout_percent:
+          configForm?.[tier]?.payout_percent ??
+          (existing?.[tier] as any)?.payout_percent,
       };
     }
 
@@ -360,7 +377,11 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
           const avgBookings =
             group.talents.length > 0
               ? group.talents.reduce(
-                  (acc, t) => acc + (isAiMode ? t.licensing_deals_this_month : t.bookings_this_month),
+                  (acc, t) =>
+                    acc +
+                    (isAiMode
+                      ? t.licensing_deals_this_month
+                      : t.bookings_this_month),
                   0,
                 ) / group.talents.length
               : 0;
@@ -446,7 +467,9 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
                       <Calendar className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      {isAiMode ? "Avg Deal Frequency" : "Avg Booking Frequency"}
+                      {isAiMode
+                        ? "Avg Deal Frequency"
+                        : "Avg Booking Frequency"}
                     </span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
@@ -561,12 +584,24 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
                                   const currentLevel = talent.tier.tier_level;
                                   if (currentLevel <= 1) return "100%"; // already Premium
                                   // Tier name for the next level up
-                                  const tierOrder = ["Premium", "Core", "Growth", "Inactive"];
+                                  const tierOrder = [
+                                    "Premium",
+                                    "Core",
+                                    "Growth",
+                                    "Inactive",
+                                  ];
                                   // currentLevel is 1-based; index in tierOrder = level - 1
-                                  const nextTierName = tierOrder[currentLevel - 2]; // one step up
-                                  const target = nextTierName && data?.config?.[nextTierName]?.min_earnings;
-                                  if (!target || target <= 0) return `${Math.max(2, Math.min(100, Math.round((earned / 500) * 100)))}%`;
-                                  const pct = Math.min(100, Math.round((earned / target) * 100));
+                                  const nextTierName =
+                                    tierOrder[currentLevel - 2]; // one step up
+                                  const target =
+                                    nextTierName &&
+                                    data?.config?.[nextTierName]?.min_earnings;
+                                  if (!target || target <= 0)
+                                    return `${Math.max(2, Math.min(100, Math.round((earned / 500) * 100)))}%`;
+                                  const pct = Math.min(
+                                    100,
+                                    Math.round((earned / target) * 100),
+                                  );
                                   return `${Math.max(2, pct)}%`; // min 2% so bar is always visible
                                 })(),
                               }}
@@ -657,126 +692,151 @@ export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean; agencyMode?:
                   </div>
                   {/* In AI mode bookings are irrelevant — hide the bookings threshold */}
                   {!isAiMode && (
-                  <div className="space-y-3">
-                    <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                      Min Bookings/Month
-                    </Label>
-                    <Input
-                      type="number"
-                      value={configForm[tier]?.min_bookings}
-                      onChange={(e) =>
-                        setConfigForm({
-                          ...configForm,
-                          [tier]: {
-                            ...configForm[tier],
-                            min_bookings: Number(e.target.value),
-                          },
-                        })
-                      }
-                      className={cn(
-                        "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all",
-                        TIER_CONFIG[tier].modalInputBg,
-                      )}
-                    />
-                  </div>
+                    <div className="space-y-3">
+                      <Label className="text-[13px] font-bold text-gray-600 ml-1">
+                        Min Bookings/Month
+                      </Label>
+                      <Input
+                        type="number"
+                        value={configForm[tier]?.min_bookings}
+                        onChange={(e) =>
+                          setConfigForm({
+                            ...configForm,
+                            [tier]: {
+                              ...configForm[tier],
+                              min_bookings: Number(e.target.value),
+                            },
+                          })
+                        }
+                        className={cn(
+                          "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all",
+                          TIER_CONFIG[tier].modalInputBg,
+                        )}
+                      />
+                    </div>
                   )}
                   {/* Commission/payout split — only relevant for AI mode (licensing deals).
                       IRL bookings use a separate payment flow and don't use these rates. */}
                   {isAiMode && (
-                  <>
-                  <div className="space-y-3">
-                    <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                      Talent Payout % (of net)
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={configForm[tier]?.payout_percent}
-                        onChange={(e) => {
-                          const val = Math.min(100, Math.max(0, Number(e.target.value)));
-                          setConfigForm({
-                            ...configForm,
-                            [tier]: {
-                              ...configForm[tier],
-                              payout_percent: val,
-                              commission_rate: Math.round((100 - val) * 100) / 100,
-                            },
-                          });
-                        }}
-                        className={cn(
-                          "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all pr-8",
-                          TIER_CONFIG[tier].modalInputBg,
-                        )}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">%</span>
-                    </div>
-                    <p className="text-[11px] text-gray-400 ml-1">
-                      Talent receives this % of net after platform fee
-                    </p>
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                      Agency Commission %
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={configForm[tier]?.commission_rate}
-                        onChange={(e) => {
-                          const val = Math.min(100, Math.max(0, Number(e.target.value)));
-                          setConfigForm({
-                            ...configForm,
-                            [tier]: {
-                              ...configForm[tier],
-                              commission_rate: val,
-                              payout_percent: Math.round((100 - val) * 100) / 100,
-                            },
-                          });
-                        }}
-                        className={cn(
-                          "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all pr-8",
-                          TIER_CONFIG[tier].modalInputBg,
-                        )}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">%</span>
-                    </div>
-                    <p className="text-[11px] text-gray-400 ml-1">
-                      Agency takes this % from talent's gross share
-                    </p>
-                  </div>
-                  {/* Live split preview */}
-                  <div className={cn(
-                    "sm:col-span-2 rounded-xl p-4 border",
-                    TIER_CONFIG[tier].statsBg,
-                    TIER_CONFIG[tier].statsBorder,
-                  )}>
-                    <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
-                      Split Preview — on a $1,000 net deal
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-3 rounded-full overflow-hidden bg-gray-200">
-                        <div
-                          className={cn("h-full rounded-full transition-all duration-300", TIER_CONFIG[tier].iconBg)}
-                          style={{ width: `${configForm[tier]?.payout_percent ?? 0}%` }}
-                        />
+                    <>
+                      <div className="space-y-3">
+                        <Label className="text-[13px] font-bold text-gray-600 ml-1">
+                          Talent Payout % (of net)
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={configForm[tier]?.payout_percent}
+                            onChange={(e) => {
+                              const val = Math.min(
+                                100,
+                                Math.max(0, Number(e.target.value)),
+                              );
+                              setConfigForm({
+                                ...configForm,
+                                [tier]: {
+                                  ...configForm[tier],
+                                  payout_percent: val,
+                                  commission_rate:
+                                    Math.round((100 - val) * 100) / 100,
+                                },
+                              });
+                            }}
+                            className={cn(
+                              "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all pr-8",
+                              TIER_CONFIG[tier].modalInputBg,
+                            )}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">
+                            %
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 ml-1">
+                          Talent receives this % of net after platform fee
+                        </p>
                       </div>
-                    </div>
-                    <div className="flex justify-between mt-2 text-[12px] font-bold">
-                      <span className={TIER_CONFIG[tier].brandColor}>
-                        Talent: ${((configForm[tier]?.payout_percent ?? 0) * 10).toFixed(0)}
-                        {" "}({configForm[tier]?.payout_percent ?? 0}%)
-                      </span>
-                      <span className="text-gray-500">
-                        Agency: ${((configForm[tier]?.commission_rate ?? 0) * 10).toFixed(0)}
-                        {" "}({configForm[tier]?.commission_rate ?? 0}%)
-                      </span>
-                    </div>
-                  </div>
-                  </>
+                      <div className="space-y-3">
+                        <Label className="text-[13px] font-bold text-gray-600 ml-1">
+                          Agency Commission %
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={configForm[tier]?.commission_rate}
+                            onChange={(e) => {
+                              const val = Math.min(
+                                100,
+                                Math.max(0, Number(e.target.value)),
+                              );
+                              setConfigForm({
+                                ...configForm,
+                                [tier]: {
+                                  ...configForm[tier],
+                                  commission_rate: val,
+                                  payout_percent:
+                                    Math.round((100 - val) * 100) / 100,
+                                },
+                              });
+                            }}
+                            className={cn(
+                              "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all pr-8",
+                              TIER_CONFIG[tier].modalInputBg,
+                            )}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">
+                            %
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 ml-1">
+                          Agency takes this % from talent's gross share
+                        </p>
+                      </div>
+                      {/* Live split preview */}
+                      <div
+                        className={cn(
+                          "sm:col-span-2 rounded-xl p-4 border",
+                          TIER_CONFIG[tier].statsBg,
+                          TIER_CONFIG[tier].statsBorder,
+                        )}
+                      >
+                        <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                          Split Preview — on a $1,000 net deal
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-3 rounded-full overflow-hidden bg-gray-200">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all duration-300",
+                                TIER_CONFIG[tier].iconBg,
+                              )}
+                              style={{
+                                width: `${configForm[tier]?.payout_percent ?? 0}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between mt-2 text-[12px] font-bold">
+                          <span className={TIER_CONFIG[tier].brandColor}>
+                            Talent: $
+                            {(
+                              (configForm[tier]?.payout_percent ?? 0) * 10
+                            ).toFixed(0)}{" "}
+                            ({configForm[tier]?.payout_percent ?? 0}%)
+                          </span>
+                          <span className="text-gray-500">
+                            Agency: $
+                            {(
+                              (configForm[tier]?.commission_rate ?? 0) * 10
+                            ).toFixed(0)}{" "}
+                            ({configForm[tier]?.commission_rate ?? 0}%)
+                          </span>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

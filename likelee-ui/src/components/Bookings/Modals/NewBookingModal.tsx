@@ -295,11 +295,12 @@ export const NewBookingModal = ({
               : [];
         const mapped = Array.isArray(rows)
           ? rows
-              .filter((r: any) =>
-                // Only include agency-created talents — those with agency_users rows.
-                // relationship_type='internal' means the talent was created by this agency.
-                // relationship_type='marketplace_connected' means independent creator — skip.
-                !r.relationship_type || r.relationship_type === "internal"
+              .filter(
+                (r: any) =>
+                  // Only include agency-created talents — those with agency_users rows.
+                  // relationship_type='internal' means the talent was created by this agency.
+                  // relationship_type='marketplace_connected' means independent creator — skip.
+                  !r.relationship_type || r.relationship_type === "internal",
               )
               .map((r: any) => ({
                 id: r.agency_user_id || r.id,
@@ -498,8 +499,9 @@ export const NewBookingModal = ({
               : [];
         const mapped = Array.isArray(rows)
           ? rows
-              .filter((r: any) =>
-                !r.relationship_type || r.relationship_type === "internal"
+              .filter(
+                (r: any) =>
+                  !r.relationship_type || r.relationship_type === "internal",
               )
               .map((r: any) => ({
                 id: r.agency_user_id || r.id,

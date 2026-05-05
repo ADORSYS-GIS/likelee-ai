@@ -224,11 +224,18 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
     const missing: string[] = [];
     const talentVal = (formData.talent_name || "").trim().toLowerCase();
     const clientVal = (formData.client_name || "").trim().toLowerCase();
-    if (talentVal && !bodyLower.includes(talentVal)) missing.push("talent_name_placeholder");
-    if (clientVal && !bodyLower.includes(clientVal)) missing.push("client_name_placeholder");
+    if (talentVal && !bodyLower.includes(talentVal))
+      missing.push("talent_name_placeholder");
+    if (clientVal && !bodyLower.includes(clientVal))
+      missing.push("client_name_placeholder");
     return missing;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, formData.contract_body, formData.talent_name, formData.client_name]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    step,
+    formData.contract_body,
+    formData.talent_name,
+    formData.client_name,
+  ]);
   const builderExternalId = useMemo(
     () =>
       currentTemplate?.id
@@ -472,8 +479,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       //   - The agency edited the body in step 2 and removed the names.
       // We check the actual values from step 1, not just placeholder presence.
       const bodyLower = currentData.contract_body.toLowerCase();
-      const talentNameValue = (currentData.talent_name || "").trim().toLowerCase();
-      const clientNameValue = (currentData.client_name || "").trim().toLowerCase();
+      const talentNameValue = (currentData.talent_name || "")
+        .trim()
+        .toLowerCase();
+      const clientNameValue = (currentData.client_name || "")
+        .trim()
+        .toLowerCase();
       const identityErrors: string[] = [];
 
       if (talentNameValue && !bodyLower.includes(talentNameValue)) {
@@ -679,8 +690,15 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 )}
                 <Button
                   onClick={handleNext}
-                  disabled={isSyncing || (step === 2 && missingIdentityFields.length > 0)}
-                  title={step === 2 && missingIdentityFields.length > 0 ? "Add the missing talent and brand names to the contract body before proceeding" : undefined}
+                  disabled={
+                    isSyncing ||
+                    (step === 2 && missingIdentityFields.length > 0)
+                  }
+                  title={
+                    step === 2 && missingIdentityFields.length > 0
+                      ? "Add the missing talent and brand names to the contract body before proceeding"
+                      : undefined
+                  }
                   className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-9 sm:h-10 px-4 sm:px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSyncing ? "..." : step === 3 ? "Finalize" : "Next"}
@@ -748,8 +766,18 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 rounded-xl bg-white/80 p-2 text-slate-500 shadow-sm shrink-0">
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
                         </svg>
                       </div>
                       <div>
@@ -757,7 +785,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           Creating a contract for an external client
                         </p>
                         <p className="text-sm text-slate-600 mt-0.5 leading-relaxed">
-                          You're initiating this contract directly — all fields are open for you to fill in. Enter the client's details and select the {entitySingularLower} you've agreed to license, typically based on the package you sent and the client's selection from it.
+                          You're initiating this contract directly — all fields
+                          are open for you to fill in. Enter the client's
+                          details and select the {entitySingularLower} you've
+                          agreed to license, typically based on the package you
+                          sent and the client's selection from it.
                         </p>
                       </div>
                     </div>
@@ -781,8 +813,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         {brandRequestBrandId ? (
                           // Locked — brand is fixed when coming from a brand request
                           <div className="h-12 bg-slate-100 border border-slate-200 rounded-xl font-medium px-3 flex items-center gap-2 text-slate-700">
-                            <span className="flex-1 truncate">{formData.client_name || brandRequestBrandName}</span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">Locked</span>
+                            <span className="flex-1 truncate">
+                              {formData.client_name || brandRequestBrandName}
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                              Locked
+                            </span>
                           </div>
                         ) : (
                           <Input
@@ -824,194 +860,198 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                   </Badge>
                                 ))}
                             </div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">Locked</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                              Locked
+                            </span>
                           </div>
                         ) : (
-                        <Popover
-                          open={talentPopoverOpen}
-                          onOpenChange={setTalentPopoverOpen}
-                        >
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className="w-full h-auto min-h-[48px] justify-between bg-slate-50 border-slate-200 rounded-xl hover:bg-slate-100 transition-all font-medium py-2 px-3"
-                            >
-                              <div className="flex flex-wrap gap-1.5 items-center">
-                                {formData.talent_name ? (
-                                  formData.talent_name
-                                    .split(", ")
-                                    .map((name) => (
-                                      <Badge
-                                        key={name}
-                                        variant="secondary"
-                                        className="bg-white text-indigo-600 border-indigo-100 rounded-lg px-2 py-0.5 flex items-center gap-1 group/badge"
-                                      >
-                                        {name}
-                                        <X
-                                          className="h-3 w-3 cursor-pointer hover:text-indigo-800"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            const selected =
-                                              formData.talent_name
-                                                .split(", ")
-                                                .filter((n) => n !== name)
-                                                .join(", ");
-                                            setValue("talent_name", selected);
-                                          }}
-                                        />
-                                      </Badge>
-                                    ))
-                                ) : (
-                                  <span className="text-slate-400">
-                                    {`Select ${entityPluralLower}...`}
-                                  </span>
-                                )}
-                              </div>
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-slate-500" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden"
-                            align="start"
+                          <Popover
+                            open={talentPopoverOpen}
+                            onOpenChange={setTalentPopoverOpen}
                           >
-                            {talentPopoverOpen && (
-                              <Command
-                                key="talent-command"
-                                className="border-none"
-                                shouldFilter={false}
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full h-auto min-h-[48px] justify-between bg-slate-50 border-slate-200 rounded-xl hover:bg-slate-100 transition-all font-medium py-2 px-3"
                               >
-                                <CommandInput
-                                  placeholder={`Search ${entitySingularLower}...`}
-                                  className="border-none focus:ring-0 h-12"
-                                  value={talentSearchQuery}
-                                  onValueChange={setTalentSearchQuery}
-                                />
-                                <CommandList className="max-h-[300px]">
-                                  <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
-                                    {`No ${entitySingularLower} found.`}
-                                  </CommandEmpty>
-                                  <CommandGroup>
-                                    {talents
-                                      .filter((t) => {
-                                        const talentName =
-                                          t.full_name ||
-                                          t.stage_name ||
-                                          t.full_legal_name ||
-                                          t.email ||
-                                          `Unknown ${entitySingularTitle}`;
-                                        if (!talentSearchQuery) return true;
-                                        return talentName
-                                          .toLowerCase()
-                                          .includes(
-                                            talentSearchQuery.toLowerCase(),
-                                          );
-                                      })
-                                      .map((t) => {
-                                        const talentName =
-                                          t.full_name ||
-                                          t.stage_name ||
-                                          t.full_legal_name ||
-                                          t.email ||
-                                          `Unknown ${entitySingularTitle}`;
-                                        // Check selection by ID to handle duplicate names
-                                        const isSelected =
-                                          t.id &&
-                                          selectedTalentIds.includes(t.id);
-                                        return (
-                                          <CommandItem
-                                            key={t.id}
-                                            value={talentName}
-                                            onSelect={() => {
-                                              const currentNames =
+                                <div className="flex flex-wrap gap-1.5 items-center">
+                                  {formData.talent_name ? (
+                                    formData.talent_name
+                                      .split(", ")
+                                      .map((name) => (
+                                        <Badge
+                                          key={name}
+                                          variant="secondary"
+                                          className="bg-white text-indigo-600 border-indigo-100 rounded-lg px-2 py-0.5 flex items-center gap-1 group/badge"
+                                        >
+                                          {name}
+                                          <X
+                                            className="h-3 w-3 cursor-pointer hover:text-indigo-800"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              const selected =
                                                 formData.talent_name
-                                                  ? formData.talent_name.split(
-                                                      ", ",
-                                                    )
-                                                  : [];
-                                              let updatedNames;
-                                              let updatedIds = [
-                                                ...selectedTalentIds,
-                                              ];
-
-                                              if (isSelected) {
-                                                updatedNames =
-                                                  currentNames.filter(
-                                                    (n) => n !== talentName,
-                                                  );
-                                                // Remove ID
-                                                if (t.id) {
-                                                  updatedIds =
-                                                    updatedIds.filter(
-                                                      (id) => id !== t.id,
-                                                    );
-                                                }
-                                              } else {
-                                                if (talentName) {
-                                                  updatedNames = [
-                                                    ...currentNames,
-                                                    talentName,
-                                                  ];
-                                                } else {
-                                                  updatedNames = currentNames;
-                                                }
-                                                // Add ID
-                                                if (
-                                                  t.id &&
-                                                  !updatedIds.includes(t.id)
-                                                ) {
-                                                  updatedIds.push(t.id);
-                                                }
-                                              }
-                                              setSelectedTalentIds(updatedIds);
-                                              setValue(
-                                                "talent_name",
-                                                updatedNames.join(", "),
-                                              );
+                                                  .split(", ")
+                                                  .filter((n) => n !== name)
+                                                  .join(", ");
+                                              setValue("talent_name", selected);
                                             }}
-                                            className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
-                                          >
-                                            <div className="relative">
-                                              <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                                                <AvatarImage
-                                                  src={t.profile_photo_url}
-                                                />
-                                                <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
-                                                  {t.full_name?.substring(
-                                                    0,
-                                                    2,
-                                                  ) || "UT"}
-                                                </AvatarFallback>
-                                              </Avatar>
-                                              {isSelected && (
-                                                <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
-                                                  <Check className="h-2.5 w-2.5 text-white" />
-                                                </div>
-                                              )}
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span
-                                                className={cn(
-                                                  "font-bold text-slate-900",
-                                                  isSelected &&
-                                                    "text-indigo-600",
+                                          />
+                                        </Badge>
+                                      ))
+                                  ) : (
+                                    <span className="text-slate-400">
+                                      {`Select ${entityPluralLower}...`}
+                                    </span>
+                                  )}
+                                </div>
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-slate-500" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden"
+                              align="start"
+                            >
+                              {talentPopoverOpen && (
+                                <Command
+                                  key="talent-command"
+                                  className="border-none"
+                                  shouldFilter={false}
+                                >
+                                  <CommandInput
+                                    placeholder={`Search ${entitySingularLower}...`}
+                                    className="border-none focus:ring-0 h-12"
+                                    value={talentSearchQuery}
+                                    onValueChange={setTalentSearchQuery}
+                                  />
+                                  <CommandList className="max-h-[300px]">
+                                    <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
+                                      {`No ${entitySingularLower} found.`}
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                      {talents
+                                        .filter((t) => {
+                                          const talentName =
+                                            t.full_name ||
+                                            t.stage_name ||
+                                            t.full_legal_name ||
+                                            t.email ||
+                                            `Unknown ${entitySingularTitle}`;
+                                          if (!talentSearchQuery) return true;
+                                          return talentName
+                                            .toLowerCase()
+                                            .includes(
+                                              talentSearchQuery.toLowerCase(),
+                                            );
+                                        })
+                                        .map((t) => {
+                                          const talentName =
+                                            t.full_name ||
+                                            t.stage_name ||
+                                            t.full_legal_name ||
+                                            t.email ||
+                                            `Unknown ${entitySingularTitle}`;
+                                          // Check selection by ID to handle duplicate names
+                                          const isSelected =
+                                            t.id &&
+                                            selectedTalentIds.includes(t.id);
+                                          return (
+                                            <CommandItem
+                                              key={t.id}
+                                              value={talentName}
+                                              onSelect={() => {
+                                                const currentNames =
+                                                  formData.talent_name
+                                                    ? formData.talent_name.split(
+                                                        ", ",
+                                                      )
+                                                    : [];
+                                                let updatedNames;
+                                                let updatedIds = [
+                                                  ...selectedTalentIds,
+                                                ];
+
+                                                if (isSelected) {
+                                                  updatedNames =
+                                                    currentNames.filter(
+                                                      (n) => n !== talentName,
+                                                    );
+                                                  // Remove ID
+                                                  if (t.id) {
+                                                    updatedIds =
+                                                      updatedIds.filter(
+                                                        (id) => id !== t.id,
+                                                      );
+                                                  }
+                                                } else {
+                                                  if (talentName) {
+                                                    updatedNames = [
+                                                      ...currentNames,
+                                                      talentName,
+                                                    ];
+                                                  } else {
+                                                    updatedNames = currentNames;
+                                                  }
+                                                  // Add ID
+                                                  if (
+                                                    t.id &&
+                                                    !updatedIds.includes(t.id)
+                                                  ) {
+                                                    updatedIds.push(t.id);
+                                                  }
+                                                }
+                                                setSelectedTalentIds(
+                                                  updatedIds,
+                                                );
+                                                setValue(
+                                                  "talent_name",
+                                                  updatedNames.join(", "),
+                                                );
+                                              }}
+                                              className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
+                                            >
+                                              <div className="relative">
+                                                <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                                  <AvatarImage
+                                                    src={t.profile_photo_url}
+                                                  />
+                                                  <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                                    {t.full_name?.substring(
+                                                      0,
+                                                      2,
+                                                    ) || "UT"}
+                                                  </AvatarFallback>
+                                                </Avatar>
+                                                {isSelected && (
+                                                  <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
+                                                    <Check className="h-2.5 w-2.5 text-white" />
+                                                  </div>
                                                 )}
-                                              >
-                                                {talentName}
-                                              </span>
-                                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                                {`Agency ${entitySingularTitle}`}
-                                              </span>
-                                            </div>
-                                          </CommandItem>
-                                        );
-                                      })}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            )}
-                          </PopoverContent>
-                        </Popover>
+                                              </div>
+                                              <div className="flex flex-col">
+                                                <span
+                                                  className={cn(
+                                                    "font-bold text-slate-900",
+                                                    isSelected &&
+                                                      "text-indigo-600",
+                                                  )}
+                                                >
+                                                  {talentName}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                  {`Agency ${entitySingularTitle}`}
+                                                </span>
+                                              </div>
+                                            </CommandItem>
+                                          );
+                                        })}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              )}
+                            </PopoverContent>
+                          </Popover>
                         )}
                         {errors.talent_name && (
                           <span className="text-amber-700 text-xs font-bold px-1 dark:text-amber-400">
@@ -1044,8 +1084,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         {brandRequestBrandId ? (
                           // Locked — client email is fixed when coming from a brand request
                           <div className="h-12 bg-slate-100 border border-slate-200 rounded-xl font-medium px-3 flex items-center gap-2 text-slate-700">
-                            <span className="flex-1 truncate">{formData.client_email || brandRequestBrandEmail}</span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">Locked</span>
+                            <span className="flex-1 truncate">
+                              {formData.client_email || brandRequestBrandEmail}
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full shrink-0">
+                              Locked
+                            </span>
                           </div>
                         ) : brandOptions.length > 0 && allowBrandChange ? (
                           <>
@@ -1256,8 +1300,18 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                   <div className="mt-6 p-5 bg-amber-50 border border-amber-300 rounded-2xl space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="bg-amber-400 p-1.5 rounded-lg mt-0.5 shrink-0">
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        <svg
+                          className="w-4 h-4 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                          />
                         </svg>
                       </div>
                       <div className="flex-1">
@@ -1266,9 +1320,16 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         </p>
                         <p className="text-amber-800 text-xs mt-1 leading-relaxed">
                           The contract body does not contain the{" "}
-                          {missingIdentityFields.includes("talent_name_placeholder") && missingIdentityFields.includes("client_name_placeholder")
+                          {missingIdentityFields.includes(
+                            "talent_name_placeholder",
+                          ) &&
+                          missingIdentityFields.includes(
+                            "client_name_placeholder",
+                          )
                             ? "talent name or brand name"
-                            : missingIdentityFields.includes("talent_name_placeholder")
+                            : missingIdentityFields.includes(
+                                  "talent_name_placeholder",
+                                )
                               ? "talent name"
                               : "brand name"}
                           . You cannot proceed until these are present. Click
@@ -1279,10 +1340,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     </div>
                     <div className="flex flex-wrap gap-2 pl-9">
                       {missingIdentityFields.map((placeholder) => {
-                        const label = placeholder === "talent_name_placeholder" ? "Talent" : "Brand";
-                        const value = placeholder === "talent_name_placeholder"
-                          ? formData.talent_name
-                          : formData.client_name;
+                        const label =
+                          placeholder === "talent_name_placeholder"
+                            ? "Talent"
+                            : "Brand";
+                        const value =
+                          placeholder === "talent_name_placeholder"
+                            ? formData.talent_name
+                            : formData.client_name;
                         return (
                           <button
                             key={placeholder}
@@ -1296,8 +1361,18 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             }}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 text-xs font-bold rounded-lg transition-colors"
                           >
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                            <svg
+                              className="w-3 h-3"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2.5}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 4.5v15m7.5-7.5h-15"
+                              />
                             </svg>
                             Insert {label} Name ({value})
                           </button>
