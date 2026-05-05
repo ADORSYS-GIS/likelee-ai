@@ -38,7 +38,6 @@ pub mod errors;
 pub mod expenses;
 pub mod face_profiles;
 pub mod health;
-pub mod instagram_scraper;
 pub mod invoices;
 pub mod job_postings;
 pub mod jobs;
