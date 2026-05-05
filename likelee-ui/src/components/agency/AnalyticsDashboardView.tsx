@@ -711,29 +711,51 @@ const AnalyticsDashboardView = ({
                   </ResponsiveContainer>
                 </div>
                 <div className="w-full mt-8 flex flex-col gap-3 text-right">
-                  {[
-                    {
-                      name: "Complete",
-                      value: analytics.consent_status.complete,
-                      color: "text-green-600",
-                    },
-                    {
-                      name: "Missing",
-                      value: analytics.consent_status.missing,
-                      color: "text-amber-600",
-                    },
-                    {
-                      name: "Expired",
-                      value: analytics.consent_status.expiring,
-                      color: "text-yellow-500",
-                    },
-                  ].map((item) => {
+                  {(() => {
                     const total = analytics.consent_status.total || 1;
-                    const pct = Math.min(
-                      Math.round((item.value / total) * 100),
-                      100,
-                    );
-                    return (
+                    // Calculate percentages ensuring they sum to 100%
+                    const completeRaw =
+                      (analytics.consent_status.complete / total) * 100;
+                    const missingRaw =
+                      (analytics.consent_status.missing / total) * 100;
+                    const expiredRaw =
+                      (analytics.consent_status.expiring / total) * 100;
+
+                    const totalRaw = completeRaw + missingRaw + expiredRaw;
+
+                    let completePct, missingPct, expiredPct;
+
+                    if (totalRaw > 0) {
+                      // Normalize to ensure sum equals 100%
+                      completePct = Math.round((completeRaw / totalRaw) * 100);
+                      missingPct = Math.round((missingRaw / totalRaw) * 100);
+                      expiredPct = 100 - completePct - missingPct; // Ensure sum = 100
+                    } else {
+                      completePct = missingPct = expiredPct = 0;
+                    }
+
+                    const items = [
+                      {
+                        name: "Complete",
+                        value: analytics.consent_status.complete,
+                        pct: completePct,
+                        color: "text-green-600",
+                      },
+                      {
+                        name: "Missing",
+                        value: analytics.consent_status.missing,
+                        pct: missingPct,
+                        color: "text-amber-600",
+                      },
+                      {
+                        name: "Expired",
+                        value: analytics.consent_status.expiring,
+                        pct: expiredPct,
+                        color: "text-yellow-500",
+                      },
+                    ];
+
+                    return items.map((item) => (
                       <div
                         key={item.name}
                         className="flex items-center justify-between"
@@ -745,11 +767,11 @@ const AnalyticsDashboardView = ({
                         </span>
                         <span className="text-xs font-bold text-gray-900">
                           {item.value} of {analytics.consent_status.total} (
-                          {pct}%)
+                          {item.pct}%)
                         </span>
                       </div>
-                    );
-                  })}
+                    ));
+                  })()}
                 </div>
               </div>
             </Card>
