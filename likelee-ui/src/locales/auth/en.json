@@ -1,14 +1,32 @@
 {
   "common": {
     "error": "Error",
-    "organization": "Organization",
+    "fullNameRequired": "Full Name *",
+    "johnDoe": "John Doe",
+    "emailRequired": "Email *",
+    "emailPlaceholder": "you@example.com",
     "passwordRequired": "Password *",
     "confirmPasswordRequired": "Confirm Password *",
-    "companyNamePlaceholder": "e.g., Acme Corporation",
-    "websitePlaceholder": "https://example.com",
-    "phonePlaceholder": "+1 (555) 000-0000",
+    "instagramPlaceholder": "@username",
+    "youtubePlaceholder": "@channel",
+    "agencyOptional": "Agency (Optional)",
+    "agencyNamePlaceholder": "e.g., Creative Agency Inc.",
+    "saving": "Saving...",
     "continue": "Continue",
-    "saving": "Saving..."
+    "selectAll": "Select All",
+    "contentTypePlaceholder": "Specify your content type",
+    "aiToolPlaceholder": "Specify your AI tool",
+    "cityRequired": "City *",
+    "cityPlaceholder": "e.g., New York",
+    "stateCountryRequired": "State/Country *",
+    "statePlaceholder": "e.g., NY, USA",
+    "experienceRequired": "AI Creative Experience *",
+    "portfolioUrl": "Portfolio URL",
+    "portfolioPlaceholder": "https://yourportfolio.com",
+    "socialMediaUrl": "Social Media URL",
+    "socialProfilePlaceholder": "https://instagram.com/yourprofile",
+    "profilePhotoOptional": "Profile Photo (Optional)",
+    "back": "Back"
   },
   "identityVerification": "Identity Verification",
   "identityVerificationMessage": "You record a 60-second guided video. We verify your identity against your government ID and confirm facial motion (liveness check). This stops imposters before they enter the system.",
@@ -58,7 +76,11 @@
       "weakPassword": "Your password is too short. Please use at least 6 characters.",
       "emailNotConfirmed": "Please verify your email address. Check your inbox for a 6-digit verification code.",
       "rateLimit": "Too many attempts. Please wait a moment before trying again.",
-      "networkError": "Connection lost. Please check your internet connection."
+      "networkError": "Connection lost. Please check your internet connection.",
+      "organizationNameRequired": "Organization name is required.",
+      "agencyTypeRequired": "Agency type is required.",
+      "organizationTypeMissing": "Organization type is missing. Please try again from the beginning.",
+      "supabaseNotConfigured": "Supabase is not configured."
     },
     "companyEmail": "Company Email",
     "agencyEmail": "Agency Email",
@@ -219,9 +241,51 @@
         "likenessProtectionOnly": "Likeness protection only",
         "variesByTalent": "Varies by talent"
       }
+    },
+    "toasts": {
+      "emailVerified": {
+        "title": "Email verified",
+        "description": "Your organization account is verified. Continue setup below."
+      },
+      "codeSent": {
+        "title": "Code sent",
+        "description": "We sent a fresh 6-digit code to your inbox."
+      },
+      "accountFound": {
+        "title": "Account found",
+        "description": "This email already belongs to an existing account. Continuing there now."
+      },
+      "codeDeliveryFailed": {
+        "title": "Code delivery failed",
+        "description": "We created the account, but could not send the verification code yet. Please try resending it."
+      },
+      "accountCreated": {
+        "title": "Account Created",
+        "description": "Enter the 6-digit code from your email to continue."
+      },
+      "continueSignup": {
+        "title": "Continue signup",
+        "description": "We found an existing signup for this email. Enter the 6-digit code from your email to continue."
+      },
+      "accountAlreadyExists": {
+        "title": "Account already exists",
+        "description": "This email already belongs to another account. Sign in instead to continue with that account."
+      }
     }
   },
   "creatorSignup": {
+    "terms": {
+      "title": "Creator Terms & Agreements",
+      "subtitle": "Please review and agree to the Privacy Policy and Creator Terms to complete your registration.",
+      "agreeTo": "I agree to the",
+      "policyLink": "Privacy Policy",
+      "andTerms": "and Terms of Service.",
+      "mustAgreeTitle": "Agreement Required",
+      "mustAgree": "You must agree to the terms to complete your registration.",
+      "submitting": "Submitting...",
+      "completeRegistration": "Complete Registration",
+      "download": "Download"
+    },
     "options": {
       "contentTypes": {
         "aiGeneratedFilms": "AI-generated films",
@@ -252,6 +316,63 @@
         "vidu": "Vidu",
         "other": "Other"
       }
+    },
+    "validation": {
+      "title": "Validation Error",
+      "requiredFields": "Please fill in all required fields.",
+      "passwordMismatch": "Passwords do not match.",
+      "socialRequired": "Please provide at least one social media handle (Instagram, TikTok, or YouTube).",
+      "contentTypeRequired": "Please select at least one content type or specify 'Other'.",
+      "contentTypeOtherRequired": "Please specify your 'Other' content type.",
+      "aiToolRequired": "Please select at least one AI tool or specify 'Other'.",
+      "aiToolOtherRequired": "Please specify your 'Other' AI tool.",
+      "locationRequired": "Please fill in your city and state/country.",
+      "experienceRequired": "Please select your years of AI creative experience."
+    },
+    "submitted": {
+      "title": "You're on the list for our next Creator cohort",
+      "description": "The first 200 Creator spots are filled. We're growing the Likelee ecosystem carefully so every AI Creator gets real visibility and paid opportunities. You're in the next cohort queue. We'll email you as soon as we open the gate.",
+      "nextTitle": "What's next:",
+      "nextDescription": "Watch for a welcome email with a quick profile checklist.",
+      "followUpdates": "Follow updates"
+    },
+    "alert": {
+      "title": "Heads-up:",
+      "description": "The first 200 Creator spots are filled. We are onboarding in cohorts so every AI Creator gets an opportunity for visibility! Continue to sign up to lock in your spot."
+    },
+    "header": {
+      "title": "Join as Creator",
+      "step": "Step {{step}} of {{totalSteps}}"
+    },
+    "basic": {
+      "title": "Basic Details",
+      "subtitle": "Let's start with your information",
+      "socialHandles": "Social Media Handles *",
+      "atLeastOneRequired": "(At least 1 required)",
+      "agencyHelp": "If you're represented by an agency, enter their name here"
+    },
+    "profile": {
+      "title": "Creator Profile Details",
+      "subtitle": "Tell us more about your creative work and experience.",
+      "creativeFocus": "Creative Focus",
+      "contentTypesQuestion": "What kind of AI content do you create? *",
+      "aiToolsQuestion": "What AI tools do you primarily use? *",
+      "locationExperience": "Location & Experience",
+      "selectExperience": "Select experience level",
+      "experience": {
+        "lessThan1": "Less than 1 year",
+        "oneToTwo": "1 - 2 years",
+        "threeToFive": "3 - 5 years",
+        "fivePlus": "5+ years"
+      },
+      "portfolioSocial": "Portfolio & Social",
+      "portfolioSocialSubtitle": "Optional: Share your work and social presence",
+      "uploadPhoto": "Upload Profile Photo",
+      "uploadPhotoSubtitle": "Add a professional photo to your profile",
+      "photoRequirements": "Minimum 800 x 800 px, JPG or PNG, maximum 5 MB",
+      "clickToUpload": "Click to upload",
+      "dragDrop": "or drag and drop",
+      "continueToTerms": "Continue to Terms"
     }
   },
   "creatorSignupOptions.main.title": "What type of creator are you?",
@@ -341,6 +462,15 @@
     "errorMessage": "Failed to send reset link"
   },
   "updatePassword": {
+    "title": "Update your password",
+    "newPasswordLabel": "New Password",
+    "confirmPasswordLabel": "Confirm New Password",
+    "updateButton": "Update Password",
+    "updating": "Updating…",
+    "errors": {
+      "passwordMismatch": "Passwords do not match",
+      "updateFailed": "Failed to update password"
+    },
     "toasts": {
       "passwordUpdated": "Your password has been updated."
     }
@@ -403,7 +533,10 @@
         "creator": "Creator",
         "brand": "Brand",
         "agency": "Agency"
-      }
+      },
+      "redirectLoadingLabel": "Loading...",
+      "completingSignup": "Completing sign up...",
+      "redirecting": "Redirecting..."
     },
     "emailOtp": {
       "title": "Verify your email",
@@ -415,7 +548,92 @@
       "resendAvailableIn": "Resend available in {{seconds}}s",
       "resendCode": "Resend code",
       "verifyLabel": "Verify code",
-      "continueButton": "Continue"
+      "continueButton": "Continue",
+      "enterCode": "Enter the 6-digit code sent to <strong>{{email}}</strong>.",
+      "codeAriaLabel": "Email verification code"
+    }
+  },
+  "twoFactorSetup": {
+    "challenge": {
+      "title": "Two-Factor Authentication",
+      "description": "Enter the 6-digit code from your authenticator app",
+      "verifyButton": "Verify",
+      "signInDifferentAccount": "Sign in with a different account",
+      "waitingForMethod": "Waiting for your authenticator method to load.",
+      "verificationCompleteTitle": "Verification Complete",
+      "verificationCompleteDescription": "You have been successfully authenticated."
+    },
+    "manage": {
+      "title": "Two-Factor Authentication",
+      "subtitle": "Add an extra layer of security to your account",
+      "enabled": "2FA is currently enabled",
+      "addAnother": "Add Another Method",
+      "back": "Back",
+      "remove": "Remove",
+      "authenticatorApp": "Authenticator App",
+      "incompleteTitle": "Incomplete 2FA setup detected",
+      "incompleteDescription": "You have an incomplete 2FA setup. Remove it and try again.",
+      "unverified": "Unverified - Setup incomplete",
+      "startFresh": "Start Fresh Setup",
+      "cleaningUp": "Cleaning up...",
+      "cleanedTitle": "Cleaned up",
+      "cleanedDescription": "Incomplete setups removed. You can now start fresh.",
+      "removedTitle": "Removed",
+      "removedDescription": "Incomplete setup removed.",
+      "disableConfirm": "Are you sure you want to disable 2FA?",
+      "disabledTitle": "2FA Disabled",
+      "disabledDescription": "Two-factor authentication has been removed."
+    },
+    "enroll": {
+      "title": "Add Authenticator Method",
+      "subtitle": "Set up an additional authenticator app",
+      "howItWorks": "How it works",
+      "step1": "Scan the QR code with an authenticator app like Google Authenticator or Authy",
+      "step2": "Enter the 6-digit code from the app to verify setup",
+      "step3": "Use the app to generate codes when logging in",
+      "deviceNameLabel": "Device Name",
+      "deviceNamePlaceholder": "e.g., iPhone, Work Phone",
+      "cancel": "Cancel",
+      "enable": "Enable 2FA",
+      "settingUp": "Setting up...",
+      "defaultDeviceName": "Authenticator App"
+    },
+    "verify": {
+      "title": "Scan QR Code",
+      "description": "Use your authenticator app to scan this code",
+      "manualEntry": "Or enter this code manually:",
+      "enterCode": "Enter verification code",
+      "verifyAndEnable": "Verify & Enable",
+      "enteredDigits": "Entered {{count}} of 6 digits",
+      "setupError": "Setup error: Factor ID not available. Please go back and try again.",
+      "enabledTitle": "2FA Enabled",
+      "enabledDescription": "Two-factor authentication is now active on your account."
+    },
+    "success": {
+      "title": "2FA Enabled Successfully",
+      "description": "Your account is now protected with two-factor authentication. You'll need to enter a code from your authenticator app when signing in.",
+      "done": "Done"
+    },
+    "errors": {
+      "loadFailed": "Failed to load 2FA settings. Please refresh the page.",
+      "serviceUnavailable": "Authentication service is not available. Please refresh the page and try again. If the problem persists, contact support.",
+      "deviceNameRequired": "Please enter a device name.",
+      "setupCouldNotStart": "Authenticator setup could not be started. Please try again.",
+      "nameConflict": "You already have a 2FA method named \"{{name}}\". Please choose a different name (e.g., \"My Phone\", \"Work Device\") or remove the existing one below.",
+      "limitReached": "You've reached the maximum number of authenticator apps allowed on your account. Please remove an existing one before adding a new device.",
+      "setupIssue": "There was an issue setting up two-factor authentication. Please try again or contact support if the problem persists.",
+      "networkSetup": "Unable to connect to the authentication service. Please check your internet connection and try again.",
+      "setupGeneric": "Something went wrong setting up 2FA. Please try again.",
+      "expiredSetup": "This verification session has expired. Please go back and start the setup process again.",
+      "expiredLogin": "Your login session has expired. Please return to the login page and sign in again.",
+      "invalidCode": "The code you entered is incorrect. Make sure you're using the current 6-digit code from your authenticator app. Codes expire after 30 seconds.",
+      "networkVerify": "Unable to verify the code. Please check your internet connection and try again.",
+      "verifyGeneric": "Verification failed. Please check the code and try again.",
+      "authUnavailable": "Authentication service not available. Please refresh the page.",
+      "cleanupFailed": "Failed to remove incomplete setup: {{message}}",
+      "unknownError": "Unknown error",
+      "failedToDisable": "Failed to disable 2FA",
+      "failedToRemove": "Failed to remove"
     }
   }
 }

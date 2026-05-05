@@ -1,23 +1,33 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
 import { Card } from "@/components/ui/card";
 import CinematicGlobe from "@/components/CinematicGlobe";
 
 export default function Impact() {
+  const { t } = useTranslation("common");
+
   useEffect(() => {
     // Add JSON-LD structured data
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "WebPage",
-      name: "Environmental Impact - Sustainability Commitment",
-      description:
+      name: t(
+        "impactPage.hero.title",
+        "Environmental Impact - Sustainability Commitment",
+      ),
+      description: t(
+        "impactPage.hero.description",
         "Our commitment to responsible AI infrastructure and environmental accountability. Transparency, collaboration, and measurable progress.",
+      ),
       url: "https://likelee.ai/impact",
       about: {
         "@type": "Thing",
         name: "Environmental Sustainability",
-        description:
+        description: t(
+          "impactPage.hero.description",
           "Likelee's approach to protecting and empowering human identity while maintaining environmental responsibility",
+        ),
       },
     };
 
@@ -29,7 +39,7 @@ export default function Impact() {
     return () => {
       document.head.removeChild(script);
     };
-  }, []);
+  }, [t]);
 
   return (
     <div>
@@ -89,17 +99,16 @@ export default function Impact() {
 
         <div className="relative z-10 max-w-7xl mx-auto text-center">
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6">
-            Our
+            {t("impactPage.hero.title", "Our")}
             <span className="block bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              Environmental Commitment
+              {t("impactPage.hero.subtitle", "Environmental Commitment")}
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto leading-relaxed mb-12">
-            At Likelee, creativity and technology are inseparable — and both
-            rely on resources that carry real impact. Every render, export, and
-            campaign we power runs on energy. Recognizing that footprint is part
-            of our responsibility as a platform that serves creators and studios
-            worldwide.
+            {t(
+              "impactPage.hero.description",
+              "At Likelee, creativity and technology are inseparable — and both rely on resources that carry real impact. Every render, export, and campaign we power runs on energy. Recognizing that footprint is part of our responsibility as a platform that serves creators and studios worldwide.",
+            )}
           </p>
         </div>
 
@@ -119,14 +128,13 @@ export default function Impact() {
       >
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            Why This Matters
+            {t("impactPage.whyMatters.title", "Why This Matters")}
           </h2>
           <p className="text-xl text-gray-200 leading-relaxed">
-            Producing digital work is not impact-free. Whether it's an AI model
-            running inference, a video render, or data stored in the cloud, each
-            creative output has an environmental cost. For us, acknowledging
-            that connection isn't a marketing statement — it's a baseline for
-            operating with integrity in a rapidly expanding industry.
+            {t(
+              "impactPage.whyMatters.description",
+              "Producing digital work is not impact-free. Whether it's an AI model running inference, a video render, or data stored in the cloud, each creative output has an environmental cost. For us, acknowledging that connection isn't a marketing statement — it's a baseline for operating with integrity in a rapidly expanding industry.",
+            )}
           </p>
         </div>
       </section>
@@ -142,44 +150,53 @@ export default function Impact() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Our Approach
+              {t("impactPage.approach.title", "Our Approach")}
             </h2>
           </div>
 
           <div className="grid gap-8">
             <Card className="p-8 border-2 border-emerald-400 hover:shadow-xl transition-all rounded-none bg-white/10 backdrop-blur-sm">
               <h3 className="text-2xl font-bold text-white mb-4">
-                1. Responsible Infrastructure
+                {t(
+                  "impactPage.approach.infrastructure.title",
+                  "1. Responsible Infrastructure",
+                )}
               </h3>
               <p className="text-gray-200 leading-relaxed text-lg">
-                We prioritize cloud providers and partners who publish
-                transparent sustainability data and measurable progress reports.
-                These relationships are reviewed regularly as standards and
-                technologies evolve.
+                {t(
+                  "impactPage.approach.infrastructure.description",
+                  "We prioritize cloud providers and partners who publish transparent sustainability data and measurable progress reports. These relationships are reviewed regularly as standards and technologies evolve.",
+                )}
               </p>
             </Card>
 
             <Card className="p-8 border-2 border-emerald-400 hover:shadow-xl transition-all rounded-none bg-white/10 backdrop-blur-sm">
               <h3 className="text-2xl font-bold text-white mb-4">
-                2. Transparency by Default
+                {t(
+                  "impactPage.approach.transparency.title",
+                  "2. Transparency by Default",
+                )}
               </h3>
               <p className="text-gray-200 leading-relaxed text-lg">
-                We're developing in-product cues that help users understand when
-                their settings or generation methods consume more resources.
-                These are designed to inform, not restrict, giving artists and
-                studios control over their choices.
+                {t(
+                  "impactPage.approach.transparency.description",
+                  "We're developing in-product cues that help users understand when their settings or generation methods consume more resources. These are designed to inform, not restrict, giving artists and studios control over their choices.",
+                )}
               </p>
             </Card>
 
             <Card className="p-8 border-2 border-emerald-400 hover:shadow-xl transition-all rounded-none bg-white/10 backdrop-blur-sm">
               <h3 className="text-2xl font-bold text-white mb-4">
-                3. Collaboration and Accountability
+                {t(
+                  "impactPage.approach.collaboration.title",
+                  "3. Collaboration and Accountability",
+                )}
               </h3>
               <p className="text-gray-200 leading-relaxed text-lg">
-                We maintain an open dialogue with creators, sustainability
-                experts, and technologists through ongoing discussions and
-                quarterly review sessions. These inform our infrastructure
-                roadmap and our product updates.
+                {t(
+                  "impactPage.approach.collaboration.description",
+                  "We maintain an open dialogue with creators, sustainability experts, and technologists through ongoing discussions and quarterly review sessions. These inform our infrastructure roadmap and our product updates.",
+                )}
               </p>
             </Card>
           </div>
@@ -196,13 +213,13 @@ export default function Impact() {
       >
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            What We Stand By
+            {t("impactPage.standBy.title", "What We Stand By")}
           </h2>
           <p className="text-xl text-gray-200 leading-relaxed">
-            We won't hide the realities of energy use behind vague
-            sustainability claims or superficial pledges. Our goal is to be
-            specific, measurable, and open to correction as the field evolves.
-            Real progress depends on clarity, not slogans.
+            {t(
+              "impactPage.standBy.description",
+              "We won't hide the realities of energy use behind vague sustainability claims or superficial pledges. Our goal is to be specific, measurable, and open to correction as the field evolves. Real progress depends on clarity, not slogans.",
+            )}
           </p>
         </div>
       </section>
@@ -217,14 +234,13 @@ export default function Impact() {
       >
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            Your Role
+            {t("impactPage.yourRole.title", "Your Role")}
           </h2>
           <p className="text-xl text-gray-200 leading-relaxed">
-            When you upload, license, or produce through Likelee, you're
-            participating in a shared system built on traceability and
-            accountability. Simple actions — such as batching exports or using
-            optimized render settings — contribute meaningfully to efficiency at
-            scale. The tools are available; the choices remain yours.
+            {t(
+              "impactPage.yourRole.description",
+              "When you upload, license, or produce through Likelee, you're participating in a shared system built on traceability and accountability. Simple actions — such as batching exports or using optimized render settings — contribute meaningfully to efficiency at scale. The tools are available; the choices remain yours.",
+            )}
           </p>
         </div>
       </section>
@@ -239,21 +255,25 @@ export default function Impact() {
       >
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
-            Looking Forward
+            {t("impactPage.lookingForward.title", "Looking Forward")}
           </h2>
           <p className="text-xl text-gray-200 leading-relaxed mb-8">
-            Sustainability is not a fixed goal but an ongoing process. As AI
-            generation becomes more advanced and accessible, our commitment is
-            to maintain balance — to innovate without neglecting the impact of
-            that innovation. We'll continue refining Likelee's infrastructure
-            and reporting practices to ensure creative progress and
-            environmental responsibility can coexist.
+            {t(
+              "impactPage.lookingForward.paragraph1",
+              "Sustainability is not a fixed goal but an ongoing process. As AI generation becomes more advanced and accessible, our commitment is to maintain balance — to innovate without neglecting the impact of that innovation. We'll continue refining Likelee's infrastructure and reporting practices to ensure creative progress and environmental responsibility can coexist.",
+            )}
           </p>
           <p className="text-2xl text-emerald-400 font-bold mb-6">
-            We invite you to collaborate, critique, and help us improve.
+            {t(
+              "impactPage.lookingForward.paragraph2",
+              "We invite you to collaborate, critique, and help us improve.",
+            )}
           </p>
           <p className="text-lg text-gray-300 leading-relaxed">
-            Reach out with ideas, concerns, or partnership opportunities at{" "}
+            {t(
+              "impactPage.lookingForward.paragraph3",
+              "Reach out with ideas, concerns, or partnership opportunities at",
+            )}{" "}
             <a
               href={CONTACT_EMAIL_MAILTO}
               className="text-emerald-400 hover:text-emerald-300 underline"

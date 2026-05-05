@@ -1,14 +1,32 @@
 {
   "common": {
     "error": "Error",
-    "organization": "Organización",
+    "fullNameRequired": "Nombre completo *",
+    "johnDoe": "Juan Pérez",
+    "emailRequired": "Correo electrónico *",
+    "emailPlaceholder": "tu@ejemplo.com",
     "passwordRequired": "Contraseña *",
     "confirmPasswordRequired": "Confirmar contraseña *",
-    "companyNamePlaceholder": "ej., Corporación Acme",
-    "websitePlaceholder": "https://ejemplo.com",
-    "phonePlaceholder": "+34 600 000 000",
+    "instagramPlaceholder": "@usuario",
+    "youtubePlaceholder": "@canal",
+    "agencyOptional": "Agencia (Opcional)",
+    "agencyNamePlaceholder": "ej., Agencia Creativa Inc.",
+    "saving": "Guardando...",
     "continue": "Continuar",
-    "saving": "Guardando..."
+    "selectAll": "Seleccionar todo",
+    "contentTypePlaceholder": "Especifica tu tipo de contenido",
+    "aiToolPlaceholder": "Especifica tu herramienta de IA",
+    "cityRequired": "Ciudad *",
+    "cityPlaceholder": "ej., Madrid",
+    "stateCountryRequired": "Estado/País *",
+    "statePlaceholder": "ej., Madrid, España",
+    "experienceRequired": "Experiencia creativa con IA *",
+    "portfolioUrl": "URL del portafolio",
+    "portfolioPlaceholder": "https://tuportafolio.com",
+    "socialMediaUrl": "URL de redes sociales",
+    "socialProfilePlaceholder": "https://instagram.com/tuperfil",
+    "profilePhotoOptional": "Foto de perfil (Opcional)",
+    "back": "Atrás"
   },
   "identityVerification": "Verificación de identidad",
   "identityVerificationMessage": "Grabas un video guiado de 60 segundos. Verificamos tu identidad con tu identificación gubernamental y confirmamos el movimiento facial (verificación de vida). Esto detiene a los impostores antes de que entren en el sistema.",
@@ -107,7 +125,11 @@
       "weakPassword": "Su contraseña es demasiado corta. Por favor use al menos 6 caracteres.",
       "emailNotConfirmed": "Por favor verifique su dirección de correo electrónico. Revise su bandeja de entrada para un enlace de confirmación.",
       "rateLimit": "Demasiados intentos. Por favor espere un momento antes de intentar nuevamente.",
-      "networkError": "Conexión perdida. Por favor verifique su conexión a internet."
+      "networkError": "Conexión perdida. Por favor verifique su conexión a internet.",
+      "organizationNameRequired": "El nombre de la organización es obligatorio.",
+      "agencyTypeRequired": "El tipo de agencia es obligatorio.",
+      "organizationTypeMissing": "Falta el tipo de organización. Inténtalo de nuevo desde el principio.",
+      "supabaseNotConfigured": "Supabase no está configurado."
     },
     "companyEmail": "Correo de Empresa",
     "confirmPassword": "Confirmar Contraseña",
@@ -269,9 +291,122 @@
       "openToAiQuestion": "Tus atletas estan abiertos a recreaciones con IA o solo a la proteccion de su imagen?",
       "campaignTypesQuestion": "Que tipos de campanas o colaboraciones buscan con mayor frecuencia?",
       "bulkOnboardQuestion": "Quieres incorporar todo tu roster a Likelee de forma masiva?"
+    },
+    "toasts": {
+      "emailVerified": {
+        "title": "Correo verificado",
+        "description": "Tu cuenta de organización está verificada. Continúa la configuración abajo."
+      },
+      "codeSent": {
+        "title": "Código enviado",
+        "description": "Enviamos un nuevo código de 6 dígitos a tu bandeja de entrada."
+      },
+      "accountFound": {
+        "title": "Cuenta encontrada",
+        "description": "Este correo ya pertenece a una cuenta existente. Continuaremos allí ahora."
+      },
+      "codeDeliveryFailed": {
+        "title": "No se pudo enviar el código",
+        "description": "Creamos la cuenta, pero aún no pudimos enviar el código de verificación. Intenta reenviarlo."
+      },
+      "accountCreated": {
+        "title": "Cuenta creada",
+        "description": "Ingresa el código de 6 dígitos de tu correo para continuar."
+      },
+      "continueSignup": {
+        "title": "Continuar registro",
+        "description": "Encontramos un registro existente para este correo. Ingresa el código de 6 dígitos de tu correo para continuar."
+      },
+      "accountAlreadyExists": {
+        "title": "La cuenta ya existe",
+        "description": "Este correo ya pertenece a otra cuenta. Inicia sesión para continuar con esa cuenta."
+      }
     }
   },
   "faces.hero.signUpButton": "Regístrate",
+  "twoFactorSetup": {
+    "challenge": {
+      "title": "Autenticación de dos factores",
+      "description": "Ingresa el código de 6 dígitos de tu app de autenticación",
+      "verifyButton": "Verificar",
+      "signInDifferentAccount": "Iniciar sesión con otra cuenta",
+      "waitingForMethod": "Waiting for your authenticator method to load.",
+      "verificationCompleteTitle": "Verification Complete",
+      "verificationCompleteDescription": "You have been successfully authenticated."
+    },
+    "manage": {
+      "title": "Autenticación de dos factores",
+      "subtitle": "Agrega una capa extra de seguridad a tu cuenta",
+      "enabled": "2FA está activado actualmente",
+      "addAnother": "Add Another Method",
+      "back": "Back",
+      "remove": "Remove",
+      "authenticatorApp": "Authenticator App",
+      "incompleteTitle": "Incomplete 2FA setup detected",
+      "incompleteDescription": "You have an incomplete 2FA setup. Remove it and try again.",
+      "unverified": "Unverified - Setup incomplete",
+      "startFresh": "Start Fresh Setup",
+      "cleaningUp": "Cleaning up...",
+      "cleanedTitle": "Cleaned up",
+      "cleanedDescription": "Incomplete setups removed. You can now start fresh.",
+      "removedTitle": "Removed",
+      "removedDescription": "Incomplete setup removed.",
+      "disableConfirm": "Are you sure you want to disable 2FA?",
+      "disabledTitle": "2FA Disabled",
+      "disabledDescription": "Two-factor authentication has been removed."
+    },
+    "enroll": {
+      "title": "Agregar método de autenticación",
+      "subtitle": "Set up an additional authenticator app",
+      "howItWorks": "Cómo funciona",
+      "step1": "Scan the QR code with an authenticator app like Google Authenticator or Authy",
+      "step2": "Enter the 6-digit code from the app to verify setup",
+      "step3": "Use the app to generate codes when logging in",
+      "deviceNameLabel": "Device Name",
+      "deviceNamePlaceholder": "e.g., iPhone, Work Phone",
+      "cancel": "Cancel",
+      "enable": "Enable 2FA",
+      "settingUp": "Setting up...",
+      "defaultDeviceName": "Authenticator App"
+    },
+    "verify": {
+      "title": "Scan QR Code",
+      "description": "Use your authenticator app to scan this code",
+      "manualEntry": "Or enter this code manually:",
+      "enterCode": "Enter verification code",
+      "enteredDigits": "Entered {{count}} of 6 digits",
+      "verifyAndEnable": "Verify & Enable",
+      "setupError": "Setup error: Factor ID not available. Please go back and try again.",
+      "enabledTitle": "2FA Enabled",
+      "enabledDescription": "Two-factor authentication is now active on your account."
+    },
+    "success": {
+      "title": "2FA Enabled Successfully",
+      "description": "Your account is now protected with two-factor authentication. You'll need to enter a code from your authenticator app when signing in.",
+      "done": "Done"
+    },
+    "errors": {
+      "loadFailed": "Failed to load 2FA settings. Please refresh the page.",
+      "serviceUnavailable": "Authentication service is not available. Please refresh the page and try again. If the problem persists, contact support.",
+      "deviceNameRequired": "Please enter a device name.",
+      "setupCouldNotStart": "Authenticator setup could not be started. Please try again.",
+      "nameConflict": "You already have a 2FA method named \"{{name}}\". Please choose a different name (e.g., \"My Phone\", \"Work Device\") or remove the existing one below.",
+      "limitReached": "You've reached the maximum number of authenticator apps allowed on your account. Please remove an existing one before adding a new device.",
+      "setupIssue": "There was an issue setting up two-factor authentication. Please try again or contact support if the problem persists.",
+      "networkSetup": "Unable to connect to the authentication service. Please check your internet connection and try again.",
+      "setupGeneric": "Something went wrong setting up 2FA. Please try again.",
+      "expiredSetup": "This verification session has expired. Please go back and start the setup process again.",
+      "expiredLogin": "Your login session has expired. Please return to the login page and sign in again.",
+      "invalidCode": "The code you entered is incorrect. Make sure you're using the current 6-digit code from your authenticator app. Codes expire after 30 seconds.",
+      "networkVerify": "Unable to verify the code. Please check your internet connection and try again.",
+      "verifyGeneric": "Verification failed. Please check the code and try again.",
+      "authUnavailable": "Authentication service not available. Please refresh the page.",
+      "cleanupFailed": "Failed to remove incomplete setup: {{message}}",
+      "unknownError": "Unknown error",
+      "failedToDisable": "Failed to disable 2FA",
+      "failedToRemove": "Failed to remove"
+    }
+  },
   "unauthorized": {
     "title": "Acceso Denegado",
     "description": "¡Ups! No tienes los permisos necesarios para ver esta página. Esta área está restringida solo para {{role}}.",
@@ -295,6 +430,15 @@
     "errorMessage": "Error al enviar el enlace de restablecimiento"
   },
   "updatePassword": {
+    "title": "Actualiza tu contraseña",
+    "newPasswordLabel": "Nueva contraseña",
+    "confirmPasswordLabel": "Confirmar nueva contraseña",
+    "updateButton": "Actualizar contraseña",
+    "updating": "Actualizando…",
+    "errors": {
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "updateFailed": "Error al actualizar la contraseña"
+    },
     "toasts": {
       "passwordUpdated": "Su contraseña ha sido actualizada."
     }
@@ -357,7 +501,10 @@
         "creator": "Creador",
         "brand": "Marca",
         "agency": "Agencia"
-      }
+      },
+      "redirectLoadingLabel": "Cargando...",
+      "completingSignup": "Completando registro...",
+      "redirecting": "Redirigiendo..."
     },
     "emailOtp": {
       "title": "Verifica tu correo electrónico",
@@ -369,20 +516,34 @@
       "resendAvailableIn": "Reenvío disponible en {{seconds}}s",
       "resendCode": "Reenviar código",
       "verifyLabel": "Verificar código",
-      "continueButton": "Continuar"
+      "continueButton": "Continuar",
+      "enterCode": "Ingresa el código de 6 dígitos enviado a <strong>{{email}}</strong>.",
+      "codeAriaLabel": "Código de verificación de correo electrónico"
     }
   },
   "creatorSignup": {
+    "terms": {
+      "title": "Términos y Acuerdos del Creador",
+      "subtitle": "Por favor revisa y acepta la Política de Privacidad y los Términos del Creador para completar tu registro.",
+      "agreeTo": "Acepto la",
+      "policyLink": "Política de Privacidad",
+      "andTerms": "y los Términos de Servicio.",
+      "mustAgreeTitle": "Acuerdo Requerido",
+      "mustAgree": "Debes aceptar los términos para completar tu registro.",
+      "submitting": "Enviando...",
+      "completeRegistration": "Completar Registro",
+      "download": "Descargar"
+    },
     "options": {
       "contentTypes": {
-        "aiGeneratedFilms": "AI-generated films",
-        "aiDrivenCommercials": "AI-driven commercials",
-        "aiArtInstallations": "AI art installations",
-        "virtualRealityExperiences": "Virtual-reality experiences",
-        "interactiveMedia": "Interactive media",
-        "digitalFashion": "Digital fashion",
-        "musicVideos": "Music videos",
-        "other": "Other"
+        "aiGeneratedFilms": "Películas generadas por IA",
+        "aiDrivenCommercials": "Comerciales impulsados por IA",
+        "aiArtInstallations": "Instalaciones de arte IA",
+        "virtualRealityExperiences": "Experiencias de realidad virtual",
+        "interactiveMedia": "Medios interactivos",
+        "digitalFashion": "Moda digital",
+        "musicVideos": "Videos musicales",
+        "other": "Otro"
       },
       "aiTools": {
         "adobeFirefly": "Adobe Firefly",
@@ -401,8 +562,77 @@
         "stableVideoDiffusion": "Stable Video Diffusion",
         "synthesia": "Synthesia",
         "vidu": "Vidu",
-        "other": "Other"
+        "other": "Otro"
       }
+    },
+    "validation": {
+      "title": "Error de validación",
+      "requiredFields": "Por favor complete todos los campos requeridos.",
+      "passwordMismatch": "Las contraseñas no coinciden.",
+      "socialRequired": "Por favor proporcione al menos una cuenta de redes sociales (Instagram, TikTok o YouTube).",
+      "contentTypeRequired": "Por favor seleccione al menos un tipo de contenido o especifique 'Otro'.",
+      "contentTypeOtherRequired": "Por favor especifique su tipo de contenido 'Otro'.",
+      "aiToolRequired": "Por favor seleccione al menos una herramienta de IA o especifique 'Otro'.",
+      "aiToolOtherRequired": "Por favor especifique su herramienta de IA 'Otro'.",
+      "locationRequired": "Por favor complete su ciudad y estado/país.",
+      "experienceRequired": "Por favor seleccione sus años de experiencia creativa con IA."
+    },
+    "submitted": {
+      "title": "Estás en la lista para nuestro próximo grupo de Creators",
+      "description": "Los primeros 200 lugares para Creators están llenos. Estamos haciendo crecer el ecosistema Likelee cuidadosamente para que cada Creator de IA obtenga visibilidad real y oportunidades pagadas. Estás en la cola del próximo grupo. Te enviaremos un correo tan pronto como abramos la puerta.",
+      "nextTitle": "¿Qué sigue?:",
+      "nextDescription": "Espera un correo de bienvenida con una lista rápida de perfil.",
+      "followUpdates": "Seguir actualizaciones"
+    },
+    "alert": {
+      "title": "Aviso:",
+      "description": "Los primeros 200 lugares para Creators están llenos. ¡Estamos incorporando en grupos para que cada Creator de IA tenga una oportunidad de visibilidad! Continúa registrándote para asegurar tu lugar."
+    },
+    "header": {
+      "title": "Unirse como creator",
+      "step": "Paso {{step}} de {{totalSteps}}"
+    },
+    "basic": {
+      "title": "Detalles básicos",
+      "subtitle": "Empecemos con tu información",
+      "socialHandles": "Cuentas de redes sociales *",
+      "atLeastOneRequired": "(Al menos 1 requerida)",
+      "agencyHelp": "Si estás representado por una agencia, ingresa su nombre aquí"
+    },
+    "profile": {
+      "title": "Detalles del perfil de Creator",
+      "subtitle": "Cuéntanos más sobre tu trabajo creativo y experiencia.",
+      "creativeFocus": "Enfoque creativo",
+      "contentTypesQuestion": "¿Qué tipo de contenido de IA creas? *",
+      "aiToolsQuestion": "¿Qué herramientas de IA usas principalmente? *",
+      "locationExperience": "Ubicación y experiencia",
+      "selectExperience": "Seleccionar nivel de experiencia",
+      "experience": {
+        "lessThan1": "Menos de 1 año",
+        "oneToTwo": "1 - 2 años",
+        "threeToFive": "3 - 5 años",
+        "fivePlus": "5+ años"
+      },
+      "portfolioSocial": "Portafolio y redes sociales",
+      "portfolioSocialSubtitle": "Opcional: Comparte tu trabajo y presencia social",
+      "uploadPhoto": "Subir foto de perfil",
+      "uploadPhotoSubtitle": "Agrega una foto profesional a tu perfil",
+      "photoRequirements": "Mínimo 800 x 800 px, JPG o PNG, máximo 5 MB",
+      "clickToUpload": "Haz clic para subir",
+      "dragDrop": "o arrastra y suelta",
+      "continueToTerms": "Continuar a términos"
+    },
+    "terms": {
+      "title": "Términos y acuerdos para creators",
+      "subtitle": "Por favor revisa y acepta la Política de Privacidad y los Términos de Creator para completar tu registro.",
+      "agreeTo": "Acepto la",
+      "policyLink": "Política de Privacidad",
+      "andTerms": "y los Términos de Servicio.",
+      "mustAgreeTitle": "Acuerdo requerido",
+      "mustAgree": "Debes aceptar los términos para completar tu registro.",
+      "submitting": "Enviando...",
+      "completeRegistration": "Completar registro",
+      "download": "Descargar"
     }
   },
   "creatorSignupOptions.main.title": "What type of creator are you?",

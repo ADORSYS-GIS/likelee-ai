@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,6 +35,7 @@ interface FactorInfo {
 }
 
 export default function TwoFactorSetup() {
+  const { t } = useTranslation("auth");
   const { mfa, authenticated, initialized, profile, refreshProfile } =
     useAuth();
   const navigate = useNavigate();
@@ -52,7 +54,9 @@ export default function TwoFactorSetup() {
   const [verifyCode, setVerifyCode] = useState("");
   const [challengeCode, setChallengeCode] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [friendlyName, setFriendlyName] = useState("Authenticator App");
+  const [friendlyName, setFriendlyName] = useState(
+    t("twoFactorSetup.enroll.defaultDeviceName"),
+  );
   const [unverifiedFactors, setUnverifiedFactors] = useState<FactorInfo[]>([]);
 
   const loadFactors = useCallback(async () => {
@@ -90,7 +94,7 @@ export default function TwoFactorSetup() {
       }
     } catch (err: any) {
       console.error("Failed to load factors:", err);
-      setError("Failed to load 2FA settings. Please refresh the page.");
+      setError(t("twoFactorSetup.errors.loadFailed"));
     }
   }, [mfa, selectedFactorId]);
 
@@ -127,13 +131,11 @@ export default function TwoFactorSetup() {
 
   const handleEnroll = async () => {
     if (!mfa) {
-      setError(
-        "Authentication service is not available. Please refresh the page and try again. If the problem persists, contact support.",
-      );
+      setError(t("twoFactorSetup.errors.serviceUnavailable"));
       return;
     }
     if (!friendlyName.trim()) {
-      setError("Please enter a device name.");
+      setError(t("twoFactorSetup.errors.deviceNameRequired"));
       return;
     }
     setLoading(true);
@@ -167,9 +169,7 @@ export default function TwoFactorSetup() {
         return;
       }
 
-      throw new Error(
-        "Authenticator setup could not be started. Please try again.",
-      );
+      throw new Error(t("twoFactorSetup.errors.setupCouldNotStart"));
     } catch (err: any) {
       const errorCode = err.code || err.error_code || "";
       const errorMessage = err.message || "";
@@ -179,28 +179,19 @@ export default function TwoFactorSetup() {
         errorMessage.includes("already exists")
       ) {
         setError(
-          `You already have a 2FA method named "${friendlyName}". Please choose a different name (e.g., "My Phone", "Work Device") or remove the existing one below.`,
+          t("twoFactorSetup.errors.nameConflict", { name: friendlyName }),
         );
       } else if (errorCode === "mfa_totp_limit_reached") {
-        setError(
-          "You've reached the maximum number of authenticator apps allowed on your account. Please remove an existing one before adding a new device.",
-        );
+        setError(t("twoFactorSetup.errors.limitReached"));
       } else if (errorCode === "auth/mfa") {
-        setError(
-          "There was an issue setting up two-factor authentication. Please try again or contact support if the problem persists.",
-        );
+        setError(t("twoFactorSetup.errors.setupIssue"));
       } else if (
         errorMessage.includes("network") ||
         errorMessage.includes("fetch")
       ) {
-        setError(
-          "Unable to connect to the authentication service. Please check your internet connection and try again.",
-        );
+        setError(t("twoFactorSetup.errors.networkSetup"));
       } else {
-        setError(
-          errorMessage ||
-            "Something went wrong setting up 2FA. Please try again.",
-        );
+        setError(errorMessage || t("twoFactorSetup.errors.setupGeneric"));
       }
     } finally {
       setLoading(false);
@@ -230,8 +221,8 @@ export default function TwoFactorSetup() {
       if (err) throw err;
       setStep("success");
       toast({
-        title: "2FA Enabled",
-        description: "Two-factor authentication is now active on your account.",
+        title: t("twoFactorSetup.verify.enabledTitle"),
+        description: t("twoFactorSetup.verify.enabledDescription"),
       });
     } catch (err: any) {
       console.error("[handleVerify] Error:", err);
@@ -239,29 +230,20 @@ export default function TwoFactorSetup() {
       const errorMessage = err.message || "";
 
       if (errorCode === "mfa_challenge_expired") {
-        setError(
-          "This verification session has expired. Please go back and start the setup process again.",
-        );
+        setError(t("twoFactorSetup.errors.expiredSetup"));
       } else if (
         errorCode === "mfa_invalid_code" ||
         errorMessage.includes("invalid") ||
         errorMessage.includes("incorrect")
       ) {
-        setError(
-          "The code you entered is incorrect. Make sure you're using the current 6-digit code from your authenticator app. Codes expire after 30 seconds.",
-        );
+        setError(t("twoFactorSetup.errors.invalidCode"));
       } else if (
         errorMessage.includes("network") ||
         errorMessage.includes("fetch")
       ) {
-        setError(
-          "Unable to verify the code. Please check your internet connection and try again.",
-        );
+        setError(t("twoFactorSetup.errors.networkVerify"));
       } else {
-        setError(
-          errorMessage ||
-            "Verification failed. Please check the code and try again.",
-        );
+        setError(errorMessage || t("twoFactorSetup.errors.verifyGeneric"));
       }
     } finally {
       setLoading(false);
@@ -283,8 +265,10 @@ export default function TwoFactorSetup() {
       console.log("[TwoFactorSetup] MFA verification successful");
 
       toast({
-        title: "Verification Complete",
-        description: "You have been successfully authenticated.",
+        title: t("twoFactorSetup.challenge.verificationCompleteTitle"),
+        description: t(
+          "twoFactorSetup.challenge.verificationCompleteDescription",
+        ),
       });
 
       // Mark that we just completed MFA so ProtectedRoute knows to wait for profile
@@ -322,29 +306,20 @@ export default function TwoFactorSetup() {
       const errorMessage = err.message || "";
 
       if (errorCode === "mfa_challenge_expired") {
-        setError(
-          "Your login session has expired. Please return to the login page and sign in again.",
-        );
+        setError(t("twoFactorSetup.errors.expiredLogin"));
       } else if (
         errorCode === "mfa_invalid_code" ||
         errorMessage.includes("invalid") ||
         errorMessage.includes("incorrect")
       ) {
-        setError(
-          "The code you entered is incorrect. Make sure you're using the current 6-digit code from your authenticator app. Codes expire after 30 seconds.",
-        );
+        setError(t("twoFactorSetup.errors.invalidCode"));
       } else if (
         errorMessage.includes("network") ||
         errorMessage.includes("fetch")
       ) {
-        setError(
-          "Unable to verify the code. Please check your internet connection and try again.",
-        );
+        setError(t("twoFactorSetup.errors.networkVerify"));
       } else {
-        setError(
-          errorMessage ||
-            "Verification failed. Please check the code and try again.",
-        );
+        setError(errorMessage || t("twoFactorSetup.errors.verifyGeneric"));
       }
     } finally {
       setLoading(false);
@@ -353,20 +328,20 @@ export default function TwoFactorSetup() {
 
   const handleUnenroll = async (factorId: string) => {
     if (!mfa) return;
-    if (!confirm("Are you sure you want to disable 2FA?")) return;
+    if (!confirm(t("twoFactorSetup.manage.disableConfirm"))) return;
     setLoading(true);
     try {
       const { error: err } = await mfa.unenroll(factorId);
       if (err) throw err;
       toast({
-        title: "2FA Disabled",
-        description: "Two-factor authentication has been removed.",
+        title: t("twoFactorSetup.manage.disabledTitle"),
+        description: t("twoFactorSetup.manage.disabledDescription"),
       });
       loadFactors();
     } catch (err: any) {
       toast({
-        title: "Error",
-        description: err.message || "Failed to disable 2FA",
+        title: t("common.error"),
+        description: err.message || t("twoFactorSetup.errors.failedToDisable"),
         variant: "destructive",
       });
     } finally {
@@ -391,10 +366,10 @@ export default function TwoFactorSetup() {
               <Shield className="w-8 h-8 text-blue-600" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Two-Factor Authentication
+              {t("twoFactorSetup.challenge.title")}
             </h1>
             <p className="text-sm text-gray-500 mt-2">
-              Enter the 6-digit code from your authenticator app
+              {t("twoFactorSetup.challenge.description")}
             </p>
           </div>
 
@@ -422,7 +397,7 @@ export default function TwoFactorSetup() {
           {!selectedFactorId && !error && (
             <div className="mb-6 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 text-amber-800 text-sm">
               <AlertCircle className="w-4 h-4" />
-              Waiting for your authenticator method to load.
+              {t("twoFactorSetup.challenge.waitingForMethod")}
             </div>
           )}
 
@@ -433,7 +408,11 @@ export default function TwoFactorSetup() {
             }
             className="w-full h-12 bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify"}
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              t("twoFactorSetup.challenge.verifyButton")
+            )}
           </Button>
 
           <div className="mt-6 text-center">
@@ -441,7 +420,7 @@ export default function TwoFactorSetup() {
               to="/login"
               className="text-sm text-gray-500 hover:text-gray-700 underline"
             >
-              Sign in with a different account
+              {t("twoFactorSetup.challenge.signInDifferentAccount")}
             </Link>
           </div>
         </Card>
@@ -462,7 +441,7 @@ export default function TwoFactorSetup() {
             className="mb-6 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            {t("twoFactorSetup.manage.back")}
           </Button>
 
           <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
@@ -472,10 +451,10 @@ export default function TwoFactorSetup() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Add Authenticator Method
+                  {t("twoFactorSetup.enroll.title")}
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Set up an additional authenticator app
+                  {t("twoFactorSetup.enroll.subtitle")}
                 </p>
               </div>
             </div>
@@ -489,41 +468,40 @@ export default function TwoFactorSetup() {
 
             <div className="space-y-6">
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                <h3 className="font-bold text-gray-900 mb-4">How it works</h3>
+                <h3 className="font-bold text-gray-900 mb-4">
+                  {t("twoFactorSetup.enroll.howItWorks")}
+                </h3>
                 <ol className="space-y-3 text-sm text-gray-600">
                   <li className="flex items-start gap-3">
                     <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                       1
                     </span>
-                    <span>
-                      Scan the QR code with an authenticator app like Google
-                      Authenticator or Authy
-                    </span>
+                    <span>{t("twoFactorSetup.enroll.step1")}</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                       2
                     </span>
-                    <span>
-                      Enter the 6-digit code from the app to verify setup
-                    </span>
+                    <span>{t("twoFactorSetup.enroll.step2")}</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                       3
                     </span>
-                    <span>Use the app to generate codes when logging in</span>
+                    <span>{t("twoFactorSetup.enroll.step3")}</span>
                   </li>
                 </ol>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="friendlyName">Device Name</Label>
+                <Label htmlFor="friendlyName">
+                  {t("twoFactorSetup.enroll.deviceNameLabel")}
+                </Label>
                 <Input
                   id="friendlyName"
                   value={friendlyName}
                   onChange={(e) => setFriendlyName(e.target.value)}
-                  placeholder="e.g., iPhone, Work Phone"
+                  placeholder={t("twoFactorSetup.enroll.deviceNamePlaceholder")}
                   className="max-w-xs"
                 />
               </div>
@@ -534,7 +512,7 @@ export default function TwoFactorSetup() {
                   onClick={() => setStep("manage")}
                   className="flex-1"
                 >
-                  Cancel
+                  {t("twoFactorSetup.enroll.cancel")}
                 </Button>
                 <Button
                   onClick={handleEnroll}
@@ -544,12 +522,12 @@ export default function TwoFactorSetup() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Setting up...
+                      {t("twoFactorSetup.enroll.settingUp")}
                     </>
                   ) : (
                     <>
                       <Shield className="w-4 h-4 mr-2" />
-                      Enable 2FA
+                      {t("twoFactorSetup.enroll.enable")}
                     </>
                   )}
                 </Button>
@@ -571,7 +549,7 @@ export default function TwoFactorSetup() {
             className="mb-6 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            {t("twoFactorSetup.manage.back")}
           </Button>
 
           <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
@@ -581,10 +559,10 @@ export default function TwoFactorSetup() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Two-Factor Authentication
+                  {t("twoFactorSetup.manage.title")}
                 </h1>
                 <p className="text-sm text-gray-500">
-                  Add an extra layer of security to your account
+                  {t("twoFactorSetup.manage.subtitle")}
                 </p>
               </div>
             </div>
@@ -593,7 +571,9 @@ export default function TwoFactorSetup() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-green-600 mb-4">
                   <CheckCircle2 className="w-5 h-5" />
-                  <span className="font-medium">2FA is currently enabled</span>
+                  <span className="font-medium">
+                    {t("twoFactorSetup.manage.enabled")}
+                  </span>
                 </div>
 
                 <div className="border border-gray-200 rounded-lg divide-y">
@@ -606,7 +586,8 @@ export default function TwoFactorSetup() {
                         <Smartphone className="w-5 h-5 text-gray-400" />
                         <div>
                           <p className="font-medium text-gray-900">
-                            {factor.friendly_name || "Authenticator App"}
+                            {factor.friendly_name ||
+                              t("twoFactorSetup.manage.authenticatorApp")}
                           </p>
                           <p className="text-xs text-gray-500">
                             {factor.factor_type.toUpperCase()}
@@ -621,7 +602,7 @@ export default function TwoFactorSetup() {
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Remove
+                        {t("twoFactorSetup.manage.remove")}
                       </Button>
                     </div>
                   ))}
@@ -632,7 +613,7 @@ export default function TwoFactorSetup() {
                   onClick={() => setStep("enroll")}
                   className="mt-4"
                 >
-                  Add Another Method
+                  {t("twoFactorSetup.manage.addAnother")}
                 </Button>
               </div>
             ) : unverifiedFactors.length > 0 ? (
@@ -640,11 +621,11 @@ export default function TwoFactorSetup() {
                 <div className="flex items-center gap-2 text-yellow-600 mb-4">
                   <AlertCircle className="w-5 h-5" />
                   <span className="font-medium">
-                    Incomplete 2FA setup detected
+                    {t("twoFactorSetup.manage.incompleteTitle")}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600">
-                  You have an incomplete 2FA setup. Remove it and try again.
+                  {t("twoFactorSetup.manage.incompleteDescription")}
                 </p>
                 {error && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
@@ -662,10 +643,11 @@ export default function TwoFactorSetup() {
                         <Smartphone className="w-5 h-5 text-yellow-600" />
                         <div>
                           <p className="font-medium text-gray-900">
-                            {factor.friendly_name || "Authenticator App"}
+                            {factor.friendly_name ||
+                              t("twoFactorSetup.manage.authenticatorApp")}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Unverified - Setup incomplete
+                            {t("twoFactorSetup.manage.unverified")}
                           </p>
                         </div>
                       </div>
@@ -678,14 +660,18 @@ export default function TwoFactorSetup() {
                           try {
                             await mfa.unenroll(factor.id);
                             toast({
-                              title: "Removed",
-                              description: "Incomplete setup removed.",
+                              title: t("twoFactorSetup.manage.removedTitle"),
+                              description: t(
+                                "twoFactorSetup.manage.removedDescription",
+                              ),
                             });
                             loadFactors();
                           } catch (e: any) {
                             toast({
-                              title: "Error",
-                              description: e.message || "Failed to remove",
+                              title: t("common.error"),
+                              description:
+                                e.message ||
+                                t("twoFactorSetup.errors.failedToRemove"),
                               variant: "destructive",
                             });
                           } finally {
@@ -696,7 +682,7 @@ export default function TwoFactorSetup() {
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Remove
+                        {t("twoFactorSetup.manage.remove")}
                       </Button>
                     </div>
                   ))}
@@ -704,9 +690,7 @@ export default function TwoFactorSetup() {
                 <Button
                   onClick={async () => {
                     if (!mfa) {
-                      setError(
-                        "Authentication service not available. Please refresh the page.",
-                      );
+                      setError(t("twoFactorSetup.errors.authUnavailable"));
                       return;
                     }
                     setLoading(true);
@@ -716,16 +700,20 @@ export default function TwoFactorSetup() {
                       }
                       setUnverifiedFactors([]);
                       toast({
-                        title: "Cleaned up",
-                        description:
-                          "Incomplete setups removed. You can now start fresh.",
+                        title: t("twoFactorSetup.manage.cleanedTitle"),
+                        description: t(
+                          "twoFactorSetup.manage.cleanedDescription",
+                        ),
                       });
                       setStep("enroll");
                     } catch (e: any) {
                       console.error("Failed to cleanup:", e);
                       setError(
-                        "Failed to remove incomplete setup: " +
-                          (e.message || "Unknown error"),
+                        t("twoFactorSetup.errors.cleanupFailed", {
+                          message:
+                            e.message ||
+                            t("twoFactorSetup.errors.unknownError"),
+                        }),
                       );
                     } finally {
                       setLoading(false);
@@ -737,40 +725,37 @@ export default function TwoFactorSetup() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Cleaning up...
+                      {t("twoFactorSetup.manage.cleaningUp")}
                     </>
                   ) : (
-                    "Start Fresh Setup"
+                    t("twoFactorSetup.manage.startFresh")
                   )}
                 </Button>
               </div>
             ) : (
               <div className="space-y-6">
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                  <h3 className="font-bold text-gray-900 mb-4">How it works</h3>
+                  <h3 className="font-bold text-gray-900 mb-4">
+                    {t("twoFactorSetup.enroll.howItWorks")}
+                  </h3>
                   <ol className="space-y-3 text-sm text-gray-600">
                     <li className="flex items-start gap-3">
                       <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                         1
                       </span>
-                      <span>
-                        Scan the QR code with an authenticator app like Google
-                        Authenticator or Authy
-                      </span>
+                      <span>{t("twoFactorSetup.enroll.step1")}</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                         2
                       </span>
-                      <span>
-                        Enter the 6-digit code from the app to verify setup
-                      </span>
+                      <span>{t("twoFactorSetup.enroll.step2")}</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0">
                         3
                       </span>
-                      <span>Use the app to generate codes when logging in</span>
+                      <span>{t("twoFactorSetup.enroll.step3")}</span>
                     </li>
                   </ol>
                 </div>
@@ -783,12 +768,16 @@ export default function TwoFactorSetup() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="friendlyName">Device Name</Label>
+                  <Label htmlFor="friendlyName">
+                    {t("twoFactorSetup.enroll.deviceNameLabel")}
+                  </Label>
                   <Input
                     id="friendlyName"
                     value={friendlyName}
                     onChange={(e) => setFriendlyName(e.target.value)}
-                    placeholder="e.g., iPhone, Work Phone"
+                    placeholder={t(
+                      "twoFactorSetup.enroll.deviceNamePlaceholder",
+                    )}
                     className="max-w-xs"
                   />
                 </div>
@@ -801,12 +790,12 @@ export default function TwoFactorSetup() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Setting up...
+                      {t("twoFactorSetup.enroll.settingUp")}
                     </>
                   ) : (
                     <>
                       <Shield className="w-4 h-4 mr-2" />
-                      Enable 2FA
+                      {t("twoFactorSetup.enroll.enable")}
                     </>
                   )}
                 </Button>
@@ -827,14 +816,13 @@ export default function TwoFactorSetup() {
             <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
               <div className="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
                 <AlertCircle className="w-4 h-4" />
-                Setup error: Factor ID not available. Please go back and try
-                again.
+                {t("twoFactorSetup.verify.setupError")}
               </div>
               <Button
                 onClick={() => setStep("intro")}
                 className="w-full bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold"
               >
-                Go Back
+                {t("twoFactorSetup.manage.back")}
               </Button>
             </Card>
           </div>
@@ -851,16 +839,16 @@ export default function TwoFactorSetup() {
             className="mb-6 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Cancel
+            {t("twoFactorSetup.enroll.cancel")}
           </Button>
 
           <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
             <div className="text-center mb-6">
               <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Scan QR Code
+                {t("twoFactorSetup.verify.title")}
               </h2>
               <p className="text-sm text-gray-500">
-                Use your authenticator app to scan this code
+                {t("twoFactorSetup.verify.description")}
               </p>
             </div>
 
@@ -879,7 +867,7 @@ export default function TwoFactorSetup() {
             {totpSecret && (
               <div className="mb-6 text-center">
                 <p className="text-xs text-gray-500 mb-1">
-                  Or enter this code manually:
+                  {t("twoFactorSetup.verify.manualEntry")}
                 </p>
                 <code className="text-sm font-mono bg-gray-100 px-3 py-1 rounded">
                   {totpSecret}
@@ -896,7 +884,7 @@ export default function TwoFactorSetup() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Enter verification code</Label>
+                <Label>{t("twoFactorSetup.verify.enterCode")}</Label>
                 <div className="flex justify-center">
                   <InputOTP
                     maxLength={6}
@@ -915,7 +903,9 @@ export default function TwoFactorSetup() {
                 </div>
                 {verifyCode.length > 0 && (
                   <p className="text-xs text-center text-gray-500">
-                    Entered {verifyCode.length} of 6 digits
+                    {t("twoFactorSetup.verify.enteredDigits", {
+                      count: verifyCode.length,
+                    })}
                   </p>
                 )}
               </div>
@@ -936,7 +926,7 @@ export default function TwoFactorSetup() {
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  "Verify & Enable"
+                  t("twoFactorSetup.verify.verifyAndEnable")
                 )}
               </Button>
             </div>
@@ -954,11 +944,10 @@ export default function TwoFactorSetup() {
             <CheckCircle2 className="w-8 h-8 text-green-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            2FA Enabled Successfully
+            {t("twoFactorSetup.success.title")}
           </h1>
           <p className="text-sm text-gray-500 mb-8">
-            Your account is now protected with two-factor authentication. You'll
-            need to enter a code from your authenticator app when signing in.
+            {t("twoFactorSetup.success.description")}
           </p>
           <Button
             onClick={() => {
@@ -967,7 +956,7 @@ export default function TwoFactorSetup() {
             }}
             className="bg-[#F7B750] hover:bg-[#F7B750]/90 text-white font-bold"
           >
-            Done
+            {t("twoFactorSetup.success.done")}
           </Button>
         </Card>
       </div>

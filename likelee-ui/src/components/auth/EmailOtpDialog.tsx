@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Loader2, Mail } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -56,11 +57,12 @@ export function EmailOtpDialog({
   description,
   onVerify,
   onResend,
-  verifyLabel = "Verify code",
+  verifyLabel,
   initialCooldownSec = 20,
   helperText,
   theme,
 }: EmailOtpDialogProps) {
+  const { t } = useTranslation("auth");
   const [code, setCode] = React.useState("");
   const [verifyLoading, setVerifyLoading] = React.useState(false);
   const [resendLoading, setResendLoading] = React.useState(false);
@@ -119,7 +121,7 @@ export function EmailOtpDialog({
       await onVerify(normalizedCode);
       lastSubmittedCodeRef.current = null;
     } catch (error) {
-      setVerifyError(getFriendlyErrorMessage(error));
+      setVerifyError(getFriendlyErrorMessage(error, t));
     } finally {
       setVerifyLoading(false);
     }
@@ -211,8 +213,12 @@ export function EmailOtpDialog({
               resolvedTheme.infoClassName,
             )}
           >
-            Enter the 6-digit code sent to{" "}
-            <span className="font-semibold">{email}</span>.
+            <Trans
+              i18nKey="auth.emailOtp.enterCode"
+              ns="auth"
+              values={{ email }}
+              components={{ strong: <span className="font-semibold" /> }}
+            />
           </div>
 
           <div className="space-y-3">
@@ -237,7 +243,7 @@ export function EmailOtpDialog({
                 onPaste={handleCodePaste}
                 onFocus={() => setOtpFocused(true)}
                 onBlur={() => setOtpFocused(false)}
-                aria-label="Email verification code"
+                aria-label={t("auth.emailOtp.codeAriaLabel")}
                 className="absolute inset-0 h-full w-full cursor-text opacity-0"
               />
 
@@ -297,10 +303,10 @@ export function EmailOtpDialog({
               {verifyLoading ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Verifying…
+                  {t("auth.emailOtp.verifying")}
                 </span>
               ) : (
-                verifyLabel
+                verifyLabel || t("auth.emailOtp.verifyLabel")
               )}
             </Button>
 
@@ -313,12 +319,12 @@ export function EmailOtpDialog({
               {resendLoading ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Sending…
+                  {t("auth.emailOtp.sending")}
                 </span>
               ) : cooldownSec > 0 ? (
-                `Resend available in ${cooldownSec}s`
+                t("auth.emailOtp.resendAvailableIn", { seconds: cooldownSec })
               ) : (
-                "Resend code"
+                t("auth.emailOtp.resendCode")
               )}
             </Button>
           </div>

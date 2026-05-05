@@ -372,11 +372,13 @@ export default function Login() {
             role="status"
           >
             <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-              Loading...
+              {t("auth.login.redirectLoadingLabel")}
             </span>
           </div>
           <p className="mt-4 text-gray-600">
-            {isOauthReturn ? "Completing sign up..." : "Redirecting..."}
+            {isOauthReturn
+              ? t("auth.login.completingSignup")
+              : t("auth.login.redirecting")}
           </p>
         </div>
       </div>

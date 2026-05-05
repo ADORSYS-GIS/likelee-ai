@@ -287,7 +287,7 @@ export default function OrganizationSignup() {
 
   const requireSupabase = () => {
     if (!supabase) {
-      throw new Error("Supabase not configured");
+      throw new Error(t("organizationSignup.errors.supabaseNotConfigured"));
     }
 
     return supabase;
@@ -303,9 +303,8 @@ export default function OrganizationSignup() {
     setEmailVerificationPending(false);
     setStep(2);
     toast({
-      title: "Email verified",
-      description:
-        "Your organization account is verified. Continue setup below.",
+      title: t("organizationSignup.toasts.emailVerified.title"),
+      description: t("organizationSignup.toasts.emailVerified.description"),
     });
   };
 
@@ -314,8 +313,8 @@ export default function OrganizationSignup() {
     await resendSignupEmailOtp(client, formData.email);
     if (showToast) {
       toast({
-        title: "Code sent",
-        description: "We sent a fresh 6-digit code to your inbox.",
+        title: t("organizationSignup.toasts.codeSent.title"),
+        description: t("organizationSignup.toasts.codeSent.description"),
       });
     }
   };
@@ -323,9 +322,8 @@ export default function OrganizationSignup() {
   const loginExistingAccount = async () => {
     await login(normalizeEmail(formData.email), formData.password);
     toast({
-      title: "Account found",
-      description:
-        "This email already belongs to an existing account. Continuing there now.",
+      title: t("organizationSignup.toasts.accountFound.title"),
+      description: t("organizationSignup.toasts.accountFound.description"),
     });
   };
 
@@ -786,7 +784,9 @@ export default function OrganizationSignup() {
       const organizationBasics = getOrganizationBasics(data);
 
       if (!organizationBasics.organizationName) {
-        throw new Error("Organization name is required.");
+        throw new Error(
+          t("organizationSignup.errors.organizationNameRequired"),
+        );
       }
 
       if (flow === "brand") {
@@ -802,7 +802,7 @@ export default function OrganizationSignup() {
         return await registerBrand(payload);
       } else {
         if (!organizationBasics.agencyType) {
-          throw new Error("Agency type is required.");
+          throw new Error(t("organizationSignup.errors.agencyTypeRequired"));
         }
 
         const payload = {
@@ -830,17 +830,18 @@ export default function OrganizationSignup() {
       } catch (err) {
         console.error("Failed to send confirmation email:", err);
         toast({
-          title: "Code delivery failed",
-          description:
-            "We created the account, but could not send the verification code yet. Please try resending it.",
+          title: t("organizationSignup.toasts.codeDeliveryFailed.title"),
+          description: t(
+            "organizationSignup.toasts.codeDeliveryFailed.description",
+          ),
           variant: "destructive",
         });
       }
 
       setEmailVerificationPending(true);
       toast({
-        title: "Account Created",
-        description: "Enter the 6-digit code from your email to continue.",
+        title: t("organizationSignup.toasts.accountCreated.title"),
+        description: t("organizationSignup.toasts.accountCreated.description"),
       });
     },
     onError: async (error) => {
@@ -856,9 +857,10 @@ export default function OrganizationSignup() {
           await handleOrganizationOtpResend(false);
           setEmailVerificationPending(true);
           toast({
-            title: "Continue signup",
-            description:
-              "We found an existing signup for this email. Enter the 6-digit code from your email to continue.",
+            title: t("organizationSignup.toasts.continueSignup.title"),
+            description: t(
+              "organizationSignup.toasts.continueSignup.description",
+            ),
           });
           return;
         } catch (resendError) {
@@ -867,9 +869,10 @@ export default function OrganizationSignup() {
             resendError,
           );
           toast({
-            title: "Account already exists",
-            description:
-              "This email already belongs to another account. Sign in instead to continue with that account.",
+            title: t("organizationSignup.toasts.accountAlreadyExists.title"),
+            description: t(
+              "organizationSignup.toasts.accountAlreadyExists.description",
+            ),
             className: "bg-cyan-50 border-2 border-cyan-400",
           });
           return;
@@ -891,7 +894,9 @@ export default function OrganizationSignup() {
       const organizationBasics = getOrganizationBasics(data);
 
       if (!organizationBasics.organizationName) {
-        throw new Error("Organization name is required.");
+        throw new Error(
+          t("organizationSignup.errors.organizationNameRequired"),
+        );
       }
 
       if (flow === "brand") {
@@ -915,7 +920,7 @@ export default function OrganizationSignup() {
         });
       } else {
         if (!organizationBasics.agencyType) {
-          throw new Error("Agency type is required.");
+          throw new Error(t("organizationSignup.errors.agencyTypeRequired"));
         }
 
         return updateAgencyProfile({
@@ -980,9 +985,8 @@ export default function OrganizationSignup() {
       // Validate organization type is set
       if (!orgType) {
         toast({
-          title: t("error"),
-          description:
-            "Organization type is missing. Please try again from the beginning.",
+          title: t("common.error"),
+          description: t("organizationSignup.errors.organizationTypeMissing"),
           variant: "destructive",
         });
         return;
@@ -1129,14 +1133,8 @@ export default function OrganizationSignup() {
   const handleFinalSubmit = () => {
     if (!agreedToTerms) {
       toast({
-        title: t(
-          "organizationSignup.terms.mustAgreeTitle",
-          "Agreement Required",
-        ),
-        description: t(
-          "organizationSignup.terms.mustAgree",
-          "You must agree to the privacy policy to complete your registration.",
-        ),
+        title: t("organizationSignup.terms.mustAgreeTitle"),
+        description: t("organizationSignup.terms.mustAgree"),
         variant: "destructive",
       });
       return;
@@ -1215,7 +1213,7 @@ export default function OrganizationSignup() {
           window.location.href = url;
         } else {
           toast({
-            title: "Error",
+            title: t("common.error"),
             description: t("organizationSignup.kycError"),
             variant: "destructive",
           });
@@ -1223,7 +1221,7 @@ export default function OrganizationSignup() {
       } catch (e) {
         console.error("Error starting organization KYC", e);
         toast({
-          title: "Error",
+          title: t("common.error"),
           description: t("organizationSignup.kycFail"),
           variant: "destructive",
         });
@@ -2752,7 +2750,7 @@ export default function OrganizationSignup() {
                   }}
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  Download
+                  {t("organizationSignup.terms.download")}
                 </Button>
               </div>
 
@@ -2770,16 +2768,16 @@ export default function OrganizationSignup() {
                     htmlFor="org-agree-terms"
                     className="text-sm text-gray-700 cursor-pointer leading-relaxed"
                   >
-                    I agree to the{" "}
+                    {t("organizationSignup.terms.agreeTo")}{" "}
                     <a
                       href="https://likelee.ai/privacypolicy"
                       target="_blank"
                       rel="noreferrer"
                       className="font-semibold underline text-indigo-600"
                     >
-                      Privacy Policy
+                      {t("organizationSignup.terms.policyLink")}
                     </a>{" "}
-                    and Terms of Service.
+                    {t("organizationSignup.terms.andTerms")}
                   </label>
                   <p className="text-sm text-gray-500">
                     {t(
@@ -2851,10 +2849,10 @@ export default function OrganizationSignup() {
           open={emailVerificationPending}
           onOpenChange={setEmailVerificationPending}
           email={normalizeEmail(formData.email)}
-          title="Verify your email"
-          description="Enter the 6-digit code from your inbox to keep setup on this tab."
-          helperText="Use resend if the email takes a moment to arrive."
-          verifyLabel="Continue"
+          title={t("auth.emailOtp.title")}
+          description={t("auth.emailOtp.description")}
+          helperText={t("auth.emailOtp.helperText")}
+          verifyLabel={t("auth.emailOtp.continueButton")}
           onVerify={handleOrganizationOtpVerify}
           onResend={handleOrganizationOtpResend}
           theme={colors.otpTheme}
