@@ -596,8 +596,23 @@ export const PerformanceTiers: React.FC<{
                                   const target =
                                     nextTierName &&
                                     data?.config?.[nextTierName]?.min_earnings;
-                                  if (!target || target <= 0)
-                                    return `${Math.max(2, Math.min(100, Math.round((earned / 500) * 100)))}%`;
+                                  if (!target || target <= 0) {
+                                    // No tier config available — show proportional progress
+                                    // using the lowest configured tier threshold as fallback,
+                                    // or a sensible default of $500 if nothing is configured.
+                                    const lowestThreshold = Object.values(
+                                      (data?.config as Record<string, any>) ??
+                                        {},
+                                    ).reduce(
+                                      (min: number, cfg: any) =>
+                                        cfg?.min_earnings > 0 &&
+                                        cfg.min_earnings < min
+                                          ? cfg.min_earnings
+                                          : min,
+                                      500,
+                                    );
+                                    return `${Math.max(2, Math.min(100, Math.round((earned / lowestThreshold) * 100)))}%`;
+                                  }
                                   const pct = Math.min(
                                     100,
                                     Math.round((earned / target) * 100),

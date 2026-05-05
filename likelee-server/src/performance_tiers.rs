@@ -260,7 +260,7 @@ pub async fn get_performance_tiers(
         .agency_mode
         .as_deref()
         .map(|m| m.eq_ignore_ascii_case("AI"))
-        .unwrap_or(true); // default to AI mode
+        .unwrap_or(false); // default to IRL mode for backward compatibility
 
     // Parallelize calls
     let (
@@ -331,6 +331,8 @@ pub async fn get_performance_tiers(
         // Fetch signed licensing deals this month for AI mode deal count.
         // Counts license_submissions with status='completed' and signed_at >= month start.
         // Covers both single-talent (talent_id) and multi-talent (talent_ids array) submissions.
+        // Uses a high limit to avoid truncation; for very high-volume agencies a dedicated
+        // aggregation RPC should be used instead.
         async {
             let now = chrono::Utc::now();
             let month_start = now.format("%Y-%m-01").to_string();
@@ -341,7 +343,7 @@ pub async fn get_performance_tiers(
                 .eq("agency_id", agency_id)
                 .eq("status", "completed")
                 .gte("signed_at", &month_start)
-                .limit(1000)
+                .limit(10000)
                 .execute()
                 .await
         }

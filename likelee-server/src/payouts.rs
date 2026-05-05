@@ -1865,6 +1865,11 @@ pub async fn stripe_webhook(
                             error = %e,
                             "Payment link checkout handler FAILED — earnings will not be recorded"
                         );
+                        // Return 500 so Stripe retries the webhook delivery.
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(json!({"status":"error","error":"payment_link_checkout_failed"})),
+                        );
                     }
                 }
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
@@ -1921,7 +1926,17 @@ pub async fn stripe_webhook(
                             .await;
                         return (StatusCode::OK, Json(json!({"status":"ok"})));
                     }
-                    Err(_) => return (StatusCode::OK, Json(json!({"status":"ok"}))),
+                    Err(e) => {
+                        tracing::error!(
+                            agency_id_from_meta = %agency_id_from_meta,
+                            error = %e,
+                            "Payment link checkout handler FAILED in metadata fallback path — earnings will not be recorded"
+                        );
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(json!({"status":"error","error":"payment_link_checkout_failed"})),
+                        );
+                    }
                 }
             }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Filter,
   CheckCircle2,
@@ -59,6 +60,7 @@ const LicensingRequestsView = ({
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["agency", "licensing-requests"],
@@ -1476,12 +1478,11 @@ const LicensingRequestsView = ({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">
-                      {talent.split(" (")[0]}
+                      {talent.replace(/\s*\([^)]*\)\s*$/, "") || talent}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {talent.includes("(")
-                        ? talent.split("(")[1]?.replace(")", "")
-                        : "Account setup incomplete"}
+                      {/\(([^)]+)\)/.exec(talent)?.[1] ??
+                        "Account setup incomplete"}
                     </p>
                   </div>
                 </div>
@@ -1517,7 +1518,7 @@ const LicensingRequestsView = ({
                     open: false,
                   }));
                   // Navigate to Messages tab so the agency can message the talent
-                  window.location.href = "/AgencyDashboard?tab=messages";
+                  navigate("/AgencyDashboard?tab=messages");
                 }}
               >
                 <MessageSquare className="w-4 h-4" />
