@@ -1846,7 +1846,27 @@ pub async fn stripe_webhook(
                     stripe_payment_link_id = %stripe_payment_link_id,
                     "checkout.session.completed detected as payment-link checkout"
                 );
-                let _ = handle_payment_link_checkout_completed(&state, &obj).await;
+                match handle_payment_link_checkout_completed(&state, &obj).await {
+                    Ok(true) => {
+                        tracing::info!(
+                            stripe_payment_link_id = %stripe_payment_link_id,
+                            "Payment link checkout completed successfully"
+                        );
+                    }
+                    Ok(false) => {
+                        tracing::warn!(
+                            stripe_payment_link_id = %stripe_payment_link_id,
+                            "Payment link checkout handler returned false — payment link record not found or already processed"
+                        );
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            stripe_payment_link_id = %stripe_payment_link_id,
+                            error = %e,
+                            "Payment link checkout handler FAILED — earnings will not be recorded"
+                        );
+                    }
+                }
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
