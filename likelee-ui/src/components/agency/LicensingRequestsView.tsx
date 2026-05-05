@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Filter,
   CheckCircle2,
@@ -8,6 +9,9 @@ import {
   Eye,
   X,
   Trash2,
+  AlertTriangle,
+  MessageSquare,
+  UserX,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
@@ -56,6 +60,7 @@ const LicensingRequestsView = ({
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["agency", "licensing-requests"],
@@ -93,6 +98,12 @@ const LicensingRequestsView = ({
   >("Active");
   const [sendPaymentBusyKey, setSendPaymentBusyKey] = useState<string>("");
   const [showFilterDialog, setShowFilterDialog] = useState(false);
+  // Payment readiness modal — shown when talents are missing Stripe Connect
+  const [paymentReadinessModal, setPaymentReadinessModal] = useState<{
+    open: boolean;
+    missingTalents: string[];
+    action: string;
+  }>({ open: false, missingTalents: [], action: "" });
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterMinLicenseFee, setFilterMinLicenseFee] = useState<string>("");
   const [filterMaxLicenseFee, setFilterMaxLicenseFee] = useState<string>("");
@@ -345,33 +356,46 @@ const LicensingRequestsView = ({
           : "Payment link sent.",
       });
     } catch (e: any) {
-      let friendlyTitle = "Send payment link failed";
-      let friendlyDesc = e?.message || "Could not generate/send payment link";
-      try {
-        const parsed = JSON.parse(String(e?.message || ""));
-        if (
-          parsed &&
-          typeof parsed === "object" &&
-          parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
-        ) {
-          friendlyTitle = `Action required: connect ${entityPluralLower} payouts`;
-          const missingList = Array.isArray(parsed.missing)
-            ? parsed.missing
-            : [];
-          const missingText = missingList.length
-            ? `Missing: ${missingList.join(", ")}`
-            : "";
-          const actionText = parsed.action ? String(parsed.action) : "";
-          friendlyDesc = [String(parsed.message || ""), actionText, missingText]
-            .filter((s) => Boolean(String(s || "").trim()))
-            .join("\n");
+      // The base44Client extracts only the message string into e.message,
+      // but preserves the full raw error payload on e.data.
+      // Check e.data first for the structured MISSING_TALENT_STRIPE_CONNECT payload.
+      const rawData = e?.data;
+      const normalizedData =
+        rawData && typeof rawData === "object"
+          ? rawData
+          : (() => {
+              try {
+                return JSON.parse(String(rawData || ""));
+              } catch {
+                return null;
+              }
+            })();
+
+      // Also try parsing e.message in case the client serialized it there
+      const parsedMessage = (() => {
+        try {
+          return JSON.parse(String(e?.message || ""));
+        } catch {
+          return null;
         }
-      } catch {
-        // ignore parse errors
+      })();
+
+      const structured = normalizedData || parsedMessage;
+
+      if (structured?.code === "MISSING_TALENT_STRIPE_CONNECT") {
+        setPaymentReadinessModal({
+          open: true,
+          missingTalents: Array.isArray(structured.missing)
+            ? structured.missing
+            : [],
+          action: String(structured.action || ""),
+        });
+        return;
       }
+
       toast({
-        title: friendlyTitle,
-        description: friendlyDesc,
+        title: "Send payment link failed",
+        description: e?.message || "Could not generate/send payment link",
         variant: "destructive" as any,
       });
     } finally {
@@ -1417,6 +1441,90 @@ const LicensingRequestsView = ({
                 })()}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Payment Readiness Modal — replaces the red destructive toast */}
+        <Dialog
+          open={paymentReadinessModal.open}
+          onOpenChange={(open) =>
+            setPaymentReadinessModal((prev) => ({ ...prev, open }))
+          }
+        >
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                </div>
+                <DialogTitle className="text-lg font-bold text-gray-900">
+                  {entitySingularTitle} setup required
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-sm text-gray-500 ml-13 pl-[52px]">
+                The following {entityPluralLower} need to complete their account
+                setup before a payment link can be sent.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-2">
+              {paymentReadinessModal.missingTalents.map((talent, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0 mt-0.5">
+                    <UserX className="w-4 h-4 text-gray-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {talent.replace(/\s*\([^)]*\)\s*$/, "") || talent}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {/\(([^)]+)\)/.exec(talent)?.[1] ??
+                        "Account setup incomplete"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {paymentReadinessModal.action && (
+                <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                  <p className="text-xs text-indigo-700 leading-relaxed">
+                    {paymentReadinessModal.action}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setPaymentReadinessModal((prev) => ({
+                    ...prev,
+                    open: false,
+                  }))
+                }
+                className="font-bold border-gray-200"
+              >
+                Close
+              </Button>
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
+                onClick={() => {
+                  setPaymentReadinessModal((prev) => ({
+                    ...prev,
+                    open: false,
+                  }));
+                  // Navigate to Messages tab so the agency can message the talent
+                  navigate("/AgencyDashboard?tab=messages");
+                }}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Message {entitySingularTitle}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
