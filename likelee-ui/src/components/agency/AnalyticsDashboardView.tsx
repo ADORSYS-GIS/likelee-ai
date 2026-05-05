@@ -1531,11 +1531,6 @@ const AnalyticsDashboardView = ({
                             <p className="text-xs font-bold text-gray-500 truncate">
                               Expired on {formatLicenseDate(license.end_date)}
                             </p>
-                            {/* Debug info - shows license ID and status */}
-                            <p className="text-xs text-gray-400 mt-1 font-mono">
-                              ID: {license.id} • Status:{" "}
-                              {license.status || "N/A"}
-                            </p>
                           </div>
                         </div>
                         <Button

@@ -18680,14 +18680,6 @@ export default function AgencyDashboard() {
   }, [sidebarWidth]);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const handleRenew = (license: ComplianceRenewableLicense) => {
-    console.log("🔄 Initiating renewal for license:", {
-      id: license.id,
-      template_id: license.template_id,
-      client_name: license.client_name,
-      brand: license.brand,
-      status: (license as any).status,
-    });
-
     if (!license.template_id) {
       toast({
         title: "Missing template",
@@ -18697,13 +18689,6 @@ export default function AgencyDashboard() {
       });
       return;
     }
-
-    console.log("🔄 Setting renewal context for license:", {
-      id: license.id,
-      template_id: license.template_id,
-      brand_request_id: license.brand_request_id,
-      client_name: license.client_name,
-    });
 
     setRenewalLaunchContext({
       templateId: license.template_id,
@@ -18727,7 +18712,6 @@ export default function AgencyDashboard() {
       brandRequestId: license.brand_request_id || undefined, // Include the original brand request ID
     });
 
-    console.log("🔄 Renewal context set, navigating to License Templates");
     setActiveView("licensing", "License Templates");
 
     toast({
@@ -22154,7 +22138,6 @@ export default function AgencyDashboard() {
                 <LicensingRequestsView
                   isSportsAgency={isSportsAgency}
                   onBrandRequestAccepted={(ctx) => {
-                    console.log("Brand request accepted, context:", ctx);
                     setBrandRequestContext(ctx);
                     setActiveView("licensing", "License Templates");
                   }}
