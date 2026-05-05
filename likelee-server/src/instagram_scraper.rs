@@ -77,7 +77,10 @@ async fn persist_scraped_data(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
             if !resp.status().is_success() {
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to verify creator".to_string()));
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to verify creator".to_string(),
+                ));
             }
 
             let text = resp
@@ -120,7 +123,10 @@ async fn persist_scraped_data(
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
             if !resp.status().is_success() {
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to verify relationship".to_string()));
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to verify relationship".to_string(),
+                ));
             }
 
             let text = resp
@@ -200,7 +206,14 @@ pub async fn scrape_instagram_profile(
 
     match service.scrape_and_wait(handle.clone()).await {
         Ok(Some(profile)) => {
-            let _ = persist_scraped_data(&state, &user, &handle, &profile, req.target_creator_id.as_deref()).await;
+            let _ = persist_scraped_data(
+                &state,
+                &user,
+                &handle,
+                &profile,
+                req.target_creator_id.as_deref(),
+            )
+            .await;
 
             Ok(Json(ScrapeResponse {
                 success: true,
@@ -280,7 +293,12 @@ pub async fn scrape_instagram_profile_query(
 pub async fn handle_apify_webhook(
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    tracing::info!(?payload, "apify webhook received (placeholder - webhook integration deferred)");
+    tracing::info!(
+        ?payload,
+        "apify webhook received (placeholder - webhook integration deferred)"
+    );
 
-    Ok(Json(json!({"status": "ok", "note": "webhook integration deferred in favor of synchronous request-response"})))
+    Ok(Json(
+        json!({"status": "ok", "note": "webhook integration deferred in favor of synchronous request-response"}),
+    ))
 }
