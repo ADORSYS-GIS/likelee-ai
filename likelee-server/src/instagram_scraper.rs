@@ -3,7 +3,7 @@ use crate::{
     config::AppState,
     services::apify::{ApifyService, InstagramProfileData},
 };
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::{
     extract::{Query, State},
     Json,
@@ -14,6 +14,7 @@ use serde_json::json;
 #[derive(Deserialize)]
 pub struct ScrapeRequest {
     pub instagram_handle: String,
+    pub creator_id: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -28,10 +29,142 @@ pub struct ScrapeQuery {
     pub handle: String,
 }
 
+#[derive(Deserialize)]
+pub struct ScrapeRequestWithTarget {
+    pub instagram_handle: String,
+    pub target_creator_id: Option<String>,
+}
+
+async fn persist_scraped_data(
+    state: &AppState,
+    user: &AuthUser,
+    handle: &str,
+    profile: &InstagramProfileData,
+    target_creator_id: Option<&str>,
+) -> Result<(), (StatusCode, String)> {
+    let Some(followers) = profile.followers else {
+        return Ok(());
+    };
+
+    tracing::info!(
+        handle = %handle,
+        followers = %followers,
+        user_id = %user.id,
+        target_creator_id = ?target_creator_id,
+        "persisting instagram followers from scrape"
+    );
+
+    let update_body = json!({
+        "instagram_followers": followers,
+        "instagram_connected": true,
+        "instagram_last_synced": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let body_str = serde_json::to_string(&update_body)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    match user.role.as_str() {
+        "creator" | "talent" => {
+            let creator_id = target_creator_id.unwrap_or(&user.id);
+            let resp = state
+                .pg
+                .from("creators")
+                .eq("id", creator_id)
+                .select("id")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !resp.status().is_success() {
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to verify creator".to_string()));
+            }
+
+            let text = resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+            if rows.is_empty() {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Can only update your own creator profile".to_string(),
+                ));
+            }
+
+            let _ = state
+                .pg
+                .from("creators")
+                .eq("id", creator_id)
+                .update(&body_str)
+                .execute()
+                .await;
+        }
+        "agency" => {
+            let creator_id = target_creator_id.ok_or((
+                StatusCode::BAD_REQUEST,
+                "Agencies must specify target_creator_id".to_string(),
+            ))?;
+
+            let resp = state
+                .pg
+                .from("agency_talent_relationships")
+                .select("creator_id")
+                .eq("agency_id", &user.id)
+                .eq("creator_id", creator_id)
+                .eq("status", "active")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !resp.status().is_success() {
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to verify relationship".to_string()));
+            }
+
+            let text = resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+            if rows.is_empty() {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Agency can only update managed talent profiles".to_string(),
+                ));
+            }
+
+            let _ = state
+                .pg
+                .from("creators")
+                .eq("id", creator_id)
+                .update(&body_str)
+                .execute()
+                .await;
+        }
+        "brand" => {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "Brands cannot persist scraped data".to_string(),
+            ));
+        }
+        _ => {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "Insufficient permissions".to_string(),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 pub async fn scrape_instagram_profile(
     State(state): State<AppState>,
     user: AuthUser,
-    Json(req): Json<ScrapeRequest>,
+    Json(req): Json<ScrapeRequestWithTarget>,
 ) -> Result<Json<ScrapeResponse>, (StatusCode, String)> {
     if !["agency", "creator", "talent", "brand"].contains(&user.role.as_str()) {
         return Err((
@@ -67,53 +200,7 @@ pub async fn scrape_instagram_profile(
 
     match service.scrape_and_wait(handle.clone()).await {
         Ok(Some(profile)) => {
-            // Auto-persist scraped data to creators table
-            if let Some(followers) = profile.followers {
-                tracing::info!(
-                    handle = %handle,
-                    followers = %followers,
-                    user_id = %user.id,
-                    "auto-persisting instagram followers from scrape"
-                );
-
-                let update_body = json!({
-                    "instagram_followers": followers,
-                    "instagram_connected": true,
-                    "instagram_last_synced": chrono::Utc::now().to_rfc3339(),
-                });
-
-                let body_str = serde_json::to_string(&update_body)
-                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-                // Update by instagram_handle
-                let _ = state
-                    .pg
-                    .from("creators")
-                    .eq("instagram_handle", &handle)
-                    .update(&body_str)
-                    .execute()
-                    .await;
-
-                // Also update by platform_handle
-                let _ = state
-                    .pg
-                    .from("creators")
-                    .eq("platform_handle", &handle)
-                    .update(&body_str)
-                    .execute()
-                    .await;
-
-                // If user is a creator, also try updating by user id directly
-                if user.role == "creator" {
-                    let _ = state
-                        .pg
-                        .from("creators")
-                        .eq("id", &user.id)
-                        .update(&body_str)
-                        .execute()
-                        .await;
-                }
-            }
+            let _ = persist_scraped_data(&state, &user, &handle, &profile, req.target_creator_id.as_deref()).await;
 
             Ok(Json(ScrapeResponse {
                 success: true,
@@ -169,53 +256,7 @@ pub async fn scrape_instagram_profile_query(
 
     match service.scrape_and_wait(handle.clone()).await {
         Ok(Some(profile)) => {
-            // Auto-persist scraped data to creators table
-            if let Some(followers) = profile.followers {
-                tracing::info!(
-                    handle = %handle,
-                    followers = %followers,
-                    user_id = %user.id,
-                    "auto-persisting instagram followers from scrape (query)"
-                );
-
-                let update_body = json!({
-                    "instagram_followers": followers,
-                    "instagram_connected": true,
-                    "instagram_last_synced": chrono::Utc::now().to_rfc3339(),
-                });
-
-                let body_str = serde_json::to_string(&update_body)
-                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-                // Update by instagram_handle
-                let _ = state
-                    .pg
-                    .from("creators")
-                    .eq("instagram_handle", &handle)
-                    .update(&body_str)
-                    .execute()
-                    .await;
-
-                // Also update by platform_handle
-                let _ = state
-                    .pg
-                    .from("creators")
-                    .eq("platform_handle", &handle)
-                    .update(&body_str)
-                    .execute()
-                    .await;
-
-                // If user is a creator, also try updating by user id directly
-                if user.role == "creator" {
-                    let _ = state
-                        .pg
-                        .from("creators")
-                        .eq("id", &user.id)
-                        .update(&body_str)
-                        .execute()
-                        .await;
-                }
-            }
+            let _ = persist_scraped_data(&state, &user, &handle, &profile, None).await;
 
             Ok(Json(ScrapeResponse {
                 success: true,
@@ -238,11 +279,30 @@ pub async fn scrape_instagram_profile_query(
 
 pub async fn handle_apify_webhook(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let webhook_secret = &state.apify_webhook_secret;
+    if webhook_secret.is_empty() {
+        tracing::warn!("apify webhook secret not configured");
+        return Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Webhook processing not configured".to_string(),
+        ));
+    }
+
+    let provided_secret = headers
+        .get("x-webhook-secret")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+
+    if provided_secret != webhook_secret {
+        tracing::warn!("apify webhook: invalid secret");
+        return Err((StatusCode::UNAUTHORIZED, "Invalid webhook secret".to_string()));
+    }
+
     tracing::info!(?payload, "apify webhook received");
 
-    // Extract handle and followers from webhook payload
     let handle = payload
         .get("username")
         .or_else(|| payload.get("ownerUsername"))
@@ -276,7 +336,6 @@ pub async fn handle_apify_webhook(
             "updating creator instagram_followers from webhook"
         );
 
-        // Update the creators table
         let update_body = json!({
             "instagram_followers": follower_count,
             "instagram_connected": true,
@@ -294,7 +353,6 @@ pub async fn handle_apify_webhook(
             .execute()
             .await;
 
-        // Also try updating via platform_handle
         let _ = state
             .pg
             .from("creators")
