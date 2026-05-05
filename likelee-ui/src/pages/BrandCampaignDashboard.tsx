@@ -1319,6 +1319,8 @@ export default function BrandCampaignDashboard({
   };
 
   useEffect(() => {
+    let mounted = true;
+
     const loadConnectedAgencies = async () => {
       setLoadingConnectedAgencies(true);
       try {
@@ -1326,18 +1328,44 @@ export default function BrandCampaignDashboard({
           status?: string;
           agencies?: any[];
         }>("/api/brand/connected-agencies");
+        if (!mounted) return;
         setConnectedAgencies(
           Array.isArray(response?.agencies) ? response.agencies : [],
         );
       } catch {
+        if (!mounted) return;
         setConnectedAgencies([]);
       } finally {
+        if (!mounted) return;
         setLoadingConnectedAgencies(false);
       }
     };
 
-    loadConnectedAgencies();
-    void loadCampaignCards();
+    const refreshData = async () => {
+      if (!mounted) return;
+      await loadConnectedAgencies();
+      await loadCampaignCards();
+    };
+
+    void refreshData();
+
+    const campaignTimer = setInterval(() => {
+      if (mounted) {
+        void loadCampaignCards();
+      }
+    }, 15000);
+
+    const agencyTimer = setInterval(() => {
+      if (mounted) {
+        void loadConnectedAgencies();
+      }
+    }, 30000);
+
+    return () => {
+      mounted = false;
+      clearInterval(campaignTimer);
+      clearInterval(agencyTimer);
+    };
   }, []);
 
   const filteredConnectedAgencies = useMemo(() => {
@@ -1394,7 +1422,7 @@ export default function BrandCampaignDashboard({
     previousCollaboratorTypeRef.current = collaboratorType;
     setLoadingMarketplaceCreators(true);
 
-    const timer = setTimeout(async () => {
+    const fetchCreators = async () => {
       try {
         const response = await base44.get<{
           items?: any[];
@@ -1418,9 +1446,23 @@ export default function BrandCampaignDashboard({
         if (creatorFetchRequestIdRef.current !== requestId) return;
         setLoadingMarketplaceCreators(false);
       }
-    }, 250);
+    };
 
-    return () => clearTimeout(timer);
+    const timer = setTimeout(fetchCreators, 250);
+
+    const pollTimer = setInterval(() => {
+      if (
+        creatorFetchRequestIdRef.current === requestId &&
+        showNewCampaignModal
+      ) {
+        void fetchCreators();
+      }
+    }, 20000);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(pollTimer);
+    };
   }, [
     creatorSearch,
     brandCampaignId,
@@ -3799,34 +3841,60 @@ export default function BrandCampaignDashboard({
           if (!open) setEscrowReleaseInfo(null);
         }}
       >
-        <DialogContent className="rounded-none">
-          <DialogHeader>
-            <DialogTitle>Escrow payout released</DialogTitle>
-            <DialogDescription>
-              Escrow has been released and Stripe transfers were triggered based
-              on your approval.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-md bg-white border-0 shadow-2xl p-0 overflow-hidden rounded-none">
+          <div className="relative p-8 text-center flex flex-col items-center">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
 
-          <div className="text-sm text-gray-700 space-y-2">
-            <p>
-              <strong>Payment status:</strong>{" "}
-              {String(escrowReleaseInfo?.payment_status || "unknown")}
-            </p>
-            <p>
-              <strong>Escrow status:</strong>{" "}
-              {String(escrowReleaseInfo?.escrow_status || "unknown")}
-            </p>
-          </div>
+            <div className="mb-6 relative">
+              <div className="w-20 h-20 bg-emerald-100 rounded-none flex items-center justify-center relative z-10 animate-bounce-short">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-amber-100 flex items-center justify-center animate-ping-slow">
+                <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+              </div>
+            </div>
 
-          <DialogFooter>
+            <DialogHeader className="space-y-2 mb-6 text-center">
+              <DialogTitle className="text-3xl font-black tracking-tight text-gray-900 uppercase italic text-center w-full">
+                Escrow Released!
+              </DialogTitle>
+              <DialogDescription className="text-gray-500 text-base font-medium text-center">
+                Funds have been successfully distributed via Stripe.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="w-full bg-gray-50 border border-gray-100 p-6 mb-8 text-left">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                  Payout Details
+                </span>
+                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 rounded-none font-bold uppercase tracking-tighter text-[10px] h-5 px-1.5 py-0 flex items-center">
+                  Released via Stripe
+                </Badge>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Payment Status:</span>
+                  <span className="font-medium text-gray-900">
+                    {String(escrowReleaseInfo?.payment_status || "unknown")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Escrow Status:</span>
+                  <span className="font-medium text-gray-900">
+                    {String(escrowReleaseInfo?.escrow_status || "unknown")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <Button
-              className="rounded-none"
+              className="w-full h-14 bg-black hover:bg-gray-800 text-white font-black uppercase tracking-widest text-sm rounded-none shadow-xl transition-all active:scale-[0.98]"
               onClick={() => setShowEscrowReleaseModal(false)}
             >
-              Close
+              Done
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -4350,9 +4418,9 @@ export default function BrandCampaignDashboard({
                 <Alert className="border-2 border-gray-200 rounded-none">
                   <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
                     <Lock className="w-4 h-4" />
-                    Approving any 1 deliverable triggers escrow payout (once)
-                    and unlocks downloads for that deliverable. Approvals are
-                    final and can’t be undone.
+                    Approving more than half of deliverables triggers escrow
+                    payout (once) and unlocks downloads for all deliverables.
+                    Approvals are final and can’t be undone.
                   </AlertDescription>
                 </Alert>
                 {loadingSelectedCampaignDetails && (

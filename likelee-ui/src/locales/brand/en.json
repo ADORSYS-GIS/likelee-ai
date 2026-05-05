@@ -1569,7 +1569,7 @@
           "includedRevisions": "2 rounds of minor edits (color correction, text changes, music swaps)",
           "majorChanges": "Require new brief and additional budget (e.g., re-shoot, complete re-edit)",
           "revisionTurnaround": "24-48 hours depending on scope",
-          "approvalProcess": "1 Creator submits deliverables to platform\n2 Brand has 48 hours to review and approve/request revisions\n3 Once approved, funds release from escrow to creator (3 business days)\n4 If no action taken, payment auto-releases after 48 hours",
+          "approvalProcess": "1 Creator submits deliverables to platform\n2 Brand reviews and approves or requests revisions\n3 Once approved, funds release from escrow to creator via Stripe",
           "watermarkProtection": "All delivered assets include embedded Likelee watermark for license verification and usage tracking.\nDMCA Protection: Automatic takedown notices if assets used outside approved scope.",
           "legalTerms": "• Creator retains copyright; Brand receives usage license as specified\n• SAG-AFTRA compliant terms and fair compensation standards\n• Creator has right to approve final usage before publishing\n• Brand cannot sublicense without creator consent\n• Usage limited to approved channels, territories, and duration"
         }

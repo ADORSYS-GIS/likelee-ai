@@ -57,6 +57,10 @@ pub struct CreateTemplateRequest {
 /// `include_second_party` controls whether a second-party (client) signature block is
 /// appended.  Pass `false` for agency-only (one-signer) templates so that DocuSeal does
 /// not create an unexpected second submitter role.
+///
+/// The signature block is only auto-appended when the contract body does NOT already
+/// contain DocuSeal signature field syntax (`type=signature`).  If the agency has
+/// manually placed signature fields in their template body, the body is used as-is.
 fn render_contract_to_html(body: &str, format: &str, include_second_party: bool) -> String {
     let content_html = if format == "markdown" {
         use pulldown_cmark::{html, Parser};
@@ -68,8 +72,18 @@ fn render_contract_to_html(body: &str, format: &str, include_second_party: bool)
         body.to_string() // Already HTML
     };
 
-    // First-party (agency) signature block — always present.
-    let first_party_block = r#"
+    // If the contract body already contains DocuSeal signature fields the agency has
+    // placed their own signature section — do not inject a duplicate block.
+    let body_has_signature_fields = body.contains("type=signature");
+
+    let signature_block = if body_has_signature_fields {
+        // Agency explicitly placed signature fields; respect their layout.
+        String::new()
+    } else {
+        // Auto-generate a signature section based on the requested signer roles.
+
+        // First-party (agency) signature block — always present when auto-generating.
+        let first_party_block = r#"
         <div style="flex: 1; min-width: 250px;">
             <h3 style="font-size: 12pt; color: #dc2626; margin-bottom: 12px;">First Party (Agency)</h3>
             <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
@@ -87,9 +101,9 @@ fn render_contract_to_html(body: &str, format: &str, include_second_party: bool)
         </div>
     "#;
 
-    // Second-party (client) signature block — only included for two-signer templates.
-    let second_party_block = if include_second_party {
-        r#"
+        // Second-party (client) signature block — only included for two-signer templates.
+        let second_party_block = if include_second_party {
+            r#"
         <div style="flex: 1; min-width: 250px;">
             <h3 style="font-size: 12pt; color: #2b6cb0; margin-bottom: 12px;">Second Party (Client)</h3>
             <p style="font-size: 11pt; color: #4a5568; margin-bottom: 8px;">
@@ -106,12 +120,12 @@ fn render_contract_to_html(body: &str, format: &str, include_second_party: bool)
             </p>
         </div>
         "#
-    } else {
-        ""
-    };
+        } else {
+            ""
+        };
 
-    let signature_block = format!(
-        r#"
+        format!(
+            r#"
         <div style="margin-top: 60px; padding-top: 30px; border-top: 2px solid #e2e8f0; page-break-inside: avoid;">
             <h2 style="font-size: 16pt; color: #1a202c; margin-bottom: 20px;">Signatures</h2>
             <div style="display: flex; gap: 40px; flex-wrap: wrap;">
@@ -119,8 +133,9 @@ fn render_contract_to_html(body: &str, format: &str, include_second_party: bool)
             </div>
         </div>
         "#,
-        first_party_block, second_party_block
-    );
+            first_party_block, second_party_block
+        )
+    };
 
     format!(
         "<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><style>body{{font-family:Arial,sans-serif;line-height:1.6;padding:32px;color:#0f172a}} h1,h2,h3{{color:#111827}} p,li{{font-size:14px}}</style></head><body>{}{}</body></html>",

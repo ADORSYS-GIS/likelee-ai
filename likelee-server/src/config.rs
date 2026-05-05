@@ -286,28 +286,24 @@ pub struct ServerConfig {
     pub calendly_api_token: String,
 
     // Cache Configuration
-    /// TTL for L2 session cache entries in seconds (default: 30 min)
-    #[envconfig(from = "CACHE_L2_TTL_SECS", default = "1800")]
+    /// TTL for L2 session cache entries in seconds (default: 5 min)
+    #[envconfig(from = "CACHE_L2_TTL_SECS", default = "300")]
     pub cache_l2_ttl_secs: u64,
 
-    /// TTL for L3 application cache entries in seconds (default: 1 hour)
-    #[envconfig(from = "CACHE_L3_TTL_SECS", default = "3600")]
+    /// TTL for L3 application cache entries in seconds (default: 15 min)
+    #[envconfig(from = "CACHE_L3_TTL_SECS", default = "900")]
     pub cache_l3_ttl_secs: u64,
 
-    /// Interval for L3 background refresh in seconds (default: 5 min)
-    #[envconfig(from = "CACHE_L3_REFRESH_SECS", default = "300")]
-    pub cache_l3_refresh_secs: u64,
-
-    /// Maximum entries in L2 session cache (default: 10000)
-    #[envconfig(from = "CACHE_L2_MAX_ENTRIES", default = "10000")]
+    /// Maximum entries in L2 session cache (default: 5000)
+    #[envconfig(from = "CACHE_L2_MAX_ENTRIES", default = "5000")]
     pub cache_l2_max_entries: usize,
 
-    /// Maximum entries in L3 application cache (default: 1000)
-    #[envconfig(from = "CACHE_L3_MAX_ENTRIES", default = "1000")]
+    /// Maximum entries in L3 application cache (default: 2000)
+    #[envconfig(from = "CACHE_L3_MAX_ENTRIES", default = "2000")]
     pub cache_l3_max_entries: usize,
 
-    /// TTL for idempotency records in seconds (default: 24 hours)
-    #[envconfig(from = "CACHE_IDEMPOTENCY_TTL_SECS", default = "86400")]
+    /// TTL for idempotency records in seconds (default: 1 hour)
+    #[envconfig(from = "CACHE_IDEMPOTENCY_TTL_SECS", default = "3600")]
     pub cache_idempotency_ttl_secs: u64,
 
     /// Secret token for authenticating cron job endpoints
