@@ -283,8 +283,7 @@
       "mustAgreeTitle": "Agreement Required",
       "mustAgree": "You must agree to the terms to complete your registration.",
       "submitting": "Submitting...",
-      "completeRegistration": "Complete Registration",
-      "download": "Download"
+      "completeRegistration": "Complete Registration"
     },
     "options": {
       "contentTypes": {

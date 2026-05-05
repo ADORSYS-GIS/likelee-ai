@@ -1,6 +1,7 @@
 {
   "greeting": "Hallo, willkommen!",
   "getStarted": "Loslegen",
+  "dateInputHelper": "Monat, Tag, dann Jahr eingeben",
   "statuses": {
     "draft": "Entwurf",
     "sent": "Gesendet",
