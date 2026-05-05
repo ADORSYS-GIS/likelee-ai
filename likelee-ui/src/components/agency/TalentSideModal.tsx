@@ -583,39 +583,50 @@ const TalentSideModal = ({
                       <label className="text-xs font-semibold text-gray-600">
                         Instagram
                       </label>
-                      <div className="relative">
-                        <Input
-                          value={editForm.instagram_handle}
-                          onChange={(e) =>
-                            setField("instagram_handle", e.target.value)
-                          }
-                          onBlur={() => {
-                            if (
-                              editForm.instagram_handle &&
-                              !fetchingInstagram
-                            ) {
-                              fetchInstagramData();
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Input
+                            value={editForm.instagram_handle}
+                            onChange={(e) =>
+                              setField("instagram_handle", e.target.value)
                             }
-                          }}
-                          placeholder="@handle"
-                          className="h-9 pr-20"
-                        />
-                        {fetchingInstagram ? (
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2 py-1 bg-indigo-50 rounded-md">
-                            <Loader2 className="w-3 h-3 text-indigo-500 animate-spin" />
-                            <span className="text-[11px] font-medium text-indigo-600">
-                              Syncing
-                            </span>
-                          </div>
-                        ) : editForm.instagram_followers > 0 ? (
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-green-50 rounded-md">
-                            <span className="text-[11px] font-medium text-green-700">
-                              {(
-                                editForm.instagram_followers as number
-                              ).toLocaleString()}
-                            </span>
-                          </div>
-                        ) : null}
+                            placeholder="@handle"
+                            className="h-9 pr-20"
+                          />
+                          {fetchingInstagram ? (
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2 py-1 bg-indigo-50 rounded-md">
+                              <Loader2 className="w-3 h-3 text-indigo-500 animate-spin" />
+                              <span className="text-[11px] font-medium text-indigo-600">
+                                Syncing
+                              </span>
+                            </div>
+                          ) : editForm.instagram_followers > 0 ? (
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-green-50 rounded-md">
+                              <span className="text-[11px] font-medium text-green-700">
+                                {(
+                                  editForm.instagram_followers as number
+                                ).toLocaleString()}
+                              </span>
+                            </div>
+                          ) : null}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={fetchInstagramData}
+                          disabled={fetchingInstagram || !editForm.instagram_handle}
+                          className="h-9 whitespace-nowrap"
+                        >
+                          {fetchingInstagram ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Instagram className="w-3 h-3 mr-1" />
+                              Connect
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">

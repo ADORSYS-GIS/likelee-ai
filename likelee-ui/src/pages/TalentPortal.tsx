@@ -50,6 +50,7 @@ import {
   listMyCampaignOffers,
   listOfferDeliverables,
   uploadOfferDeliverable,
+  scrapeInstagramProfile,
 } from "@/api/functions";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import { CommunicationHub } from "@/components/chat/CommunicationHub";
@@ -64,6 +65,7 @@ import {
   FileText,
   FolderArchive,
   Image as LucideImage,
+  Instagram,
   LayoutGrid,
   Loader2,
   MessageSquare,
@@ -983,6 +985,7 @@ export default function TalentPortal({
   }, [agencyUser]);
 
   const [profileForm, setProfileForm] = React.useState<any>({});
+  const [instagramSyncing, setInstagramSyncing] = React.useState(false);
   React.useEffect(() => {
     if (!agencyUser) return;
     setProfileForm(buildProfileForm());
@@ -1067,6 +1070,50 @@ export default function TalentPortal({
         : undefined,
     };
     updateProfileMutation.mutate(payload);
+  };
+
+  const syncInstagram = async () => {
+    const handle = profileForm.instagram_handle?.trim().replace("@", "");
+    if (!handle) {
+      toast({
+        title: "Error",
+        description: "Please enter your Instagram handle first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setInstagramSyncing(true);
+    try {
+      const data = await scrapeInstagramProfile(handle);
+
+      if (data?.success && data?.profile) {
+        setProfileForm((prev: any) => ({
+          ...prev,
+          instagram_handle: handle,
+          instagram_followers: data.profile?.followers || 0,
+        }));
+
+        toast({
+          title: "Success",
+          description: "Instagram profile synced successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data?.error || "Could not sync Instagram data",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Failed to sync Instagram profile",
+        variant: "destructive",
+      });
+    } finally {
+      setInstagramSyncing(false);
+    }
   };
 
   if (!initialized) {
@@ -2319,29 +2366,40 @@ export default function TalentPortal({
                       <div className="text-xs text-gray-600 mb-1">
                         Instagram
                       </div>
-                      <Input
-                        value={profileForm.instagram_handle || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            instagram_handle: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-600 mb-1">
-                        Instagram Followers
+                      <div className="flex gap-2">
+                        <Input
+                          value={profileForm.instagram_handle || ""}
+                          onChange={(e) =>
+                            setProfileForm((p: any) => ({
+                              ...p,
+                              instagram_handle: e.target.value,
+                            }))
+                          }
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={syncInstagram}
+                          disabled={instagramSyncing || !profileForm.instagram_handle}
+                          className="whitespace-nowrap"
+                        >
+                          {instagramSyncing ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Instagram className="w-4 h-4 mr-1" />
+                              Connect
+                            </>
+                          )}
+                        </Button>
                       </div>
-                      <Input
-                        value={String(profileForm.instagram_followers ?? "")}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            instagram_followers: e.target.value,
-                          }))
-                        }
-                      />
+                      {profileForm.instagram_followers > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {profileForm.instagram_followers.toLocaleString()} followers
+                        </p>
+                      )}
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">

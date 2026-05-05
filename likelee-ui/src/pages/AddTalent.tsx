@@ -1601,32 +1601,45 @@ export default function AddTalent() {
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
                   Instagram Account
                 </Label>
-                <div className="relative">
-                  <Instagram className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <Input
-                    value={formData.instagram_handle}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        instagram_handle: e.target.value,
-                      })
-                    }
-                    onBlur={() => {
-                      if (formData.instagram_handle && !fetchingInstagram) {
-                        fetchInstagramData();
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Instagram className="w-5 h-5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Input
+                      value={formData.instagram_handle}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          instagram_handle: e.target.value,
+                        })
                       }
-                    }}
-                    placeholder="@handle"
-                    className={`pl-10 h-12 pr-10 ${fetchingInstagram ? "border-indigo-400 ring-2 ring-indigo-100" : ""}`}
-                  />
-                  {fetchingInstagram && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-                      <span className="text-xs font-medium text-indigo-500">
-                        Fetching...
-                      </span>
-                    </div>
-                  )}
+                      placeholder="@handle"
+                      className={`pl-10 h-12 ${fetchingInstagram ? "border-indigo-400 ring-2 ring-indigo-100" : ""}`}
+                    />
+                    {fetchingInstagram && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={fetchInstagramData}
+                    disabled={fetchingInstagram || !formData.instagram_handle}
+                    className="h-12 whitespace-nowrap"
+                  >
+                    {fetchingInstagram ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <Instagram className="w-4 h-4 mr-2" />
+                        Connect
+                      </>
+                    )}
+                  </Button>
                 </div>
                 {formData.instagram_followers > 0 && !fetchingInstagram && (
                   <p className="text-sm text-gray-500 mt-2">
