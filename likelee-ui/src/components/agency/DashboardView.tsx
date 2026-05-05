@@ -681,7 +681,7 @@ const DashboardView = ({
             <Button
               variant="default"
               className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
-              onClick={onReviewPendingApprovals}
+              onClick={() => onReviewPendingApprovals?.()}
             >
               Review Now
             </Button>
@@ -730,7 +730,7 @@ const DashboardView = ({
             <Button
               variant="outline"
               className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
-              onClick={onReviewExpiringLicenses}
+              onClick={() => onReviewExpiringLicenses?.()}
             >
               Review
             </Button>
