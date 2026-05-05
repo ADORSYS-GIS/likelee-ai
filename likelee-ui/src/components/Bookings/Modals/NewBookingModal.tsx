@@ -40,6 +40,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { parseBackendError } from "@/utils/errorParser";
 import {
   getAgencyRoster,
+  getAgencyTalents,
   getAgencyClients,
   getAgencyCalendlySettings,
   createAgencyClient,
@@ -281,7 +282,10 @@ export const NewBookingModal = ({
       if (!open) return;
       setTalentsLoading(true);
       try {
-        const resp = await getAgencyRoster();
+        // Bookings are IRL-only — only agency-created talents (agency_users rows)
+        // can be booked. Independent connected creators (relationship_type='marketplace_connected')
+        // don't have agency_users rows and cannot be booked.
+        const resp = await getAgencyTalents();
         const rows = Array.isArray(resp)
           ? resp
           : Array.isArray((resp as any)?.talents)
@@ -290,15 +294,22 @@ export const NewBookingModal = ({
               ? (resp as any).data.talents
               : [];
         const mapped = Array.isArray(rows)
-          ? rows.map((r: any) => ({
-              id: r.id,
-              name: r.full_name || r.name || "Unnamed",
-              img: r.img || r.profile_photo_url || null,
-              creator_id: r.creator_id || null,
-              relationship_id: r.relationship_id || null,
-              relationship_type: r.relationship_type || "internal",
-              contract_controlled: Boolean(r.contract_controlled),
-            }))
+          ? rows
+              .filter((r: any) =>
+                // Only include agency-created talents — those with agency_users rows.
+                // relationship_type='internal' means the talent was created by this agency.
+                // relationship_type='marketplace_connected' means independent creator — skip.
+                !r.relationship_type || r.relationship_type === "internal"
+              )
+              .map((r: any) => ({
+                id: r.agency_user_id || r.id,
+                name: r.full_name || r.name || "Unnamed",
+                img: r.img || r.profile_photo_url || null,
+                creator_id: r.creator_id || null,
+                relationship_id: r.relationship_id || null,
+                relationship_type: r.relationship_type || "internal",
+                contract_controlled: Boolean(r.contract_controlled),
+              }))
           : [];
         setTalents(mapped);
       } catch (_e) {
@@ -476,7 +487,7 @@ export const NewBookingModal = ({
       if (!open) return;
       setTalentsLoading(true);
       try {
-        const resp = await getAgencyRoster();
+        const resp = await getAgencyTalents({ q: talentSearch || undefined });
         if (cancelled) return;
         const rows = Array.isArray(resp)
           ? resp
@@ -485,23 +496,20 @@ export const NewBookingModal = ({
             : Array.isArray((resp as any)?.data?.talents)
               ? (resp as any).data.talents
               : [];
-        const filteredRows = talentSearch
-          ? rows.filter((r: any) =>
-              String(r.full_name || r.name || "")
-                .toLowerCase()
-                .includes(talentSearch.toLowerCase()),
-            )
-          : rows;
-        const mapped = Array.isArray(filteredRows)
-          ? filteredRows.map((r: any) => ({
-              id: r.id,
-              name: r.full_name || r.name || "Unnamed",
-              img: r.img || r.profile_photo_url || null,
-              creator_id: r.creator_id || null,
-              relationship_id: r.relationship_id || null,
-              relationship_type: r.relationship_type || "internal",
-              contract_controlled: Boolean(r.contract_controlled),
-            }))
+        const mapped = Array.isArray(rows)
+          ? rows
+              .filter((r: any) =>
+                !r.relationship_type || r.relationship_type === "internal"
+              )
+              .map((r: any) => ({
+                id: r.agency_user_id || r.id,
+                name: r.full_name || r.name || "Unnamed",
+                img: r.img || r.profile_photo_url || null,
+                creator_id: r.creator_id || null,
+                relationship_id: r.relationship_id || null,
+                relationship_type: r.relationship_type || "internal",
+                contract_controlled: Boolean(r.contract_controlled),
+              }))
           : [];
         setTalents(mapped);
       } catch (_e) {
