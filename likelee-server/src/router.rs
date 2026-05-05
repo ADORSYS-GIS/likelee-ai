@@ -941,7 +941,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/brand/billing/escrow-summary",
-            get(crate::brand_campaigns::get_brand_escrow_summary),
+            get(crate::brand::brand_campaigns::get_brand_escrow_summary),
         )
         .route(
             "/api/brand/billing/invoices",
