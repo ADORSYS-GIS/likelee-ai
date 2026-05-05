@@ -535,6 +535,18 @@
     }
   },
   "creatorSignup": {
+    "terms": {
+      "title": "Creator-Bedingungen und Vereinbarungen",
+      "subtitle": "Bitte überprüfen und akzeptieren Sie die Datenschutzrichtlinie und Creator-Bedingungen, um Ihre Registrierung abzuschließen.",
+      "agreeTo": "Ich stimme der",
+      "policyLink": "Datenschutzrichtlinie",
+      "andTerms": "und den Nutzungsbedingungen zu.",
+      "mustAgreeTitle": "Zustimmung Erforderlich",
+      "mustAgree": "Sie müssen den Bedingungen zustimmen, um Ihre Registrierung abzuschließen.",
+      "submitting": "Wird übermittelt...",
+      "completeRegistration": "Registrierung Abschließen",
+      "download": "Herunterladen"
+    },
     "options": {
       "contentTypes": {
         "aiGeneratedFilms": "KI-generierte Filme",

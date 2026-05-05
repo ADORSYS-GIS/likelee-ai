@@ -522,6 +522,18 @@
     }
   },
   "creatorSignup": {
+    "terms": {
+      "title": "Términos y Acuerdos del Creador",
+      "subtitle": "Por favor revisa y acepta la Política de Privacidad y los Términos del Creador para completar tu registro.",
+      "agreeTo": "Acepto la",
+      "policyLink": "Política de Privacidad",
+      "andTerms": "y los Términos de Servicio.",
+      "mustAgreeTitle": "Acuerdo Requerido",
+      "mustAgree": "Debes aceptar los términos para completar tu registro.",
+      "submitting": "Enviando...",
+      "completeRegistration": "Completar Registro",
+      "download": "Descargar"
+    },
     "options": {
       "contentTypes": {
         "aiGeneratedFilms": "Películas generadas por IA",

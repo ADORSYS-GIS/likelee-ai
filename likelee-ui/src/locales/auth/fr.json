@@ -438,6 +438,18 @@
     }
   },
   "creatorSignup": {
+    "terms": {
+      "title": "Termes et Accords du Créateur",
+      "subtitle": "Veuillez examiner et accepter la Politique de Confidentialité et les Termes du Créateur pour terminer votre inscription.",
+      "agreeTo": "J'accepte la",
+      "policyLink": "Politique de Confidentialité",
+      "andTerms": "et les Conditions de Service.",
+      "mustAgreeTitle": "Accord Requis",
+      "mustAgree": "Vous devez accepter les termes pour terminer votre inscription.",
+      "submitting": "Soumission...",
+      "completeRegistration": "Terminer l'Inscription",
+      "download": "Télécharger"
+    },
     "options": {
       "contentTypes": {
         "aiGeneratedFilms": "Films générés par IA",
