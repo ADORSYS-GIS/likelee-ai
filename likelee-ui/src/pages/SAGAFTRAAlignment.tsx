@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import {
   CheckCircle2,
@@ -11,20 +12,26 @@ import {
 } from "lucide-react";
 
 export default function SAGAFTRAAlignment() {
+  const { t } = useTranslation("common");
+
   useEffect(() => {
     // Add JSON-LD structured data
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "WebPage",
-      name: "SAG-AFTRA Alignment",
-      description:
+      name: t("sagAftraPage.hero.title", "SAG-AFTRA Alignment"),
+      description: t(
+        "sagAftraPage.hero.description",
         "How Likelee implements SAG-AFTRA AI safeguards: informed consent, fair pay, scope-locked usage, and enforceable protections for all creators.",
+      ),
       url: "https://likelee.ai/s-a-g-a-f-t-r-a-alignment",
       about: {
         "@type": "Thing",
         name: "SAG-AFTRA AI Guidelines Compliance",
-        description:
+        description: t(
+          "sagAftraPage.hero.description",
           "Likelee bakes the 2025 SAG-AFTRA Commercials Contract AI safeguards into every license",
+        ),
       },
     };
 
@@ -36,56 +43,91 @@ export default function SAGAFTRAAlignment() {
     return () => {
       document.head.removeChild(script);
     };
-  }, []);
+  }, [t]);
 
   const safeguards = [
     {
       icon: FileText,
-      title: "Informed consent every time",
-      description:
+      title: t(
+        "sagAftraPage.safeguards.informedConsent.title",
+        "Informed consent every time",
+      ),
+      description: t(
+        "sagAftraPage.safeguards.informedConsent.description",
         "A creator signs a clear, project-specific release before any capture, synthetization, or reuse of their face, voice, or motion.",
+      ),
       color: "from-[#32C8D1] to-teal-600",
     },
     {
       icon: DollarSign,
-      title: "Fair pay & residuals on autopilot",
-      description:
+      title: t(
+        "sagAftraPage.safeguards.fairPay.title",
+        "Fair pay & residuals on autopilot",
+      ),
+      description: t(
+        "sagAftraPage.safeguards.fairPay.description",
         "Each replica triggers up-front compensation, ongoing residuals, and full pension/health (or equivalent) contributions—logged and paid out automatically by our royalty engine.",
+      ),
       color: "from-green-500 to-emerald-600",
     },
     {
       icon: Lock,
-      title: "Scope-locked usage",
-      description:
+      title: t(
+        "sagAftraPage.safeguards.scopeLocked.title",
+        "Scope-locked usage",
+      ),
+      description: t(
+        "sagAftraPage.safeguards.scopeLocked.description",
         "Contracts spell out exactly where (TV, streaming, social, in-engine, print, etc.) and how long a replica can appear. New medium? New project? Fresh approval + payout.",
+      ),
       color: "from-[#F18B6A] to-[#E07A5A]",
     },
     {
       icon: Shield,
-      title: "No blanket rights or transfers",
-      description:
+      title: t(
+        "sagAftraPage.safeguards.noBlanket.title",
+        "No blanket rights or transfers",
+      ),
+      description: t(
+        "sagAftraPage.safeguards.noBlanket.description",
         '"All-media in perpetuity" clauses are void here. Consent is non-transferable; sublicensing requires a brand-new agreement.',
+      ),
       color: "from-purple-500 to-indigo-600",
     },
     {
       icon: Users,
-      title: "AI-training is a separate license",
-      description:
+      title: t(
+        "sagAftraPage.safeguards.aiTraining.title",
+        "AI-training is a separate license",
+      ),
+      description: t(
+        "sagAftraPage.safeguards.aiTraining.description",
         "Feeding likeness data into model training is its own, bargained-for use case with distinct terms and revenue share.",
+      ),
       color: "from-[#F7B750] to-yellow-600",
     },
     {
       icon: Users,
-      title: "Background talent protected",
-      description:
+      title: t(
+        "sagAftraPage.safeguards.backgroundTalent.title",
+        "Background talent protected",
+      ),
+      description: t(
+        "sagAftraPage.safeguards.backgroundTalent.description",
         "Digital stand-ins never count toward background-hiring minimums or replace on-set performers.",
+      ),
       color: "from-cyan-500 to-blue-600",
     },
     {
       icon: Scale,
-      title: "Enforceable safeguards",
-      description:
+      title: t(
+        "sagAftraPage.safeguards.enforceable.title",
+        "Enforceable safeguards",
+      ),
+      description: t(
+        "sagAftraPage.safeguards.enforceable.description",
         "Backed by SAG-AFTRA contracts and California law, giving creators clear recourse if terms are breached.",
+      ),
       color: "from-red-500 to-pink-600",
     },
   ];
@@ -99,13 +141,13 @@ export default function SAGAFTRAAlignment() {
             <CheckCircle2 className="w-16 h-16 mx-auto text-[#32C8D1] mb-4" />
           </div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6">
-            SAG-AFTRA Alignment
+            {t("sagAftraPage.hero.title", "SAG-AFTRA Alignment")}
           </h1>
           <p className="text-xl md:text-2xl text-gray-700 leading-relaxed max-w-4xl mx-auto">
-            Likelee bakes the 2025 SAG-AFTRA Commercials Contract AI safeguards
-            into every license we issue—and we apply the same bar to all
-            creators on the platform (actors, models, athletes, influencers,
-            voice).
+            {t(
+              "sagAftraPage.hero.description",
+              "Likelee bakes the 2025 SAG-AFTRA Commercials Contract AI safeguards into every license we issue—and we apply the same bar to all creators on the platform (actors, models, athletes, influencers, voice).",
+            )}
           </p>
         </div>
       </section>
@@ -144,13 +186,13 @@ export default function SAGAFTRAAlignment() {
         <div className="max-w-5xl mx-auto">
           <Card className="p-12 bg-white border-2 border-black shadow-2xl rounded-none">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6 text-center">
-              Bottom Line
+              {t("sagAftraPage.bottomLine.title", "Bottom Line")}
             </h2>
             <p className="text-xl text-gray-700 leading-relaxed text-center">
-              Likelee licenses talent the way the union's AI rules
-              intended—consent first, cash second, creator control always—and we
-              hold every brand and campaign on the platform to that same
-              standard.
+              {t(
+                "sagAftraPage.bottomLine.description",
+                "Likelee licenses talent the way the union's AI rules intended—consent first, cash second, creator control always—and we hold every brand and campaign on the platform to that same standard.",
+              )}
             </p>
           </Card>
         </div>
