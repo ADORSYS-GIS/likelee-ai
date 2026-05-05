@@ -1215,6 +1215,68 @@ pub async fn finalize(
                             );
                         }
                     }
+
+                    // Create a brand_license_requests entry for the renewed license so brands can see it
+                    if let Some(brand_id) = &submission.client_id {
+                        tracing::info!(
+                            "Creating brand_license_requests entry for renewal: brand_id={}, old_license_id={}",
+                            brand_id,
+                            old_license_id
+                        );
+
+                        let brand_license_data = json!({
+                            "brand_id": brand_id,
+                            "agency_id": agency_id,
+                            "client_name": client_name_str,
+                            "talent_name": talent_name,
+                            "campaign_title": license_template.template_name.clone(),
+                            "usage_scope": license_template.usage_scope.clone(),
+                            "territory": license_template.territory.clone(),
+                            "duration_days": license_template.duration_days,
+                            "license_fee": license_template.license_fee,
+                            "start_date": license_template.start_date.clone(),
+                            "custom_terms": license_template.custom_terms.clone(),
+                            "submission_id": submission.id,
+                            "status": "approved", // Renewed licenses are automatically approved
+                            "license_end_date": deadline.map(|d| d.to_string()),
+                            "created_at": chrono::Utc::now().to_rfc3339(),
+                            "updated_at": chrono::Utc::now().to_rfc3339()
+                        });
+
+                        let brand_license_result = state
+                            .pg
+                            .from("brand_license_requests")
+                            .insert(brand_license_data.to_string())
+                            .execute()
+                            .await;
+
+                        match brand_license_result {
+                            Ok(brand_resp) if brand_resp.status().is_success() => {
+                                tracing::info!(
+                                    "Successfully created brand_license_requests entry for renewal"
+                                );
+                            }
+                            Ok(brand_resp) => {
+                                let status = brand_resp.status();
+                                let body = brand_resp.text().await.unwrap_or_default();
+                                tracing::warn!(
+                                    "Failed to create brand_license_requests entry for renewal: status={}, body={}",
+                                    status,
+                                    body
+                                );
+                            }
+                            Err(e) => {
+                                tracing::error!(
+                                    "Error creating brand_license_requests entry for renewal: {}",
+                                    e
+                                );
+                            }
+                        }
+                    } else {
+                        tracing::info!(
+                            "No brand_id found for renewal, skipping brand_license_requests creation"
+                        );
+                    }
                 } else {
                     tracing::info!("Not a renewal - no old_license_id provided");
                 }
