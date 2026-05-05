@@ -1574,7 +1574,7 @@
           "includedRevisions": "2 rondas de ediciones menores (corrección de color, cambios de texto, cambios de música)",
           "majorChanges": "Requieren un nuevo brief y presupuesto adicional (p. ej., regrabación, reedición completa)",
           "revisionTurnaround": "24-48 horas según el alcance",
-          "approvalProcess": "1 El creador envía los entregables a la plataforma\n2 La marca tiene 48 horas para revisar y aprobar/solicitar revisiones\n3 Una vez aprobado, los fondos se liberan del escrow al creador (3 días hábiles)\n4 Si no se toma ninguna acción, el pago se libera automáticamente después de 48 horas",
+          "approvalProcess": "1 El creador envía los entregables a la plataforma\n2 La marca revisa y aprueba o solicita revisiones\n3 Una vez aprobado, los fondos se liberan del escrow al creador vía Stripe",
           "watermarkProtection": "Todos los recursos entregados incluyen una marca de agua incrustada de Likelee para verificación de licencia y seguimiento de uso.\nProtección DMCA: avisos automáticos de retirada si los recursos se usan fuera del alcance aprobado.",
           "legalTerms": "• El creador conserva los derechos de autor; la marca recibe la licencia de uso especificada\n• Términos compatibles con SAG-AFTRA y estándares de compensación justa\n• El creador tiene derecho a aprobar el uso final antes de publicarlo\n• La marca no puede sublicenciar sin consentimiento del creador\n• El uso se limita a los canales, territorios y duración aprobados"
         }

@@ -2,7 +2,11 @@ use crate::{
     auth::{AuthUser, RoleGuard},
     config::AppState,
 };
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
@@ -44,12 +48,17 @@ pub struct TalentPerformance {
     pub photo_url: Option<String>,
     pub earnings_30d: f64,
     pub bookings_this_month: i64,
+    /// Signed licensing deals this month (AI mode equivalent of bookings_this_month).
+    pub licensing_deals_this_month: i64,
     pub tier: TierRule,
     pub commission_rate: f64,
     pub is_custom_rate: bool,
     pub relationship_type: String,
     pub commission_source: String,
     pub is_editable: bool,
+    /// True only when the talent has completed portal onboarding AND
+    /// their KYC is approved in the creators table.
+    pub is_verified: bool,
 }
 
 #[derive(Serialize)]
@@ -231,14 +240,27 @@ pub async fn configure_performance_tiers(
     Ok(Json(json!({ "ok": true })))
 }
 
+#[derive(Deserialize)]
+pub struct PerformanceTiersQuery {
+    pub agency_mode: Option<String>,
+}
+
 pub async fn get_performance_tiers(
     State(state): State<AppState>,
     auth_user: AuthUser,
+    Query(query): Query<PerformanceTiersQuery>,
 ) -> Result<Json<PerformanceTiersResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let start_total = Instant::now();
     let agency_id = auth_user.effective_org_id();
     let today = today_iso();
+    // In AI mode bookings are irrelevant — creators earn through licensing deals.
+    // Tier classification uses only earnings; min_monthly_bookings is treated as 0.
+    let is_ai_mode = query
+        .agency_mode
+        .as_deref()
+        .map(|m| m.eq_ignore_ascii_case("AI"))
+        .unwrap_or(false); // default to IRL mode for backward compatibility
 
     // Parallelize calls
     let (
@@ -248,6 +270,7 @@ pub async fn get_performance_tiers(
         resp_stats,
         resp_agency,
         resp_marketplace_contracts,
+        resp_licensing_deals,
     ) = tokio::try_join!(
         state
             .pg
@@ -304,7 +327,26 @@ pub async fn get_performance_tiers(
             .eq("status", "active")
             .lte("valid_from", &today)
             .gte("valid_until", &today)
-            .execute()
+            .execute(),
+        // Fetch signed licensing deals this month for AI mode deal count.
+        // Counts license_submissions with status='completed' and signed_at >= month start.
+        // Covers both single-talent (talent_id) and multi-talent (talent_ids array) submissions.
+        // Uses a high limit to avoid truncation; for very high-volume agencies a dedicated
+        // aggregation RPC should be used instead.
+        async {
+            let now = chrono::Utc::now();
+            let month_start = now.format("%Y-%m-01").to_string();
+            state
+                .pg
+                .from("license_submissions")
+                .select("talent_id,talent_ids")
+                .eq("agency_id", agency_id)
+                .eq("status", "completed")
+                .gte("signed_at", &month_start)
+                .limit(10000)
+                .execute()
+                .await
+        }
     )
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -424,6 +466,42 @@ pub async fn get_performance_tiers(
         bookings_map.insert(s.talent_id, s.booking_count);
     }
 
+    // Process signed licensing deals this month (AI mode deal count).
+    // Use talent_ids array when non-empty (preferred, covers multi-talent).
+    // Fall back to talent_id only when talent_ids is absent or empty.
+    // Never count both for the same submission to avoid double-counting.
+    let text_licensing_deals = resp_licensing_deals
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let licensing_deal_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&text_licensing_deals).unwrap_or_default();
+    let mut licensing_deals_map: HashMap<String, i64> = HashMap::new();
+    for row in &licensing_deal_rows {
+        // Prefer talent_ids array — it's the authoritative multi-talent list.
+        let arr = row.get("talent_ids").and_then(|v| v.as_array());
+        let used_array = arr.map(|a| !a.is_empty()).unwrap_or(false);
+
+        if used_array {
+            for item in arr.unwrap() {
+                if let Some(tid) = item.as_str() {
+                    let tid = tid.trim();
+                    if !tid.is_empty() {
+                        *licensing_deals_map.entry(tid.to_string()).or_insert(0) += 1;
+                    }
+                }
+            }
+        } else {
+            // Single-talent path — only when talent_ids is absent/empty
+            if let Some(tid) = row.get("talent_id").and_then(|v| v.as_str()) {
+                let tid = tid.trim();
+                if !tid.is_empty() {
+                    *licensing_deals_map.entry(tid.to_string()).or_insert(0) += 1;
+                }
+            }
+        }
+    }
+
     // Process Talents
     let text_talents = resp_talents
         .text()
@@ -472,6 +550,53 @@ pub async fn get_performance_tiers(
     }
     creator_ids.sort();
     creator_ids.dedup();
+
+    // Fetch kyc_status and profile_photo_url for all creators so we can:
+    // 1. Mark verified talent (kyc_status = 'approved')
+    // 2. Fall back to creators.profile_photo_url when agency_users has no photo
+    let mut kyc_approved_creators: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
+    let mut creator_photo_by_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let kyc_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        if let Ok(kyc_resp) = state
+            .pg
+            .from("creators")
+            .select("id,kyc_status,profile_photo_url")
+            .in_("id", kyc_refs)
+            .execute()
+            .await
+        {
+            if kyc_resp.status().is_success() {
+                let kyc_text = kyc_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let kyc_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&kyc_text).unwrap_or_default();
+                for r in kyc_rows {
+                    let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+                    if cid.is_empty() {
+                        continue;
+                    }
+                    let status = r
+                        .get("kyc_status")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_lowercase();
+                    if status == "approved" {
+                        kyc_approved_creators.insert(cid.to_string());
+                    }
+                    if let Some(photo) = r
+                        .get("profile_photo_url")
+                        .and_then(|v| v.as_str())
+                        .filter(|s| !s.trim().is_empty())
+                    {
+                        creator_photo_by_id.insert(cid.to_string(), photo.to_string());
+                    }
+                }
+            }
+        }
+    }
 
     let mut custom_by_creator: HashMap<String, f64> = HashMap::new();
     if !creator_ids.is_empty() {
@@ -549,15 +674,24 @@ pub async fn get_performance_tiers(
         let photo = t
             .get("profile_photo_url")
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.to_string())
+            // Fall back to creators.profile_photo_url when agency_users has no photo
+            .or_else(|| {
+                creator_id
+                    .as_ref()
+                    .and_then(|cid| creator_photo_by_id.get(cid))
+                    .cloned()
+            });
         let earnings = *earnings_map.get(&id).unwrap_or(&0.0);
         let booking_count = *bookings_map.get(&id).unwrap_or(&0);
 
         let mut assigned_tier = &tiers_json[tiers_json.len() - 1];
         for rule in &tiers_json {
-            if earnings >= rule.min_monthly_earnings
-                && booking_count >= rule.min_monthly_bookings as i64
-            {
+            // In AI mode bookings are irrelevant — only earnings drive tier placement.
+            // In IRL mode both earnings and bookings must meet the threshold.
+            let meets_bookings = is_ai_mode || booking_count >= rule.min_monthly_bookings as i64;
+            if earnings >= rule.min_monthly_earnings && meets_bookings {
                 assigned_tier = rule;
                 break;
             }
@@ -612,12 +746,17 @@ pub async fn get_performance_tiers(
                 photo_url: photo,
                 earnings_30d: earnings,
                 bookings_this_month: booking_count,
+                licensing_deals_this_month: *licensing_deals_map.get(&id).unwrap_or(&0),
                 tier: assigned_tier.clone(),
                 commission_rate: final_rate,
                 is_custom_rate,
                 relationship_type,
                 commission_source,
                 is_editable,
+                is_verified: creator_id
+                    .as_ref()
+                    .map(|cid| kyc_approved_creators.contains(cid))
+                    .unwrap_or(false),
             });
         }
 
@@ -697,17 +836,19 @@ pub async fn get_performance_tiers(
         if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
             group.talents.push(TalentPerformance {
                 id: creator_id.clone(),
-                creator_id: Some(creator_id),
+                creator_id: Some(creator_id.clone()),
                 name,
                 photo_url: photo,
                 earnings_30d: 0.0,
                 bookings_this_month: 0,
+                licensing_deals_this_month: *licensing_deals_map.get(&creator_id).unwrap_or(&0),
                 tier: assigned_tier.clone(),
                 commission_rate: final_rate,
                 is_custom_rate,
                 relationship_type,
                 commission_source,
                 is_editable,
+                is_verified: kyc_approved_creators.contains(&creator_id),
             });
         }
     }

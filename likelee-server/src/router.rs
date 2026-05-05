@@ -401,6 +401,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::licensing_requests::update_status_bulk),
         )
         .route(
+            "/api/agency/licensing-requests/delete",
+            post(crate::licensing_requests::delete_archived_requests),
+        )
+        .route(
             "/api/agency/licensing-requests/:id/send-payment-link",
             post(crate::licensing_requests::send_payment_link),
         )
@@ -595,6 +599,14 @@ pub fn build_router(state: AppState) -> Router {
             "/api/brand/licensing-requests",
             get(crate::licensing_requests::list_for_brand)
                 .post(crate::face_profiles::create_brand_licensing_request),
+        )
+        .route(
+            "/api/brand/licensing-requests/status",
+            post(crate::licensing_requests::update_status_for_brand),
+        )
+        .route(
+            "/api/brand/licensing-requests/delete",
+            post(crate::licensing_requests::delete_archived_requests_for_brand),
         )
         .route(
             "/api/brand/brand-license-requests",
@@ -949,6 +961,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::billing::check_license_expiration_alerts_cron),
         )
         .route(
+            "/api/cron/auto-archive-licensing-requests",
+            post(crate::billing::auto_archive_expired_licensing_requests_cron),
+        )
+        .route(
             "/api/brand/campaigns",
             post(crate::brand_campaigns::create_campaign)
                 .get(crate::brand_campaigns::list_campaigns),
@@ -1048,8 +1064,20 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::list_brand_inbox_packages),
         )
         .route(
+            "/api/campaign-offers/:offer_id/packages/:package_id/interactions",
+            get(crate::brand_campaigns::get_brand_package_interactions),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/packages/brand-done",
             post(crate::brand_campaigns::mark_brand_package_done),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/packages/:package_id/dismiss",
+            post(crate::brand_campaigns::dismiss_brand_inbox_package),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/packages/brand-delete",
+            post(crate::brand_campaigns::delete_brand_inbox_package),
         )
         .route(
             "/api/agency/brand-offers/package-feedback",
@@ -1066,12 +1094,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/campaign-offers/:offer_id/assignments",
-            get(crate::brand_campaigns::list_offer_talent_assignments)
-                .post(crate::brand_campaigns::create_offer_talent_assignment),
-        )
-        .route(
-            "/api/campaign-offers/:offer_id/assignments/:assignment_id",
-            delete(crate::brand_campaigns::delete_offer_talent_assignment),
+            get(crate::brand_campaigns::list_offer_talent_assignments),
         )
         .route(
             "/api/campaign-offers/:offer_id/asset-requests",

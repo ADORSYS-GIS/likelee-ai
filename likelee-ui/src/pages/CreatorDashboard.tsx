@@ -2396,7 +2396,8 @@ export default function CreatorDashboard() {
   useEffect(() => {
     if (!initialized || !authenticated || !creatorBillingLoaded) return;
     let active = true;
-    (async () => {
+
+    const loadAllData = async () => {
       try {
         setIsLoadingCampaigns(true);
         setAgencyConnectionLoading(true);
@@ -2446,7 +2447,6 @@ export default function CreatorDashboard() {
         setBrandConnections(brandConnected);
         setBrandOffers(Array.isArray(offers) ? offers : []);
         setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
-        // Contract hub rows are not needed now that contracts tab is removed.
         const assets = Array.isArray(assetRequestsResp)
           ? assetRequestsResp
           : [];
@@ -2522,9 +2522,19 @@ export default function CreatorDashboard() {
         setAgencyConnectionLoading(false);
         setIsLoadingCampaigns(false);
       }
-    })();
+    };
+
+    void loadAllData();
+
+    const timer = setInterval(() => {
+      if (active) {
+        void loadAllData();
+      }
+    }, 20000);
+
     return () => {
       active = false;
+      clearInterval(timer);
     };
   }, [
     initialized,
@@ -2548,12 +2558,6 @@ export default function CreatorDashboard() {
 
   useEffect(() => {
     if (!initialized || !authenticated) return;
-    if (
-      activeSection !== "brand-connection" &&
-      activeSection !== "agency-connection"
-    ) {
-      return;
-    }
     let active = true;
     (async () => {
       try {

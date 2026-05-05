@@ -1846,7 +1846,32 @@ pub async fn stripe_webhook(
                     stripe_payment_link_id = %stripe_payment_link_id,
                     "checkout.session.completed detected as payment-link checkout"
                 );
-                let _ = handle_payment_link_checkout_completed(&state, &obj).await;
+                match handle_payment_link_checkout_completed(&state, &obj).await {
+                    Ok(true) => {
+                        tracing::info!(
+                            stripe_payment_link_id = %stripe_payment_link_id,
+                            "Payment link checkout completed successfully"
+                        );
+                    }
+                    Ok(false) => {
+                        tracing::warn!(
+                            stripe_payment_link_id = %stripe_payment_link_id,
+                            "Payment link checkout handler returned false — payment link record not found or already processed"
+                        );
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            stripe_payment_link_id = %stripe_payment_link_id,
+                            error = %e,
+                            "Payment link checkout handler FAILED — earnings will not be recorded"
+                        );
+                        // Return 500 so Stripe retries the webhook delivery.
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(json!({"status":"error","error":"payment_link_checkout_failed"})),
+                        );
+                    }
+                }
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
@@ -1901,7 +1926,17 @@ pub async fn stripe_webhook(
                             .await;
                         return (StatusCode::OK, Json(json!({"status":"ok"})));
                     }
-                    Err(_) => return (StatusCode::OK, Json(json!({"status":"ok"}))),
+                    Err(e) => {
+                        tracing::error!(
+                            agency_id_from_meta = %agency_id_from_meta,
+                            error = %e,
+                            "Payment link checkout handler FAILED in metadata fallback path — earnings will not be recorded"
+                        );
+                        return (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            Json(json!({"status":"error","error":"payment_link_checkout_failed"})),
+                        );
+                    }
                 }
             }
 

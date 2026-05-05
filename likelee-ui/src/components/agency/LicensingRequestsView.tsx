@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, CheckCircle2, Send, RefreshCw, Eye, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  Filter,
+  CheckCircle2,
+  Send,
+  RefreshCw,
+  Eye,
+  X,
+  Trash2,
+  AlertTriangle,
+  MessageSquare,
+  UserX,
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,8 +27,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
+  deleteAgencyLicensingRequests,
   sendLicensingRequestPaymentLink,
   getAgencyBrandLicenseRequests,
   updateAgencyBrandLicenseRequestStatus,
@@ -40,6 +60,7 @@ const LicensingRequestsView = ({
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["agency", "licensing-requests"],
@@ -68,13 +89,30 @@ const LicensingRequestsView = ({
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
   const [groupToCounter, setGroupToCounter] = useState<any>(null);
-  const [declineModalOpen, setDeclineModalOpen] = useState(false);
-  const [declineReason, setDeclineReason] = useState("");
+  const [sendingCounterOffer, setSendingCounterOffer] = useState(false);
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
   const [groupToDecline, setGroupToDecline] = useState<any>(null);
+  const [isDeclining, setIsDeclining] = useState(false);
   const [activeRequestTab, setActiveRequestTab] = useState<
     "Active" | "Archive" | "Brand Requests"
   >("Active");
   const [sendPaymentBusyKey, setSendPaymentBusyKey] = useState<string>("");
+  const [showFilterDialog, setShowFilterDialog] = useState(false);
+  // Payment readiness modal — shown when talents are missing Stripe Connect
+  const [paymentReadinessModal, setPaymentReadinessModal] = useState<{
+    open: boolean;
+    missingTalents: string[];
+    action: string;
+  }>({ open: false, missingTalents: [], action: "" });
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterMinLicenseFee, setFilterMinLicenseFee] = useState<string>("");
+  const [filterMaxLicenseFee, setFilterMaxLicenseFee] = useState<string>("");
+  const [filterMinDuration, setFilterMinDuration] = useState<string>("");
+  const [filterMaxDuration, setFilterMaxDuration] = useState<string>("");
+  const [deletingGroup, setDeletingGroup] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [groupToDelete, setGroupToDelete] = useState<any>(null);
+  const [recoveringGroup, setRecoveringGroup] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeRequestTab === "Active" && Array.isArray(data)) {
@@ -135,6 +173,39 @@ const LicensingRequestsView = ({
     </div>
   );
 
+  const handleSendCounterOffer = async () => {
+    if (!groupToCounter || !counterOfferMessage.trim()) return;
+    setSendingCounterOffer(true);
+    try {
+      const ids = (groupToCounter?.talents || [])
+        .map((t: any) => t.licensing_request_id)
+        .filter(Boolean);
+      await updateAgencyLicensingRequestsStatus({
+        licensing_request_ids: ids,
+        status: "negotiating",
+        notes: counterOfferMessage,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+      toast({
+        title: "Counter offer sent",
+        description: "The client has been notified.",
+      });
+      setCounterOfferModalOpen(false);
+      setCounterOfferMessage("");
+      setGroupToCounter(null);
+    } catch (e: any) {
+      toast({
+        title: "Failed to send counter offer",
+        description: e?.message || "Could not send counter offer",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setSendingCounterOffer(false);
+    }
+  };
+
   const updateGroupStatus = async (
     group: any,
     status:
@@ -149,7 +220,15 @@ const LicensingRequestsView = ({
     const ids = (group?.talents || [])
       .map((t: any) => t.licensing_request_id)
       .filter(Boolean);
-    if (!ids.length) return;
+    if (!ids.length) {
+      toast({
+        title: "Update failed",
+        description:
+          "Could not find licensing request IDs to update. Please refresh and try again.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
 
     try {
       await updateAgencyLicensingRequestsStatus({
@@ -157,7 +236,8 @@ const LicensingRequestsView = ({
         status,
         notes,
       });
-      await queryClient.invalidateQueries({
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
       if (status === "approved") {
@@ -180,6 +260,18 @@ const LicensingRequestsView = ({
           description: "The client has been notified.",
         });
       }
+      if (status === "declined" || status === "rejected") {
+        toast({
+          title: "Request declined",
+          description: "The licensing request has been declined.",
+        });
+      }
+      if (status === "approved") {
+        toast({
+          title: "Request approved",
+          description: "The licensing request has been approved.",
+        });
+      }
     } catch (e: any) {
       toast({
         title: "Update failed",
@@ -200,7 +292,8 @@ const LicensingRequestsView = ({
         status,
         decline_reason,
       });
-      await queryClient.invalidateQueries({
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
         queryKey: ["agency", "brand-license-requests"],
       });
       if (status === "approved" && onBrandRequestAccepted) {
@@ -219,8 +312,7 @@ const LicensingRequestsView = ({
         });
       }
       if (["declined", "rejected"].includes(status)) {
-        setDeclineModalOpen(false);
-        setDeclineReason("");
+        setShowDeclineConfirm(false);
         setGroupToDecline(null);
         toast({
           title: "Request declined",
@@ -252,7 +344,8 @@ const LicensingRequestsView = ({
         await sendLicensingRequestPaymentLink(licensingRequestId);
       const paymentLinkUrl = String(resp?.payment_link_url || "");
 
-      await queryClient.invalidateQueries({
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
 
@@ -263,37 +356,102 @@ const LicensingRequestsView = ({
           : "Payment link sent.",
       });
     } catch (e: any) {
-      let friendlyTitle = "Send payment link failed";
-      let friendlyDesc = e?.message || "Could not generate/send payment link";
-      try {
-        const parsed = JSON.parse(String(e?.message || ""));
-        if (
-          parsed &&
-          typeof parsed === "object" &&
-          parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
-        ) {
-          friendlyTitle = `Action required: connect ${entityPluralLower} payouts`;
-          const missingList = Array.isArray(parsed.missing)
-            ? parsed.missing
-            : [];
-          const missingText = missingList.length
-            ? `Missing: ${missingList.join(", ")}`
-            : "";
-          const actionText = parsed.action ? String(parsed.action) : "";
-          friendlyDesc = [String(parsed.message || ""), actionText, missingText]
-            .filter((s) => Boolean(String(s || "").trim()))
-            .join("\n");
+      // The base44Client extracts only the message string into e.message,
+      // but preserves the full raw error payload on e.data.
+      // Check e.data first for the structured MISSING_TALENT_STRIPE_CONNECT payload.
+      const rawData = e?.data;
+      const normalizedData =
+        rawData && typeof rawData === "object"
+          ? rawData
+          : (() => {
+              try {
+                return JSON.parse(String(rawData || ""));
+              } catch {
+                return null;
+              }
+            })();
+
+      // Also try parsing e.message in case the client serialized it there
+      const parsedMessage = (() => {
+        try {
+          return JSON.parse(String(e?.message || ""));
+        } catch {
+          return null;
         }
-      } catch {
-        // ignore parse errors
+      })();
+
+      const structured = normalizedData || parsedMessage;
+
+      if (structured?.code === "MISSING_TALENT_STRIPE_CONNECT") {
+        setPaymentReadinessModal({
+          open: true,
+          missingTalents: Array.isArray(structured.missing)
+            ? structured.missing
+            : [],
+          action: String(structured.action || ""),
+        });
+        return;
       }
+
       toast({
-        title: friendlyTitle,
-        description: friendlyDesc,
+        title: "Send payment link failed",
+        description: e?.message || "Could not generate/send payment link",
         variant: "destructive" as any,
       });
     } finally {
       setSendPaymentBusyKey("");
+    }
+  };
+
+  const handleRecoverGroup = async (group: any) => {
+    const groupKey = String(group?.group_key || "");
+    setRecoveringGroup(groupKey);
+    try {
+      await updateGroupStatus(group, "pending");
+      toast({
+        title: "Recovered",
+        description: "Licensing request has been moved back to active.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Recovery failed",
+        description: e?.message || "Could not recover licensing request",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setRecoveringGroup(null);
+    }
+  };
+
+  const handleDeleteGroup = async (group: any) => {
+    const ids = (group?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    setDeletingGroup(group.group_key);
+    try {
+      await deleteAgencyLicensingRequests({
+        licensing_request_ids: ids,
+      });
+      // Fire-and-forget cache invalidation
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+      toast({
+        title: "Deleted",
+        description: "Licensing request(s) permanently deleted.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Delete failed",
+        description: e?.message || "Could not delete licensing request",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setDeletingGroup(null);
+      setShowDeleteConfirm(false);
+      setGroupToDelete(null);
     }
   };
 
@@ -316,16 +474,141 @@ const LicensingRequestsView = ({
     return source === "brand_dashboard";
   };
 
+  const getRequestDurationDays = (group: any) => {
+    const startDateRaw = group?.license_start_date
+      ? new Date(group.license_start_date)
+      : null;
+    const endDateRaw = group?.license_end_date
+      ? new Date(group.license_end_date)
+      : null;
+
+    if (
+      startDateRaw &&
+      !Number.isNaN(startDateRaw.getTime()) &&
+      endDateRaw &&
+      !Number.isNaN(endDateRaw.getTime())
+    ) {
+      return Math.max(
+        0,
+        Math.ceil(
+          (endDateRaw.getTime() - startDateRaw.getTime()) /
+            (1000 * 60 * 60 * 24),
+        ) + 1,
+      );
+    }
+
+    const deadlineRaw = group?.deadline ? new Date(group.deadline) : null;
+    if (deadlineRaw && !Number.isNaN(deadlineRaw.getTime())) {
+      return Math.max(
+        0,
+        Math.ceil((deadlineRaw.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+      );
+    }
+
+    return null;
+  };
+
+  const isLicenseExpired = (group: any) => {
+    const now = new Date();
+    const endDateRaw = group?.license_end_date
+      ? new Date(group.license_end_date)
+      : null;
+    if (endDateRaw && !Number.isNaN(endDateRaw.getTime()) && endDateRaw < now) {
+      return true;
+    }
+    const deadlineRaw = group?.deadline ? new Date(group.deadline) : null;
+    if (
+      deadlineRaw &&
+      !Number.isNaN(deadlineRaw.getTime()) &&
+      deadlineRaw < now
+    ) {
+      return true;
+    }
+    return false;
+  };
+
   const filteredData = (data || []).filter((group: any) => {
     const isArchived = ["rejected", "declined", "archived"].includes(
       group.status,
     );
+    const isExpired = isLicenseExpired(group);
     const isBrandRequest = isBrandRequestGroup(group);
-    const matchesStatus =
-      activeRequestTab === "Active" ? !isArchived : isArchived;
-    if (!matchesStatus) return false;
+    if (activeRequestTab === "Active") {
+      if (isArchived || isExpired) return false;
+    } else {
+      if (!isArchived && !isExpired) return false;
+    }
     return !isBrandRequest;
   });
+
+  const filteredRegularData = filteredData.filter((group: any) => {
+    if (filterStatus !== "all" && group.status !== filterStatus) return false;
+
+    const fee = Number(group?.license_fee);
+    if (filterMinLicenseFee.trim()) {
+      const min = Number(filterMinLicenseFee);
+      if (Number.isFinite(min) && Number.isFinite(fee) && fee < min) {
+        return false;
+      }
+      if (Number.isFinite(min) && !Number.isFinite(fee)) return false;
+    }
+
+    if (filterMaxLicenseFee.trim()) {
+      const max = Number(filterMaxLicenseFee);
+      if (Number.isFinite(max) && Number.isFinite(fee) && fee > max) {
+        return false;
+      }
+      if (Number.isFinite(max) && !Number.isFinite(fee)) return false;
+    }
+
+    const durationDays = getRequestDurationDays(group);
+    if (filterMinDuration.trim()) {
+      const min = Number(filterMinDuration);
+      if (Number.isFinite(min)) {
+        if (durationDays === null || durationDays < min) return false;
+      }
+    }
+
+    if (filterMaxDuration.trim()) {
+      const max = Number(filterMaxDuration);
+      if (Number.isFinite(max)) {
+        if (durationDays === null || durationDays > max) return false;
+      }
+    }
+
+    return true;
+  });
+
+  const clearFilters = () => {
+    setFilterStatus("all");
+    setFilterMinLicenseFee("");
+    setFilterMaxLicenseFee("");
+    setFilterMinDuration("");
+    setFilterMaxDuration("");
+  };
+
+  const hasActiveFilters =
+    filterStatus !== "all" ||
+    filterMinLicenseFee ||
+    filterMaxLicenseFee ||
+    filterMinDuration ||
+    filterMaxDuration;
+
+  const feePresets = [
+    { label: "Any", min: "", max: "" },
+    { label: "< $1k", min: "", max: "999" },
+    { label: "$1k - $5k", min: "1000", max: "5000" },
+    { label: "$5k - $10k", min: "5001", max: "10000" },
+    { label: "$10k+", min: "10001", max: "" },
+  ];
+
+  const durationPresets = [
+    { label: "Any", min: "", max: "" },
+    { label: "0-7 days", min: "0", max: "7" },
+    { label: "8-30 days", min: "8", max: "30" },
+    { label: "31-90 days", min: "31", max: "90" },
+    { label: "90+ days", min: "91", max: "" },
+  ];
 
   const filteredBrandData = brandLicenseData.filter((req: any) => {
     const isArchived = ["rejected", "declined", "archived"].includes(
@@ -391,15 +674,63 @@ const LicensingRequestsView = ({
               })}
             </div>
           </div>
-          <Button
-            variant="outline"
-            className="flex w-full items-center justify-center gap-2 border-gray-300 font-bold text-gray-700 bg-white sm:w-auto"
-          >
-            <Filter className="w-4 h-4" /> Filter
-          </Button>
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-3 h-3 mr-1" /> Clear
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className={`flex w-full items-center justify-center gap-2 border-gray-300 font-bold text-gray-700 bg-white sm:w-auto ${hasActiveFilters ? "border-indigo-300 bg-indigo-50" : ""}`}
+              onClick={() => setShowFilterDialog(true)}
+            >
+              <Filter className="w-4 h-4" /> Filter
+              {hasActiveFilters && (
+                <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-indigo-500 text-white rounded-full">
+                  {
+                    [
+                      filterStatus !== "all",
+                      filterMinLicenseFee,
+                      filterMaxLicenseFee,
+                      filterMinDuration,
+                      filterMaxDuration,
+                    ].filter(Boolean).length
+                  }
+                </span>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
+          {activeRequestTab === "Active" && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <svg
+                className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p className="text-xs text-amber-800">
+                Licensing requests past their end date are automatically moved
+                to the Archive tab.
+              </p>
+            </div>
+          )}
+
           {isLoading && (
             <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
               <div className="text-gray-500 font-medium">Loading...</div>
@@ -416,7 +747,7 @@ const LicensingRequestsView = ({
 
           {!isLoading &&
             !error &&
-            filteredData.length === 0 &&
+            filteredRegularData.length === 0 &&
             activeRequestTab !== "Brand Requests" && (
               <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
                 <div className="text-gray-500 font-medium">
@@ -428,7 +759,7 @@ const LicensingRequestsView = ({
             )}
 
           {activeRequestTab !== "Brand Requests" &&
-            filteredData.map((group: any) => (
+            filteredRegularData.map((group: any) => (
               <Card
                 key={group.group_key}
                 className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
@@ -536,14 +867,45 @@ const LicensingRequestsView = ({
                     )}
                   </div>
                 ) : activeRequestTab === "Archive" ? (
-                  <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Button
                       variant="outline"
-                      onClick={() => updateGroupStatus(group, "pending")}
+                      onClick={() => handleRecoverGroup(group)}
+                      disabled={recoveringGroup === group.group_key}
                       className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                     >
-                      <RefreshCw className="w-4 h-4" />
-                      Recover to Active
+                      {recoveringGroup === group.group_key ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Recovering...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-4 h-4" />
+                          Recover to Active
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setGroupToDelete(group);
+                        setShowDeleteConfirm(true);
+                      }}
+                      disabled={deletingGroup === group.group_key}
+                      className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    >
+                      {deletingGroup === group.group_key ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" />
+                          Delete Permanently
+                        </>
+                      )}
                     </Button>
                   </div>
                 ) : (
@@ -569,7 +931,10 @@ const LicensingRequestsView = ({
                     </Button>
                     <Button
                       variant="outline"
-                      onClick={() => updateGroupStatus(group, "rejected")}
+                      onClick={() => {
+                        setGroupToDecline(group);
+                        setShowDeclineConfirm(true);
+                      }}
                       className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                     >
                       <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
@@ -711,7 +1076,7 @@ const LicensingRequestsView = ({
                       variant="outline"
                       onClick={() => {
                         setGroupToDecline(req);
-                        setDeclineModalOpen(true);
+                        setShowDeclineConfirm(true);
                       }}
                       className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                     >
@@ -725,6 +1090,101 @@ const LicensingRequestsView = ({
               </Card>
             ))}
         </div>
+
+        <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Filter Licensing Requests</DialogTitle>
+              <DialogDescription>
+                Narrow down your licensing requests by status, license fee, and
+                duration.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="negotiating">Negotiating</SelectItem>
+                    <SelectItem value="declined">Declined</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>License Fee</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {feePresets.map((preset) => {
+                    const active =
+                      filterMinLicenseFee === preset.min &&
+                      filterMaxLicenseFee === preset.max;
+                    return (
+                      <Button
+                        key={preset.label}
+                        type="button"
+                        variant={active ? "default" : "outline"}
+                        onClick={() => {
+                          setFilterMinLicenseFee(preset.min);
+                          setFilterMaxLicenseFee(preset.max);
+                        }}
+                        className={`justify-center font-bold ${active ? "bg-indigo-600 text-white hover:bg-indigo-600" : "border-gray-200 text-gray-700"}`}
+                      >
+                        {preset.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Duration</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {durationPresets.map((preset) => {
+                    const active =
+                      filterMinDuration === preset.min &&
+                      filterMaxDuration === preset.max;
+                    return (
+                      <Button
+                        key={preset.label}
+                        type="button"
+                        variant={active ? "default" : "outline"}
+                        onClick={() => {
+                          setFilterMinDuration(preset.min);
+                          setFilterMaxDuration(preset.max);
+                        }}
+                        className={`justify-center font-bold ${active ? "bg-indigo-600 text-white hover:bg-indigo-600" : "border-gray-200 text-gray-700"}`}
+                      >
+                        {preset.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="font-bold"
+              >
+                Clear Filters
+              </Button>
+              <Button onClick={() => setShowFilterDialog(false)}>
+                Apply Filters
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog
           open={counterOfferModalOpen}
@@ -761,59 +1221,112 @@ const LicensingRequestsView = ({
                 Cancel
               </Button>
               <Button
-                onClick={() =>
-                  updateGroupStatus(
-                    groupToCounter,
-                    "negotiating",
-                    counterOfferMessage,
-                  )
-                }
-                disabled={!counterOfferMessage.trim()}
+                onClick={handleSendCounterOffer}
+                disabled={!counterOfferMessage.trim() || sendingCounterOffer}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
               >
-                Send Counter Offer
+                {sendingCounterOffer ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Counter Offer"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        <Dialog
-          open={declineModalOpen}
-          onOpenChange={(open) => {
-            setDeclineModalOpen(open);
-            if (!open) {
-              setDeclineReason("");
-              setGroupToDecline(null);
-            }
-          }}
-        >
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Decline Brand Request</DialogTitle>
+              <DialogTitle>Delete Licensing Request</DialogTitle>
               <DialogDescription>
-                Share a brief reason so the brand understands your decision.
+                {groupToDelete?.status === "archived"
+                  ? "This will permanently delete this archived licensing request. This action cannot be undone."
+                  : "This will archive and then permanently delete this licensing request. This action cannot be undone."}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>Reason</Label>
-                <Textarea
-                  value={declineReason}
-                  onChange={(e) => setDeclineReason(e.target.value)}
-                  placeholder="Tell the brand why you are declining..."
-                  rows={5}
-                  className="resize-none"
-                />
-              </div>
+            <div className="py-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete the licensing request for{" "}
+                <span className="font-semibold">
+                  {groupToDelete?.brand_name || "Unknown brand"}
+                </span>
+                ?
+              </p>
             </div>
 
             <DialogFooter>
               <Button
                 variant="outline"
                 onClick={() => {
-                  setDeclineModalOpen(false);
-                  setDeclineReason("");
+                  setShowDeleteConfirm(false);
+                  setGroupToDelete(null);
+                }}
+                className="font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteGroup(groupToDelete)}
+                disabled={deletingGroup === groupToDelete?.group_key}
+                className="font-bold"
+              >
+                {deletingGroup === groupToDelete?.group_key ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Permanently
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={showDeclineConfirm}
+          onOpenChange={(open) => {
+            setShowDeclineConfirm(open);
+            if (!open) {
+              setGroupToDecline(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Decline</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to decline this licensing request? This
+                action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <p className="text-sm text-gray-600">
+                You are about to decline the request from{" "}
+                <span className="font-semibold">
+                  {groupToDecline?.brand_name ||
+                    groupToDecline?.brands?.company_name ||
+                    "this brand"}
+                </span>
+                .
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeclineConfirm(false);
                   setGroupToDecline(null);
                 }}
                 className="font-bold"
@@ -821,27 +1334,39 @@ const LicensingRequestsView = ({
                 Cancel
               </Button>
               <Button
-                onClick={() => {
-                  if (groupToDecline?.id && !groupToDecline?.group_key) {
-                    // This is a brand request
-                    updateBrandRequestStatus(
-                      groupToDecline,
-                      "declined",
-                      declineReason,
-                    );
-                  } else {
-                    // This is a regular licensing request group
-                    updateGroupStatus(
-                      groupToDecline,
-                      "declined",
-                      declineReason,
-                    );
+                variant="destructive"
+                onClick={async () => {
+                  setIsDeclining(true);
+                  try {
+                    const isBrandRequest =
+                      groupToDecline?.id &&
+                      !groupToDecline?.group_key &&
+                      groupToDecline?.brands;
+                    if (isBrandRequest) {
+                      await updateBrandRequestStatus(
+                        groupToDecline,
+                        "declined",
+                      );
+                    } else {
+                      await updateGroupStatus(groupToDecline, "declined");
+                    }
+                    setShowDeclineConfirm(false);
+                    setGroupToDecline(null);
+                  } finally {
+                    setIsDeclining(false);
                   }
                 }}
-                disabled={!declineReason.trim()}
+                disabled={isDeclining}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold"
               >
-                Decline Request
+                {isDeclining ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Declining...
+                  </>
+                ) : (
+                  "Yes, Decline"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -916,6 +1441,90 @@ const LicensingRequestsView = ({
                 })()}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Payment Readiness Modal — replaces the red destructive toast */}
+        <Dialog
+          open={paymentReadinessModal.open}
+          onOpenChange={(open) =>
+            setPaymentReadinessModal((prev) => ({ ...prev, open }))
+          }
+        >
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                </div>
+                <DialogTitle className="text-lg font-bold text-gray-900">
+                  {entitySingularTitle} setup required
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-sm text-gray-500 ml-13 pl-[52px]">
+                The following {entityPluralLower} need to complete their account
+                setup before a payment link can be sent.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-2">
+              {paymentReadinessModal.missingTalents.map((talent, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0 mt-0.5">
+                    <UserX className="w-4 h-4 text-gray-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {talent.replace(/\s*\([^)]*\)\s*$/, "") || talent}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {/\(([^)]+)\)/.exec(talent)?.[1] ??
+                        "Account setup incomplete"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {paymentReadinessModal.action && (
+                <div className="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                  <p className="text-xs text-indigo-700 leading-relaxed">
+                    {paymentReadinessModal.action}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setPaymentReadinessModal((prev) => ({
+                    ...prev,
+                    open: false,
+                  }))
+                }
+                className="font-bold border-gray-200"
+              >
+                Close
+              </Button>
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
+                onClick={() => {
+                  setPaymentReadinessModal((prev) => ({
+                    ...prev,
+                    open: false,
+                  }));
+                  // Navigate to Messages tab so the agency can message the talent
+                  navigate("/AgencyDashboard?tab=messages");
+                }}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Message {entitySingularTitle}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

@@ -14,11 +14,14 @@ import {
   createBrandLicensingRequest,
   createAgencyBrandLicensingRequest,
   getBrandLicensingRequests,
+  updateBrandLicensingRequestsStatus,
+  deleteBrandLicensingRequests,
   getBrandProfile,
   listOfferDeliverables,
   reviewOfferDeliverable,
   getBrandBillingStatus,
   getBrandSpendAnalytics,
+  getBrandEscrowSummary,
   listBrandInvoices,
   getBrandBudgetSettings,
   updateBrandBudgetSettings,
@@ -338,6 +341,7 @@ export default function BrandDashboard() {
   const [jobStatusFilter, setJobStatusFilter] = useState("all");
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
   const hasLoadedOffersRef = useRef(false);
+  const hasLoadedBillingDataRef = useRef(false);
   const hasLoadedBrandAnalyticsRef = useRef(false);
   const deliverableReviewBusyRef = useRef<Set<string>>(new Set());
   const [activityEvents, setActivityEvents] = useState<any[]>([]);
@@ -353,8 +357,35 @@ export default function BrandDashboard() {
   const billingSuccessProcessedRef = useRef(false);
 
   useEffect(() => {
-    activeSectionRef.current = activeSection;
-  }, [activeSection]);
+    let mounted = true;
+    const loadPackages = async () => {
+      try {
+        setLoadingInboxPackages(true);
+        const response = await base44.get<{ packages?: any[] }>(
+          "/api/brand/inbox/packages",
+        );
+        if (!mounted) return;
+        const pkgs = Array.isArray(response?.packages) ? response.packages : [];
+        setInboxPackages(pkgs);
+        setInboxPendingCount(
+          pkgs.filter((p: any) => String(p?.status || "") === "sent").length,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        setInboxPackages([]);
+        setInboxPendingCount(0);
+      } finally {
+        if (!mounted) return;
+        setLoadingInboxPackages(false);
+      }
+    };
+    loadPackages();
+    const timer = setInterval(loadPackages, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     campaignHubTabRef.current = campaignHubTab;
@@ -440,6 +471,10 @@ export default function BrandDashboard() {
   const [billingCurrentMonthSpend, setBillingCurrentMonthSpend] = useState(0);
   const [billingProjectedEoy, setBillingProjectedEoy] = useState(0);
   const [billingMonthlyAvg, setBillingMonthlyAvg] = useState(0);
+  const [escrowSummary, setEscrowSummary] = useState<{
+    breakdown: string;
+    projectCount: number;
+  }>({ breakdown: "$0", projectCount: 0 });
   const [budgetLimit, setBudgetLimit] = useState<number | null>(null);
   const [budgetAlertEnabled, setBudgetAlertEnabled] = useState(false);
   const [savingBudgetSettings, setSavingBudgetSettings] = useState(false);
@@ -674,6 +709,9 @@ export default function BrandDashboard() {
   const [isBatchDownloading, setIsBatchDownloading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [assetToDelete, setAssetToDelete] = useState<any>(null);
+  const [showDeletePackageDialog, setShowDeletePackageDialog] = useState(false);
+  const [packageToDelete, setPackageToDelete] = useState<any>(null);
+  const [deletingPackage, setDeletingPackage] = useState(false);
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<string>>(
     new Set(),
   );
@@ -724,6 +762,14 @@ export default function BrandDashboard() {
   );
   const [loadingBrandLicensingRequests, setLoadingBrandLicensingRequests] =
     useState(false);
+  const [activeLicensingTab, setActiveLicensingTab] = useState<
+    "Active" | "Archive"
+  >("Active");
+  const [deletingRequestId, setDeletingRequestId] = useState<string | null>(
+    null,
+  );
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [requestToDelete, setRequestToDelete] = useState<any>(null);
   const [licenseRequestForm, setLicenseRequestForm] = useState({
     start_date: new Date().toISOString().slice(0, 10),
     license_fee: "",
@@ -754,6 +800,7 @@ export default function BrandDashboard() {
   const [showContractHub, setShowContractHub] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractHubTab, setContractHubTab] = useState("active");
+  const [contractHubSubTab, setContractHubSubTab] = useState("agency"); // New sub-tab state
   const [contractSearch, setContractSearch] = useState("");
   const [contractSort, setContractSort] = useState("newest");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
@@ -822,11 +869,35 @@ export default function BrandDashboard() {
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
+  const [finalizedPackageInfo, setFinalizedPackageInfo] = useState<{
+    title: string;
+    agencyName: string;
+  } | null>(null);
+  const [dismissingPkg, setDismissingPkg] = useState<any>(null);
+  const [dismissingBusy, setDismissingBusy] = useState(false);
+  const [confirmingDonePkgPublicData, setConfirmingDonePkgPublicData] =
+    useState<any>(null);
+  const [
+    loadingConfirmingDonePkgPublicData,
+    setLoadingConfirmingDonePkgPublicData,
+  ] = useState(false);
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [expandedInboxPackageId, setExpandedInboxPackageId] =
     useState<string>("");
   const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
   const [loadingBrandOfferItems, setLoadingBrandOfferItems] = useState(false);
+
+  // Memoized offer map for O(1) lookups instead of O(n) find() calls
+  const offerMap = useMemo(() => {
+    const map = new Map<string, any>();
+    brandOfferItems.forEach((offer: any) => {
+      if (offer?.id) {
+        map.set(String(offer.id), offer);
+      }
+    });
+    return map;
+  }, [brandOfferItems]);
+
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
   const [payingOfferId, setPayingOfferId] = useState<string | null>(null);
   const [expandedCampaignHubId, setExpandedCampaignHubId] =
@@ -987,11 +1058,17 @@ export default function BrandDashboard() {
     if (typeof window !== "undefined") {
       window.addEventListener("focus", onFocus);
     }
+    const timer = setInterval(() => {
+      if (mounted) {
+        void loadMetrics();
+      }
+    }, 15000);
     return () => {
       mounted = false;
       if (typeof window !== "undefined") {
         window.removeEventListener("focus", onFocus);
       }
+      clearInterval(timer);
     };
   }, []);
 
@@ -1042,16 +1119,21 @@ export default function BrandDashboard() {
       activeSection !== "usage-rights"
     )
       return;
+    if (hasLoadedBillingDataRef.current) return;
     let mounted = true;
 
     const loadBillingData = async () => {
+      hasLoadedBillingDataRef.current = true;
       setLoadingBillingData(true);
       try {
-        const [statusRes, spendRes, invoicesRes] = await Promise.all([
-          getBrandBillingStatus(),
-          getBrandSpendAnalytics(),
-          listBrandInvoices(),
-        ]);
+        const [statusRes, spendRes, invoicesRes, escrowRes] = await Promise.all(
+          [
+            getBrandBillingStatus(),
+            getBrandSpendAnalytics(),
+            listBrandInvoices(),
+            getBrandEscrowSummary().catch(() => null),
+          ],
+        );
         if (!mounted) return;
         if (statusRes) {
           setBrandBillingStatus({
@@ -1083,6 +1165,37 @@ export default function BrandDashboard() {
           setBrandInvoices(
             Array.isArray(invoicesRes.invoices) ? invoicesRes.invoices : [],
           );
+        }
+        if (escrowRes) {
+          const entries = Object.entries(escrowRes.currencies || {});
+          let breakdown: string;
+          if (entries.length === 0) {
+            breakdown = "$0";
+          } else if (entries.length === 1) {
+            const curr = entries[0][0];
+            const total = Number(entries[0][1]);
+            breakdown = new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: curr,
+              notation: "compact",
+              maximumFractionDigits: 1,
+            }).format(total);
+          } else {
+            breakdown = entries
+              .map(([curr, total]) =>
+                new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: curr,
+                  notation: "compact",
+                  maximumFractionDigits: 1,
+                }).format(Number(total)),
+              )
+              .join(", ");
+          }
+          setEscrowSummary({
+            breakdown,
+            projectCount: escrowRes.project_count || 0,
+          });
         }
       } catch (e) {
         if (!mounted) return;
@@ -1122,8 +1235,14 @@ export default function BrandDashboard() {
       }
     };
     loadActivityEvents();
+    const timer = setInterval(() => {
+      if (mounted) {
+        void loadActivityEvents();
+      }
+    }, 30000);
     return () => {
       mounted = false;
+      clearInterval(timer);
     };
   }, []);
 
@@ -1164,7 +1283,6 @@ export default function BrandDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeSection !== "campaigns-inbox") return;
     let mounted = true;
     const loadPackages = async () => {
       try {
@@ -1193,10 +1311,9 @@ export default function BrandDashboard() {
       mounted = false;
       clearInterval(timer);
     };
-  }, [activeSection]);
+  }, []);
 
   useEffect(() => {
-    if (campaignHubTab !== "jobs") return;
     let mounted = true;
     (async () => {
       try {
@@ -1216,7 +1333,7 @@ export default function BrandDashboard() {
     return () => {
       mounted = false;
     };
-  }, [campaignHubTab]);
+  }, []);
 
   const updateJobStatus = async (jobId: string, status: string) => {
     try {
@@ -1405,38 +1522,45 @@ export default function BrandDashboard() {
         );
         if (!mounted) return;
         const offers = Array.isArray(response?.offers) ? response.offers : [];
-        const withDeliverables = await Promise.all(
-          offers.map(async (offer: any) => {
-            const offerId = String(offer?.id || "").trim();
-            if (!offerId) return offer;
-            try {
-              const [delResp, contractsResp] = await Promise.all([
-                listOfferDeliverables(offerId),
-                base44
-                  .get<{
-                    contracts?: any[];
-                  }>(`/api/campaign-offers/${offerId}/contracts`)
-                  .catch(() => ({ contracts: [] })),
-              ]);
-              const deliverables = Array.isArray(delResp?.deliverables)
-                ? delResp.deliverables
-                : [];
-              const contracts = Array.isArray(contractsResp?.contracts)
-                ? contractsResp.contracts
-                : [];
-              return {
-                ...offer,
-                offer_deliverables: deliverables,
-                offer_contracts: contracts,
-              };
-            } catch {
-              return offer;
-            }
-          }),
-        );
-        if (!mounted) return;
-        setBrandOfferItems(withDeliverables);
+        setBrandOfferItems(offers);
         hasLoadedOffersRef.current = true;
+        setLoadingBrandOfferItems(false);
+
+        void (async () => {
+          if (!mounted) return;
+          const enriched = await Promise.all(
+            offers.map(async (offer: any) => {
+              const offerId = String(offer?.id || "").trim();
+              if (!offerId) return offer;
+              try {
+                const [delResp, contractsResp] = await Promise.all([
+                  listOfferDeliverables(offerId),
+                  base44
+                    .get<{
+                      contracts?: any[];
+                    }>(`/api/campaign-offers/${offerId}/contracts`)
+                    .catch(() => ({ contracts: [] })),
+                ]);
+                if (!mounted) return offer;
+                const deliverables = Array.isArray(delResp?.deliverables)
+                  ? delResp.deliverables
+                  : [];
+                const contracts = Array.isArray(contractsResp?.contracts)
+                  ? contractsResp.contracts
+                  : [];
+                return {
+                  ...offer,
+                  offer_deliverables: deliverables,
+                  offer_contracts: contracts,
+                };
+              } catch {
+                return offer;
+              }
+            }),
+          );
+          if (!mounted) return;
+          setBrandOfferItems(enriched);
+        })();
       } catch {
         if (!mounted) return;
         setBrandOfferItems([]);
@@ -2078,6 +2202,41 @@ export default function BrandDashboard() {
     setAssetToDelete(null);
   };
 
+  const handleDeletePackage = async (pkg: any) => {
+    setPackageToDelete(pkg);
+    setShowDeletePackageDialog(true);
+  };
+
+  const confirmDeletePackage = async () => {
+    if (!packageToDelete) return;
+    setShowDeletePackageDialog(false);
+    setDeletingPackage(true);
+
+    try {
+      const offerId = String(packageToDelete?.offer_id || "");
+      const packageId = String(packageToDelete?.id || "");
+      await base44.post(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/brand-delete`,
+        { package_id: packageId },
+      );
+
+      setInboxPackages((prev) => prev.filter((p) => p.id !== packageId));
+      toast({
+        title: "Package deleted",
+        description: `"${packageToDelete.title || "Package"}" has been removed.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error?.message || "Could not delete the package.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingPackage(false);
+      setPackageToDelete(null);
+    }
+  };
+
   useEffect(() => {
     const fetchCreators = async () => {
       setLoading(true);
@@ -2190,59 +2349,77 @@ export default function BrandDashboard() {
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
-  const { escrowTotal, escrowProjects } = useMemo(() => {
+  const { escrowBreakdown, escrowProjects } = useMemo(() => {
     const projects: any[] = [];
-    let total = 0;
+    const currencies: Record<string, number> = {};
     brandOfferItems.forEach((offer: any) => {
       const escrowStatus = String(offer?.escrow_status || "").toLowerCase();
-      if (escrowStatus === "holding" || escrowStatus === "releasing") {
+      const paymentStatus = String(offer?.payment_status || "").toLowerCase();
+      if (
+        (escrowStatus === "holding" || escrowStatus === "releasing") &&
+        paymentStatus === "paid"
+      ) {
         const budgetSnap = offer?.budget_snapshot || {};
-        // Support multiple possible keys: budget_total (new offers), total_amount (legacy/drafts), amount (fallback)
         const rawAmount =
           budgetSnap?.budget_total ||
           budgetSnap?.total_amount ||
           budgetSnap?.amount ||
           "0";
 
-        // Robust parsing: strip $ and , and handle strings vs numbers
         const normalizedAmount =
           typeof rawAmount === "string"
             ? parseFloat(rawAmount.replace(/[$,\s]/g, "")) || 0
             : Number(rawAmount) || 0;
 
+        const currency = budgetSnap?.currency_code || "USD";
+        currencies[currency] = (currencies[currency] || 0) + normalizedAmount;
+
         if (normalizedAmount > 0) {
-          total += normalizedAmount;
+          const creatorName =
+            offer?.target_name ||
+            offer?.creators?.full_name ||
+            offer?.agencies?.agency_name ||
+            (offer?.target_type === "creator" ? offer.target_id : "Unknown");
           projects.push({
             id: offer.id,
             name:
               offer?.brand_campaigns?.name || offer?.offer_title || "Campaign",
             status: escrowStatus === "holding" ? "in_progress" : "releasing",
             amount: normalizedAmount,
-            creator:
-              offer?.target_type === "creator" ? offer.target_id : "Unknown",
-            // For independent creators, we can usually resolve their name from brand_creator_connections if available,
-            // but for now we fallback to ID if unknown.
+            creator: creatorName,
             dueDate: budgetSnap?.budget_submission_deadline || "TBD",
-            currency: budgetSnap?.currency_code || "USD",
+            currency,
           });
         }
       }
     });
-    return { escrowTotal: total, escrowProjects: projects };
-  }, [brandOfferItems]);
 
-  const formatCompactCurrencyFromCents = (amountCents: number) => {
-    const dollars = (Number(amountCents) || 0) / 100;
-    if (dollars >= 1000) {
-      return new Intl.NumberFormat("en-US", {
+    const entries = Object.entries(currencies);
+    let breakdown: string;
+    if (entries.length === 0) {
+      breakdown = "$0";
+    } else if (entries.length === 1) {
+      breakdown = new Intl.NumberFormat("en-US", {
         style: "currency",
-        currency: "USD",
+        currency: entries[0][0],
         notation: "compact",
         maximumFractionDigits: 1,
-      }).format(dollars);
+      }).format(entries[0][1]);
+    } else {
+      breakdown = entries
+        .map(([curr, total]) =>
+          new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: curr,
+            notation: "compact",
+            maximumFractionDigits: 1,
+          }).format(total),
+        )
+        .join(", ");
     }
-    return currencyFormatter.format(dollars);
-  };
+
+    return { escrowBreakdown: breakdown, escrowProjects: projects };
+  }, [brandOfferItems]);
 
   const homeCurrentMonthSpendLabel = loadingBillingData
     ? "..."
@@ -2795,7 +2972,7 @@ export default function BrandDashboard() {
               Active Escrow
             </h3>
             <p className="text-6xl font-black text-blue-600">
-              ${(escrowTotal / 1000).toFixed(2)}K
+              {escrowBreakdown}
             </p>
             <p className="text-blue-800 mt-2 font-medium">
               Protecting {escrowProjects.length}{" "}
@@ -2885,20 +3062,39 @@ export default function BrandDashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-5 text-right font-mono font-bold text-gray-900">
-                      ${project.amount.toLocaleString()}
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: project.currency || "USD",
+                      }).format(project.amount)}
                     </td>
                     <td className="px-6 py-5">
-                      <Badge
-                        className={
+                      <div
+                        className="relative group"
+                        title={
                           project.status === "releasing"
-                            ? "bg-amber-100 text-amber-700 border-amber-200"
-                            : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                            ? "Funds are being transferred to the creator. This may take 1-3 business days to complete."
+                            : "Funds are securely held in escrow until deliverables are approved."
                         }
                       >
-                        {project.status === "releasing"
-                          ? "Process Started"
-                          : "Protected"}
-                      </Badge>
+                        <Badge
+                          className={
+                            project.status === "releasing"
+                              ? "bg-amber-100 text-amber-700 border-amber-200"
+                              : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                          }
+                        >
+                          {project.status === "releasing"
+                            ? "Release in Progress"
+                            : "Protected"}
+                        </Badge>
+                        {project.status === "releasing" && (
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                            Funds are being transferred to the creator. This may
+                            take 1-3 business days to complete.
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-5 text-right">
                       <span className="text-sm text-gray-600">
@@ -2955,7 +3151,7 @@ export default function BrandDashboard() {
               <DollarSign className="w-5 h-5 text-gray-400" />
             </div>
             <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-              ${(escrowTotal / 1000).toFixed(1)}K
+              {loadingBillingData ? "..." : escrowSummary.breakdown}
             </p>
             <p className="text-sm text-blue-600 mt-1 font-medium">
               Click for details →
@@ -4169,252 +4365,412 @@ export default function BrandDashboard() {
     );
   };
 
-  const renderBrandLicensingRequests = () => (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div>
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-            Licensing Requests
-          </h2>
-          <p className="text-gray-600">
-            Track licensing requests you have sent to agencies.
-          </p>
+  const handleArchiveRequest = async (req: any) => {
+    try {
+      await updateBrandLicensingRequestsStatus({
+        licensing_request_ids: [req.id],
+        status: "archived",
+      });
+      const resp = await getBrandLicensingRequests();
+      const rows = (resp as any)?.requests || resp?.data || [];
+      setBrandLicensingRequests(Array.isArray(rows) ? rows : []);
+      toast({
+        title: "Archived",
+        description: "Licensing request has been archived.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Archive failed",
+        description: e?.message || "Could not archive licensing request",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const handleDeleteRequest = async (req: any) => {
+    setDeletingRequestId(req.id);
+    try {
+      await deleteBrandLicensingRequests({
+        licensing_request_ids: [req.id],
+      });
+      const resp = await getBrandLicensingRequests();
+      const rows = (resp as any)?.requests || resp?.data || [];
+      setBrandLicensingRequests(Array.isArray(rows) ? rows : []);
+      toast({
+        title: "Deleted",
+        description: "Licensing request permanently deleted.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Delete failed",
+        description: e?.message || "Could not delete licensing request",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setDeletingRequestId(null);
+      setShowDeleteConfirm(false);
+      setRequestToDelete(null);
+    }
+  };
+
+  const renderBrandLicensingRequests = () => {
+    const isArchived = (req: any) =>
+      ["rejected", "declined", "archived"].includes(req?.status || "");
+
+    const filteredRequests = brandLicensingRequests.filter((req: any) => {
+      if (activeLicensingTab === "Active") return !isArchived(req);
+      return isArchived(req);
+    });
+
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Licensing Requests
+            </h2>
+            <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
+              {["Active", "Archive"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveLicensingTab(tab as any)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeLicensingTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {loadingBrandLicensingRequests && (
-        <Card className="p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600">Loading licensing requests...</p>
-        </Card>
-      )}
-
-      {!loadingBrandLicensingRequests &&
-        brandLicensingRequests.length === 0 && (
-          <Card className="p-4 sm:p-8 text-center text-sm text-gray-600">
-            No licensing requests yet.
+        {loadingBrandLicensingRequests && (
+          <Card className="p-6 bg-white border border-gray-200">
+            <p className="text-sm text-gray-600">
+              Loading licensing requests...
+            </p>
           </Card>
         )}
 
-      {!loadingBrandLicensingRequests &&
-        brandLicensingRequests.map((req: any) => {
-          const agencyName =
-            req?.agencies?.agency_name || req?.agency_name || "Agency";
-          const status = formatLicenseStatus(req?.status || "pending");
-          const statusClass =
-            status === "Approved"
-              ? "bg-green-100 text-green-700 border-green-200"
-              : status === "Declined"
-                ? "bg-red-100 text-red-700 border-red-200"
-                : "bg-amber-100 text-amber-700 border-amber-200";
+        {!loadingBrandLicensingRequests && filteredRequests.length === 0 && (
+          <Card className="p-4 sm:p-8 text-center text-sm text-gray-600">
+            {activeLicensingTab === "Active"
+              ? "No active licensing requests"
+              : "No archived licensing requests"}
+          </Card>
+        )}
 
-          const licenseFeeValue = req?.license_fee;
-          const licenseFee = licenseFeeValue
-            ? `$${Number(licenseFeeValue).toLocaleString()}`
-            : "\u2014";
+        {!loadingBrandLicensingRequests &&
+          filteredRequests.map((req: any) => {
+            const agencyName =
+              req?.agencies?.agency_name || req?.agency_name || "Agency";
+            const status = formatLicenseStatus(req?.status || "pending");
+            const statusClass =
+              status === "Approved"
+                ? "bg-green-100 text-green-700 border-green-200"
+                : status === "Declined" || status === "Archived"
+                  ? "bg-red-100 text-red-700 border-red-200"
+                  : "bg-amber-100 text-amber-700 border-amber-200";
 
-          // Submissions can come from either join path depending on whether the
-          // brand request was linked by submission_id directly or via brand_request_id.
-          let submissions = req?.license_submissions;
-          if (submissions && !Array.isArray(submissions)) {
-            submissions = [submissions];
-          }
-          const directSubmission = req?.license_submission;
-          if (directSubmission) {
-            const directSubmissionList = Array.isArray(directSubmission)
-              ? directSubmission
-              : [directSubmission];
-            const existingIds = new Set(
-              (submissions || [])
-                .map((sub: any) => String(sub?.id || "").trim())
-                .filter(Boolean),
-            );
-            submissions = [
-              ...directSubmissionList.filter((sub: any) => {
-                const id = String(sub?.id || "").trim();
-                return id ? !existingIds.has(id) : true;
-              }),
-              ...(submissions || []),
-            ];
-          }
+            const licenseFeeValue = req?.license_fee;
+            const licenseFee = licenseFeeValue
+              ? `$${Number(licenseFeeValue).toLocaleString()}`
+              : "\u2014";
 
-          const submission = Array.isArray(submissions)
-            ? submissions
-                .filter((sub: any) => sub?.status !== "draft")
-                .sort((a: any, b: any) => {
-                  const linkedSubmissionId = String(
-                    req?.submission_id || "",
-                  ).trim();
-                  const aId = String(a?.id || "").trim();
-                  const bId = String(b?.id || "").trim();
-                  const aMatchesLinked = linkedSubmissionId
-                    ? aId === linkedSubmissionId
-                    : false;
-                  const bMatchesLinked = linkedSubmissionId
-                    ? bId === linkedSubmissionId
-                    : false;
+            let submissions = req?.license_submissions;
+            if (submissions && !Array.isArray(submissions)) {
+              submissions = [submissions];
+            }
+            const directSubmission = req?.license_submission;
+            if (directSubmission) {
+              const directSubmissionList = Array.isArray(directSubmission)
+                ? directSubmission
+                : [directSubmission];
+              const existingIds = new Set(
+                (submissions || [])
+                  .map((sub: any) => String(sub?.id || "").trim())
+                  .filter(Boolean),
+              );
+              submissions = [
+                ...directSubmissionList.filter((sub: any) => {
+                  const id = String(sub?.id || "").trim();
+                  return id ? !existingIds.has(id) : true;
+                }),
+                ...(submissions || []),
+              ];
+            }
 
-                  if (aMatchesLinked && !bMatchesLinked) return -1;
-                  if (!aMatchesLinked && bMatchesLinked) return 1;
+            const submission = Array.isArray(submissions)
+              ? submissions
+                  .filter((sub: any) => sub?.status !== "draft")
+                  .sort((a: any, b: any) => {
+                    const linkedSubmissionId = String(
+                      req?.submission_id || "",
+                    ).trim();
+                    const aId = String(a?.id || "").trim();
+                    const bId = String(b?.id || "").trim();
+                    const aMatchesLinked = linkedSubmissionId
+                      ? aId === linkedSubmissionId
+                      : false;
+                    const bMatchesLinked = linkedSubmissionId
+                      ? bId === linkedSubmissionId
+                      : false;
 
-                  const aHasUrl = !!(
-                    a?.client_submitter_slug || a?.docuseal_slug
-                  );
-                  const bHasUrl = !!(
-                    b?.client_submitter_slug || b?.docuseal_slug
-                  );
+                    if (aMatchesLinked && !bMatchesLinked) return -1;
+                    if (!aMatchesLinked && bMatchesLinked) return 1;
 
-                  if (aHasUrl && !bHasUrl) return -1;
-                  if (!aHasUrl && bHasUrl) return 1;
+                    const aHasUrl = !!(
+                      a?.client_submitter_slug || a?.docuseal_slug
+                    );
+                    const bHasUrl = !!(
+                      b?.client_submitter_slug || b?.docuseal_slug
+                    );
 
-                  const aDate = new Date(a?.created_at || 0);
-                  const bDate = new Date(b?.created_at || 0);
-                  return bDate.getTime() - aDate.getTime();
-                })[0]
-            : null;
+                    if (aHasUrl && !bHasUrl) return -1;
+                    if (!aHasUrl && bHasUrl) return 1;
 
-          const slug =
-            submission?.client_submitter_slug || submission?.docuseal_slug;
-          const signingUrl = slug ? `https://docuseal.co/s/${slug}` : "";
-          const declineReason = String(req?.decline_reason || "").trim();
+                    const aDate = new Date(a?.created_at || 0);
+                    const bDate = new Date(b?.created_at || 0);
+                    return bDate.getTime() - aDate.getTime();
+                  })[0]
+              : null;
 
-          return (
-            <Card
-              key={req?.id}
-              className="p-6 bg-white border border-gray-200 rounded-xl"
-            >
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">
-                      {req?.campaign_title || "Licensing Request"}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Agency: {agencyName}
-                      {req?.talent_name ? ` • Talent: ${req.talent_name}` : ""}
-                    </p>
-                  </div>
-                  <Badge className={`border ${statusClass}`}>{status}</Badge>
-                </div>
+            const slug =
+              submission?.client_submitter_slug || submission?.docuseal_slug;
+            const signingUrl = slug ? `https://docuseal.co/s/${slug}` : "";
+            const declineReason = String(req?.decline_reason || "").trim();
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Start Date</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.license_start_date
-                        ? new Date(req.license_start_date).toLocaleDateString()
-                        : "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">End Date</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.license_end_date
-                        ? new Date(req.license_end_date).toLocaleDateString()
-                        : "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Duration (Days)</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.duration_days || "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">License Fee</p>
-                    <p className="font-semibold text-gray-900">{licenseFee}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Territory</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.territory || req?.regions || "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Exclusivity</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.exclusivity || req?.usage_scope || "\u2014"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Modifications Allowed</p>
-                    <p className="font-semibold text-gray-900">
-                      {req?.modifications_allowed || "\u2014"}
-                    </p>
-                  </div>
-                </div>
-
-                {req?.custom_terms && (
-                  <div className="text-sm">
-                    <p className="text-gray-500">Additional Terms</p>
-                    <p className="font-semibold text-gray-900">
-                      {String(req.custom_terms)}
-                    </p>
-                  </div>
-                )}
-
-                {req?.description && (
-                  <div className="text-sm">
-                    <p className="text-gray-500">Description</p>
-                    <p className="font-semibold text-gray-900">
-                      {String(req.description)}
-                    </p>
-                  </div>
-                )}
-
-                {declineReason && status === "Declined" && (
-                  <div className="text-sm bg-red-50 border border-red-100 rounded-lg p-3 text-red-700 mt-2">
-                    <span className="font-semibold">Decline reason: </span>
-                    {declineReason}
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-3 mt-2">
-                  {signingUrl && submission?.status !== "completed" ? (
-                    <Button
-                      className="text-white"
-                      style={{ backgroundColor: "#E9A23B" }}
-                      onMouseEnter={(e) =>
-                        (e.target.style.backgroundColor = "#D4941F")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.target.style.backgroundColor = "#E9A23B")
-                      }
-                      onClick={() => {
-                        setBrandSignUrl(signingUrl);
-                        setBrandSignOpen(true);
-                      }}
-                    >
-                      Sign Contract
-                    </Button>
-                  ) : submission?.status === "completed" ? (
-                    <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
-                      <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        Contract Signed
+            return (
+              <Card
+                key={req?.id}
+                className="p-6 bg-white border border-gray-200 rounded-xl"
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {req?.campaign_title || "Licensing Request"}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Agency: {agencyName}
+                        {req?.talent_name
+                          ? ` • Talent: ${req.talent_name}`
+                          : ""}
                       </p>
                     </div>
+                    <Badge className={`border ${statusClass}`}>{status}</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-500">Start Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.license_start_date
+                          ? new Date(
+                              req.license_start_date,
+                            ).toLocaleDateString()
+                          : "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">End Date</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.license_end_date
+                          ? new Date(req.license_end_date).toLocaleDateString()
+                          : "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Duration (Days)</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.duration_days || "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">License Fee</p>
+                      <p className="font-semibold text-gray-900">
+                        {licenseFee}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Territory</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.territory || req?.regions || "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Exclusivity</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.exclusivity || req?.usage_scope || "\u2014"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Modifications Allowed</p>
+                      <p className="font-semibold text-gray-900">
+                        {req?.modifications_allowed || "\u2014"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {req?.custom_terms && (
+                    <div className="text-sm">
+                      <p className="text-gray-500">Additional Terms</p>
+                      <p className="font-semibold text-gray-900">
+                        {String(req.custom_terms)}
+                      </p>
+                    </div>
+                  )}
+
+                  {req?.description && (
+                    <div className="text-sm">
+                      <p className="text-gray-500">Description</p>
+                      <p className="font-semibold text-gray-900">
+                        {String(req.description)}
+                      </p>
+                    </div>
+                  )}
+
+                  {declineReason && status === "Declined" && (
+                    <div className="text-sm bg-red-50 border border-red-100 rounded-lg p-3 text-red-700 mt-2">
+                      <span className="font-semibold">Decline reason: </span>
+                      {declineReason}
+                    </div>
+                  )}
+
+                  {activeLicensingTab === "Archive" ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleArchiveRequest(req)}
+                        className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Recover to Active
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setRequestToDelete(req);
+                          setShowDeleteConfirm(true);
+                        }}
+                        disabled={deletingRequestId === req.id}
+                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                      >
+                        {deletingRequestId === req.id ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4" />
+                            Delete Permanently
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   ) : (
-                    <div className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-2 rounded-md text-xs font-medium">
-                      Awaiting contract from agency
+                    <div className="flex flex-wrap gap-3 mt-2">
+                      {signingUrl && submission?.status !== "completed" ? (
+                        <Button
+                          className="text-white"
+                          style={{ backgroundColor: "#E9A23B" }}
+                          onMouseEnter={(e) =>
+                            (e.target.style.backgroundColor = "#D4941F")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.target.style.backgroundColor = "#E9A23B")
+                          }
+                          onClick={() => {
+                            setBrandSignUrl(signingUrl);
+                            setBrandSignOpen(true);
+                          }}
+                        >
+                          Sign Contract
+                        </Button>
+                      ) : submission?.status === "completed" ? (
+                        <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                          <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            Contract Signed
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-2 rounded-md text-xs font-medium">
+                          Awaiting contract from agency
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              </div>
-            </Card>
-          );
-        })}
-    </div>
-  );
+              </Card>
+            );
+          })}
+
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Licensing Request</DialogTitle>
+              <DialogDescription>
+                This will permanently delete this archived licensing request.
+                This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete the licensing request for{" "}
+                <span className="font-semibold">
+                  {requestToDelete?.campaign_title || "Unknown campaign"}
+                </span>
+                ?
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setRequestToDelete(null);
+                }}
+                className="font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDeleteRequest(requestToDelete)}
+                disabled={deletingRequestId === requestToDelete?.id}
+                className="font-bold"
+              >
+                {deletingRequestId === requestToDelete?.id ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Permanently
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  };
 
   const renderInboxSubtab = () => {
     if (!canViewInbox) {
@@ -4565,7 +4921,32 @@ export default function BrandDashboard() {
                           : "bg-black hover:bg-gray-800 text-white"
                       }`}
                       disabled={isExpired || isDone || !canManagePayOffers}
-                      onClick={() => setConfirmingDonePkg(pkg)}
+                      onClick={async () => {
+                        setConfirmingDonePkg(pkg);
+                        setConfirmingDonePkgPublicData(null);
+                        // Fetch interactions via the authenticated brand endpoint.
+                        // This bypasses the public package password gate — the brand
+                        // is already authenticated and owns this offer, so their JWT
+                        // is sufficient. The public endpoint would 401 for
+                        // password-protected packages even though the brand has rights.
+                        const offerId = String(
+                          pkg?.offer_id || pkg?.campaign_offers?.id || "",
+                        ).trim();
+                        const packageId = String(pkg?.id || "").trim();
+                        if (offerId && packageId) {
+                          setLoadingConfirmingDonePkgPublicData(true);
+                          try {
+                            const resp = await base44.get<any>(
+                              `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/${encodeURIComponent(packageId)}/interactions`,
+                            );
+                            setConfirmingDonePkgPublicData(resp);
+                          } catch {
+                            // non-fatal — dialog will show "no talent selected" message
+                          } finally {
+                            setLoadingConfirmingDonePkgPublicData(false);
+                          }
+                        }
+                      }}
                       title={
                         !canManagePayOffers
                           ? "You do not have permission to mark packages as done"
@@ -4593,8 +4974,35 @@ export default function BrandDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      className="border border-gray-300 rounded-none flex-shrink-0"
+                      className={`border rounded-none flex-shrink-0 transition-colors ${
+                        isDone
+                          ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                          : "border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50"
+                      }`}
                       disabled={!canManagePayOffers}
+                      title={
+                        !canManagePayOffers
+                          ? "You do not have permission to dismiss packages"
+                          : isDone
+                            ? "This package has been finalized"
+                            : "Dismiss from inbox"
+                      }
+                      onClick={() => {
+                        if (isDone) {
+                          setFinalizedPackageInfo({
+                            title:
+                              pkg?.title ||
+                              pkg?.campaign_offers?.offer_title ||
+                              pkg?.campaign_offers?.brand_campaigns?.name ||
+                              "Talent package",
+                            agencyName:
+                              pkg?.agencies?.agency_name || "the agency",
+                          });
+                          return;
+                        }
+                        // Open dismiss confirmation modal
+                        setDismissingPkg(pkg);
+                      }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -4943,455 +5351,581 @@ export default function BrandDashboard() {
         </h2>
         <p className="text-gray-600">Campaign contracts and signing status.</p>
       </div>
-      <div className="space-y-3">
-        {loadingBrandOfferItems ? (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <div className="flex items-center gap-3">
-              <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
-              <p className="text-sm text-gray-500">Loading offers...</p>
-            </div>
-          </Card>
-        ) : brandOfferItems.length === 0 ? (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <p className="text-sm text-gray-500">
-              No offer contracts available yet.
-            </p>
-          </Card>
-        ) : null}
-        {brandOfferItems.map((offer: any) => {
-          const offerId = String(offer?.id || "");
-          const expanded = selectedOfferHubId === offerId;
-          const contractsForStatus = expanded
-            ? selectedOfferHubContracts
-            : offer?.offer_contracts;
-          const hasCompletedContract = Array.isArray(contractsForStatus)
-            ? contractsForStatus.some((c: any) => {
-                const st = String(
-                  c?.docuseal_status || c?.status || "",
-                ).toLowerCase();
-                return st === "completed" || st === "signed";
-              })
-            : false;
-          const isFullySigned =
-            Boolean(offer?.is_fully_signed) || hasCompletedContract;
-          const downloadedDeliverables = selectedOfferHubDeliverables.filter(
-            (d: any) =>
-              Boolean(d?.meta?.brand_downloaded_at) &&
-              ["approved", "accepted"].includes(
-                String(d?.status || "").toLowerCase(),
-              ),
-          );
-          const approvedCount = downloadedDeliverables.filter(
-            (d: any) => String(d?.status || "").toLowerCase() === "approved",
-          ).length;
-          const totalCount = downloadedDeliverables.length;
-          const progressPct =
-            totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
-          return (
-            <Card
-              key={offerId}
-              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
-            >
-              {/* Payment Pending Banner */}
-              {isFullySigned && offer?.payment_status !== "paid" && (
-                <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                  <span className="text-amber-700 text-xs font-semibold">
-                    ⏳ Contract signed. Payment required before deliverables can
-                    start.
-                  </span>
-                  {canManagePayOffers ? (
+
+      {/* Sub-navigation tabs */}
+      <div className="flex gap-1 border-b border-gray-200">
+        <button
+          onClick={() => setContractHubSubTab("agency")}
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            contractHubSubTab === "agency"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          Agency Contracts
+          {brandOfferItems.filter(
+            (offer: any) => offer?.target_type === "agency",
+          ).length > 0 && (
+            <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+              {
+                brandOfferItems.filter(
+                  (offer: any) => offer?.target_type === "agency",
+                ).length
+              }
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setContractHubSubTab("creator")}
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            contractHubSubTab === "creator"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          Creator Contracts
+          {contractHubRows.filter((row: any) => {
+            const offer = offerMap.get(String(row?.offer_id));
+            return offer?.target_type === "creator";
+          }).length > 0 && (
+            <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+              {
+                contractHubRows.filter((row: any) => {
+                  const offer = offerMap.get(String(row?.offer_id));
+                  return offer?.target_type === "creator";
+                }).length
+              }
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Agency Contracts Tab Content */}
+      {contractHubSubTab === "agency" && (
+        <div className="space-y-3">
+          {loadingBrandOfferItems ? (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                <p className="text-sm text-gray-600 font-medium">
+                  Loading agency contracts...
+                </p>
+              </div>
+            </Card>
+          ) : brandOfferItems.filter(
+              (offer: any) => offer?.target_type === "agency",
+            ).length === 0 ? (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <div className="flex flex-col items-center justify-center py-16 px-4">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                  <Building2 className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No Agency Contracts Yet
+                </h3>
+                <p className="text-sm text-gray-600 text-center max-w-md mb-4">
+                  Agency contracts will appear here once you send campaign
+                  offers to agencies and they sign the agreements.
+                </p>
+                <p className="text-xs text-gray-500 text-center">
+                  Tip: Connect with agencies from the marketplace to get
+                  started!
+                </p>
+              </div>
+            </Card>
+          ) : null}
+          {brandOfferItems
+            .filter((offer: any) => offer?.target_type === "agency")
+            .map((offer: any) => {
+              const offerId = String(offer?.id || "");
+              const expanded = selectedOfferHubId === offerId;
+              const contractsForStatus = expanded
+                ? selectedOfferHubContracts
+                : offer?.offer_contracts;
+              const hasCompletedContract = Array.isArray(contractsForStatus)
+                ? contractsForStatus.some((c: any) => {
+                    const st = String(
+                      c?.docuseal_status || c?.status || "",
+                    ).toLowerCase();
+                    return st === "completed" || st === "signed";
+                  })
+                : false;
+              const isFullySigned =
+                Boolean(offer?.is_fully_signed) || hasCompletedContract;
+              const downloadedDeliverables =
+                selectedOfferHubDeliverables.filter(
+                  (d: any) =>
+                    Boolean(d?.meta?.brand_downloaded_at) &&
+                    ["approved", "accepted"].includes(
+                      String(d?.status || "").toLowerCase(),
+                    ),
+                );
+              const approvedCount = downloadedDeliverables.filter(
+                (d: any) =>
+                  String(d?.status || "").toLowerCase() === "approved",
+              ).length;
+              const totalCount = downloadedDeliverables.length;
+              const progressPct =
+                totalCount > 0
+                  ? Math.round((approvedCount / totalCount) * 100)
+                  : 0;
+              return (
+                <Card
+                  key={offerId}
+                  className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
+                >
+                  {/* Payment Pending Banner */}
+                  {isFullySigned && offer?.payment_status !== "paid" && (
+                    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                      <span className="text-amber-700 text-xs font-semibold">
+                        ⏳ Contract signed. Payment required before deliverables
+                        can start.
+                      </span>
+                      {canManagePayOffers ? (
+                        <Button
+                          size="sm"
+                          className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
+                          disabled={payingOfferId === offerId}
+                          onClick={async () => {
+                            setPayingOfferId(offerId);
+                            try {
+                              const data: any = await base44.post(
+                                `/api/brand/campaign-offers/${offerId}/checkout`,
+                                {},
+                              );
+                              if (data?.url) {
+                                window.location.href = data.url;
+                              } else {
+                                toast({
+                                  title: "Payment Error",
+                                  description:
+                                    data?.message ||
+                                    "Could not start checkout.",
+                                  variant: "destructive",
+                                });
+                              }
+                            } catch (e: any) {
+                              const msg = String(e?.message || "");
+                              toast({
+                                title: msg.includes("no_talents_assigned")
+                                  ? "Talent assignment required"
+                                  : "Payment Error",
+                                description: msg.includes("no_talents_assigned")
+                                  ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
+                                  : msg || "Could not start checkout.",
+                                variant: "destructive" as any,
+                              });
+                            } finally {
+                              setPayingOfferId(null);
+                            }
+                          }}
+                        >
+                          {payingOfferId === offerId
+                            ? "Redirecting…"
+                            : "💳 Pay Offer"}
+                        </Button>
+                      ) : (
+                        <span className="ml-auto text-xs text-amber-600 italic">
+                          View only - payment requires admin or project manager
+                          role
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {isFullySigned && offer?.payment_status === "paid" && (
+                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
+                      <span className="text-emerald-700 text-xs font-semibold">
+                        ✅ Payment confirmed — deliverables can be submitted.
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {offer?.brand_campaigns?.name || "Campaign offer"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Agency:{" "}
+                        {offer?.agencies?.agency_name || "Unknown Agency"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {String(offer?.status || "sent").replace(/_/g, " ")}
+                      </p>
+                    </div>
                     <Button
-                      size="sm"
-                      className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
-                      disabled={payingOfferId === offerId}
+                      variant="outline"
+                      className="border border-gray-300 rounded-none"
                       onClick={async () => {
-                        setPayingOfferId(offerId);
-                        try {
-                          const data: any = await base44.post(
-                            `/api/brand/campaign-offers/${offerId}/checkout`,
-                            {},
-                          );
-                          if (data?.url) {
-                            window.location.href = data.url;
-                          } else {
-                            toast({
-                              title: "Payment Error",
-                              description:
-                                data?.message || "Could not start checkout.",
-                              variant: "destructive",
-                            });
-                          }
-                        } catch (e: any) {
-                          const msg = String(e?.message || "");
-                          toast({
-                            title: msg.includes("no_talents_assigned")
-                              ? "Talent assignment required"
-                              : "Payment Error",
-                            description: msg.includes("no_talents_assigned")
-                              ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
-                              : msg || "Could not start checkout.",
-                            variant: "destructive" as any,
-                          });
-                        } finally {
-                          setPayingOfferId(null);
-                        }
+                        const next = expanded ? "" : offerId;
+                        setSelectedOfferHubId(next);
+                        await loadOfferHubDetails(next);
                       }}
                     >
-                      {payingOfferId === offerId
-                        ? "Redirecting…"
-                        : "💳 Pay Offer"}
+                      {expanded ? "Hide" : "View Contracts"}
                     </Button>
-                  ) : (
-                    <span className="ml-auto text-xs text-amber-600 italic">
-                      View only - payment requires admin or project manager role
-                    </span>
-                  )}
-                </div>
-              )}
-              {isFullySigned && offer?.payment_status === "paid" && (
-                <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2">
-                  <span className="text-emerald-700 text-xs font-semibold">
-                    ✅ Payment confirmed — deliverables can be submitted.
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {offer?.brand_campaigns?.name || "Campaign offer"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {String(offer?.status || "sent").replace(/_/g, " ")}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border border-gray-300 rounded-none"
-                  onClick={async () => {
-                    const next = expanded ? "" : offerId;
-                    setSelectedOfferHubId(next);
-                    await loadOfferHubDetails(next);
-                  }}
-                >
-                  {expanded ? "Hide" : "View Contracts"}
-                </Button>
-              </div>
-              {expanded && (
-                <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
-                  {loadingOfferHubDetails ? (
-                    <div className="p-8 text-center bg-white">
-                      <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
-                      <p className="text-sm text-gray-500 font-medium">
-                        Loading contracts...
-                      </p>
-                    </div>
-                  ) : selectedOfferHubContracts.filter(
-                      (c: any) =>
-                        c?.docuseal_status && c.docuseal_status !== "draft",
-                    ).length === 0 ? (
-                    <div className="p-8 text-center bg-white">
-                      <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500 font-medium">
-                        No active contracts
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Contracts requiring your attention will appear here.
-                      </p>
-                    </div>
-                  ) : (
-                    selectedOfferHubContracts
-                      .filter(
-                        (c: any) =>
-                          c?.docuseal_status && c.docuseal_status !== "draft",
-                      )
-                      .map((contract: any) => {
-                        const isCompleted =
-                          contract?.docuseal_status === "completed";
-                        const isPending =
-                          contract?.docuseal_status === "sent" ||
-                          contract?.docuseal_status === "opened";
-                        // Calculate signing URL from submission ID
-                        const submissionId = contract?.docuseal_submission_id;
-                        // Based on standard DocuSeal flow, though typically we'd fetch this from backend
-                        // For now we'll link to a placeholder or rely on email if URL isn't directly available,
-                        // but ideally we'd have the signing_url. We'll add a realistic button.
+                  </div>
+                  {expanded && (
+                    <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
+                      {loadingOfferHubDetails ? (
+                        <div className="p-8 text-center bg-white">
+                          <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
+                          <p className="text-sm text-gray-500 font-medium">
+                            Loading contracts...
+                          </p>
+                        </div>
+                      ) : selectedOfferHubContracts.filter(
+                          (c: any) =>
+                            c?.docuseal_status && c.docuseal_status !== "draft",
+                        ).length === 0 ? (
+                        <div className="p-8 text-center bg-white">
+                          <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                          <p className="text-sm text-gray-500 font-medium">
+                            No active contracts
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Contracts requiring your attention will appear here.
+                          </p>
+                        </div>
+                      ) : (
+                        selectedOfferHubContracts
+                          .filter(
+                            (c: any) =>
+                              c?.docuseal_status &&
+                              c.docuseal_status !== "draft",
+                          )
+                          .map((contract: any) => {
+                            const isCompleted =
+                              contract?.docuseal_status === "completed";
+                            const isPending =
+                              contract?.docuseal_status === "sent" ||
+                              contract?.docuseal_status === "opened";
 
-                        return (
-                          <div
-                            key={String(contract?.id)}
-                            className="bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-4">
+                            return (
                               <div
-                                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                                  isCompleted ? "bg-green-50" : "bg-blue-50"
-                                }`}
+                                key={String(contract?.id)}
+                                className="bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:bg-gray-50/50 transition-colors"
                               >
-                                {isCompleted ? (
-                                  <CheckCircle className="w-5 h-5 text-green-500" />
-                                ) : (
-                                  <FileText className="w-5 h-5 text-blue-500" />
-                                )}
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-semibold text-gray-900">
-                                  {String(
-                                    contract?.title || "Contract Document",
-                                  )}
-                                </h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span
-                                    className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
-                                      isCompleted
-                                        ? "bg-green-100 text-green-700"
-                                        : isPending
-                                          ? "bg-blue-100 text-blue-700"
-                                          : "bg-gray-100 text-gray-700"
+                                <div className="flex items-center gap-4">
+                                  <div
+                                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                      isCompleted ? "bg-green-50" : "bg-blue-50"
                                     }`}
                                   >
-                                    {String(
-                                      contract?.docuseal_status || "Unknown",
-                                    ).replace(/_/g, " ")}
-                                  </span>
-                                  {contract?.updated_at && (
-                                    <span className="text-xs text-gray-500">
-                                      Updated{" "}
-                                      {new Date(
-                                        contract.updated_at,
-                                      ).toLocaleDateString()}
-                                    </span>
+                                    {isCompleted ? (
+                                      <CheckCircle className="w-5 h-5 text-green-500" />
+                                    ) : (
+                                      <FileText className="w-5 h-5 text-blue-500" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-900">
+                                      {String(
+                                        contract?.title || "Contract Document",
+                                      )}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span
+                                        className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
+                                          isCompleted
+                                            ? "bg-green-100 text-green-700"
+                                            : isPending
+                                              ? "bg-blue-100 text-blue-700"
+                                              : "bg-gray-100 text-gray-700"
+                                        }`}
+                                      >
+                                        {String(
+                                          contract?.docuseal_status ||
+                                            "Unknown",
+                                        ).replace(/_/g, " ")}
+                                      </span>
+                                      {contract?.updated_at && (
+                                        <span className="text-xs text-gray-500">
+                                          Updated{" "}
+                                          {new Date(
+                                            contract.updated_at,
+                                          ).toLocaleDateString()}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {isPending && (
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                                      onClick={() => {
+                                        // Check if backend provides a signing URL
+                                        const signingUrl =
+                                          contract?.signing_url ||
+                                          contract?.docuseal_signing_url;
+
+                                        if (signingUrl) {
+                                          window.open(signingUrl, "_blank");
+                                        } else {
+                                          // Fallback: inform user to check email
+                                          toast({
+                                            title: "Check your email",
+                                            description:
+                                              "A secure DocuSeal signing link has been sent to your email address.",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Review & Sign
+                                    </Button>
+                                  )}
+                                  {isCompleted && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="border-gray-200 text-gray-600"
+                                      onClick={() => {
+                                        if (contract?.signed_document_url) {
+                                          window.open(
+                                            contract.signed_document_url,
+                                            "_blank",
+                                          );
+                                        } else {
+                                          toast({
+                                            title: "Download Unavailable",
+                                            description:
+                                              "The signed document URL is not available yet.",
+                                            variant: "destructive",
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <Download className="w-4 h-4 mr-2" />
+                                      Download
+                                    </Button>
                                   )}
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {isPending && (
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                                  onClick={() => {
-                                    const subId =
-                                      contract?.docuseal_slug ||
-                                      contract?.docuseal_submission_id;
-                                    if (subId) {
-                                      window.open(
-                                        `https://docuseal.com/s/${subId}`,
-                                        "_blank",
-                                      );
-                                    } else {
-                                      toast({
-                                        title: "Check your email",
-                                        description:
-                                          "A secure DocuSeal signing link has been sent to your email address.",
-                                      });
-                                    }
-                                  }}
-                                >
-                                  Review & Sign
-                                </Button>
-                              )}
-                              {isCompleted && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="border-gray-200 text-gray-600"
-                                  onClick={() => {
-                                    if (contract?.signed_document_url) {
-                                      window.open(
-                                        contract.signed_document_url,
-                                        "_blank",
-                                      );
-                                    } else {
-                                      toast({
-                                        title: "Download Unavailable",
-                                        description:
-                                          "The signed document URL is not available yet.",
-                                        variant: "destructive",
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <Download className="w-4 h-4 mr-2" />
-                                  Download
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                  )}
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
-      <Card className="p-4 bg-white border border-gray-300 rounded-none">
-        {loadingContractHubRows ? (
-          <p className="text-sm text-gray-500">Loading submissions</p>
-        ) : contractHubRows.length === 0 ? (
-          <p className="text-sm text-gray-500">No contract submissions yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm text-left text-gray-700">
-              <thead className="border-b border-gray-200 text-gray-800">
-                <tr>
-                  <th className="px-2 py-2">Campaign Name</th>
-                  <th className="px-2 py-2">Template</th>
-                  <th className="px-2 py-2">Status</th>
-                  <th className="px-2 py-2">Sent Date</th>
-                  <th className="px-2 py-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contractHubRows.map((row: any) => (
-                  <tr
-                    key={String(row?.id)}
-                    className="border-b border-gray-100"
-                  >
-                    <td className="px-2 py-2 font-medium text-gray-900">
-                      {String(row?.campaign_name || "Campaign offer")}
-                    </td>
-                    <td className="px-2 py-2 text-gray-700">
-                      {String(
-                        row?.title ||
-                          `Template ${String(
-                            row?.docuseal_template_id || "N/A",
-                          )}`,
+                            );
+                          })
                       )}
-                    </td>
-                    <td className="px-2 py-2">
-                      <span
-                        className={contractStatusBadgeClass(
-                          row?.docuseal_status,
-                        )}
-                      >
-                        {String(row?.docuseal_status || "").toLowerCase() ===
-                          "sent" && <Mail className="h-3.5 w-3.5 mr-1.5" />}
-                        {String(row?.docuseal_status || "").toLowerCase() ===
-                          "signed" && (
-                          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                        )}
-                        {formatContractStatusLabel(row?.docuseal_status)}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2">
-                      {formatHubDate(row?.sent_at || row?.created_at)}
-                    </td>
-                    <td className="px-2 py-2">
-                      <div className="flex items-center gap-3">
-                        <button
-                          className="text-blue-600 hover:text-blue-700"
-                          title="Resend"
-                          aria-label="Resend"
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await base44.post(
-                                `/api/campaign-offers/${encodeURIComponent(
-                                  String(row?.offer_id || ""),
-                                )}/contracts/send`,
-                                { contract_id: String(row?.id || "") },
-                              );
-                              const refreshed = await base44.get<{
-                                contracts?: any[];
-                              }>(
-                                `/api/campaign-offers/${encodeURIComponent(
-                                  String(row?.offer_id || ""),
-                                )}/contracts`,
-                              );
-                              const refreshedContracts = Array.isArray(
-                                refreshed?.contracts,
-                              )
-                                ? refreshed.contracts
-                                : [];
-                              setContractHubRows((prev) =>
-                                prev.map((existing: any) => {
-                                  if (String(existing?.id) !== String(row?.id))
-                                    return existing;
-                                  const fresh = refreshedContracts.find(
-                                    (c: any) =>
-                                      String(c?.id) === String(row?.id),
-                                  );
-                                  return fresh
-                                    ? {
-                                        ...fresh,
-                                        offer_id: existing?.offer_id,
-                                        campaign_name: existing?.campaign_name,
-                                      }
-                                    : existing;
-                                }),
-                              );
-                              toast({ title: "Contract resent" });
-                            } catch (e: any) {
-                              toast({
-                                title: "Resend failed",
-                                description: e?.message || "Please try again.",
-                                variant: "destructive" as any,
-                              });
-                            }
-                          }}
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="text-red-600 hover:text-red-700"
-                          title="Archive"
-                          aria-label="Archive"
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              await base44.post(
-                                `/api/campaign-offers/${encodeURIComponent(
-                                  String(row?.offer_id || ""),
-                                )}/contracts/${encodeURIComponent(
-                                  String(row?.id || ""),
-                                )}/archive`,
-                                {},
-                              );
-                              setContractHubRows((prev) =>
-                                prev.filter(
-                                  (x: any) => String(x?.id) !== String(row?.id),
-                                ),
-                              );
-                              toast({ title: "Contract archived" });
-                            } catch (e: any) {
-                              toast({
-                                title: "Archive failed",
-                                description: e?.message || "Please try again.",
-                                variant: "destructive" as any,
-                              });
-                            }
-                          }}
-                        >
-                          <Archive className="h-4 w-4" />
-                        </button>
-                        {row?.meta?.docuseal_document_url && (
-                          <a
-                            href={String(row.meta.docuseal_document_url)}
-                            target="_blank"
-                            rel="noreferrer"
-                            download
-                            title="Download"
-                            aria-label="Download"
-                            className="text-blue-700 hover:text-blue-800"
-                          >
-                            <Download className="h-4 w-4" />
-                          </a>
-                        )}
-                      </div>
-                    </td>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+        </div>
+      )}
+
+      {/* Creator Contracts Tab Content */}
+      {contractHubSubTab === "creator" && (
+        <Card className="p-4 bg-white border border-gray-300 rounded-none">
+          {loadingContractHubRows ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+              <p className="text-sm text-gray-600 font-medium">
+                Loading creator contracts...
+              </p>
+            </div>
+          ) : contractHubRows.filter((row: any) => {
+              const offer = offerMap.get(String(row?.offer_id));
+              return offer?.target_type === "creator";
+            }).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Creator Contracts Yet
+              </h3>
+              <p className="text-sm text-gray-600 text-center max-w-md mb-4">
+                Creator contracts will appear here once you send campaign offers
+                to individual creators and they sign the agreements.
+              </p>
+              <p className="text-xs text-gray-500 text-center">
+                Tip: Send offers from your campaigns to get started!
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left text-gray-700">
+                <thead className="border-b border-gray-200 text-gray-800">
+                  <tr>
+                    <th className="px-2 py-2">Campaign Name</th>
+                    <th className="px-2 py-2">Creator</th>
+                    <th className="px-2 py-2">Template</th>
+                    <th className="px-2 py-2">Status</th>
+                    <th className="px-2 py-2">Sent Date</th>
+                    <th className="px-2 py-2">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                </thead>
+                <tbody>
+                  {contractHubRows
+                    .filter((row: any) => {
+                      const offer = offerMap.get(String(row?.offer_id));
+                      return offer?.target_type === "creator";
+                    })
+                    .map((row: any) => {
+                      const offer = offerMap.get(String(row?.offer_id));
+                      return (
+                        <tr
+                          key={String(row?.id)}
+                          className="border-b border-gray-100"
+                        >
+                          <td className="px-2 py-2 font-medium text-gray-900">
+                            {String(row?.campaign_name || "Campaign offer")}
+                          </td>
+                          <td className="px-2 py-2 text-gray-700">
+                            {offer?.creators?.full_name || "Unknown Creator"}
+                          </td>
+                          <td className="px-2 py-2 text-gray-700">
+                            {String(
+                              row?.title ||
+                                `Template ${String(
+                                  row?.docuseal_template_id || "N/A",
+                                )}`,
+                            )}
+                          </td>
+                          <td className="px-2 py-2">
+                            <span
+                              className={contractStatusBadgeClass(
+                                row?.docuseal_status,
+                              )}
+                            >
+                              {String(
+                                row?.docuseal_status || "",
+                              ).toLowerCase() === "sent" && (
+                                <Mail className="h-3.5 w-3.5 mr-1.5" />
+                              )}
+                              {String(
+                                row?.docuseal_status || "",
+                              ).toLowerCase() === "signed" && (
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                              )}
+                              {formatContractStatusLabel(row?.docuseal_status)}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2">
+                            {formatHubDate(row?.sent_at || row?.created_at)}
+                          </td>
+                          <td className="px-2 py-2">
+                            <div className="flex items-center gap-3">
+                              <button
+                                className="text-blue-600 hover:text-blue-700"
+                                title="Resend"
+                                aria-label="Resend"
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await base44.post(
+                                      `/api/campaign-offers/${encodeURIComponent(
+                                        String(row?.offer_id || ""),
+                                      )}/contracts/send`,
+                                      { contract_id: String(row?.id || "") },
+                                    );
+                                    const refreshed = await base44.get<{
+                                      contracts?: any[];
+                                    }>(
+                                      `/api/campaign-offers/${encodeURIComponent(
+                                        String(row?.offer_id || ""),
+                                      )}/contracts`,
+                                    );
+                                    const refreshedContracts = Array.isArray(
+                                      refreshed?.contracts,
+                                    )
+                                      ? refreshed.contracts
+                                      : [];
+                                    setContractHubRows((prev) =>
+                                      prev.map((existing: any) => {
+                                        if (
+                                          String(existing?.id) !==
+                                          String(row?.id)
+                                        )
+                                          return existing;
+                                        const fresh = refreshedContracts.find(
+                                          (c: any) =>
+                                            String(c?.id) === String(row?.id),
+                                        );
+                                        return fresh
+                                          ? {
+                                              ...fresh,
+                                              offer_id: existing?.offer_id,
+                                              campaign_name:
+                                                existing?.campaign_name,
+                                            }
+                                          : existing;
+                                      }),
+                                    );
+                                    toast({ title: "Contract resent" });
+                                  } catch (e: any) {
+                                    toast({
+                                      title: "Resend failed",
+                                      description:
+                                        e?.message || "Please try again.",
+                                      variant: "destructive" as any,
+                                    });
+                                  }
+                                }}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </button>
+                              <button
+                                className="text-red-600 hover:text-red-700"
+                                title="Archive"
+                                aria-label="Archive"
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await base44.post(
+                                      `/api/campaign-offers/${encodeURIComponent(
+                                        String(row?.offer_id || ""),
+                                      )}/contracts/${encodeURIComponent(
+                                        String(row?.id || ""),
+                                      )}/archive`,
+                                      {},
+                                    );
+                                    setContractHubRows((prev) =>
+                                      prev.filter(
+                                        (x: any) =>
+                                          String(x?.id) !== String(row?.id),
+                                      ),
+                                    );
+                                    toast({ title: "Contract archived" });
+                                  } catch (e: any) {
+                                    toast({
+                                      title: "Archive failed",
+                                      description:
+                                        e?.message || "Please try again.",
+                                      variant: "destructive" as any,
+                                    });
+                                  }
+                                }}
+                              >
+                                <Archive className="h-4 w-4" />
+                              </button>
+                              {row?.meta?.docuseal_document_url && (
+                                <a
+                                  href={String(row.meta.docuseal_document_url)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  download
+                                  title="Download"
+                                  aria-label="Download"
+                                  className="text-blue-700 hover:text-blue-800"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </a>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
-
   const renderCampaignDeliverablesHub = () => (
     <div className="space-y-6">
       <div>
@@ -5712,8 +6246,8 @@ export default function BrandDashboard() {
                                 </div>
                                 <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
                                   <p className="text-sm font-semibold text-amber-900">
-                                    Approving any 1 deliverable triggers escrow
-                                    payout (once).
+                                    Approving more than half of deliverables
+                                    triggers escrow payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
                                     After you approve a deliverable, Downloading
@@ -7880,7 +8414,7 @@ export default function BrandDashboard() {
       </div>
 
       {/* Top KPI Section */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         <Card className="p-4 sm:p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Projects (YTD)</p>
           <p className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -7888,20 +8422,22 @@ export default function BrandDashboard() {
           </p>
         </Card>
         <Card className="p-4 sm:p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Avg Turnaround</p>
+          <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
           <p className="text-2xl sm:text-3xl font-bold text-gray-900">
-            {campaignMetrics.avg_turnaround_hours > 0
-              ? `${campaignMetrics.avg_turnaround_hours}h`
-              : "—"}
+            {billingYtdSpend > 0
+              ? currencyFormatter.format(billingYtdSpend / 100)
+              : "$0"}
           </p>
         </Card>
         <Card className="p-4 sm:p-6 bg-white border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Spend (YTD)</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">$45.2K</p>
-        </Card>
-        <Card className="p-4 sm:p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Cost/Project</p>
-          <p className="text-2xl sm:text-3xl font-bold text-gray-900">$3.8K</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {billingYtdSpend > 0 && brandAnalytics.total_projects_ytd > 0
+              ? currencyFormatter.format(
+                  billingYtdSpend / 100 / brandAnalytics.total_projects_ytd,
+                )
+              : "$0"}
+          </p>
         </Card>
       </div>
 
@@ -7911,7 +8447,69 @@ export default function BrandDashboard() {
           <h3 className="text-xl font-bold text-gray-900">
             Talent Performance
           </h3>
-          <Button variant="outline" className="border-2 border-gray-300">
+          <Button
+            variant="outline"
+            className="border-2 border-gray-300"
+            onClick={() => {
+              const sanitizeCsvField = (value: string): string => {
+                const needsQuoting =
+                  /[,"\n\r]/.test(value) || /^[=+\-@]/.test(value.trim());
+                if (needsQuoting) {
+                  const safeValue = /^[=+\-@]/.test(value.trim())
+                    ? `'${value}`
+                    : value;
+                  return `"${safeValue.replace(/"/g, '""')}"`;
+                }
+                return value;
+              };
+              const header =
+                "Metric,Value\nTotal Projects (YTD),{projects}\nTotal Spend (YTD),{spend}\nAvg Cost/Project,{avgCost}\n\nTalent,Projects,Success Rate (%),Total Cost ($)\n";
+              const talentRows = brandAnalytics.talent_performance
+                .map((t: any) => {
+                  const name = sanitizeCsvField(String(t?.name || "Talent"));
+                  const projects = Number(t?.projects_count || 0);
+                  const successRate = Number(t?.success_rate_pct || 0);
+                  const totalCostCents = Number(t?.total_cost_cents || 0);
+                  const totalCostDollars = (totalCostCents / 100).toFixed(2);
+                  return `${name},${projects},${successRate},${totalCostDollars}`;
+                })
+                .join("\n");
+              const monthlyRows =
+                brandSpendData?.monthly_spend &&
+                brandSpendData.monthly_spend.length > 0
+                  ? "\n\nMonth,Spend ($)\n" +
+                    brandSpendData.monthly_spend
+                      .map(
+                        (d: any) =>
+                          `${sanitizeCsvField(d.month)},${(d.spend / 100).toFixed(2)}`,
+                      )
+                      .join("\n")
+                  : "";
+              const totalProjects = brandAnalytics.total_projects_ytd;
+              const totalSpend =
+                billingYtdSpend > 0
+                  ? (billingYtdSpend / 100).toFixed(2)
+                  : "0.00";
+              const avgCost =
+                billingYtdSpend > 0 && totalProjects > 0
+                  ? (billingYtdSpend / 100 / totalProjects).toFixed(2)
+                  : "0.00";
+              const csv =
+                header
+                  .replace("{projects}", String(totalProjects))
+                  .replace("{spend}", totalSpend)
+                  .replace("{avgCost}", avgCost) +
+                talentRows +
+                monthlyRows;
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `brand-analytics-report-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
@@ -7927,9 +8525,6 @@ export default function BrandDashboard() {
                   Projects
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                  Avg Turnaround
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                   Success Rate
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
@@ -7940,7 +8535,7 @@ export default function BrandDashboard() {
             <tbody className="divide-y divide-gray-200">
               {brandAnalytics.loading && (
                 <tr>
-                  <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
+                  <td className="px-4 py-4 text-sm text-gray-600" colSpan={4}>
                     Loading talent performance...
                   </td>
                 </tr>
@@ -7948,7 +8543,7 @@ export default function BrandDashboard() {
               {!brandAnalytics.loading &&
                 brandAnalytics.talent_performance.length === 0 && (
                   <tr>
-                    <td className="px-4 py-4 text-sm text-gray-600" colSpan={5}>
+                    <td className="px-4 py-4 text-sm text-gray-600" colSpan={4}>
                       No talent performance data yet.
                     </td>
                   </tr>
@@ -7959,9 +8554,6 @@ export default function BrandDashboard() {
                     const name = String(talent?.name || "Talent");
                     const imageUrl = String(talent?.image_url || "").trim();
                     const projectsCount = Number(talent?.projects_count || 0);
-                    const avgTurnaround = Number(
-                      talent?.avg_turnaround_hours || 0,
-                    );
                     const successRate = Number(talent?.success_rate_pct || 0);
                     return (
                       <tr
@@ -7996,13 +8588,17 @@ export default function BrandDashboard() {
                         <td className="px-4 py-4 text-gray-900">
                           {projectsCount}
                         </td>
-                        <td className="px-4 py-4 text-gray-900">
-                          {avgTurnaround > 0 ? `${avgTurnaround}h` : "—"}
-                        </td>
                         <td className="px-4 py-4 text-green-600 font-semibold">
                           {projectsCount > 0 ? `${successRate}%` : "—"}
                         </td>
-                        <td className="px-4 py-4 font-bold text-gray-900">—</td>
+                        <td className="px-4 py-4 font-bold text-gray-900">
+                          {talent.total_cost_cents != null &&
+                          Number(talent.total_cost_cents) > 0
+                            ? currencyFormatter.format(
+                                Number(talent.total_cost_cents) / 100,
+                              )
+                            : "—"}
+                        </td>
                       </tr>
                     );
                   },
@@ -8050,32 +8646,38 @@ export default function BrandDashboard() {
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           Budget Forecast
         </h3>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">YTD Spend</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {billingYtdSpend > 0
-                ? `$${(billingYtdSpend / 100).toLocaleString()}`
-                : "$0"}
-            </p>
+        {loadingBillingData ? (
+          <div className="p-4 text-center text-gray-500">
+            Loading budget forecast...
           </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Monthly Avg</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {billingMonthlyAvg > 0
-                ? `$${(billingMonthlyAvg / 100).toLocaleString()}`
-                : "$0"}
-            </p>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">YTD Spend</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {billingYtdSpend > 0
+                  ? currencyFormatter.format(billingYtdSpend / 100)
+                  : "$0"}
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">Monthly Avg</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {billingMonthlyAvg > 0
+                  ? currencyFormatter.format(billingMonthlyAvg / 100)
+                  : "$0"}
+              </p>
+            </div>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {billingProjectedEoy > 0
+                  ? currencyFormatter.format(billingProjectedEoy / 100)
+                  : "$0"}
+              </p>
+            </div>
           </div>
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Projected EOY</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {billingProjectedEoy > 0
-                ? `$${(billingProjectedEoy / 100000).toFixed(1)}K`
-                : "$0"}
-            </p>
-          </div>
-        </div>
+        )}
       </Card>
     </div>
   );
@@ -9277,7 +9879,7 @@ export default function BrandDashboard() {
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">In Escrow</p>
           <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-            ${(escrowTotal / 1000).toFixed(1)}K
+            {loadingBillingData ? "..." : escrowSummary.breakdown}
           </p>
           <p className="text-xs text-gray-500 mt-1">Pending delivery</p>
         </Card>
@@ -9608,8 +10210,8 @@ export default function BrandDashboard() {
           releases to the creator.
         </p>
         <p className="text-sm font-semibold text-blue-900">
-          Current Escrow: ${(escrowTotal / 1000).toFixed(1)}K across{" "}
-          {escrowProjects.length} projects
+          Current Escrow: {loadingBillingData ? "..." : escrowSummary.breakdown}{" "}
+          across {escrowSummary.projectCount} projects
         </p>
       </Card>
 
@@ -9622,13 +10224,24 @@ export default function BrandDashboard() {
             className="border-2 border-gray-300"
             disabled={brandInvoices.length === 0}
             onClick={() => {
+              const sanitizeCsvField = (value: string): string => {
+                const needsQuoting =
+                  /[,"\n\r]/.test(value) || /^[=+\-@]/.test(value.trim());
+                if (needsQuoting) {
+                  const safeValue = /^[=+\-@]/.test(value.trim())
+                    ? `'${value}`
+                    : value;
+                  return `"${safeValue.replace(/"/g, '""')}"`;
+                }
+                return value;
+              };
               const header = "ID,Number,Amount,Currency,Status,Date\n";
               const rows = brandInvoices.map((inv) => {
                 const amountDollars = ((inv.amount || 0) / 100).toFixed(2);
                 const date = inv.created_at
                   ? new Date(inv.created_at).toLocaleDateString()
                   : "";
-                return `${inv.id},${inv.number || ""},${amountDollars},${inv.currency},${inv.status},${date}`;
+                return `${inv.id},${sanitizeCsvField(inv.number || "")},${amountDollars},${inv.currency},${inv.status},${date}`;
               });
               const csv = header + rows.join("\n");
               const blob = new Blob([csv], { type: "text/csv" });
@@ -12609,10 +13222,189 @@ export default function BrandDashboard() {
           {activeSection === "settings" && renderSettings()}
         </div>
       </main>
+      {/* Dismiss Confirmation Modal */}
+      <Dialog
+        open={!!dismissingPkg}
+        onOpenChange={(open) => {
+          if (!open && !dismissingBusy) setDismissingPkg(null);
+        }}
+      >
+        <DialogContent className="max-w-sm bg-white rounded-2xl border-none shadow-2xl p-8">
+          <div className="flex flex-col items-center gap-5 text-center">
+            {/* Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+              <Trash2 className="w-7 h-7 text-gray-500" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                Remove from Inbox
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                You are about to remove{" "}
+                <span className="font-semibold text-gray-800">
+                  {dismissingPkg?.title ||
+                    dismissingPkg?.campaign_offers?.offer_title ||
+                    dismissingPkg?.campaign_offers?.brand_campaigns?.name ||
+                    "this package"}
+                </span>{" "}
+                from{" "}
+                <span className="font-semibold text-gray-800">
+                  {dismissingPkg?.agencies?.agency_name || "the agency"}
+                </span>{" "}
+                from your inbox.
+              </p>
+            </div>
+
+            <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-left">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
+                Good to know
+              </p>
+              <ul className="text-xs text-gray-600 space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  The agency keeps their copy — this only affects your view
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  No talent assignments or contracts are affected
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  You can still receive new packages from this agency
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-3 w-full mt-1">
+              <Button
+                className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold"
+                disabled={dismissingBusy}
+                onClick={async () => {
+                  const pkg = dismissingPkg;
+                  if (!pkg) return;
+                  const offerId = String(
+                    pkg?.offer_id || pkg?.campaign_offers?.id || "",
+                  ).trim();
+                  const packageId = String(pkg?.id || "").trim();
+                  if (!offerId || !packageId) return;
+                  setDismissingBusy(true);
+                  try {
+                    await base44.post(
+                      `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/${encodeURIComponent(packageId)}/dismiss`,
+                      {},
+                    );
+                    setInboxPackages((prev: any[]) =>
+                      prev.filter((p: any) => p.id !== packageId),
+                    );
+                    setDismissingPkg(null);
+                    toast({
+                      title: "Package removed",
+                      description: "Removed from your inbox.",
+                    });
+                  } catch (e: any) {
+                    const msg = String(e?.message || "");
+                    toast({
+                      title: "Could not remove package",
+                      description: msg.includes(
+                        "cannot_dismiss_finalized_package",
+                      )
+                        ? "This package has been finalized and cannot be removed."
+                        : msg || "Please try again.",
+                      variant: "destructive" as any,
+                    });
+                  } finally {
+                    setDismissingBusy(false);
+                  }
+                }}
+              >
+                {dismissingBusy ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : null}
+                Yes, Remove It
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full rounded-xl h-11 font-semibold text-sm text-gray-500 hover:text-gray-700"
+                disabled={dismissingBusy}
+                onClick={() => setDismissingPkg(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Finalized Package — Cannot Dismiss Modal */}
+      <Dialog
+        open={!!finalizedPackageInfo}
+        onOpenChange={(open) => !open && setFinalizedPackageInfo(null)}
+      >
+        <DialogContent className="max-w-sm bg-white rounded-2xl border-none shadow-2xl p-8">
+          <div className="flex flex-col items-center gap-5 text-center">
+            {/* Icon */}
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
+              <FileText className="w-8 h-8 text-gray-500" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                Package in Progress
+              </h3>
+              <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                <span className="font-semibold text-gray-700">
+                  {finalizedPackageInfo?.title}
+                </span>{" "}
+                from{" "}
+                <span className="font-semibold text-gray-700">
+                  {finalizedPackageInfo?.agencyName}
+                </span>{" "}
+                has already been finalized. Talent assignments and contracts are
+                in progress and this package cannot be removed from your inbox.
+              </p>
+            </div>
+
+            <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-left space-y-2">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest">
+                What you can do
+              </p>
+              <ul className="text-xs text-gray-600 space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  View the contract in the Contract Hub
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  Track deliverables once the contract is signed
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
+                  This package will automatically disappear from your inbox once
+                  its expiry date passes
+                </li>
+              </ul>
+            </div>
+
+            <Button
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-11 font-bold"
+              onClick={() => setFinalizedPackageInfo(null)}
+            >
+              Got it
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Confirmation Dialog for Mark Done */}
       <AlertDialog
         open={!!confirmingDonePkg}
-        onOpenChange={(open) => !open && setConfirmingDonePkg(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConfirmingDonePkg(null);
+            setConfirmingDonePkgPublicData(null);
+          }
+        }}
       >
         <AlertDialogContent className="bg-white rounded-none border border-gray-300 shadow-2xl">
           <AlertDialogHeader>
@@ -12628,33 +13420,77 @@ export default function BrandDashboard() {
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
                   Selected Talents:
                 </p>
-                <ul className="space-y-1">
-                  {(() => {
-                    const selectedIds =
-                      confirmingDonePkg?.meta?.selected_talent_ids || [];
-                    const items =
-                      confirmingDonePkg?.package_snapshot?.items || [];
-                    const selectedNames = items
-                      .filter((item: any) =>
-                        selectedIds.includes(String(item.talent_id || item.id)),
-                      )
-                      .map((item: any) => item.talent_name || "Unnamed Talent");
+                {loadingConfirmingDonePkgPublicData ? (
+                  <p className="text-sm text-gray-500 italic">
+                    Loading selections...
+                  </p>
+                ) : (
+                  <ul className="space-y-1">
+                    {(() => {
+                      const publicPkg = confirmingDonePkgPublicData;
 
-                    if (selectedNames.length === 0)
-                      return (
-                        <li className="text-sm italic">No talent selected</li>
-                      );
-                    return selectedNames.map((name: string, idx: number) => (
-                      <li
-                        key={idx}
-                        className="text-sm font-medium text-gray-900 flex items-center gap-2"
-                      >
-                        <CheckCircle2 className="w-3 h-3 text-green-600" />
-                        {name}
-                      </li>
-                    ));
-                  })()}
-                </ul>
+                      // Selected IDs come exclusively from the public package
+                      // interactions (type "selected") — these are written when
+                      // the brand clicks the ✓ button in PublicPackageView.
+                      // meta.selected_talent_ids is only written AFTER brand-done
+                      // is called, so it's never available at this point.
+                      //
+                      // Independent connected creators have talent_id = null and
+                      // creator_id set instead — use whichever is present.
+                      const selectedIds = (publicPkg?.interactions || [])
+                        .filter((i: any) => i?.type === "selected")
+                        .map((i: any) =>
+                          String(i?.talent_id || i?.creator_id || "").trim(),
+                        )
+                        .filter(Boolean);
+
+                      if (selectedIds.length === 0) {
+                        return (
+                          <li className="text-sm italic text-gray-500">
+                            No talent selected yet. Open the package, select the
+                            talent you want, then come back to confirm.
+                          </li>
+                        );
+                      }
+
+                      // Resolve names from the public package items — these come
+                      // from agency_users and have stage_name / full_legal_name.
+                      // The package_snapshot.items only carry a stale talent_name
+                      // string and must not be used as the primary source.
+                      const publicItems: any[] = Array.isArray(publicPkg?.items)
+                        ? publicPkg.items
+                        : [];
+
+                      // Build a lookup keyed on whichever identity is present:
+                      // talent_id (agency_users.id) for onboarded roster talent,
+                      // creator_id (creators.id) for independent connected creators.
+                      const nameById = new Map<string, string>();
+                      for (const item of publicItems) {
+                        const id = String(
+                          item?.talent_id || item?.creator_id || item?.id || "",
+                        ).trim();
+                        if (!id) continue;
+                        const name =
+                          item?.talent?.stage_name ||
+                          item?.talent?.full_legal_name ||
+                          item?.talent?.full_name ||
+                          item?.talent_name ||
+                          null;
+                        if (name) nameById.set(id, name);
+                      }
+
+                      return selectedIds.map((id: string, idx: number) => (
+                        <li
+                          key={idx}
+                          className="text-sm font-medium text-gray-900 flex items-center gap-2"
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-green-600" />
+                          {nameById.get(id) || id}
+                        </li>
+                      ));
+                    })()}
+                  </ul>
+                )}
               </div>
               <p className="text-sm font-medium text-red-600 bg-red-50 p-3 border border-red-100 italic">
                 Note: Once you click "Confirm", you will not be able to modify
@@ -12668,17 +13504,45 @@ export default function BrandDashboard() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="rounded-none bg-black hover:bg-gray-800 text-white"
+              className="rounded-none bg-black hover:bg-gray-800 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={
+                loadingConfirmingDonePkgPublicData ||
+                (() => {
+                  const selectedIds = (
+                    confirmingDonePkgPublicData?.interactions || []
+                  )
+                    .filter((i: any) => i?.type === "selected")
+                    .map((i: any) =>
+                      String(i?.talent_id || i?.creator_id || "").trim(),
+                    )
+                    .filter(Boolean);
+                  return selectedIds.length === 0;
+                })()
+              }
               onClick={async () => {
                 const pkg = confirmingDonePkg;
                 if (!pkg) return;
                 try {
+                  // selected_talent_ids come from the public package interactions
+                  // (type "selected") — the only reliable source before brand-done
+                  // is called. meta.selected_talent_ids doesn't exist yet at this point.
+                  // Use talent_id when present (agency_users.id), otherwise creator_id
+                  // (creators.id) for independent connected creators.
+                  const selectedTalentIds = (
+                    confirmingDonePkgPublicData?.interactions || []
+                  )
+                    .filter((i: any) => i?.type === "selected")
+                    .map((i: any) =>
+                      String(i?.talent_id || i?.creator_id || "").trim(),
+                    )
+                    .filter(Boolean);
+
                   await base44.post(
                     `/api/campaign-offers/${encodeURIComponent(String(pkg?.offer_id || ""))}/packages/brand-done`,
                     {
                       package_id: String(pkg?.id || ""),
                       feedback_note: "Brand completed package selection.",
-                      selected_talent_ids: pkg?.meta?.selected_talent_ids || [],
+                      selected_talent_ids: selectedTalentIds,
                     },
                   );
                   const response = await base44.get<{ packages?: any[] }>(
@@ -12693,13 +13557,25 @@ export default function BrandDashboard() {
                       "Your package selection was submitted to the agency.",
                   });
                 } catch (e: any) {
+                  const msg = String(e?.message || "");
+                  // Surface assignment errors from the backend clearly
+                  let description = msg || "Please try again.";
+                  try {
+                    const parsed = JSON.parse(msg);
+                    if (parsed?.error === "assignment_errors") {
+                      description = parsed.message || description;
+                    }
+                  } catch {
+                    // not JSON — use raw message
+                  }
                   toast({
                     title: "Unable to submit package",
-                    description: e?.message || "Please try again.",
+                    description,
                     variant: "destructive" as any,
                   });
                 } finally {
                   setConfirmingDonePkg(null);
+                  setConfirmingDonePkgPublicData(null);
                 }
               }}
             >
@@ -12990,8 +13866,11 @@ export default function BrandDashboard() {
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-black text-gray-900 leading-none">
                   {escrowReleasedModal.amount
-                    ? `$${(escrowReleasedModal.amount / 100).toLocaleString()}`
-                    : "$ --"}
+                    ? new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: escrowReleasedModal.currency || "USD",
+                      }).format(escrowReleasedModal.amount / 100)
+                    : "--"}
                 </span>
                 <span className="text-xs font-bold text-gray-500 uppercase">
                   {escrowReleasedModal.currency}
@@ -13171,6 +14050,39 @@ export default function BrandDashboard() {
             </Button>
             <Button variant="destructive" onClick={confirmDeleteAsset}>
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Package Confirmation Dialog */}
+      <Dialog
+        open={showDeletePackageDialog}
+        onOpenChange={setShowDeletePackageDialog}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Package</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "
+              {packageToDelete?.title || "this package"}"? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeletePackageDialog(false)}
+              disabled={deletingPackage}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeletePackage}
+              disabled={deletingPackage}
+            >
+              {deletingPackage ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

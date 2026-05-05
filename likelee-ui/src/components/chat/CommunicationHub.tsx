@@ -7,8 +7,10 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export function CommunicationHub({
   initialCreatorId,
+  onInitialCreatorHandled,
 }: {
   initialCreatorId?: string;
+  onInitialCreatorHandled?: () => void;
 }) {
   const { profile } = useAuth();
   const isMobile = useIsMobile();
@@ -52,6 +54,8 @@ export function CommunicationHub({
     } else {
       startConversation(initialCreatorId);
     }
+    // Clear the initialCreatorId so navigating away and back doesn't re-trigger
+    onInitialCreatorHandled?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCreatorId, loadingConversations]);
 

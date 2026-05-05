@@ -232,6 +232,12 @@ export const getBrandSpendAnalytics = () =>
     projected_eoy: number;
   }>(`/api/brand/billing/spend`);
 
+export const getBrandEscrowSummary = () =>
+  base44Client.get<{
+    currencies: Record<string, number>;
+    project_count: number;
+  }>(`/api/brand/billing/escrow-summary`);
+
 export const listBrandInvoices = () =>
   base44Client.get<{
     invoices: Array<{
@@ -789,6 +795,10 @@ export const updateAgencyLicensingRequestsStatus = (data: {
   notes?: string;
 }) => base44Client.post(`/agency/licensing-requests/status`, data);
 
+export const deleteAgencyLicensingRequests = (data: {
+  licensing_request_ids: string[];
+}) => base44Client.post(`/agency/licensing-requests/delete`, data);
+
 // Payment Links (Agency)
 export const generateAgencyPaymentLink = (data: {
   licensing_request_ids: string[];
@@ -1345,6 +1355,16 @@ export const createAgencyBrandLicensingRequest = (payload: {
 export const getBrandLicensingRequests = () =>
   base44Client.get<{ requests: any[] }>("/api/brand/brand-license-requests");
 
+export const updateBrandLicensingRequestsStatus = (payload: {
+  licensing_request_ids: string[];
+  status: string;
+  notes?: string;
+}) => base44Client.post("/api/brand/licensing-requests/status", payload);
+
+export const deleteBrandLicensingRequests = (payload: {
+  licensing_request_ids: string[];
+}) => base44Client.post("/api/brand/licensing-requests/delete", payload);
+
 export const getAgencyBrandLicenseRequests = () =>
   base44Client.get<{ requests: any[] }>("/api/agency/brand-license-requests");
 
@@ -1377,3 +1397,29 @@ export const getAgencyBillingStatus = () =>
     stripe_current_period_end?: string | null;
     stripe_cancel_at_period_end: boolean;
   }>(`/api/agency/billing/status`);
+
+export interface InstagramProfileData {
+  username: string;
+  followers?: number | null;
+  following?: number | null;
+  bio?: string | null;
+  profile_pic_url?: string | null;
+  external_url?: string | null;
+  posts_count?: number | null;
+  engagement_rate?: number | null;
+  avg_likes?: number | null;
+  avg_comments?: number | null;
+  is_verified?: boolean | null;
+  is_private?: boolean | null;
+}
+
+export interface ScrapeInstagramResponse {
+  success: boolean;
+  profile?: InstagramProfileData | null;
+  error?: string | null;
+}
+
+export const scrapeInstagramProfile = (instagram_handle: string) =>
+  base44Client.post<ScrapeInstagramResponse>("/api/instagram/scrape", {
+    instagram_handle,
+  });

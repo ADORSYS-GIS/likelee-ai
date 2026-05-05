@@ -37,6 +37,34 @@ pub async fn start_agency_payout_scheduler(state: AppState) {
     }
 }
 
+pub async fn start_auto_archive_licensing_requests(state: AppState) {
+    info!("Starting background job: auto-archive expired licensing requests");
+    loop {
+        // Run every 6 hours
+        tokio::time::sleep(StdDuration::from_secs(6 * 3600)).await;
+
+        if let Err(e) = run_auto_archive_licensing_requests(&state).await {
+            warn!(error = %e, "Auto-archive licensing requests job iteration failed");
+        }
+    }
+}
+
+async fn run_auto_archive_licensing_requests(state: &AppState) -> Result<(), String> {
+    match crate::licensing_requests::auto_archive_expired_licensing_requests(state).await {
+        Ok((total_checked, archived_count)) => {
+            if archived_count > 0 {
+                info!(
+                    total_checked = total_checked,
+                    archived_count = archived_count,
+                    "Auto-archived expired licensing requests"
+                );
+            }
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }
+}
+
 async fn run_agency_payout_scheduler(state: &AppState) -> Result<(), String> {
     // Fetch settings for all agencies (1 row per agency)
     let resp = state

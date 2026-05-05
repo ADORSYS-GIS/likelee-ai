@@ -77,6 +77,8 @@ export const agencyKeys = {
   dashboard: (agencyId: string) => ["agency", "dashboard", agencyId] as const,
   /** Agency roster (talent list) */
   roster: (agencyId: string) => ["agency", "roster", agencyId] as const,
+  /** Agency talents (detailed talent data) */
+  talents: (agencyId: string) => ["agency", "talents", agencyId] as const,
   /** Agency clients/CRM */
   clients: {
     all: (agencyId: string) => ["agency", "clients", agencyId] as const,
@@ -85,6 +87,9 @@ export const agencyKeys = {
   },
   /** Active licenses */
   licenses: (agencyId: string) => ["agency", "licenses", agencyId] as const,
+  /** Active licenses stats */
+  licensesStats: (agencyId: string) =>
+    ["agency", "licenses", agencyId, "stats"] as const,
   /** License templates */
   licenseTemplates: (agencyId: string) =>
     ["agency", "licenseTemplates", agencyId] as const,
@@ -99,6 +104,30 @@ export const agencyKeys = {
     ["agency", "brandConnections", agencyId] as const,
   /** Agency payouts */
   payouts: (agencyId: string) => ["agency", "payouts", agencyId] as const,
+  /** Agency billing status */
+  billingStatus: (agencyId: string) =>
+    ["agency", "billing", "status", agencyId] as const,
+  /** Agency talent invites */
+  talentInvites: (agencyId: string) =>
+    ["agency", "talent-invites", agencyId] as const,
+  /** Agency offer packages */
+  offerPackages: (agencyId: string) =>
+    ["agency", "offer-packages", agencyId] as const,
+  /** Agency profile */
+  profile: (agencyId: string) => ["agency", "profile", agencyId] as const,
+  /** Agency analytics */
+  analytics: {
+    performance: (agencyId: string) =>
+      ["agency", "analytics", "performance", agencyId] as const,
+    revenue: (agencyId: string) =>
+      ["agency", "analytics", "revenue", agencyId] as const,
+    pipeline: (agencyId: string) =>
+      ["agency", "analytics", "pipeline", agencyId] as const,
+  },
+  /** Agency digitals */
+  digitals: (agencyId: string) => ["agency", "digitals", agencyId] as const,
+  /** Agency recent activity */
+  activity: (agencyId: string) => ["agency", "activity", agencyId] as const,
 } as const;
 
 /**
@@ -206,6 +235,83 @@ export const marketplaceKeys = {
 } as const;
 
 /**
+ * Brand-related query keys
+ */
+export const brandKeys = {
+  /** Brand jobs */
+  jobs: {
+    all: ["brand", "jobs"] as const,
+    unreadCount: ["brand", "jobs", "unreadCount"] as const,
+  },
+  /** Brand inbox */
+  inbox: {
+    all: ["brand", "inbox"] as const,
+    packages: ["brand", "inbox", "packages"] as const,
+    unreadCount: ["brand", "inbox", "unreadCount"] as const,
+  },
+  /** Brand campaign metrics */
+  campaignMetrics: ["brand", "campaigns", "metrics"] as const,
+  /** Brand analytics */
+  analytics: ["brand", "analytics"] as const,
+  /** Brand activity events */
+  activityEvents: ["brand", "activity-events"] as const,
+  /** Brand campaign offers */
+  offers: {
+    all: ["brand", "campaign-offers"] as const,
+    contracts: (offerId: string) =>
+      ["brand", "campaign-offers", offerId, "contracts"] as const,
+    deliverables: (offerId: string) =>
+      ["brand", "campaign-offers", offerId, "deliverables"] as const,
+  },
+  /** Brand contracts */
+  contracts: ["brand", "contracts"] as const,
+  /** Brand licensing requests */
+  licensingRequests: ["brand", "licensing-requests"] as const,
+  /** Brand billing data */
+  billing: {
+    status: ["brand", "billing", "status"] as const,
+    spend: ["brand", "billing", "spend"] as const,
+    invoices: ["brand", "billing", "invoices"] as const,
+    budgetSettings: ["brand", "billing", "budget-settings"] as const,
+  },
+  /** Brand studio data */
+  studio: {
+    generations: ["brand", "studio", "generations"] as const,
+    files: ["brand", "studio", "files"] as const,
+    folders: ["brand", "studio", "folders"] as const,
+  },
+  /** Brand profile */
+  profile: ["brand", "profile"] as const,
+} as const;
+
+/**
+ * Creator-related query keys
+ */
+export const creatorKeys = {
+  /** Creator dashboard data */
+  dashboard: ["creator", "dashboard"] as const,
+  /** Creator rates */
+  rates: ["creator", "rates"] as const,
+  /** Creator billing status */
+  billing: ["creator", "billing", "status"] as const,
+  /** Creator brand connections */
+  brandConnections: {
+    requests: ["creator", "brand-connections", "requests"] as const,
+    connections: ["creator", "brand-connections", "connections"] as const,
+  },
+  /** Creator brand offers */
+  brandOffers: ["creator", "brand-offers"] as const,
+  /** Creator job invites */
+  jobInvites: ["creator", "job-invites"] as const,
+  /** Creator asset requests */
+  assetRequests: ["creator", "asset-requests"] as const,
+  /** Creator bookings */
+  bookings: ["creator", "bookings"] as const,
+  /** Creator verification/KYC */
+  verification: ["creator", "verification"] as const,
+} as const;
+
+/**
  * Combined query keys object for convenience
  */
 export const queryKeys = {
@@ -220,6 +326,8 @@ export const queryKeys = {
   scouting: scoutingKeys,
   crm: crmKeys,
   marketplace: marketplaceKeys,
+  brand: brandKeys,
+  creator: creatorKeys,
 } as const;
 
 /**
