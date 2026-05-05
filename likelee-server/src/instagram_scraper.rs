@@ -65,7 +65,7 @@ async fn persist_scraped_data(
 
     match user.role.as_str() {
         "creator" | "talent" => {
-            let creator_id = target_creator_id.unwrap_or(&user.id);
+            let creator_id = &user.id;
             let resp = state
                 .pg
                 .from("creators")
