@@ -105,7 +105,7 @@ The system uses a three-level **in-memory** caching strategy (no Redis):
 - Connection changes → `invalidate_brand_agency_connection_cache()` (L3)
 - Security events → `invalidate_session()` (L2)
 
-See [Cache Invalidation System](../CACHE_INVALIDATION.md) and [Data Storage Architecture](../DATA_STORAGE_ARCHITECTURE.md) for detailed documentation.
+See [Cache Invalidation System](./CACHE_INVALIDATION.md) and [Storage Architecture](./storage/architecture.md) for detailed documentation.
 
 ### Webhook Flow
 
