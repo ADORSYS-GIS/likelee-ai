@@ -421,6 +421,19 @@ const BrandConnectionsView = ({
     if (!Array.isArray(rosterQuery.data)) return [];
     return rosterQuery.data;
   }, [rosterQuery.data]);
+  const filteredRoster = useMemo(() => {
+    if (!assignSearch.trim()) return roster;
+    const search = assignSearch.toLowerCase();
+    return roster.filter((talent: any) => {
+      const name =
+        talent?.stage_name || talent?.name || talent?.full_legal_name || "";
+      const email = talent?.email || "";
+      return (
+        name.toLowerCase().includes(search) ||
+        email.toLowerCase().includes(search)
+      );
+    });
+  }, [roster, assignSearch]);
   const assignedTalentIds = useMemo(() => {
     const assignments = offerAssignmentsQuery.data?.assignments || [];
     return new Set(
