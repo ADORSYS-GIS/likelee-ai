@@ -43,11 +43,9 @@ export function brandPlanSeatLimit(tier: BrandPlanTier): number | null {
   return 0;
 }
 
-export function brandPlanCampaignLimit(tier: BrandPlanTier): number | null {
-  if (tier === "basic") return 3;
-  if (tier === "pro") return 10;
-  if (tier === "enterprise") return null;
-  return 0;
+export function brandPlanCampaignLimit(_tier: BrandPlanTier): number | null {
+  // Campaign creation is unlimited across all plan tiers.
+  return null;
 }
 
 export function brandAllowsCampaignCollaboration(value: unknown): boolean {
