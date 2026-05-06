@@ -227,12 +227,9 @@ pub async fn get_brand_plan_tier(
 }
 
 pub fn brand_campaign_limit(tier: PlanTier) -> Option<usize> {
-    match tier {
-        PlanTier::Free => Some(0),
-        PlanTier::Basic => Some(3),
-        PlanTier::Pro => Some(10),
-        PlanTier::Enterprise => None,
-    }
+    // Campaign creation is unlimited across all plan tiers.
+    let _ = tier;
+    None
 }
 
 pub fn brand_seat_limit(tier: PlanTier) -> Option<usize> {
