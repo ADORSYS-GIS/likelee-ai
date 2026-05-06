@@ -5437,12 +5437,14 @@ export default function BrandDashboard() {
   };
   const formatContractStatusLabel = (statusRaw: unknown) => {
     const status = String(statusRaw || "sent").toLowerCase();
-    if (status === "opened") return "Sign Required";
-    if (status === "sent") return "Sent";
+    if (status === "opened")
+      return t("campaigns.contractHub.status.signRequired");
+    if (status === "sent") return t("statuses.sent");
     if (status === "partially_signed" || status === "signed")
-      return "Awaiting Creator";
-    if (status === "completed") return "Completed";
-    if (status === "declined" || status === "rejected") return "Declined";
+      return t("campaigns.contractHub.status.awaitingCreator");
+    if (status === "completed") return t("statuses.completed");
+    if (status === "declined" || status === "rejected")
+      return t("statuses.declined");
     return status.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
   };
 
@@ -11634,12 +11636,11 @@ export default function BrandDashboard() {
           <DialogHeader className="border-b border-gray-100 pb-3">
             <DialogTitle className="text-2xl font-bold text-gray-900">
               {selectedJobForApplications?._showDetailsOnly
-                ? "Job Details"
-                : "Applications"}
+                ? t("campaigns.jobs.viewJobDetails")
+                : t("campaigns.jobs.applications")}
             </DialogTitle>
             <DialogDescription>
-              View details for this job posting or review submitted
-              applications.
+              {t("campaigns.jobs.viewDetailsJobPosting")}
             </DialogDescription>
           </DialogHeader>
           {selectedJobForApplications?._showDetailsOnly ? (
@@ -11651,7 +11652,8 @@ export default function BrandDashboard() {
                       selectedJobForApplications.title}
                   </h3>
                   <p className="text-lg font-semibold text-gray-800 mt-1">
-                    {selectedJobForApplications.company_name || "Brand"}
+                    {selectedJobForApplications.company_name ||
+                      t("company", { defaultValue: "Brand" })}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -11699,27 +11701,35 @@ export default function BrandDashboard() {
                   )}
                 </div>
                 <div className="text-sm font-semibold text-gray-900">
-                  About the role
+                  {t("campaigns.jobs.details.aboutRole")}
                 </div>
                 <div className="text-sm text-gray-700 whitespace-pre-line">
                   {selectedJobForApplications.about_role ||
-                    "No role description provided."}
+                    t("campaigns.jobs.noRoleDescription")}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-600">
                   <div>
-                    <span className="font-medium text-gray-900">Location:</span>{" "}
+                    <span className="font-medium text-gray-900">
+                      {t("campaigns.jobs.details.location")}:
+                    </span>{" "}
                     {formatJobLabel(
-                      selectedJobForApplications.location || "Remote",
+                      selectedJobForApplications.location ||
+                        t("campaigns.jobs.details.location"),
                     )}
                   </div>
                   <div>
-                    <span className="font-medium text-gray-900">Job type:</span>{" "}
+                    <span className="font-medium text-gray-900">
+                      {t("campaigns.jobs.details.jobType")}:
+                    </span>{" "}
                     {formatJobLabel(
-                      selectedJobForApplications.job_type || "Project",
+                      selectedJobForApplications.job_type ||
+                        t("campaigns.jobs.details.jobType"),
                     )}
                   </div>
                   <div>
-                    <span className="font-medium text-gray-900">Timeline:</span>{" "}
+                    <span className="font-medium text-gray-900">
+                      {t("campaigns.jobs.details.timeline")}:
+                    </span>{" "}
                     {selectedJobForApplications.start_date || "—"}
                     {selectedJobForApplications.end_date
                       ? ` → ${selectedJobForApplications.end_date}`
@@ -11729,7 +11739,7 @@ export default function BrandDashboard() {
                     selectedJobForApplications.goals.length > 0 && (
                       <div className="md:col-span-2">
                         <span className="font-medium text-gray-900">
-                          Goals:
+                          {t("campaigns.jobs.details.goals")}:
                         </span>{" "}
                         {selectedJobForApplications.goals.join(", ")}
                       </div>
@@ -11737,7 +11747,7 @@ export default function BrandDashboard() {
                   {selectedJobForApplications.deliverables && (
                     <div>
                       <span className="font-medium text-gray-900">
-                        Deliverables:
+                        {t("campaigns.jobs.details.deliverables")}:
                       </span>{" "}
                       {selectedJobForApplications.deliverables}
                     </div>
@@ -11747,7 +11757,7 @@ export default function BrandDashboard() {
 
               <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h4 className="text-sm font-semibold text-gray-900">
-                  Talent Requirements
+                  {t("campaigns.jobs.details.talentRequirements")}
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   {(selectedJobForApplications.talent_types || []).map(
@@ -11776,14 +11786,16 @@ export default function BrandDashboard() {
                 <div className="text-sm text-gray-600">
                   {selectedJobForApplications.region && (
                     <span className="mr-3">
-                      <span className="font-medium text-gray-900">Region:</span>{" "}
+                      <span className="font-medium text-gray-900">
+                        {t("campaigns.jobs.details.region")}:
+                      </span>{" "}
                       {selectedJobForApplications.region}
                     </span>
                   )}
                   {selectedJobForApplications.language && (
                     <span>
                       <span className="font-medium text-gray-900">
-                        Language:
+                        {t("campaigns.jobs.details.language")}:
                       </span>{" "}
                       {selectedJobForApplications.language}
                     </span>
@@ -11791,22 +11803,24 @@ export default function BrandDashboard() {
                 </div>
                 <div className="text-sm text-gray-600">
                   <span className="font-medium text-gray-900">
-                    Licensing required:
+                    {t("campaigns.jobs.details.licensingRequired")}:
                   </span>{" "}
-                  {selectedJobForApplications.needs_licensing ? "Yes" : "No"}
+                  {selectedJobForApplications.needs_licensing
+                    ? t("campaigns.jobs.details.yes")
+                    : t("campaigns.jobs.details.no")}
                 </div>
               </section>
 
               {selectedJobForApplications.needs_licensing && (
                 <section className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-5">
                   <h4 className="text-sm font-semibold text-gray-900">
-                    Licensing Details
+                    {t("campaigns.jobs.details.licensingDetails")}
                   </h4>
                   <div className="text-sm text-gray-600">
                     {selectedJobForApplications.usage_type && (
                       <span className="mr-3">
                         <span className="font-medium text-gray-900">
-                          Usage:
+                          {t("campaigns.jobs.details.usage")}:
                         </span>{" "}
                         {selectedJobForApplications.usage_type}
                       </span>
@@ -11814,7 +11828,7 @@ export default function BrandDashboard() {
                     {selectedJobForApplications.license_duration && (
                       <span className="mr-3">
                         <span className="font-medium text-gray-900">
-                          Duration:
+                          {t("campaigns.jobs.details.duration")}:
                         </span>{" "}
                         {String(
                           selectedJobForApplications.license_duration,
@@ -11824,7 +11838,7 @@ export default function BrandDashboard() {
                     {selectedJobForApplications.territories && (
                       <span>
                         <span className="font-medium text-gray-900">
-                          Territories:
+                          {t("campaigns.jobs.details.territories")}:
                         </span>{" "}
                         {selectedJobForApplications.territories}
                       </span>
@@ -11833,15 +11847,19 @@ export default function BrandDashboard() {
                   <div className="text-sm text-gray-600">
                     <span className="mr-3">
                       <span className="font-medium text-gray-900">
-                        Exclusivity:
+                        {t("campaigns.jobs.details.exclusivity")}:
                       </span>{" "}
-                      {selectedJobForApplications.exclusivity ? "Yes" : "No"}
+                      {selectedJobForApplications.exclusivity
+                        ? t("campaigns.jobs.details.yes")
+                        : t("campaigns.jobs.details.no")}
                     </span>
                     <span>
                       <span className="font-medium text-gray-900">
-                        Royalty option:
+                        {t("campaigns.jobs.details.royaltyOption")}:
                       </span>{" "}
-                      {selectedJobForApplications.royalty_option ? "Yes" : "No"}
+                      {selectedJobForApplications.royalty_option
+                        ? t("campaigns.jobs.details.yes")
+                        : t("campaigns.jobs.details.no")}
                     </span>
                   </div>
                 </section>
@@ -11849,18 +11867,20 @@ export default function BrandDashboard() {
 
               <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h4 className="text-sm font-semibold text-gray-900">
-                  Budget & Compensation
+                  {t("campaigns.jobs.details.budgetCompensation")}
                 </h4>
                 <div className="text-sm text-gray-600">
-                  <span className="font-medium text-gray-900">Budget:</span>{" "}
+                  <span className="font-medium text-gray-900">
+                    {t("campaigns.jobs.budget")}:
+                  </span>{" "}
                   {selectedJobForApplications.budget
                     ? `${selectedJobForApplications.budget} ${selectedJobForApplications.currency || "USD"}`
-                    : "Not specified"}
+                    : t("campaigns.jobs.details.notSpecified")}
                 </div>
                 {selectedJobForApplications.payment_type && (
                   <div className="text-sm text-gray-600">
                     <span className="font-medium text-gray-900">
-                      Payment type:
+                      {t("campaigns.jobs.details.paymentType")}:
                     </span>{" "}
                     {selectedJobForApplications.payment_type}
                   </div>
@@ -11881,21 +11901,23 @@ export default function BrandDashboard() {
                     0) && (
                   <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h4 className="text-sm font-semibold text-gray-900">
-                      Collaboration Preferences
+                      {t("campaigns.jobs.details.collaborationPreferences")}
                     </h4>
                     <div className="text-sm text-gray-600">
                       <span className="font-medium text-gray-900">
-                        Work with agency:
+                        {t("campaigns.jobs.details.workWithAgency")}:
                       </span>{" "}
                       {selectedJobForApplications.work_with_agency
-                        ? "Yes"
-                        : "No"}
+                        ? t("campaigns.jobs.details.yes")
+                        : t("campaigns.jobs.details.no")}
                     </div>
                     <div className="text-sm text-gray-600">
                       <span className="font-medium text-gray-900">
-                        Invite creator:
+                        {t("campaigns.jobs.details.inviteCreator")}:
                       </span>{" "}
-                      {selectedJobForApplications.invite_creator ? "Yes" : "No"}
+                      {selectedJobForApplications.invite_creator
+                        ? t("campaigns.jobs.details.yes")
+                        : t("campaigns.jobs.details.no")}
                     </div>
                     {/* Agencies */}
                     {(Array.isArray(
@@ -11914,7 +11936,7 @@ export default function BrandDashboard() {
                         0) ? (
                       <div className="pt-1">
                         <p className="text-xs font-semibold text-gray-700 mb-2">
-                          Agencies
+                          {t("campaigns.jobs.details.agencies")}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {/* Show Accepted/Pending first, then Declined */}
@@ -11951,15 +11973,17 @@ export default function BrandDashboard() {
                                   (agency?.id || agency?.agency_id),
                               );
 
-                            let statusLabel = "Pending";
+                            let statusLabel = t(
+                              "campaigns.jobs.status.pending",
+                            );
                             let statusColor =
                               "bg-slate-100 text-slate-600 border-slate-200";
                             if (isAccepted) {
-                              statusLabel = "Accepted";
+                              statusLabel = t("campaigns.jobs.status.accepted");
                               statusColor =
                                 "bg-emerald-100 text-emerald-700 border-emerald-200";
                             } else if (isDeclined) {
-                              statusLabel = "Declined";
+                              statusLabel = t("campaigns.jobs.status.declined");
                               statusColor =
                                 "bg-amber-100 text-amber-700 border-amber-200";
                             }
@@ -12021,7 +12045,7 @@ export default function BrandDashboard() {
                         0) ? (
                       <div className="pt-3">
                         <p className="text-xs font-semibold text-gray-700 mb-2">
-                          Creators
+                          {t("campaigns.jobs.details.creators")}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {[
@@ -12049,15 +12073,17 @@ export default function BrandDashboard() {
                                 []
                               ).some((c: any) => c?.id === creator?.id);
 
-                            let statusLabel = "Pending";
+                            let statusLabel = t(
+                              "campaigns.jobs.status.pending",
+                            );
                             let statusColor =
                               "bg-slate-100 text-slate-600 border-slate-200";
                             if (isAccepted) {
-                              statusLabel = "Accepted";
+                              statusLabel = t("campaigns.jobs.status.accepted");
                               statusColor =
                                 "bg-emerald-100 text-emerald-700 border-emerald-200";
                             } else if (isDeclined) {
-                              statusLabel = "Declined";
+                              statusLabel = t("campaigns.jobs.status.declined");
                               statusColor =
                                 "bg-amber-100 text-amber-700 border-amber-200";
                             }
@@ -12109,10 +12135,13 @@ export default function BrandDashboard() {
                   <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-semibold text-gray-900">
-                        Brand Assets
+                        {t("campaigns.jobs.details.brandAssets")}
                       </h4>
                       <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                        {selectedJobForApplications.brand_assets.length} Assets
+                        {t("campaigns.campaignList.assets", {
+                          count: selectedJobForApplications.brand_assets.length,
+                          defaultValue: `${selectedJobForApplications.brand_assets.length} Assets`,
+                        })}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -12292,9 +12321,13 @@ export default function BrandDashboard() {
               </Dialog>
             </div>
           ) : loadingJobApplications ? (
-            <div className="text-sm text-gray-600">Loading applications...</div>
+            <div className="text-sm text-gray-600">
+              {t("campaigns.jobs.loadingApplications")}
+            </div>
           ) : selectedJobApplications.length === 0 ? (
-            <div className="text-sm text-gray-600">No applications yet.</div>
+            <div className="text-sm text-gray-600">
+              {t("campaigns.jobs.noApplications")}
+            </div>
           ) : (
             <div className="space-y-4">
               <div className="space-y-4">
@@ -12349,7 +12382,7 @@ export default function BrandDashboard() {
                             download={app.resume_name || "resume"}
                             className="text-sm font-medium text-blue-600 hover:text-blue-700"
                           >
-                            📄 View resume
+                            📄 {t("campaigns.jobs.viewResume")}
                           </a>
                         )}
                         {Array.isArray(app.comp_cards) &&
@@ -12374,7 +12407,7 @@ export default function BrandDashboard() {
                             download={app.comp_card_name || "comp_card"}
                             className="text-sm font-medium text-purple-600 hover:text-purple-700"
                           >
-                            🖼️ Comp card
+                            🖼️ {t("campaigns.jobs.compCard")}
                           </a>
                         ) : null}
                         {app.portfolio_link && (
@@ -12384,7 +12417,7 @@ export default function BrandDashboard() {
                             rel="noreferrer"
                             className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
                           >
-                            🌐 Portfolio
+                            🌐 {t("campaigns.jobs.portfolio")}
                           </a>
                         )}
                         {app.github_link && (
@@ -13786,40 +13819,41 @@ export default function BrandDashboard() {
 
             <div>
               <h3 className="text-xl font-black text-gray-900 tracking-tight">
-                Remove from Inbox
+                {t("campaigns.inbox.dismissModal.title")}
               </h3>
               <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                You are about to remove{" "}
+                {t("campaigns.inbox.dismissModal.descriptionPrefix")}{" "}
                 <span className="font-semibold text-gray-800">
                   {dismissingPkg?.title ||
                     dismissingPkg?.campaign_offers?.offer_title ||
                     dismissingPkg?.campaign_offers?.brand_campaigns?.name ||
-                    "this package"}
+                    t("campaigns.inbox.dismissModal.thisPackage")}
                 </span>{" "}
-                from{" "}
+                {t("campaigns.inbox.dismissModal.from")}{" "}
                 <span className="font-semibold text-gray-800">
-                  {dismissingPkg?.agencies?.agency_name || "the agency"}
+                  {dismissingPkg?.agencies?.agency_name ||
+                    t("campaigns.inbox.dismissModal.theAgency")}
                 </span>{" "}
-                from your inbox.
+                {t("campaigns.inbox.dismissModal.descriptionSuffix")}
               </p>
             </div>
 
             <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-left">
               <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">
-                Good to know
+                {t("campaigns.inbox.dismissModal.goodToKnow")}
               </p>
               <ul className="text-xs text-gray-600 space-y-1.5">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
-                  The agency keeps their copy — this only affects your view
+                  {t("campaigns.inbox.dismissModal.points.viewOnly")}
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
-                  No talent assignments or contracts are affected
+                  {t("campaigns.inbox.dismissModal.points.noAssignments")}
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
-                  You can still receive new packages from this agency
+                  {t("campaigns.inbox.dismissModal.points.receiveNew")}
                 </li>
               </ul>
             </div>
@@ -13869,7 +13903,7 @@ export default function BrandDashboard() {
                 {dismissingBusy ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
-                Yes, Remove It
+                {t("campaigns.inbox.dismissModal.confirm")}
               </Button>
               <Button
                 variant="ghost"
@@ -13877,7 +13911,7 @@ export default function BrandDashboard() {
                 disabled={dismissingBusy}
                 onClick={() => setDismissingPkg(null)}
               >
-                Cancel
+                {t("campaigns.licensingRequest.cancel")}
               </Button>
             </div>
           </div>
@@ -14497,14 +14531,16 @@ export default function BrandDashboard() {
       <Dialog open={showFilterDialog} onOpenChange={setShowFilterDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Filter Assets</DialogTitle>
+            <DialogTitle>{t("assetLibrary.filterDialog.title")}</DialogTitle>
             <DialogDescription>
-              Narrow down your asset library view.
+              {t("assetLibrary.filterDialog.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-3">
-              <Label className="text-sm font-semibold">Asset Type</Label>
+              <Label className="text-sm font-semibold">
+                {t("assetLibrary.filterDialog.assetType")}
+              </Label>
               <div className="flex gap-2">
                 <Button
                   variant={filterType === "all" ? "default" : "outline"}
@@ -14512,7 +14548,7 @@ export default function BrandDashboard() {
                   onClick={() => setFilterType("all")}
                   className="flex-1"
                 >
-                  All
+                  {t("assetLibrary.filterDialog.all")}
                 </Button>
                 <Button
                   variant={filterType === "image" ? "default" : "outline"}
@@ -14521,7 +14557,7 @@ export default function BrandDashboard() {
                   className="flex-1"
                 >
                   <ImageIcon className="w-4 h-4 mr-1" />
-                  Images
+                  {t("assetLibrary.stats.images")}
                 </Button>
                 <Button
                   variant={filterType === "video" ? "default" : "outline"}
@@ -14530,12 +14566,14 @@ export default function BrandDashboard() {
                   className="flex-1"
                 >
                   <Video className="w-4 h-4 mr-1" />
-                  Videos
+                  {t("assetLibrary.stats.videos")}
                 </Button>
               </div>
             </div>
             <div className="space-y-3">
-              <Label className="text-sm font-semibold">Date Range</Label>
+              <Label className="text-sm font-semibold">
+                {t("assetLibrary.filterDialog.dateRange")}
+              </Label>
               <div className="flex gap-2">
                 <Button
                   variant={filterDateRange === "all" ? "default" : "outline"}
@@ -14543,7 +14581,7 @@ export default function BrandDashboard() {
                   onClick={() => setFilterDateRange("all")}
                   className="flex-1"
                 >
-                  All Time
+                  {t("assetLibrary.filterDialog.allTime")}
                 </Button>
                 <Button
                   variant={filterDateRange === "week" ? "default" : "outline"}
@@ -14551,7 +14589,7 @@ export default function BrandDashboard() {
                   onClick={() => setFilterDateRange("week")}
                   className="flex-1"
                 >
-                  Last Week
+                  {t("assetLibrary.filterDialog.lastWeek")}
                 </Button>
                 <Button
                   variant={filterDateRange === "month" ? "default" : "outline"}
@@ -14559,7 +14597,7 @@ export default function BrandDashboard() {
                   onClick={() => setFilterDateRange("month")}
                   className="flex-1"
                 >
-                  Last Month
+                  {t("assetLibrary.filterDialog.lastMonth")}
                 </Button>
                 <Button
                   variant={filterDateRange === "year" ? "default" : "outline"}
@@ -14567,7 +14605,7 @@ export default function BrandDashboard() {
                   onClick={() => setFilterDateRange("year")}
                   className="flex-1"
                 >
-                  Last Year
+                  {t("assetLibrary.filterDialog.lastYear")}
                 </Button>
               </div>
             </div>
@@ -14580,10 +14618,10 @@ export default function BrandDashboard() {
                 setFilterDateRange("all");
               }}
             >
-              Reset Filters
+              {t("assetLibrary.filterDialog.reset")}
             </Button>
             <Button onClick={() => setShowFilterDialog(false)}>
-              Apply Filters
+              {t("assetLibrary.filterDialog.apply")}
             </Button>
           </DialogFooter>
         </DialogContent>

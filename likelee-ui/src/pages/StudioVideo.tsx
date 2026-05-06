@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { base44 } from "@/api/base44Client";
 import {
   StudioAssetPicker,
@@ -40,6 +41,7 @@ import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserFriendlyError } from "@/utils";
 import WalletTransactionsDialog from "@/components/WalletTransactionsDialog";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   generate as studioGenerate,
   getJobStatus,
@@ -251,6 +253,7 @@ const promptSuggestions = [
 ];
 
 const StudioVideo = () => {
+  const { t } = useTranslation("brand");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -716,7 +719,7 @@ const StudioVideo = () => {
                   fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                 }}
               >
-                StudioVideo
+                {t("studio.video.title")}
               </h1>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div
@@ -736,7 +739,7 @@ const StudioVideo = () => {
                     letterSpacing: "0.05em",
                   }}
                 >
-                  AI Engine Active
+                  {t("studio.video.engineActive")}
                 </span>
               </div>
             </div>
@@ -744,6 +747,7 @@ const StudioVideo = () => {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <LanguageSwitcher />
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <button
               onClick={() => setShowTransactions(true)}
@@ -781,7 +785,7 @@ const StudioVideo = () => {
                 transition: "all 0.2s",
               }}
             >
-              + Add Credits
+              + {t("studio.video.addCredits")}
             </button>
           </div>
         </div>
@@ -838,7 +842,7 @@ const StudioVideo = () => {
                   fontFamily: '"Fraunces", ui-serif, Georgia, serif',
                 }}
               >
-                Configuration
+                {t("studio.video.configuration")}
               </h2>
               <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.5 }}>
                 Tweak parameters to perfect your AI generation.
@@ -1561,12 +1565,12 @@ const StudioVideo = () => {
                     size={18}
                     style={{ animation: "spin 1s linear infinite" }}
                   />
-                  Generating...
+                  {t("studio.video.ui.generating")}
                 </>
               ) : (
                 <>
                   <Zap size={18} />
-                  Generate Video
+                  {t("studio.video.ui.generateVideo")}
                 </>
               )}
             </button>
@@ -1605,7 +1609,7 @@ const StudioVideo = () => {
                 fontFamily: '"Fraunces", ui-serif, Georgia, serif',
               }}
             >
-              Preview Output
+              {t("studio.video.ui.previewOutput")}
             </h3>
             <div style={{ display: "flex", gap: 12 }}>
               <Badge
@@ -1735,7 +1739,7 @@ const StudioVideo = () => {
                             marginBottom: 8,
                           }}
                         >
-                          Ready to Create
+                          {t("studio.video.ui.readyToCreate")}
                         </h4>
                         <p
                           style={{
@@ -1745,8 +1749,7 @@ const StudioVideo = () => {
                             margin: "0 auto",
                           }}
                         >
-                          Configure parameters and click "Generate Video" to
-                          start.
+                          {t("studio.video.ui.readyToCreateHint")}
                         </p>
                       </div>
                     );
