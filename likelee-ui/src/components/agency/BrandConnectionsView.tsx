@@ -203,6 +203,40 @@ const BrandConnectionsView = ({
     { label: string; onClick: () => void; variant?: "default" | "outline" }[]
   >([]);
 
+  const [assignDialog, setAssignDialog] = useState<{
+    open: boolean;
+    offerId: string;
+    talentId: string;
+  }>({
+    open: false,
+    offerId: "",
+    talentId: "",
+  });
+  const [assignSearch, setAssignSearch] = useState("");
+  const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
+  const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [assignConfirmOpen, setAssignConfirmOpen] = useState(false);
+  const [inviteRequiredDialog, setInviteRequiredDialog] = useState<{
+    open: boolean;
+    talentName: string;
+    talentId: string;
+  }>({
+    open: false,
+    talentName: "",
+    talentId: "",
+  });
+  const [unassignConfirm, setUnassignConfirm] = useState<{
+    open: boolean;
+    offerId: string;
+    assignmentId: string;
+    talentName: string;
+  }>({
+    open: false,
+    offerId: "",
+    assignmentId: "",
+    talentName: "",
+  });
+
   // Load DocuSeal Builder script
   const loadDocuSealBuilder = () => {
     if (document.getElementById("docuseal-builder-script")) return;
@@ -433,6 +467,28 @@ const BrandConnectionsView = ({
   const assignmentLockedForSelectedOffer = selectedOfferLockInfo.locked;
   const selectedOfferContractSigned = selectedOfferLockInfo.contractSigned;
   const selectedOfferPackageFinalized = selectedOfferLockInfo.packageFinalized;
+
+  const assignmentLockedForOffer = useMemo(() => {
+    const offerId = String(assignDialog.offerId || "").trim();
+    if (!offerId) return false;
+    const offer = (offers || []).find(
+      (o: any) => String(o?.id || "") === offerId,
+    );
+    const status = String(offer?.status || "")
+      .trim()
+      .toLowerCase();
+    const pay = String(offer?.payment_status || "unpaid")
+      .trim()
+      .toLowerCase();
+    const contractSigned = status === "contract_fully_signed";
+    const packageFinalized = Boolean(offerAssignmentsQuery.data?.is_locked);
+    return (
+      packageFinalized ||
+      (pay !== "unpaid" && pay !== "") ||
+      status === "contract_sent" ||
+      contractSigned
+    );
+  }, [offers, assignDialog.offerId, offerAssignmentsQuery.data]);
 
   const agencyPayoutAccountStatusQuery = useQuery({
     queryKey: ["agency", "payouts", "account_status"],
