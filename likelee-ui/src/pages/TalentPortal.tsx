@@ -78,6 +78,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "react-i18next";
 
 import {
   acceptCreatorAgencyInvite,
@@ -109,6 +110,7 @@ export default function TalentPortal({
   const navigate = useNavigate();
   const location = useLocation();
   const params = useQueryParams();
+  const { t } = useTranslation();
   const { initialized, authenticated, profile } = useAuth();
   const queryClient = useQueryClient();
 
@@ -1296,12 +1298,14 @@ export default function TalentPortal({
             </div>
             <div className="min-w-0">
               <div className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">
-                {mode === "irl" ? "IRL Bookings Portal" : "AI Licensing Portal"}
+                {mode === "irl"
+                  ? t("talentPortal.mode.irlTitle")
+                  : t("talentPortal.mode.aiTitle")}
               </div>
               <div className="text-xs sm:text-sm text-gray-600 mt-0.5">
                 {mode === "irl"
-                  ? "Track your bookings and earnings"
-                  : "Manage your AI licensing deals and earnings"}
+                  ? t("talentPortal.mode.irlSubtitle")
+                  : t("talentPortal.mode.aiSubtitle")}
               </div>
             </div>
           </div>
@@ -1312,12 +1316,12 @@ export default function TalentPortal({
             {mode === "irl" ? (
               <>
                 <Briefcase className="h-4 w-4 text-blue-500" />
-                AI Mode
+                {t("talentPortal.mode.aiButton")}
               </>
             ) : (
               <>
                 <Briefcase className="h-4 w-4 text-blue-500" />
-                IRL Mode
+                {t("talentPortal.mode.irlButton")}
               </>
             )}
           </button>
@@ -1327,59 +1331,103 @@ export default function TalentPortal({
           <div className="flex items-center gap-6 min-w-max pb-3">
             {(mode === "irl"
               ? [
-                  { id: "overview", label: "Overview", icon: LayoutGrid },
+                  {
+                    id: "overview",
+                    label: t("talentPortal.tabs.overview"),
+                    icon: LayoutGrid,
+                  },
                   {
                     id: "calendar",
-                    label: "Booking Calendar",
+                    label: t("talentPortal.tabs.bookingCalendar"),
                     icon: Calendar,
                     badge: 0,
                   },
                   {
                     id: "active_projects",
-                    label: "Active Projects",
+                    label: t("talentPortal.tabs.activeProjects"),
                     icon: Briefcase,
                   },
-                  { id: "history", label: "Job History", icon: FileText },
+                  {
+                    id: "history",
+                    label: t("talentPortal.tabs.jobHistory"),
+                    icon: FileText,
+                  },
                   {
                     id: "availability",
-                    label: "Availability",
+                    label: t("talentPortal.tabs.availability"),
                     icon: CheckCircle2,
                   },
-                  { id: "portfolio", label: "Portfolio", icon: LucideImage },
-                  { id: "earnings", label: "Earnings", icon: DollarSign },
+                  {
+                    id: "portfolio",
+                    label: t("talentPortal.tabs.portfolio"),
+                    icon: LucideImage,
+                  },
+                  {
+                    id: "earnings",
+                    label: t("talentPortal.tabs.earnings"),
+                    icon: DollarSign,
+                  },
                   {
                     id: "messages",
-                    label: "Messages",
+                    label: t("talentPortal.tabs.messages"),
                     icon: MessageSquare,
                     badge: totalUnreadMessages || undefined,
                   },
-                  { id: "settings", label: "Settings", icon: Settings },
+                  {
+                    id: "settings",
+                    label: t("talentPortal.tabs.settings"),
+                    icon: Settings,
+                  },
                   {
                     id: "agency_connection",
-                    label: "Agency Connection",
+                    label: t("talentPortal.tabs.agencyConnection"),
                     icon: Building2,
                     badge: pendingAgencyInvitesCount || undefined,
                   },
                 ]
               : [
-                  { id: "overview", label: "Overview", icon: LayoutGrid },
-                  { id: "likeness", label: "My Likeness", icon: Sparkles },
+                  {
+                    id: "overview",
+                    label: t("talentPortal.tabs.overview"),
+                    icon: LayoutGrid,
+                  },
+                  {
+                    id: "likeness",
+                    label: t("talentPortal.tabs.myLikeness"),
+                    icon: Sparkles,
+                  },
                   {
                     id: "campaigns",
-                    label: "Active Campaigns",
+                    label: t("talentPortal.tabs.activeCampaigns"),
                     icon: Briefcase,
                     badge: activeCampaignRows.length,
                   },
-                  { id: "archive", label: "Archive", icon: FolderArchive },
-                  { id: "earnings", label: "Earnings", icon: DollarSign },
-                  { id: "analytics", label: "Analytics", icon: BarChart3 },
+                  {
+                    id: "archive",
+                    label: t("talentPortal.tabs.archive"),
+                    icon: FolderArchive,
+                  },
+                  {
+                    id: "earnings",
+                    label: t("talentPortal.tabs.earnings"),
+                    icon: DollarSign,
+                  },
+                  {
+                    id: "analytics",
+                    label: t("talentPortal.tabs.analytics"),
+                    icon: BarChart3,
+                  },
                   {
                     id: "messages",
-                    label: "Messages",
+                    label: t("talentPortal.tabs.messages"),
                     icon: MessageSquare,
                     badge: totalUnreadMessages || undefined,
                   },
-                  { id: "settings", label: "Settings", icon: Settings },
+                  {
+                    id: "settings",
+                    label: t("talentPortal.tabs.settings"),
+                    icon: Settings,
+                  },
                 ]
             ).map((item) => {
               const Icon = item.icon as any;
@@ -2494,10 +2542,10 @@ export default function TalentPortal({
             <div className="space-y-6">
               <div>
                 <div className="text-2xl font-bold text-gray-900">
-                  Agency Connection
+                  {t("agencyConnections.title")}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Manage agency invitations and your connected agencies.
+                  {t("agencyConnections.subtitle")}
                 </div>
               </div>
 
@@ -2505,19 +2553,19 @@ export default function TalentPortal({
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      Connected Agencies
+                      {t("agencyConnections.connectedAgencies")}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
                       {agencyConnections.length > 0
-                        ? "You can be connected to multiple agencies at once."
-                        : "You are not connected to any agencies yet."}
+                        ? t("agencyConnections.connectedAgenciesDescription")
+                        : t("agencyConnections.noConnectionsDescription")}
                     </div>
                   </div>
                   {(agencyConnectionsLoading ||
                     disconnectAgencyMutation.isPending) && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading
+                      {t("agencyConnections.loading")}
                     </div>
                   )}
                 </div>
@@ -2631,16 +2679,16 @@ export default function TalentPortal({
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      Invitations
+                      {t("agencyConnections.invitations")}
                     </div>
                     <div className="text-xs text-gray-600 mt-1">
-                      Respond to pending invitations from agencies.
+                      {t("agencyConnections.pendingInvitationsDescription")}
                     </div>
                   </div>
                   {agencyInvitesLoading && (
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Loading
+                      {t("agencyConnections.loading")}
                     </div>
                   )}
                 </div>
@@ -2686,13 +2734,20 @@ export default function TalentPortal({
                               <div className="min-w-0">
                                 <div className="font-semibold text-gray-900 truncate">
                                   {inv?.agencies?.agency_name
-                                    ? `Invitation from ${inv.agencies.agency_name}`
-                                    : "Invitation from agency"}
+                                    ? t(
+                                        "agencyConnections.invitationFromAgencyNamed",
+                                        {
+                                          agency: inv.agencies.agency_name,
+                                        },
+                                      )
+                                    : t(
+                                        "agencyConnections.invitationFromAgency",
+                                      )}
                                 </div>
                                 <div className="text-xs text-gray-500 truncate mt-1">
                                   {inv?.agencies?.email ||
                                     inv?.agencies?.website ||
-                                    "Agency profile available on request"}
+                                    t("agencyConnections.profileAvailable")}
                                 </div>
                               </div>
                             </div>
@@ -2724,7 +2779,7 @@ export default function TalentPortal({
                                   }
                                 }}
                               >
-                                Decline
+                                {t("agencyConnections.decline")}
                               </Button>
                               {inv?.marketplace_contract ? (
                                 <>
@@ -2779,7 +2834,7 @@ export default function TalentPortal({
                                       }
                                     }}
                                   >
-                                    Review contract
+                                    {t("agencyConnections.reviewContract")}
                                   </Button>
                                   <Button
                                     className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -2820,7 +2875,7 @@ export default function TalentPortal({
                                       }
                                     }}
                                   >
-                                    Sync
+                                    {t("agencyConnections.sync")}
                                   </Button>
                                 </>
                               ) : (
@@ -2859,7 +2914,7 @@ export default function TalentPortal({
                                     }
                                   }}
                                 >
-                                  Accept
+                                  {t("agencyConnections.accept")}
                                 </Button>
                               )}
                             </div>
@@ -2885,17 +2940,16 @@ export default function TalentPortal({
                           ) : null}
                           <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
                             <span className="font-semibold">
-                              Likelee notice:
+                              {t("agencyConnections.likeleeNoticeTitle")}
                             </span>{" "}
-                            This agency found your public profile in marketplace
-                            and sent a connection invitation.
+                            {t("agencyConnections.likeleeNoticeDescription")}
                           </div>
                         </div>
                       ))}
                   </div>
                 ) : (
                   <div className="mt-6 text-sm text-gray-500">
-                    No pending invitations.
+                    {t("agencyConnections.noPendingInvitations")}
                   </div>
                 )}
               </Card>
@@ -3209,7 +3263,9 @@ export default function TalentPortal({
                     <Input
                       value={campaignSearch}
                       onChange={(e) => setCampaignSearch(e.target.value)}
-                      placeholder="Search by brand or campaign"
+                      placeholder={t(
+                        "talentPortal.content.ai.campaigns.searchPlaceholder",
+                      )}
                       className="pl-10 pr-12"
                     />
                     {campaignSearch.trim() && (
