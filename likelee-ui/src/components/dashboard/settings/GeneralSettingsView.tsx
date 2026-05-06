@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
@@ -288,15 +290,17 @@ const TEAM_ROLE_OPTIONS: Array<{
 const formatTeamRoleLabel = (role?: string) => {
   switch (role) {
     case "owner":
-      return "Owner";
+      return i18n.t("settings.team.roles.owner", { ns: "agency" });
     case "admin":
-      return "Admin";
+      return i18n.t("settings.team.roles.admin.label", { ns: "agency" });
     case "project_manager":
-      return "Project Manager";
+      return i18n.t("settings.team.roles.projectManager.label", {
+        ns: "agency",
+      });
     case "reviewer":
-      return "Reviewer";
+      return i18n.t("settings.team.roles.reviewer.label", { ns: "agency" });
     default:
-      return role || "Unknown";
+      return role || i18n.t("settings.team.roles.unknown", { ns: "agency" });
   }
 };
 
@@ -319,32 +323,33 @@ const InviteTeamMemberModal = ({
   onSubmit: () => void;
   submitting: boolean;
 }) => {
+  const { t } = useTranslation("agency");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md w-[95vw] rounded-2xl p-4 sm:p-6 overflow-hidden">
         <DialogHeader className="space-y-1 sm:space-y-1.5 text-left">
           <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
-            Invite Team Member
+            {t("settings.team.modals.inviteTitle")}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
-            Send an email invitation to join your agency team
+            {t("settings.team.modals.inviteDescription")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 sm:space-y-6 py-4">
           <div className="space-y-1.5 sm:space-y-2">
             <Label className="text-xs sm:text-sm font-bold text-gray-900">
-              Email Address
+              {t("settings.team.modals.emailAddress")}
             </Label>
             <Input
               value={email}
               onChange={(event) => onEmailChange(event.target.value)}
-              placeholder="colleague@example.com"
+              placeholder={t("settings.team.modals.emailPlaceholder")}
               className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm"
             />
           </div>
           <div className="space-y-1.5 sm:space-y-2">
             <Label className="text-xs sm:text-sm font-bold text-gray-900">
-              User Role
+              {t("settings.team.userRole")}
             </Label>
             <Select
               value={role}
@@ -353,7 +358,7 @@ const InviteTeamMemberModal = ({
               }
             >
               <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
-                <SelectValue placeholder="Select role" />
+                <SelectValue placeholder={t("settings.team.selectRole")} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
@@ -363,9 +368,21 @@ const InviteTeamMemberModal = ({
                     className="text-xs font-bold py-2.5"
                   >
                     <div className="flex flex-col gap-0.5">
-                      <span>{option.label}</span>
+                      <span>
+                        {option.value === "admin"
+                          ? t("settings.team.roles.admin.label")
+                          : option.value === "project_manager"
+                            ? t("settings.team.roles.projectManager.label")
+                            : t("settings.team.roles.reviewer.label")}
+                      </span>
                       <span className="text-[10px] text-gray-400 font-medium">
-                        {option.description}
+                        {option.value === "admin"
+                          ? t("settings.team.roles.admin.description")
+                          : option.value === "project_manager"
+                            ? t(
+                                "settings.team.roles.projectManager.description",
+                              )
+                            : t("settings.team.roles.reviewer.description")}
                       </span>
                     </div>
                   </SelectItem>
@@ -375,8 +392,8 @@ const InviteTeamMemberModal = ({
           </div>
           <div className="p-3 sm:p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
             <p className="text-[10px] sm:text-xs text-indigo-700 font-medium leading-relaxed">
-              <span className="font-bold">Note:</span> The invited user will
-              receive instructions via email to access the dashboard.
+              <span className="font-bold">{t("settings.team.note")}:</span>{" "}
+              {t("settings.team.inviteNote")}
             </p>
           </div>
         </div>
@@ -387,7 +404,7 @@ const InviteTeamMemberModal = ({
             className="w-full sm:w-auto font-bold text-xs sm:text-sm"
             disabled={submitting}
           >
-            Cancel
+            {t("common.cancel", { ns: "common", defaultValue: "Cancel" })}
           </Button>
           <Button
             onClick={onSubmit}
@@ -399,7 +416,9 @@ const InviteTeamMemberModal = ({
             ) : (
               <Mail className="w-4 h-4" />
             )}
-            {submitting ? "Sending..." : "Send Invitation"}
+            {submitting
+              ? t("settings.team.modals.sending")
+              : t("settings.team.modals.sendInvitation")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -424,6 +443,7 @@ const EditPermissionsModal = ({
   onSubmit: () => void;
   submitting: boolean;
 }) => {
+  const { t } = useTranslation("agency");
   if (!member) return null;
 
   return (
@@ -431,16 +451,19 @@ const EditPermissionsModal = ({
       <DialogContent className="max-w-md w-[95vw] rounded-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-2 text-left space-y-1">
           <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
-            Update Team Role
+            {t("settings.team.modals.updateRoleTitle")}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm text-gray-500 font-medium">
-            {member.email} is currently {formatTeamRoleLabel(member.role)}.
+            {t("settings.team.modals.currentRole", {
+              email: member.email,
+              role: formatTeamRoleLabel(member.role),
+            })}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-2 space-y-5 sm:space-y-6">
           <div className="space-y-1.5 sm:space-y-2">
             <Label className="text-xs sm:text-sm font-bold text-gray-900">
-              New Role
+              {t("settings.team.newRole")}
             </Label>
             <Select
               value={nextRole}
@@ -449,7 +472,7 @@ const EditPermissionsModal = ({
               }
             >
               <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
-                <SelectValue placeholder="Select role" />
+                <SelectValue placeholder={t("settings.team.selectRole")} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
@@ -459,9 +482,21 @@ const EditPermissionsModal = ({
                     className="text-xs font-bold py-2.5"
                   >
                     <div className="flex flex-col gap-0.5">
-                      <span>{option.label}</span>
+                      <span>
+                        {option.value === "admin"
+                          ? t("settings.team.roles.admin.label")
+                          : option.value === "project_manager"
+                            ? t("settings.team.roles.projectManager.label")
+                            : t("settings.team.roles.reviewer.label")}
+                      </span>
                       <span className="text-[10px] text-gray-400 font-medium">
-                        {option.description}
+                        {option.value === "admin"
+                          ? t("settings.team.roles.admin.description")
+                          : option.value === "project_manager"
+                            ? t(
+                                "settings.team.roles.projectManager.description",
+                              )
+                            : t("settings.team.roles.reviewer.description")}
                       </span>
                     </div>
                   </SelectItem>
@@ -470,8 +505,7 @@ const EditPermissionsModal = ({
             </Select>
           </div>
           <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 sm:p-4 text-[10px] sm:text-xs font-medium text-amber-800">
-            This change takes effect immediately for the member’s active
-            session.
+            {t("settings.team.modals.roleChangeWarning")}
           </div>
         </div>
         <DialogFooter className="p-4 sm:p-6 border-t border-gray-100 flex-col sm:flex-row gap-2 sm:gap-0">
@@ -481,14 +515,16 @@ const EditPermissionsModal = ({
             className="w-full sm:w-auto font-bold text-xs sm:text-sm"
             disabled={submitting}
           >
-            Cancel
+            {t("common.cancel", { ns: "common", defaultValue: "Cancel" })}
           </Button>
           <Button
             onClick={onSubmit}
             disabled={submitting}
             className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-8 rounded-xl text-xs sm:text-sm"
           >
-            {submitting ? "Saving..." : "Confirm Role Change"}
+            {submitting
+              ? t("settings.team.modals.saving")
+              : t("settings.team.modals.confirmRoleChange")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -614,6 +650,7 @@ const GeneralSettingsView = ({
   hasProAccess = false,
   agencyDisplayPlanLabel,
 }: GeneralSettingsViewProps) => {
+  const { t } = useTranslation("agency");
   const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -3046,7 +3083,9 @@ const GeneralSettingsView = ({
                 className="h-8 sm:h-9 px-3 sm:px-4 bg-indigo-50/70 hover:bg-slate-900 text-indigo-700 hover:text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 transition-all"
               >
                 <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm">Invite</span>
+                <span className="text-xs sm:text-sm">
+                  {t("settings.team.actions.inviteUser")}
+                </span>
               </Button>
             </div>
 
@@ -3054,7 +3093,7 @@ const GeneralSettingsView = ({
               <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Loading team members…
+                  {t("settings.team.loadingMembers")}
                 </div>
               </Card>
             ) : (
@@ -3068,7 +3107,7 @@ const GeneralSettingsView = ({
                         </div>
                         <div>
                           <h4 className="text-sm sm:text-lg font-bold text-gray-900 tracking-tight">
-                            Active Members
+                            {t("settings.team.activeMembers")}
                           </h4>
                           <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
                             Current access inside{" "}
@@ -3085,7 +3124,7 @@ const GeneralSettingsView = ({
                         >
                           <History className="w-3.5 h-3.5 mr-1.5" />
                           <span className="text-[10px] sm:text-xs">
-                            Activity
+                            {t("settings.team.activity.title")}
                           </span>
                         </Button>
                         <Badge className="bg-gray-50 text-gray-500 border-gray-100 font-bold text-[9px] sm:text-[10px] h-5 sm:h-6 shrink-0">
@@ -3097,7 +3136,7 @@ const GeneralSettingsView = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {(teamContext?.members || []).length === 0 ? (
                         <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
-                          No active team members yet.
+                          {t("settings.team.emptyMembers")}
                         </div>
                       ) : (
                         (teamContext?.members || []).map((member) => {
@@ -3129,7 +3168,7 @@ const GeneralSettingsView = ({
                               <div className="flex items-center justify-end border-t border-gray-100 pt-3">
                                 {member.role === "owner" ? (
                                   <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 text-[9px] font-black uppercase tracking-widest px-2">
-                                    Owner
+                                    {t("settings.team.roles.owner")}
                                   </Badge>
                                 ) : (
                                   <Button
@@ -3140,7 +3179,7 @@ const GeneralSettingsView = ({
                                     onClick={() => openRoleEditor(member)}
                                   >
                                     <Edit2 className="w-3 h-3 mr-1.5" />
-                                    Edit Role
+                                    {t("settings.team.actions.editRole")}
                                   </Button>
                                 )}
                               </div>
@@ -3161,10 +3200,10 @@ const GeneralSettingsView = ({
                         </div>
                         <div>
                           <h4 className="text-sm sm:text-lg font-bold text-gray-900 tracking-tight">
-                            Invitations
+                            {t("settings.team.pendingInvitations.title")}
                           </h4>
                           <p className="text-[10px] sm:text-sm text-gray-500 font-medium mt-0.5 hidden sm:block">
-                            Outstanding invites waiting for acceptance.
+                            {t("settings.team.pendingInvitations.description")}
                           </p>
                         </div>
                       </div>
@@ -3182,7 +3221,7 @@ const GeneralSettingsView = ({
                         (invite) => invite.status === "pending",
                       ).length === 0 ? (
                         <div className="col-span-full rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-xs sm:text-sm text-gray-500 text-center">
-                          No pending invitations.
+                          {t("settings.team.pendingInvitations.empty")}
                         </div>
                       ) : (
                         (teamContext?.invites || [])
@@ -3201,7 +3240,9 @@ const GeneralSettingsView = ({
                                     {formatTeamRoleLabel(invite.role)}
                                   </Badge>
                                   <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                    Pending
+                                    {t(
+                                      "settings.team.pendingInvitations.pending",
+                                    )}
                                   </span>
                                 </div>
                               </div>
