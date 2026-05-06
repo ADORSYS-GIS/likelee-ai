@@ -703,8 +703,7 @@ pub async fn create_for_agency(
     let body = lines.join("\n");
 
     // Best-effort email send
-    match crate::email::send_plain_text_email(&state, &email, &subject, &body, Some(&agency_name))
-    {
+    match crate::email::send_plain_text_email(&state, &email, &subject, &body, Some(&agency_name)) {
         Ok(()) => {
             tracing::info!(
                 email = %email,
