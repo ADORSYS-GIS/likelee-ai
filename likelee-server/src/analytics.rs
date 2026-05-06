@@ -2642,7 +2642,10 @@ pub async fn get_expired_licenses(
                 .map(|s| s.to_string());
 
             // Get license_submissions data from submission_map
-            let submission_id = r.get("submission_id").and_then(|v| v.as_str()).unwrap_or("");
+            let submission_id = r
+                .get("submission_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let license_submission = submission_map.get(submission_id);
 
             let template_id = license_submission
@@ -2667,12 +2670,7 @@ pub async fn get_expired_licenses(
                 brand_request_id
             );
 
-            // If no brand_request_id, try to find it by matching client_name and other fields
-            let final_brand_request_id = if brand_request_id.is_none() {
-                brand_request_id
-            } else {
-                brand_request_id
-            };
+            let final_brand_request_id = brand_request_id;
 
             json!({
                 "id": r.get("id").and_then(|v| v.as_str()).unwrap_or_default(),

@@ -281,8 +281,6 @@ pub async fn create_draft(
         "brand_request_id": req.licensing_request_id,
     });
 
-
-
     let resp = state
         .pg
         .from("license_submissions")
@@ -1165,7 +1163,6 @@ pub async fn finalize(
 
                 // If this is a renewal, mark the old license as "renewed"
                 if let Some(old_license_id) = &req.old_license_id {
-
                     // Get the brand_request_id from the current submission record (passed via licensing_request_id)
                     let brand_request_id_opt = req.licensing_request_id.clone().or_else(|| {
                         submission_data["brand_request_id"]
@@ -1427,7 +1424,9 @@ pub async fn finalize(
                                                                 {
                                                                     submission_talent_id.to_string()
                                                                 }
-                                                                _ => submission_talent_id.to_string(),
+                                                                _ => {
+                                                                    submission_talent_id.to_string()
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -1448,7 +1447,9 @@ pub async fn finalize(
                                             .execute()
                                             .await
                                         {
-                                            Ok(creator_resp) if creator_resp.status().is_success() => {
+                                            Ok(creator_resp)
+                                                if creator_resp.status().is_success() =>
+                                            {
                                                 submission_talent_id.to_string()
                                             }
                                             _ => submission_talent_id.to_string(),
