@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { createPageUrl } from "@/utils";
 import { createBookDemoUrl } from "@/utils/bookDemo";
 import { CONTACT_EMAIL_MAILTO } from "@/config/public";
@@ -310,6 +311,7 @@ const getBrandInitials = (name: string) => {
 // Mock licenses removed - licenses are now loaded from real API data
 
 export default function BrandDashboard() {
+  const { t } = useTranslation();
   const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -4690,7 +4692,7 @@ export default function BrandDashboard() {
                             setBrandSignOpen(true);
                           }}
                         >
-                          Sign Contract
+                          {t("brandDashboard.licensingRequests.signContract")}
                         </Button>
                       ) : submission?.status === "completed" ? (
                         <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
@@ -4706,12 +4708,16 @@ export default function BrandDashboard() {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            Contract Signed
+                            {t(
+                              "brandDashboard.licensingRequests.contractSigned",
+                            )}
                           </p>
                         </div>
                       ) : (
                         <div className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-2 rounded-md text-xs font-medium">
-                          Awaiting contract from agency
+                          {t(
+                            "brandDashboard.licensingRequests.awaitingAgencyContract",
+                          )}
                         </div>
                       )}
                     </div>
@@ -9226,7 +9232,9 @@ export default function BrandDashboard() {
                       {new Date(contract.signed_date).toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-700">
-                      Contract fully signed by both parties
+                      {t(
+                        "brandDashboard.campaigns.statuses.contractFullySigned",
+                      )}
                     </p>
                     <p className="text-xs text-gray-500">
                       DocuSign Envelope: {contract.docusign_envelope_id}
@@ -11083,9 +11091,11 @@ export default function BrandDashboard() {
       >
         <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
           <DialogHeader className="p-4 border-b">
-            <DialogTitle>Sign Contract</DialogTitle>
+            <DialogTitle>
+              {t("brandDashboard.licensingRequests.signContract")}
+            </DialogTitle>
             <DialogDescription>
-              Review and sign the licensing contract.
+              {t("brandDashboard.licensingRequests.signContractDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 w-full bg-gray-50 overflow-auto">
