@@ -318,7 +318,10 @@
         "pendingApprovals": "Aprobaciones Pendientes",
         "actionNeeded": "Acción necesaria",
         "thisMonthSpend": "Gasto de Este Mes",
-        "avgTurnaround": "Tiempo Promedio"
+        "avgTurnaround": "Tiempo Promedio",
+        "spendVsLastMonth": "{{value}} vs el mes pasado",
+        "newSpendThisMonth": "Nuevo gasto este mes",
+        "noSpendRecorded": "Aún no hay gasto registrado"
       },
       "quickActions": {
         "title": "Acciones Rápidas",
@@ -361,6 +364,14 @@
           "connectionRequestAccepted": "aceptó una solicitud de conexión",
           "connectionRequestDeclined": "rechazó una solicitud de conexión",
           "performedAction": "realizó una acción"
+        },
+        "templates": {
+          "campaignCreated": "{{actor}} creó {{campaign}}.",
+          "campaignCompleted": "{{actor}} marcó {{campaign}} como completada.",
+          "jobCreated": "{{actor}} creó un trabajo: {{job}}.",
+          "jobInviteSent": "{{actor}} invitó a {{target}} a postularse para {{job}}.",
+          "jobInviteAccepted": "{{actor}} aceptó la invitación para {{job}}.",
+          "jobInviteDeclined": "{{actor}} rechazó la invitación para {{job}}."
         }
       },
       "monthlySpendTrend": "Tendencia de Gasto Mensual"
@@ -862,6 +873,7 @@
         "willingToTravel": "Dispuesto a viajar",
         "notSpecified": "No especificado",
         "noRatesPublished": "Sin tarifas publicadas.",
+        "autoConnectedByYou": "Conectado automáticamente (creado por ti)",
         "openPortfolioLink": "Abrir enlace de portafolio",
         "noUploadedPortfolioMedia": "Sin medios de portafolio cargados aún.",
         "confirmed": "Confirmado",
@@ -1301,6 +1313,7 @@
       "projects": "Proyectos",
       "successRate": "Tasa de éxito",
       "totalCost": "Costo total",
+      "totalSpend": "Gasto",
       "loadingTalentPerformance": "Cargando rendimiento del talento...",
       "noTalentPerformance": "Aún no hay datos de rendimiento del talento.",
       "topPerformer": "Mejor rendimiento",

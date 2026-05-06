@@ -320,7 +320,10 @@
         "pendingApprovals": "Approbations en Attente",
         "actionNeeded": "Action requise",
         "thisMonthSpend": "Dépenses de Ce Mois",
-        "avgTurnaround": "Délai Moyen"
+        "avgTurnaround": "Délai Moyen",
+        "spendVsLastMonth": "{{value}} vs le mois dernier",
+        "newSpendThisMonth": "Nouvelles dépenses ce mois-ci",
+        "noSpendRecorded": "Aucune dépense enregistrée pour le moment"
       },
       "quickActions": {
         "title": "Actions Rapides",
@@ -363,6 +366,14 @@
           "connectionRequestAccepted": "a accepté une demande de connexion",
           "connectionRequestDeclined": "a refusé une demande de connexion",
           "performedAction": "a effectué une action"
+        },
+        "templates": {
+          "campaignCreated": "{{actor}} a créé {{campaign}}.",
+          "campaignCompleted": "{{actor}} a marqué {{campaign}} comme terminé.",
+          "jobCreated": "{{actor}} a créé une offre d'emploi : {{job}}.",
+          "jobInviteSent": "{{actor}} a invité {{target}} à postuler pour {{job}}.",
+          "jobInviteAccepted": "{{actor}} a accepté l'invitation pour {{job}}.",
+          "jobInviteDeclined": "{{actor}} a refusé l'invitation pour {{job}}."
         }
       },
       "monthlySpendTrend": "Tendance des Dépenses Mensuelles"
@@ -873,6 +884,7 @@
         "willingToTravel": "Disposé à voyager",
         "notSpecified": "Non spécifié",
         "noRatesPublished": "Aucun tarif publié.",
+        "autoConnectedByYou": "Connecté automatiquement (créé par vous)",
         "openPortfolioLink": "Ouvrir le lien du portfolio",
         "noUploadedPortfolioMedia": "Aucun média de portfolio téléchargé pour le moment.",
         "confirmed": "Confirmé",
@@ -1360,6 +1372,7 @@
       "projects": "Projets",
       "successRate": "Taux de réussite",
       "totalCost": "Coût total",
+      "totalSpend": "Dépenses",
       "loadingTalentPerformance": "Chargement de la performance des talents...",
       "noTalentPerformance": "Aucune donnée de performance pour le moment.",
       "topPerformer": "Meilleure performance",
