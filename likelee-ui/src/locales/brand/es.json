@@ -571,7 +571,38 @@
         "taxIdentificationPlaceholder": "XX-XXXXXXX",
         "primaryPaymentMethod": "Método de pago principal",
         "primaryPaymentMethodValue": "Visa terminada en 4242",
-        "manage": "Gestionar"
+        "manage": "Gestionar",
+        "paymentMethods": {
+          "loadFailed": "No se pudieron cargar los metodos de pago",
+          "cannotDeletePrimary": "No se puede eliminar el metodo de pago principal",
+          "removed": "Metodo de pago eliminado",
+          "deleteFailed": "No se pudo eliminar el metodo de pago",
+          "primaryUpdated": "Metodo de pago principal actualizado",
+          "setPrimaryFailed": "No se pudo establecer el metodo de pago principal",
+          "expires": "Vence",
+          "none": "No hay un metodo de pago registrado",
+          "addCard": "Agregar tarjeta",
+          "saved": "Metodos de pago guardados",
+          "empty": "No hay metodos de pago guardados",
+          "emptyHelp": "Agrega una tarjeta para comenzar",
+          "primary": "Principal",
+          "setPrimary": "Definir principal"
+        },
+        "modal": {
+          "title": "Agregar metodo de pago",
+          "description": "Introduce los datos de tu tarjeta para agregar un nuevo metodo de pago a la cuenta de tu marca.",
+          "cardDetails": "Datos de la tarjeta",
+          "processing": "Procesando...",
+          "stripeNotLoaded": "Stripe no se ha cargado. Intentalo de nuevo.",
+          "setupIntentFailed": "No se pudo crear el setup intent",
+          "genericError": "Ocurrio un error",
+          "stripeNotConfigured": "Stripe no esta configurado. Ponte en contacto con soporte.",
+          "stripeConfigFailed": "No se pudo cargar la configuracion de Stripe.",
+          "stripeLoadFailed": "No se pudo cargar Stripe",
+          "success": "Tarjeta agregada con exito",
+          "successToast": "Metodo de pago agregado correctamente",
+          "securityNote": "La informacion de tu tarjeta es procesada de forma segura por Stripe y nunca se almacena en nuestros servidores."
+        }
       },
       "team": {
         "title": "Gestión del equipo",
@@ -579,7 +610,8 @@
       },
       "integrations": {
         "title": "Amplía tu flujo de trabajo",
-        "description": "Conecta Likelee con tus herramientas de marketing favoritas para automatizar entregables, seguimiento y pagos."
+        "description": "Conecta Likelee con tus herramientas de marketing favoritas para automatizar entregables, seguimiento y pagos.",
+        "comingSoon": "Proximamente"
       },
       "security": {
         "title": "Configuración de seguridad",
@@ -592,7 +624,8 @@
         "terms": "Términos y condiciones",
         "privacy": "Política de privacidad",
         "sagAftra": "Acuerdo SAG-AFTRA",
-        "dataExport": "Exportación de datos (RGPD)"
+        "dataExport": "Exportación de datos (RGPD)",
+        "comingSoon": "Proximamente"
       },
       "support": {
         "title": "¿Necesitas ayuda?",
@@ -882,6 +915,8 @@
     }
   },
   "campaigns": {
+    "showCampaignSubtabs": "Mostrar subpestanas de campanas",
+    "hideCampaignSubtabs": "Ocultar subpestanas de campanas",
     "myOffers": {
       "title": "Mis Ofertas",
       "subtitle": "Revisa y gestiona ofertas de campañas y colaboraciones en curso",
@@ -1214,6 +1249,8 @@
       "subtitle": "Haz seguimiento de las solicitudes de licencia que has enviado a agencias.",
       "loading": "Cargando solicitudes de licencia...",
       "empty": "Aún no hay solicitudes de licencia.",
+      "emptyActive": "No hay solicitudes de licencia activas",
+      "emptyArchive": "No hay solicitudes de licencia archivadas",
       "requestFallback": "Solicitud de licencia",
       "agency": "Agencia",
       "talent": "Talento",
@@ -1231,6 +1268,19 @@
       "signContractDescription": "Revisa y firma el contrato de licencia.",
       "contractSigned": "Contrato firmado",
       "awaitingAgencyContract": "Esperando contrato de la agencia",
+      "tabs": {
+        "active": "Activas",
+        "archive": "Archivo"
+      },
+      "deleteDialog": {
+        "title": "Eliminar solicitud de licencia",
+        "description": "Esto eliminara permanentemente esta solicitud de licencia archivada. Esta accion no se puede deshacer.",
+        "confirmPrefix": "Seguro que quieres eliminar la solicitud de licencia para",
+        "unknownCampaign": "Campana desconocida",
+        "cancel": "Cancelar",
+        "deleting": "Eliminando...",
+        "delete": "Eliminar permanentemente"
+      },
       "status": {
         "approved": "Aprobado",
         "declined": "Rechazado",
@@ -1256,6 +1306,7 @@
       "topPerformer": "Mejor rendimiento",
       "spendByMonth": "Gasto por mes",
       "budgetForecast": "Proyección de presupuesto",
+      "loadingBudgetForecast": "Cargando prevision de presupuesto...",
       "ytdSpend": "Gasto YTD",
       "monthlyAvg": "Promedio mensual",
       "projectedEoy": "Proyección fin de año"

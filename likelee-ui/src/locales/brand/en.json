@@ -570,7 +570,38 @@
         "taxIdentificationPlaceholder": "XX-XXXXXXX",
         "primaryPaymentMethod": "Primary Payment Method",
         "primaryPaymentMethodValue": "Visa ending in 4242",
-        "manage": "Manage"
+        "manage": "Manage",
+        "paymentMethods": {
+          "loadFailed": "Failed to load payment methods",
+          "cannotDeletePrimary": "Cannot delete the primary payment method",
+          "removed": "Payment method removed",
+          "deleteFailed": "Failed to delete payment method",
+          "primaryUpdated": "Primary payment method updated",
+          "setPrimaryFailed": "Failed to set primary payment method",
+          "expires": "Expires",
+          "none": "No payment method on file",
+          "addCard": "Add Card",
+          "saved": "Saved Payment Methods",
+          "empty": "No saved payment methods",
+          "emptyHelp": "Add a card to get started",
+          "primary": "Primary",
+          "setPrimary": "Set Primary"
+        },
+        "modal": {
+          "title": "Add Payment Method",
+          "description": "Enter your card details to add a new payment method for your brand account.",
+          "cardDetails": "Card Details",
+          "processing": "Processing...",
+          "stripeNotLoaded": "Stripe is not loaded. Please try again.",
+          "setupIntentFailed": "Failed to create setup intent",
+          "genericError": "An error occurred",
+          "stripeNotConfigured": "Stripe is not configured. Please contact support.",
+          "stripeConfigFailed": "Failed to load Stripe configuration.",
+          "stripeLoadFailed": "Stripe failed to load",
+          "success": "Card added successfully!",
+          "successToast": "Payment method added successfully",
+          "securityNote": "Your card information is securely processed by Stripe and never stored on our servers."
+        }
       },
       "team": {
         "title": "Team Management",
@@ -578,7 +609,8 @@
       },
       "integrations": {
         "title": "Extend Your Workflow",
-        "description": "Connect Likelee with your favorite marketing tools to automate deliverables, tracking, and payments."
+        "description": "Connect Likelee with your favorite marketing tools to automate deliverables, tracking, and payments.",
+        "comingSoon": "Coming Soon"
       },
       "security": {
         "title": "Security Settings",
@@ -591,7 +623,8 @@
         "terms": "Terms & Conditions",
         "privacy": "Privacy Policy",
         "sagAftra": "SAG-AFTRA Agreement",
-        "dataExport": "Data Export (GDPR)"
+        "dataExport": "Data Export (GDPR)",
+        "comingSoon": "Coming Soon"
       },
       "support": {
         "title": "Need Assistance?",
@@ -882,6 +915,8 @@
     }
   },
   "campaigns": {
+    "showCampaignSubtabs": "Show campaign subtabs",
+    "hideCampaignSubtabs": "Hide campaign subtabs",
     "myOffers": {
       "title": "My Offers",
       "subtitle": "Review and manage campaign offers and ongoing collaborations",
@@ -1215,6 +1250,8 @@
       "subtitle": "Track licensing requests you have sent to agencies.",
       "loading": "Loading licensing requests...",
       "empty": "No licensing requests yet.",
+      "emptyActive": "No active licensing requests",
+      "emptyArchive": "No archived licensing requests",
       "requestFallback": "Licensing Request",
       "agency": "Agency",
       "talent": "Talent",
@@ -1232,6 +1269,19 @@
       "signContractDescription": "Review and sign the licensing contract.",
       "contractSigned": "Contract Signed",
       "awaitingAgencyContract": "Awaiting contract from agency",
+      "tabs": {
+        "active": "Active",
+        "archive": "Archive"
+      },
+      "deleteDialog": {
+        "title": "Delete Licensing Request",
+        "description": "This will permanently delete this archived licensing request. This action cannot be undone.",
+        "confirmPrefix": "Are you sure you want to delete the licensing request for",
+        "unknownCampaign": "Unknown campaign",
+        "cancel": "Cancel",
+        "deleting": "Deleting...",
+        "delete": "Delete Permanently"
+      },
       "status": {
         "approved": "Approved",
         "declined": "Declined",
@@ -1257,6 +1307,7 @@
       "topPerformer": "Top Performer",
       "spendByMonth": "Spend by Month",
       "budgetForecast": "Budget Forecast",
+      "loadingBudgetForecast": "Loading budget forecast...",
       "ytdSpend": "YTD Spend",
       "monthlyAvg": "Monthly Avg",
       "projectedEoy": "Projected EOY"
