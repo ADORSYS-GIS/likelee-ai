@@ -3224,6 +3224,7 @@ export default function BrandCampaignDashboard({
                     }}
                     hideBack={isExistingCampaign}
                     onNext={handleStep2Next}
+                    isSaving={savingCampaign}
                     uploading={uploadingImages}
                   />
                 </>
