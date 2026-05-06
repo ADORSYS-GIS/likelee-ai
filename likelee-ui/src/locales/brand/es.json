@@ -1004,7 +1004,22 @@
       "error": "Error al cargar la bandeja de entrada",
       "new": "Nuevo",
       "confirmSelectionTitle": "Confirmar selección",
-      "confirmSelectionDescription": "Estás a punto de finalizar tu selección de talento para {{title}}."
+      "confirmSelectionDescription": "Estás a punto de finalizar tu selección de talento para {{title}}.",
+      "dismissModal": {
+        "title": "Quitar de la bandeja de entrada",
+        "descriptionPrefix": "Estás a punto de quitar",
+        "thisPackage": "este paquete",
+        "from": "de",
+        "theAgency": "la agencia",
+        "descriptionSuffix": "de tu bandeja de entrada.",
+        "goodToKnow": "Bueno saberlo",
+        "confirm": "Sí, quitarlo",
+        "points": {
+          "viewOnly": "La agencia conserva su copia; esto solo afecta tu vista",
+          "noAssignments": "No se verán afectados los contratos ni las asignaciones de talento",
+          "receiveNew": "Aún puedes recibir nuevos paquetes de esta agencia"
+        }
+      }
     },
     "contractHub": {
       "title": "Hub de Contratos",
@@ -1079,6 +1094,8 @@
       },
       "status": {
         "sent": "Enviado",
+        "signRequired": "Firma requerida",
+        "awaitingCreator": "Esperando al creador",
         "opened": "Abierto",
         "completed": "Completado",
         "signed": "Firmado",
@@ -1149,6 +1166,11 @@
       "error": "Error al cargar trabajos",
       "postJob": "Publicar Nuevo Trabajo",
       "viewApplications": "Ver solicitudes",
+      "loadingApplications": "Cargando solicitudes...",
+      "noApplications": "Aún no hay solicitudes.",
+      "viewResume": "Ver currículum",
+      "compCard": "Tarjeta comp",
+      "portfolio": "Portafolio",
       "applications": "Solicitudes",
       "jobPostings": "Ofertas de trabajo",
       "postJobButton": "Publicar trabajo",
@@ -1221,7 +1243,20 @@
       "error": "Error al cargar activos",
       "uploadAsset": "Subir Activo",
       "deleteAsset": "Eliminar",
-      "downloadAsset": "Descargar"
+      "downloadAsset": "Descargar",
+      "filterDialog": {
+        "title": "Filtrar activos",
+        "description": "Reduce la vista de tu biblioteca de activos.",
+        "assetType": "Tipo de activo",
+        "dateRange": "Rango de fechas",
+        "all": "Todos",
+        "allTime": "Todo el tiempo",
+        "lastWeek": "Última semana",
+        "lastMonth": "Último mes",
+        "lastYear": "Último año",
+        "reset": "Restablecer filtros",
+        "apply": "Aplicar filtros"
+      }
     },
     "licensingRequest": {
       "title": "Solicitar Licencia",

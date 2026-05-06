@@ -1015,7 +1015,22 @@
       "error": "Erreur lors du chargement de la boîte de réception",
       "new": "Nouveau",
       "confirmSelectionTitle": "Confirmer la sélection",
-      "confirmSelectionDescription": "Vous êtes sur le point de finaliser votre sélection de talents pour {{title}}."
+      "confirmSelectionDescription": "Vous êtes sur le point de finaliser votre sélection de talents pour {{title}}.",
+      "dismissModal": {
+        "title": "Retirer de la boîte de réception",
+        "descriptionPrefix": "Vous êtes sur le point de retirer",
+        "thisPackage": "ce package",
+        "from": "de",
+        "theAgency": "l'agence",
+        "descriptionSuffix": "de votre boîte de réception.",
+        "goodToKnow": "Bon à savoir",
+        "confirm": "Oui, le retirer",
+        "points": {
+          "viewOnly": "L'agence conserve sa copie ; cela n'affecte que votre vue",
+          "noAssignments": "Aucune attribution de talent ou contrat n'est affecté",
+          "receiveNew": "Vous pouvez toujours recevoir de nouveaux packages de cette agence"
+        }
+      }
     },
     "contractHub": {
       "title": "Hub des contrats",
@@ -1089,6 +1104,8 @@
       },
       "status": {
         "sent": "Envoyé",
+        "signRequired": "Signature requise",
+        "awaitingCreator": "En attente du créateur",
         "opened": "Ouvert",
         "completed": "Terminé",
         "signed": "Signé",
@@ -1189,6 +1206,11 @@
       "error": "Erreur lors du chargement des emplois",
       "postJob": "Publier un Nouvel Emploi",
       "viewApplications": "Voir les candidatures",
+      "loadingApplications": "Chargement des candidatures...",
+      "noApplications": "Aucune candidature pour le moment.",
+      "viewResume": "Voir le CV",
+      "compCard": "Carte comp",
+      "portfolio": "Portfolio",
       "applications": "Candidatures",
       "jobPostings": "Offres d'emploi",
       "postJobButton": "Publier un emploi",
@@ -1261,7 +1283,20 @@
       "error": "Erreur lors du chargement des actifs",
       "uploadAsset": "Télécharger un Actif",
       "deleteAsset": "Supprimer",
-      "downloadAsset": "Télécharger"
+      "downloadAsset": "Télécharger",
+      "filterDialog": {
+        "title": "Filtrer les actifs",
+        "description": "Affinez la vue de votre bibliothèque d'actifs.",
+        "assetType": "Type d'actif",
+        "dateRange": "Plage de dates",
+        "all": "Tous",
+        "allTime": "Toute la période",
+        "lastWeek": "Semaine dernière",
+        "lastMonth": "Mois dernier",
+        "lastYear": "Année dernière",
+        "reset": "Réinitialiser les filtres",
+        "apply": "Appliquer les filtres"
+      }
     },
     "licensingRequest": {
       "title": "Demander une Licence",
