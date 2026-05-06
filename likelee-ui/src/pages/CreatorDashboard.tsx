@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { DobInput } from "@/components/ui/DobInput";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -26,6 +27,7 @@ import {
   markTalentAssetRequestViewed,
   scrapeInstagramProfile,
 } from "@/api/functions";
+import { getCacheItem, setCacheItem } from "@/lib/localStorageCache";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -553,8 +555,46 @@ export default function CreatorDashboard() {
   };
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' | 'rules' | 'billing'
-  const [creatorBilling, setCreatorBilling] = useState<any>(null);
-  const [creatorBillingLoaded, setCreatorBillingLoaded] = useState(false);
+
+  // ── Billing — multi-layer cache ──────────────────────────────────────────
+  // Layer 1: localStorage — survives page refresh, seeds initial state instantly
+  // Layer 2: React Query — in-memory, stale-while-revalidate, shared with prefetcher
+  // Layer 3: Network — background revalidation, never blocks render
+  const BILLING_CACHE_KEY = `creator_billing_${user?.id || "anon"}`;
+  const BILLING_STALE_MS = 5 * 60 * 1000; // 5 min — matches backend session cache
+
+  // Seed initial data from localStorage so the correct plan shows immediately
+  // on page load without any network round-trip.
+  const cachedBilling = useMemo(() => {
+    const entry = getCacheItem<any>(BILLING_CACHE_KEY);
+    if (!entry) return null;
+    const age = Date.now() - entry.timestamp;
+    // Accept cache up to 24h old as seed — React Query will revalidate in bg
+    return age < 24 * 60 * 60 * 1000 ? entry.data : null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [BILLING_CACHE_KEY]);
+
+  const billingQuery = useQuery({
+    queryKey: ["creator", "billing", "status", user?.id],
+    queryFn: async () => {
+      const data = await getCreatorBillingStatus();
+      // Persist to localStorage so next page load is instant
+      setCacheItem(BILLING_CACHE_KEY, data);
+      return data;
+    },
+    // Seed from localStorage — no flash of "Free" on refresh
+    initialData: cachedBilling ?? undefined,
+    // Data is fresh for 5 min — matches backend session cache TTL
+    staleTime: BILLING_STALE_MS,
+    gcTime: 60 * 60 * 1000, // keep in memory for 1h
+    enabled: !!user?.id,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+
+  const creatorBilling = billingQuery.data ?? null;
+  const creatorBillingLoaded = !billingQuery.isLoading || !!cachedBilling;
+  // ─────────────────────────────────────────────────────────────────────────
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const [agencyInvites, setAgencyInvites] = useState<any[]>([]);
@@ -3801,28 +3841,6 @@ export default function CreatorDashboard() {
       setSettingsTab(nextSettings);
     }
   }, [searchParams]);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadBilling() {
-      try {
-        const resp = await getCreatorBillingStatus();
-        if (!cancelled) {
-          setCreatorBilling(resp);
-        }
-      } catch (error) {
-        console.error("Failed to load creator billing status", error);
-      } finally {
-        if (!cancelled) {
-          setCreatorBillingLoaded(true);
-        }
-      }
-    }
-    void loadBilling();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const creatorPlanTier = String(creatorBilling?.plan_tier || "free");
   const trialActive = !!creatorBilling?.trial_active;
