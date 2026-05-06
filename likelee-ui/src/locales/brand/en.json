@@ -1055,6 +1055,10 @@
       "viewContracts": "View Contracts",
       "noContracts": "No contracts found",
       "loading": "Loading contracts...",
+      "allContractsSigned": "All contracts signed",
+      "noPendingSignatures": "No pending signatures at this time.",
+      "noContractsYet": "No contracts yet",
+      "contractsWillAppear": "Contracts will appear here once campaigns are created and sent.",
       "noActiveContracts": "No active contracts",
       "contractsAttentionHere": "Contracts requiring your attention will appear here.",
       "error": "Failed to load contracts",
@@ -1361,6 +1365,7 @@
       "approvalsAreFinal": "After you approve a deliverable, Downloading will be enabled. Approvals are final and can't be undone.",
       "loadingDeliverables": "Loading deliverables...",
       "noContentSubmitted": "No content has been submitted yet.",
+      "viewFullContract": "View Full Contract",
       "premiumVideo": "Premium Video",
       "locked": "Locked",
       "deliverable": "Deliverable",
@@ -1684,7 +1689,15 @@
     "collectionsCount_other": "{{count}} assets",
     "searchPlaceholder": "Search by project, creator, or filename...",
     "emptyState": "No assets available yet. Assets will appear here once campaigns are completed.",
-    "collections": "Collections"
+    "collections": "Collections",
+    "createCollectionDialog": {
+      "description": "Organize your selected assets into a new collection.",
+      "collectionName": "Collection Name",
+      "collectionNamePlaceholder": "e.g., Summer Campaign 2025",
+      "assetsSelected_one": "{{count}} asset will be added to this collection.",
+      "assetsSelected_other": "{{count}} assets will be added to this collection.",
+      "noAssetsSelected": "No assets selected. You can add assets later."
+    }
   },
   "postJobPage": {
     "backToDashboard": "Back to Dashboard",

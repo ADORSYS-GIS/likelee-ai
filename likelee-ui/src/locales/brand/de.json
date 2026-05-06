@@ -865,6 +865,10 @@
       "viewContracts": "Verträge anzeigen",
       "noContracts": "Keine Verträge gefunden",
       "loading": "Verträge werden geladen...",
+      "allContractsSigned": "Alle Verträge sind unterzeichnet",
+      "noPendingSignatures": "Derzeit stehen keine Unterschriften aus.",
+      "noContractsYet": "Noch keine Verträge",
+      "contractsWillAppear": "Verträge erscheinen hier, sobald Kampagnen erstellt und gesendet wurden.",
       "noActiveContracts": "Keine aktiven Verträge",
       "contractsAttentionHere": "Verträge, die Ihre Aufmerksamkeit benötigen, werden hier angezeigt.",
       "error": "Fehler beim Laden von Verträgen",
@@ -1171,6 +1175,7 @@
       "approvalsAreFinal": "Nach der Genehmigung einer Lieferung wird der Download aktiviert. Genehmigungen sind endgültig und können nicht rückgängig gemacht werden.",
       "loadingDeliverables": "Deliverables werden geladen...",
       "noContentSubmitted": "Es wurde noch kein Inhalt eingereicht.",
+      "viewFullContract": "Vollständigen Vertrag ansehen",
       "premiumVideo": "Premium-Video",
       "locked": "Gesperrt",
       "deliverable": "Deliverable",
@@ -1738,7 +1743,15 @@
     "collectionsCount_other": "{{count}} Assets",
     "searchPlaceholder": "Nach Projekt, Creator oder Dateiname suchen...",
     "emptyState": "Noch keine Assets verfügbar. Assets erscheinen hier, sobald Kampagnen abgeschlossen sind.",
-    "collections": "Sammlungen"
+    "collections": "Sammlungen",
+    "createCollectionDialog": {
+      "description": "Organisieren Sie Ihre ausgewählten Assets in einer neuen Sammlung.",
+      "collectionName": "Name der Sammlung",
+      "collectionNamePlaceholder": "z. B. Sommerkampagne 2025",
+      "assetsSelected_one": "{{count}} Asset wird dieser Sammlung hinzugefügt.",
+      "assetsSelected_other": "{{count}} Assets werden dieser Sammlung hinzugefügt.",
+      "noAssetsSelected": "Keine Assets ausgewählt. Sie können später Assets hinzufügen."
+    }
   },
   "postJobPage": {
     "backToDashboard": "Zurück zum Dashboard",
