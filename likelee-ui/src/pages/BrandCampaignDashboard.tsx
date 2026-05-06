@@ -2634,26 +2634,33 @@ export default function BrandCampaignDashboard({
                           ).toLocaleString();
                           return (
                             <span>
-                              Budget: ${min} – ${max}
+                              {t("campaigns.myOffers.budget")}: ${min} – ${max}
                             </span>
                           );
                         }
                         if (campaign.budget > 0)
                           return (
                             <span>
-                              Budget: ${campaign.budget.toLocaleString()}
+                              {t("campaigns.myOffers.budget")}: $
+                              {campaign.budget.toLocaleString()}
                             </span>
                           );
                         return null;
                       })()}
                       {campaign.start_date && campaign.start_date !== "N/A" && (
-                        <span>Start: {campaign.start_date}</span>
+                        <span>
+                          {t("campaigns.jobs.start")}: {campaign.start_date}
+                        </span>
                       )}
                       {campaign.due_date && (
-                        <span>Due: {campaign.due_date}</span>
+                        <span>
+                          {t("campaigns.myOffers.dueDate")}: {campaign.due_date}
+                        </span>
                       )}
                       <span>
-                        {campaign.collaborators.length} collaborator(s)
+                        {t("campaigns.myOffers.collaboratorsCount", {
+                          count: campaign.collaborators.length,
+                        })}
                       </span>
                     </div>
                   </div>
@@ -4060,7 +4067,7 @@ export default function BrandCampaignDashboard({
             <Card className="w-full max-w-2xl bg-white p-8 rounded-none">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Invite Marketing Agency
+                  {t("campaignsDashboard.inviteAgency.title")}
                 </h2>
                 <Button
                   variant="ghost"
@@ -4075,19 +4082,21 @@ export default function BrandCampaignDashboard({
               <div className="space-y-6">
                 <div>
                   <h3 className="font-bold text-gray-900 mb-3">
-                    Choose Invitation Method
+                    {t("campaignsDashboard.inviteAgency.chooseMethod")}
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <Card className="p-6 border-2 border-gray-200 bg-gray-50 rounded-none opacity-80">
                       <Mail className="w-8 h-8 text-gray-400 mb-3" />
                       <h4 className="font-bold text-gray-900 mb-2">
-                        Invite via Email
+                        {t("campaignsDashboard.inviteAgency.emailTitle")}
                       </h4>
                       <p className="text-sm text-gray-600 mb-4">
-                        Email invite flow will be available soon
+                        {t("campaignsDashboard.inviteAgency.emailSoon")}
                       </p>
                       <Input
-                        placeholder="agency@example.com"
+                        placeholder={t(
+                          "campaignsDashboard.inviteAgency.emailPlaceholder",
+                        )}
                         className="border-2 border-gray-300 rounded-none mb-3"
                         disabled
                       />
@@ -4095,17 +4104,21 @@ export default function BrandCampaignDashboard({
                         disabled
                         className="w-full bg-gray-300 text-gray-600 rounded-none cursor-not-allowed"
                       >
-                        Coming Soon
+                        {t("campaignsDashboard.planLabels.comingSoon", {
+                          defaultValue: "Coming Soon",
+                        })}
                       </Button>
                     </Card>
 
                     <Card className="p-6 border-2 border-gray-300 hover:border-[#F7B750] cursor-pointer transition-all rounded-none">
                       <Building2 className="w-8 h-8 text-[#F7B750] mb-3" />
                       <h4 className="font-bold text-gray-900 mb-2">
-                        Browse Marketplace
+                        {t("campaignsDashboard.inviteAgency.marketplaceTitle")}
                       </h4>
                       <p className="text-sm text-gray-600 mb-4">
-                        Select from Likelee partner agencies
+                        {t(
+                          "campaignsDashboard.inviteAgency.marketplaceDescription",
+                        )}
                       </p>
                       <Button
                         onClick={() => {
@@ -4117,7 +4130,7 @@ export default function BrandCampaignDashboard({
                         className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
                       >
                         <Search className="w-4 h-4 mr-2" />
-                        View Agencies
+                        {t("campaignsDashboard.inviteAgency.marketplaceCta")}
                       </Button>
                     </Card>
                   </div>
@@ -4851,7 +4864,7 @@ export default function BrandCampaignDashboard({
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   <Plus className="w-5 h-5 mr-2" />
-                  Create Job Posting
+                  {t("campaignsDashboard.postJobModal.cta")}
                 </Button>
               </div>
             </Card>
