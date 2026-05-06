@@ -489,7 +489,11 @@
       "showOnPortfolio": "Afficher sur le Portfolio",
       "visibleOnPortfolio": "Visible sur votre profil public",
       "hiddenFromPortfolio": "Masqué de votre profil public",
-      "viewDetails": "Voir les Détails"
+      "viewDetails": "Voir les Détails",
+      "loadingPastCampaigns": "Chargement des campagnes passées...",
+      "fetchingCompletedCampaigns": "Récupération de vos campagnes terminées.",
+      "noPastCampaigns": "Aucune campagne passée pour le moment.",
+      "completedCampaignsAppearHere": "Les campagnes terminées apparaîtront ici."
     },
     "contracts": {
       "title": "Licences et Contrats",
@@ -1125,6 +1129,9 @@
       "openJobBoard": "Tableau d'emploi ouvert",
       "loadingInvites": "Chargement des invitations à un emploi...",
       "noInvites": "Aucune invitation à un emploi pour l'instant.",
+      "inviteFallbackTitle": "Invitation à un emploi",
+      "viewJobDetails": "Voir les détails du poste",
+      "apply": "Postuler",
       "acceptInvite": "Accepter l'invitation",
       "declineInvite": "Refuser l'invitation",
       "inviteAccepted": "Invitation acceptée",
@@ -1661,6 +1668,8 @@
           "allBrands": "Toutes les marques",
           "searchPlaceholder": "Rechercher par marque ou campagne",
           "clearSearchAria": "Effacer la recherche",
+          "activeCampaigns": "Campagnes actives",
+          "active": "Active",
           "amount": "Montant",
           "activeUntil": "Actif jusqu'au",
           "regions": "Régions",
@@ -1671,14 +1680,20 @@
           "notAvailable": "—"
         },
         "archive": {
+          "title": "Archive",
           "subtitle": "Campagnes passées (expirées)",
           "campaignFallback": "Campagne",
           "loading": "Chargement des campagnes passées...",
           "empty": "Aucune campagne passée pour le moment"
         },
         "earnings": {
+          "title": "Revenus",
           "subtitle": "Suivez vos revenus de licence",
+          "monthlyRecurring": "Récurrent mensuel",
           "annualRunRate": "Projection annuelle",
+          "activeCampaigns": "Campagnes actives",
+          "earningsByCampaign": "Revenus par campagne",
+          "empty": "Aucun revenu pour ce mois pour le moment.",
           "brandFallback": "Marque",
           "monthlySuffix": "/mois",
           "yourAgency": "Votre agence",
@@ -1689,8 +1704,26 @@
           "manage": "Gérer"
         },
         "analytics": {
+          "title": "Analytique",
           "subtitle": "Indicateurs de performance sur l'ensemble des campagnes",
-          "totalViews": "Vues totales"
+          "totalViews": "Vues totales",
+          "thisMonth": "{{value}} ce mois-ci",
+          "totalRevenue": "Revenu total",
+          "monthlyRecurring": "Récurrent mensuel",
+          "campaignPerformance": "Performance des campagnes",
+          "aiLicensing": "Licences IA",
+          "viewsPerWeek": "Vues/semaine",
+          "revenue": "Revenu",
+          "empty": "Aucune métrique analytique pour le moment. Demandez à votre agence d'ajouter des métriques de vues hebdomadaires."
+        },
+        "settings": {
+          "title": "Paramètres du portail",
+          "subtitle": "Configurez les préférences de votre portail de talent",
+          "paymentPreferences": "Préférences de paiement",
+          "taxDocumentation": "Documents fiscaux",
+          "w9OnFile": "W-9 au dossier • Mis à jour {{date}}",
+          "noW9OnFile": "Aucun W-9 au dossier",
+          "download1099": "Télécharger 1099 ({{year}})"
         }
       }
     },
@@ -1734,6 +1767,8 @@
         "hoursAgo_other": "il y a {{count}} heures",
         "minutesAgo": "il y a {{count}} minute",
         "minutesAgo_other": "il y a {{count}} minutes",
+        "monthsAgo": "il y a {{count}} mois",
+        "monthsAgo_other": "il y a {{count}} mois",
         "justNow": "À l'instant"
       }
     },
@@ -1919,6 +1954,7 @@
     "submitted": "soumis",
     "signContract": "Signer le Contrat",
     "contractAlreadySigned": "Contrat déjà signé",
+    "signContractDescription": "Terminez votre signature pour finaliser ce contrat de campagne.",
     "accepted": "accepté",
     "declined": "refusé",
     "approved": "approuvé",

@@ -471,7 +471,11 @@
       "showOnPortfolio": "Im Portfolio anzeigen",
       "visibleOnPortfolio": "Sichtbar für Marken, die Ihr Profil anzeigen",
       "hiddenFromPortfolio": "Aus dem öffentlichen Portfolio ausgeblendet",
-      "viewDetails": "Details anzeigen"
+      "viewDetails": "Details anzeigen",
+      "loadingPastCampaigns": "Vergangene Kampagnen werden geladen...",
+      "fetchingCompletedCampaigns": "Deine abgeschlossenen Kampagnen werden abgerufen.",
+      "noPastCampaigns": "Noch keine vergangenen Kampagnen.",
+      "completedCampaignsAppearHere": "Abgeschlossene Kampagnen werden hier angezeigt."
     },
     "approvals": {
       "subtitle": "Überprüfen Sie Markenanfragen, Vertragsmaßnahmen und zu lieferndes Feedback.",
@@ -1112,6 +1116,9 @@
       "openJobBoard": "Jobbörse öffnen",
       "loadingInvites": "Jobeinladungen werden geladen...",
       "noInvites": "Noch keine Jobeinladungen.",
+      "inviteFallbackTitle": "Jobeinladung",
+      "viewJobDetails": "Jobdetails ansehen",
+      "apply": "Bewerben",
       "acceptInvite": "Einladung annehmen",
       "declineInvite": "Einladung ablehnen",
       "inviteAccepted": "Einladung angenommen",
@@ -1227,11 +1234,11 @@
       "stripeConnect": "Connect with Stripe",
       "paypalConnect": "Connect with PayPal",
       "wiseConnect": "Connect with Wise",
-      "paymentPreferences": "Payment Preferences",
+      "paymentPreferences": "Zahlungseinstellungen",
       "taxDocumentation": "Tax Documentation",
       "w9OnFile": "W-9 on file • Updated {{date}}",
       "noW9OnFile": "No W-9 on file",
-      "download1099": "Download 1099 ({{year}})",
+      "download1099": "1099 herunterladen ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
       "requesting": "Requesting..."
     },
@@ -1514,6 +1521,7 @@
     "submitted": "eingereicht",
     "signContract": "Vertrag unterschreiben",
     "contractAlreadySigned": "Vertrag bereits unterschrieben",
+    "signContractDescription": "Schließe deine Unterschrift ab, um diesen Kampagnenvertrag zu finalisieren.",
     "accepted": "akzeptiert",
     "declined": "abgelehnt",
     "approved": "genehmigt",
@@ -1981,6 +1989,8 @@
           "allBrands": "Alle Marken",
           "searchPlaceholder": "Nach Marke oder Kampagne suchen",
           "clearSearchAria": "Suche löschen",
+          "activeCampaigns": "Aktive Kampagnen",
+          "active": "Aktiv",
           "amount": "Betrag",
           "activeUntil": "Aktiv bis",
           "regions": "Regionen",
@@ -1991,14 +2001,20 @@
           "notAvailable": "—"
         },
         "archive": {
+          "title": "Archiv",
           "subtitle": "Vergangene Kampagnen (abgelaufen)",
           "campaignFallback": "Kampagne",
           "loading": "Vergangene Kampagnen werden geladen...",
           "empty": "Noch keine vergangenen Kampagnen"
         },
         "earnings": {
+          "title": "Einnahmen",
           "subtitle": "Verfolge deine Lizenzeinnahmen",
+          "monthlyRecurring": "Monatlich wiederkehrend",
           "annualRunRate": "Jährliche Hochrechnung",
+          "activeCampaigns": "Aktive Kampagnen",
+          "earningsByCampaign": "Einnahmen nach Kampagne",
+          "empty": "Noch keine Einnahmen für diesen Monat.",
           "brandFallback": "Marke",
           "monthlySuffix": "/Monat",
           "yourAgency": "Deine Agentur",
@@ -2009,8 +2025,26 @@
           "manage": "Verwalten"
         },
         "analytics": {
+          "title": "Analysen",
           "subtitle": "Leistungsmetriken über alle Kampagnen",
-          "totalViews": "Gesamtaufrufe"
+          "totalViews": "Gesamtaufrufe",
+          "thisMonth": "{{value}} diesen Monat",
+          "totalRevenue": "Gesamtumsatz",
+          "monthlyRecurring": "Monatlich wiederkehrend",
+          "campaignPerformance": "Kampagnenleistung",
+          "aiLicensing": "KI-Lizenzierung",
+          "viewsPerWeek": "Aufrufe/Woche",
+          "revenue": "Umsatz",
+          "empty": "Noch keine Analysemetriken. Bitte deine Agentur, wöchentliche View-Metriken hinzuzufügen."
+        },
+        "settings": {
+          "title": "Portal-Einstellungen",
+          "subtitle": "Konfiguriere deine Talentportal-Einstellungen",
+          "paymentPreferences": "Zahlungseinstellungen",
+          "taxDocumentation": "Steuerunterlagen",
+          "w9OnFile": "W-9 hinterlegt • Aktualisiert {{date}}",
+          "noW9OnFile": "Kein W-9 hinterlegt",
+          "download1099": "1099 herunterladen ({{year}})"
         }
       }
     },
@@ -2054,6 +2088,8 @@
         "hoursAgo_other": "vor {{count}} Stunden",
         "minutesAgo": "vor {{count}} Minute",
         "minutesAgo_other": "vor {{count}} Minuten",
+        "monthsAgo": "vor {{count}} Monat",
+        "monthsAgo_other": "vor {{count}} Monaten",
         "justNow": "Gerade eben"
       }
     }
