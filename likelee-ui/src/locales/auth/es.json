@@ -330,9 +330,9 @@
       "description": "Ingresa el código de 6 dígitos de tu app de autenticación",
       "verifyButton": "Verificar",
       "signInDifferentAccount": "Iniciar sesión con otra cuenta",
-      "waitingForMethod": "Waiting for your authenticator method to load.",
-      "verificationCompleteTitle": "Verification Complete",
-      "verificationCompleteDescription": "You have been successfully authenticated."
+      "waitingForMethod": "Esperando a que cargue tu método de autenticación.",
+      "verificationCompleteTitle": "Verificación completada",
+      "verificationCompleteDescription": "Te has autenticado correctamente."
     },
     "manage": {
       "title": "Autenticación de dos factores",
