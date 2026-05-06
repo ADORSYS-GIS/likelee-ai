@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Sparkles, Zap, ArrowRight, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserFriendlyError } from "@/utils";
@@ -28,8 +28,35 @@ export default function StudioSubscribe() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [showTransactions, setShowTransactions] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const success = searchParams.get("success") === "1";
+  const canceled = searchParams.get("canceled") === "1";
+
+  // Redirect to studio after successful payment
+  useEffect(() => {
+    if (success) {
+      // Refresh wallet data
+      queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
+      // Redirect to studio
+      navigate("/studio", { replace: true });
+    }
+  }, [navigate, success, queryClient]);
+
+  // Show cancellation message
+  useEffect(() => {
+    if (canceled) {
+      toast({
+        title: "Payment Canceled",
+        description: "Your payment was canceled. You can try again anytime.",
+        variant: "default",
+      });
+      // Clear the canceled param from URL
+      navigate("/studiosubscribe", { replace: true });
+    }
+  }, [navigate, canceled, toast]);
 
   const { data: wallet } = useQuery({
     queryKey: ["studio", "wallet"],

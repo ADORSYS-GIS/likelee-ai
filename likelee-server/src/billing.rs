@@ -337,9 +337,9 @@ pub async fn create_checkout_session_legacy(
         let mut sub_md = std::collections::HashMap::new();
         sub_md.insert("user_id".to_string(), user.id.clone());
         sub_md.insert("billing_domain".to_string(), "studio".to_string());
-        sub_md.insert("credits".to_string(), payload.credits.to_string());
+        sub_md.insert("studio_credits".to_string(), payload.credits.to_string());
         if let Some(pt) = payload.plan_type.as_deref() {
-            sub_md.insert("plan_type".to_string(), pt.trim().to_lowercase());
+            sub_md.insert("studio_plan".to_string(), pt.trim().to_lowercase());
         }
 
         (
@@ -378,7 +378,7 @@ pub async fn create_checkout_session_legacy(
     if let Some(pt) = payload.plan_type.as_deref() {
         let pt = pt.trim().to_lowercase();
         if pt == "lite" || pt == "pro" {
-            md.insert("plan_type".to_string(), pt);
+            md.insert("studio_plan".to_string(), pt);
         }
     }
     cs_params.metadata = Some(md);
