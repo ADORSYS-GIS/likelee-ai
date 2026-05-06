@@ -1051,6 +1051,10 @@
       "viewContracts": "Voir les contrats",
       "noContracts": "Aucun contrat trouvé",
       "loading": "Chargement des contrats...",
+      "allContractsSigned": "Tous les contrats sont signés",
+      "noPendingSignatures": "Aucune signature en attente pour le moment.",
+      "noContractsYet": "Aucun contrat pour le moment",
+      "contractsWillAppear": "Les contrats apparaîtront ici une fois les campagnes créées et envoyées.",
       "noActiveContracts": "Aucun contrat actif",
       "contractsAttentionHere": "Les contrats nécessitant votre attention apparaîtront ici.",
       "error": "Erreur lors du chargement des contrats",
@@ -1419,6 +1423,7 @@
       "approvalsAreFinal": "Apres approbation d'un livrable, le telechargement sera active. Les approbations sont definitives et ne peuvent pas etre annulees.",
       "loadingDeliverables": "Chargement des livrables...",
       "noContentSubmitted": "Aucun contenu n'a encore ete soumis.",
+      "viewFullContract": "Voir le contrat complet",
       "premiumVideo": "Video premium",
       "locked": "Verrouille",
       "deliverable": "Livrable",
@@ -1742,7 +1747,15 @@
     "collectionsCount_other": "{{count}} assets",
     "searchPlaceholder": "Rechercher par projet, créateur ou nom de fichier...",
     "emptyState": "Aucun asset disponible pour le moment. Les assets apparaîtront ici une fois les campagnes terminées.",
-    "collections": "Collections"
+    "collections": "Collections",
+    "createCollectionDialog": {
+      "description": "Organisez vos assets sélectionnés dans une nouvelle collection.",
+      "collectionName": "Nom de la collection",
+      "collectionNamePlaceholder": "ex. Campagne Été 2025",
+      "assetsSelected_one": "{{count}} asset sera ajouté à cette collection.",
+      "assetsSelected_other": "{{count}} assets seront ajoutés à cette collection.",
+      "noAssetsSelected": "Aucun asset sélectionné. Vous pourrez en ajouter plus tard."
+    }
   },
   "postJobPage": {
     "backToDashboard": "Retour au tableau de bord",

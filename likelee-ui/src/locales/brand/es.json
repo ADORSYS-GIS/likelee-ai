@@ -1054,6 +1054,10 @@
       "viewContracts": "Ver contratos",
       "noContracts": "Sin contratos encontrados",
       "loading": "Cargando contratos...",
+      "allContractsSigned": "Todos los contratos están firmados",
+      "noPendingSignatures": "No hay firmas pendientes en este momento.",
+      "noContractsYet": "Todavía no hay contratos",
+      "contractsWillAppear": "Los contratos aparecerán aquí una vez que las campañas se creen y se envíen.",
       "noActiveContracts": "No hay contratos activos",
       "contractsAttentionHere": "Los contratos que requieren tu atención aparecerán aquí.",
       "error": "Error al cargar contratos",
@@ -1360,6 +1364,7 @@
       "approvalsAreFinal": "Después de aprobar un entregable, se habilitará la descarga. Las aprobaciones son finales y no se pueden deshacer.",
       "loadingDeliverables": "Cargando entregables...",
       "noContentSubmitted": "Aún no se ha enviado contenido.",
+      "viewFullContract": "Ver contrato completo",
       "premiumVideo": "Video premium",
       "locked": "Bloqueado",
       "deliverable": "Entregable",
@@ -1683,7 +1688,15 @@
     "collectionsCount_other": "{{count}} activos",
     "searchPlaceholder": "Buscar por proyecto, creador o nombre de archivo...",
     "emptyState": "Todavía no hay activos disponibles. Los activos aparecerán aquí una vez que las campañas se completen.",
-    "collections": "Colecciones"
+    "collections": "Colecciones",
+    "createCollectionDialog": {
+      "description": "Organiza tus activos seleccionados en una nueva colección.",
+      "collectionName": "Nombre de la colección",
+      "collectionNamePlaceholder": "p. ej., Campaña de Verano 2025",
+      "assetsSelected_one": "{{count}} activo se añadirá a esta colección.",
+      "assetsSelected_other": "{{count}} activos se añadirán a esta colección.",
+      "noAssetsSelected": "No hay activos seleccionados. Puedes agregarlos más tarde."
+    }
   },
   "postJobPage": {
     "backToDashboard": "Volver al panel",
