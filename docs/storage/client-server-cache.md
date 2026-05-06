@@ -1,12 +1,13 @@
-# Data Storage Architecture
+# Client/Server Cache Architecture
 
-## Overview
+**Version**: 1.0  
+**Last Updated**: 2026-05-06  
 
-Likelee uses a multi-layered storage strategy spanning browser, server, and database. This document explains where data is stored at each layer and how the prefetchers fit into this architecture.
+This document explains the multi-layered storage and caching strategy spanning browser, server, and database.
 
 ---
 
-## Storage Layers
+## Storage Layers Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -82,11 +83,6 @@ Likelee uses a multi-layered storage strategy spanning browser, server, and data
 │  │  • Licensing requests, bookings, invoices                         │   │
 │  │  • File metadata in DB, files in Storage buckets                   │   │
 │  │                                                                      │   │
-│  │  Storage Buckets:                                                   │   │
-│  │  • likelee-public  (avatars, portfolios)                          │   │
-│  │  • likelee-private (contracts, sensitive docs)                    │   │
-│  │  • likelee-temp    (upload staging)                               │   │
-│  │                                                                      │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -102,20 +98,6 @@ Likelee uses a multi-layered storage strategy spanning browser, server, and data
 **Library**: `@tanstack/react-query`  
 **Purpose**: Primary data store for UI components
 
-```typescript
-// Prefetcher stores data here
-queryClient.prefetchQuery({
-  queryKey: ["agency", "roster", agencyId],
-  queryFn: () => fetchRoster(),
-  staleTime: 30 * 1000, // 30 seconds
-});
-
-// Component reads from same cache
-const { data } = useQuery({
-  queryKey: ["agency", "roster", agencyId],
-});
-```
-
 **Characteristics**:
 - Fastest access (microseconds)
 - Lost on page refresh
@@ -129,31 +111,13 @@ const { data } = useQuery({
 **Purpose**: Survive page refreshes for large datasets
 
 **Persisted Query Types**:
-```typescript
-const INDEXED_DB_QUERIES = [
-  "agency-roster",      // Large talent lists
-  "agency-dashboard",   // Dashboard overview
-  "talentMe",          // Profile data
-  "talentBookings",    // Booking lists
-  "marketplace",       // Marketplace listings
-  "jobs",              // Job listings
-  "scouting",          // Scouting data
-];
-```
-
-**Flow**:
-```
-1. React Query cache updated
-        │
-        ▼ (persister subscribes to cache events)
-2. Check if query key matches INDEXED_DB_QUERIES
-        │
-        ▼
-3. Save to IndexedDB with timestamp + version
-        │
-        ▼
-4. On app init: Load from IndexedDB → React Query cache
-```
+- `agency-roster` - Large talent lists
+- `agency-dashboard` - Dashboard overview
+- `talentMe` - Profile data
+- `talentBookings` - Booking lists
+- `marketplace` - Marketplace listings
+- `jobs` - Job listings
+- `scouting` - Scouting data
 
 **Max Age**: 30 minutes (older data discarded)
 
@@ -162,12 +126,9 @@ const INDEXED_DB_QUERIES = [
 **Location**: Browser localStorage (disk storage)  
 **Purpose**: Small configuration data only
 
-```typescript
-const LOCAL_STORAGE_QUERIES = [
-  "talentPortalSettings",
-  "agency-payout-settings",
-];
-```
+**Persisted Query Types**:
+- `talentPortalSettings`
+- `agency-payout-settings`
 
 **Characteristics**:
 - 5-10 MB limit
@@ -185,8 +146,6 @@ const LOCAL_STORAGE_QUERIES = [
 **Scope**: Single HTTP request  
 **Storage**: `RwLock<HashMap>`  
 **Purpose**: Prevent duplicate queries within same request
-
-**Example**: Multiple permission checks in one request
 
 ### L2: Session Cache
 
@@ -219,41 +178,22 @@ Since there's no Redis, invalidation is done by:
 2. **Explicit deletion**: `state.cache_l2.delete(key)`
 3. **Session clearance**: `state.cache_l2.clear_session(session_id)`
 
-See [CACHE_INVALIDATION.md](./CACHE_INVALIDATION.md) for details.
-
----
-
-## Database (Supabase)
-
-### PostgreSQL
-
-**Primary storage** for all persistent data:
-- User profiles and authentication
-- Organization memberships and roles
-- Licensing requests and contracts
-- Bookings, invoices, payments
-- Roster relationships
-
-### Storage Buckets
-
-| Bucket | Purpose | Access |
-|--------|---------|--------|
-| `likelee-public` | Avatars, portfolio images | Public read |
-| `likelee-private` | Contracts, sensitive docs | Backend-only (service role) |
-| `likelee-temp` | Upload staging | Auto-cleanup |
+**Key Cache Invalidation Points**:
+- Role changes → `invalidate_org_access_cache()` (L2)
+- Connection changes → `invalidate_brand_agency_connection_cache()` (L3)
+- Security events → `invalidate_session()` (L2)
 
 ---
 
 ## Prefetcher Data Flow
 
-When the prefetchers run on app startup:
+When prefetchers run on app startup:
 
 ```
 1. User logs in → Auth confirmed
         │
         ▼
-2. BrandDataPrefetcher/AgencyDataPrefetcher/CreatorDataPrefetcher
-   mount in Layout.tsx
+2. BrandDataPrefetcher/AgencyDataPrefetcher/CreatorDataPrefetcher mount
         │
         ▼
 3. Prefetchers call queryClient.prefetchQuery() for all relevant data
@@ -278,31 +218,6 @@ When the prefetchers run on app startup:
 
 ---
 
-## Query Key Structure
-
-Prefetchers use structured query keys for cache organization:
-
-```typescript
-// Brand keys
-["brand", "jobs"]                           // All brand jobs
-["brand", "inbox", "packages"]              // Inbox packages
-["brand", "billing", "status"]              // Billing status
-
-// Agency keys
-["agency", "dashboard", agencyId]             // Dashboard overview
-["agency", "roster", agencyId]                // Talent roster
-["agency", "clients", agencyId]               // CRM clients
-["agency", "licensingRequests", agencyId]     // Licensing requests
-
-// Creator keys
-["creator", "dashboard"]                    // Creator dashboard
-["creator", "rates"]                          // Custom rates
-["creator", "bookings"]                     // Bookings list
-["creator", "brand-connections", "requests"] // Connection requests
-```
-
----
-
 ## Performance Characteristics
 
 | Layer | Latency | Capacity | Persistence |
@@ -312,6 +227,31 @@ Prefetchers use structured query keys for cache organization:
 | localStorage | ~5ms | 5-10MB | Until cleared |
 | Server L1/L2/L3 | ~1μs | Server RAM | Server lifetime |
 | Database | ~50-200ms | Unlimited | Permanent |
+
+---
+
+## Query Key Structure
+
+Prefetchers use structured query keys for cache organization:
+
+```typescript
+// Brand keys
+["brand", "jobs"]
+["brand", "inbox", "packages"]
+["brand", "billing", "status"]
+
+// Agency keys
+["agency", "dashboard", agencyId]
+["agency", "roster", agencyId]
+["agency", "clients", agencyId]
+["agency", "licensingRequests", agencyId]
+
+// Creator keys
+["creator", "dashboard"]
+["creator", "rates"]
+["creator", "bookings"]
+["creator", "brand-connections", "requests"]
+```
 
 ---
 
@@ -326,19 +266,6 @@ await indexedDB.databases();
 // Should show "LikeleeCache" database
 ```
 
-### Cache Size Too Large
-
-IndexedDB entries are automatically pruned:
-- Max age: 30 minutes
-- GC time: Configured per query type (5 min - 2 hours)
-
-### Prefetcher Not Running
-
-Check React Query DevTools:
-1. Install React Query DevTools browser extension
-2. Look for prefetch queries on startup
-3. Should see "fresh" (green) queries before navigating to tabs
-
 ### Server Cache Stale
 
 Since there's no Redis, each server instance has its own cache:
@@ -350,5 +277,5 @@ Since there's no Redis, each server instance has its own cache:
 
 ## Related Documentation
 
-- [CACHE_INVALIDATION.md](./CACHE_INVALIDATION.md) - Server cache invalidation
-- [Frontend Architecture](../likelee-ui/docs/architecture/) - React Query patterns
+- [architecture.md](./architecture.md) - Storage bucket architecture
+- [CACHE_INVALIDATION.md](../CACHE_INVALIDATION.md) - Server cache invalidation details

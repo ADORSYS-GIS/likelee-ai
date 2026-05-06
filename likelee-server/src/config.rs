@@ -8,12 +8,6 @@ pub struct VeriffConfig {
     pub shared_secret: String,
 }
 
-#[derive(Clone)]
-pub struct DuixConfig {
-    pub base_url: String,
-    pub auth_token: String,
-}
-
 #[derive(Envconfig, Clone)]
 pub struct ServerConfig {
     #[envconfig(from = "SUPABASE_URL")]
@@ -45,12 +39,6 @@ pub struct ServerConfig {
 
     #[envconfig(from = "VERIFF_SHARED_SECRET")]
     pub veriff_shared_secret: String,
-
-    #[envconfig(from = "DUIX_BASE_URL", default = "http://127.0.0.1:7860")]
-    pub duix_base_url: String,
-
-    #[envconfig(from = "DUIX_AUTH_TOKEN", default = "change-me")]
-    pub duix_auth_token: String,
 
     #[envconfig(from = "ELEVENLABS_API_KEY", default = "")]
     pub elevenlabs_api_key: String,
@@ -329,7 +317,6 @@ pub struct ServerConfig {
 pub struct AppState {
     pub pg: Postgrest,
     pub veriff: VeriffConfig,
-    pub duix: DuixConfig,
     pub supabase_url: String,
     pub supabase_service_key: String,
     pub supabase_jwt_secret: String,
