@@ -22051,6 +22051,53 @@ export default function AgencyDashboard() {
                       )}
                   </div>
                 </div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                  {!agencyBillingLoading && (
+                    <div
+                      className={`inline-flex items-center justify-center rounded-2xl px-5 py-2 text-sm font-black uppercase tracking-wider shadow-sm ring-1 ring-inset ${
+                        agencyTrialActive
+                          ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white ring-amber-200"
+                          : agencyPlanTier === "pro"
+                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white ring-blue-200"
+                            : agencyPlanTier === "basic" ||
+                                agencyPlanTier === "agency"
+                              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-emerald-200"
+                              : agencyPlanTier === "enterprise"
+                                ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-white ring-amber-200"
+                                : "bg-white text-gray-900 ring-gray-200"
+                      }`}
+                      title={t("agencyDashboard.dashboard.banner.currentPlan")}
+                    >
+                      {agencyTrialActive ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span>{agencyDisplayPlanLabel} TRIAL</span>
+                          {agencyTrialCountdown ? (
+                            <span className="text-[11px] font-black tracking-normal opacity-95">
+                              {agencyTrialCountdown}
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        String(agencyPlanTier || agencyDisplayPlanLabel || "")
+                          .trim()
+                          .toUpperCase()
+                      )}
+                    </div>
+                  )}
+
+                  {!agencyBillingLoading &&
+                    agencyPlanTier === "free" &&
+                    !agencyTrialActive && (
+                      <Button
+                        type="button"
+                        className="h-11 rounded-2xl font-black bg-[#0B1828] hover:bg-[#132C49] text-white px-6 shadow-sm"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
+                        Upgrade
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
               </div>
             </div>
           )}
