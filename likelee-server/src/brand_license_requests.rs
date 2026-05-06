@@ -206,14 +206,6 @@ pub async fn create(
 
     let effective_brand_id = crate::team::resolve_effective_brand_id(&state, &user).await?;
 
-    tracing::info!(
-        "Brand license request - user.id: {}, user.role: {}, effective_brand_id: {}, agency_id: {}",
-        user.id,
-        user.role,
-        effective_brand_id,
-        agency_id
-    );
-
     // ── Step 2: Verify brand is connected to that agency (or auto-create connection) ──
     // First try brand_agency_connections table
     let connected_resp = state
@@ -232,12 +224,6 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    tracing::info!(
-        "brand_agency_connections query status: {}, response: {}",
-        connected_status,
-        connected_text
-    );
-
     let (connection_table, connected_rows): (&str, Vec<serde_json::Value>) =
         if connected_status.is_success() {
             (
@@ -248,9 +234,6 @@ pub async fn create(
             &connected_text,
             "brand_agency_connections",
         ) {
-            tracing::info!(
-            "brand_agency_connections table not found, checking brand_agency_connection_requests"
-        );
             // Fallback: check connection requests table
             let fallback_resp = state
                 .pg
@@ -405,10 +388,6 @@ pub async fn create(
                 let text = resp.text().await.unwrap_or_default();
 
                 if status.is_success() {
-                    tracing::info!(
-                        "Successfully auto-created brand_agency_connection: {}",
-                        text
-                    );
                     crate::team::invalidate_brand_agency_connection_cache(
                         &state,
                         &effective_brand_id,
@@ -419,9 +398,6 @@ pub async fn create(
                     "brand_agency_connections",
                 ) {
                     // Table doesn't exist, try connection_requests table
-                    tracing::info!(
-                        "brand_agency_connections table missing, trying connection_requests"
-                    );
                     let req_payload = json!({
                         "brand_id": effective_brand_id,
                         "agency_id": agency_id,
@@ -440,11 +416,7 @@ pub async fn create(
                         .await;
 
                     match req_resp {
-                        Ok(r) if r.status().is_success() => {
-                            tracing::info!(
-                                "Successfully auto-created brand_agency_connection_request"
-                            );
-                        }
+                        Ok(r) if r.status().is_success() => {}
                         Ok(r) => {
                             let status = r.status();
                             let err_text = r.text().await.unwrap_or_default();
