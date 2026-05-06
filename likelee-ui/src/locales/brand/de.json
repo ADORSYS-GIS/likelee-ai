@@ -129,7 +129,10 @@
         "pendingApprovals": "Ausstehende Genehmigungen",
         "actionNeeded": "Aktion erforderlich",
         "thisMonthSpend": "Ausgaben diesen Monat",
-        "avgTurnaround": "Durchschn. Bearbeitungszeit"
+        "avgTurnaround": "Durchschn. Bearbeitungszeit",
+        "spendVsLastMonth": "{{value}} vs. letzter Monat",
+        "newSpendThisMonth": "Neue Ausgaben in diesem Monat",
+        "noSpendRecorded": "Noch keine Ausgaben erfasst"
       },
       "quickActions": {
         "title": "Schnellaktionen",
@@ -172,6 +175,14 @@
           "connectionRequestAccepted": "hat eine Verbindungsanfrage angenommen",
           "connectionRequestDeclined": "hat eine Verbindungsanfrage abgelehnt",
           "performedAction": "hat eine Aktion durchgeführt"
+        },
+        "templates": {
+          "campaignCreated": "{{actor}} hat {{campaign}} erstellt.",
+          "campaignCompleted": "{{actor}} hat {{campaign}} als erledigt markiert.",
+          "jobCreated": "{{actor}} hat einen Job erstellt: {{job}}.",
+          "jobInviteSent": "{{actor}} hat {{target}} eingeladen, sich für {{job}} zu bewerben.",
+          "jobInviteAccepted": "{{actor}} hat die Einladung für {{job}} angenommen.",
+          "jobInviteDeclined": "{{actor}} hat die Einladung für {{job}} abgelehnt."
         }
       },
       "monthlySpendTrend": "Monatlicher Ausgabentrend"
@@ -673,6 +684,7 @@
         "willingToTravel": "Bereit zu reisen",
         "notSpecified": "Nicht angegeben",
         "noRatesPublished": "Keine Tarife veröffentlicht.",
+        "autoConnectedByYou": "Automatisch verbunden (von Ihnen erstellt)",
         "openPortfolioLink": "Portfolio-Link öffnen",
         "noUploadedPortfolioMedia": "Noch keine Portfolio-Medien hochgeladen.",
         "confirmed": "Bestätigt",
@@ -1112,6 +1124,7 @@
       "projects": "Projekte",
       "successRate": "Erfolgsquote",
       "totalCost": "Gesamtkosten",
+      "totalSpend": "Ausgaben",
       "loadingTalentPerformance": "Talent-Performance wird geladen...",
       "noTalentPerformance": "Noch keine Talent-Performance-Daten.",
       "topPerformer": "Top-Performer",
