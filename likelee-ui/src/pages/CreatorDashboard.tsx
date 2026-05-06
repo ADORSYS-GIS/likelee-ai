@@ -9230,11 +9230,11 @@ export default function CreatorDashboard() {
                         onClick={signContract}
                         disabled={!selectedBriefContract}
                       >
-                        Sign Contract
+                        {t("creatorDashboard.signContract")}
                       </Button>
                     ) : (
                       <div className="text-sm font-medium text-emerald-700">
-                        Contract already signed.
+                        {t("creatorDashboard.contractAlreadySigned")}
                       </div>
                     )}
                   </div>
@@ -9571,9 +9571,9 @@ export default function CreatorDashboard() {
         >
           <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
             <DialogHeader className="p-4 border-b">
-              <DialogTitle>Sign Contract</DialogTitle>
+              <DialogTitle>{t("creatorDashboard.signContract")}</DialogTitle>
               <DialogDescription>
-                Complete your signature to finalize this campaign contract.
+                {t("creatorDashboard.signContractDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 w-full bg-gray-50 overflow-auto">
@@ -10171,16 +10171,16 @@ export default function CreatorDashboard() {
               </>
             ) : loadingBrandOffers ? (
               <>
-                <p>Loading past campaigns...</p>
+                <p>{t("creatorDashboard.archive.loadingPastCampaigns")}</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Fetching your completed campaigns.
+                  {t("creatorDashboard.archive.fetchingCompletedCampaigns")}
                 </p>
               </>
             ) : (
               <>
-                <p>No past campaigns yet.</p>
+                <p>{t("creatorDashboard.archive.noPastCampaigns")}</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Completed campaigns will appear here.
+                  {t("creatorDashboard.archive.completedCampaignsAppearHere")}
                 </p>
               </>
             )}
