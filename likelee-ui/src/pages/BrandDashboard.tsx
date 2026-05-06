@@ -5222,7 +5222,8 @@ export default function BrandDashboard() {
     const status = String(statusRaw || "sent").toLowerCase();
     if (status === "opened") return "Sign Required";
     if (status === "sent") return "Sent";
-    if (status === "partially_signed" || status === "signed") return "Awaiting Creator";
+    if (status === "partially_signed" || status === "signed")
+      return "Awaiting Creator";
     if (status === "completed") return "Completed";
     if (status === "declined" || status === "rejected") return "Declined";
     return status.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
@@ -5817,10 +5818,24 @@ export default function BrandDashboard() {
                               )}
                             >
                               {(() => {
-                                const st = String(row?.docuseal_status || "").toLowerCase();
-                                if (st === "sent" || st === "opened") return <Mail className="h-3.5 w-3.5 mr-1.5" />;
-                                if (st === "completed") return <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />;
-                                if (st === "partially_signed" || st === "signed") return <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />;
+                                const st = String(
+                                  row?.docuseal_status || "",
+                                ).toLowerCase();
+                                if (st === "sent" || st === "opened")
+                                  return (
+                                    <Mail className="h-3.5 w-3.5 mr-1.5" />
+                                  );
+                                if (st === "completed")
+                                  return (
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                  );
+                                if (
+                                  st === "partially_signed" ||
+                                  st === "signed"
+                                )
+                                  return (
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                  );
                                 return null;
                               })()}
                               {formatContractStatusLabel(row?.docuseal_status)}
@@ -5836,8 +5851,14 @@ export default function BrandDashboard() {
                                   then DocuSeal sends to the creator automatically.
                                   Not shown for completed (both signed) or draft (not sent yet). */}
                               {(() => {
-                                const st = String(row?.docuseal_status || "").toLowerCase();
-                                const canResend = st === "sent" || st === "opened" || st === "partially_signed" || st === "signed";
+                                const st = String(
+                                  row?.docuseal_status || "",
+                                ).toLowerCase();
+                                const canResend =
+                                  st === "sent" ||
+                                  st === "opened" ||
+                                  st === "partially_signed" ||
+                                  st === "signed";
                                 if (!canResend) return null;
 
                                 return (
@@ -5847,41 +5868,81 @@ export default function BrandDashboard() {
                                     aria-label="Resend"
                                     type="button"
                                     onClick={async () => {
-                                      const offerId = String(row?.offer_id || "");
+                                      const offerId = String(
+                                        row?.offer_id || "",
+                                      );
                                       const contractId = String(row?.id || "");
                                       if (!offerId || !contractId) {
-                                        toast({ title: "Resend failed", description: "Missing offer or contract ID.", variant: "destructive" as any });
+                                        toast({
+                                          title: "Resend failed",
+                                          description:
+                                            "Missing offer or contract ID.",
+                                          variant: "destructive" as any,
+                                        });
                                         return;
                                       }
                                       try {
                                         // Always create a fresh submission — never reuse an old signing URL
-                                        const result = await base44.post<{ contract?: any }>(
+                                        const result = await base44.post<{
+                                          contract?: any;
+                                        }>(
                                           `/api/campaign-offers/${encodeURIComponent(offerId)}/contracts/send`,
-                                          { contract_id: contractId, force_new_submission: true },
+                                          {
+                                            contract_id: contractId,
+                                            force_new_submission: true,
+                                          },
                                         );
                                         const newContract = result?.contract;
                                         const newSigningUrl =
-                                          newContract?.meta?.brand_signing_url ||
-                                          newContract?.meta?.agency_signing_url ||
-                                          newContract?.meta?.docuseal_signing_url;
+                                          newContract?.meta
+                                            ?.brand_signing_url ||
+                                          newContract?.meta
+                                            ?.agency_signing_url ||
+                                          newContract?.meta
+                                            ?.docuseal_signing_url;
                                         if (newContract) {
                                           // Update the row in place with the fresh contract data
                                           setContractHubRows((prev) =>
                                             prev.map((existing: any) =>
-                                              String(existing?.id) === contractId
-                                                ? { ...newContract, offer_id: existing?.offer_id, campaign_name: existing?.campaign_name, creator_name: existing?.creator_name }
+                                              String(existing?.id) ===
+                                              contractId
+                                                ? {
+                                                    ...newContract,
+                                                    offer_id:
+                                                      existing?.offer_id,
+                                                    campaign_name:
+                                                      existing?.campaign_name,
+                                                    creator_name:
+                                                      existing?.creator_name,
+                                                  }
                                                 : existing,
                                             ),
                                           );
                                         }
                                         if (newSigningUrl) {
-                                          window.open(String(newSigningUrl), "_blank");
-                                          toast({ title: "New contract ready", description: "Sign the document — it will be sent to the creator automatically." });
+                                          window.open(
+                                            String(newSigningUrl),
+                                            "_blank",
+                                          );
+                                          toast({
+                                            title: "New contract ready",
+                                            description:
+                                              "Sign the document — it will be sent to the creator automatically.",
+                                          });
                                         } else {
-                                          toast({ title: "Contract resent", description: "Check your email for the new signing link." });
+                                          toast({
+                                            title: "Contract resent",
+                                            description:
+                                              "Check your email for the new signing link.",
+                                          });
                                         }
                                       } catch (e: any) {
-                                        toast({ title: "Resend failed", description: e?.message || "Please try again.", variant: "destructive" as any });
+                                        toast({
+                                          title: "Resend failed",
+                                          description:
+                                            e?.message || "Please try again.",
+                                          variant: "destructive" as any,
+                                        });
                                       }
                                     }}
                                   >

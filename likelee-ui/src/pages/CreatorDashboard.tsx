@@ -571,7 +571,7 @@ export default function CreatorDashboard() {
     const age = Date.now() - entry.timestamp;
     // Accept cache up to 24h old as seed — React Query will revalidate in bg
     return age < 24 * 60 * 60 * 1000 ? entry.data : null;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [BILLING_CACHE_KEY]);
 
   const billingQuery = useQuery({
@@ -3181,7 +3181,11 @@ export default function CreatorDashboard() {
   const [contractsTab, setContractsTab] = useState("active");
   const [showImageUploadModal, setShowImageUploadModal] = useState(false);
   const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
-  const [deleteVoiceModal, setDeleteVoiceModal] = useState<{ open: boolean; uiId: any; serverId: any }>({ open: false, uiId: null, serverId: null });
+  const [deleteVoiceModal, setDeleteVoiceModal] = useState<{
+    open: boolean;
+    uiId: any;
+    serverId: any;
+  }>({ open: false, uiId: null, serverId: null });
   const [isDeletingVoice, setIsDeletingVoice] = useState(false);
   const [newRestriction, setNewRestriction] = useState("");
   const [newBrand, setNewBrand] = useState("");
@@ -4358,19 +4362,28 @@ export default function CreatorDashboard() {
             Content Tracking
           </h3>
           <p className="text-gray-500 max-w-md leading-relaxed mb-8">
-            See every piece of content brands create using your likeness — views, engagement, platforms, and live status — all in one place.
+            See every piece of content brands create using your likeness —
+            views, engagement, platforms, and live status — all in one place.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-lg">
             {[
-              { label: "Brand Content Feed", desc: "All authorized content in one view" },
-              { label: "Engagement Metrics", desc: "Views, reach & engagement rates" },
+              {
+                label: "Brand Content Feed",
+                desc: "All authorized content in one view",
+              },
+              {
+                label: "Engagement Metrics",
+                desc: "Views, reach & engagement rates",
+              },
               { label: "Live Detection", desc: "Know when content goes live" },
             ].map((feature) => (
               <div
                 key={feature.label}
                 className="bg-white border border-gray-100 rounded-xl p-4 text-left shadow-sm"
               >
-                <p className="text-sm font-semibold text-gray-800 mb-1">{feature.label}</p>
+                <p className="text-sm font-semibold text-gray-800 mb-1">
+                  {feature.label}
+                </p>
                 <p className="text-xs text-gray-400">{feature.desc}</p>
               </div>
             ))}
@@ -5300,22 +5313,43 @@ export default function CreatorDashboard() {
   const confirmDeleteRecording = async () => {
     const { uiId, serverId } = deleteVoiceModal;
     if (!serverId) {
-      toast({ title: t("creatorDashboard.voice.deleteFailedTitle", "Delete failed"), description: t("creatorDashboard.voice.deleteFailedDesc", "Missing recording id."), variant: "destructive" });
+      toast({
+        title: t("creatorDashboard.voice.deleteFailedTitle", "Delete failed"),
+        description: t(
+          "creatorDashboard.voice.deleteFailedDesc",
+          "Missing recording id.",
+        ),
+        variant: "destructive",
+      });
       setDeleteVoiceModal({ open: false, uiId: null, serverId: null });
       return;
     }
     try {
       setIsDeletingVoice(true);
-      await base44.delete(`/voice/recordings/${encodeURIComponent(String(serverId))}`);
+      await base44.delete(
+        `/voice/recordings/${encodeURIComponent(String(serverId))}`,
+      );
       setVoiceLibrary((prev) =>
-        prev.filter((r) => r.id !== uiId && String(r?.server_recording_id || r?.id) !== String(serverId)),
+        prev.filter(
+          (r) =>
+            r.id !== uiId &&
+            String(r?.server_recording_id || r?.id) !== String(serverId),
+        ),
       );
       setDeleteVoiceModal({ open: false, uiId: null, serverId: null });
-      toast({ title: t("creatorDashboard.voice.deleteSuccess", "Recording deleted") });
+      toast({
+        title: t("creatorDashboard.voice.deleteSuccess", "Recording deleted"),
+      });
     } catch (err: any) {
       toast({
         title: t("creatorDashboard.voice.deleteFailedTitle", "Delete failed"),
-        description: typeof err?.message === "string" ? err.message : t("creatorDashboard.voice.deleteFailedDesc", "Failed to delete recording."),
+        description:
+          typeof err?.message === "string"
+            ? err.message
+            : t(
+                "creatorDashboard.voice.deleteFailedDesc",
+                "Failed to delete recording.",
+              ),
         variant: "destructive",
       });
     } finally {
@@ -13308,7 +13342,12 @@ export default function CreatorDashboard() {
       </Dialog>
 
       {/* Delete Voice Recording Modal */}
-      <Dialog open={deleteVoiceModal.open} onOpenChange={(open) => !isDeletingVoice && setDeleteVoiceModal((prev) => ({ ...prev, open }))}>
+      <Dialog
+        open={deleteVoiceModal.open}
+        onOpenChange={(open) =>
+          !isDeletingVoice && setDeleteVoiceModal((prev) => ({ ...prev, open }))
+        }
+      >
         <DialogContent className="max-w-sm rounded-2xl p-0 overflow-hidden">
           <div className="p-6">
             <div className="flex items-center justify-center w-14 h-14 rounded-full bg-red-50 mx-auto mb-5">
@@ -13316,10 +13355,16 @@ export default function CreatorDashboard() {
             </div>
             <DialogHeader className="text-center space-y-2 mb-6">
               <DialogTitle className="text-xl font-bold text-gray-900 text-center">
-                {t("creatorDashboard.voice.deleteConfirmation.title", "Delete Recording?")}
+                {t(
+                  "creatorDashboard.voice.deleteConfirmation.title",
+                  "Delete Recording?",
+                )}
               </DialogTitle>
               <DialogDescription className="text-gray-500 text-sm text-center leading-relaxed">
-                {t("creatorDashboard.voice.deleteConfirmation.description", "This action cannot be undone. The recording will be permanently removed.")}
+                {t(
+                  "creatorDashboard.voice.deleteConfirmation.description",
+                  "This action cannot be undone. The recording will be permanently removed.",
+                )}
               </DialogDescription>
             </DialogHeader>
             <div className="flex gap-3">
@@ -13327,7 +13372,13 @@ export default function CreatorDashboard() {
                 variant="outline"
                 className="flex-1 h-11 rounded-xl border-2 border-gray-200 font-semibold"
                 disabled={isDeletingVoice}
-                onClick={() => setDeleteVoiceModal({ open: false, uiId: null, serverId: null })}
+                onClick={() =>
+                  setDeleteVoiceModal({
+                    open: false,
+                    uiId: null,
+                    serverId: null,
+                  })
+                }
               >
                 {t("common.cancel", "Cancel")}
               </Button>
@@ -13337,9 +13388,15 @@ export default function CreatorDashboard() {
                 onClick={confirmDeleteRecording}
               >
                 {isDeletingVoice ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Deleting…</>
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting…
+                  </>
                 ) : (
-                  t("creatorDashboard.voice.deleteConfirmation.action", "Delete")
+                  t(
+                    "creatorDashboard.voice.deleteConfirmation.action",
+                    "Delete",
+                  )
                 )}
               </Button>
             </div>
