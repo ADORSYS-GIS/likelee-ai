@@ -254,6 +254,10 @@ pub struct CreateOfferContractRequest {
 #[derive(Debug, Deserialize)]
 pub struct SendOfferContractRequest {
     pub contract_id: Option<String>,
+    /// When true, always create a fresh DocuSeal submission even if one already
+    /// exists. Used by the resend flow so the brand gets a new signing URL.
+    #[serde(default)]
+    pub force_new_submission: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -3562,7 +3566,8 @@ pub async fn send_offer_contract(
             ));
         }
 
-        let submission_missing = contract_data.get("docuseal_submission_id").is_none()
+        let submission_missing = payload.force_new_submission
+            || contract_data.get("docuseal_submission_id").is_none()
             || contract_data["docuseal_submission_id"].is_null();
 
         if submission_missing && (target_type == "creator" || target_type == "talent") {
