@@ -13,13 +13,12 @@ This document provides a comprehensive reference for all external services used 
 |---------|----------|---------------|---------------------|----------|
 | **Supabase** | PostgreSQL database, Storage buckets, Authentication | Pro Plan | $25/mo base + storage | ✅ Yes |
 | **Stripe** | Payment processing, Connect for payouts, Subscriptions | Standard | 2.9% + $0.30 per transaction | ✅ Yes |
-| **DocuSeal** | Contract signing, document workflows | Starter or Business | $49/mo or $99/mo | ✅ Yes |
-| **Fal AI** | AI image/video generation | Pro | $49/mo + usage costs | ✅ Yes |
-| **Veriff** | KYC identity verification | Business | $99/mo + per-session | ✅ Yes |
-| **Calendly** | IRL booking scheduling | Free or Standard | Free or $8/mo/user | Optional |
-| **ElevenLabs** | Voice synthesis, TTS | Free or Starter | Free (10min/mo) or $5/mo | Optional |
-| **Apify** | Instagram profile scraping | Free or Starter | Free (limited) or $49/mo | Optional |
-| **SMTP Provider** | Transactional email | Included | Usually free with hosting | ✅ Yes |
+| **DocuSeal** | Contract signing, document workflows | Starter or Business | $20/mo | ✅ Yes |
+| **Veriff** | KYC identity verification | Plus | $99/mo + per-session | ✅ Yes |
+| **Calendly** | IRL booking scheduling | Free or Standard | Free or $10/mo/user | ✅ Yes |
+| **ElevenLabs** | Voice synthesis, TTS | Free or Starter | Free (20min/mo) | ✅ Yes |
+| **Apify** | Instagram profile scraping | Free or Starter | $1.39/1000 request|  ✅ Yes
+| **SMTP Provider** | Transactional email | Included | google smtp srver | ✅ Yes |
 
 ---
 
