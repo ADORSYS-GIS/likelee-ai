@@ -3181,6 +3181,8 @@ export default function CreatorDashboard() {
   const [contractsTab, setContractsTab] = useState("active");
   const [showImageUploadModal, setShowImageUploadModal] = useState(false);
   const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
+  const [deleteVoiceModal, setDeleteVoiceModal] = useState<{ open: boolean; uiId: any; serverId: any }>({ open: false, uiId: null, serverId: null });
+  const [isDeletingVoice, setIsDeletingVoice] = useState(false);
   const [newRestriction, setNewRestriction] = useState("");
   const [newBrand, setNewBrand] = useState("");
   const [selectedImageSection, setSelectedImageSection] = useState(null);
@@ -4332,12 +4334,6 @@ export default function CreatorDashboard() {
   );
 
   const renderContent = () => {
-    const showingExamples = contentItems.length === 0;
-    const itemsToShow = showingExamples ? exampleContentItems : contentItems;
-    // For now, we don't have real detections state, so we assume empty if not showing examples
-    const detectionsToShow = showingExamples ? exampleDetections : [];
-    const detectionsCount = detectionsToShow.length;
-
     return (
       <div className="space-y-6">
         <div>
@@ -4349,131 +4345,37 @@ export default function CreatorDashboard() {
           </p>
         </div>
 
-        {showingExamples && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-            <p className="text-blue-900 text-sm">
-              {t("creatorDashboard.content.welcome.message")}
-            </p>
+        {/* Coming Soon */}
+        <div className="flex flex-col items-center justify-center py-24 px-6 bg-gradient-to-b from-gray-50 to-white rounded-2xl border border-gray-200 text-center">
+          <div className="w-20 h-20 rounded-2xl bg-[#32C8D1]/10 flex items-center justify-center mb-6 shadow-sm">
+            <Eye className="w-10 h-10 text-[#32C8D1]" />
           </div>
-        )}
-
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <div className="flex gap-6">
-            <button
-              onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
-                contentTab === "brand_content"
-                  ? "border-[#32C8D1] text-[#32C8D1]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {t("creatorDashboard.content.tabs.brandContent")}
-              <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
-                {itemsToShow.length}
-              </Badge>
-            </button>
+          <div className="inline-flex items-center gap-2 bg-[#32C8D1]/10 text-[#32C8D1] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#32C8D1] animate-pulse" />
+            Coming Soon
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">
+            Content Tracking
+          </h3>
+          <p className="text-gray-500 max-w-md leading-relaxed mb-8">
+            See every piece of content brands create using your likeness — views, engagement, platforms, and live status — all in one place.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-lg">
+            {[
+              { label: "Brand Content Feed", desc: "All authorized content in one view" },
+              { label: "Engagement Metrics", desc: "Views, reach & engagement rates" },
+              { label: "Live Detection", desc: "Know when content goes live" },
+            ].map((feature) => (
+              <div
+                key={feature.label}
+                className="bg-white border border-gray-100 rounded-xl p-4 text-left shadow-sm"
+              >
+                <p className="text-sm font-semibold text-gray-800 mb-1">{feature.label}</p>
+                <p className="text-xs text-gray-400">{feature.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
-
-        {contentTab === "brand_content" && (
-          <>
-            <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
-              <Eye className="h-4 w-4" />
-              {t("creatorDashboard.content.brandContent.info")}
-            </div>
-
-            {itemsToShow.length > 0 ? (
-              <div className="grid md:grid-cols-3 gap-6">
-                {itemsToShow.map((item) => (
-                  <Card
-                    key={item.id}
-                    className="overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <div className="relative aspect-video bg-gray-100">
-                      <img
-                        src={item.thumbnail_url}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                      {item.is_live && (
-                        <Badge className="absolute top-3 right-3 bg-green-500 text-white border-none px-2 py-0.5 text-xs font-bold uppercase tracking-wide">
-                          Live
-                        </Badge>
-                      )}
-                      {item.brand_logo && (
-                        <div className="absolute bottom-3 left-3 w-8 h-8 rounded-full bg-white p-1 shadow-sm">
-                          <img
-                            src={item.brand_logo}
-                            alt={item.brand}
-                            className="w-full h-full object-contain rounded-full"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h3 className="font-bold text-gray-900 text-base">
-                            {item.brand}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {(item as any).titleKey
-                              ? t(
-                                  `creatorDashboard.content.examples.${(item as any).titleKey}`,
-                                )
-                              : item.title}
-                          </p>
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className="text-xs font-normal"
-                        >
-                          {item.platform}
-                        </Badge>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">
-                            {t("creatorDashboard.content.brandContent.views")}
-                          </p>
-                          <p className="font-bold text-gray-900 text-sm">
-                            {item.views}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 mb-0.5">
-                            {t(
-                              "creatorDashboard.content.brandContent.engagement",
-                            )}
-                          </p>
-                          <p className="font-bold text-gray-900 text-sm">
-                            {item.engagement}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-400">
-                        {t("creatorDashboard.content.brandContent.published", {
-                          date: new Date(item.published_at).toLocaleDateString(
-                            i18n.language,
-                          ),
-                        })}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-gray-500">
-                  {t("creatorDashboard.content.brandContent.noContent")}
-                </p>
-              </div>
-            )}
-          </>
-        )}
       </div>
     );
   };
@@ -5392,30 +5294,33 @@ export default function CreatorDashboard() {
   const deleteRecording = async (id) => {
     const rec = voiceLibrary.find((r) => r.id === id);
     const sid = rec?.server_recording_id || rec?.id;
+    setDeleteVoiceModal({ open: true, uiId: id, serverId: sid });
+  };
 
-    // Create the toast first, then attach an action using `update`.
-    // This avoids a TDZ crash when passing `dismiss` into the JSX before it's initialized.
-    const tinst = toast({
-      title: t(
-        "creatorDashboard.voice.deleteConfirmation.title",
-        "Delete Recording?",
-      ),
-      description: t(
-        "creatorDashboard.voice.deleteConfirmation.description",
-        "This action cannot be undone.",
-      ),
-      variant: "destructive",
-    });
-
-    tinst.update({
-      action: (
-        <DeleteVoiceRecordingToastAction
-          uiId={id}
-          serverId={sid}
-          dismiss={tinst.dismiss}
-        />
-      ),
-    });
+  const confirmDeleteRecording = async () => {
+    const { uiId, serverId } = deleteVoiceModal;
+    if (!serverId) {
+      toast({ title: t("creatorDashboard.voice.deleteFailedTitle", "Delete failed"), description: t("creatorDashboard.voice.deleteFailedDesc", "Missing recording id."), variant: "destructive" });
+      setDeleteVoiceModal({ open: false, uiId: null, serverId: null });
+      return;
+    }
+    try {
+      setIsDeletingVoice(true);
+      await base44.delete(`/voice/recordings/${encodeURIComponent(String(serverId))}`);
+      setVoiceLibrary((prev) =>
+        prev.filter((r) => r.id !== uiId && String(r?.server_recording_id || r?.id) !== String(serverId)),
+      );
+      setDeleteVoiceModal({ open: false, uiId: null, serverId: null });
+      toast({ title: t("creatorDashboard.voice.deleteSuccess", "Recording deleted") });
+    } catch (err: any) {
+      toast({
+        title: t("creatorDashboard.voice.deleteFailedTitle", "Delete failed"),
+        description: typeof err?.message === "string" ? err.message : t("creatorDashboard.voice.deleteFailedDesc", "Failed to delete recording."),
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingVoice(false);
+    }
   };
 
   const createVoiceProfile = async (recording) => {
@@ -12823,6 +12728,7 @@ export default function CreatorDashboard() {
           {activeSection === "jobs" && renderJobsSection()}
           {activeSection === "approvals" && renderApprovals()}
           {activeSection === "archive" && renderCampaignArchive()}
+          {activeSection === "contracts" && renderContracts()}
           {activeSection === "earnings" && renderEarnings()}
           {activeSection === "settings" && renderSettings()}
           {activeSection === "agency-connection" && renderAgencyConnection()}
@@ -13401,6 +13307,46 @@ export default function CreatorDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Voice Recording Modal */}
+      <Dialog open={deleteVoiceModal.open} onOpenChange={(open) => !isDeletingVoice && setDeleteVoiceModal((prev) => ({ ...prev, open }))}>
+        <DialogContent className="max-w-sm rounded-2xl p-0 overflow-hidden">
+          <div className="p-6">
+            <div className="flex items-center justify-center w-14 h-14 rounded-full bg-red-50 mx-auto mb-5">
+              <Trash2 className="w-7 h-7 text-red-500" />
+            </div>
+            <DialogHeader className="text-center space-y-2 mb-6">
+              <DialogTitle className="text-xl font-bold text-gray-900 text-center">
+                {t("creatorDashboard.voice.deleteConfirmation.title", "Delete Recording?")}
+              </DialogTitle>
+              <DialogDescription className="text-gray-500 text-sm text-center leading-relaxed">
+                {t("creatorDashboard.voice.deleteConfirmation.description", "This action cannot be undone. The recording will be permanently removed.")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 h-11 rounded-xl border-2 border-gray-200 font-semibold"
+                disabled={isDeletingVoice}
+                onClick={() => setDeleteVoiceModal({ open: false, uiId: null, serverId: null })}
+              >
+                {t("common.cancel", "Cancel")}
+              </Button>
+              <Button
+                className="flex-1 h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold shadow-sm"
+                disabled={isDeletingVoice}
+                onClick={confirmDeleteRecording}
+              >
+                {isDeletingVoice ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Deleting…</>
+                ) : (
+                  t("creatorDashboard.voice.deleteConfirmation.action", "Delete")
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Revoke License Modal */}
       <Dialog open={showRevokeModal} onOpenChange={setShowRevokeModal}>
         <DialogContent className="max-w-2xl">
@@ -13596,44 +13542,6 @@ export default function CreatorDashboard() {
                         {section.bestFor}
                       </p>
                     </div>
-
-                    <Card className="p-4 bg-gray-50 border border-gray-200">
-                      <h4 className="font-bold text-gray-900 mb-3">
-                        {t("creatorDashboard.uploadModal.requirementsTitle")}
-                      </h4>
-                      <div className="space-y-2 text-sm text-gray-700">
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.resolution")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.faceVisible")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t("creatorDashboard.uploadModal.goodLighting")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.recentPhoto")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>{t("creatorDashboard.uploadModal.noFilters")}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="w-4 h-4 text-green-600" />
-                          <p>
-                            {t(
-                              "creatorDashboard.uploadModal.professionalQuality",
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
 
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#32C8D1] transition-colors">
                       <input
