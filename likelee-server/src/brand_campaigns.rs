@@ -5146,7 +5146,7 @@ async fn resolve_creator_id_for_assignment(
     if cr_resp.status().is_success() {
         let cr_text = cr_resp.text().await.unwrap_or_default();
         let cr_rows: Vec<serde_json::Value> = serde_json::from_str(&cr_text).unwrap_or_default();
-        if cr_rows.first().is_some() {
+        if !cr_rows.is_empty() {
             // Verify the creator is connected to this agency.
             // Check agency_users first (internal talent).
             let au_resp = state
@@ -5186,7 +5186,7 @@ async fn resolve_creator_id_for_assignment(
                 let rel_text = rel_resp.text().await.unwrap_or_default();
                 let rel_rows: Vec<serde_json::Value> =
                     serde_json::from_str(&rel_text).unwrap_or_default();
-                if rel_rows.first().is_some() {
+                if !rel_rows.is_empty() {
                     // Independent creator — no agency_users.id, creator_id only.
                     return Ok((raw_id.to_string(), None));
                 }
