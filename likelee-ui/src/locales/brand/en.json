@@ -318,7 +318,10 @@
         "pendingApprovals": "Pending Approvals",
         "actionNeeded": "Action needed",
         "thisMonthSpend": "This Month's Spend",
-        "avgTurnaround": "Avg. Turnaround"
+        "avgTurnaround": "Avg. Turnaround",
+        "spendVsLastMonth": "{{value}} vs last month",
+        "newSpendThisMonth": "New spend this month",
+        "noSpendRecorded": "No spend recorded yet"
       },
       "quickActions": {
         "title": "Quick Actions",
@@ -361,6 +364,14 @@
           "connectionRequestAccepted": "accepted a connection request",
           "connectionRequestDeclined": "declined a connection request",
           "performedAction": "performed an action"
+        },
+        "templates": {
+          "campaignCreated": "{{actor}} created {{campaign}}.",
+          "campaignCompleted": "{{actor}} marked {{campaign}} as done.",
+          "jobCreated": "{{actor}} created a job: {{job}}.",
+          "jobInviteSent": "{{actor}} invited {{target}} to apply for job {{job}}.",
+          "jobInviteAccepted": "{{actor}} accepted the job invite for {{job}}.",
+          "jobInviteDeclined": "{{actor}} declined the job invite for {{job}}."
         }
       },
       "monthlySpendTrend": "Monthly Spend Trend"
@@ -861,6 +872,7 @@
         "willingToTravel": "Willing to Travel",
         "notSpecified": "Not specified",
         "noRatesPublished": "No rates published yet.",
+        "autoConnectedByYou": "Automatically connected (Created by you)",
         "openPortfolioLink": "Open portfolio link",
         "noUploadedPortfolioMedia": "No uploaded portfolio media yet.",
         "confirmed": "Confirmed",
@@ -1302,6 +1314,7 @@
       "projects": "Projects",
       "successRate": "Success Rate",
       "totalCost": "Total Cost",
+      "totalSpend": "Spend",
       "loadingTalentPerformance": "Loading talent performance...",
       "noTalentPerformance": "No talent performance data yet.",
       "topPerformer": "Top Performer",
