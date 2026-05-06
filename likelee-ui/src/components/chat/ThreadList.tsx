@@ -1,11 +1,30 @@
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
 import type { Conversation, Participant, Contact } from "@/hooks/useChat";
+import { useTranslation } from "react-i18next";
 
-function formatTime(dateString: string) {
+function formatTime(
+  dateString: string,
+  t: (key: string, options?: any) => string,
+) {
   try {
     const date = new Date(dateString);
-    return formatDistanceToNow(date, { addSuffix: true });
+    const seconds = Math.max(
+      0,
+      Math.floor((Date.now() - date.getTime()) / 1000),
+    );
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const months = Math.floor(days / 30);
+
+    if (months > 0)
+      return t("talentPortal.chat.time.monthsAgo", { count: months });
+    if (days > 0) return t("talentPortal.chat.time.daysAgo", { count: days });
+    if (hours > 0)
+      return t("talentPortal.chat.time.hoursAgo", { count: hours });
+    if (minutes > 0)
+      return t("talentPortal.chat.time.minutesAgo", { count: minutes });
+    return t("talentPortal.chat.time.justNow");
   } catch (e) {
     return "";
   }
@@ -78,6 +97,7 @@ export function ThreadList({
   onStartChat,
   getParticipant,
 }: ThreadListProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filter, setFilter] = React.useState<"all" | "unread">("all");
 
@@ -124,10 +144,14 @@ export function ThreadList({
           </svg>
         </div>
         <p className="text-sm font-semibold text-gray-500">
-          No active connections
+          {t("talentPortal.chat.noActiveConnections")}
         </p>
         <p className="text-xs text-gray-400 mt-1">
-          Connect with {isCreator ? "an agency" : "a creator"} to chat.
+          {t("talentPortal.chat.connectToChat", {
+            role: isCreator
+              ? t("talentPortal.chat.roleAgency")
+              : t("talentPortal.chat.roleCreator"),
+          })}
         </p>
       </div>
     );
@@ -135,18 +159,18 @@ export function ThreadList({
 
   const countLabel = isCreator
     ? conversations.length === 1
-      ? "Agency"
-      : "Agencies"
+      ? t("talentPortal.chat.agencySingular")
+      : t("talentPortal.chat.agencyPlural")
     : conversations.length === 1
-      ? "Creator"
-      : "Creators";
+      ? t("talentPortal.chat.creatorSingular")
+      : t("talentPortal.chat.creatorPlural");
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="px-5 py-4 bg-white">
         <h2 className="text-xl font-black text-gray-900 tracking-tight">
-          Messages
+          {t("talentPortal.chat.messagesTitle")}
         </h2>
         <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider mt-0.5">
           {conversations.length} {countLabel}
@@ -157,7 +181,7 @@ export function ThreadList({
         <div className="relative">
           <input
             type="text"
-            placeholder="Search conversations…"
+            placeholder={t("talentPortal.chat.searchConversations")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
@@ -185,7 +209,7 @@ export function ThreadList({
                 : "bg-gray-50 text-gray-500 hover:bg-gray-100"
             }`}
           >
-            All
+            {t("talentPortal.chat.filterAll")}
           </button>
           <button
             onClick={() => setFilter("unread")}
@@ -195,7 +219,7 @@ export function ThreadList({
                 : "bg-gray-50 text-gray-500 hover:bg-gray-100"
             }`}
           >
-            Unread
+            {t("talentPortal.chat.filterUnread")}
             {conversations.some((c) => (c.unread_count || 0) > 0) && (
               <span
                 className={`w-2 h-2 rounded-full ${filter === "unread" ? "bg-white" : "bg-indigo-500"}`}
@@ -211,7 +235,10 @@ export function ThreadList({
           const participant = getParticipant(conv, currentUserId);
           const isActive = conv.id === activeConversationId;
           const preview = (conv.last_message_content || "").trim();
-          const previewText = preview || "No messages yet";
+          const previewText =
+            preview === "This message was deleted"
+              ? t("talentPortal.chat.messageDeleted")
+              : preview || t("talentPortal.chat.noMessagesYet");
 
           return (
             <li
@@ -230,7 +257,7 @@ export function ThreadList({
                     {participant.name}
                   </span>
                   <span className="text-[10px] text-gray-400 font-medium flex-shrink-0">
-                    {formatTime(conv.updated_at)}
+                    {formatTime(conv.updated_at, t)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -269,7 +296,7 @@ export function ThreadList({
                 </div>
                 <button
                   className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 shadow-sm"
-                  title="Start Conversation"
+                  title={t("talentPortal.chat.startConversation")}
                 >
                   <svg
                     className="w-4 h-4"
@@ -292,7 +319,9 @@ export function ThreadList({
         {filteredConversations.length === 0 &&
           filteredContacts.length === 0 && (
             <div className="py-8 px-4 text-center">
-              <p className="text-xs text-gray-400">No results found</p>
+              <p className="text-xs text-gray-400">
+                {t("talentPortal.chat.noResults")}
+              </p>
             </div>
           )}
       </ul>

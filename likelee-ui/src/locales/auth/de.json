@@ -343,9 +343,9 @@
       "description": "Geben Sie den 6-stelligen Code aus Ihrer Authenticator-App ein",
       "verifyButton": "Verifizieren",
       "signInDifferentAccount": "Mit einem anderen Konto anmelden",
-      "waitingForMethod": "Waiting for your authenticator method to load.",
-      "verificationCompleteTitle": "Verification Complete",
-      "verificationCompleteDescription": "You have been successfully authenticated."
+      "waitingForMethod": "Warten, bis Ihre Authenticator-Methode geladen ist.",
+      "verificationCompleteTitle": "Verifizierung abgeschlossen",
+      "verificationCompleteDescription": "Sie wurden erfolgreich authentifiziert."
     },
     "manage": {
       "title": "Zwei-Faktor-Authentifizierung",

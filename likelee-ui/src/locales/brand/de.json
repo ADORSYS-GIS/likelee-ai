@@ -1039,6 +1039,7 @@
       "description": "Beschreibung",
       "declineReason": "Ablehnungsgrund",
       "signContract": "Vertrag unterschreiben",
+      "signContractDescription": "Prüfen und unterschreiben Sie den Lizenzvertrag.",
       "contractSigned": "Vertrag unterschrieben",
       "awaitingAgencyContract": "Warte auf Vertrag von der Agentur",
       "status": {
@@ -1904,7 +1905,7 @@
   "statuses": {
     "draft": "Entwurf",
     "sent": "Gesendet",
-    "accepted": "Akzeptiert",
+    "accepted": "Angenommen",
     "declined": "Abgelehnt",
     "new": "Neu",
     "changesRequested": "Änderungen angefordert",
@@ -1917,9 +1918,9 @@
     "active": "Aktiv",
     "inactive": "Inaktiv",
     "expired": "Abgelaufen",
-    "inProgress": "In progress",
-    "signed": "Signed",
-    "voided": "Voided",
-    "opened": "Opened"
+    "inProgress": "In Bearbeitung",
+    "signed": "Unterschrieben",
+    "voided": "Ungültig",
+    "opened": "Geöffnet"
   }
 }

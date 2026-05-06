@@ -166,6 +166,9 @@
     "activeCampaigns": "Active Campaigns",
     "licensesAndContracts": "Licenses & Contracts",
     "earningsDashboard": "Earnings Dashboard",
+    "signContract": "Sign Contract",
+    "contractAlreadySigned": "Contract already signed",
+    "signContractDescription": "Complete your signature to finalize this campaign contract.",
     "settings": {
       "myRules": "My Rules",
       "profileSettings": "Profile Settings"
@@ -539,7 +542,11 @@
       "showOnPortfolio": "Show on Portfolio",
       "visibleOnPortfolio": "Visible to brands viewing your profile",
       "hiddenFromPortfolio": "Hidden from public portfolio",
-      "viewDetails": "View Details"
+      "viewDetails": "View Details",
+      "loadingPastCampaigns": "Loading past campaigns...",
+      "fetchingCompletedCampaigns": "Fetching your completed campaigns.",
+      "noPastCampaigns": "No past campaigns yet.",
+      "completedCampaignsAppearHere": "Completed campaigns will appear here."
     },
     "approvals": {
       "backToQueue": "Back to Queue",
@@ -1158,6 +1165,9 @@
       "openJobBoard": "Open Job Board",
       "loadingInvites": "Loading job invites...",
       "noInvites": "No job invites yet.",
+      "inviteFallbackTitle": "Job invitation",
+      "viewJobDetails": "View Job Details",
+      "apply": "Apply",
       "acceptInvite": "Accept Invite",
       "declineInvite": "Decline Invite",
       "inviteAccepted": "Invite accepted",
@@ -1292,8 +1302,16 @@
         "subtitle": "This profile is specific to the selected agency.",
         "allAgencies": "All agencies",
         "defaultAgency": "Default agency",
+        "connectInstagram": "Connect",
+        "instagramFollowersCount": "{{count}} followers",
+        "enterInstagramHandle": "Please enter your Instagram handle first",
         "save": "Save profile",
         "saving": "Saving...",
+        "syncSuccessTitle": "Success",
+        "syncSuccessDescription": "Instagram profile synced successfully",
+        "syncErrorTitle": "Error",
+        "syncFailedDescription": "Could not sync Instagram data",
+        "syncExceptionDescription": "Failed to sync Instagram profile",
         "fields": {
           "stageName": "Stage Name",
           "fullLegalName": "Full Legal Name",
@@ -1320,6 +1338,10 @@
     },
     "content": {
       "irl": {
+        "entities": {
+          "talent": "Talent",
+          "athlete": "Athlete"
+        },
         "overview": {
           "upcomingBookings": "Upcoming Bookings",
           "totalEarnings": "Total Earnings",
@@ -1372,6 +1394,29 @@
             "today": "Today",
             "newBooking": "New Booking",
             "close": "Close"
+          },
+          "months": {
+            "january": "January",
+            "february": "February",
+            "march": "March",
+            "april": "April",
+            "may": "May",
+            "june": "June",
+            "july": "July",
+            "august": "August",
+            "september": "September",
+            "october": "October",
+            "november": "November",
+            "december": "December"
+          },
+          "days": {
+            "sun": "Sun",
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat"
           },
           "legend": {
             "casting": "Casting",
@@ -1548,6 +1593,8 @@
           "allBrands": "All brands",
           "searchPlaceholder": "Search by brand or campaign",
           "clearSearchAria": "Clear search",
+          "activeCampaigns": "Active Campaigns",
+          "active": "Active",
           "amount": "Amount",
           "activeUntil": "Active Until",
           "regions": "Regions",
@@ -1558,14 +1605,20 @@
           "notAvailable": "—"
         },
         "archive": {
+          "title": "Archive",
           "subtitle": "Past campaigns (expired)",
           "campaignFallback": "Campaign",
           "loading": "Loading past campaigns...",
           "empty": "No past campaigns yet"
         },
         "earnings": {
+          "title": "Earnings",
           "subtitle": "Track your licensing revenue",
+          "monthlyRecurring": "Monthly Recurring",
           "annualRunRate": "Annual Run Rate",
+          "activeCampaigns": "Active Campaigns",
+          "earningsByCampaign": "Earnings by Campaign",
+          "empty": "No earnings for this month yet.",
           "brandFallback": "Brand",
           "monthlySuffix": "/mo",
           "yourAgency": "Your Agency",
@@ -1576,8 +1629,26 @@
           "manage": "Manage"
         },
         "analytics": {
+          "title": "Analytics",
           "subtitle": "Performance metrics across all campaigns",
-          "totalViews": "Total Views"
+          "totalViews": "Total Views",
+          "thisMonth": "{{value}} this month",
+          "totalRevenue": "Total Revenue",
+          "monthlyRecurring": "Monthly recurring",
+          "campaignPerformance": "Campaign Performance",
+          "aiLicensing": "AI Licensing",
+          "viewsPerWeek": "Views/Week",
+          "revenue": "Revenue",
+          "empty": "No analytics metrics yet. Ask your agency to add weekly view metrics."
+        },
+        "settings": {
+          "title": "Portal Settings",
+          "subtitle": "Configure your talent portal preferences",
+          "paymentPreferences": "Payment Preferences",
+          "taxDocumentation": "Tax Documentation",
+          "w9OnFile": "W-9 on file • Updated {{date}}",
+          "noW9OnFile": "No W-9 on file",
+          "download1099": "Download 1099 ({{year}})"
         }
       },
       "bookingPreferences": {
@@ -1588,7 +1659,9 @@
         "minimumDayRate": "Minimum Day Rate",
         "minimumRateDescription": "Your minimum acceptable rate",
         "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "Please choose the agency for this book-out using the Agency filter dropdown."
+        "selectAgencyDescription": "Please choose the agency for this book-out using the Agency filter dropdown.",
+        "updateFailedTitle": "Failed to update booking preferences",
+        "tryAgain": "Please try again."
       },
       "portfolio": {
         "title": "Portfolio",
@@ -1654,6 +1727,8 @@
         "hoursAgo_other": "{{count}} hours ago",
         "minutesAgo": "{{count}} minute ago",
         "minutesAgo_other": "{{count}} minutes ago",
+        "monthsAgo": "{{count}} month ago",
+        "monthsAgo_other": "{{count}} months ago",
         "justNow": "Just now"
       }
     },
@@ -1839,6 +1914,7 @@
     "submitted": "submitted",
     "signContract": "Sign Contract",
     "contractAlreadySigned": "Contract already signed",
+    "signContractDescription": "Complete your signature to finalize this campaign contract.",
     "accepted": "accepted",
     "declined": "declined",
     "approved": "approved",

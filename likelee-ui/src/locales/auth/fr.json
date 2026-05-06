@@ -573,7 +573,10 @@
       "title": "Authentification à deux facteurs",
       "description": "Entrez le code à 6 chiffres de votre application d'authentification",
       "verifyButton": "Vérifier",
-      "signInDifferentAccount": "Se connecter avec un autre compte"
+      "signInDifferentAccount": "Se connecter avec un autre compte",
+      "waitingForMethod": "En attente du chargement de votre méthode d'authentification.",
+      "verificationCompleteTitle": "Vérification terminée",
+      "verificationCompleteDescription": "Vous avez été authentifié avec succès."
     },
     "manage": {
       "title": "Authentification à deux facteurs",

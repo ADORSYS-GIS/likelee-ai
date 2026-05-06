@@ -12,6 +12,9 @@
     "activeCampaigns": "Campañas Activas",
     "licensesAndContracts": "Licencias y Contratos",
     "earningsDashboard": "Tablero de Ganancias",
+    "signContract": "Firmar contrato",
+    "contractAlreadySigned": "Contrato ya firmado",
+    "signContractDescription": "Completa tu firma para finalizar este contrato de campaña.",
     "earnings": {
       "title": "Panel de Ganancias",
       "byIndustry": "Ganancias por Industria",
@@ -113,14 +116,14 @@
       },
       "pendingTransfers": "Transferencias pendientes",
       "refresh": "Actualizar",
-      "retrying": "retrying...",
-      "failed": "failed",
-      "pending": "pending",
-      "retry": "retry",
-      "retries": "retries",
-      "actionRequired": "Action required",
-      "actionRequiredDescription": "One or more transfers failed because your Stripe account is not fully set up. Complete your Stripe onboarding to receive these funds. The agency will retry the transfer once your account is ready.",
-      "completeStripeSetup": "Complete Stripe setup"
+      "retrying": "reintentando...",
+      "failed": "fallido",
+      "pending": "pendiente",
+      "retry": "reintento",
+      "retries": "reintentos",
+      "actionRequired": "Acción requerida",
+      "actionRequiredDescription": "Una o más transferencias fallaron porque tu cuenta de Stripe no está completamente configurada. Completa tu onboarding de Stripe para recibir estos fondos. La agencia volverá a intentar la transferencia una vez que tu cuenta esté lista.",
+      "completeStripeSetup": "Completar configuración de Stripe"
     },
     "settings": {
       "myRules": "My Rules",
@@ -465,7 +468,11 @@
       "showOnPortfolio": "Mostrar en Portafolio",
       "visibleOnPortfolio": "Visible para las marcas que ven tu perfil",
       "hiddenFromPortfolio": "Oculto del portafolio público",
-      "viewDetails": "Ver Detalles"
+      "viewDetails": "Ver Detalles",
+      "loadingPastCampaigns": "Cargando campañas pasadas...",
+      "fetchingCompletedCampaigns": "Obteniendo tus campañas completadas.",
+      "noPastCampaigns": "Aún no hay campañas pasadas.",
+      "completedCampaignsAppearHere": "Las campañas completadas aparecerán aquí."
     },
     "approvals": {
       "subtitle": "Revise las solicitudes de marca, las acciones contractuales y los comentarios entregables.",
@@ -1096,6 +1103,9 @@
       "openJobBoard": "Bolsa de trabajo abierta",
       "loadingInvites": "Cargando invitaciones de trabajo...",
       "noInvites": "Aún no hay invitaciones de trabajo.",
+      "inviteFallbackTitle": "Invitación de trabajo",
+      "viewJobDetails": "Ver detalles del empleo",
+      "apply": "Postular",
       "acceptInvite": "Aceptar invitación",
       "declineInvite": "Rechazar invitación",
       "inviteAccepted": "Invitación aceptada",
@@ -1178,11 +1188,11 @@
       "stripeConnect": "Connect with Stripe",
       "paypalConnect": "Connect with PayPal",
       "wiseConnect": "Connect with Wise",
-      "paymentPreferences": "Payment Preferences",
+      "paymentPreferences": "Preferencias de pago",
       "taxDocumentation": "Tax Documentation",
       "w9OnFile": "W-9 on file • Updated {{date}}",
       "noW9OnFile": "No W-9 on file",
-      "download1099": "Download 1099 ({{year}})",
+      "download1099": "Descargar 1099 ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
       "requesting": "Requesting..."
     },
@@ -1465,6 +1475,7 @@
     "submitted": "enviado",
     "signContract": "Firmar contrato",
     "contractAlreadySigned": "Contrato ya firmado",
+    "signContractDescription": "Completa tu firma para finalizar este contrato de campaña.",
     "accepted": "aceptado",
     "declined": "rechazado",
     "approved": "aprobado",
@@ -1639,8 +1650,16 @@
         "subtitle": "Este perfil es específico de la agencia seleccionada.",
         "allAgencies": "Todas las agencias",
         "defaultAgency": "Agencia predeterminada",
+        "connectInstagram": "Conectar",
+        "instagramFollowersCount": "{{count}} seguidores",
+        "enterInstagramHandle": "Primero ingresa tu usuario de Instagram",
         "save": "Guardar perfil",
         "saving": "Guardando...",
+        "syncSuccessTitle": "Éxito",
+        "syncSuccessDescription": "El perfil de Instagram se sincronizó correctamente",
+        "syncErrorTitle": "Error",
+        "syncFailedDescription": "No se pudieron sincronizar los datos de Instagram",
+        "syncExceptionDescription": "No se pudo sincronizar el perfil de Instagram",
         "fields": {
           "stageName": "Nombre artístico",
           "fullLegalName": "Nombre legal completo",
@@ -1671,6 +1690,10 @@
     "disabledDescription": "Conéctate a una agencia para acceder al Portal de talento.",
     "content": {
       "irl": {
+        "entities": {
+          "talent": "Talento",
+          "athlete": "Atleta"
+        },
         "overview": {
           "upcomingBookings": "Próximas reservas",
           "totalEarnings": "Ingresos totales",
@@ -1723,6 +1746,29 @@
             "today": "Hoy",
             "newBooking": "Nueva reserva",
             "close": "Cerrar"
+          },
+          "months": {
+            "january": "Enero",
+            "february": "Febrero",
+            "march": "Marzo",
+            "april": "Abril",
+            "may": "Mayo",
+            "june": "Junio",
+            "july": "Julio",
+            "august": "Agosto",
+            "september": "Septiembre",
+            "october": "Octubre",
+            "november": "Noviembre",
+            "december": "Diciembre"
+          },
+          "days": {
+            "sun": "Dom",
+            "mon": "Lun",
+            "tue": "Mar",
+            "wed": "Mié",
+            "thu": "Jue",
+            "fri": "Vie",
+            "sat": "Sáb"
           },
           "legend": {
             "casting": "Casting",
@@ -1869,8 +1915,10 @@
         "acceptOutsideLocalArea": "Aceptar reservas fuera del área local",
         "minimumDayRate": "Tarifa mínima por día",
         "minimumRateDescription": "Tu tarifa mínima aceptable",
-        "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "Elige la agencia para este bloqueo usando el menu desplegable de filtro Agencia."
+        "selectAgencyTitle": "Selecciona una agencia",
+        "selectAgencyDescription": "Elige la agencia para este bloqueo usando el menú desplegable del filtro Agencia.",
+        "updateFailedTitle": "No se pudieron actualizar las preferencias de reservas",
+        "tryAgain": "Inténtalo de nuevo."
       },
       "portfolio": {
         "title": "Portafolio",
@@ -1932,6 +1980,8 @@
           "allBrands": "Todas las marcas",
           "searchPlaceholder": "Buscar por marca o campaña",
           "clearSearchAria": "Limpiar búsqueda",
+          "activeCampaigns": "Campañas activas",
+          "active": "Activo",
           "amount": "Monto",
           "activeUntil": "Activo hasta",
           "regions": "Regiones",
@@ -1942,14 +1992,20 @@
           "notAvailable": "—"
         },
         "archive": {
+          "title": "Archivo",
           "subtitle": "Campañas pasadas (expiradas)",
           "campaignFallback": "Campaña",
           "loading": "Cargando campañas pasadas...",
           "empty": "Aún no hay campañas pasadas"
         },
         "earnings": {
+          "title": "Ganancias",
           "subtitle": "Haz seguimiento de tus ingresos por licencias",
+          "monthlyRecurring": "Recurrente mensual",
           "annualRunRate": "Proyección anual",
+          "activeCampaigns": "Campañas activas",
+          "earningsByCampaign": "Ganancias por campaña",
+          "empty": "Aún no hay ganancias de este mes.",
           "brandFallback": "Marca",
           "monthlySuffix": "/mes",
           "yourAgency": "Tu agencia",
@@ -1960,8 +2016,26 @@
           "manage": "Gestionar"
         },
         "analytics": {
+          "title": "Analíticas",
           "subtitle": "Métricas de rendimiento en todas las campañas",
-          "totalViews": "Vistas totales"
+          "totalViews": "Vistas totales",
+          "thisMonth": "{{value}} este mes",
+          "totalRevenue": "Ingresos totales",
+          "monthlyRecurring": "Recurrente mensual",
+          "campaignPerformance": "Rendimiento de campañas",
+          "aiLicensing": "Licencias de IA",
+          "viewsPerWeek": "Vistas/semana",
+          "revenue": "Ingresos",
+          "empty": "Aún no hay métricas de analíticas. Pide a tu agencia que añada métricas de vistas semanales."
+        },
+        "settings": {
+          "title": "Configuración del portal",
+          "subtitle": "Configura las preferencias de tu portal de talento",
+          "paymentPreferences": "Preferencias de pago",
+          "taxDocumentation": "Documentación fiscal",
+          "w9OnFile": "W-9 archivado • Actualizado {{date}}",
+          "noW9OnFile": "No hay W-9 archivado",
+          "download1099": "Descargar 1099 ({{year}})"
         }
       }
     },
@@ -2005,6 +2079,8 @@
         "hoursAgo_other": "hace {{count}} horas",
         "minutesAgo": "hace {{count}} minuto",
         "minutesAgo_other": "hace {{count}} minutos",
+        "monthsAgo": "hace {{count}} mes",
+        "monthsAgo_other": "hace {{count}} meses",
         "justNow": "Justo ahora"
       }
     }

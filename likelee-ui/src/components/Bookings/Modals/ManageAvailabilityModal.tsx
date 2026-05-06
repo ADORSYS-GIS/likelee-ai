@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddBookOutModal } from "./AddBookOutModal";
 import { getAgencyRoster } from "@/api/functions";
+import { useTranslation } from "react-i18next";
 
 export const ManageAvailabilityModal = ({
   open,
@@ -28,8 +29,13 @@ export const ManageAvailabilityModal = ({
   fixedTalent?: { id: string; name: string };
   isSportsAgency?: boolean;
 }) => {
-  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
-  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const { t } = useTranslation();
+  const entitySingularTitle = t(
+    isSportsAgency
+      ? "talentPortal.content.irl.entities.athlete"
+      : "talentPortal.content.irl.entities.talent",
+  );
+  const entitySingularLower = entitySingularTitle.toLowerCase();
   const [addOpen, setAddOpen] = useState(false);
   const [talents, setTalents] = useState<any[]>([]);
 
@@ -87,10 +93,14 @@ export const ManageAvailabilityModal = ({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            {`${entitySingularTitle} Availability & Book-Outs`}
+            {t("talentPortal.content.irl.availability.manageModalTitle", {
+              entity: entitySingularTitle,
+            })}
           </DialogTitle>
           <p className="text-sm text-gray-500">
-            {`Manage when ${entitySingularLower} is unavailable for bookings`}
+            {t("talentPortal.content.irl.availability.manageModalDescription", {
+              entity: entitySingularLower,
+            })}
           </p>
         </DialogHeader>
         <div className="py-6">
@@ -98,7 +108,8 @@ export const ManageAvailabilityModal = ({
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold mb-8 rounded-lg h-10"
             onClick={() => setAddOpen(true)}
           >
-            <Plus className="w-4 h-4 mr-2" /> Add Book-Out
+            <Plus className="w-4 h-4 mr-2" />{" "}
+            {t("talentPortal.content.irl.availability.addBookOut")}
           </Button>
 
           {bookOuts.length === 0 ? (
@@ -107,10 +118,12 @@ export const ManageAvailabilityModal = ({
                 <Calendar className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="font-bold text-gray-900 mb-1">
-                No book-outs scheduled
+                {t("talentPortal.content.irl.availability.noneTitle")}
               </h3>
               <p className="text-sm text-gray-500">
-                {`${entitySingularTitle} will appear available for all dates`}
+                {t("talentPortal.content.irl.availability.allDatesAvailable", {
+                  entity: entitySingularTitle,
+                })}
               </p>
             </div>
           ) : (
@@ -130,7 +143,12 @@ export const ManageAvailabilityModal = ({
                       </div>
                       <div className="text-gray-500">
                         {start} – {end} ·{" "}
-                        <span className="capitalize">{reason}</span>
+                        <span className="capitalize">
+                          {t(
+                            `talentPortal.content.irl.bookOutReasons.${reason}`,
+                            reason,
+                          )}
+                        </span>
                       </div>
                     </div>
                     <Button
@@ -138,7 +156,8 @@ export const ManageAvailabilityModal = ({
                       className="text-red-600 border-red-200 hover:bg-red-50"
                       onClick={() => onRemoveBookOut(bo.id)}
                     >
-                      <X className="w-4 h-4 mr-1" /> Remove
+                      <X className="w-4 h-4 mr-1" />{" "}
+                      {t("talentPortal.content.irl.shared.remove")}
                     </Button>
                   </Card>
                 );

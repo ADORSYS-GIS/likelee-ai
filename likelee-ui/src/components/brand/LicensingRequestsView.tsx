@@ -19,6 +19,7 @@ import {
   FileText,
   Plus,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface LicensingRequestsViewProps {
   brandLicensingRequests: any[];
@@ -49,6 +50,8 @@ export const LicensingRequestsView: React.FC<LicensingRequestsViewProps> = ({
   setBrandSignOpen,
   navigateToSection,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
@@ -134,7 +137,7 @@ export const LicensingRequestsView: React.FC<LicensingRequestsViewProps> = ({
                 <FileText className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No licensing requests yet
+                {t("brandDashboard.licensingRequests.empty")}
               </h3>
               <p className="text-sm text-gray-600 mb-6">
                 Start by browsing the marketplace and requesting licenses from
@@ -471,7 +474,7 @@ export const LicensingRequestsView: React.FC<LicensingRequestsViewProps> = ({
                         }}
                       >
                         <Edit className="w-4 h-4 mr-2" />
-                        Sign Contract
+                        {t("brandDashboard.licensingRequests.signContract")}
                       </Button>
                     )}
 
@@ -479,7 +482,7 @@ export const LicensingRequestsView: React.FC<LicensingRequestsViewProps> = ({
                       <div className="flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2.5 rounded-lg border border-green-200">
                         <CheckCircle className="w-4 h-4" />
                         <span className="font-semibold text-sm">
-                          Contract Signed
+                          {t("brandDashboard.licensingRequests.contractSigned")}
                         </span>
                       </div>
                     )}

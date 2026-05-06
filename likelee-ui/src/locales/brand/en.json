@@ -1229,6 +1229,7 @@
       "description": "Description",
       "declineReason": "Decline reason",
       "signContract": "Sign Contract",
+      "signContractDescription": "Review and sign the licensing contract.",
       "contractSigned": "Contract Signed",
       "awaitingAgencyContract": "Awaiting contract from agency",
       "status": {

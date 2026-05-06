@@ -702,6 +702,7 @@ export default function CreatorDashboard() {
   const [sendDeliverablePreviewUrls, setSendDeliverablePreviewUrls] = useState<
     string[]
   >([]);
+  const deliverableUploadInputRef = useRef<HTMLInputElement | null>(null);
   const [seenBrandRequestIds, setSeenBrandRequestIds] = useState<Set<string>>(
     new Set(),
   );
@@ -827,10 +828,27 @@ export default function CreatorDashboard() {
   const totalBrandConnectionNotifications =
     unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
 
-  const formatStatus = (status: unknown) =>
-    String(status || "sent")
+  const formatStatus = (status: unknown) => {
+    const normalized = String(status || "sent").toLowerCase();
+    const keyMap: Record<string, string> = {
+      sent: "brandConnections.sent",
+      viewed: "brandConnections.viewed",
+      fulfilled: "brandConnections.fulfilled",
+      submitted: "brandConnections.submitted",
+      approved: "brandConnections.approved",
+      brand_approved: "brandConnections.approved",
+      accepted: "brandConnections.accepted",
+      declined: "brandConnections.declined",
+      changes_requested: "brandConnections.changesRequested",
+      contract_fully_signed: "brandConnections.contractFullySigned",
+      contract_partially_signed: "brandConnections.contractPartiallySigned",
+      contract_sent: "brandConnections.contractSent",
+    };
+    if (keyMap[normalized]) return t(keyMap[normalized]);
+    return String(status || "sent")
       .replace(/_/g, " ")
       .replace(/\b\w/g, (m) => m.toUpperCase());
+  };
 
   const offerStatusBadgeClass = (statusRaw: unknown) => {
     const status = String(statusRaw || "").toLowerCase();
@@ -2423,7 +2441,7 @@ export default function CreatorDashboard() {
               campaign_name: String(
                 offer?.brand_campaigns?.name ||
                   offer?.offer_title ||
-                  "Campaign offer",
+                  t("brandConnections.offerFallback"),
               ),
             }));
           } catch {
@@ -3879,16 +3897,16 @@ export default function CreatorDashboard() {
       const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
       setDaysLeft(days);
       if (ms <= 0) {
-        setTrialCountdown("Trial ended");
+        setTrialCountdown(t("creatorDashboard.planStatus.trialEnded"));
         return;
       }
-      setTrialCountdown(`${days} ${days === 1 ? "day" : "days"}`);
+      setTrialCountdown(t("creatorDashboard.planStatus.days", { count: days }));
     };
 
     compute();
     const id = window.setInterval(compute, 60 * 1000);
     return () => window.clearInterval(id);
-  }, [creatorPlanTier, trialActive, trialEndsAt]);
+  }, [creatorPlanTier, t, trialActive, trialEndsAt]);
 
   const creatorCategoryLimit =
     typeof creatorBilling?.category_limit === "number"
@@ -4045,11 +4063,11 @@ export default function CreatorDashboard() {
     },
     {
       id: "jobs",
-      label: "Jobs",
+      label: t("creatorDashboard.nav.jobs"),
       icon: Briefcase,
       locked: !creatorCanUseJobs,
       requiredPlan: "pro",
-      premiumFeature: "Jobs",
+      premiumFeature: t("creatorDashboard.nav.jobs"),
       onClick: () => {
         navigate(createPageUrl("Jobs"));
       },
@@ -4095,7 +4113,7 @@ export default function CreatorDashboard() {
     },
     {
       id: "talent-portal",
-      label: "Talent Portal",
+      label: t("creatorDashboard.nav.talentPortal"),
       icon: Briefcase,
       locked: !creatorCanUseTalentPortal,
       requiredPlan: "pro",
@@ -4107,8 +4125,8 @@ export default function CreatorDashboard() {
         }
         if (!talentPortalEnabled) {
           toast({
-            title: "Talent Portal",
-            description: "Connect to an agency to access Talent Portal.",
+            title: t("creatorDashboard.nav.talentPortal"),
+            description: t("creatorDashboard.talentPortal.connectAgencyHint"),
           });
           return;
         }
@@ -4117,11 +4135,11 @@ export default function CreatorDashboard() {
     },
     {
       id: "agency-connection",
-      label: "Agency Connection",
+      label: t("creatorDashboard.nav.agencyConnection"),
       icon: LinkIcon,
       locked: !creatorCanUseAgencyConnection,
       requiredPlan: "basic",
-      premiumFeature: "Agency Connection",
+      premiumFeature: t("creatorDashboard.nav.agencyConnection"),
       badge:
         agencyInvites.filter((i) => i.status === "pending").length > 0
           ? agencyInvites.filter((i) => i.status === "pending").length
@@ -4129,11 +4147,11 @@ export default function CreatorDashboard() {
     },
     {
       id: "brand-connection",
-      label: "Brand Connection",
+      label: t("creatorDashboard.nav.brandConnection"),
       icon: LinkIcon,
       locked: !creatorCanUseBrandConnection,
       requiredPlan: "basic",
-      premiumFeature: "Brand Connection",
+      premiumFeature: t("creatorDashboard.nav.brandConnection"),
       badge:
         totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
     },
@@ -4197,7 +4215,7 @@ export default function CreatorDashboard() {
                         )
                       }
                     >
-                      View job details
+                      {t("creatorDashboard.jobs.viewJobDetails")}
                     </Button>
                     <Button
                       variant="outline"
@@ -4208,7 +4226,7 @@ export default function CreatorDashboard() {
                         setJobInviteConfirmOpen(true);
                       }}
                     >
-                      Accept
+                      {t("creatorDashboard.jobs.acceptInvite")}
                     </Button>
                     <Button
                       variant="outline"
@@ -4219,7 +4237,7 @@ export default function CreatorDashboard() {
                         setJobInviteConfirmOpen(true);
                       }}
                     >
-                      Decline
+                      {t("creatorDashboard.jobs.declineInvite")}
                     </Button>
                   </>
                 ) : (
@@ -4233,7 +4251,7 @@ export default function CreatorDashboard() {
                       )
                     }
                   >
-                    Apply
+                    {t("creatorDashboard.jobs.apply")}
                   </Button>
                 )}
               </div>
@@ -4247,9 +4265,11 @@ export default function CreatorDashboard() {
   const renderJobsSection = () => (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-gray-900">Jobs</h2>
+        <h2 className="text-3xl font-bold text-gray-900">
+          {t("creatorDashboard.jobs.title")}
+        </h2>
         <p className="text-gray-600 mt-1">
-          Review invitations and explore open roles.
+          {t("creatorDashboard.jobs.subtitle")}
         </p>
       </div>
 
@@ -4264,7 +4284,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setJobsSubTab("job_invites")}
           >
-            Job Invites
+            {t("creatorDashboard.jobs.jobInvites")}
             {jobInvites.length > 0 ? (
               <Badge className="ml-2 bg-white/20 text-current border border-white/30">
                 {jobInvites.length}
@@ -4285,7 +4305,7 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            Open Job Board
+            {t("creatorDashboard.jobs.openJobBoard")}
           </Button>
         </div>
 
@@ -4295,10 +4315,10 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-lg font-semibold text-gray-900">
-                    Job Invites
+                    {t("creatorDashboard.jobs.jobInvites")}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
-                    Respond to direct job invitations from brands.
+                    {t("creatorDashboard.jobs.jobInvitesDescription")}
                   </div>
                 </div>
                 <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
@@ -4311,11 +4331,10 @@ export default function CreatorDashboard() {
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 flex flex-col gap-4">
               <div>
                 <div className="text-lg font-semibold text-gray-900">
-                  Browse the full Jobs board
+                  {t("jobs.browseBoardTitle")}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Open the public jobs page to view all available opportunities
-                  and apply.
+                  {t("jobs.browseBoardDescription")}
                 </div>
               </div>
               <div>
@@ -4327,7 +4346,7 @@ export default function CreatorDashboard() {
                     )
                   }
                 >
-                  Open Jobs Board
+                  {t("creatorDashboard.jobs.openJobBoard")}
                 </Button>
               </div>
             </div>
@@ -5889,15 +5908,14 @@ export default function CreatorDashboard() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold text-gray-900">
-                    Upgrade to Basic to start KYC
+                    {t("creatorDashboard.trialGate.upgradeToBasicForKyc")}
                   </p>
                   <Badge className="rounded-full border-0 bg-white/90 px-2.5 py-0.5 text-[11px] font-medium text-gray-700 shadow-sm">
-                    Basic required
+                    {t("creatorDashboard.trialGate.basicRequired")}
                   </Badge>
                 </div>
                 <p className="mt-1 text-sm leading-6 text-gray-600">
-                  Without Basic and approved KYC, your creator profile cannot be
-                  visible in the marketplace or managed by brands and agencies.
+                  {t("creatorDashboard.trialGate.basicAndKycDescription")}
                 </p>
               </div>
             </div>
@@ -5917,7 +5935,9 @@ export default function CreatorDashboard() {
               ) : (
                 <Crown className="mr-2 h-4 w-4" />
               )}
-              {portalLoading ? "Processing..." : "Upgrade plan"}
+              {portalLoading
+                ? t("creatorDashboard.trialGate.processing")
+                : t("creatorDashboard.trialGate.upgradePlan")}
             </Button>
           </div>
         </div>
@@ -6157,7 +6177,9 @@ export default function CreatorDashboard() {
               {trialActive && trialEndsAt && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <div className="flex items-center gap-1.5 font-medium text-[#64748B]">
-                    <span className="text-[#94A3B8]">Ends in:</span>
+                    <span className="text-[#94A3B8]">
+                      {t("creatorDashboard.planStatus.endsIn")}
+                    </span>
                     <span
                       className={`font-black ${
                         isExpiringSoon ? "text-red-500" : "text-[#0F172A]"
@@ -6168,7 +6190,11 @@ export default function CreatorDashboard() {
                   </div>
                   {trialStartAt && (
                     <span className="text-[10px] text-[#94A3B8] font-medium bg-[#F1F5F9] px-2 py-0.5 rounded-full">
-                      Started {new Date(trialStartAt).toLocaleDateString()}
+                      {t("creatorDashboard.planStatus.started", {
+                        date: new Date(trialStartAt).toLocaleDateString(
+                          i18n.language,
+                        ),
+                      })}
                     </span>
                   )}
                   {isExpiringSoon && (
@@ -6178,7 +6204,7 @@ export default function CreatorDashboard() {
                       className="flex items-center gap-1 bg-red-100/80 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tight"
                     >
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                      Expiring Soon
+                      {t("creatorDashboard.planStatus.expiringSoon")}
                     </motion.div>
                   )}
                 </div>
@@ -6209,7 +6235,9 @@ export default function CreatorDashboard() {
                 <Gift className="h-4 w-4 text-[#38BDF8]" />
               </motion.div>
             )}
-            {trialActive ? "Manage Subscription" : "Account Settings"}
+            {trialActive
+              ? t("creatorDashboard.planStatus.manageSubscription")
+              : t("creatorDashboard.planStatus.accountSettings")}
             <ChevronRight
               className={`ml-2 h-4 w-4 transition-transform ${
                 isExpiringSoon
@@ -6260,19 +6288,17 @@ export default function CreatorDashboard() {
                 </motion.div>
                 <div className="max-w-xl">
                   <div className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-[#5eead4] mb-4">
-                    Exclusive Creator Offer
+                    {t("creatorDashboard.trialOffer.badge")}
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black tracking-tight sm:text-4xl leading-tight">
-                    Experience Likelee{" "}
+                    {t("creatorDashboard.trialOffer.titlePrefix")}{" "}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5eead4] to-[#2dd4bf]">
-                      Pro
+                      {t("creatorDashboard.trialOffer.pro")}
                     </span>{" "}
-                    for 30 Days
+                    {t("creatorDashboard.trialOffer.titleSuffix")}
                   </h2>
                   <p className="mt-3 text-sm sm:text-lg text-slate-300 leading-relaxed font-medium">
-                    Unlock professional features including AI Voice profiles,
-                    advanced analytics, content monitoring, and premium campaign
-                    opportunities.
+                    {t("creatorDashboard.trialOffer.description")}
                   </p>
                 </div>
               </div>
@@ -6280,9 +6306,9 @@ export default function CreatorDashboard() {
                 <div className="rounded-[20px] sm:rounded-[28px] border border-white/10 bg-white/5 p-4 sm:p-6 backdrop-blur-md">
                   <div className="space-y-3 mb-5 sm:mb-8">
                     {[
-                      "30 Days of Premium Access",
-                      "Cancel anytime during trial",
-                      "Automatic billing after 30 days",
+                      t("creatorDashboard.trialOffer.bullets.premiumAccess"),
+                      t("creatorDashboard.trialOffer.bullets.cancelAnytime"),
+                      t("creatorDashboard.trialOffer.bullets.autoBilling"),
                     ].map((item, i) => (
                       <div
                         key={i}
@@ -6298,7 +6324,7 @@ export default function CreatorDashboard() {
                     onClick={() => navigate("/CreatorSubscribe")}
                     className="w-full h-12 sm:h-14 rounded-xl sm:rounded-2xl bg-white text-[#0f172a] hover:bg-[#ccfbf1] transition-all duration-300 font-black text-base sm:text-lg shadow-xl group"
                   >
-                    Explore Plans & Unlock Trial
+                    {t("creatorDashboard.trialOffer.cta")}
                     <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </div>
@@ -7482,13 +7508,17 @@ export default function CreatorDashboard() {
             <AlertDialogHeader>
               <AlertDialogTitle>
                 {disconnectRequiresApproval
-                  ? `Request disconnect from ${disconnectLabel}?`
-                  : `Disconnect from ${disconnectLabel}?`}
+                  ? t("agencyConnections.dialogs.requestDisconnectTitle", {
+                      agency: disconnectLabel,
+                    })
+                  : t("agencyConnections.dialogs.disconnectTitle", {
+                      agency: disconnectLabel,
+                    })}
               </AlertDialogTitle>
               <AlertDialogDescription>
                 {disconnectRequiresApproval
-                  ? "This contract is still active, so the agency must approve your disconnect request unless the contract expires first."
-                  : "This may remove access to bookings, earnings, and portal data for that agency."}
+                  ? t("agencyConnections.dialogs.requestDisconnectDescription")
+                  : t("agencyConnections.dialogs.disconnectDescription")}
               </AlertDialogDescription>
             </AlertDialogHeader>
 
@@ -7500,31 +7530,37 @@ export default function CreatorDashboard() {
               />
               <Label htmlFor="confirm-disconnect" className="text-sm leading-5">
                 {disconnectRequiresApproval
-                  ? "I understand the connection stays active until the agency approves this request."
-                  : "I understand this action is hard to undo."}
+                  ? t("agencyConnections.dialogs.requestDisconnectConfirm")
+                  : t("agencyConnections.dialogs.disconnectConfirm")}
               </Label>
             </div>
 
             {disconnectRequiresApproval && (
               <div className="space-y-2">
-                <Label htmlFor="disconnect-reason">Reason for request</Label>
+                <Label htmlFor="disconnect-reason">
+                  {t("agencyConnections.dialogs.requestReasonLabel")}
+                </Label>
                 <Textarea
                   id="disconnect-reason"
                   value={disconnectReason}
                   onChange={(e) => setDisconnectReason(e.target.value)}
-                  placeholder="Tell the agency why you want to terminate the active contract early."
+                  placeholder={t(
+                    "agencyConnections.dialogs.requestReasonPlaceholder",
+                  )}
                   rows={4}
                 />
                 {disconnectPending ? (
                   <p className="text-xs text-amber-700">
-                    A disconnect request is already pending for this contract.
+                    {t("agencyConnections.dialogs.requestPending")}
                   </p>
                 ) : null}
               </div>
             )}
 
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>
+                {t("agencyConnections.dialogs.cancel")}
+              </AlertDialogCancel>
               <AlertDialogAction
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 disabled={
@@ -7537,8 +7573,8 @@ export default function CreatorDashboard() {
                 }}
               >
                 {disconnectRequiresApproval
-                  ? "Request disconnect"
-                  : "Disconnect"}
+                  ? t("agencyConnections.dialogs.requestDisconnect")
+                  : t("agencyConnections.disconnectNow")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -7673,10 +7709,10 @@ export default function CreatorDashboard() {
 
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
-            Agency Connection
+            {t("agencyConnections.title")}
           </h2>
           <p className="text-gray-600 mt-1">
-            Manage agency invitations and your connected agencies.
+            {t("agencyConnections.subtitle")}
           </p>
         </div>
 
@@ -7692,7 +7728,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setAgencyConnectionSubTab("connections")}
           >
-            Connections
+            {t("agencyConnections.connections")}
           </Button>
           <Button
             variant={
@@ -7707,7 +7743,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setAgencyConnectionSubTab("asset_requests")}
           >
-            Asset Requests
+            {t("agencyConnections.assetRequests")}
             {unseenAssetRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenAssetRequestCount}
@@ -7722,18 +7758,18 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-lg font-semibold text-gray-900">
-                    Connected Agencies
+                    {t("agencyConnections.connectedAgencies")}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {agencyConnections.length > 0
-                      ? "You can be connected to multiple agencies at once."
-                      : "You are not connected to any agencies yet."}
+                      ? t("agencyConnections.connectedAgenciesDescription")
+                      : t("agencyConnections.noConnectionsDescription")}
                   </div>
                 </div>
                 {agencyConnectionLoading && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Loading
+                    {t("agencyConnections.loading")}
                   </div>
                 )}
               </div>
@@ -7772,8 +7808,8 @@ export default function CreatorDashboard() {
                             {String(
                               c.marketplace_contract?.disconnect_status || "",
                             ).toLowerCase() === "pending"
-                              ? "Disconnect request pending"
-                              : "Connected agency"}
+                              ? t("agencyConnections.disconnectPending")
+                              : t("agencyConnections.connectedAgencyFallback")}
                           </div>
                         </div>
                       </button>
@@ -7800,14 +7836,14 @@ export default function CreatorDashboard() {
                             setDisconnectConfirmChecked(false);
                             setDisconnectDialogOpen(true);
                           }}
-                          aria-label="Disconnect from agency"
+                          aria-label={t("agencyConnections.disconnectAria")}
                         >
                           <Link2Off className="h-4 w-4 mr-2" />
                           {String(
                             c.marketplace_contract?.status || "",
                           ).toLowerCase() === "active"
-                            ? "Request disconnect"
-                            : "Disconnect"}
+                            ? t("agencyConnections.disconnect")
+                            : t("agencyConnections.disconnectNow")}
                         </Button>
                       )}
                     </div>
@@ -7820,12 +7856,12 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-lg font-semibold text-gray-900">
-                    Invitations
+                    {t("agencyConnections.invitations")}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {pending.length > 0
-                      ? "Respond to pending invitations from agencies."
-                      : "No pending invitations right now."}
+                      ? t("agencyConnections.pendingInvitationsDescription")
+                      : t("agencyConnections.noPendingInvitations")}
                   </div>
                 </div>
                 {pending.length > 0 && (
@@ -7865,13 +7901,20 @@ export default function CreatorDashboard() {
                                 <div className="min-w-0">
                                   <div className="font-semibold text-gray-900 truncate">
                                     {inv?.agencies?.agency_name
-                                      ? `Invitation from ${inv.agencies.agency_name}`
-                                      : "Invitation from agency"}
+                                      ? t(
+                                          "agencyConnections.invitationFromAgencyNamed",
+                                          {
+                                            agency: inv.agencies.agency_name,
+                                          },
+                                        )
+                                      : t(
+                                          "agencyConnections.invitationFromAgency",
+                                        )}
                                   </div>
                                   <div className="text-xs text-gray-500 truncate mt-1">
                                     {inv?.agencies?.email ||
                                       inv?.agencies?.website ||
-                                      "Agency profile available on request"}
+                                      t("agencyConnections.profileAvailable")}
                                   </div>
                                 </div>
                               </div>
@@ -7908,7 +7951,7 @@ export default function CreatorDashboard() {
                                     }
                                   }}
                                 >
-                                  Decline
+                                  {t("agencyConnections.decline")}
                                 </Button>
                                 {requiresSignature ? (
                                   <>
@@ -7947,7 +7990,7 @@ export default function CreatorDashboard() {
                                         }
                                       }}
                                     >
-                                      Review contract
+                                      {t("agencyConnections.reviewContract")}
                                     </Button>
                                     <Button
                                       className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -7981,7 +8024,7 @@ export default function CreatorDashboard() {
                                         }
                                       }}
                                     >
-                                      Sync
+                                      {t("agencyConnections.sync")}
                                     </Button>
                                   </>
                                 ) : (
@@ -8013,8 +8056,9 @@ export default function CreatorDashboard() {
                                         );
                                         toast({
                                           title: "Invitation accepted",
-                                          description:
-                                            "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
+                                          description: t(
+                                            "agencyConnections.invitationAccepted",
+                                          ),
                                         });
                                       } catch (e: any) {
                                         toast({
@@ -8026,29 +8070,28 @@ export default function CreatorDashboard() {
                                       }
                                     }}
                                   >
-                                    Accept
+                                    {t("agencyConnections.accept")}
                                   </Button>
                                 )}
                               </div>
                             </div>
                             <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
                               <span className="font-semibold">
-                                Likelee notice:
+                                {t("agencyConnections.likeleeNoticeTitle")}
                               </span>{" "}
-                              This agency found your public profile in
-                              marketplace and sent a connection invitation.
+                              {t("agencyConnections.likeleeNoticeDescription")}
                             </div>
                             {contract ? (
                               <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
-                                Contract status:{" "}
+                                {t("agencyConnections.contract.status")}:{" "}
                                 <span className="font-semibold capitalize">
-                                  {contract.status}
+                                  {formatStatus(contract.status)}
                                 </span>
                                 {contract.commission_rate != null
-                                  ? ` • ${contract.commission_rate}% commission`
+                                  ? ` • ${contract.commission_rate}% ${t("agencyConnections.contract.commission")}`
                                   : ""}
                                 {contract.valid_until
-                                  ? ` • valid until ${contract.valid_until}`
+                                  ? ` • ${t("agencyConnections.contract.validUntil")} ${contract.valid_until}`
                                   : ""}
                               </div>
                             ) : null}
@@ -8067,10 +8110,10 @@ export default function CreatorDashboard() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-lg font-semibold text-gray-900">
-                  Asset Requests
+                  {t("agencyConnections.assetRequests")}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Upload deliverables for agency requests.
+                  {t("agencyConnections.assetRequestsDescription")}
                 </div>
               </div>
               {unseenAssetRequestCount > 0 && (
@@ -8081,10 +8124,14 @@ export default function CreatorDashboard() {
             </div>
             <div className="mt-6 space-y-4">
               {loadingAssetRequests && (
-                <p className="text-sm text-gray-600">Loading requests...</p>
+                <p className="text-sm text-gray-600">
+                  {t("agencyConnections.loadingRequests")}
+                </p>
               )}
               {!loadingAssetRequests && assetRequests.length === 0 && (
-                <p className="text-sm text-gray-600">No asset requests yet.</p>
+                <p className="text-sm text-gray-600">
+                  {t("agencyConnections.noAssetRequests")}
+                </p>
               )}
               {assetRequests.map((req: any) => {
                 const offer = req?.campaign_offers || {};
@@ -8096,9 +8143,13 @@ export default function CreatorDashboard() {
                     "",
                 );
                 const reqId = String(req?.id || "");
-                const agencyName = req?.agencies?.agency_name || "Agency";
+                const agencyName =
+                  req?.agencies?.agency_name ||
+                  t("agencyConnections.contract.agencyFallback");
                 const agencyLogo = req?.agencies?.logo_url || "";
-                const requestTitle = String(req?.title || "Asset request");
+                const requestTitle = String(
+                  req?.title || t("agencyConnections.assetRequestFallback"),
+                );
                 const offerDeliverables = offerId
                   ? offerDeliverablesById[offerId] || []
                   : [];
@@ -8143,13 +8194,13 @@ export default function CreatorDashboard() {
                             {agencyName} •{" "}
                             {offer?.offer_title ||
                               offer?.brand_campaigns?.name ||
-                              "Campaign"}
+                              t("brandConnections.campaignFallback")}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="capitalize">
-                          {String(req?.status || "sent").replace(/_/g, " ")}
+                          {formatStatus(req?.status || "sent")}
                         </Badge>
                         <ChevronDown
                           className={`w-4 h-4 text-gray-400 transition-transform ${
@@ -8174,7 +8225,8 @@ export default function CreatorDashboard() {
                               window.open(String(req.file_url), "_blank")
                             }
                           >
-                            <FileText className="w-4 h-4 mr-2" /> View PDF
+                            <FileText className="w-4 h-4 mr-2" />{" "}
+                            {t("agencyConnections.viewPDF")}
                           </Button>
                         )}
                         <div className="flex flex-wrap gap-2 pt-2">
@@ -8186,9 +8238,12 @@ export default function CreatorDashboard() {
                             onClick={async () => {
                               if (!offerId) {
                                 toast({
-                                  title: "Campaign offer missing",
-                                  description:
-                                    "We could not find the campaign offer for this request. Please refresh and try again.",
+                                  title: t(
+                                    "agencyConnections.offerMissingTitle",
+                                  ),
+                                  description: t(
+                                    "agencyConnections.offerMissingDescription",
+                                  ),
                                   variant: "destructive",
                                 });
                                 return;
@@ -8220,22 +8275,24 @@ export default function CreatorDashboard() {
                               } catch {}
                             }}
                           >
-                            Upload Deliverables
+                            {t("brandConnections.uploadDeliverables")}
                           </Button>
                         </div>
                         <div className="pt-2 border-t border-gray-100">
                           <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-2">
-                            <span>Your deliverables</span>
+                            <span>
+                              {t("brandConnections.yourDeliverables")}
+                            </span>
                           </div>
                           {loadingOfferDeliverablesById[offerId] && (
                             <p className="text-xs text-gray-500">
-                              Loading deliverables...
+                              {t("brandConnections.loadingDeliverables")}
                             </p>
                           )}
                           {!loadingOfferDeliverablesById[offerId] &&
                             requestDeliverables.length === 0 && (
                               <p className="text-xs text-gray-500">
-                                No deliverables submitted yet.
+                                {t("brandConnections.noDeliverablesSubmitted")}
                               </p>
                             )}
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -8261,7 +8318,12 @@ export default function CreatorDashboard() {
                                       deliverableIsImage(deliverable) && (
                                         <img
                                           src={assetUrl}
-                                          alt={caption || "Deliverable"}
+                                          alt={
+                                            caption ||
+                                            t(
+                                              "brandConnections.sendDeliverable",
+                                            )
+                                          }
                                           className="w-full h-full object-cover"
                                         />
                                       )}
@@ -8282,8 +8344,8 @@ export default function CreatorDashboard() {
                                         {String(
                                           deliverable?.status || "submitted",
                                         ).toLowerCase() === "brand_approved"
-                                          ? "approved"
-                                          : String(
+                                          ? t("brandConnections.approved")
+                                          : formatStatus(
                                               deliverable?.status ||
                                                 "submitted",
                                             )}
@@ -8292,11 +8354,17 @@ export default function CreatorDashboard() {
                                   </div>
                                   <div className="p-3 space-y-2">
                                     <div className="text-xs text-gray-700 font-medium">
-                                      {caption || "Deliverable"}
+                                      {caption ||
+                                        t("brandConnections.sendDeliverable")}
                                     </div>
                                     {agencyNote && (
                                       <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded p-2">
-                                        <strong>Agency Feedback:</strong>{" "}
+                                        <strong>
+                                          {t(
+                                            "agencyConnections.agencyFeedback",
+                                          )}
+                                          :
+                                        </strong>{" "}
                                         {agencyNote}
                                       </div>
                                     )}
@@ -8309,7 +8377,7 @@ export default function CreatorDashboard() {
                                           rel="noreferrer"
                                           className="text-xs text-blue-600 underline"
                                         >
-                                          Open file
+                                          {t("brandConnections.openFile")}
                                         </a>
                                       )}
                                   </div>
@@ -8334,15 +8402,18 @@ export default function CreatorDashboard() {
     return (
       <div className="space-y-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Brand Connection</h2>
-          <p className="text-gray-600 mt-1">
-            Manage connections, requests, and incoming campaign offers.
-          </p>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {t("brandConnections.title")}
+          </h2>
+          <p className="text-gray-600 mt-1">{t("brandConnections.subtitle")}</p>
           {totalBrandConnectionNotifications > 0 && (
             <p className="text-xs text-amber-700 mt-2">
-              {totalBrandConnectionNotifications} new notification
-              {totalBrandConnectionNotifications > 1 ? "s" : ""} across
-              requests, offers, and deliverables.
+              {t(
+                totalBrandConnectionNotifications > 1
+                  ? "brandConnections.notificationSummaryPlural"
+                  : "brandConnections.notificationSummarySingular",
+                { count: totalBrandConnectionNotifications },
+              )}
             </p>
           )}
         </div>
@@ -8359,7 +8430,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setBrandConnectionSubTab("connections")}
           >
-            Connected Brands
+            {t("brandConnections.connections")}
           </Button>
           <Button
             variant={
@@ -8381,7 +8452,7 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            Requests
+            {t("brandConnections.requests")}
             {unseenRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenRequestCount}
@@ -8406,7 +8477,7 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            Brand Offers
+            {t("brandConnections.offers")}
             {unseenOfferCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenOfferCount}
@@ -8424,7 +8495,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setBrandConnectionSubTab("job-invites")}
           >
-            Job Invites
+            {t("creatorDashboard.jobs.jobInvites")}
             {jobInvites.length > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {jobInvites.length}
@@ -8451,7 +8522,7 @@ export default function CreatorDashboard() {
               );
             }}
           >
-            Deliverables
+            {t("brandConnections.deliverables")}
             {unseenDeliverableFeedbackCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
                 {unseenDeliverableFeedbackCount}
@@ -8463,12 +8534,12 @@ export default function CreatorDashboard() {
         {brandConnectionSubTab === "connections" && (
           <Card className="p-6">
             <div className="text-lg font-semibold text-gray-900">
-              Connected Brands
+              {t("brandConnections.connections")}
             </div>
             <div className="text-sm text-gray-600 mt-1">
               {brandConnections.length > 0
-                ? "You are connected with brands below."
-                : "You are not connected to any brands yet."}
+                ? t("brandConnections.connectionsDescription")
+                : t("brandConnections.noConnectionsDescription")}
             </div>
             {brandConnections.length > 0 && (
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -8494,7 +8565,8 @@ export default function CreatorDashboard() {
                           {resolveConnectedBrandName(c)}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
-                          {c?.brands?.email || "Connected brand"}
+                          {c?.brands?.email ||
+                            t("brandConnections.connectedBrandFallback")}
                         </div>
                       </div>
                     </div>
@@ -8503,8 +8575,8 @@ export default function CreatorDashboard() {
                       size="icon"
                       disabled={agencyConnectionLoading}
                       onClick={() => onDisconnect(String(c?.brand_id || ""))}
-                      aria-label="Disconnect from brand"
-                      title="Disconnect"
+                      aria-label={t("brandConnections.disconnectAria")}
+                      title={t("brandConnections.disconnectAria")}
                     >
                       <Link2Off className="h-4 w-4" />
                     </Button>
@@ -8520,12 +8592,12 @@ export default function CreatorDashboard() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-lg font-semibold text-gray-900">
-                  Requests
+                  {t("brandConnections.requests")}
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
                   {pending.length > 0
-                    ? "Respond to pending brand connection requests."
-                    : "No pending requests right now."}
+                    ? t("brandConnections.requestsDescription")
+                    : t("brandConnections.noPendingRequestsDescription")}
                 </div>
               </div>
               {pending.length > 0 && (
@@ -8545,10 +8617,11 @@ export default function CreatorDashboard() {
                       <div className="min-w-0">
                         <div className="font-semibold text-gray-900 truncate">
                           {req?.brands?.company_name ||
-                            "Brand connection request"}
+                            t("brandConnections.requestFallback")}
                         </div>
                         <div className="text-xs text-gray-500 truncate mt-1">
-                          {req?.brands?.email || "Brand profile available"}
+                          {req?.brands?.email ||
+                            t("brandConnections.profileAvailable")}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -8560,7 +8633,7 @@ export default function CreatorDashboard() {
                           }
                           disabled={agencyConnectionLoading}
                         >
-                          Decline
+                          {t("brandConnections.declineRequest")}
                         </Button>
                         <Button
                           className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -8569,7 +8642,7 @@ export default function CreatorDashboard() {
                           }
                           disabled={agencyConnectionLoading}
                         >
-                          Accept
+                          {t("brandConnections.acceptRequest")}
                         </Button>
                       </div>
                     </div>
@@ -8584,13 +8657,17 @@ export default function CreatorDashboard() {
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
-                Job Invites
+                {t("creatorDashboard.jobs.jobInvites")}
               </div>
               {loadingJobInvites && (
-                <p className="text-sm text-gray-600">Loading job invites...</p>
+                <p className="text-sm text-gray-600">
+                  {t("creatorDashboard.jobs.loadingInvites")}
+                </p>
               )}
               {!loadingJobInvites && jobInvites.length === 0 && (
-                <p className="text-sm text-gray-600">No job invites yet.</p>
+                <p className="text-sm text-gray-600">
+                  {t("creatorDashboard.jobs.noInvites")}
+                </p>
               )}
               {!loadingJobInvites && jobInvites.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -8602,7 +8679,8 @@ export default function CreatorDashboard() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="font-semibold text-gray-900 truncate">
-                            {job?.job_title || "Job invite"}
+                            {job?.job_title ||
+                              t("creatorDashboard.jobs.inviteFallbackTitle")}
                           </div>
                           <div className="text-xs text-gray-500 truncate mt-1">
                             {resolveJobBrandName(job)}
@@ -8636,7 +8714,7 @@ export default function CreatorDashboard() {
                                 )
                               }
                             >
-                              View job details
+                              {t("creatorDashboard.jobs.viewJobDetails")}
                             </Button>
                             <Button
                               variant="outline"
@@ -8647,7 +8725,7 @@ export default function CreatorDashboard() {
                                 setJobInviteConfirmOpen(true);
                               }}
                             >
-                              Accept
+                              {t("creatorDashboard.jobs.acceptInvite")}
                             </Button>
                             <Button
                               variant="outline"
@@ -8658,7 +8736,7 @@ export default function CreatorDashboard() {
                                 setJobInviteConfirmOpen(true);
                               }}
                             >
-                              Decline
+                              {t("creatorDashboard.jobs.declineInvite")}
                             </Button>
                           </>
                         ) : (
@@ -8672,7 +8750,7 @@ export default function CreatorDashboard() {
                               )
                             }
                           >
-                            Apply
+                            {t("creatorDashboard.jobs.apply")}
                           </Button>
                         )}
                       </div>
@@ -8688,16 +8766,16 @@ export default function CreatorDashboard() {
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
-                Brand Offers
+                {t("brandConnections.offers")}
               </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">
-                  Loading campaign offers...
+                  {t("brandConnections.loadingOffers")}
                 </p>
               )}
               {!loadingBrandOffers && brandOffers.length === 0 && (
                 <p className="text-sm text-gray-600">
-                  No campaign offers available yet.
+                  {t("brandConnections.noOffersAvailable")}
                 </p>
               )}
               {!selectedOfferBriefId && brandOffers.length > 0 && (
@@ -8713,15 +8791,17 @@ export default function CreatorDashboard() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <div className="font-semibold text-gray-900">
-                              {offer?.brand_campaigns?.name || "Campaign offer"}
+                              {offer?.brand_campaigns?.name ||
+                                t("brandConnections.offerFallback")}
                             </div>
                             <div className="text-xs text-gray-500">
-                              {offer?.brands?.company_name || "Brand"} •{" "}
-                              {status.replace(/_/g, " ")}
+                              {offer?.brands?.company_name ||
+                                t("brandConnections.brandFallback")}{" "}
+                              • {formatStatus(status)}
                             </div>
                           </div>
                           <Badge variant="outline" className="capitalize">
-                            {status.replace(/_/g, " ")}
+                            {formatStatus(status)}
                           </Badge>
                         </div>
                         {offer?.message && (
@@ -8735,7 +8815,7 @@ export default function CreatorDashboard() {
                             className="border-gray-200"
                             onClick={() => openOfferBriefPage(offerId)}
                           >
-                            View brief
+                            {t("brandConnections.viewBrief")}
                           </Button>
                         </div>
                       </div>
@@ -8750,9 +8830,11 @@ export default function CreatorDashboard() {
                     className="border-gray-300"
                     onClick={closeOfferBriefPage}
                   >
-                    ← Back to Brand Offers
+                    {t("brandConnections.backToOffers")}
                   </Button>
-                  <p className="text-sm text-red-600">Offer brief not found.</p>
+                  <p className="text-sm text-red-600">
+                    {t("brandConnections.offerBriefNotFound")}
+                  </p>
                 </div>
               )}
               {selectedOfferBriefId && selectedBriefOffer && (
@@ -8764,14 +8846,17 @@ export default function CreatorDashboard() {
                         onClick={closeOfferBriefPage}
                         className="border-2 border-gray-300"
                       >
-                        ← Back to Brand Offers
+                        {t("brandConnections.backToOffers")}
                       </Button>
                       <h1 className="text-3xl font-bold text-gray-900">
-                        {selectedBriefCampaign?.name || "Campaign"} - Brief &
-                        Contract
+                        {t("brandConnections.briefAndContractTitle", {
+                          campaign:
+                            selectedBriefCampaign?.name ||
+                            t("brandConnections.campaignFallback"),
+                        })}
                       </h1>
                       <p className="text-gray-600">
-                        Detailed scope and requirements
+                        {t("brandConnections.briefAndContractSubtitle")}
                       </p>
                     </div>
                     <Badge
@@ -9165,11 +9250,11 @@ export default function CreatorDashboard() {
                         onClick={signContract}
                         disabled={!selectedBriefContract}
                       >
-                        Sign Contract
+                        {t("creatorDashboard.signContract")}
                       </Button>
                     ) : (
                       <div className="text-sm font-medium text-emerald-700">
-                        Contract already signed.
+                        {t("creatorDashboard.contractAlreadySigned")}
                       </div>
                     )}
                   </div>
@@ -9187,7 +9272,7 @@ export default function CreatorDashboard() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-2">
                           <p className="text-xs text-gray-600 uppercase tracking-wide">
-                            Brand
+                            {t("brandConnections.brandFallback")}
                           </p>
                           <p className="text-base font-bold text-gray-900">
                             {resolveOfferBrandName(offer)}
@@ -9195,7 +9280,7 @@ export default function CreatorDashboard() {
                           <div className="font-semibold text-gray-900">
                             {campaign?.name ||
                               offer?.offer_title ||
-                              "Campaign offer"}
+                              t("brandConnections.offerFallback")}
                           </div>
                         </div>
                         <Badge
@@ -9206,36 +9291,36 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
                         <p>
-                          Offer status:{" "}
+                          {t("brandConnections.offerStatusLabel")}{" "}
                           <span className="font-semibold text-gray-900">
                             {formatStatus(offer?.status || "sent")}
                           </span>
                         </p>
                         <p>
-                          Deliverable status:{" "}
+                          {t("brandConnections.deliverableStatus")}{" "}
                           <span className="font-semibold text-gray-900">
                             {(() => {
                               const normalized = String(
                                 offer?.status || "",
                               ).toLowerCase();
                               if (normalized.includes("changes_requested")) {
-                                return "Request Review";
+                                return t("brandConnections.requestReview");
                               }
                               if (
                                 normalized.includes("deliverables_submitted")
                               ) {
-                                return "Submitted";
+                                return t("brandConnections.submitted");
                               }
                               if (normalized.includes("approved")) {
-                                return "Approved";
+                                return t("brandConnections.approved");
                               }
                               if (
                                 normalized.includes("contract_fully_signed") ||
                                 normalized.includes("signed")
                               ) {
-                                return "Ready to submit";
+                                return t("brandConnections.readyToSubmit");
                               }
-                              return "Not started";
+                              return t("brandConnections.notStarted");
                             })()}
                           </span>
                         </p>
@@ -9289,8 +9374,8 @@ export default function CreatorDashboard() {
                           String(offer?.id || ""),
                         ) && (
                           <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                            Edits requested by brand. Open brief and check
-                            feedback comments.
+                            {t("brandConnections.editsRequestedByBrand")}.{" "}
+                            {t("brandConnections.viewBrief")}
                           </div>
                         )}
                       <Button
@@ -9298,7 +9383,7 @@ export default function CreatorDashboard() {
                         className="border-gray-200"
                         onClick={() => openOfferBriefPage(offerId)}
                       >
-                        View brief
+                        {t("brandConnections.viewBrief")}
                       </Button>
                     </div>
                   );
@@ -9312,7 +9397,7 @@ export default function CreatorDashboard() {
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="text-lg font-semibold text-gray-900">
-                  Deliverables
+                  {t("brandConnections.deliverables")}
                 </div>
                 <Button
                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -9322,16 +9407,18 @@ export default function CreatorDashboard() {
                     setSendDeliverableOpen(true);
                   }}
                 >
-                  Send deliverable
+                  {t("brandConnections.sendDeliverable")}
                 </Button>
               </div>
               {loadingBrandOffers && (
-                <p className="text-sm text-gray-600">Loading deliverables...</p>
+                <p className="text-sm text-gray-600">
+                  {t("brandConnections.loadingDeliverables")}
+                </p>
               )}
               {!loadingBrandOffers &&
                 deliverableEligibleOffers.length === 0 && (
                   <p className="text-sm text-gray-600">
-                    No deliverables yet for fully signed offers.
+                    {t("brandConnections.noDeliverablesForSignedOffers")}
                   </p>
                 )}
               {deliverableEligibleOffers.map((offer: any) => {
@@ -9345,10 +9432,12 @@ export default function CreatorDashboard() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="space-y-1">
                         <p className="font-semibold text-gray-900">
-                          {offer?.brand_campaigns?.name || "Campaign offer"}
+                          {offer?.brand_campaigns?.name ||
+                            t("brandConnections.offerFallback")}
                         </p>
                         <p className="text-xs text-gray-600">
-                          Offer status: {formatStatus(offer?.status || "sent")}
+                          {t("brandConnections.offerStatus")}{" "}
+                          {formatStatus(offer?.status || "sent")}
                         </p>
                       </div>
                       <Button
@@ -9356,18 +9445,20 @@ export default function CreatorDashboard() {
                         className="border-gray-200"
                         onClick={() => openOfferBrief(offerId)}
                       >
-                        {expanded ? "Hide" : "Open"}
+                        {expanded
+                          ? t("brandConnections.hide")
+                          : t("brandConnections.open")}
                       </Button>
                     </div>
                     {expanded && (
                       <div className="rounded-md border border-gray-200 p-3">
                         {loadingOfferDetails ? (
                           <div className="text-xs text-gray-500">
-                            Loading deliverables...
+                            {t("brandConnections.loadingDeliverables")}
                           </div>
                         ) : selectedOfferDeliverables.length === 0 ? (
                           <div className="text-xs text-gray-500">
-                            No deliverables yet.
+                            {t("brandConnections.noDeliverablesYet")}
                           </div>
                         ) : (
                           selectedOfferDeliverables.map((deliverable: any) => (
@@ -9387,7 +9478,7 @@ export default function CreatorDashboard() {
                                   {String(
                                     deliverable?.status || "submitted",
                                   ).toLowerCase() === "brand_approved"
-                                    ? "Approved"
+                                    ? t("brandConnections.approved")
                                     : formatStatus(
                                         deliverable?.status || "submitted",
                                       )}
@@ -9397,7 +9488,7 @@ export default function CreatorDashboard() {
                                 {String(
                                   deliverable?.caption ||
                                     deliverable?.meta?.original_name ||
-                                    "Deliverable image",
+                                    t("brandConnections.sendDeliverable"),
                                 )}
                               </div>
                               {deliverable?.asset_url && (
@@ -9500,9 +9591,9 @@ export default function CreatorDashboard() {
         >
           <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
             <DialogHeader className="p-4 border-b">
-              <DialogTitle>Sign Contract</DialogTitle>
+              <DialogTitle>{t("creatorDashboard.signContract")}</DialogTitle>
               <DialogDescription>
-                Complete your signature to finalize this campaign contract.
+                {t("creatorDashboard.signContractDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 w-full bg-gray-50 overflow-auto">
@@ -9574,7 +9665,7 @@ export default function CreatorDashboard() {
               <Input
                 value={campaignSearch}
                 onChange={(e) => setCampaignSearch(e.target.value)}
-                placeholder="Search by brand or campaign"
+                placeholder={t("creatorDashboard.campaigns.searchPlaceholder")}
                 className="pl-12 pr-12 h-12"
               />
               {campaignSearch.trim() && (
@@ -9882,17 +9973,17 @@ export default function CreatorDashboard() {
       <div className="space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-            Approval Queue
+            {t("creatorDashboard.approvals.title")}
           </h2>
           <p className="text-gray-600 mt-1 text-sm sm:text-base">
-            Review brand requests, contract actions, and deliverable feedback.
+            {t("creatorDashboard.approvals.subtitle")}
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              Pending requests
+              {t("creatorDashboard.approvals.pendingRequests")}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pending.length}
@@ -9901,13 +9992,13 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("requests")}
             >
-              Open requests
+              {t("creatorDashboard.approvals.openRequests")}
             </Button>
           </Card>
 
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              Offer actions
+              {t("creatorDashboard.approvals.offerActions")}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {actionableOffers.length}
@@ -9916,13 +10007,13 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("offers")}
             >
-              Review offers
+              {t("creatorDashboard.approvals.reviewOffers")}
             </Button>
           </Card>
 
           <Card className="p-3 sm:p-5 border border-[#DDE5EF] shadow-sm flex flex-col">
             <div className="text-xs text-gray-500 h-8 sm:h-10">
-              Deliverable feedback
+              {t("creatorDashboard.approvals.deliverableFeedback")}
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1">
               {pendingDeliverables.length}
@@ -9931,7 +10022,7 @@ export default function CreatorDashboard() {
               className="mt-3 w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-[10px] sm:text-sm h-9 sm:h-10 whitespace-normal leading-tight px-1 sm:px-3"
               onClick={() => openBrandConnectionSubTab("deliverables")}
             >
-              View feedback
+              {t("creatorDashboard.approvals.viewFeedback")}
             </Button>
           </Card>
         </div>
@@ -9940,10 +10031,10 @@ export default function CreatorDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="text-base sm:text-lg font-semibold text-gray-900">
-                Needs your attention
+                {t("brandConnections.needsYourAttention")}
               </div>
               <div className="text-xs sm:text-sm text-gray-600 mt-1">
-                The latest items that still need a response from you.
+                {t("brandConnections.needsYourAttentionDescription")}
               </div>
             </div>
             <Badge className="bg-[#1A2140] text-white w-fit">
@@ -9957,7 +10048,7 @@ export default function CreatorDashboard() {
           actionableOffers.length === 0 &&
           pendingDeliverables.length === 0 ? (
             <div className="mt-6 rounded-xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center text-sm text-gray-600">
-              No approvals are waiting right now.
+              {t("brandConnections.noApprovalsWaiting")}
             </div>
           ) : (
             <div className="mt-6 space-y-3">
@@ -9970,14 +10061,16 @@ export default function CreatorDashboard() {
                     <div className="min-w-0">
                       <div className="font-semibold text-gray-900 truncate">
                         {req?.brands?.company_name ||
-                          "Brand connection request"}
+                          t("brandConnections.requestFallback")}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        Connection request awaiting your response
+                        {t(
+                          "brandConnections.connectionRequestAwaitingResponse",
+                        )}
                       </div>
                     </div>
                     <Badge className="bg-amber-50 text-amber-700 border border-amber-200">
-                      Request
+                      {t("brandConnections.requests")}
                     </Badge>
                   </div>
                 </div>
@@ -9991,15 +10084,17 @@ export default function CreatorDashboard() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-semibold text-gray-900 truncate">
-                        {offer?.brand_campaigns?.name || "Campaign offer"}
+                        {offer?.brand_campaigns?.name ||
+                          t("brandConnections.offerFallback")}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        {offer?.brands?.company_name || "Brand"} •{" "}
-                        {String(offer?.status || "sent").replace(/_/g, " ")}
+                        {offer?.brands?.company_name ||
+                          t("brandConnections.brandFallback")}{" "}
+                        • {formatStatus(offer?.status || "sent")}
                       </div>
                     </div>
                     <Badge className="bg-blue-50 text-blue-700 border border-blue-200 capitalize">
-                      {String(offer?.status || "sent").replace(/_/g, " ")}
+                      {formatStatus(offer?.status || "sent")}
                     </Badge>
                   </div>
                 </div>
@@ -10013,14 +10108,15 @@ export default function CreatorDashboard() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="font-semibold text-gray-900 truncate">
-                        {offer?.brand_campaigns?.name || "Deliverable review"}
+                        {offer?.brand_campaigns?.name ||
+                          t("brandConnections.deliverableReview")}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
-                        Feedback received on submitted deliverables
+                        {t("brandConnections.feedbackReceivedOnDeliverables")}
                       </div>
                     </div>
                     <Badge className="bg-rose-50 text-rose-700 border border-rose-200">
-                      Feedback
+                      {t("brandConnections.feedback")}
                     </Badge>
                   </div>
                 </div>
@@ -10068,7 +10164,7 @@ export default function CreatorDashboard() {
               <Input
                 value={archiveSearch}
                 onChange={(e) => setArchiveSearch(e.target.value)}
-                placeholder="Search by brand or campaign"
+                placeholder={t("creatorDashboard.campaigns.searchPlaceholder")}
                 className="pl-12 pr-12 h-12"
               />
               {archiveSearch.trim() && (
@@ -10095,16 +10191,16 @@ export default function CreatorDashboard() {
               </>
             ) : loadingBrandOffers ? (
               <>
-                <p>Loading past campaigns...</p>
+                <p>{t("creatorDashboard.archive.loadingPastCampaigns")}</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Fetching your completed campaigns.
+                  {t("creatorDashboard.archive.fetchingCompletedCampaigns")}
                 </p>
               </>
             ) : (
               <>
-                <p>No past campaigns yet.</p>
+                <p>{t("creatorDashboard.archive.noPastCampaigns")}</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  Completed campaigns will appear here.
+                  {t("creatorDashboard.archive.completedCampaignsAppearHere")}
                 </p>
               </>
             )}
@@ -10790,7 +10886,7 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500"></div>
             <p className="text-sm font-medium text-gray-600 mb-2 relative z-10">
-              cashout Balance (Stripe)
+              {t("creatorDashboard.earnings.metrics.cashoutBalanceStripe")}
             </p>
             <p className="text-3xl font-bold text-emerald-600 relative z-10">
               $
@@ -10800,10 +10896,12 @@ export default function CreatorDashboard() {
               ).toFixed(2)}
             </p>
             <p className="text-sm text-gray-600 mt-1 relative z-10">
-              Available in your connected Stripe account.
+              {t(
+                "creatorDashboard.earnings.metrics.availableInConnectedStripe",
+              )}
             </p>
             <p className="text-xs text-gray-500 mt-2 relative z-10">
-              Held (pending transfer): $
+              {t("creatorDashboard.earnings.metrics.heldPendingTransfer")}: $
               {(
                 (balances.find((b) => b.currency === "USD")?.available_cents ||
                   0) / 100
@@ -10951,7 +11049,7 @@ export default function CreatorDashboard() {
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900">
-                Pending Transfers
+                {t("creatorDashboard.earnings.pendingTransfers")}
               </h3>
               <Button
                 size="sm"
@@ -10963,50 +11061,66 @@ export default function CreatorDashboard() {
                 <RefreshCw
                   className={`w-3 h-3 mr-1 ${loadingCreatorTransfers ? "animate-spin" : ""}`}
                 />
-                Refresh
+                {t("creatorDashboard.earnings.refresh")}
               </Button>
             </div>
 
             {loadingCreatorTransfers ? (
               <div className="flex items-center justify-center py-8 gap-2 text-gray-400">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-xs">Loading transfer status…</span>
+                <span className="text-xs">
+                  {t("creatorDashboard.earnings.transfers.loadingStatus")}
+                </span>
               </div>
             ) : (
               <div className="space-y-3">
-                {creatorTransfers.map((t: any) => {
+                {creatorTransfers.map((transfer: any) => {
                   const statusIcon =
-                    t.transfer_status === "created" ? (
+                    transfer.transfer_status === "created" ? (
                       <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                    ) : t.transfer_status === "failed" ||
-                      t.transfer_status === "pending_retry" ? (
+                    ) : transfer.transfer_status === "failed" ||
+                      transfer.transfer_status === "pending_retry" ? (
                       <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
                     ) : (
                       <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     );
 
                   const statusLabel =
-                    t.transfer_status === "created"
-                      ? "transferred"
-                      : t.transfer_status === "pending_retry"
-                        ? "retrying…"
-                        : t.transfer_status === "failed"
-                          ? "failed"
-                          : "pending";
+                    transfer.transfer_status === "created"
+                      ? t(
+                          "creatorDashboard.earnings.transfers.status.transferred",
+                        )
+                      : transfer.transfer_status === "pending_retry"
+                        ? t(
+                            "creatorDashboard.earnings.transfers.status.retrying",
+                          )
+                        : transfer.transfer_status === "failed"
+                          ? t(
+                              "creatorDashboard.earnings.transfers.status.failed",
+                            )
+                          : t(
+                              "creatorDashboard.earnings.transfers.status.pending",
+                            );
 
                   const friendlyReason = (reason: string) => {
                     if (!reason) return null;
                     if (
                       reason.includes("insufficient_capabilities_for_transfer")
                     )
-                      return "Your Stripe account is not fully set up. Complete Stripe onboarding to receive transfers.";
+                      return t(
+                        "creatorDashboard.earnings.transfers.errors.incompleteStripe",
+                      );
                     if (reason.includes("transfers_not_allowed"))
-                      return "Transfers not allowed on your Stripe account.";
+                      return t(
+                        "creatorDashboard.earnings.transfers.errors.notAllowed",
+                      );
                     if (
                       reason.includes("no_stripe_account") ||
                       reason.includes("No Stripe Connect")
                     )
-                      return "No Stripe account connected. Complete Stripe onboarding to receive funds.";
+                      return t(
+                        "creatorDashboard.earnings.transfers.errors.noStripeAccount",
+                      );
                     return reason.length > 120
                       ? reason.slice(0, 120) + "…"
                       : reason;
@@ -11014,7 +11128,7 @@ export default function CreatorDashboard() {
 
                   return (
                     <div
-                      key={t.offer_id}
+                      key={transfer.offer_id}
                       className="p-4 rounded-xl border border-gray-200 bg-gray-50/50"
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -11023,37 +11137,39 @@ export default function CreatorDashboard() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-semibold text-gray-900 truncate">
-                                {t.offer_title}
+                                {transfer.offer_title}
                               </span>
                               <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">
-                                {t.brand_name}
+                                {transfer.brand_name}
                               </span>
                             </div>
-                            {t.transfer_status === "failed" &&
-                              t.failure_reason && (
+                            {transfer.transfer_status === "failed" &&
+                              transfer.failure_reason && (
                                 <p className="text-[11px] text-amber-700 mt-1 leading-snug">
-                                  {friendlyReason(t.failure_reason)}
+                                  {friendlyReason(transfer.failure_reason)}
                                 </p>
                               )}
-                            {t.retry_count > 0 && (
+                            {transfer.retry_count > 0 && (
                               <p className="text-[10px] text-gray-400 mt-0.5">
-                                {t.retry_count}{" "}
-                                {t.retry_count === 1 ? "retry" : "retries"}
+                                {transfer.retry_count}{" "}
+                                {transfer.retry_count === 1
+                                  ? t("creatorDashboard.earnings.retry")
+                                  : t("creatorDashboard.earnings.retries")}
                               </p>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
                           <span className="text-sm font-bold text-gray-900">
-                            ${((t.amount_cents ?? 0) / 100).toFixed(2)}
+                            ${((transfer.amount_cents ?? 0) / 100).toFixed(2)}
                           </span>
                           <span
                             className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
-                              t.transfer_status === "created"
+                              transfer.transfer_status === "created"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : t.transfer_status === "failed"
+                                : transfer.transfer_status === "failed"
                                   ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : t.transfer_status === "pending_retry"
+                                  : transfer.transfer_status === "pending_retry"
                                     ? "bg-blue-50 text-blue-700 border-blue-200"
                                     : "bg-gray-50 text-gray-500 border-gray-200"
                             }`}
@@ -11076,13 +11192,10 @@ export default function CreatorDashboard() {
                   <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-bold text-amber-900">
-                      Action required
+                      {t("creatorDashboard.earnings.actionRequired")}
                     </p>
                     <p className="text-xs text-amber-800 mt-1 leading-relaxed">
-                      One or more transfers failed because your Stripe account
-                      is not fully set up. Complete your Stripe onboarding to
-                      receive these funds. The agency will retry the transfer
-                      once your account is ready.
+                      {t("creatorDashboard.earnings.actionRequiredDescription")}
                     </p>
                     {!payoutAccountStatus?.transfers_enabled && (
                       <Button
@@ -11090,7 +11203,7 @@ export default function CreatorDashboard() {
                         className="mt-3 h-8 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs"
                         onClick={() => setShowPayoutSettings(true)}
                       >
-                        Complete Stripe setup
+                        {t("creatorDashboard.earnings.completeStripeSetup")}
                       </Button>
                     )}
                   </div>
@@ -11372,7 +11485,7 @@ export default function CreatorDashboard() {
               : "border-transparent text-gray-600 hover:text-gray-900"
           }`}
         >
-          Billing
+          {t("creatorDashboard.settingsView.tabs.billing")}
         </button>
       </div>
 
@@ -11466,12 +11579,14 @@ export default function CreatorDashboard() {
 
               <div className="pt-2">
                 <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                  Professional Details
+                  {t(
+                    "creatorDashboard.settingsView.profile.professionalDetails",
+                  )}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Creator Type
+                      {t("creatorDashboard.settingsView.profile.creatorType")}
                     </Label>
                     <Input
                       value={creator.creator_type || ""}
@@ -11482,13 +11597,15 @@ export default function CreatorDashboard() {
                         })
                       }
                       className="border-2 border-gray-300"
-                      placeholder="Model / Influencer / Actor"
+                      placeholder={t(
+                        "creatorDashboard.settingsView.profile.creatorType",
+                      )}
                     />
                   </div>
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Date of Birth
+                      {t("creatorDashboard.settingsView.profile.dateOfBirth")}
                     </Label>
                     <DobInput
                       value={creator.birthday || ""}
@@ -11505,7 +11622,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Gender
+                      {t("creatorDashboard.settingsView.profile.gender")}
                     </Label>
                     <Input
                       value={creator.gender || ""}
@@ -11521,7 +11638,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Ethnicity
+                      {t("creatorDashboard.settingsView.profile.ethnicity")}
                     </Label>
                     <Input
                       value={creator.ethnicity || ""}
@@ -11537,7 +11654,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Race
+                      {t("creatorDashboard.settingsView.profile.race")}
                     </Label>
                     <Input
                       value={creator.race || ""}
@@ -11553,7 +11670,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Hair Color
+                      {t("creatorDashboard.settingsView.profile.hairColor")}
                     </Label>
                     <Input
                       value={creator.hair_color || ""}
@@ -11569,7 +11686,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Eye Color
+                      {t("creatorDashboard.settingsView.profile.eyeColor")}
                     </Label>
                     <Input
                       value={creator.eye_color || ""}
@@ -11585,7 +11702,7 @@ export default function CreatorDashboard() {
 
                   <div>
                     <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                      Height (cm)
+                      {t("creatorDashboard.settingsView.profile.heightCm")}
                     </Label>
                     <Input
                       type="number"
@@ -12085,7 +12202,7 @@ export default function CreatorDashboard() {
                 <div>
                   <div className="flex items-center gap-3">
                     <h3 className="text-xl font-bold text-[#142033]">
-                      Creator subscription
+                      {t("creatorDashboard.settingsView.billingSummary.title")}
                     </h3>
                     <Badge
                       className={
@@ -12116,18 +12233,30 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                      Current access
+                      {t(
+                        "creatorDashboard.settingsView.billingSummary.currentAccess",
+                      )}
                     </div>
                     <div className="mt-1 text-2xl font-bold text-[#142033]">
                       {effectivePlanTier === "pro"
                         ? trialActive
-                          ? "Pro Trial access"
-                          : "Pro creator access"
+                          ? t(
+                              "creatorDashboard.settingsView.billingSummary.access.proTrial",
+                            )
+                          : t(
+                              "creatorDashboard.settingsView.billingSummary.access.pro",
+                            )
                         : effectivePlanTier === "basic"
                           ? trialActive
-                            ? "Basic Trial access"
-                            : "Basic creator access"
-                          : "Free creator access"}
+                            ? t(
+                                "creatorDashboard.settingsView.billingSummary.access.basicTrial",
+                              )
+                            : t(
+                                "creatorDashboard.settingsView.billingSummary.access.basic",
+                              )
+                          : t(
+                              "creatorDashboard.settingsView.billingSummary.access.free",
+                            )}
                     </div>
                   </div>
                 </div>
@@ -12136,50 +12265,101 @@ export default function CreatorDashboard() {
                   {[
                     {
                       label: "Content",
-                      value: "Included for all creators",
+                      value: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.content.value",
+                      ),
                       included: true,
                     },
                     {
-                      label: "KYC access",
-                      value: creatorCanUseKyc ? "Included" : "Upgrade to Basic",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.kyc.label",
+                      ),
+                      value: creatorCanUseKyc
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                          ),
                       included: creatorCanUseKyc,
                     },
                     {
-                      label: "My Likeness",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.likeness.label",
+                      ),
                       value: creatorCanUseLikeness
-                        ? "Included"
-                        : "Upgrade to Basic",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                          ),
                       included: creatorCanUseLikeness,
                     },
                     {
-                      label: "Payouts",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.payouts.label",
+                      ),
                       value: creatorCanUsePayouts
-                        ? "Included"
-                        : "Upgrade to Basic",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                          ),
                       included: creatorCanUsePayouts,
                     },
                     {
-                      label: "My Rules",
-                      value: creatorCanUseRules ? "Included" : "Pro only",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.rules.label",
+                      ),
+                      value: creatorCanUseRules
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                          ),
                       included: creatorCanUseRules,
                     },
                     {
-                      label: "Voice",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.voice.label",
+                      ),
                       value: creatorCanUseVoice
-                        ? `Enabled (${Math.max(creatorVoiceLimit, 6)} tones)`
-                        : "Pro only",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.voiceEnabled",
+                            { count: Math.max(creatorVoiceLimit, 6) },
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                          ),
                       included: creatorCanUseVoice,
                     },
                     {
-                      label: "Jobs",
-                      value: creatorCanUseJobs ? "Included" : "Pro only",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.jobs.label",
+                      ),
+                      value: creatorCanUseJobs
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                          ),
                       included: creatorCanUseJobs,
                     },
                     {
-                      label: "Active Campaigns",
+                      label: t(
+                        "creatorDashboard.settingsView.billingSummary.cards.activeCampaigns.label",
+                      ),
                       value: creatorCanUseActiveCampaigns
-                        ? "Included"
-                        : "Pro only",
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.included",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.proOnly",
+                          ),
                       included: creatorCanUseActiveCampaigns,
                     },
                   ].map((item) => (
@@ -12192,16 +12372,26 @@ export default function CreatorDashboard() {
                           className={`mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full ${
                             item.included
                               ? "bg-[#E8F7FB] text-[#1683A3]"
-                              : item.value === "Pro only"
+                              : item.value ===
+                                  t(
+                                    "creatorDashboard.settingsView.billingSummary.proOnly",
+                                  )
                                 ? "bg-[#FFF4DA] text-[#B7791F]"
                                 : "bg-[#F1F5F9] text-[#718096]"
                           }`}
                         >
                           {item.included ? (
                             <Check className="h-4 w-4" />
-                          ) : item.value === "Pro only" ? (
+                          ) : item.value ===
+                            t(
+                              "creatorDashboard.settingsView.billingSummary.proOnly",
+                            ) ? (
                             <Crown className="h-4 w-4 text-amber-500" />
-                          ) : item.value.startsWith("Upgrade to Basic") ? (
+                          ) : item.value.startsWith(
+                              t(
+                                "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                              ),
+                            ) ? (
                             <Star className="h-4 w-4 text-blue-500" />
                           ) : (
                             <Shield className="h-4 w-4" />
@@ -12224,21 +12414,35 @@ export default function CreatorDashboard() {
               <div className="space-y-4">
                 <div className="rounded-3xl border border-[#D7E6F5] bg-gradient-to-br from-[#F9FCFF] to-[#EEF5FB] p-6">
                   <div className="text-sm font-semibold uppercase tracking-[0.16em] text-[#7A889F]">
-                    Recommended next step
+                    {t(
+                      "creatorDashboard.settingsView.billingSummary.recommendedNextStep",
+                    )}
                   </div>
                   <div className="mt-2 text-2xl font-bold text-[#142033]">
                     {effectivePlanTier === "free"
-                      ? "Move to Basic"
+                      ? t(
+                          "creatorDashboard.settingsView.billingSummary.upgradeToBasic",
+                        )
                       : effectivePlanTier === "basic"
-                        ? "Move to Pro"
-                        : "You’re fully unlocked"}
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.next.basic",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.next.pro",
+                          )}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[#5A6880]">
                     {effectivePlanTier === "free"
-                      ? "Basic unlocks KYC, creator visibility, agency and brand connections, My Likeness, and payouts."
+                      ? t(
+                          "creatorDashboard.settingsView.billingSummary.descriptions.free",
+                        )
                       : effectivePlanTier === "basic"
-                        ? "Pro unlocks Cameo uploads, Jobs, My Rules, Voice, Talent Portal, Campaign Archives, and Active Campaigns."
-                        : "Your current plan includes the full creator workflow toolset."}
+                        ? t(
+                            "creatorDashboard.settingsView.billingSummary.descriptions.basic",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.billingSummary.descriptions.pro",
+                          )}
                   </p>
                   {effectivePlanTier !== "pro" && (
                     <Button
@@ -12249,10 +12453,14 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          Processing...
+                          {t(
+                            "creatorDashboard.settingsView.billingSummary.processing",
+                          )}
                         </>
                       ) : (
-                        "View Details"
+                        t(
+                          "creatorDashboard.settingsView.billingSummary.viewDetails",
+                        )
                       )}
                     </Button>
                   )}
@@ -12263,12 +12471,14 @@ export default function CreatorDashboard() {
                   <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                     <div className="max-w-md text-center md:text-left">
                       <h4 className="text-2xl font-black tracking-tight">
-                        Ready to lock in Pro?
+                        {t(
+                          "creatorDashboard.settingsView.billingSummary.lockInProTitle",
+                        )}
                       </h4>
                       <p className="mt-3 text-base text-indigo-100/100 leading-relaxed font-medium">
-                        Your trial is active, but you can secure your
-                        professional workflow tools today. Get full marketplace
-                        priority and exclusive campaign access.
+                        {t(
+                          "creatorDashboard.settingsView.billingSummary.lockInProDescription",
+                        )}
                       </p>
                     </div>
                     <Button
@@ -12278,10 +12488,14 @@ export default function CreatorDashboard() {
                       {portalLoading ? (
                         <>
                           <Loader2 className="w-6 h-6 animate-spin mr-3" />
-                          Opening Portal...
+                          {t(
+                            "creatorDashboard.settingsView.billingSummary.openingPortal",
+                          )}
                         </>
                       ) : (
-                        "Select Plan"
+                        t(
+                          "creatorDashboard.settingsView.billingSummary.selectPlan",
+                        )
                       )}
                     </Button>
                   </div>
@@ -12787,11 +13001,11 @@ export default function CreatorDashboard() {
         >
           <DialogContent className="max-w-4xl">
             <DialogHeader>
-              <DialogTitle>Send deliverable</DialogTitle>
+              <DialogTitle>{t("brandConnections.sendDeliverable")}</DialogTitle>
               <DialogDescription>
                 {sendDeliverableRequestId
-                  ? "Upload deliverables for the agency request."
-                  : "Upload a deliverable, choose the connected brand, and select the campaign offer."}
+                  ? t("brandConnections.uploadForAgencyRequest")
+                  : t("brandConnections.uploadDeliverableDescription")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -12801,23 +13015,30 @@ export default function CreatorDashboard() {
                     {sendDeliverableRequestMeta.agency_logo_url ? (
                       <img
                         src={sendDeliverableRequestMeta.agency_logo_url}
-                        alt={sendDeliverableRequestMeta.agency_name || "Agency"}
+                        alt={
+                          sendDeliverableRequestMeta.agency_name ||
+                          t("agencyConnections.contract.agencyFallback")
+                        }
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      String(sendDeliverableRequestMeta.agency_name || "A")
+                      String(
+                        sendDeliverableRequestMeta.agency_name ||
+                          t("agencyConnections.contract.agencyFallback"),
+                      )
                         .slice(0, 1)
                         .toUpperCase()
                     )}
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-gray-900">
-                      {sendDeliverableRequestMeta.agency_name || "Agency"}
+                      {sendDeliverableRequestMeta.agency_name ||
+                        t("agencyConnections.contract.agencyFallback")}
                     </div>
                     <div className="text-xs text-gray-500">
                       {sendDeliverableRequestMeta.offer_title ||
                         sendDeliverableRequestMeta.campaign_name ||
-                        "Campaign offer"}
+                        t("brandConnections.offerFallback")}
                     </div>
                   </div>
                 </div>
@@ -12833,8 +13054,7 @@ export default function CreatorDashboard() {
                   return (
                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                       <span className="text-amber-700 text-sm font-semibold">
-                        ⏳ Awaiting brand payment before deliverables can be
-                        uploaded.
+                        {t("brandConnections.awaitingPayment")}
                       </span>
                     </div>
                   );
@@ -12842,11 +13062,15 @@ export default function CreatorDashboard() {
                 return null;
               })()}
               <div className="space-y-2">
-                <Label htmlFor="deliverable-upload">Upload deliverables</Label>
+                <Label htmlFor="deliverable-upload">
+                  {t("brandConnections.uploadDeliverables")}
+                </Label>
                 <Input
+                  ref={deliverableUploadInputRef}
                   id="deliverable-upload"
                   type="file"
                   multiple
+                  className="sr-only"
                   onChange={(e) => {
                     const selectedFiles = Array.from(e.target.files || []);
                     if (selectedFiles.length === 0) return;
@@ -12870,9 +13094,25 @@ export default function CreatorDashboard() {
                     e.target.value = "";
                   }}
                 />
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-gray-300"
+                    onClick={() => deliverableUploadInputRef.current?.click()}
+                  >
+                    {t("brandConnections.chooseFiles")}
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    {sendDeliverableFiles.length === 0
+                      ? t("brandConnections.noFileChosen")
+                      : t("brandConnections.filesSelected", {
+                          count: sendDeliverableFiles.length,
+                        })}
+                  </span>
+                </div>
                 <p className="text-xs text-gray-500">
-                  Uploaded assets will be stored and shared as downloadable
-                  links.
+                  {t("brandConnections.uploadHint")}
                 </p>
                 {sendDeliverableFiles.length > 0 && (
                   <div className="mt-2 space-y-2">
@@ -12893,7 +13133,7 @@ export default function CreatorDashboard() {
                           ) : (
                             <img
                               src={sendDeliverablePreviewUrls[idx]}
-                              alt={`Deliverable preview ${idx + 1}`}
+                              alt={`${t("brandConnections.sendDeliverable")} ${idx + 1}`}
                               className="h-32 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
                             />
                           )
@@ -12920,7 +13160,7 @@ export default function CreatorDashboard() {
                               setSendDeliverablePreviewUrls(nextUrls);
                             }}
                           >
-                            Remove
+                            {t("brandConnections.remove")}
                           </Button>
                         </div>
                       </div>
@@ -12931,7 +13171,9 @@ export default function CreatorDashboard() {
               {!sendDeliverableRequestId && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="deliverable-brand">Select brand</Label>
+                    <Label htmlFor="deliverable-brand">
+                      {t("brandConnections.selectBrand")}
+                    </Label>
                     <select
                       id="deliverable-brand"
                       value={sendDeliverableBrandId}
@@ -12941,7 +13183,9 @@ export default function CreatorDashboard() {
                       }}
                       className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      <option value="">Select connected brand</option>
+                      <option value="">
+                        {t("brandConnections.selectConnectedBrand")}
+                      </option>
                       {brandConnections.map((c: any) => (
                         <option
                           key={String(c?.brand_id || c?.id)}
@@ -12954,7 +13198,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="deliverable-campaign">
-                      Select campaign
+                      {t("brandConnections.selectCampaign")}
                     </Label>
                     <select
                       id="deliverable-campaign"
@@ -12974,7 +13218,9 @@ export default function CreatorDashboard() {
                       }}
                       className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      <option value="">Select campaign offer</option>
+                      <option value="">
+                        {t("brandConnections.selectCampaignOffer")}
+                      </option>
                       {campaignOptions.map((offer: any) => (
                         <option
                           key={String(offer?.id)}
@@ -12983,14 +13229,14 @@ export default function CreatorDashboard() {
                           {String(
                             offer?.brand_campaigns?.name ||
                               offer?.offer_title ||
-                              "Campaign offer",
+                              t("brandConnections.offerFallback"),
                           )}
                         </option>
                       ))}
                     </select>
                     {sendDeliverableBrandId && campaignOptions.length === 0 && (
                       <p className="text-xs text-amber-700">
-                        No campaign offers found for this brand yet.
+                        {t("brandConnections.noCampaignOffersForBrandYet")}
                       </p>
                     )}
                   </div>
@@ -13011,7 +13257,7 @@ export default function CreatorDashboard() {
                 }}
                 disabled={offerActionLoading}
               >
-                Cancel
+                {t("brandConnections.cancel")}
               </Button>
               <Button
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -13031,7 +13277,9 @@ export default function CreatorDashboard() {
                     })())
                 }
               >
-                {offerActionLoading ? "Sending..." : "Send"}
+                {offerActionLoading
+                  ? t("brandConnections.sending")
+                  : t("brandConnections.send")}
               </Button>
             </DialogFooter>
           </DialogContent>
