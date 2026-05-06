@@ -23,8 +23,8 @@ erDiagram
 
     %% platforms & handles
     text primary_platform
-    text platform_handle
     text instagram_handle
+    text tiktok_handle
     text twitter_handle
 
     %% modeling / talent

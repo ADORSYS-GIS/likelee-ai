@@ -215,6 +215,23 @@ pub async fn upsert_profile(
         body.as_object_mut().unwrap().remove("updated_date");
     }
 
+    // Map instagram_handle to platform_handle for creators table compatibility
+    // Keep both fields in sync since both columns exist in the database
+    if let Some(handle) = body.get("instagram_handle").and_then(|v| v.as_str()) {
+        let cleaned = handle.trim_start_matches('@').to_string();
+        body["instagram_handle"] = serde_json::Value::String(cleaned.clone());
+        body["platform_handle"] = serde_json::Value::String(cleaned);
+    } else if let Some(handle) = body.get("platform_handle").and_then(|v| v.as_str()) {
+        let cleaned = handle.trim_start_matches('@').to_string();
+        body["platform_handle"] = serde_json::Value::String(cleaned.clone());
+        body["instagram_handle"] = serde_json::Value::String(cleaned);
+    }
+
+    // Map instagram_followers if present
+    if let Some(followers) = body.get("instagram_followers") {
+        body["instagram_followers"] = followers.clone();
+    }
+
     let existing_row = {
         let by_effective_id = match state
             .pg

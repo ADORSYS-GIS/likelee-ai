@@ -24,6 +24,7 @@ import {
   listTalentLicenses,
   listTalentLicensingRequests,
   markTalentAssetRequestViewed,
+  scrapeInstagramProfile,
 } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -993,6 +994,7 @@ export default function CreatorDashboard() {
   const [licenses, setLicenses] = useState<any[]>([]);
   const [licensingRequests, setLicensingRequests] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
+  const [instagramSyncing, setInstagramSyncing] = useState(false);
 
   const baseMonthlyRate = Number.isFinite(Number(creator.price_per_month))
     ? Number(creator.price_per_month)
@@ -3549,9 +3551,11 @@ export default function CreatorDashboard() {
           profile_photo: profile.profile_photo_url || prev.profile_photo,
           location: [profile.city, profile.state].filter(Boolean).join(", "),
           bio: profile.bio || prev.bio,
-          instagram_handle: profile.platform_handle
-            ? `@${profile.platform_handle}`
-            : prev.instagram_handle,
+          instagram_handle: profile.instagram_handle
+            ? `@${profile.instagram_handle}`
+            : profile.platform_handle
+              ? `@${profile.platform_handle}`
+              : prev.instagram_handle,
           birthday: profile.birthdate ?? prev.birthday,
           gender: profile.gender ?? prev.gender,
           ethnicity: profile.ethnicity ?? prev.ethnicity,
@@ -5756,7 +5760,9 @@ export default function CreatorDashboard() {
           ? creator.eye_color.trim()
           : undefined,
       height_cm: parseOptionalInt(creator.height_cm),
-      platform_handle: creator.instagram_handle?.replace("@", ""),
+      instagram_handle: creator.instagram_handle?.replace("@", ""),
+      instagram_followers: parseOptionalInt(creator.instagram_followers),
+      instagram_connected: creator.instagram_connected,
       tiktok_handle: normalizedTiktok,
       portfolio_link: normalizedPortfolio,
       accept_negotiations:
@@ -5823,6 +5829,14 @@ export default function CreatorDashboard() {
             typeof savedProfile.height_cm === "number"
               ? String(savedProfile.height_cm)
               : prev.height_cm,
+          instagram_handle:
+            savedProfile.instagram_handle ??
+            savedProfile.platform_handle ??
+            prev.instagram_handle,
+          instagram_followers:
+            savedProfile.instagram_followers ?? prev.instagram_followers,
+          instagram_connected:
+            savedProfile.instagram_connected ?? prev.instagram_connected,
           tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
@@ -5873,6 +5887,55 @@ export default function CreatorDashboard() {
       await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
     } finally {
       setSavingSocialLinks(false);
+    }
+  };
+
+  const syncInstagram = async () => {
+    const handle = creator.instagram_handle || creator.platform_handle;
+    if (!handle) {
+      toast({
+        title: "Error",
+        description: "Please enter your Instagram handle first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setInstagramSyncing(true);
+    try {
+      const cleanHandle = handle.replace("@", "");
+      const data = await scrapeInstagramProfile(cleanHandle);
+
+      if (data?.success && data?.profile) {
+        setCreator((prev: any) => ({
+          ...prev,
+          instagram_handle: prev.instagram_handle || cleanHandle,
+          platform_handle: cleanHandle,
+          instagram_connected: true,
+          instagram_followers: data.profile?.followers || 0,
+        }));
+
+        await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
+
+        toast({
+          title: "Success",
+          description: "Instagram profile synced successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data?.error || "Could not sync Instagram data",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      toast({
+        title: "Error",
+        description: "Failed to sync Instagram profile",
+        variant: "destructive",
+      });
+    } finally {
+      setInstagramSyncing(false);
     }
   };
 
@@ -11770,16 +11833,45 @@ export default function CreatorDashboard() {
                   <Instagram className="w-4 h-4 inline mr-2" />
                   {t("creatorDashboard.settingsView.profile.instagram")}
                 </Label>
-                <Input
-                  value={creator.instagram_handle || ""}
-                  onChange={(e) =>
-                    setCreator({ ...creator, instagram_handle: e.target.value })
-                  }
-                  className="border-2 border-gray-300"
-                  placeholder={t(
-                    "creatorDashboard.settingsView.profile.placeholders.instagram",
-                  )}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    value={creator.instagram_handle || ""}
+                    onChange={(e) =>
+                      setCreator({
+                        ...creator,
+                        instagram_handle: e.target.value,
+                      })
+                    }
+                    className="border-2 border-gray-300 flex-1"
+                    placeholder={t(
+                      "creatorDashboard.settingsView.profile.placeholders.instagram",
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={syncInstagram}
+                    disabled={instagramSyncing || !creator.instagram_handle}
+                    className="h-10 whitespace-nowrap"
+                  >
+                    {instagramSyncing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Syncing...
+                      </>
+                    ) : (
+                      <>
+                        <Instagram className="w-4 h-4 mr-2" />
+                        Connect & Sync
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {creator.instagram_followers > 0 && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    Followers: {creator.instagram_followers.toLocaleString()}
+                  </p>
+                )}
               </div>
 
               <div>

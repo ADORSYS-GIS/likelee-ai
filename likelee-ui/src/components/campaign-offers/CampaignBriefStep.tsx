@@ -18,6 +18,7 @@ type Props = {
   onReferenceImagesUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBrandAssetsUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   uploading?: boolean;
+  isSaving?: boolean;
   fieldErrors?: Record<string, string>;
   onFieldChange?: (field: string) => void;
   hideBack?: boolean;
@@ -31,6 +32,7 @@ export default function CampaignBriefStep({
   onReferenceImagesUpload,
   onBrandAssetsUpload,
   uploading = false,
+  isSaving = false,
   fieldErrors = {},
   onFieldChange,
   hideBack = false,
@@ -712,16 +714,21 @@ export default function CampaignBriefStep({
         )}
         <Button
           onClick={onNext}
-          disabled={uploading}
+          disabled={uploading || isSaving}
           className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none min-w-[100px]"
         >
-          {uploading ? (
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : uploading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Uploading...
             </>
           ) : (
-            "Next"
+            "Next →"
           )}
         </Button>
       </div>

@@ -364,7 +364,6 @@ export default function ReserveProfile() {
           content_other: "",
           industries: [],
           primary_platform: "",
-          platform_handle: "",
 
           // Model specific
           work_types: [],
@@ -484,7 +483,7 @@ export default function ReserveProfile() {
         ? profile.industries
         : prev.industries,
       primary_platform: profile.primary_platform || prev.primary_platform,
-      platform_handle: profile.platform_handle || prev.platform_handle,
+      instagram_handle: profile.instagram_handle || prev.instagram_handle,
       work_types: Array.isArray(profile.work_types)
         ? profile.work_types
         : prev.work_types,
@@ -496,7 +495,6 @@ export default function ReserveProfile() {
       school_name: profile.school_name || prev.school_name,
       age: profile.age ? String(profile.age) : prev.age,
       languages: profile.languages || prev.languages,
-      instagram_handle: profile.instagram_handle || prev.instagram_handle,
       twitter_handle: profile.twitter_handle || prev.twitter_handle,
       brand_categories: Array.isArray(profile.brand_categories)
         ? profile.brand_categories
@@ -688,7 +686,7 @@ export default function ReserveProfile() {
       content_other: data.content_other || null,
       industries: data.industries || [],
       primary_platform: data.primary_platform || null,
-      platform_handle: data.platform_handle || null,
+      instagram_handle: data.instagram_handle || null,
       work_types: data.work_types || [],
       representation_status: data.representation_status || "",
       headshot_url: data.headshot_url || "",
@@ -697,7 +695,6 @@ export default function ReserveProfile() {
       school_name: data.school_name || null,
       age: data.age || null,
       languages: data.languages || null,
-      instagram_handle: data.instagram_handle || null,
       twitter_handle: data.twitter_handle || null,
       brand_categories: data.brand_categories || [],
       bio: data.bio || null,

@@ -87,8 +87,8 @@ export default function PublicProfile() {
     [profile.city, profile.state],
   );
   const handleText = useMemo(
-    () => (profile.platform_handle ? `@${profile.platform_handle}` : ""),
-    [profile.platform_handle],
+    () => (profile.instagram_handle ? `@${profile.instagram_handle}` : ""),
+    [profile.instagram_handle],
   );
   const contentTypes: string[] = useMemo(
     () => (Array.isArray(profile.content_types) ? profile.content_types : []),

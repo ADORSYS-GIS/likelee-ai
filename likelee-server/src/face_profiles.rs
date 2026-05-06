@@ -661,7 +661,7 @@ pub async fn search_marketplace_profiles(
             let mut request = state
                 .pg
                 .from("creators")
-                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,plan_tier")
+                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,pricing_updated_at,created_at,currency_code,accept_negotiations,plan_tier,instagram_followers")
                 .eq("role", "creator")
                 .eq("kyc_status", "approved")
                 .limit(limit);
@@ -840,7 +840,9 @@ pub async fn search_marketplace_profiles(
                 "skills": row.get("facial_features").cloned().unwrap_or(serde_json::json!([])),
                 "followers": followers_by_creator_id
                     .get(creator_id)
+                    .filter(|v| **v > 0)
                     .map(|v| serde_json::json!(v))
+                    .or_else(|| row.get("instagram_followers").and_then(|v| v.as_i64()).filter(|v| *v > 0).map(|v| serde_json::json!(v)))
                     .unwrap_or(serde_json::Value::Null),
                 "engagement_rate": engagement_by_creator_id
                     .get(creator_id)

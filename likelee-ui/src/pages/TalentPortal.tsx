@@ -50,6 +50,7 @@ import {
   listMyCampaignOffers,
   listOfferDeliverables,
   uploadOfferDeliverable,
+  scrapeInstagramProfile,
 } from "@/api/functions";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import { CommunicationHub } from "@/components/chat/CommunicationHub";
@@ -64,6 +65,7 @@ import {
   FileText,
   FolderArchive,
   Image as LucideImage,
+  Instagram,
   LayoutGrid,
   Loader2,
   MessageSquare,
@@ -987,6 +989,7 @@ export default function TalentPortal({
   }, [agencyUser]);
 
   const [profileForm, setProfileForm] = React.useState<any>({});
+  const [instagramSyncing, setInstagramSyncing] = React.useState(false);
   React.useEffect(() => {
     if (!agencyUser) return;
     setProfileForm(buildProfileForm());
@@ -1071,6 +1074,56 @@ export default function TalentPortal({
         : undefined,
     };
     updateProfileMutation.mutate(payload);
+  };
+
+  const syncInstagram = async () => {
+    const handle = profileForm.instagram_handle?.trim().replace("@", "");
+    if (!handle) {
+      toast({
+        title: t("talentPortal.settings.profile.syncErrorTitle"),
+        description: t("talentPortal.settings.profile.enterInstagramHandle"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setInstagramSyncing(true);
+    try {
+      const data = await scrapeInstagramProfile(handle);
+
+      if (data?.success && data?.profile) {
+        setProfileForm((prev: any) => ({
+          ...prev,
+          instagram_handle: handle,
+          instagram_followers: data.profile?.followers || 0,
+        }));
+
+        toast({
+          title: t("talentPortal.settings.profile.syncSuccessTitle"),
+          description: t(
+            "talentPortal.settings.profile.syncSuccessDescription",
+          ),
+        });
+      } else {
+        toast({
+          title: t("talentPortal.settings.profile.syncErrorTitle"),
+          description:
+            data?.error ||
+            t("talentPortal.settings.profile.syncFailedDescription"),
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      toast({
+        title: t("talentPortal.settings.profile.syncErrorTitle"),
+        description: t(
+          "talentPortal.settings.profile.syncExceptionDescription",
+        ),
+        variant: "destructive",
+      });
+    } finally {
+      setInstagramSyncing(false);
+    }
   };
 
   if (!initialized) {
@@ -2481,15 +2534,51 @@ export default function TalentPortal({
                       <div className="text-xs text-gray-600 mb-1">
                         {t("talentPortal.settings.profile.fields.instagram")}
                       </div>
-                      <Input
-                        value={profileForm.instagram_handle || ""}
-                        onChange={(e) =>
-                          setProfileForm((p: any) => ({
-                            ...p,
-                            instagram_handle: e.target.value,
-                          }))
-                        }
-                      />
+                      <div className="flex gap-2">
+                        <Input
+                          value={profileForm.instagram_handle || ""}
+                          onChange={(e) =>
+                            setProfileForm((p: any) => ({
+                              ...p,
+                              instagram_handle: e.target.value,
+                            }))
+                          }
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={syncInstagram}
+                          disabled={
+                            instagramSyncing || !profileForm.instagram_handle
+                          }
+                          className="whitespace-nowrap"
+                        >
+                          {instagramSyncing ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Instagram className="w-4 h-4 mr-1" />
+                              {t(
+                                "talentPortal.settings.profile.connectInstagram",
+                              )}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      {profileForm.instagram_followers > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {t(
+                            "talentPortal.settings.profile.instagramFollowersCount",
+                            {
+                              count: Number(
+                                profileForm.instagram_followers || 0,
+                              ),
+                            },
+                          )}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <div className="text-xs text-gray-600 mb-1">
