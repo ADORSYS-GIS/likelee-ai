@@ -2488,7 +2488,7 @@ export default function BrandCampaignDashboard({
               {hasStudioAddon ? (
                 <>
                   <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  {t("planLabels.openStudio")}
+                  {t("brandPricingStudioAddon.openStudio")}
                 </>
               ) : (
                 <>
@@ -2686,7 +2686,7 @@ export default function BrandCampaignDashboard({
                     <div className="flex flex-wrap gap-2">
                       {campaign.collaborators.length === 0 ? (
                         <span className="text-sm text-gray-500">
-                          No collaborators yet.
+                          {t("campaignsDashboard.overview.noCollaboratorsYet")}
                         </span>
                       ) : (
                         campaign.collaborators.map((collab, idx) => (
@@ -4825,7 +4825,7 @@ export default function BrandCampaignDashboard({
               onClick={() => navigate(createPageUrl("PostJob"))}
               className="absolute top-4 left-4 text-white hover:bg-white/10 rounded-none"
             >
-              Open Full Form
+              {t("campaignsDashboard.postJobModal.openFullForm")}
             </Button>
             <Button
               variant="ghost"
@@ -4841,12 +4841,10 @@ export default function BrandCampaignDashboard({
                   <Briefcase className="w-10 h-10 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                  Post a Job to Find Talent
+                  {t("campaignsDashboard.postJobModal.title")}
                 </h2>
                 <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-                  Create a detailed job posting to connect with AI creators,
-                  marketing agencies, and verified talent for your next
-                  campaign.
+                  {t("campaignsDashboard.postJobModal.description")}
                 </p>
                 <Button
                   onClick={() => navigate(createPageUrl("PostJob"))}
