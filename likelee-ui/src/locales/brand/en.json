@@ -1004,7 +1004,22 @@
       "error": "Failed to load inbox",
       "new": "New",
       "confirmSelectionTitle": "Confirm Selection",
-      "confirmSelectionDescription": "You are about to finalize your talent selection for {{title}}."
+      "confirmSelectionDescription": "You are about to finalize your talent selection for {{title}}.",
+      "dismissModal": {
+        "title": "Remove from Inbox",
+        "descriptionPrefix": "You are about to remove",
+        "thisPackage": "this package",
+        "from": "from",
+        "theAgency": "the agency",
+        "descriptionSuffix": "from your inbox.",
+        "goodToKnow": "Good to know",
+        "confirm": "Yes, Remove It",
+        "points": {
+          "viewOnly": "The agency keeps their copy — this only affects your view",
+          "noAssignments": "No talent assignments or contracts are affected",
+          "receiveNew": "You can still receive new packages from this agency"
+        }
+      }
     },
     "contractHub": {
       "title": "Contract Hub",
@@ -1080,6 +1095,8 @@
       },
       "status": {
         "sent": "Sent",
+        "signRequired": "Sign Required",
+        "awaitingCreator": "Awaiting Creator",
         "opened": "Opened",
         "completed": "Completed",
         "signed": "Signed",
@@ -1149,6 +1166,11 @@
       "error": "Failed to load jobs",
       "postJob": "Post New Job",
       "viewApplications": "View Applications",
+      "loadingApplications": "Loading applications...",
+      "noApplications": "No applications yet.",
+      "viewResume": "View resume",
+      "compCard": "Comp card",
+      "portfolio": "Portfolio",
       "applications": "Applications",
       "jobPostings": "Job Postings",
       "postJobButton": "Post Job",
@@ -1222,7 +1244,20 @@
       "error": "Failed to load assets",
       "uploadAsset": "Upload Asset",
       "deleteAsset": "Delete",
-      "downloadAsset": "Download"
+      "downloadAsset": "Download",
+      "filterDialog": {
+        "title": "Filter Assets",
+        "description": "Narrow down your asset library view.",
+        "assetType": "Asset Type",
+        "dateRange": "Date Range",
+        "all": "All",
+        "allTime": "All Time",
+        "lastWeek": "Last Week",
+        "lastMonth": "Last Month",
+        "lastYear": "Last Year",
+        "reset": "Reset Filters",
+        "apply": "Apply Filters"
+      }
     },
     "licensingRequest": {
       "title": "Request License",
