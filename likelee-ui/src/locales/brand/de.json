@@ -382,7 +382,38 @@
         "taxIdentificationPlaceholder": "XX-XXXXXXX",
         "primaryPaymentMethod": "Primäre Zahlungsmethode",
         "primaryPaymentMethodValue": "Visa mit Endziffer 4242",
-        "manage": "Verwalten"
+        "manage": "Verwalten",
+        "paymentMethods": {
+          "loadFailed": "Zahlungsmethoden konnten nicht geladen werden",
+          "cannotDeletePrimary": "Die primäre Zahlungsmethode kann nicht gelöscht werden",
+          "removed": "Zahlungsmethode entfernt",
+          "deleteFailed": "Zahlungsmethode konnte nicht gelöscht werden",
+          "primaryUpdated": "Primäre Zahlungsmethode aktualisiert",
+          "setPrimaryFailed": "Primäre Zahlungsmethode konnte nicht festgelegt werden",
+          "expires": "Läuft ab",
+          "none": "Keine Zahlungsmethode hinterlegt",
+          "addCard": "Karte hinzufügen",
+          "saved": "Gespeicherte Zahlungsmethoden",
+          "empty": "Keine gespeicherten Zahlungsmethoden",
+          "emptyHelp": "Fügen Sie eine Karte hinzu, um loszulegen",
+          "primary": "Primär",
+          "setPrimary": "Als primär festlegen"
+        },
+        "modal": {
+          "title": "Zahlungsmethode hinzufügen",
+          "description": "Geben Sie Ihre Kartendaten ein, um eine neue Zahlungsmethode für Ihr Markenkonto hinzuzufügen.",
+          "cardDetails": "Kartendetails",
+          "processing": "Wird verarbeitet...",
+          "stripeNotLoaded": "Stripe ist nicht geladen. Bitte versuchen Sie es erneut.",
+          "setupIntentFailed": "Setup-Intent konnte nicht erstellt werden",
+          "genericError": "Es ist ein Fehler aufgetreten",
+          "stripeNotConfigured": "Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Support.",
+          "stripeConfigFailed": "Stripe-Konfiguration konnte nicht geladen werden.",
+          "stripeLoadFailed": "Stripe konnte nicht geladen werden",
+          "success": "Karte erfolgreich hinzugefügt!",
+          "successToast": "Zahlungsmethode erfolgreich hinzugefügt",
+          "securityNote": "Ihre Karteninformationen werden sicher von Stripe verarbeitet und niemals auf unseren Servern gespeichert."
+        }
       },
       "team": {
         "title": "Teamverwaltung",
@@ -390,7 +421,8 @@
       },
       "integrations": {
         "title": "Deinen Workflow erweitern",
-        "description": "Verbinde Likelee mit deinen bevorzugten Marketing-Tools, um Deliverables, Tracking und Zahlungen zu automatisieren."
+        "description": "Verbinde Likelee mit deinen bevorzugten Marketing-Tools, um Deliverables, Tracking und Zahlungen zu automatisieren.",
+        "comingSoon": "Demnächst"
       },
       "security": {
         "title": "Sicherheitseinstellungen",
@@ -403,7 +435,8 @@
         "terms": "AGB",
         "privacy": "Datenschutzerklärung",
         "sagAftra": "SAG-AFTRA-Vereinbarung",
-        "dataExport": "Datenexport (DSGVO)"
+        "dataExport": "Datenexport (DSGVO)",
+        "comingSoon": "Demnächst"
       },
       "support": {
         "title": "Brauchst du Hilfe?",
@@ -693,6 +726,8 @@
     }
   },
   "campaigns": {
+    "showCampaignSubtabs": "Kampagnen-Untertabs anzeigen",
+    "hideCampaignSubtabs": "Kampagnen-Untertabs ausblenden",
     "myOffers": {
       "title": "Meine Angebote",
       "subtitle": "Überprüfen und verwalten Sie Kampagnenangebote und laufende Zusammenarbeit",
@@ -1025,6 +1060,8 @@
       "subtitle": "Verfolgen Sie die Lizenzierungsanfragen, die Sie an Agenturen gesendet haben.",
       "loading": "Lizenzanfragen werden geladen...",
       "empty": "Noch keine Lizenzanfragen.",
+      "emptyActive": "Keine aktiven Lizenzanfragen",
+      "emptyArchive": "Keine archivierten Lizenzanfragen",
       "requestFallback": "Lizenzanfrage",
       "agency": "Agentur",
       "talent": "Talent",
@@ -1042,6 +1079,19 @@
       "signContractDescription": "Prüfen und unterschreiben Sie den Lizenzvertrag.",
       "contractSigned": "Vertrag unterschrieben",
       "awaitingAgencyContract": "Warte auf Vertrag von der Agentur",
+      "tabs": {
+        "active": "Aktiv",
+        "archive": "Archiv"
+      },
+      "deleteDialog": {
+        "title": "Lizenzanfrage löschen",
+        "description": "Diese archivierte Lizenzanfrage wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirmPrefix": "Möchten Sie die Lizenzanfrage für",
+        "unknownCampaign": "Unbekannte Kampagne",
+        "cancel": "Abbrechen",
+        "deleting": "Wird gelöscht...",
+        "delete": "Dauerhaft löschen"
+      },
       "status": {
         "approved": "Genehmigt",
         "declined": "Abgelehnt",
@@ -1067,6 +1117,7 @@
       "topPerformer": "Top-Performer",
       "spendByMonth": "Ausgaben nach Monat",
       "budgetForecast": "Budgetprognose",
+      "loadingBudgetForecast": "Budgetprognose wird geladen...",
       "ytdSpend": "YTD-Ausgaben",
       "monthlyAvg": "Monatl. Durchschnitt",
       "projectedEoy": "Prognose Jahresende"
