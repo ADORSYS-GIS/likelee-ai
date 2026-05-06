@@ -20,6 +20,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   ArrowRight,
@@ -88,6 +89,7 @@ const skills = [
 export default function PostJob() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation("brand");
   const [currentStep, setCurrentStep] = useState(1);
   const [showCustomWorkType, setShowCustomWorkType] = useState(false);
   const [customWorkType, setCustomWorkType] = useState("");
@@ -714,7 +716,7 @@ export default function PostJob() {
             className="mb-4 rounded-none"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Dashboard
+            {t("postJobPage.backToDashboard")}
           </Button>
 
           <div className="flex items-center gap-4 mb-6">
@@ -722,10 +724,10 @@ export default function PostJob() {
               <Briefcase className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Post a Job</h1>
-              <p className="text-gray-600">
-                Find the perfect talent for your campaign
-              </p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {t("postJobPage.title")}
+              </h1>
+              <p className="text-gray-600">{t("postJobPage.subtitle")}</p>
             </div>
           </div>
 
@@ -733,10 +735,15 @@ export default function PostJob() {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
-                Step {currentStep} of {totalSteps}
+                {t("postJobPage.stepCounter", {
+                  current: currentStep,
+                  total: totalSteps,
+                })}
               </span>
               <span className="text-sm text-gray-600">
-                {Math.round(progress)}% Complete
+                {t("postJobPage.percentComplete", {
+                  percent: Math.round(progress),
+                })}
               </span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-none">
@@ -755,7 +762,7 @@ export default function PostJob() {
               <div className="flex items-center gap-3 mb-6">
                 <FileText className="w-6 h-6 text-blue-600" />
                 <h2 className="text-2xl font-bold text-gray-900">
-                  Basic Information
+                  {t("postJobPage.steps.basicInformation")}
                 </h2>
               </div>
 

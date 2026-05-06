@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { createPageUrl, getUserFriendlyError } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { createCheckoutSession } from "@/api/functions";
@@ -8,6 +9,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   Accordion,
   AccordionContent,
@@ -137,6 +139,7 @@ const exampleProjects = [
 ];
 
 export default function Studio() {
+  const { t } = useTranslation("brand");
   const [hoveredTool, setHoveredTool] = useState(null);
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -396,7 +399,7 @@ export default function Studio() {
                 onClick={() => navigate(createPageUrl("Studio"))}
                 className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors"
               >
-                Home
+                {t("studio.landing.nav.home")}
               </button>
 
               {/* Video AI Dropdown */}
@@ -498,7 +501,7 @@ export default function Studio() {
               {/* Image AI Dropdown */}
               <div className="dropdown-parent">
                 <button className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors flex items-center gap-1">
-                  Image AI
+                  {t("studio.landing.nav.imageAi")}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute top-full left-0 mt-0 w-[600px] bg-[#1A1A1F] border border-white/10 rounded-lg shadow-2xl p-6">
@@ -730,18 +733,21 @@ export default function Studio() {
                 onClick={() => scrollToSection("pricing")}
                 className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors"
               >
-                Pricing
+                {t("studio.landing.nav.pricing")}
               </button>
             </nav>
 
             {/* Right Side */}
             <div className="flex items-center gap-4">
+              <div>
+                <LanguageSwitcher />
+              </div>
               <button
                 onClick={() => navigate(getDashboardRoute())}
                 className="hidden lg:flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors bg-white/5 rounded-lg border border-white/10 hover:border-white/20"
               >
                 <ArrowLeft className="w-4 h-4" />
-                Back to likelee.ai
+                {t("studio.landing.nav.backToLikelee")}
               </button>
 
               {/* Mobile Menu Button */}
@@ -769,7 +775,7 @@ export default function Studio() {
                   }}
                   className="block w-full text-left px-4 py-2 text-white hover:bg-white/5 rounded transition-colors"
                 >
-                  Home
+                  {t("studio.landing.nav.home")}
                 </button>
 
                 <Accordion type="single" collapsible className="w-full">
@@ -1131,7 +1137,7 @@ export default function Studio() {
                   }}
                   className="block w-full text-left px-4 py-2 text-white hover:bg-white/5 rounded transition-colors"
                 >
-                  Pricing
+                  {t("studio.landing.nav.pricing")}
                 </button>
 
                 <button
@@ -1142,7 +1148,7 @@ export default function Studio() {
                   className="flex items-center gap-2 w-full text-left px-4 py-2 text-gray-400 hover:bg-white/5 rounded transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to likelee.ai
+                  {t("studio.landing.nav.backToLikelee")}
                 </button>
               </div>
             </div>
