@@ -5,6 +5,7 @@ import React, {
   useState,
   useCallback,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -136,6 +137,7 @@ export default function BrandCampaignDashboard({
     return new URL(normalizedPath, normalizedBase).toString();
   };
   const navigate = useNavigate();
+  const { t } = useTranslation("brand");
   const { toast } = useToast();
   const { user, supabase, profile } = useAuth();
 
@@ -2290,7 +2292,7 @@ export default function BrandCampaignDashboard({
                   className="rounded-none"
                 >
                   <ArrowLeft className="w-5 h-5 mr-2" />
-                  Back to Dashboard
+                  {t("campaignsDashboard.backToDashboard")}
                 </Button>
                 <div className="flex items-center gap-3">
                   {profile?.logo_url && (
@@ -2301,7 +2303,7 @@ export default function BrandCampaignDashboard({
                     />
                   )}
                   <span className="text-xl font-bold text-gray-900">
-                    {profile?.company_name || "Brand Dashboard"}
+                    {profile?.company_name || t("dashboardTitle")}
                   </span>
                 </div>
               </div>
@@ -2311,7 +2313,7 @@ export default function BrandCampaignDashboard({
                 className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                New Campaign
+                {t("campaignsDashboard.newCampaign")}
               </Button>
             </div>
           </div>
@@ -2326,7 +2328,7 @@ export default function BrandCampaignDashboard({
               className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Campaign
+              {t("campaignsDashboard.newCampaign")}
             </Button>
           </div>
         )}
@@ -2334,7 +2336,9 @@ export default function BrandCampaignDashboard({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaignsDashboard.stats.totalSpend30d")}
+            </p>
             <p className="text-3xl font-bold text-gray-900">
               ${(dashboardMetrics.totalSpend / 1000).toFixed(1)}K
             </p>
@@ -2342,7 +2346,9 @@ export default function BrandCampaignDashboard({
 
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <Users className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Active Collaborators</p>
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaignsDashboard.stats.activeCollaborators")}
+            </p>
             <p className="text-3xl font-bold text-gray-900">
               {dashboardMetrics.activeCollaborators}
             </p>
@@ -2350,7 +2356,9 @@ export default function BrandCampaignDashboard({
 
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
-            <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
+            <p className="text-sm text-gray-600 mb-1">
+              {t("campaignsDashboard.stats.campaignsLaunched")}
+            </p>
             <p className="text-3xl font-bold text-gray-900">
               {dashboardMetrics.campaignsLaunched}
             </p>
@@ -2362,8 +2370,11 @@ export default function BrandCampaignDashboard({
             <AlertCircle className="h-5 w-5 text-amber-700" />
             <AlertDescription className="text-amber-900">
               {!canUseCampaignCollaboration
-                ? "Basic plans can save campaign details and briefs, but collaborator selection and offer sending start on Pro."
-                : `You've used ${campaignSlotsUsed} of ${brandCampaignLimitLabel} active campaign slots on your current plan.`}
+                ? t("campaignsDashboard.plan.basicBriefOnly")
+                : t("campaignsDashboard.plan.slotsUsed", {
+                    used: campaignSlotsUsed,
+                    total: brandCampaignLimitLabel,
+                  })}
             </AlertDescription>
           </Alert>
         )}
@@ -2380,10 +2391,10 @@ export default function BrandCampaignDashboard({
               </div>
               <div className="flex-1 sm:flex-none">
                 <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
-                  Collaborate with Agency
+                  {t("campaignsDashboard.quickActions.collaborateWithAgency")}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
-                  Invite a marketing agency to manage your campaigns
+                  {t("campaignsDashboard.overview.collaborateWithAgencyDesc")}
                 </p>
               </div>
             </div>
@@ -2391,10 +2402,10 @@ export default function BrandCampaignDashboard({
               {canUseCampaignCollaboration ? (
                 <>
                   <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  Invite Agency
+                  {t("campaignsDashboard.inviteAgency.title")}
                 </>
               ) : (
-                "Upgrade Plan"
+                t("campaignsDashboard.overview.upgradePlan")
               )}
             </Button>
           </Card>
@@ -2406,10 +2417,10 @@ export default function BrandCampaignDashboard({
               </div>
               <div className="flex-1 sm:flex-none">
                 <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
-                  Add AI Creator
+                  {t("campaignsDashboard.quickActions.addAICreator")}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
-                  Work directly with verified AI creators
+                  {t("campaignsDashboard.overview.addAICreatorDesc")}
                 </p>
               </div>
             </div>
@@ -2417,7 +2428,7 @@ export default function BrandCampaignDashboard({
               disabled
               className="w-full mt-3 sm:mt-4 bg-[#FAD54C] text-white rounded-none cursor-not-allowed text-xs sm:text-sm h-8 sm:h-10"
             >
-              Coming Soon
+              {t("campaignsDashboard.quickActions.comingSoon")}
             </Button>
           </Card>
 
@@ -2431,16 +2442,16 @@ export default function BrandCampaignDashboard({
               </div>
               <div className="flex-1 sm:flex-none">
                 <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
-                  Invite Company Seat
+                  {t("campaignsDashboard.quickActions.inviteCompanySeat")}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
-                  Add in-house AI creator to your team
+                  {t("campaignsDashboard.overview.inviteCompanySeatDesc")}
                 </p>
               </div>
             </div>
             <Button className="w-full mt-3 sm:mt-4 bg-amber-600 hover:bg-amber-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               {(brandSeatLimit ?? 0) === 0
-                ? "Upgrade Plan"
+                ? t("campaignsDashboard.overview.upgradePlan")
                 : brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit
                   ? "Seat limit reached"
                   : `Up to ${brandSeatLimitLabel} seats`}
@@ -2466,10 +2477,10 @@ export default function BrandCampaignDashboard({
               </div>
               <div className="flex-1 sm:flex-none">
                 <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
-                  AI Studio Add-On
+                  {t("campaignsDashboard.quickActions.aiStudioAddon")}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
-                  Generate content in-house without waiting
+                  {t("campaignsDashboard.overview.aiStudioAddonDesc")}
                 </p>
               </div>
             </div>
@@ -2477,12 +2488,14 @@ export default function BrandCampaignDashboard({
               {hasStudioAddon ? (
                 <>
                   <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  Open Studio
+                  {t("planLabels.openStudio")}
                 </>
               ) : (
                 <>
                   <Lock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                  {brandPlanTier === "pro" ? "Unlock Addon" : "Upgrade Plan"}
+                  {brandPlanTier === "pro"
+                    ? t("campaignsDashboard.overview.unlockAddon")
+                    : t("campaignsDashboard.overview.upgradePlan")}
                 </>
               )}
             </Button>
@@ -2498,16 +2511,16 @@ export default function BrandCampaignDashboard({
               </div>
               <div className="flex-1 sm:flex-none">
                 <h3 className="text-sm sm:text-lg font-bold text-gray-900 sm:mb-2">
-                  Post a Job
+                  {t("campaignsDashboard.quickActions.postJob")}
                 </h3>
                 <p className="text-xs sm:text-sm text-gray-600 hidden sm:block sm:mb-4">
-                  Find talent on the marketplace
+                  {t("campaignsDashboard.overview.postJobDesc")}
                 </p>
               </div>
             </div>
             <Button className="w-full mt-3 sm:mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-none text-xs sm:text-sm h-8 sm:h-10">
               <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              Post Job
+              {t("campaigns.jobs.postJob")}
             </Button>
           </Card>
         </div>
@@ -2516,7 +2529,7 @@ export default function BrandCampaignDashboard({
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Your Campaigns
+              {t("campaignsDashboard.yourCampaigns")}
             </h2>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -2528,7 +2541,7 @@ export default function BrandCampaignDashboard({
                     : "border-gray-300"
                 }`}
               >
-                Active
+                {t("campaigns.myOffers.tabs.active")}
               </Button>
               <Button
                 variant="outline"
@@ -2539,7 +2552,7 @@ export default function BrandCampaignDashboard({
                     : "border-gray-300"
                 }`}
               >
-                Pending
+                {t("campaigns.myOffers.tabs.pendingApproval")}
               </Button>
               <Button
                 variant="outline"
@@ -2550,7 +2563,7 @@ export default function BrandCampaignDashboard({
                     : "border-gray-300"
                 }`}
               >
-                Expired
+                {t("campaigns.myOffers.tabs.expired")}
               </Button>
             </div>
           </div>
@@ -2562,7 +2575,9 @@ export default function BrandCampaignDashboard({
             if (loadingCampaignCards) {
               return (
                 <Card className="p-4 bg-white border-2 border-gray-200 rounded-none">
-                  <p className="text-sm text-gray-600">Loading campaigns...</p>
+                  <p className="text-sm text-gray-600">
+                    {t("campaigns.myOffers.loadingCampaigns")}
+                  </p>
                 </Card>
               );
             }
@@ -2571,10 +2586,10 @@ export default function BrandCampaignDashboard({
                 <Card className="p-4 bg-white border-2 border-gray-200 rounded-none">
                   <p className="text-sm text-gray-600">
                     {campaignListTab === "active"
-                      ? "No active campaigns yet."
+                      ? t("campaignsDashboard.overview.noActiveCampaigns")
                       : campaignListTab === "pending_approval"
-                        ? "No campaigns pending approval."
-                        : "No expired campaigns yet."}
+                        ? t("campaignsDashboard.overview.noPendingCampaigns")
+                        : t("campaignsDashboard.overview.noExpiredCampaigns")}
                   </p>
                 </Card>
               );
@@ -2646,7 +2661,7 @@ export default function BrandCampaignDashboard({
                     onClick={() => void openCampaignDetails(campaign)}
                     className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none shrink-0 text-xs sm:text-sm h-8 sm:h-10"
                   >
-                    View Details
+                    {t("campaignsDashboard.viewDetails")}
                   </Button>
                 </div>
 
@@ -2699,7 +2714,7 @@ export default function BrandCampaignDashboard({
             <Card className="w-full max-w-6xl bg-white sm:p-8 p-4 border-0 sm:border-2 border-black rounded-none min-h-screen sm:min-h-0">
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  Create New Campaign
+                  {t("campaignsDashboard.builder.title")}
                 </h2>
                 <Button
                   variant="ghost"
@@ -2723,7 +2738,7 @@ export default function BrandCampaignDashboard({
                       1
                     </div>
                     <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                      Campaign Info
+                      {t("campaignsDashboard.builder.steps.campaignInfo")}
                     </span>
                   </div>
                   <div className="w-4 sm:flex-1 h-px bg-gray-300 shrink-0" />
@@ -2736,7 +2751,7 @@ export default function BrandCampaignDashboard({
                       2
                     </div>
                     <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                      Campaign Brief
+                      {t("campaignsDashboard.builder.steps.campaignBrief")}
                     </span>
                   </div>
                   <div className="w-4 sm:flex-1 h-px bg-gray-300 shrink-0" />
@@ -2749,7 +2764,7 @@ export default function BrandCampaignDashboard({
                       3
                     </div>
                     <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                      Collaborators
+                      {t("campaignsDashboard.builder.steps.collaborators")}
                     </span>
                   </div>
                   <div className="w-4 sm:flex-1 h-px bg-gray-300 shrink-0" />
@@ -2762,7 +2777,7 @@ export default function BrandCampaignDashboard({
                       4
                     </div>
                     <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                      Offer Summary
+                      {t("campaignsDashboard.builder.steps.offerSummary")}
                     </span>
                   </div>
                   {campaignForm.collaborator_type === "creator" && (
@@ -2777,7 +2792,7 @@ export default function BrandCampaignDashboard({
                           5
                         </div>
                         <span className="text-xs sm:text-sm font-medium whitespace-nowrap">
-                          Contract
+                          {t("campaignsDashboard.builder.steps.contractUpload")}
                         </span>
                       </div>
                     </>
@@ -2789,9 +2804,7 @@ export default function BrandCampaignDashboard({
                 <Alert className="mb-6 border-2 border-amber-200 bg-amber-50 rounded-none">
                   <AlertCircle className="h-5 w-5 text-amber-700" />
                   <AlertDescription className="text-amber-900">
-                    Your current plan includes only Steps 1-2 of this wizard.
-                    Upgrade to Pro to unlock collaborator selection, talent
-                    browsing, and offer sending.
+                    {t("campaignsDashboard.builder.planLimit")}
                   </AlertDescription>
                 </Alert>
               )}
@@ -2816,7 +2829,10 @@ export default function BrandCampaignDashboard({
                       <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                       <div>
                         <p className="text-sm font-semibold text-amber-900">
-                          Almost there — just a few fields need attention
+                          {t(
+                            "campaignsDashboard.builder.reviewRequired",
+                            "Almost there — just a few fields need attention",
+                          )}
                         </p>
                         <p className="text-xs text-amber-700 mt-0.5">
                           {wizardErrorBanner}
@@ -2834,7 +2850,8 @@ export default function BrandCampaignDashboard({
                   {/* Campaign Name */}
                   <div>
                     <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                      Campaign Name <span className="text-red-500">*</span>
+                      {t("campaignsDashboard.builder.fields.campaignName")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Input
                       id="step1-name"
@@ -2847,7 +2864,9 @@ export default function BrandCampaignDashboard({
                         if (step1FieldErrors.name)
                           setStep1FieldErrors((p) => ({ ...p, name: "" }));
                       }}
-                      placeholder="e.g., Spring Collection Launch"
+                      placeholder={t(
+                        "campaignsDashboard.builder.placeholders.campaignName",
+                      )}
                       className={`rounded-none transition-colors ${step1FieldErrors.name ? "border-2 border-amber-400 bg-amber-50 focus:border-amber-500" : "border-2 border-gray-200 focus:border-black"}`}
                     />
                     {step1FieldErrors.name && (
@@ -2861,7 +2880,8 @@ export default function BrandCampaignDashboard({
                   {/* Objective */}
                   <div>
                     <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                      Campaign Objective <span className="text-red-500">*</span>
+                      {t("campaignsDashboard.builder.fields.campaignObjective")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Select
                       value={campaignForm.objective}
@@ -2875,21 +2895,31 @@ export default function BrandCampaignDashboard({
                         id="step1-objective"
                         className={`rounded-none transition-colors ${step1FieldErrors.objective ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
                       >
-                        <SelectValue placeholder="Select objective" />
+                        <SelectValue
+                          placeholder={t(
+                            "campaignsDashboard.builder.placeholders.selectObjective",
+                          )}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="awareness">
-                          Brand Awareness
+                          {t("campaignsDashboard.builder.objectives.awareness")}
                         </SelectItem>
                         <SelectItem value="product_launch">
-                          Product Launch
+                          {t(
+                            "campaignsDashboard.builder.objectives.productLaunch",
+                          )}
                         </SelectItem>
-                        <SelectItem value="ugc">UGC Campaign</SelectItem>
+                        <SelectItem value="ugc">
+                          {t("campaignsDashboard.builder.objectives.ugc")}
+                        </SelectItem>
                         <SelectItem value="regional_promo">
-                          Regional Promotion
+                          {t(
+                            "campaignsDashboard.builder.objectives.regionalPromo",
+                          )}
                         </SelectItem>
                         <SelectItem value="seasonal">
-                          Seasonal Campaign
+                          {t("campaignsDashboard.builder.objectives.seasonal")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -2904,7 +2934,8 @@ export default function BrandCampaignDashboard({
                   {/* Category */}
                   <div>
                     <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                      Category <span className="text-red-500">*</span>
+                      {t("campaignsDashboard.builder.fields.category")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Select
                       value={campaignForm.category}
@@ -2918,7 +2949,11 @@ export default function BrandCampaignDashboard({
                         id="step1-category"
                         className={`rounded-none transition-colors ${step1FieldErrors.category ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
                       >
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue
+                          placeholder={t(
+                            "campaignsDashboard.builder.placeholders.selectCategory",
+                          )}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Social Media">
@@ -2942,7 +2977,8 @@ export default function BrandCampaignDashboard({
                   {/* Description */}
                   <div>
                     <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                      Description <span className="text-red-500">*</span>
+                      {t("campaignsDashboard.builder.fields.description")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Textarea
                       id="step1-description"
@@ -2958,7 +2994,9 @@ export default function BrandCampaignDashboard({
                             description: "",
                           }));
                       }}
-                      placeholder="Describe campaign goals and licensing context..."
+                      placeholder={t(
+                        "campaignsDashboard.builder.placeholders.description",
+                      )}
                       className={`rounded-none min-h-[90px] transition-colors ${step1FieldErrors.description ? "border-2 border-amber-400 bg-amber-50" : "border-2 border-gray-200"}`}
                     />
                     {step1FieldErrors.description && (
@@ -2973,7 +3011,8 @@ export default function BrandCampaignDashboard({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                        Budget Min (USD) <span className="text-red-500">*</span>
+                        {t("campaignsDashboard.builder.fields.budgetMin")}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <Input
                         id="step1-budget_min"
@@ -3002,7 +3041,8 @@ export default function BrandCampaignDashboard({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                        Budget Max (USD) <span className="text-red-500">*</span>
+                        {t("campaignsDashboard.builder.fields.budgetMax")}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <Input
                         id="step1-budget_max"
@@ -3031,7 +3071,8 @@ export default function BrandCampaignDashboard({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                        Start Date <span className="text-red-500">*</span>
+                        {t("campaignsDashboard.builder.fields.startDate")}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <Input
                         id="step1-start_date"
@@ -3059,7 +3100,8 @@ export default function BrandCampaignDashboard({
                     </div>
                     <div>
                       <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                        Duration (days) <span className="text-red-500">*</span>
+                        {t("campaignsDashboard.builder.fields.durationDays")}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <Input
                         id="step1-duration_days"
@@ -3093,7 +3135,7 @@ export default function BrandCampaignDashboard({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-600 block mb-1.5">
-                        Usage Scope
+                        {t("campaignsDashboard.builder.fields.usageScope")}
                       </label>
                       <Input
                         value={campaignForm.usage_scope}
@@ -3103,13 +3145,15 @@ export default function BrandCampaignDashboard({
                             usage_scope: e.target.value,
                           })
                         }
-                        placeholder="e.g., Paid social + website"
+                        placeholder={t(
+                          "campaignsDashboard.builder.placeholders.usageScope",
+                        )}
                         className="border-2 border-gray-200 rounded-none"
                       />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-600 block mb-1.5">
-                        Territory
+                        {t("campaignsDashboard.builder.fields.territory")}
                       </label>
                       <Input
                         value={campaignForm.territory}
@@ -3119,13 +3163,15 @@ export default function BrandCampaignDashboard({
                             territory: e.target.value,
                           })
                         }
-                        placeholder="Global / US only / EU"
+                        placeholder={t(
+                          "campaignsDashboard.builder.placeholders.territory",
+                        )}
                         className="border-2 border-gray-200 rounded-none"
                       />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-600 block mb-1.5">
-                        Exclusivity
+                        {t("campaignsDashboard.builder.fields.exclusivity")}
                       </label>
                       <Select
                         value={campaignForm.exclusivity}
@@ -3134,17 +3180,27 @@ export default function BrandCampaignDashboard({
                         }
                       >
                         <SelectTrigger className="border-2 border-gray-200 rounded-none">
-                          <SelectValue placeholder="Select exclusivity" />
+                          <SelectValue
+                            placeholder={t(
+                              "campaignsDashboard.builder.placeholders.selectExclusivity",
+                            )}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Non-exclusive">
-                            Non-exclusive
+                            {t(
+                              "campaignsDashboard.builder.exclusivity.nonExclusive",
+                            )}
                           </SelectItem>
                           <SelectItem value="Category exclusive">
-                            Category exclusive
+                            {t(
+                              "campaignsDashboard.builder.exclusivity.categoryExclusive",
+                            )}
                           </SelectItem>
                           <SelectItem value="Full exclusivity">
-                            Full exclusivity
+                            {t(
+                              "campaignsDashboard.builder.exclusivity.fullExclusivity",
+                            )}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -3153,7 +3209,7 @@ export default function BrandCampaignDashboard({
 
                   <div>
                     <label className="text-sm font-medium text-gray-600 block mb-1.5">
-                      Custom Terms
+                      {t("campaignsDashboard.builder.fields.customTerms")}
                     </label>
                     <Textarea
                       value={campaignForm.custom_terms}
@@ -3163,7 +3219,9 @@ export default function BrandCampaignDashboard({
                           custom_terms: e.target.value,
                         })
                       }
-                      placeholder="Any additional legal/commercial terms..."
+                      placeholder={t(
+                        "campaignsDashboard.builder.placeholders.customTerms",
+                      )}
                       className="border-2 border-gray-200 rounded-none min-h-[80px]"
                     />
                   </div>
@@ -3174,14 +3232,16 @@ export default function BrandCampaignDashboard({
                       onClick={resetCampaignBuilder}
                       className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
                     >
-                      Cancel
+                      {t("campaignsDashboard.builder.actions.cancel")}
                     </Button>
                     <Button
                       onClick={handleStep1Next}
                       disabled={savingCampaign}
                       className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                     >
-                      {savingCampaign ? "Saving..." : "Next →"}
+                      {savingCampaign
+                        ? t("campaignsDashboard.builder.actions.saving")
+                        : t("campaignsDashboard.builder.actions.next")}
                     </Button>
                   </div>
                 </div>
@@ -3194,7 +3254,10 @@ export default function BrandCampaignDashboard({
                       <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                       <div>
                         <p className="text-sm font-semibold text-amber-900">
-                          Please review the campaign brief
+                          {t(
+                            "campaignsDashboard.builder.reviewBriefTitle",
+                            "Please review the campaign brief",
+                          )}
                         </p>
                         <p className="text-xs text-amber-700 mt-0.5">
                           {wizardErrorBanner}
@@ -3235,17 +3298,20 @@ export default function BrandCampaignDashboard({
                   <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
                     <AlertCircle className="h-5 w-5 text-blue-600" />
                     <AlertDescription className="text-blue-900">
-                      Select your collaborator type, then choose connected{" "}
-                      {campaignForm.collaborator_type === "agency"
-                        ? "talents"
-                        : "creators"}
-                      .
+                      {t("campaignsDashboard.builder.step3Intro", {
+                        role:
+                          campaignForm.collaborator_type === "agency"
+                            ? t("campaignsDashboard.builder.copy.talents")
+                            : t("campaignsDashboard.builder.copy.creators"),
+                      })}
                     </AlertDescription>
                   </Alert>
 
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-3">
-                      Select Collaborator Type
+                      {t(
+                        "campaignsDashboard.builder.fields.selectCollaboratorType",
+                      )}
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card
@@ -3267,10 +3333,14 @@ export default function BrandCampaignDashboard({
                       >
                         <Building2 className="w-8 h-8 text-black mb-2" />
                         <h4 className="font-bold text-gray-900 mb-1">
-                          Marketing Agency
+                          {t(
+                            "campaignsDashboard.builder.collaborators.marketingAgency",
+                          )}
                         </h4>
                         <p className="text-xs text-gray-600">
-                          Select talents from a connected agency
+                          {t(
+                            "campaignsDashboard.builder.collaborators.marketingAgencyDesc",
+                          )}
                         </p>
                       </Card>
                       <Card
@@ -3293,10 +3363,14 @@ export default function BrandCampaignDashboard({
                       >
                         <Sparkles className="w-8 h-8 text-black mb-2" />
                         <h4 className="font-bold text-gray-900 mb-1">
-                          AI Creator
+                          {t(
+                            "campaignsDashboard.builder.collaborators.aiCreator",
+                          )}
                         </h4>
                         <p className="text-xs text-gray-600">
-                          Work directly with connected creators
+                          {t(
+                            "campaignsDashboard.builder.collaborators.aiCreatorDesc",
+                          )}
                         </p>
                       </Card>
                     </div>
@@ -3305,27 +3379,35 @@ export default function BrandCampaignDashboard({
                   {campaignForm.collaborator_type === "agency" && (
                     <div className="space-y-4">
                       <label className="text-sm font-medium text-gray-700 block">
-                        Select Agency
+                        {t("campaignsDashboard.builder.fields.selectAgency")}
                       </label>
                       {loadingExistingCollaborators ? (
                         <p className="text-xs text-gray-500">
-                          Loading existing campaign collaborators…
+                          {t(
+                            "campaignsDashboard.builder.loadingExistingCollaborators",
+                          )}
                         </p>
                       ) : null}
                       <Input
                         value={agencySearch}
                         onChange={(e) => setAgencySearch(e.target.value)}
-                        placeholder="Search connected agencies..."
+                        placeholder={t(
+                          "campaignsDashboard.builder.placeholders.searchConnectedAgencies",
+                        )}
                         className="border-2 border-gray-300 rounded-none"
                       />
                       <div className="border-2 border-gray-200 rounded-none p-3 space-y-3">
                         {loadingConnectedAgencies ? (
                           <p className="text-sm text-gray-500">
-                            Loading connected agencies...
+                            {t(
+                              "campaignsDashboard.builder.loadingConnectedAgencies",
+                            )}
                           </p>
                         ) : filteredConnectedAgencies.length === 0 ? (
                           <p className="text-sm text-gray-500">
-                            No connected agencies found.
+                            {t(
+                              "campaignsDashboard.builder.noConnectedAgencies",
+                            )}
                           </p>
                         ) : (
                           filteredConnectedAgencies.map((agency) => {
@@ -3358,7 +3440,9 @@ export default function BrandCampaignDashboard({
                                     </p>
                                     {alreadyInCampaign ? (
                                       <p className="text-[11px] font-semibold text-amber-700 mt-1">
-                                        Already part of this campaign
+                                        {t(
+                                          "campaignsDashboard.builder.alreadyInCampaign",
+                                        )}
                                       </p>
                                     ) : null}
                                   </div>
@@ -3371,9 +3455,12 @@ export default function BrandCampaignDashboard({
                                         if (!agencyId) return;
                                         if (alreadyInCampaign) {
                                           toast({
-                                            title: "Collaborator already added",
-                                            description:
-                                              "This agency is already part of the campaign.",
+                                            title: t(
+                                              "campaignsDashboard.builder.collaboratorAlreadyAdded",
+                                            ),
+                                            description: t(
+                                              "campaignsDashboard.builder.agencyAlreadyInCampaign",
+                                            ),
                                           });
                                           return;
                                         }
@@ -3385,7 +3472,13 @@ export default function BrandCampaignDashboard({
                                     }
                                     disabled={alreadyInCampaign}
                                   >
-                                    {selected ? "Selected" : "Select"}
+                                    {selected
+                                      ? t(
+                                          "campaignsDashboard.builder.actions.selected",
+                                        )
+                                      : t(
+                                          "campaignsDashboard.builder.actions.select",
+                                        )}
                                   </Button>
                                 </div>
                               </div>
@@ -3399,12 +3492,14 @@ export default function BrandCampaignDashboard({
                   {campaignForm.collaborator_type === "creator" && (
                     <div className="space-y-3">
                       <label className="text-sm font-medium text-gray-700 block">
-                        Select Creators
+                        {t("campaignsDashboard.builder.fields.selectCreators")}
                       </label>
                       <Input
                         value={creatorSearch}
                         onChange={(e) => setCreatorSearch(e.target.value)}
-                        placeholder="Search creators..."
+                        placeholder={t(
+                          "campaignsDashboard.builder.placeholders.searchConnectedCreators",
+                        )}
                         className="border-2 border-gray-300 rounded-none"
                       />
                       <div className="border-2 border-gray-200 rounded-none p-3 max-h-[340px] overflow-y-auto space-y-3">

@@ -2455,10 +2455,12 @@ export default function BrandDashboard() {
     loadingBillingData || !brandSpendData
       ? ""
       : brandSpendData.previous_month_spend > 0
-        ? `${homeSpendGrowth >= 0 ? "+" : ""}${homeSpendGrowth.toFixed(1)}% vs last month`
+        ? t("dashboard.home.stats.spendVsLastMonth", {
+            value: `${homeSpendGrowth >= 0 ? "+" : ""}${homeSpendGrowth.toFixed(1)}%`,
+          })
         : brandSpendData.current_month_spend > 0
-          ? "New spend this month"
-          : "No spend recorded yet";
+          ? t("dashboard.home.stats.newSpendThisMonth")
+          : t("dashboard.home.stats.noSpendRecorded");
   const homeSpendGrowthClass =
     !brandSpendData || loadingBillingData
       ? "text-gray-500"
@@ -3202,7 +3204,6 @@ export default function BrandDashboard() {
             onClick={() => setShowEscrowDetails(true)}
           >
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-medium text-gray-600">In Escrow</p>
               <p className="text-sm font-medium text-gray-600">
                 {t("dashboard.home.stats.inEscrow")}
               </p>
@@ -3278,7 +3279,6 @@ export default function BrandDashboard() {
             >
               <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
               <span className="font-semibold text-xs sm:text-sm">
-                Start New Project
                 {t("dashboard.home.quickActions.startNewProject")}
               </span>
             </Button>
@@ -3364,7 +3364,13 @@ export default function BrandDashboard() {
                                   : "bg-gray-100 text-gray-700 border border-gray-300"
                           }
                         >
-                          {String(campaign.status).replace(/_/g, " ")}
+                          {campaign.status === "in_progress"
+                            ? t("campaigns.contractHub.status.pending")
+                            : campaign.status === "pending_approval"
+                              ? t("campaigns.myOffers.tabs.pendingApproval")
+                              : campaign.status === "completed"
+                                ? t("campaigns.contractHub.status.completed")
+                                : String(campaign.status).replace(/_/g, " ")}
                         </Badge>
                         {campaign.completed_at && (
                           <Badge className="bg-green-100 text-green-700 border border-green-300">
@@ -3511,6 +3517,81 @@ export default function BrandDashboard() {
                         ));
                   const fallbackDescription = `${actorLabel} ${fallbackAction}.`;
                   let message = description || fallbackDescription;
+                  const descriptionPatterns: Array<
+                    [RegExp, (match: RegExpMatchArray) => string]
+                  > = [
+                    [
+                      /^(.+?) created (.+)\.$/i,
+                      (match) =>
+                        t(
+                          "dashboard.home.activityFeed.templates.campaignCreated",
+                          {
+                            actor: match[1],
+                            campaign: match[2],
+                          },
+                        ),
+                    ],
+                    [
+                      /^(.+?) marked (.+?) as done\.$/i,
+                      (match) =>
+                        t(
+                          "dashboard.home.activityFeed.templates.campaignCompleted",
+                          {
+                            actor: match[1],
+                            campaign: match[2],
+                          },
+                        ),
+                    ],
+                    [
+                      /^(.+?) created a job: (.+)\.$/i,
+                      (match) =>
+                        t("dashboard.home.activityFeed.templates.jobCreated", {
+                          actor: match[1],
+                          job: match[2],
+                        }),
+                    ],
+                    [
+                      /^(.+?) invited (.+?) to apply for job (.+)\.$/i,
+                      (match) =>
+                        t(
+                          "dashboard.home.activityFeed.templates.jobInviteSent",
+                          {
+                            actor: match[1],
+                            target: match[2],
+                            job: match[3],
+                          },
+                        ),
+                    ],
+                    [
+                      /^(.+?) accepted the job invite for (.+)\.$/i,
+                      (match) =>
+                        t(
+                          "dashboard.home.activityFeed.templates.jobInviteAccepted",
+                          {
+                            actor: match[1],
+                            job: match[2],
+                          },
+                        ),
+                    ],
+                    [
+                      /^(.+?) declined the job invite for (.+)\.$/i,
+                      (match) =>
+                        t(
+                          "dashboard.home.activityFeed.templates.jobInviteDeclined",
+                          {
+                            actor: match[1],
+                            job: match[2],
+                          },
+                        ),
+                    ],
+                  ];
+                  for (const [pattern, formatter] of descriptionPatterns) {
+                    const match = description.match(pattern);
+                    if (match) {
+                      message = formatter(match);
+                      break;
+                    }
+                  }
                   if (actorTypeRaw === "brand" && message) {
                     if (actor && message.startsWith(actor)) {
                       message = `You${message.slice(actor.length)}`;
@@ -3569,7 +3650,12 @@ export default function BrandDashboard() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip />
+              <Tooltip
+                formatter={(value: number) => [
+                  `$${Number(value || 0).toLocaleString()}`,
+                  t("campaigns.analytics.totalSpend"),
+                ]}
+              />
               <Line
                 type="monotone"
                 dataKey="spend"
@@ -8852,7 +8938,12 @@ export default function BrandDashboard() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip />
+              <Tooltip
+                formatter={(value: number) => [
+                  `$${Number(value || 0).toLocaleString()}`,
+                  t("campaigns.analytics.totalSpend"),
+                ]}
+              />
               <Line
                 type="monotone"
                 dataKey="spend"
@@ -9142,7 +9233,7 @@ export default function BrandDashboard() {
                 >
                   {contract.payment_status === "released"
                     ? "✓ Released"
-                    : "In Escrow"}
+                    : t("dashboard.home.stats.inEscrow")}
                 </Badge>
               </div>
             </div>
