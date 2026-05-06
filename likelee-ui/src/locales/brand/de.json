@@ -815,7 +815,22 @@
       "error": "Fehler beim Laden des Posteingangs",
       "new": "Neu",
       "confirmSelectionTitle": "Auswahl bestätigen",
-      "confirmSelectionDescription": "Sie sind dabei, Ihre Talentauswahl für {{title}} abzuschließen."
+      "confirmSelectionDescription": "Sie sind dabei, Ihre Talentauswahl für {{title}} abzuschließen.",
+      "dismissModal": {
+        "title": "Aus dem Posteingang entfernen",
+        "descriptionPrefix": "Sie sind dabei",
+        "thisPackage": "dieses Paket",
+        "from": "von",
+        "theAgency": "der Agentur",
+        "descriptionSuffix": "aus Ihrem Posteingang zu entfernen.",
+        "goodToKnow": "Gut zu wissen",
+        "confirm": "Ja, entfernen",
+        "points": {
+          "viewOnly": "Die Agentur behält ihre Kopie – dies betrifft nur Ihre Ansicht",
+          "noAssignments": "Keine Talentzuweisungen oder Verträge werden beeinflusst",
+          "receiveNew": "Sie können weiterhin neue Pakete von dieser Agentur erhalten"
+        }
+      }
     },
     "contractHub": {
       "title": "Vertrags-Hub",
@@ -890,6 +905,8 @@
       },
       "status": {
         "sent": "Gesendet",
+        "signRequired": "Unterschrift erforderlich",
+        "awaitingCreator": "Wartet auf Creator",
         "opened": "Geöffnet",
         "completed": "Abgeschlossen",
         "signed": "Unterzeichnet",
@@ -960,6 +977,11 @@
       "error": "Fehler beim Laden von Jobs",
       "postJob": "Neuen Job veröffentlichen",
       "viewApplications": "Bewerbungen anzeigen",
+      "loadingApplications": "Bewerbungen werden geladen...",
+      "noApplications": "Noch keine Bewerbungen.",
+      "viewResume": "Lebenslauf ansehen",
+      "compCard": "Comp Card",
+      "portfolio": "Portfolio",
       "applications": "Bewerbungen",
       "jobPostings": "Stellenausschreibungen",
       "postJobButton": "Job veröffentlichen",
@@ -1032,7 +1054,20 @@
       "error": "Fehler beim Laden von Assets",
       "uploadAsset": "Asset hochladen",
       "deleteAsset": "Löschen",
-      "downloadAsset": "Herunterladen"
+      "downloadAsset": "Herunterladen",
+      "filterDialog": {
+        "title": "Assets filtern",
+        "description": "Grenzen Sie die Ansicht Ihrer Asset-Bibliothek ein.",
+        "assetType": "Asset-Typ",
+        "dateRange": "Datumsbereich",
+        "all": "Alle",
+        "allTime": "Gesamte Zeit",
+        "lastWeek": "Letzte Woche",
+        "lastMonth": "Letzter Monat",
+        "lastYear": "Letztes Jahr",
+        "reset": "Filter zurücksetzen",
+        "apply": "Filter anwenden"
+      }
     },
     "licensingRequest": {
       "title": "Lizenz anfordern",
