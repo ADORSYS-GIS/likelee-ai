@@ -291,13 +291,30 @@ pub async fn create_invite(
         invited_role.as_str().replace('_', " "),
         invite_url
     );
-    let _ = email::send_plain_text_email(
+    match email::send_plain_text_email(
         &state,
         invite.email.as_str(),
         subject.as_str(),
         body.as_str(),
         Some(scope.organization_name.as_str()),
-    );
+    ) {
+        Ok(()) => {
+            tracing::info!(
+                email = %invite.email,
+                organization = %scope.organization_name,
+                "Team invitation email sent successfully"
+            );
+        }
+        Err((code, error)) => {
+            tracing::error!(
+                email = %invite.email,
+                organization = %scope.organization_name,
+                status_code = %code,
+                error = %error,
+                "Failed to send team invitation email"
+            );
+        }
+    }
 
     Ok(Json(invite))
 }
@@ -428,13 +445,28 @@ pub async fn update_member_role(
         target_role.as_str().replace('_', " "),
         next_role.as_str().replace('_', " ")
     );
-    let _ = email::send_plain_text_email(
+    match email::send_plain_text_email(
         &state,
         updated.email.as_str(),
         subject.as_str(),
         body.as_str(),
         Some(scope.organization_name.as_str()),
-    );
+    ) {
+        Ok(()) => {
+            tracing::info!(
+                email = %updated.email,
+                "Role change notification email sent successfully"
+            );
+        }
+        Err((code, error)) => {
+            tracing::error!(
+                email = %updated.email,
+                status_code = %code,
+                error = %error,
+                "Failed to send role change notification email"
+            );
+        }
+    }
 
     Ok(Json(updated))
 }
@@ -536,13 +568,28 @@ pub async fn remove_member(
         "Hi,\n\nYou have been removed from {} on Likelee. If you believe this was an error, please contact the organization owner.",
         scope.organization_name
     );
-    let _ = email::send_plain_text_email(
+    match email::send_plain_text_email(
         &state,
         target_membership.email.as_str(),
         subject.as_str(),
         body.as_str(),
         Some(scope.organization_name.as_str()),
-    );
+    ) {
+        Ok(()) => {
+            tracing::info!(
+                email = %target_membership.email,
+                "Member removal notification email sent successfully"
+            );
+        }
+        Err((code, error)) => {
+            tracing::error!(
+                email = %target_membership.email,
+                status_code = %code,
+                error = %error,
+                "Failed to send member removal notification email"
+            );
+        }
+    }
 
     Ok(Json(ActionResponse {
         status: "ok".to_string(),

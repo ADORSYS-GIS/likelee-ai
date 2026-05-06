@@ -703,8 +703,25 @@ pub async fn create_for_agency(
     let body = lines.join("\n");
 
     // Best-effort email send
-    let _ =
-        crate::email::send_plain_text_email(&state, &email, &subject, &body, Some(&agency_name));
+    match crate::email::send_plain_text_email(&state, &email, &subject, &body, Some(&agency_name))
+    {
+        Ok(()) => {
+            tracing::info!(
+                email = %email,
+                agency = %agency_name,
+                "Agency talent invitation email sent successfully"
+            );
+        }
+        Err((code, error)) => {
+            tracing::error!(
+                email = %email,
+                agency = %agency_name,
+                status_code = %code,
+                error = %error,
+                "Failed to send agency talent invitation email"
+            );
+        }
+    }
 
     Ok(Json(json!({
         "status": "ok",
