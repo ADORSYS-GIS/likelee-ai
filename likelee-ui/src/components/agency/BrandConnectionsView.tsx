@@ -1856,6 +1856,7 @@ const BrandConnectionsView = ({
                                     []
                                   ).map((a: any) => {
                                     const talent = a?.agency_users || {};
+                                    const creator = a?.creators || {};
                                     const tid = String(a?.talent_id || "");
                                     const assignmentId = String(a?.id || "");
                                     const creatorId = String(
@@ -1863,6 +1864,13 @@ const BrandConnectionsView = ({
                                         a?.agency_users?.creator_id ||
                                         "",
                                     ).trim();
+                                    // Name: prefer agency_users fields (internal talent),
+                                    // fall back to creators.full_name (independent creator).
+                                    const displayName =
+                                      talent?.stage_name ||
+                                      talent?.full_legal_name ||
+                                      creator?.full_name ||
+                                      "Talent";
                                     return (
                                       <div
                                         key={String(a?.id)}
@@ -1874,9 +1882,7 @@ const BrandConnectionsView = ({
                                           </div>
                                           <div>
                                             <p className="text-sm font-semibold text-gray-900">
-                                              {talent?.stage_name ||
-                                                talent?.full_legal_name ||
-                                                "Talent"}
+                                              {displayName}
                                             </p>
                                             <p className="text-xs text-green-600 font-medium">
                                               Selected by brand
