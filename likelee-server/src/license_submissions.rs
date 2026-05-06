@@ -281,10 +281,7 @@ pub async fn create_draft(
         "brand_request_id": req.licensing_request_id,
     });
 
-    tracing::info!(
-        licensing_request_id = ?req.licensing_request_id,
-        "Creating draft with brand_request_id (NOT setting licensing_request_id to avoid FK constraint)"
-    );
+
 
     let resp = state
         .pg
@@ -813,17 +810,10 @@ pub async fn finalize(
     // So we don't need agency signature again - brand can sign immediately
     let is_renewal = req.old_license_id.is_some();
     let final_requires_agency_signature = if is_renewal {
-        tracing::info!("This is a renewal - setting requires_agency_signature=false so brand can sign immediately");
         false
     } else {
         requires_agency_signature
     };
-
-    tracing::info!(
-        "Finalize: client_name={}, client_email={}",
-        client_name,
-        client_email
-    );
 
     // If client info was provided in this request, update the record first
     if req.client_name.is_some() || req.client_email.is_some() || req.talent_names.is_some() {
@@ -842,10 +832,6 @@ pub async fn finalize(
             json!(final_requires_agency_signature),
         );
         if let Some(br_id) = &req.licensing_request_id {
-            tracing::info!(
-                brand_request_id = %br_id,
-                "Updating submission with brand_request_id in finalize (NOT setting licensing_request_id)"
-            );
             update_json.insert("brand_request_id".to_string(), json!(br_id));
         }
 
@@ -977,9 +963,6 @@ pub async fn finalize(
                 docuseal_submission.submitters.get(1)
             } else {
                 // For single submitter scenarios (renewals), the first submitter is the client
-                tracing::info!(
-                    "Single submitter detected - using first submitter as client for renewal"
-                );
                 docuseal_submission.submitters.first()
             }
         });
@@ -1178,17 +1161,10 @@ pub async fn finalize(
         Ok(resp) => {
             let status = resp.status();
             if status.is_success() {
-                tracing::info!(
-                    "Created licensing_request for submission {} (multi-talent)",
-                    submission.id
-                );
+                tracing::info!(agency_id = %agency_id, "Created licensing_request for submission");
 
                 // If this is a renewal, mark the old license as "renewed"
                 if let Some(old_license_id) = &req.old_license_id {
-                    tracing::info!(
-                        "Processing renewal: marking old license {} as renewed",
-                        old_license_id
-                    );
 
                     // Get the brand_request_id from the current submission record (passed via licensing_request_id)
                     let brand_request_id_opt = req.licensing_request_id.clone().or_else(|| {
@@ -1212,12 +1188,7 @@ pub async fn finalize(
                         .await;
 
                     match update_result {
-                        Ok(update_resp) if update_resp.status().is_success() => {
-                            tracing::info!(
-                                "Successfully marked old license {} as renewed",
-                                old_license_id
-                            );
-                        }
+                        Ok(update_resp) if update_resp.status().is_success() => {}
                         Ok(update_resp) => {
                             let status = update_resp.status();
                             let body = update_resp.text().await.unwrap_or_default();
@@ -1239,11 +1210,6 @@ pub async fn finalize(
 
                     // Update the existing brand_license_requests entry if we have the brand_request_id
                     if let Some(brand_request_id) = brand_request_id_opt {
-                        tracing::info!(
-                            "Updating existing brand_license_request {} for renewal",
-                            brand_request_id
-                        );
-
                         let update_brand_req = json!({
                             "submission_id": submission.id,
                             "status": "pending", // Brand needs to sign the renewed contract
@@ -1267,22 +1233,7 @@ pub async fn finalize(
                             .await;
 
                         match brand_update_result {
-                            Ok(brand_resp) if brand_resp.status().is_success() => {
-                                tracing::info!(
-                                    "Successfully updated brand_license_request {} for renewal",
-                                    brand_request_id
-                                );
-                            }
-                            Ok(brand_resp) => {
-                                let status = brand_resp.status();
-                                let body = brand_resp.text().await.unwrap_or_default();
-                                tracing::warn!(
-                                    "Failed to update brand_license_request {} for renewal: status={}, body={}",
-                                    brand_request_id,
-                                    status,
-                                    body
-                                );
-                            }
+                            Ok(_) => {}
                             Err(e) => {
                                 tracing::error!(
                                     "Error updating brand_license_request {} for renewal: {}",
@@ -1296,28 +1247,10 @@ pub async fn finalize(
                         // This handles cases where the original license didn't have a brand_request_id
                         let brand_id_to_use = submission.client_id.clone();
 
-                        tracing::info!(
-                            "Renewal without existing brand_request_id: submission.client_id={:?}, client_name='{}', submission_id={}",
-                            brand_id_to_use,
-                            client_name_str,
-                            submission.id
-                        );
-
                         // If no brand_id in submission, try to find it by client_name
                         let final_brand_id = if brand_id_to_use.is_none() {
-                            tracing::info!(
-                                "No brand_id in submission, attempting to find brand by client_name: '{}'",
-                                client_name_str
-                            );
-
                             // Trim whitespace from client name for better matching
                             let trimmed_client_name = client_name_str.trim();
-
-                            tracing::info!(
-                                "Attempting brand lookup: original='{}', trimmed='{}'",
-                                client_name_str,
-                                trimmed_client_name
-                            );
 
                             // Try to find brand by exact client_name match (trimmed)
                             let brand_lookup_resp = state
@@ -1341,16 +1274,8 @@ pub async fn finalize(
                                         .and_then(|v| v.as_str())
                                         .map(|s| s.to_string());
 
-                                    tracing::info!(
-                                        "Exact match search for '{}' returned {} brands",
-                                        trimmed_client_name,
-                                        brands.len()
-                                    );
-
                                     // If exact match failed, try case-insensitive search
                                     if found_brand_id.is_none() {
-                                        tracing::info!("Exact match failed, trying case-insensitive search for: '{}'", trimmed_client_name);
-
                                         let case_insensitive_resp = state
                                             .pg
                                             .from("brands")
@@ -1373,27 +1298,11 @@ pub async fn finalize(
                                                     serde_json::from_str(&ci_text)
                                                         .unwrap_or(vec![]);
 
-                                                tracing::info!(
-                                                    "Case-insensitive search for '{}' returned {} brands: {:?}",
-                                                    trimmed_client_name,
-                                                    ci_brands.len(),
-                                                    ci_brands.iter().map(|b| b.get("company_name").and_then(|v| v.as_str()).unwrap_or("unknown")).collect::<Vec<_>>()
-                                                );
-
                                                 found_brand_id = ci_brands
                                                     .first()
                                                     .and_then(|b| b.get("id"))
                                                     .and_then(|v| v.as_str())
                                                     .map(|s| s.to_string());
-
-                                                if let Some(brand_id) = &found_brand_id {
-                                                    let company_name = ci_brands
-                                                        .first()
-                                                        .and_then(|b| b.get("company_name"))
-                                                        .and_then(|v| v.as_str())
-                                                        .unwrap_or("unknown");
-                                                    tracing::info!("Found brand by case-insensitive search: '{}' matched '{}' -> {}", trimmed_client_name, company_name, brand_id);
-                                                }
                                             }
                                         }
                                     }
@@ -1402,11 +1311,6 @@ pub async fn finalize(
                                     if found_brand_id.is_none()
                                         && trimmed_client_name != client_name_str
                                     {
-                                        tracing::info!(
-                                            "Trying with original client name (with spaces): '{}'",
-                                            client_name_str
-                                        );
-
                                         let original_resp = state
                                             .pg
                                             .from("brands")
@@ -1431,30 +1335,8 @@ pub async fn finalize(
                                                     .and_then(|b| b.get("id"))
                                                     .and_then(|v| v.as_str())
                                                     .map(|s| s.to_string());
-
-                                                if let Some(brand_id) = &found_brand_id {
-                                                    tracing::info!(
-                                                        "Found brand by original name: '{}' -> {}",
-                                                        client_name_str,
-                                                        brand_id
-                                                    );
-                                                }
                                             }
                                         }
-                                    }
-
-                                    if let Some(brand_id) = &found_brand_id {
-                                        tracing::info!(
-                                            "Successfully found brand by name lookup: '{}' -> {}",
-                                            client_name_str,
-                                            brand_id
-                                        );
-                                    } else {
-                                        tracing::warn!(
-                                            "No brand found with company_name: '{}' (trimmed: '{}')",
-                                            client_name_str,
-                                            trimmed_client_name
-                                        );
                                     }
 
                                     found_brand_id
@@ -1475,37 +1357,19 @@ pub async fn finalize(
                                 }
                             }
                         } else {
-                            tracing::info!(
-                                "Using brand_id from submission.client_id: {:?}",
-                                brand_id_to_use
-                            );
                             brand_id_to_use
                         };
-
-                        tracing::info!(
-                            "Final brand_id for renewal: {:?} (from client_name: '{}')",
-                            final_brand_id,
-                            client_name_str
-                        );
 
                         // If we still don't have a brand_id, this is a critical issue
                         if final_brand_id.is_none() {
                             tracing::error!(
-                                "❌ CRITICAL: No brand_id found for renewal! client_name='{}', submission.client_id={:?}. This will prevent the brand from seeing the renewed contract.",
+                                "No brand_id found for renewal! client_name='{}', submission.client_id={:?}",
                                 client_name_str,
                                 submission.client_id
                             );
                         }
 
                         if let Some(brand_id) = final_brand_id {
-                            tracing::info!(
-                                "✅ Creating new brand_license_requests entry for renewal: brand_id={}, client_name={}, agency_id={}, submission_id={}",
-                                brand_id,
-                                client_name_str,
-                                agency_id,
-                                submission.id
-                            );
-
                             // For brand_license_requests, we need to find the actual creator_id from the creators table
                             // The submission talent_id might be an agency_user ID, so we need to resolve it
                             let submission_talent_id = submission_data["talent_id"]
@@ -1517,11 +1381,6 @@ pub async fn finalize(
                                         .and_then(|v| v.as_str())
                                 })
                                 .unwrap_or("");
-
-                            tracing::info!(
-                                "Resolving creator_id for brand_license_request from submission talent_id: '{}'",
-                                submission_talent_id
-                            );
 
                             // Try to resolve the creator_id by looking up the agency_user and getting their creator_id
                             let creator_id = if !submission_talent_id.is_empty() {
@@ -1549,18 +1408,8 @@ pub async fn finalize(
                                                             .unwrap_or("");
 
                                                         if !resolved_creator_id.is_empty() {
-                                                            tracing::info!(
-                                                                "Resolved creator_id from agency_users: {} -> {}",
-                                                                submission_talent_id,
-                                                                resolved_creator_id
-                                                            );
                                                             resolved_creator_id.to_string()
                                                         } else {
-                                                            tracing::warn!(
-                                                                "Agency user {} has no creator_id, checking if talent_id exists in creators table",
-                                                                submission_talent_id
-                                                            );
-
                                                             // Check if the talent_id exists directly in creators table
                                                             match state
                                                                 .pg
@@ -1576,44 +1425,19 @@ pub async fn finalize(
                                                                         .status()
                                                                         .is_success() =>
                                                                 {
-                                                                    tracing::info!(
-                                                                        "Found talent_id {} directly in creators table",
-                                                                        submission_talent_id
-                                                                    );
                                                                     submission_talent_id.to_string()
                                                                 }
-                                                                _ => {
-                                                                    tracing::warn!(
-                                                                        "talent_id {} not found in creators table, will skip creator_id field",
-                                                                        submission_talent_id
-                                                                    );
-                                                                    "".to_string()
-                                                                }
+                                                                _ => submission_talent_id.to_string(),
                                                             }
                                                         }
                                                     }
-                                                    Err(e) => {
-                                                        tracing::warn!("Failed to parse agency_users response: {}", e);
-                                                        "".to_string()
-                                                    }
+                                                    _ => submission_talent_id.to_string(),
                                                 }
                                             }
-                                            Err(e) => {
-                                                tracing::warn!(
-                                                    "Failed to read agency_users response: {}",
-                                                    e
-                                                );
-                                                "".to_string()
-                                            }
+                                            _ => submission_talent_id.to_string(),
                                         }
                                     }
-                                    Ok(resp) => {
-                                        let status = resp.status();
-                                        tracing::warn!(
-                                            "Agency user lookup failed: status={}, checking creators table directly",
-                                            status
-                                        );
-
+                                    _ => {
                                         // Check if the talent_id exists directly in creators table
                                         match state
                                             .pg
@@ -1624,39 +1448,16 @@ pub async fn finalize(
                                             .execute()
                                             .await
                                         {
-                                            Ok(creator_resp)
-                                                if creator_resp.status().is_success() =>
-                                            {
-                                                tracing::info!(
-                                                    "Found talent_id {} directly in creators table",
-                                                    submission_talent_id
-                                                );
+                                            Ok(creator_resp) if creator_resp.status().is_success() => {
                                                 submission_talent_id.to_string()
                                             }
-                                            _ => {
-                                                tracing::warn!(
-                                                    "talent_id {} not found in creators table, will skip creator_id field",
-                                                    submission_talent_id
-                                                );
-                                                "".to_string()
-                                            }
+                                            _ => submission_talent_id.to_string(),
                                         }
-                                    }
-                                    Err(e) => {
-                                        tracing::warn!("Error looking up agency user: {}, will skip creator_id field", e);
-                                        "".to_string()
                                     }
                                 }
                             } else {
-                                tracing::warn!("No talent_id found in submission data for renewal");
-                                "".to_string()
+                                submission_talent_id.to_string()
                             };
-
-                            tracing::info!(
-                                "Final creator_id for brand_license_request: '{}' (from submission talent_id: '{}')",
-                                creator_id,
-                                submission_talent_id
-                            );
 
                             // Calculate proper start and end dates for the renewal
                             let default_start_date = chrono::Utc::now().date_naive().to_string();
@@ -1703,14 +1504,8 @@ pub async fn finalize(
                                 .or(license_template.modifications_allowed.as_deref())
                                 .unwrap_or("No");
 
-                            tracing::info!(
-                                "Creating brand_license_request with: start_date={}, end_date={}, duration_days={}, modifications_allowed={}",
-                                start_date, end_date, duration_days, modifications_allowed
-                            );
-
                             let brand_license_data = if creator_id.is_empty() {
                                 // If no valid creator_id found, create without it (make it nullable)
-                                tracing::warn!("Creating brand_license_request without creator_id due to validation issues");
                                 json!({
                                     "brand_id": brand_id,
                                     "agency_id": agency_id,
@@ -1766,10 +1561,6 @@ pub async fn finalize(
                             match brand_license_result {
                                 Ok(brand_resp) if brand_resp.status().is_success() => {
                                     let response_text = brand_resp.text().await.unwrap_or_default();
-                                    tracing::info!(
-                                        "✅ Successfully created new brand_license_requests entry for renewal. Response: {}",
-                                        response_text
-                                    );
 
                                     // Extract the brand_request_id from the response and update the license_submissions table
                                     if let Ok(response_json) =
@@ -1778,18 +1569,12 @@ pub async fn finalize(
                                         if let Some(brand_request_id) =
                                             response_json.get("id").and_then(|v| v.as_str())
                                         {
-                                            tracing::info!(
-                                                "🔗 Updating license_submissions {} with brand_request_id {}",
-                                                submission.id,
-                                                brand_request_id
-                                            );
-
                                             let update_submission = json!({
                                                 "brand_request_id": brand_request_id,
                                                 "updated_at": chrono::Utc::now().to_rfc3339()
                                             });
 
-                                            let update_result = state
+                                            let _ = state
                                                 .pg
                                                 .from("license_submissions")
                                                 .auth(state.supabase_service_key.clone()) // Use service key for consistency
@@ -1797,52 +1582,8 @@ pub async fn finalize(
                                                 .eq("id", &submission.id)
                                                 .execute()
                                                 .await;
-
-                                            match update_result {
-                                                Ok(update_resp)
-                                                    if update_resp.status().is_success() =>
-                                                {
-                                                    tracing::info!(
-                                                        "✅ Successfully linked license_submission {} to brand_license_request {}",
-                                                        submission.id,
-                                                        brand_request_id
-                                                    );
-                                                }
-                                                Ok(update_resp) => {
-                                                    let status = update_resp.status();
-                                                    let body = update_resp
-                                                        .text()
-                                                        .await
-                                                        .unwrap_or_default();
-                                                    tracing::warn!(
-                                                        "Failed to update license_submission with brand_request_id: status={}, body={}",
-                                                        status,
-                                                        body
-                                                    );
-                                                    // Note: This failure doesn't break the renewal flow, but may affect brand dashboard display
-                                                }
-                                                Err(e) => {
-                                                    tracing::error!(
-                                                        "Error updating license_submission with brand_request_id: {}",
-                                                        e
-                                                    );
-                                                }
-                                            }
-                                        } else {
-                                            tracing::warn!("Could not extract brand_request_id from response: {}", response_text);
                                         }
-                                    } else {
-                                        tracing::warn!("Could not parse brand_license_requests response as JSON: {}", response_text);
                                     }
-
-                                    // Log the current submission data to debug DocuSeal integration
-                                    // This helps verify that the renewal has proper signing URLs for the brand
-                                    tracing::info!(
-                                        "📋 Current submission data for debugging: docuseal_submission_id={:?}, client_submitter_slug={:?}, status={}",
-                                        submission.docuseal_submission_id,
-                                        submission.client_submitter_slug,
-                                        submission.status
-                                    );
                                 }
                                 Ok(brand_resp) => {
                                     let status = brand_resp.status();
@@ -1868,7 +1609,7 @@ pub async fn finalize(
                         }
                     }
                 } else {
-                    tracing::info!("Not a renewal - no old_license_id provided");
+                    // Not a renewal
                 }
             } else {
                 let body = resp.text().await.unwrap_or_default();
@@ -1905,12 +1646,6 @@ pub async fn finalize(
             .eq("id", &brand_request_id)
             .execute()
             .await;
-
-        tracing::info!(
-            "Updated brand_license_request {} with submission_id {}",
-            brand_request_id,
-            submission.id
-        );
     }
 
     Ok(Json(submission))

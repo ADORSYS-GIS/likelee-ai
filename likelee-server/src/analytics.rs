@@ -2538,40 +2538,7 @@ pub async fn get_expired_licenses(
     // Get first day of current month
     let month_start = now.format("%Y-%m-01").to_string();
 
-    // First, let's check all expired licenses (including renewed ones) for debugging
-    let all_expired_resp = state
-        .pg
-        .from("licensing_requests")
-        .select("id, talent_id, deadline, client_name, status, submission_id")
-        .eq("agency_id", &auth_user.id)
-        .lt("deadline", &today)
-        .gte("deadline", &month_start)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let all_expired_text = all_expired_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let all_expired: Vec<serde_json::Value> =
-        serde_json::from_str(&all_expired_text).unwrap_or(vec![]);
-
-    tracing::info!(
-        "Total expired licenses in current month: {}",
-        all_expired.len()
-    );
-    for license in &all_expired {
-        if let (Some(id), Some(status), Some(client)) = (
-            license.get("id").and_then(|v| v.as_str()),
-            license.get("status").and_then(|v| v.as_str()),
-            license.get("client_name").and_then(|v| v.as_str()),
-        ) {
-            tracing::info!("License {}: {} - status: {}", id, client, status);
-        }
-    }
-
-    // Now fetch only approved (non-renewed) expired licenses
+    // Fetch only approved (non-renewed) expired licenses
     let resp = state
         .pg
         .from("licensing_requests")
@@ -2586,25 +2553,6 @@ pub async fn get_expired_licenses(
 
     let requests_text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
     let requests: Vec<serde_json::Value> = serde_json::from_str(&requests_text).unwrap_or(vec![]);
-
-    tracing::info!(
-        "Filtered expired licenses (approved only): {}",
-        requests.len()
-    );
-    for license in &requests {
-        if let (Some(id), Some(status), Some(client)) = (
-            license.get("id").and_then(|v| v.as_str()),
-            license.get("status").and_then(|v| v.as_str()),
-            license.get("client_name").and_then(|v| v.as_str()),
-        ) {
-            tracing::info!(
-                "Approved expired license {}: {} - status: {}",
-                id,
-                client,
-                status
-            );
-        }
-    }
 
     // Collect submission_ids to fetch license_submissions data
     let submission_ids: Vec<String> = requests
@@ -2635,25 +2583,6 @@ pub async fn get_expired_licenses(
             if let Some(id) = s.get("id").and_then(|v| v.as_str()) {
                 submission_map.insert(id.to_string(), s);
             }
-        }
-    }
-
-    tracing::info!(
-        "Filtered expired licenses (approved only): {}",
-        requests.len()
-    );
-    for license in &requests {
-        if let (Some(id), Some(status), Some(client)) = (
-            license.get("id").and_then(|v| v.as_str()),
-            license.get("status").and_then(|v| v.as_str()),
-            license.get("client_name").and_then(|v| v.as_str()),
-        ) {
-            tracing::info!(
-                "Approved expired license {}: {} - status: {}",
-                id,
-                client,
-                status
-            );
         }
     }
 
@@ -2740,15 +2669,6 @@ pub async fn get_expired_licenses(
 
             // If no brand_request_id, try to find it by matching client_name and other fields
             let final_brand_request_id = if brand_request_id.is_none() {
-                let client_name = r.get("client_name").and_then(|v| v.as_str()).unwrap_or("");
-                if !client_name.is_empty() {
-                    tracing::info!(
-                        "No brand_request_id found for license {}, trying to find by client_name: {}",
-                        r.get("id").and_then(|v| v.as_str()).unwrap_or("unknown"),
-                        client_name
-                    );
-                    // We could add a lookup here, but for now just log it
-                }
                 brand_request_id
             } else {
                 brand_request_id
