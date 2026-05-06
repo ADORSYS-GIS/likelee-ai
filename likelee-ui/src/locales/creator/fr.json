@@ -125,6 +125,9 @@
     "activeCampaigns": "Campagnes Actives",
     "licensesAndContracts": "Licences et Contrats",
     "earningsDashboard": "Tableau de Bord des Gains",
+    "signContract": "Signer le contrat",
+    "contractAlreadySigned": "Contrat déjà signé",
+    "signContractDescription": "Terminez votre signature pour finaliser ce contrat de campagne.",
     "earnings": {
       "title": "Tableau de Bord des Gains",
       "subtitle": "Suivez vos revenus et paiements",
@@ -1407,6 +1410,10 @@
     },
     "content": {
       "irl": {
+        "entities": {
+          "talent": "Talent",
+          "athlete": "Athlète"
+        },
         "overview": {
           "upcomingBookings": "Réservations à venir",
           "totalEarnings": "Revenus totaux",
@@ -1459,6 +1466,29 @@
             "today": "Aujourd'hui",
             "newBooking": "Nouvelle réservation",
             "close": "Fermer"
+          },
+          "months": {
+            "january": "Janvier",
+            "february": "Février",
+            "march": "Mars",
+            "april": "Avril",
+            "may": "Mai",
+            "june": "Juin",
+            "july": "Juillet",
+            "august": "Août",
+            "september": "Septembre",
+            "october": "Octobre",
+            "november": "Novembre",
+            "december": "Décembre"
+          },
+          "days": {
+            "sun": "Dim",
+            "mon": "Lun",
+            "tue": "Mar",
+            "wed": "Mer",
+            "thu": "Jeu",
+            "fri": "Ven",
+            "sat": "Sam"
           },
           "legend": {
             "casting": "Casting",
@@ -1605,8 +1635,10 @@
         "acceptOutsideLocalArea": "Accepter les réservations hors zone locale",
         "minimumDayRate": "Tarif journalier minimum",
         "minimumRateDescription": "Votre tarif minimum acceptable",
-        "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "Veuillez choisir l'agence pour cette indisponibilite avec le menu deroulant du filtre Agence."
+        "selectAgencyTitle": "Sélectionner une agence",
+        "selectAgencyDescription": "Veuillez choisir l'agence pour cette indisponibilité avec le menu déroulant du filtre Agence.",
+        "updateFailedTitle": "Impossible de mettre à jour les préférences de réservation",
+        "tryAgain": "Veuillez réessayer."
       },
       "portfolio": {
         "title": "Portfolio",

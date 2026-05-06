@@ -166,6 +166,9 @@
     "activeCampaigns": "Active Campaigns",
     "licensesAndContracts": "Licenses & Contracts",
     "earningsDashboard": "Earnings Dashboard",
+    "signContract": "Sign Contract",
+    "contractAlreadySigned": "Contract already signed",
+    "signContractDescription": "Complete your signature to finalize this campaign contract.",
     "settings": {
       "myRules": "My Rules",
       "profileSettings": "Profile Settings"
@@ -1327,6 +1330,10 @@
     },
     "content": {
       "irl": {
+        "entities": {
+          "talent": "Talent",
+          "athlete": "Athlete"
+        },
         "overview": {
           "upcomingBookings": "Upcoming Bookings",
           "totalEarnings": "Total Earnings",
@@ -1379,6 +1386,29 @@
             "today": "Today",
             "newBooking": "New Booking",
             "close": "Close"
+          },
+          "months": {
+            "january": "January",
+            "february": "February",
+            "march": "March",
+            "april": "April",
+            "may": "May",
+            "june": "June",
+            "july": "July",
+            "august": "August",
+            "september": "September",
+            "october": "October",
+            "november": "November",
+            "december": "December"
+          },
+          "days": {
+            "sun": "Sun",
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat"
           },
           "legend": {
             "casting": "Casting",
@@ -1621,7 +1651,9 @@
         "minimumDayRate": "Minimum Day Rate",
         "minimumRateDescription": "Your minimum acceptable rate",
         "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "Please choose the agency for this book-out using the Agency filter dropdown."
+        "selectAgencyDescription": "Please choose the agency for this book-out using the Agency filter dropdown.",
+        "updateFailedTitle": "Failed to update booking preferences",
+        "tryAgain": "Please try again."
       },
       "portfolio": {
         "title": "Portfolio",

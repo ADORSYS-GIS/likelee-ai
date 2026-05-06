@@ -12,6 +12,9 @@
     "activeCampaigns": "Aktive Kampagnen",
     "licensesAndContracts": "Lizenzen & Verträge",
     "earningsDashboard": "Verdienstübersicht",
+    "signContract": "Vertrag unterschreiben",
+    "contractAlreadySigned": "Vertrag bereits unterschrieben",
+    "signContractDescription": "Schließe deine Unterschrift ab, um diesen Kampagnenvertrag zu finalisieren.",
     "earnings": {
       "title": "Einnahmen-Dashboard",
       "byIndustry": "Einnahmen nach Branche",
@@ -1728,6 +1731,10 @@
     "disabledDescription": "Verbinde dich mit einer Agentur, um auf das Talent-Portal zuzugreifen.",
     "content": {
       "irl": {
+        "entities": {
+          "talent": "Talent",
+          "athlete": "Athlet"
+        },
         "overview": {
           "upcomingBookings": "Anstehende Buchungen",
           "totalEarnings": "Gesamteinnahmen",
@@ -1780,6 +1787,29 @@
             "today": "Heute",
             "newBooking": "Neue Buchung",
             "close": "Schließen"
+          },
+          "months": {
+            "january": "Januar",
+            "february": "Februar",
+            "march": "März",
+            "april": "April",
+            "may": "Mai",
+            "june": "Juni",
+            "july": "Juli",
+            "august": "August",
+            "september": "September",
+            "october": "Oktober",
+            "november": "November",
+            "december": "Dezember"
+          },
+          "days": {
+            "sun": "So",
+            "mon": "Mo",
+            "tue": "Di",
+            "wed": "Mi",
+            "thu": "Do",
+            "fri": "Fr",
+            "sat": "Sa"
           },
           "legend": {
             "casting": "Casting",
@@ -1926,8 +1956,10 @@
         "acceptOutsideLocalArea": "Buchungen außerhalb der Region akzeptieren",
         "minimumDayRate": "Mindesttagessatz",
         "minimumRateDescription": "Dein minimal akzeptabler Satz",
-        "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "Bitte waehlen Sie die Agentur fuer diese Sperrzeit ueber das Agentur-Filter-Dropdown aus."
+        "selectAgencyTitle": "Agentur auswählen",
+        "selectAgencyDescription": "Bitte wähle die Agentur für diese Sperrzeit über das Agentur-Filter-Dropdown aus.",
+        "updateFailedTitle": "Buchungspräferenzen konnten nicht aktualisiert werden",
+        "tryAgain": "Bitte versuche es erneut."
       },
       "portfolio": {
         "title": "Portfolio",

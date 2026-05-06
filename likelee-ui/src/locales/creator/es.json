@@ -12,6 +12,9 @@
     "activeCampaigns": "Campañas Activas",
     "licensesAndContracts": "Licencias y Contratos",
     "earningsDashboard": "Tablero de Ganancias",
+    "signContract": "Firmar contrato",
+    "contractAlreadySigned": "Contrato ya firmado",
+    "signContractDescription": "Completa tu firma para finalizar este contrato de campaña.",
     "earnings": {
       "title": "Panel de Ganancias",
       "byIndustry": "Ganancias por Industria",
@@ -1679,6 +1682,10 @@
     "disabledDescription": "Conéctate a una agencia para acceder al Portal de talento.",
     "content": {
       "irl": {
+        "entities": {
+          "talent": "Talento",
+          "athlete": "Atleta"
+        },
         "overview": {
           "upcomingBookings": "Próximas reservas",
           "totalEarnings": "Ingresos totales",
@@ -1731,6 +1738,29 @@
             "today": "Hoy",
             "newBooking": "Nueva reserva",
             "close": "Cerrar"
+          },
+          "months": {
+            "january": "Enero",
+            "february": "Febrero",
+            "march": "Marzo",
+            "april": "Abril",
+            "may": "Mayo",
+            "june": "Junio",
+            "july": "Julio",
+            "august": "Agosto",
+            "september": "Septiembre",
+            "october": "Octubre",
+            "november": "Noviembre",
+            "december": "Diciembre"
+          },
+          "days": {
+            "sun": "Dom",
+            "mon": "Lun",
+            "tue": "Mar",
+            "wed": "Mié",
+            "thu": "Jue",
+            "fri": "Vie",
+            "sat": "Sáb"
           },
           "legend": {
             "casting": "Casting",
@@ -1877,8 +1907,10 @@
         "acceptOutsideLocalArea": "Aceptar reservas fuera del área local",
         "minimumDayRate": "Tarifa mínima por día",
         "minimumRateDescription": "Tu tarifa mínima aceptable",
-        "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "Elige la agencia para este bloqueo usando el menu desplegable de filtro Agencia."
+        "selectAgencyTitle": "Selecciona una agencia",
+        "selectAgencyDescription": "Elige la agencia para este bloqueo usando el menú desplegable del filtro Agencia.",
+        "updateFailedTitle": "No se pudieron actualizar las preferencias de reservas",
+        "tryAgain": "Inténtalo de nuevo."
       },
       "portfolio": {
         "title": "Portafolio",
