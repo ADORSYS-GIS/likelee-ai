@@ -1481,6 +1481,8 @@ export default function BrandDashboard() {
                     offer?.offer_title ||
                     "Campaign offer",
                 ),
+                // Preserve creator/agency name from the offer for display
+                creator_name: String(offer?.target_name || "").trim() || null,
               }));
             }),
           )
@@ -5197,24 +5199,35 @@ export default function BrandDashboard() {
   };
   const contractStatusBadgeClass = (statusRaw: unknown) => {
     const status = String(statusRaw || "").toLowerCase();
-    if (status === "signed") {
+    if (status === "completed") {
       return "inline-flex min-w-28 items-center rounded-md border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-emerald-700 font-semibold";
+    }
+    if (status === "partially_signed" || status === "signed") {
+      // Brand signed, waiting for creator — amber/waiting tone
+      return "inline-flex min-w-28 items-center rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-700 font-semibold";
+    }
+    if (status === "opened") {
+      // Brand opened but hasn't signed yet — blue/action-needed tone
+      return "inline-flex min-w-28 items-center rounded-md border border-blue-300 bg-blue-100 px-2.5 py-1 text-blue-700 font-semibold";
     }
     if (status === "sent") {
       return "inline-flex min-w-28 items-center rounded-md border border-blue-300 bg-blue-100 px-2.5 py-1 text-blue-700 font-semibold";
-    }
-    if (status === "opened") {
-      return "inline-flex min-w-28 items-center rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-700 font-semibold";
     }
     if (status === "declined" || status === "rejected") {
       return "inline-flex min-w-28 items-center rounded-md border border-red-300 bg-red-100 px-2.5 py-1 text-red-700 font-semibold";
     }
     return "inline-flex min-w-28 items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-gray-700 font-semibold";
   };
-  const formatContractStatusLabel = (statusRaw: unknown) =>
-    String(statusRaw || "sent")
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (m) => m.toUpperCase());
+  const formatContractStatusLabel = (statusRaw: unknown) => {
+    const status = String(statusRaw || "sent").toLowerCase();
+    if (status === "opened") return "Sign Required";
+    if (status === "sent") return "Sent";
+    if (status === "partially_signed" || status === "signed")
+      return "Awaiting Creator";
+    if (status === "completed") return "Completed";
+    if (status === "declined" || status === "rejected") return "Declined";
+    return status.replace(/_/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
+  };
 
   const handleDeliverableReview = async (
     offerId: string,
@@ -5785,7 +5798,10 @@ export default function BrandDashboard() {
                             {String(row?.campaign_name || "Campaign offer")}
                           </td>
                           <td className="px-2 py-2 text-gray-700">
-                            {offer?.creators?.full_name || "Unknown Creator"}
+                            {row?.creator_name ||
+                              offer?.target_name ||
+                              offer?.creators?.full_name ||
+                              "Creator"}
                           </td>
                           <td className="px-2 py-2 text-gray-700">
                             {String(
@@ -5801,16 +5817,27 @@ export default function BrandDashboard() {
                                 row?.docuseal_status,
                               )}
                             >
-                              {String(
-                                row?.docuseal_status || "",
-                              ).toLowerCase() === "sent" && (
-                                <Mail className="h-3.5 w-3.5 mr-1.5" />
-                              )}
-                              {String(
-                                row?.docuseal_status || "",
-                              ).toLowerCase() === "signed" && (
-                                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                              )}
+                              {(() => {
+                                const st = String(
+                                  row?.docuseal_status || "",
+                                ).toLowerCase();
+                                if (st === "sent" || st === "opened")
+                                  return (
+                                    <Mail className="h-3.5 w-3.5 mr-1.5" />
+                                  );
+                                if (st === "completed")
+                                  return (
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                  );
+                                if (
+                                  st === "partially_signed" ||
+                                  st === "signed"
+                                )
+                                  return (
+                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                  );
+                                return null;
+                              })()}
                               {formatContractStatusLabel(row?.docuseal_status)}
                             </span>
                           </td>
@@ -5819,65 +5846,110 @@ export default function BrandDashboard() {
                           </td>
                           <td className="px-2 py-2">
                             <div className="flex items-center gap-3">
-                              <button
-                                className="text-blue-600 hover:text-blue-700"
-                                title="Resend"
-                                aria-label="Resend"
-                                type="button"
-                                onClick={async () => {
-                                  try {
-                                    await base44.post(
-                                      `/api/campaign-offers/${encodeURIComponent(
-                                        String(row?.offer_id || ""),
-                                      )}/contracts/send`,
-                                      { contract_id: String(row?.id || "") },
-                                    );
-                                    const refreshed = await base44.get<{
-                                      contracts?: any[];
-                                    }>(
-                                      `/api/campaign-offers/${encodeURIComponent(
-                                        String(row?.offer_id || ""),
-                                      )}/contracts`,
-                                    );
-                                    const refreshedContracts = Array.isArray(
-                                      refreshed?.contracts,
-                                    )
-                                      ? refreshed.contracts
-                                      : [];
-                                    setContractHubRows((prev) =>
-                                      prev.map((existing: any) => {
-                                        if (
-                                          String(existing?.id) !==
-                                          String(row?.id)
-                                        )
-                                          return existing;
-                                        const fresh = refreshedContracts.find(
-                                          (c: any) =>
-                                            String(c?.id) === String(row?.id),
+                              {/* Resend — always creates a fresh DocuSeal submission from the same
+                                  template so the brand gets a new signing URL. The brand signs,
+                                  then DocuSeal sends to the creator automatically.
+                                  Not shown for completed (both signed) or draft (not sent yet). */}
+                              {(() => {
+                                const st = String(
+                                  row?.docuseal_status || "",
+                                ).toLowerCase();
+                                const canResend =
+                                  st === "sent" ||
+                                  st === "opened" ||
+                                  st === "partially_signed" ||
+                                  st === "signed";
+                                if (!canResend) return null;
+
+                                return (
+                                  <button
+                                    className="text-blue-600 hover:text-blue-700"
+                                    title="Resend — create new contract for brand to sign"
+                                    aria-label="Resend"
+                                    type="button"
+                                    onClick={async () => {
+                                      const offerId = String(
+                                        row?.offer_id || "",
+                                      );
+                                      const contractId = String(row?.id || "");
+                                      if (!offerId || !contractId) {
+                                        toast({
+                                          title: "Resend failed",
+                                          description:
+                                            "Missing offer or contract ID.",
+                                          variant: "destructive" as any,
+                                        });
+                                        return;
+                                      }
+                                      try {
+                                        // Always create a fresh submission — never reuse an old signing URL
+                                        const result = await base44.post<{
+                                          contract?: any;
+                                        }>(
+                                          `/api/campaign-offers/${encodeURIComponent(offerId)}/contracts/send`,
+                                          {
+                                            contract_id: contractId,
+                                            force_new_submission: true,
+                                          },
                                         );
-                                        return fresh
-                                          ? {
-                                              ...fresh,
-                                              offer_id: existing?.offer_id,
-                                              campaign_name:
-                                                existing?.campaign_name,
-                                            }
-                                          : existing;
-                                      }),
-                                    );
-                                    toast({ title: "Contract resent" });
-                                  } catch (e: any) {
-                                    toast({
-                                      title: "Resend failed",
-                                      description:
-                                        e?.message || "Please try again.",
-                                      variant: "destructive" as any,
-                                    });
-                                  }
-                                }}
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </button>
+                                        const newContract = result?.contract;
+                                        const newSigningUrl =
+                                          newContract?.meta
+                                            ?.brand_signing_url ||
+                                          newContract?.meta
+                                            ?.agency_signing_url ||
+                                          newContract?.meta
+                                            ?.docuseal_signing_url;
+                                        if (newContract) {
+                                          // Update the row in place with the fresh contract data
+                                          setContractHubRows((prev) =>
+                                            prev.map((existing: any) =>
+                                              String(existing?.id) ===
+                                              contractId
+                                                ? {
+                                                    ...newContract,
+                                                    offer_id:
+                                                      existing?.offer_id,
+                                                    campaign_name:
+                                                      existing?.campaign_name,
+                                                    creator_name:
+                                                      existing?.creator_name,
+                                                  }
+                                                : existing,
+                                            ),
+                                          );
+                                        }
+                                        if (newSigningUrl) {
+                                          window.open(
+                                            String(newSigningUrl),
+                                            "_blank",
+                                          );
+                                          toast({
+                                            title: "New contract ready",
+                                            description:
+                                              "Sign the document — it will be sent to the creator automatically.",
+                                          });
+                                        } else {
+                                          toast({
+                                            title: "Contract resent",
+                                            description:
+                                              "Check your email for the new signing link.",
+                                          });
+                                        }
+                                      } catch (e: any) {
+                                        toast({
+                                          title: "Resend failed",
+                                          description:
+                                            e?.message || "Please try again.",
+                                          variant: "destructive" as any,
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <RefreshCw className="h-4 w-4" />
+                                  </button>
+                                );
+                              })()}
                               <button
                                 className="text-red-600 hover:text-red-700"
                                 title="Archive"
@@ -5912,19 +5984,26 @@ export default function BrandDashboard() {
                               >
                                 <Archive className="h-4 w-4" />
                               </button>
-                              {row?.meta?.docuseal_document_url && (
-                                <a
-                                  href={String(row.meta.docuseal_document_url)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  download
-                                  title="Download"
-                                  aria-label="Download"
-                                  className="text-blue-700 hover:text-blue-800"
-                                >
-                                  <Download className="h-4 w-4" />
-                                </a>
-                              )}
+                              {/* Download — check both signed_document_url and meta.docuseal_document_url */}
+                              {(() => {
+                                const docUrl =
+                                  row?.signed_document_url ||
+                                  row?.meta?.docuseal_document_url ||
+                                  row?.meta?.signed_document_url;
+                                return docUrl ? (
+                                  <a
+                                    href={String(docUrl)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download
+                                    title="Download signed contract"
+                                    aria-label="Download"
+                                    className="text-blue-700 hover:text-blue-800"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </a>
+                                ) : null;
+                              })()}
                             </div>
                           </td>
                         </tr>
