@@ -1056,8 +1056,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <div className="flex items-start justify-between ml-1 gap-2">
                           <Label className="text-sm font-bold text-slate-800 whitespace-nowrap">
                             Client Email *
-                        </Label>
-                        {!brandRequestBrandId && brandOptions.length > 0 && (
+                          </Label>
+                          {!brandRequestBrandId && brandOptions.length > 0 && (
                             <div className="flex items-center gap-2">
                               <Label
                                 htmlFor="allow-brand-change-wizard"
