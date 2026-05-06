@@ -113,14 +113,14 @@
       },
       "pendingTransfers": "Ausstehende Transfers",
       "refresh": "Aktualisieren",
-      "retrying": "retrying...",
-      "failed": "failed",
-      "pending": "pending",
-      "retry": "retry",
-      "retries": "retries",
-      "actionRequired": "Action required",
-      "actionRequiredDescription": "One or more transfers failed because your Stripe account is not fully set up. Complete your Stripe onboarding to receive these funds. The agency will retry the transfer once your account is ready.",
-      "completeStripeSetup": "Complete Stripe setup"
+      "retrying": "wird erneut versucht...",
+      "failed": "fehlgeschlagen",
+      "pending": "ausstehend",
+      "retry": "Wiederholung",
+      "retries": "Wiederholungen",
+      "actionRequired": "Aktion erforderlich",
+      "actionRequiredDescription": "Eine oder mehrere Überweisungen sind fehlgeschlagen, weil dein Stripe-Konto nicht vollständig eingerichtet ist. Schließe dein Stripe-Onboarding ab, um diese Gelder zu erhalten. Die Agentur wird die Überweisung erneut versuchen, sobald dein Konto bereit ist.",
+      "completeStripeSetup": "Stripe-Einrichtung abschließen"
     },
     "settings": {
       "myRules": "My Rules",
