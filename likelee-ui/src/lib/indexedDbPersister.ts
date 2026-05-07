@@ -20,15 +20,33 @@ const PERSIST_THROTTLE = 1000; // 1 second throttle for saves
 const INDEXED_DB_QUERIES = [
   "agency-roster",
   "agency-dashboard",
+  "agency-profile", // Agency profile data - prevents refetch on navigation
+  "agency-campaign-offers", // Agency campaign offers
+  "agency-job-invites", // Agency job invites
+  "agency-package-feedback", // Agency package feedback
+  "brand-profile", // Brand profile data - prevents refetch on navigation
+  "brand-inbox-packages", // Brand inbox packages
+  "brand-campaign-offers", // Brand campaign offers/deliverables
+  "brand-campaign-metrics", // Brand campaign metrics (active, pending approvals)
+  "brand-analytics", // Brand analytics data (YTD, performance)
+  "brand-activity-events", // Brand activity feed
+  "brand-jobs", // Brand posted jobs
+  "brand-billing", // Brand billing status/data (includes escrow)
+  "brand-licenses", // Brand licensing requests
   "talentMe",
   "talentBookings",
   "talentAnalytics",
+  "talentPortfolio", // Talent portfolio data
+  "talentProjects", // Talent projects data
+  "jobMatches", // Job matching data
   "marketplace",
   "jobs",
   "talentLicensing",
   "talentLicenses",
   "prospects",
   "scouting",
+  "creator-billing", // Creator billing status
+  "campaign-offers", // Generic campaign offers key
 ];
 
 /** Queries to persist to localStorage (small settings) */

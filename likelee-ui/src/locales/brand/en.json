@@ -69,7 +69,21 @@
         "estimatedCostValue": "{{count}} Credits",
         "generating": "Generating...",
         "generateVideo": "Generate Video",
-        "previewOutput": "Preview Output"
+        "previewOutput": "Preview Output",
+        "configurationHint": "Tweak parameters to perfect your AI generation.",
+        "selectAiModel": "Select AI Model",
+        "creditCount": "{{count}} credits",
+        "prompt": "Prompt",
+        "assets": "Assets",
+        "startFrame": "Start Frame",
+        "endFrame": "End Frame",
+        "reference": "Reference",
+        "audio": "Audio",
+        "swapFrames": "Swap Frames",
+        "generatingVideo": "Generating Video...",
+        "processingRequest": "Processing your request on the AI cluster.",
+        "recentArtifacts": "Recent Artifacts",
+        "totalCount": "{{count}} Total"
       }
     },
     "image": {
@@ -91,6 +105,7 @@
         "notice": "Notice",
         "noticeText": "Higher guidance scales follow prompts strictly but may reduce overall realism.",
         "recentArtifacts": "Recent Artifacts",
+        "gridView": "Grid View",
         "expand": "Expand",
         "mysteriousGeneration": "Mysterious generation...",
         "ready": "Ready",
@@ -99,7 +114,8 @@
         "creditExhaustionTitle": "Credit Exhaustion",
         "creditExhaustionBody": "Your creative fuel is low. To continue synthesizing high-fidelity imagery, please replenish your balance.",
         "maybeLater": "Maybe Later",
-        "topUpNow": "Top Up Now"
+        "topUpNow": "Top Up Now",
+        "creditCount": "{{count}} Credits"
       }
     },
     "landing": {
@@ -188,7 +204,18 @@
       },
       "examples": {
         "title": "What people are making",
-        "subtitle": "Created using Likelee Studio tools and models."
+        "subtitle": "Created using Likelee Studio tools and models.",
+        "types": {
+          "video": "video",
+          "image": "image"
+        },
+        "tryStyle": "Try this style →",
+        "captions": {
+          "cinematicAiVideo": "Cinematic AI video",
+          "aiPortraitGeneration": "AI portrait generation",
+          "aiShortFilm": "AI short film",
+          "digitalArtStyle": "Digital art style"
+        }
       },
       "faq": {
         "title": "Frequently Asked Questions",
@@ -198,6 +225,56 @@
         "a2": "Nope. Just upload or describe what you want.",
         "q3": "Is this unlimited?",
         "a3": "Each plan has a fair-use limit to ensure performance. The Agency Plan includes unlimited generations."
+      },
+      "dropdowns": {
+        "textToVideoAi": "Text to Video AI",
+        "imageToVideoAi": "Image to Video AI",
+        "photoToVideoAvatar": "Photo to Video Avatar",
+        "aiVideoEditor": "AI Video Editor",
+        "aiShorts": "AI Shorts",
+        "mimicMotion": "Mimic Motion",
+        "canvas": "Canvas",
+        "videoToVideoAi": "Video to Video AI",
+        "consistentCharacterVideo": "Consistent Character Video",
+        "aiVideoEnhancer": "AI Video Enhancer",
+        "aiVideoExtender": "AI Video Extender",
+        "moreTools": "More Tools →",
+        "aiImageGenerator": "AI Image Generator",
+        "imageToImageAi": "Image to Image AI",
+        "chatToImage": "Chat to Image",
+        "aiArtGenerator": "AI Art Generator",
+        "editEnhance": "Edit & Enhance",
+        "removeBg": "Remove BG",
+        "objectRemover": "Object Remover",
+        "imageEnhancer": "Image Enhancer",
+        "stylesModels": "Styles & Models",
+        "ghibliAiGenerator": "Ghibli AI Generator",
+        "animeUpscaler": "Anime Upscaler",
+        "imageGenerators": "Image Generators",
+        "aiEffectsHub": "AI Effects Hub",
+        "overlaysTemplates": "Overlays & Templates",
+        "transitions": "Transitions",
+        "textCaptions": "Text & Captions",
+        "utilities": "Utilities",
+        "batchQueue": "Batch Queue",
+        "presets": "Presets",
+        "changelog": "Changelog"
+      },
+      "features": {
+        "feature": "Feature",
+        "items": {
+          "videosPerMonth": "Videos / month",
+          "imagesPerMonth": "Images / month",
+          "parallelTasks": "Parallel tasks",
+          "multiModel": "All-in-one multi-model support",
+          "textToVideo": "Text to video",
+          "imageToVideo": "Image to video",
+          "textImageVideoToVideo": "Text/Image/Video to video",
+          "consistentCharacterVideo": "Consistent character video",
+          "aiAnimationGenerator": "AI animation generator",
+          "textImageChatToImage": "Text/Image/Chat to image",
+          "templatesEffects": "300+ templates & effects"
+        }
       }
     }
   },
@@ -318,7 +395,10 @@
         "pendingApprovals": "Pending Approvals",
         "actionNeeded": "Action needed",
         "thisMonthSpend": "This Month's Spend",
-        "avgTurnaround": "Avg. Turnaround"
+        "avgTurnaround": "Avg. Turnaround",
+        "spendVsLastMonth": "{{value}} vs last month",
+        "newSpendThisMonth": "New spend this month",
+        "noSpendRecorded": "No spend recorded yet"
       },
       "quickActions": {
         "title": "Quick Actions",
@@ -361,6 +441,14 @@
           "connectionRequestAccepted": "accepted a connection request",
           "connectionRequestDeclined": "declined a connection request",
           "performedAction": "performed an action"
+        },
+        "templates": {
+          "campaignCreated": "{{actor}} created {{campaign}}.",
+          "campaignCompleted": "{{actor}} marked {{campaign}} as done.",
+          "jobCreated": "{{actor}} created a job: {{job}}.",
+          "jobInviteSent": "{{actor}} invited {{target}} to apply for job {{job}}.",
+          "jobInviteAccepted": "{{actor}} accepted the job invite for {{job}}.",
+          "jobInviteDeclined": "{{actor}} declined the job invite for {{job}}."
         }
       },
       "monthlySpendTrend": "Monthly Spend Trend"
@@ -570,7 +658,38 @@
         "taxIdentificationPlaceholder": "XX-XXXXXXX",
         "primaryPaymentMethod": "Primary Payment Method",
         "primaryPaymentMethodValue": "Visa ending in 4242",
-        "manage": "Manage"
+        "manage": "Manage",
+        "paymentMethods": {
+          "loadFailed": "Failed to load payment methods",
+          "cannotDeletePrimary": "Cannot delete the primary payment method",
+          "removed": "Payment method removed",
+          "deleteFailed": "Failed to delete payment method",
+          "primaryUpdated": "Primary payment method updated",
+          "setPrimaryFailed": "Failed to set primary payment method",
+          "expires": "Expires",
+          "none": "No payment method on file",
+          "addCard": "Add Card",
+          "saved": "Saved Payment Methods",
+          "empty": "No saved payment methods",
+          "emptyHelp": "Add a card to get started",
+          "primary": "Primary",
+          "setPrimary": "Set Primary"
+        },
+        "modal": {
+          "title": "Add Payment Method",
+          "description": "Enter your card details to add a new payment method for your brand account.",
+          "cardDetails": "Card Details",
+          "processing": "Processing...",
+          "stripeNotLoaded": "Stripe is not loaded. Please try again.",
+          "setupIntentFailed": "Failed to create setup intent",
+          "genericError": "An error occurred",
+          "stripeNotConfigured": "Stripe is not configured. Please contact support.",
+          "stripeConfigFailed": "Failed to load Stripe configuration.",
+          "stripeLoadFailed": "Stripe failed to load",
+          "success": "Card added successfully!",
+          "successToast": "Payment method added successfully",
+          "securityNote": "Your card information is securely processed by Stripe and never stored on our servers."
+        }
       },
       "team": {
         "title": "Team Management",
@@ -578,7 +697,8 @@
       },
       "integrations": {
         "title": "Extend Your Workflow",
-        "description": "Connect Likelee with your favorite marketing tools to automate deliverables, tracking, and payments."
+        "description": "Connect Likelee with your favorite marketing tools to automate deliverables, tracking, and payments.",
+        "comingSoon": "Coming Soon"
       },
       "security": {
         "title": "Security Settings",
@@ -591,7 +711,8 @@
         "terms": "Terms & Conditions",
         "privacy": "Privacy Policy",
         "sagAftra": "SAG-AFTRA Agreement",
-        "dataExport": "Data Export (GDPR)"
+        "dataExport": "Data Export (GDPR)",
+        "comingSoon": "Coming Soon"
       },
       "support": {
         "title": "Need Assistance?",
@@ -633,6 +754,43 @@
       "teamActivity": "Team Activity",
       "activityDescription": "Recent changes to team members and invitations.",
       "noActivity": "No recent activity.",
+      "updateRoleTitle": "Update Team Role",
+      "roleDescriptions": {
+        "admin": "Full team management, billing, campaigns, and approvals.",
+        "projectManager": "Campaign creation and deliverable approvals without billing.",
+        "reviewer": "Read-only access to deliverables with team visibility."
+      },
+      "permissions": {
+        "fullTeamManagement": "Full team management",
+        "billingSubscriptions": "Billing & subscriptions",
+        "campaignsApprovals": "Campaigns & approvals",
+        "payOffers": "Pay offers",
+        "jobsManagement": "Jobs management",
+        "contractsManagement": "Contracts management",
+        "licenseManagement": "License management",
+        "brandConnections": "Brand connections",
+        "manageJobs": "Manage jobs",
+        "manageContracts": "Manage contracts",
+        "manageLicenses": "Manage licenses",
+        "manageBrandConnections": "Manage brand connections",
+        "manageClients": "Manage clients",
+        "viewSubscriptionsBilling": "View subscriptions & billing",
+        "campaignCreation": "Campaign creation",
+        "deliverableApprovals": "Deliverable approvals",
+        "viewPayOffers": "View pay offers",
+        "viewJobs": "View jobs",
+        "viewContracts": "View contracts",
+        "viewDeliverables": "View deliverables",
+        "viewTeamMembers": "View team members",
+        "viewBrandConnections": "View brand connections",
+        "viewClients": "View clients",
+        "viewLicenses": "View licenses"
+      },
+      "removeMemberTitle": "Remove Team Member",
+      "removeMemberDescription": "Are you sure you want to remove {{member}} from the team?",
+      "removeMemberWarning": "This action cannot be undone. The member will lose access to all organization resources immediately.",
+      "removing": "Removing...",
+      "removeMember": "Remove Member",
       "roles": {
         "owner": "Owner",
         "admin": "Admin",
@@ -828,6 +986,7 @@
         "willingToTravel": "Willing to Travel",
         "notSpecified": "Not specified",
         "noRatesPublished": "No rates published yet.",
+        "autoConnectedByYou": "Automatically connected (Created by you)",
         "openPortfolioLink": "Open portfolio link",
         "noUploadedPortfolioMedia": "No uploaded portfolio media yet.",
         "confirmed": "Confirmed",
@@ -860,7 +1019,6 @@
         "rejectRequest": "Reject request",
         "availabilityRates": "Availability & Rates",
         "pastCampaigns": "Past Campaigns",
-        "portfolio": "Portfolio",
         "noCampaignHistory": "No campaign history yet.",
         "licensingUnavailable": "Licensing unavailable",
         "licensingUnavailableDesc": "This creator is not currently represented by an active agency roster entry, so licensing requests can't be sent from marketplace right now.",
@@ -882,6 +1040,8 @@
     }
   },
   "campaigns": {
+    "showCampaignSubtabs": "Show campaign subtabs",
+    "hideCampaignSubtabs": "Hide campaign subtabs",
     "myOffers": {
       "title": "My Offers",
       "subtitle": "Review and manage campaign offers and ongoing collaborations",
@@ -957,7 +1117,22 @@
       "error": "Failed to load inbox",
       "new": "New",
       "confirmSelectionTitle": "Confirm Selection",
-      "confirmSelectionDescription": "You are about to finalize your talent selection for {{title}}."
+      "confirmSelectionDescription": "You are about to finalize your talent selection for {{title}}.",
+      "dismissModal": {
+        "title": "Remove from Inbox",
+        "descriptionPrefix": "You are about to remove",
+        "thisPackage": "this package",
+        "from": "from",
+        "theAgency": "the agency",
+        "descriptionSuffix": "from your inbox.",
+        "goodToKnow": "Good to know",
+        "confirm": "Yes, Remove It",
+        "points": {
+          "viewOnly": "The agency keeps their copy — this only affects your view",
+          "noAssignments": "No talent assignments or contracts are affected",
+          "receiveNew": "You can still receive new packages from this agency"
+        }
+      }
     },
     "contractHub": {
       "title": "Contract Hub",
@@ -1008,6 +1183,13 @@
       "viewContracts": "View Contracts",
       "noContracts": "No contracts found",
       "loading": "Loading contracts...",
+      "allContractsSigned": "All contracts signed",
+      "noPendingSignatures": "No pending signatures at this time.",
+      "noContractsYet": "No contracts yet",
+      "contractsWillAppear": "Contracts will appear here once campaigns are created and sent.",
+      "noCreatorContractsYet": "No Creator Contracts Yet",
+      "creatorContractsWillAppear": "Creator contracts will appear here once you send campaign offers to individual creators and they sign the agreements.",
+      "creatorContractsTip": "Tip: Send offers from your campaigns to get started!",
       "noActiveContracts": "No active contracts",
       "contractsAttentionHere": "Contracts requiring your attention will appear here.",
       "error": "Failed to load contracts",
@@ -1018,6 +1200,8 @@
         "sentDate": "Sent Date",
         "actions": "Actions"
       },
+      "contractOverview": "Contract Overview",
+      "contract": "Contract",
       "actions": {
         "resend": "Resend",
         "archive": "Archive",
@@ -1029,6 +1213,8 @@
       },
       "status": {
         "sent": "Sent",
+        "signRequired": "Sign Required",
+        "awaitingCreator": "Awaiting Creator",
         "opened": "Opened",
         "completed": "Completed",
         "signed": "Signed",
@@ -1098,6 +1284,11 @@
       "error": "Failed to load jobs",
       "postJob": "Post New Job",
       "viewApplications": "View Applications",
+      "loadingApplications": "Loading applications...",
+      "noApplications": "No applications yet.",
+      "viewResume": "View resume",
+      "compCard": "Comp card",
+      "portfolio": "Portfolio",
       "applications": "Applications",
       "jobPostings": "Job Postings",
       "postJobButton": "Post Job",
@@ -1121,7 +1312,6 @@
       "clearSearchButton": "Clear search",
       "viewDetails": "View Details",
       "viewDetailsJobPosting": "View this job posting and its applications.",
-      "viewApplications": "View Applications",
       "closeJob": "Close Job",
       "noRoleDescription": "No role description added yet.",
       "budget": "Budget",
@@ -1171,7 +1361,20 @@
       "error": "Failed to load assets",
       "uploadAsset": "Upload Asset",
       "deleteAsset": "Delete",
-      "downloadAsset": "Download"
+      "downloadAsset": "Download",
+      "filterDialog": {
+        "title": "Filter Assets",
+        "description": "Narrow down your asset library view.",
+        "assetType": "Asset Type",
+        "dateRange": "Date Range",
+        "all": "All",
+        "allTime": "All Time",
+        "lastWeek": "Last Week",
+        "lastMonth": "Last Month",
+        "lastYear": "Last Year",
+        "reset": "Reset Filters",
+        "apply": "Apply Filters"
+      }
     },
     "licensingRequest": {
       "title": "Request License",
@@ -1215,6 +1418,9 @@
       "subtitle": "Track licensing requests you have sent to agencies.",
       "loading": "Loading licensing requests...",
       "empty": "No licensing requests yet.",
+      "emptyActive": "No active licensing requests",
+      "emptyArchive": "No archived licensing requests",
+      "archivedDescription": "Licensing request has been archived.",
       "requestFallback": "Licensing Request",
       "agency": "Agency",
       "talent": "Talent",
@@ -1229,8 +1435,22 @@
       "description": "Description",
       "declineReason": "Decline reason",
       "signContract": "Sign Contract",
+      "signContractDescription": "Review and sign the licensing contract.",
       "contractSigned": "Contract Signed",
       "awaitingAgencyContract": "Awaiting contract from agency",
+      "tabs": {
+        "active": "Active",
+        "archive": "Archive"
+      },
+      "deleteDialog": {
+        "title": "Delete Licensing Request",
+        "description": "This will permanently delete this archived licensing request. This action cannot be undone.",
+        "confirmPrefix": "Are you sure you want to delete the licensing request for",
+        "unknownCampaign": "Unknown campaign",
+        "cancel": "Cancel",
+        "deleting": "Deleting...",
+        "delete": "Delete Permanently"
+      },
       "status": {
         "approved": "Approved",
         "declined": "Declined",
@@ -1251,11 +1471,13 @@
       "projects": "Projects",
       "successRate": "Success Rate",
       "totalCost": "Total Cost",
+      "totalSpend": "Spend",
       "loadingTalentPerformance": "Loading talent performance...",
       "noTalentPerformance": "No talent performance data yet.",
       "topPerformer": "Top Performer",
       "spendByMonth": "Spend by Month",
       "budgetForecast": "Budget Forecast",
+      "loadingBudgetForecast": "Loading budget forecast...",
       "ytdSpend": "YTD Spend",
       "monthlyAvg": "Monthly Avg",
       "projectedEoy": "Projected EOY"
@@ -1296,6 +1518,8 @@
       "approvalsAreFinal": "After you approve a deliverable, Downloading will be enabled. Approvals are final and can't be undone.",
       "loadingDeliverables": "Loading deliverables...",
       "noContentSubmitted": "No content has been submitted yet.",
+      "viewFullContract": "View Full Contract",
+      "downloadBriefPdf": "Download Brief PDF",
       "premiumVideo": "Premium Video",
       "locked": "Locked",
       "deliverable": "Deliverable",
@@ -1304,7 +1528,73 @@
       "approve": "Approve",
       "requestChanges": "Request changes",
       "new": "New",
-      "download": "Download"
+      "download": "Download",
+      "startDate": "Start Date",
+      "submittedCount": "{{count}} submitted",
+      "collaborators": "Collaborators",
+      "noCollaborators": "No collaborators assigned yet.",
+      "deliverablesFeedback": "Deliverables & Feedback",
+      "approvalThresholdWarning": "Approving more than half of deliverables triggers escrow payout (once) and unlocks downloads for all deliverables. Approvals are final and cannot be undone.",
+      "assetsCount_one": "{{count}} asset",
+      "assetsCount_other": "{{count}} assets",
+      "videoLocked": "Video locked",
+      "deliverableNumber": "Deliverable {{count}}",
+      "uploadedOn": "Uploaded {{date}}",
+      "user": "User",
+      "send": "Send",
+      "feedbackPlaceholder": "Type feedback here..."
+    },
+    "campaignBriefBuilder": {
+      "sections": {
+        "generalDialogue": "General Dialogue",
+        "visualGuide": "Visual Guide",
+        "scopeDetails": "Scope Details"
+      },
+      "fields": {
+        "voice": "Voice",
+        "tone": "Tone",
+        "personality": "Personality",
+        "campaignDuration": "Campaign Duration",
+        "keyMessages": "Key Messages",
+        "scriptGuidelines": "Script Guidelines",
+        "opening": "Opening",
+        "middle": "Middle",
+        "closing": "Closing",
+        "do": "Do",
+        "dont": "Do not",
+        "deliverables": "Deliverables",
+        "heroImage": "Hero Image",
+        "styleAesthetic": "Style & Aesthetic",
+        "palette": "Palette",
+        "setting": "Setting",
+        "framing": "Framing",
+        "editing": "Editing",
+        "referenceImages": "Reference Images",
+        "brandAssets": "Brand Assets",
+        "objective": "Objective",
+        "targetAudience": "Target Audience",
+        "launchDate": "Launch Date",
+        "revisionPolicy": "Revision Policy",
+        "includedRevisions": "Included Revisions",
+        "revisionTurnaround": "Turnaround for Revisions",
+        "approvalProcess": "Approval Process",
+        "watermarkProtection": "Watermark & Protection",
+        "legalTerms": "Legal Terms",
+        "majorChanges": "Major Changes"
+      },
+      "noReferenceImages": "No reference images provided.",
+      "noAssetsProvided": "No assets provided.",
+      "referenceCount": "Reference {{current}} of {{total}}",
+      "reference": "Reference"
+    },
+    "markDone": {
+      "title": "Mark campaign as done?",
+      "description": "This action is irreversible. The campaign will be marked as completed and removed from Active.",
+      "confirm": "Mark as Done"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Completion Status",
+      "markedDoneOn": "Marked done on"
     }
   },
   "campaignsDashboard": {
@@ -1314,7 +1604,8 @@
       "inviteCompanySeat": "Invite Company Seat",
       "aiStudioAddon": "AI Studio Add-On",
       "postJob": "Post a Job",
-      "comingSoon": "Coming Soon"
+      "comingSoon": "Coming Soon",
+      "upToSeats": "Up to {{count}} seats"
     },
     "stats": {
       "campaignsLaunched": "Campaigns Launched",
@@ -1325,7 +1616,10 @@
     "newCampaign": "New Campaign",
     "status": {
       "completed": "Completed",
-      "incomplete": "Incomplete"
+      "incomplete": "Incomplete",
+      "active": "Active",
+      "pending_approval": "Pending approval",
+      "pendingApproval": "Pending approval"
     },
     "plan": {
       "basicBriefOnly": "Basic plans can save campaign details and briefs, but collaborator selection and offer sending start on Pro.",
@@ -1366,6 +1660,15 @@
       "title": "Post a Job to Find Talent",
       "description": "Create a detailed job posting to connect with AI creators, marketing agencies, and verified talent for your next campaign.",
       "cta": "Create Job Posting"
+    },
+    "teamManagement": {
+      "title": "Team Management",
+      "manageTeam": "Manage your team ({{count}} / 5 seats used)",
+      "seatsBadge": "{{count}} / 5 Seats",
+      "admin": "Admin",
+      "projectManager": "Project Manager",
+      "reviewer": "Reviewer",
+      "inviteCollaborator": "Invite New Collaborator"
     },
     "selectedCampaign": {
       "completionStatus": "Completion Status",
@@ -1619,7 +1922,15 @@
     "collectionsCount_other": "{{count}} assets",
     "searchPlaceholder": "Search by project, creator, or filename...",
     "emptyState": "No assets available yet. Assets will appear here once campaigns are completed.",
-    "collections": "Collections"
+    "collections": "Collections",
+    "createCollectionDialog": {
+      "description": "Organize your selected assets into a new collection.",
+      "collectionName": "Collection Name",
+      "collectionNamePlaceholder": "e.g., Summer Campaign 2025",
+      "assetsSelected_one": "{{count}} asset will be added to this collection.",
+      "assetsSelected_other": "{{count}} assets will be added to this collection.",
+      "noAssetsSelected": "No assets selected. You can add assets later."
+    }
   },
   "postJobPage": {
     "backToDashboard": "Back to Dashboard",
@@ -1824,7 +2135,23 @@
     "lookingFor": "Looking for:",
     "licensingRequired": "Licensing Required",
     "noDescription": "No description provided",
-    "backToEdit": "Back to Edit"
+    "backToEdit": "Back to Edit",
+    "validation": {
+      "requiredField": "Required Field",
+      "jobTitleRequired": "Job title is required.",
+      "contactEmailRequired": "Contact email is required.",
+      "categoryRequired": "Category is required.",
+      "callTypeRequired": "Call type is required.",
+      "jobTypeRequired": "Job type is required.",
+      "aboutRoleRequired": "About the role is required.",
+      "budgetRequired": "Budget is required.",
+      "paymentTypeRequired": "Payment type is required.",
+      "missingTitle": "Missing title",
+      "success": "Success",
+      "jobPostedSuccessfully": "Job posted successfully!",
+      "draftUpdated": "Draft updated",
+      "draftSaved": "Draft saved"
+    }
   },
   "statuses": {
     "draft": "Draft",
@@ -1845,7 +2172,12 @@
     "inProgress": "In progress",
     "signed": "Signed",
     "voided": "Voided",
-    "opened": "Opened"
+    "opened": "Opened",
+    "archived": "Archived",
+    "in_progress": "In progress",
+    "pending_approval": "Pending Approval",
+    "fully_signed": "Fully signed",
+    "contract_fully_signed": "Contract fully signed"
   },
   "brandCompanyPage": {
     "hero": {
@@ -1900,6 +2232,313 @@
       "title": "Join Our Pilot Program",
       "getStartedButton": "Get Started",
       "bookDemoButton": "Book a Demo"
+    }
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "credits": "Credits",
+    "credits_lower": "credits",
+    "history": "History"
+  },
+  "teamManagement": {
+    "seatLimitReached": "Seat Limit Reached",
+    "teamMemberLimitReached": "You've reached your team member limit.",
+    "upgradePlanForMembers": "Upgrade your plan to add more team members and unlock additional features.",
+    "upgradePlan": "Upgrade Plan",
+    "upgradeForSeats": "Upgrade to Basic or above to unlock team seats.",
+    "seatLimitReachedDescription": "You've reached your {{count}} seat limit. Upgrade to add more team members.",
+    "activity": "Activity",
+    "upgradeToAddMembers": "Upgrade to Add Members",
+    "inviteTeamMember": "Invite Team Member",
+    "inviteTeamMemberTitle": "Invite Team Member",
+    "loadingMembers": "Loading team members...",
+    "activeMembers": "Active Members",
+    "membersCount_one": "{{count}} member",
+    "membersCount_other": "{{count}} members",
+    "added": "Added",
+    "noMembers": "No team members found yet.",
+    "pendingInvites": "Pending Invites",
+    "pending": "Pending",
+    "expires": "Expires",
+    "noPendingInvites": "No pending invites.",
+    "inviteBrandDescription": "Add a new collaborator to your brand",
+    "inviteDescription": "Send an email invitation to join your team",
+    "emailAddress": "Email Address",
+    "emailPlaceholder": "colleague@example.com",
+    "userRole": "User Role",
+    "selectRole": "Select role",
+    "accessRights": "Access Rights",
+    "note": "Note",
+    "inviteNote": "Invited teammates will receive an email to join your workspace.",
+    "sending": "Sending...",
+    "sendInvitation": "Send Invitation",
+    "member": "Member",
+    "aMember": "A member",
+    "isCurrently": "is currently",
+    "newRole": "New Role",
+    "roleChangeImmediate": "Role changes take effect immediately.",
+    "confirmRoleChange": "Confirm Role Change",
+    "teamActivity": "Team Activity",
+    "activityDescription": "Recent changes to team members and invitations.",
+    "empty": "No team activity recorded yet.",
+    "noActivity": "No team activity recorded yet.",
+    "updateRoleTitle": "Update Team Role",
+    "invitationCreated": "Invitation created",
+    "invitedAs": "{{target}} invited as {{role}}",
+    "roleUpdated": "Role updated",
+    "changedRole": "{{target}} changed from {{oldRole}} to {{newRole}}",
+    "invitationAccepted": "Invitation accepted",
+    "joinedTeam": "{{target}} joined the team",
+    "invitationDeclined": "Invitation declined",
+    "declinedInvitation": "{{target}} declined the invitation",
+    "memberRemoved": "Member removed",
+    "memberRemovedDescription": "{{email}} has been removed from the team.",
+    "removedFromTeam": "{{target}} was removed from the team",
+    "removalFailed": "Removal failed",
+    "removalFailedDescription": "Could not remove the member.",
+    "fallback": "Team activity",
+    "roleDescriptions": {
+      "admin": "Full team management, billing, campaigns, and approvals.",
+      "projectManager": "Campaign creation and deliverable approvals without billing.",
+      "reviewer": "Read-only access to deliverables with team visibility."
+    },
+    "permissions": {
+      "fullTeamManagement": "Full team management",
+      "billingSubscriptions": "Billing & subscriptions",
+      "campaignsApprovals": "Campaigns & approvals",
+      "payOffers": "Pay offers",
+      "jobsManagement": "Jobs management",
+      "contractsManagement": "Contracts management",
+      "licenseManagement": "License management",
+      "brandConnections": "Brand connections",
+      "manageJobs": "Manage jobs",
+      "manageContracts": "Manage contracts",
+      "manageLicenses": "Manage licenses",
+      "manageBrandConnections": "Manage brand connections",
+      "manageClients": "Manage clients",
+      "viewSubscriptionsBilling": "View subscriptions & billing",
+      "campaignCreation": "Campaign creation",
+      "deliverableApprovals": "Deliverable approvals",
+      "viewPayOffers": "View pay offers",
+      "viewJobs": "View jobs",
+      "viewContracts": "View contracts",
+      "viewDeliverables": "View deliverables",
+      "viewTeamMembers": "View team members",
+      "viewBrandConnections": "View brand connections",
+      "viewClients": "View clients",
+      "viewLicenses": "View licenses"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "projectManager": "Project Manager",
+      "reviewer": "Reviewer",
+      "unknown": "Unknown"
+    },
+    "invite": "Invite"
+  },
+  "brandPricing": {
+    "requiredBanner": "Almost there! Choose your plan to activate your account",
+    "hero": {
+      "setupPill": "Complete your setup in 2 minutes",
+      "titlePrefix": "Start with a",
+      "trialTitle": "{{days}}-Day Free Trial",
+      "subtitleBefore": "Get full access to all features.",
+      "subtitleStrong": "No charge until your trial ends.",
+      "subtitleAfter": "Cancel anytime before the {{days}} days are up.",
+      "noChargeTitle": "Your card won't be charged today",
+      "noChargeSubtitle": "We'll charge it automatically after {{days}} days • Cancel anytime",
+      "brandPlans": "Brand plans",
+      "publicTitleLine1": "The right plan for",
+      "publicTitleLine2": "every stage of growth",
+      "publicSubtitle": "From your first campaign to a full-stack creator ecosystem. Likelee scales with you.",
+      "basePlanNote": "Choose a base plan first, then unlock AI Studio with a one-time add-on.",
+      "annualBasePlanNote": "Annual base plans are billed upfront and save 20%. AI Studio is a separate one-time add-on."
+    },
+    "billing": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "save20": "Save 20%",
+      "perMonth": "per month",
+      "perMonthEquivalent": "per month equivalent",
+      "billedAnnually": "{{total}} billed annually",
+      "trialCaption": "{{days}}-day free trial • Cancel anytime",
+      "cardRequired": "Card required • Auto-renews after trial",
+      "oneTime": "one-time"
+    },
+    "planNames": {
+      "free": "Free",
+      "basic": "Basic",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "plans": {
+      "basic": {
+        "eyebrow": "Starter",
+        "description": "Test the platform. Run your first campaigns with an in-house team.",
+        "cta": "Get started"
+      },
+      "pro": {
+        "eyebrow": "Most popular",
+        "description": "Full campaign ops — agencies, AI creators, licensing, and analytics.",
+        "cta": "Pay now"
+      },
+      "enterprise": {
+        "eyebrow": "Full suite",
+        "description": "Unlimited scale, AI Studio included, and white-glove support.",
+        "priceLabel": "Custom",
+        "priceNote": "tailored to your team",
+        "cta": "Talk to sales"
+      }
+    },
+    "sections": {
+      "campaigns": "Campaigns",
+      "collaboration": "Collaboration",
+      "assetsReporting": "Assets & Reporting",
+      "everythingInPro": "Everything in Pro, plus",
+      "platformSettings": "Platform & Settings",
+      "assetsApprovals": "Assets & Approvals",
+      "analyticsPlatform": "Analytics & Platform"
+    },
+    "pills": {
+      "activeCampaigns": "{{count}} active",
+      "seats": "{{count}} seats"
+    },
+    "values": {
+      "unlimited": "Unlimited",
+      "included": "Included",
+      "basic": "Basic",
+      "full": "Full",
+      "oneTimePrice": "${{price}} one-time",
+      "addOnOnly": "Add-On only"
+    },
+    "features": {
+      "campaignList": "Campaign list & filter tabs",
+      "newCampaignWizardBasic": "New Campaign wizard (Steps 1–2)",
+      "metricsOverview": "Metrics overview (4 cards)",
+      "talentBrowseLicense": "Talent browse & license (Step 3)",
+      "inviteCompanySeats": "Invite Company Seats",
+      "inviteAgency": "Invite Modeling Agency",
+      "addAiCreator": "Add AI Creator",
+      "campaignDetailsDeliverables": "Campaign details & deliverables",
+      "approveRequestDownload": "Approve / request edit / download",
+      "assetComments": "Per-asset comment threads",
+      "fullCampaignWizard": "Full Campaign wizard (Steps 1–3)",
+      "talentBrowseLicenseAgency": "Talent browse & license from agency",
+      "inviteAgencyMarketplace": "Invite Modeling Agency (marketplace)",
+      "addAiCreatorCollaborators": "Add AI Creator + collaborator list",
+      "contractsLicensingTab": "Contracts & Licensing tab",
+      "analyticsReporting": "Analytics & reporting",
+      "unlimitedCampaigns": "Unlimited active campaigns",
+      "unlimitedSeatsAgency": "Unlimited seats + multi-agency",
+      "aiStudio": "AI Studio",
+      "notificationsActivity": "Notifications & activity feed",
+      "fullSettings": "Full Settings (roles, billing, profile)",
+      "advancedAnalyticsCsv": "Advanced analytics & CSV export",
+      "customContractTemplates": "Custom contract templates",
+      "ssoAuditLogs": "SSO + audit logs",
+      "apiZapier": "API access + Zapier integration",
+      "dedicatedCsm": "Dedicated CSM + priority onboarding"
+    },
+    "badges": {
+      "publicPricing": "Pricing is public. Brand signup happens after plan selection.",
+      "billingUpdated": "Billing updated",
+      "checkoutCanceled": "Checkout canceled",
+      "current": "Current",
+      "daysFree": "{{days}} DAYS FREE"
+    },
+    "actions": {
+      "continue": "Continue",
+      "redirecting": "Redirecting...",
+      "currentPlan": "Current plan",
+      "upgradeTo": "Upgrade to",
+      "startTrial": "Start {{days}}-Day Free Trial",
+      "or": "or",
+      "contactSalesActivation": "contact sales for immediate activation",
+      "openStudio": "Open Studio",
+      "activateStudio": "Activate Studio",
+      "getStudioAddon": "Get Studio Add-On"
+    },
+    "subscription": {
+      "currentSubscription": "Current subscription",
+      "base": "Base: {{status}}",
+      "aiStudio": "AI Studio: {{status}}",
+      "trialEndsOn": "Free trial ends on {{date}}.",
+      "baseRenewsOn": "Base plan renews on {{date}}.",
+      "studioLifetimeActive": "AI Studio access is active (lifetime).",
+      "baseAlreadyActiveNotice": "Your base plan is already active. AI Studio remains a separate line item, but base-plan changes are not self-serve yet."
+    },
+    "addon": {
+      "eyebrow": "AI Studio add-on",
+      "title": "Separate from the base plan",
+      "descriptionPrefix": "Unlock AI Studio with a single one-time payment of",
+      "descriptionMiddle": ". Your brand gets permanent access to",
+      "descriptionAnd": "and",
+      "credits": "initial credits",
+      "descriptionSuffix": "credited to your Studio wallet. Enterprise includes Studio access automatically.",
+      "badges": {
+        "initialCredits": "{{credits}} initial Studio credits",
+        "walletPlan": "Studio Pro wallet plan",
+        "oneTimePayment": "One-time payment",
+        "permanentAccess": "Permanent /studio access",
+        "enterpriseIncluded": "Included with Enterprise"
+      }
+    },
+    "comparison": {
+      "title": "Full comparison",
+      "subtitle": "Everything side by side.",
+      "feature": "Feature",
+      "activeCampaigns": "Active campaigns",
+      "talentBrowseLicense": "Talent browse & license",
+      "companySeats": "Company seats",
+      "multiAgencyManagement": "Multi-agency management",
+      "deliverableApproveDownload": "Deliverable approve / download",
+      "notificationsActivityFeed": "Notifications / activity feed",
+      "aiStudioActivation": "AI Studio (one-time activation)",
+      "editInStudio": "\"Edit in Studio\" on deliverables"
+    },
+    "faq": {
+      "title": "Common questions",
+      "upgrade": {
+        "question": "Can I upgrade mid-cycle?",
+        "answer": "Yes — upgrades take effect immediately and are prorated. Downgrades apply at the start of the next billing period."
+      },
+      "activeCampaign": {
+        "question": "What counts as an \"active\" campaign?",
+        "answer": "Any campaign with a status of Active or Pending Approval counts toward your limit. Completed campaigns don't count."
+      },
+      "studioAccess": {
+        "question": "How does AI Studio access work?",
+        "answer": "AI Studio is a one-time add-on for ${{price}}. After purchase, your brand gets permanent access to /studio and {{credits}} initial Studio credits. Enterprise includes Studio access at no extra charge."
+      },
+      "agencySeats": {
+        "question": "Do agency invites count as seats?",
+        "answer": "No — seat limits apply to in-house Company Seats only. Agency and AI Creator collaborators are managed separately and don't count toward your cap."
+      },
+      "talentLicensing": {
+        "question": "How does talent licensing work?",
+        "answer": "Pro and above unlocks Step 3 of the Campaign wizard — browse verified agencies on the Likelee marketplace and license talent directly."
+      },
+      "enterprise": {
+        "question": "What's included in Enterprise?",
+        "answer": "Enterprise is custom-quoted and includes unlimited everything, a dedicated CSM, SSO, audit logs, advanced exports, custom contracts, and API access."
+      }
+    },
+    "errors": {
+      "baseAlreadyActive": "This base plan is already active.",
+      "studioAlreadyActive": "The AI Studio add-on is already active.",
+      "studioIncludedEnterprise": "AI Studio is already included with Enterprise.",
+      "enterpriseSales": "Enterprise plans are handled by sales.",
+      "annualNotConfigured": "Annual billing is not configured yet. Use monthly billing or add the annual Stripe price IDs.",
+      "tryAgain": "Please try again.",
+      "noCheckoutUrl": "No checkout URL returned.",
+      "checkoutFailed": "Checkout failed",
+      "brandAccountRequired": "Brand account required",
+      "brandAccountRequiredDescription": "This pricing page is public, but checkout is only available for brand accounts.",
+      "studioBrandAccountRequiredDescription": "AI Studio add-on billing is only available for brand accounts.",
+      "checkoutSignedInBrandsOnly": "This page is public, but checkout only works for signed-in brand accounts."
     }
   }
 }

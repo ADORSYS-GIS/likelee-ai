@@ -2222,7 +2222,7 @@
       "uploaded": "UPLOADED",
       "missing": "MISSING",
       "bestFor": "Best For:",
-      "view": "View",
+      "view": "Ansehen",
       "replace": "Replace"
     },
     "rules": {
@@ -2300,8 +2300,8 @@
     "campaignDetails": {
       "notAvailable": "Not Available",
       "invalidDate": "Invalid Date",
-      "close": "Close",
-      "viewCompleteBrief": "View Complete Brief",
+      "close": "Schließen",
+      "viewCompleteBrief": "Vollständiges Briefing ansehen",
       "assignedCollaborators": "Assigned Collaborators",
       "contractManagement": "Contract Management",
       "contractManagementDesc": "Contract Management Desc"
@@ -2486,7 +2486,7 @@
           "actions": {
             "paymentHistory": "Payment History",
             "print": "Print",
-            "close": "Close"
+            "close": "Schließen"
           },
           "paymentHistory": {
             "title": "Title",

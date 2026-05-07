@@ -125,6 +125,9 @@
     "activeCampaigns": "Campagnes Actives",
     "licensesAndContracts": "Licences et Contrats",
     "earningsDashboard": "Tableau de Bord des Gains",
+    "signContract": "Signer le contrat",
+    "contractAlreadySigned": "Contrat déjà signé",
+    "signContractDescription": "Terminez votre signature pour finaliser ce contrat de campagne.",
     "earnings": {
       "title": "Tableau de Bord des Gains",
       "subtitle": "Suivez vos revenus et paiements",
@@ -397,6 +400,25 @@
             "desc": "Nous aidons à déposer des rapports DMCA et de plateforme"
           }
         }
+      },
+      "comingSoon": "Bientôt disponible",
+      "tracking": {
+        "title": "Suivi du contenu",
+        "description": "Consultez chaque contenu que les marques créent avec votre image : vues, engagement, plateformes et statut en direct, le tout au même endroit.",
+        "features": {
+          "feed": {
+            "label": "Flux de contenu de marque",
+            "desc": "Tout le contenu autorisé dans une seule vue"
+          },
+          "metrics": {
+            "label": "Mesures d’engagement",
+            "desc": "Vues, portée et taux d’engagement"
+          },
+          "live": {
+            "label": "Détection en direct",
+            "desc": "Sachez quand le contenu est mis en ligne"
+          }
+        }
       }
     },
     "approvals": {
@@ -489,7 +511,11 @@
       "showOnPortfolio": "Afficher sur le Portfolio",
       "visibleOnPortfolio": "Visible sur votre profil public",
       "hiddenFromPortfolio": "Masqué de votre profil public",
-      "viewDetails": "Voir les Détails"
+      "viewDetails": "Voir les Détails",
+      "loadingPastCampaigns": "Chargement des campagnes passées...",
+      "fetchingCompletedCampaigns": "Récupération de vos campagnes terminées.",
+      "noPastCampaigns": "Aucune campagne passée pour le moment.",
+      "completedCampaignsAppearHere": "Les campagnes terminées apparaîtront ici."
     },
     "contracts": {
       "title": "Licences et Contrats",
@@ -732,7 +758,13 @@
         "enableLicensing": "Activer les Licences",
         "enableLicensingDesc": "Accepter les demandes de licence des marques",
         "emailNotifications": "Notifications par E-mail",
-        "emailNotificationsDesc": "Recevoir des mises à jour sur les campagnes et les approbations"
+        "emailNotificationsDesc": "Recevoir des mises à jour sur les campagnes et les approbations",
+        "syncing": "Synchronisation...",
+        "connectAndSync": "Connecter et synchroniser",
+        "followers": "Abonnés : {{count}}",
+        "marketplaceVisibility": "Visibilité sur le marketplace",
+        "marketplaceVisibleToast": "Le profil est maintenant visible sur le marketplace.",
+        "marketplaceHiddenToast": "Le profil est maintenant masqué du marketplace."
       },
       "rules": {
         "title": "Mes règles",
@@ -756,7 +788,12 @@
         "acceptNegotiations": "Accepter les négociations",
         "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base",
         "negotiationEnabled": "Négociation activée !",
-        "negotiationDisabled": "Négociation désactivée !"
+        "negotiationDisabled": "Négociation désactivée !",
+        "plans": {
+          "free": "Gratuit",
+          "basic": "Basic",
+          "pro": "Pro"
+        }
       },
       "billing": {
         "title": "Billing",
@@ -1125,6 +1162,9 @@
       "openJobBoard": "Tableau d'emploi ouvert",
       "loadingInvites": "Chargement des invitations à un emploi...",
       "noInvites": "Aucune invitation à un emploi pour l'instant.",
+      "inviteFallbackTitle": "Invitation à un emploi",
+      "viewJobDetails": "Voir les détails du poste",
+      "apply": "Postuler",
       "acceptInvite": "Accepter l'invitation",
       "declineInvite": "Refuser l'invitation",
       "inviteAccepted": "Invitation acceptée",
@@ -1213,7 +1253,9 @@
       "noW9OnFile": "Aucun W-9 au dossier",
       "download1099": "Télécharger le 1099 ({{year}})",
       "cashOutEarnings": "Retirer les revenus",
-      "requesting": "Demande en cours..."
+      "requesting": "Demande en cours...",
+      "paypalDescription": "Recevez les paiements directement sur votre compte PayPal.",
+      "wiseDescription": "Virements internationaux avec frais réduits. Idéal pour les paiements transfrontaliers."
     },
     "profileSettings": "Profile Settings",
     "myRules": "My Rules",
@@ -1372,8 +1414,16 @@
         "subtitle": "Ce profil est spécifique à l'agence sélectionnée.",
         "allAgencies": "Toutes les agences",
         "defaultAgency": "Agence par défaut",
+        "connectInstagram": "Connecter",
+        "instagramFollowersCount": "{{count}} abonnés",
+        "enterInstagramHandle": "Veuillez d'abord saisir votre identifiant Instagram",
         "save": "Enregistrer le profil",
         "saving": "Enregistrement...",
+        "syncSuccessTitle": "Succès",
+        "syncSuccessDescription": "Le profil Instagram a été synchronisé avec succès",
+        "syncErrorTitle": "Erreur",
+        "syncFailedDescription": "Impossible de synchroniser les données Instagram",
+        "syncExceptionDescription": "Échec de la synchronisation du profil Instagram",
         "fields": {
           "stageName": "Nom de scène",
           "fullLegalName": "Nom légal complet",
@@ -1400,6 +1450,10 @@
     },
     "content": {
       "irl": {
+        "entities": {
+          "talent": "Talent",
+          "athlete": "Athlète"
+        },
         "overview": {
           "upcomingBookings": "Réservations à venir",
           "totalEarnings": "Revenus totaux",
@@ -1452,6 +1506,29 @@
             "today": "Aujourd'hui",
             "newBooking": "Nouvelle réservation",
             "close": "Fermer"
+          },
+          "months": {
+            "january": "Janvier",
+            "february": "Février",
+            "march": "Mars",
+            "april": "Avril",
+            "may": "Mai",
+            "june": "Juin",
+            "july": "Juillet",
+            "august": "Août",
+            "september": "Septembre",
+            "october": "Octobre",
+            "november": "Novembre",
+            "december": "Décembre"
+          },
+          "days": {
+            "sun": "Dim",
+            "mon": "Lun",
+            "tue": "Mar",
+            "wed": "Mer",
+            "thu": "Jeu",
+            "fri": "Ven",
+            "sat": "Sam"
           },
           "legend": {
             "casting": "Casting",
@@ -1598,8 +1675,10 @@
         "acceptOutsideLocalArea": "Accepter les réservations hors zone locale",
         "minimumDayRate": "Tarif journalier minimum",
         "minimumRateDescription": "Votre tarif minimum acceptable",
-        "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "Veuillez choisir l'agence pour cette indisponibilite avec le menu deroulant du filtre Agence."
+        "selectAgencyTitle": "Sélectionner une agence",
+        "selectAgencyDescription": "Veuillez choisir l'agence pour cette indisponibilité avec le menu déroulant du filtre Agence.",
+        "updateFailedTitle": "Impossible de mettre à jour les préférences de réservation",
+        "tryAgain": "Veuillez réessayer."
       },
       "portfolio": {
         "title": "Portfolio",
@@ -1661,6 +1740,8 @@
           "allBrands": "Toutes les marques",
           "searchPlaceholder": "Rechercher par marque ou campagne",
           "clearSearchAria": "Effacer la recherche",
+          "activeCampaigns": "Campagnes actives",
+          "active": "Active",
           "amount": "Montant",
           "activeUntil": "Actif jusqu'au",
           "regions": "Régions",
@@ -1671,14 +1752,20 @@
           "notAvailable": "—"
         },
         "archive": {
+          "title": "Archive",
           "subtitle": "Campagnes passées (expirées)",
           "campaignFallback": "Campagne",
           "loading": "Chargement des campagnes passées...",
           "empty": "Aucune campagne passée pour le moment"
         },
         "earnings": {
+          "title": "Revenus",
           "subtitle": "Suivez vos revenus de licence",
+          "monthlyRecurring": "Récurrent mensuel",
           "annualRunRate": "Projection annuelle",
+          "activeCampaigns": "Campagnes actives",
+          "earningsByCampaign": "Revenus par campagne",
+          "empty": "Aucun revenu pour ce mois pour le moment.",
           "brandFallback": "Marque",
           "monthlySuffix": "/mois",
           "yourAgency": "Votre agence",
@@ -1689,8 +1776,26 @@
           "manage": "Gérer"
         },
         "analytics": {
+          "title": "Analytique",
           "subtitle": "Indicateurs de performance sur l'ensemble des campagnes",
-          "totalViews": "Vues totales"
+          "totalViews": "Vues totales",
+          "thisMonth": "{{value}} ce mois-ci",
+          "totalRevenue": "Revenu total",
+          "monthlyRecurring": "Récurrent mensuel",
+          "campaignPerformance": "Performance des campagnes",
+          "aiLicensing": "Licences IA",
+          "viewsPerWeek": "Vues/semaine",
+          "revenue": "Revenu",
+          "empty": "Aucune métrique analytique pour le moment. Demandez à votre agence d'ajouter des métriques de vues hebdomadaires."
+        },
+        "settings": {
+          "title": "Paramètres du portail",
+          "subtitle": "Configurez les préférences de votre portail de talent",
+          "paymentPreferences": "Préférences de paiement",
+          "taxDocumentation": "Documents fiscaux",
+          "w9OnFile": "W-9 au dossier • Mis à jour {{date}}",
+          "noW9OnFile": "Aucun W-9 au dossier",
+          "download1099": "Télécharger 1099 ({{year}})"
         }
       }
     },
@@ -1734,6 +1839,8 @@
         "hoursAgo_other": "il y a {{count}} heures",
         "minutesAgo": "il y a {{count}} minute",
         "minutesAgo_other": "il y a {{count}} minutes",
+        "monthsAgo": "il y a {{count}} mois",
+        "monthsAgo_other": "il y a {{count}} mois",
         "justNow": "À l'instant"
       }
     },
@@ -1919,6 +2026,7 @@
     "submitted": "soumis",
     "signContract": "Signer le Contrat",
     "contractAlreadySigned": "Contrat déjà signé",
+    "signContractDescription": "Terminez votre signature pour finaliser ce contrat de campagne.",
     "accepted": "accepté",
     "declined": "refusé",
     "approved": "approuvé",

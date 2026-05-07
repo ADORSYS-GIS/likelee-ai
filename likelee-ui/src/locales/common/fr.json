@@ -2425,7 +2425,7 @@
       "uploaded": "UPLOADED",
       "missing": "MISSING",
       "bestFor": "Best For:",
-      "view": "View",
+      "view": "Voir",
       "replace": "Replace"
     },
     "rules": {
@@ -2527,7 +2527,7 @@
       "backToProject": "← Retour au Projet",
       "briefAndContract": "Brief et Contrat",
       "detailedScope": "Portée détaillée et exigences",
-      "close": "Close",
+      "close": "Fermer",
       "created": "Created",
       "dueDate": "Date d'échéance",
       "briefAndScope": "Brief & Scope",
@@ -2537,7 +2537,7 @@
       "totalBudget": "Total Budget",
       "creatorPayment": "Creator Payment",
       "submissionDeadline": "Submission Deadline",
-      "viewCompleteBrief": "View Complete Brief",
+      "viewCompleteBrief": "Voir le brief complet",
       "assignedCollaborators": "Assigned Collaborators",
       "contractManagement": "Contract Management",
       "contractManagementDesc": "Contract Management Desc"

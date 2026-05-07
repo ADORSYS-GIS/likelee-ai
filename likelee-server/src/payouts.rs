@@ -2414,11 +2414,6 @@ async fn handle_studio_checkout_session_completed(
         .unwrap_or("")
         .trim()
         .to_string();
-    let plan_type = md
-        .get("plan_type")
-        .and_then(|v| v.as_str())
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
     let credits = md
         .get("credits")
         .and_then(|v| v.as_str())
@@ -2597,8 +2592,7 @@ async fn handle_studio_checkout_session_completed(
         .await
         .map_err(|e| e.to_string())?;
 
-    let _ =
-        crate::studio::wallet::set_current_plan(&state.pg, &user_id, plan_type.as_deref()).await;
+    let _ = crate::studio::wallet::set_current_plan(&state.pg, &user_id, Some(&studio_plan)).await;
 
     info!(user_id = %user_id, credits = credits, stripe_session_id = %session_id, "studio credits purchased via stripe checkout");
     Ok(())

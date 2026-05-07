@@ -131,10 +131,6 @@ async fn main() {
             api_key: cfg.veriff_api_key,
             shared_secret: cfg.veriff_shared_secret,
         },
-        duix: likelee_server::config::DuixConfig {
-            base_url: cfg.duix_base_url,
-            auth_token: cfg.duix_auth_token,
-        },
         supabase_url: cfg.supabase_url.clone(),
         supabase_service_key: cfg.supabase_service_key.clone(),
         supabase_jwt_secret: cfg.supabase_jwt_secret.clone(),

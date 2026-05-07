@@ -12,6 +12,9 @@
     "activeCampaigns": "Aktive Kampagnen",
     "licensesAndContracts": "Lizenzen & Verträge",
     "earningsDashboard": "Verdienstübersicht",
+    "signContract": "Vertrag unterschreiben",
+    "contractAlreadySigned": "Vertrag bereits unterschrieben",
+    "signContractDescription": "Schließe deine Unterschrift ab, um diesen Kampagnenvertrag zu finalisieren.",
     "earnings": {
       "title": "Einnahmen-Dashboard",
       "byIndustry": "Einnahmen nach Branche",
@@ -113,14 +116,14 @@
       },
       "pendingTransfers": "Ausstehende Transfers",
       "refresh": "Aktualisieren",
-      "retrying": "retrying...",
-      "failed": "failed",
-      "pending": "pending",
-      "retry": "retry",
-      "retries": "retries",
-      "actionRequired": "Action required",
-      "actionRequiredDescription": "One or more transfers failed because your Stripe account is not fully set up. Complete your Stripe onboarding to receive these funds. The agency will retry the transfer once your account is ready.",
-      "completeStripeSetup": "Complete Stripe setup"
+      "retrying": "wird erneut versucht...",
+      "failed": "fehlgeschlagen",
+      "pending": "ausstehend",
+      "retry": "Wiederholung",
+      "retries": "Wiederholungen",
+      "actionRequired": "Aktion erforderlich",
+      "actionRequiredDescription": "Eine oder mehrere Überweisungen sind fehlgeschlagen, weil dein Stripe-Konto nicht vollständig eingerichtet ist. Schließe dein Stripe-Onboarding ab, um diese Gelder zu erhalten. Die Agentur wird die Überweisung erneut versuchen, sobald dein Konto bereit ist.",
+      "completeStripeSetup": "Stripe-Einrichtung abschließen"
     },
     "settings": {
       "myRules": "My Rules",
@@ -239,7 +242,13 @@
         "enableLicensing": "Lizenzierung aktivieren",
         "enableLicensingDesc": "Lizenzanfragen von Marken akzeptieren",
         "emailNotifications": "E-Mail-Benachrichtigungen",
-        "emailNotificationsDesc": "Updates zu Kampagnen und Genehmigungen erhalten"
+        "emailNotificationsDesc": "Updates zu Kampagnen und Genehmigungen erhalten",
+        "syncing": "Synchronisierung...",
+        "connectAndSync": "Verbinden & synchronisieren",
+        "followers": "Follower: {{count}}",
+        "marketplaceVisibility": "Marketplace-Sichtbarkeit",
+        "marketplaceVisibleToast": "Profil ist jetzt im Marketplace sichtbar.",
+        "marketplaceHiddenToast": "Profil ist jetzt im Marketplace ausgeblendet."
       },
       "rules": {
         "title": "Meine Regeln",
@@ -263,7 +272,12 @@
         "acceptNegotiations": "Verhandlungen akzeptieren",
         "acceptNegotiationsDesc": "Marken erlauben, Gegenangebote zu Ihrem Grundpreis zu machen",
         "negotiationEnabled": "Verhandlung aktiviert!",
-        "negotiationDisabled": "Verhandlung deaktiviert!"
+        "negotiationDisabled": "Verhandlung deaktiviert!",
+        "plans": {
+          "free": "Kostenlos",
+          "basic": "Basic",
+          "pro": "Pro"
+        }
       },
       "billing": {
         "title": "Billing",
@@ -453,7 +467,7 @@
       "subtitle": "Sehen Sie sich Ihre abgeschlossenen Kampagnen an und verwalten Sie die Sichtbarkeit Ihres Portfolios",
       "completedCount": "{{count}} abgeschlossen",
       "loadingPastCampaigns": "Vergangene Kampagnen werden geladen...",
-      "fetchingCompletedCampaigns": "Ihre abgeschlossenen Kampagnen werden abgerufen.",
+      "fetchingCompletedCampaigns": "Deine abgeschlossenen Kampagnen werden abgerufen.",
       "noPastCampaigns": "Noch keine vergangenen Kampagnen.",
       "completedCampaignsWillAppear": "Abgeschlossene Kampagnen werden hier angezeigt.",
       "welcome": {
@@ -471,7 +485,8 @@
       "showOnPortfolio": "Im Portfolio anzeigen",
       "visibleOnPortfolio": "Sichtbar für Marken, die Ihr Profil anzeigen",
       "hiddenFromPortfolio": "Aus dem öffentlichen Portfolio ausgeblendet",
-      "viewDetails": "Details anzeigen"
+      "viewDetails": "Details anzeigen",
+      "completedCampaignsAppearHere": "Abgeschlossene Kampagnen werden hier angezeigt."
     },
     "approvals": {
       "subtitle": "Überprüfen Sie Markenanfragen, Vertragsmaßnahmen und zu lieferndes Feedback.",
@@ -777,6 +792,25 @@
           "takedown": {
             "title": "Unterstützung bei der Entfernung",
             "desc": "Wir unterstützen bei der Einreichung von DMCA- und Plattform-Meldungen"
+          }
+        }
+      },
+      "comingSoon": "Demnächst",
+      "tracking": {
+        "title": "Inhaltsverfolgung",
+        "description": "Sieh jedes Inhaltselement, das Marken mit deinem Abbild erstellen: Aufrufe, Engagement, Plattformen und Live-Status an einem Ort.",
+        "features": {
+          "feed": {
+            "label": "Marken-Content-Feed",
+            "desc": "Alle autorisierten Inhalte in einer Ansicht"
+          },
+          "metrics": {
+            "label": "Engagement-Metriken",
+            "desc": "Aufrufe, Reichweite und Engagement-Raten"
+          },
+          "live": {
+            "label": "Live-Erkennung",
+            "desc": "Erfahre, wann Inhalte live gehen"
           }
         }
       }
@@ -1112,6 +1146,9 @@
       "openJobBoard": "Jobbörse öffnen",
       "loadingInvites": "Jobeinladungen werden geladen...",
       "noInvites": "Noch keine Jobeinladungen.",
+      "inviteFallbackTitle": "Jobeinladung",
+      "viewJobDetails": "Jobdetails ansehen",
+      "apply": "Bewerben",
       "acceptInvite": "Einladung annehmen",
       "declineInvite": "Einladung ablehnen",
       "inviteAccepted": "Einladung angenommen",
@@ -1227,13 +1264,15 @@
       "stripeConnect": "Connect with Stripe",
       "paypalConnect": "Connect with PayPal",
       "wiseConnect": "Connect with Wise",
-      "paymentPreferences": "Payment Preferences",
+      "paymentPreferences": "Zahlungseinstellungen",
       "taxDocumentation": "Tax Documentation",
       "w9OnFile": "W-9 on file • Updated {{date}}",
       "noW9OnFile": "No W-9 on file",
-      "download1099": "Download 1099 ({{year}})",
+      "download1099": "1099 herunterladen ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
-      "requesting": "Requesting..."
+      "requesting": "Requesting...",
+      "paypalDescription": "Erhalte Zahlungen direkt auf dein PayPal-Konto.",
+      "wiseDescription": "Internationale Überweisungen mit niedrigen Gebühren. Ideal für grenzüberschreitende Zahlungen."
     },
     "agencyConnection": {
       "subtitle": "Verwalten Sie Agentureinladungen und Ihre verbundenen Agenturen.",
@@ -1514,6 +1553,7 @@
     "submitted": "eingereicht",
     "signContract": "Vertrag unterschreiben",
     "contractAlreadySigned": "Vertrag bereits unterschrieben",
+    "signContractDescription": "Schließe deine Unterschrift ab, um diesen Kampagnenvertrag zu finalisieren.",
     "accepted": "akzeptiert",
     "declined": "abgelehnt",
     "approved": "genehmigt",
@@ -1688,8 +1728,16 @@
         "subtitle": "Dieses Profil gilt für die ausgewählte Agentur.",
         "allAgencies": "Alle Agenturen",
         "defaultAgency": "Standardagentur",
+        "connectInstagram": "Verbinden",
+        "instagramFollowersCount": "{{count}} Follower",
+        "enterInstagramHandle": "Bitte gib zuerst deinen Instagram-Nutzernamen ein",
         "save": "Profil speichern",
         "saving": "Wird gespeichert...",
+        "syncSuccessTitle": "Erfolg",
+        "syncSuccessDescription": "Instagram-Profil erfolgreich synchronisiert",
+        "syncErrorTitle": "Fehler",
+        "syncFailedDescription": "Instagram-Daten konnten nicht synchronisiert werden",
+        "syncExceptionDescription": "Instagram-Profil konnte nicht synchronisiert werden",
         "fields": {
           "stageName": "Künstlername",
           "fullLegalName": "Vollständiger rechtlicher Name",
@@ -1720,6 +1768,10 @@
     "disabledDescription": "Verbinde dich mit einer Agentur, um auf das Talent-Portal zuzugreifen.",
     "content": {
       "irl": {
+        "entities": {
+          "talent": "Talent",
+          "athlete": "Athlet"
+        },
         "overview": {
           "upcomingBookings": "Anstehende Buchungen",
           "totalEarnings": "Gesamteinnahmen",
@@ -1772,6 +1824,29 @@
             "today": "Heute",
             "newBooking": "Neue Buchung",
             "close": "Schließen"
+          },
+          "months": {
+            "january": "Januar",
+            "february": "Februar",
+            "march": "März",
+            "april": "April",
+            "may": "Mai",
+            "june": "Juni",
+            "july": "Juli",
+            "august": "August",
+            "september": "September",
+            "october": "Oktober",
+            "november": "November",
+            "december": "Dezember"
+          },
+          "days": {
+            "sun": "So",
+            "mon": "Mo",
+            "tue": "Di",
+            "wed": "Mi",
+            "thu": "Do",
+            "fri": "Fr",
+            "sat": "Sa"
           },
           "legend": {
             "casting": "Casting",
@@ -1918,8 +1993,10 @@
         "acceptOutsideLocalArea": "Buchungen außerhalb der Region akzeptieren",
         "minimumDayRate": "Mindesttagessatz",
         "minimumRateDescription": "Dein minimal akzeptabler Satz",
-        "selectAgencyTitle": "Select an agency",
-        "selectAgencyDescription": "Bitte waehlen Sie die Agentur fuer diese Sperrzeit ueber das Agentur-Filter-Dropdown aus."
+        "selectAgencyTitle": "Agentur auswählen",
+        "selectAgencyDescription": "Bitte wähle die Agentur für diese Sperrzeit über das Agentur-Filter-Dropdown aus.",
+        "updateFailedTitle": "Buchungspräferenzen konnten nicht aktualisiert werden",
+        "tryAgain": "Bitte versuche es erneut."
       },
       "portfolio": {
         "title": "Portfolio",
@@ -1981,6 +2058,8 @@
           "allBrands": "Alle Marken",
           "searchPlaceholder": "Nach Marke oder Kampagne suchen",
           "clearSearchAria": "Suche löschen",
+          "activeCampaigns": "Aktive Kampagnen",
+          "active": "Aktiv",
           "amount": "Betrag",
           "activeUntil": "Aktiv bis",
           "regions": "Regionen",
@@ -1991,14 +2070,20 @@
           "notAvailable": "—"
         },
         "archive": {
+          "title": "Archiv",
           "subtitle": "Vergangene Kampagnen (abgelaufen)",
           "campaignFallback": "Kampagne",
           "loading": "Vergangene Kampagnen werden geladen...",
           "empty": "Noch keine vergangenen Kampagnen"
         },
         "earnings": {
+          "title": "Einnahmen",
           "subtitle": "Verfolge deine Lizenzeinnahmen",
+          "monthlyRecurring": "Monatlich wiederkehrend",
           "annualRunRate": "Jährliche Hochrechnung",
+          "activeCampaigns": "Aktive Kampagnen",
+          "earningsByCampaign": "Einnahmen nach Kampagne",
+          "empty": "Noch keine Einnahmen für diesen Monat.",
           "brandFallback": "Marke",
           "monthlySuffix": "/Monat",
           "yourAgency": "Deine Agentur",
@@ -2009,8 +2094,26 @@
           "manage": "Verwalten"
         },
         "analytics": {
+          "title": "Analysen",
           "subtitle": "Leistungsmetriken über alle Kampagnen",
-          "totalViews": "Gesamtaufrufe"
+          "totalViews": "Gesamtaufrufe",
+          "thisMonth": "{{value}} diesen Monat",
+          "totalRevenue": "Gesamtumsatz",
+          "monthlyRecurring": "Monatlich wiederkehrend",
+          "campaignPerformance": "Kampagnenleistung",
+          "aiLicensing": "KI-Lizenzierung",
+          "viewsPerWeek": "Aufrufe/Woche",
+          "revenue": "Umsatz",
+          "empty": "Noch keine Analysemetriken. Bitte deine Agentur, wöchentliche View-Metriken hinzuzufügen."
+        },
+        "settings": {
+          "title": "Portal-Einstellungen",
+          "subtitle": "Konfiguriere deine Talentportal-Einstellungen",
+          "paymentPreferences": "Zahlungseinstellungen",
+          "taxDocumentation": "Steuerunterlagen",
+          "w9OnFile": "W-9 hinterlegt • Aktualisiert {{date}}",
+          "noW9OnFile": "Kein W-9 hinterlegt",
+          "download1099": "1099 herunterladen ({{year}})"
         }
       }
     },
@@ -2054,6 +2157,8 @@
         "hoursAgo_other": "vor {{count}} Stunden",
         "minutesAgo": "vor {{count}} Minute",
         "minutesAgo_other": "vor {{count}} Minuten",
+        "monthsAgo": "vor {{count}} Monat",
+        "monthsAgo_other": "vor {{count}} Monaten",
         "justNow": "Gerade eben"
       }
     }
