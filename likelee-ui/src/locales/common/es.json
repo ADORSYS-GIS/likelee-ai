@@ -2211,7 +2211,7 @@
       "uploaded": "UPLOADED",
       "missing": "MISSING",
       "bestFor": "Best For:",
-      "view": "View",
+      "view": "Ver",
       "replace": "Replace"
     },
     "rules": {
@@ -2292,8 +2292,8 @@
     "campaignDetails": {
       "notAvailable": "Not Available",
       "invalidDate": "Invalid Date",
-      "close": "Close",
-      "viewCompleteBrief": "View Complete Brief",
+      "close": "Cerrar",
+      "viewCompleteBrief": "Ver brief completo",
       "assignedCollaborators": "Assigned Collaborators",
       "contractManagement": "Contract Management",
       "contractManagementDesc": "Contract Management Desc"
