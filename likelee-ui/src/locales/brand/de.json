@@ -1231,7 +1231,7 @@
       "due": "Fällig",
       "briefAndScope": "Brief & Umfang",
       "viewFullDetails": "Vollständige Details anzeigen →",
-      "deliverables": "Deliverables",
+      "deliverables": "Lieferobjekte",
       "totalBudget": "Gesamtbudget",
       "creatorPayment": "Creator-Zahlung",
       "submissionDeadline": "Abgabefrist",
@@ -1239,16 +1239,16 @@
       "campaign": "Kampagne",
       "progress": "Fortschritt",
       "completion": "Fertigstellung",
-      "deliverablesApproved": "genehmigte Deliverables",
+      "deliverablesApproved": "Lieferobjekte genehmigt",
       "loadingCampaigns": "Kampagnen werden geladen...",
       "noActiveCampaigns": "Keine aktiven Kampagnen verfügbar.",
       "campaignAssetSubmission": "Kampagnen-Asset-Einreichung",
       "campaignOffer": "Kampagnenangebot",
       "agency": "Agentur",
-      "creator": "Creator",
+      "creator": "Ersteller",
       "collaborator": "Mitarbeiter",
-      "creatorAgency": "Creator • Agentur",
-      "creatorCreator": "Creator • Creator",
+      "creatorAgency": "Ersteller • Agentur",
+      "creatorCreator": "Ersteller • Ersteller",
       "approvingDeliverableTriggers": "Die Genehmigung einer Lieferung löst die Treuhand-Auszahlung aus (einmalig).",
       "approvalsAreFinal": "Nach der Genehmigung einer Lieferung wird der Download aktiviert. Genehmigungen sind endgültig und können nicht rückgängig gemacht werden.",
       "loadingDeliverables": "Deliverables werden geladen...",
@@ -1326,6 +1326,10 @@
       "title": "Kampagne als erledigt markieren?",
       "description": "Diese Aktion kann nicht rückgängig gemacht werden. Die Kampagne wird als abgeschlossen markiert und aus „Aktiv“ entfernt.",
       "confirm": "Als erledigt markieren"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Abschlussstatus",
+      "markedDoneOn": "Als erledigt markiert am"
     }
   },
   "brandCompanyPage": {
@@ -1668,7 +1672,9 @@
     "status": {
       "completed": "Abgeschlossen",
       "incomplete": "Unvollständig",
-      "active": "Aktiv"
+      "active": "Aktiv",
+      "pending_approval": "Ausstehende Freigabe",
+      "pendingApproval": "Ausstehende Freigabe"
     },
     "plan": {
       "basicBriefOnly": "Basic-Pläne können Kampagnendetails und Briefings speichern, aber Mitarbeiterauswahl und Angebotsversand starten erst mit Pro.",
@@ -1691,7 +1697,7 @@
       "collaborators": "Mitarbeiter",
       "collaboratorsCount_one": "{{count}} Mitarbeiter",
       "collaboratorsCount_other": "{{count}} Mitarbeiter",
-      "deliverablesApproved": "{{approved}} / {{total}} Deliverables genehmigt",
+      "deliverablesApproved": "{{approved}} / {{total}} Lieferobjekte genehmigt",
       "noCollaboratorsYet": "Noch keine Mitarbeiter."
     },
     "inviteAgency": {

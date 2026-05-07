@@ -1591,6 +1591,10 @@
       "title": "Mark campaign as done?",
       "description": "This action is irreversible. The campaign will be marked as completed and removed from Active.",
       "confirm": "Mark as Done"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Completion Status",
+      "markedDoneOn": "Marked done on"
     }
   },
   "campaignsDashboard": {
@@ -1613,7 +1617,9 @@
     "status": {
       "completed": "Completed",
       "incomplete": "Incomplete",
-      "active": "Active"
+      "active": "Active",
+      "pending_approval": "Pending approval",
+      "pendingApproval": "Pending approval"
     },
     "plan": {
       "basicBriefOnly": "Basic plans can save campaign details and briefs, but collaborator selection and offer sending start on Pro.",
