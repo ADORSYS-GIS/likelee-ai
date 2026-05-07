@@ -136,3 +136,18 @@ export async function listCampaignGenerations(
 ): Promise<StudioGenerationRow[]> {
   return await base44.get(`/studio/campaigns/${campaignId}/generations`);
 }
+
+export type LicensedAsset = {
+  id: string;
+  type: "image" | "audio";
+  name: string;
+  url: string;
+  campaign_name?: string;
+  talent_name?: string;
+  source: "licensed";
+};
+
+export async function listLicensedAssets(): Promise<LicensedAsset[]> {
+  const { assets } = await base44.get<{ assets: LicensedAsset[] }>("/studio/licensed-assets");
+  return assets || [];
+}

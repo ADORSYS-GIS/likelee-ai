@@ -33,7 +33,9 @@ import {
 import {
   listGenerations,
   listCampaignGenerations,
+  listLicensedAssets,
   StudioGenerationRow,
+  LicensedAsset,
 } from "@/api/studio";
 import { useAuth } from "@/auth/AuthProvider";
 import {
@@ -684,6 +686,7 @@ export default function BrandDashboard() {
   >([]);
   const [studioFiles, setStudioFiles] = useState<any[]>([]);
   const [studioFolders, setStudioFolders] = useState<any[]>([]);
+  const [licensedAssets, setLicensedAssets] = useState<LicensedAsset[]>([]);
   const [studioLoading, setStudioLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [studioSearchQuery, setStudioSearchQuery] = useState("");
@@ -697,6 +700,7 @@ export default function BrandDashboard() {
     files: any[];
     generations: any[];
     folders: any[];
+    licensed: any[];
     timestamp: number;
   } | null>(null);
   const [signedUrlsCache, setSignedUrlsCache] = useState<
@@ -723,18 +727,20 @@ export default function BrandDashboard() {
     const saved = localStorage.getItem("studio-collections");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const hasOldCollections = parsed.some(
+          (c: any) => c.name === "Holiday 2024" || c.name === "Evergreen"
+        );
+        if (hasOldCollections) {
+          localStorage.removeItem("studio-collections");
+          return [];
+        }
+        return parsed;
       } catch {
-        return [
-          { id: "1", name: "Holiday 2024", assetIds: [] },
-          { id: "2", name: "Evergreen", assetIds: [] },
-        ];
+        return [];
       }
     }
-    return [
-      { id: "1", name: "Holiday 2024", assetIds: [] },
-      { id: "2", name: "Evergreen", assetIds: [] },
-    ];
+    return [];
   });
   const [showCreateCollectionDialog, setShowCreateCollectionDialog] =
     useState(false);
@@ -1693,6 +1699,7 @@ export default function BrandDashboard() {
   useEffect(() => {
     if (activeSection !== "studio") return;
     const CACHE_KEY = "studio-data-cache";
+    const CACHE_VERSION = 4;
     const CACHE_TTL = 5 * 60 * 1000;
     let mounted = true;
 
@@ -1705,13 +1712,16 @@ export default function BrandDashboard() {
         if (cachedJson && !forceRefresh) {
           try {
             const cached = JSON.parse(cachedJson);
-            if (Date.now() - cached.timestamp < CACHE_TTL) {
+            if (cached.version !== CACHE_VERSION) {
+              localStorage.removeItem(CACHE_KEY);
+            } else if (Date.now() - cached.timestamp < CACHE_TTL) {
               useCache = true;
               if (mounted) {
                 setStudioDataCache(cached);
                 setStudioGenerations(cached.generations || []);
                 setStudioFiles(cached.files || []);
                 setStudioFolders(cached.folders || []);
+                setLicensedAssets(cached.licensed || []);
                 setStudioLoading(false);
               }
             }
@@ -1719,22 +1729,39 @@ export default function BrandDashboard() {
         }
 
         if (!useCache || forceRefresh) {
-          const [generations, files, folders] = await Promise.all([
-            listGenerations({ limit: 100 }).catch(() => []),
-            listBrandStorageFilesPaged({ limit: 100 }).catch(() => []),
-            listBrandStorageFoldersPaged().catch(() => []),
+          const [generations, files, folders, licensed] = await Promise.all([
+            listGenerations({ limit: 100 }).catch((e) => {
+              console.error("Failed to load generations:", e);
+              return [];
+            }),
+            listBrandStorageFilesPaged({ limit: 100, root_only: false }).catch((e) => {
+              console.error("Failed to load brand files:", e);
+              return [];
+            }),
+            listBrandStorageFoldersPaged().catch((e) => {
+              console.error("Failed to load brand folders:", e);
+              return [];
+            }),
+            listLicensedAssets().catch((e) => {
+              console.error("Failed to load licensed assets:", e);
+              return [];
+            }),
           ]);
+          console.log("Loaded licensed assets:", licensed);
           if (mounted) {
             const cacheData = {
+              version: CACHE_VERSION,
               files: files || [],
               generations: generations || [],
               folders: folders || [],
+              licensed: licensed || [],
               timestamp: Date.now(),
             };
             setStudioDataCache(cacheData);
             setStudioGenerations(generations || []);
             setStudioFiles(files || []);
             setStudioFolders(folders || []);
+            setLicensedAssets(licensed || []);
             localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
             if (useCache && !forceRefresh) {
               toast({
@@ -1919,10 +1946,34 @@ export default function BrandDashboard() {
       }
     }
 
+    // Add licensed assets
+    for (const lic of licensedAssets) {
+      const isImage = lic.type === "image";
+      const isAudio = lic.type === "audio";
+      if (!isImage && !isAudio) continue;
+      if (
+        studioSearchQuery &&
+        !lic.name.toLowerCase().includes(studioSearchQuery.toLowerCase()) &&
+        !lic.campaign_name?.toLowerCase().includes(studioSearchQuery.toLowerCase()) &&
+        !lic.talent_name?.toLowerCase().includes(studioSearchQuery.toLowerCase())
+      )
+        continue;
+      assets.push({
+        id: lic.id,
+        file_name: lic.name,
+        url: lic.url,
+        mime_type: isImage ? "image/jpeg" : "audio/mpeg",
+        source_type: "licensed",
+        size_bytes: 0,
+        created_at: new Date().toISOString(),
+      });
+    }
+
     return assets;
   }, [
     studioFiles,
     studioGenerations,
+    licensedAssets,
     studioAssetUrls,
     studioSearchQuery,
     studioSourceFilter,
@@ -2101,7 +2152,9 @@ export default function BrandDashboard() {
 
   const getFilteredAssets = () => {
     let filtered = [...studioAssets];
-    if (selectedCollectionId) {
+    if (selectedCollectionId === "licensed") {
+      filtered = filtered.filter((a) => a.source_type === "licensed");
+    } else if (selectedCollectionId) {
       const collection = collections.find((c) => c.id === selectedCollectionId);
       if (collection) {
         filtered = filtered.filter((a) => collection.assetIds.includes(a.id));
@@ -2133,21 +2186,38 @@ export default function BrandDashboard() {
     localStorage.removeItem(CACHE_KEY);
     const loadStudioData = async () => {
       try {
-        const [generations, files, folders] = await Promise.all([
-          listGenerations({ limit: 100 }).catch(() => []),
-          listBrandStorageFilesPaged({ limit: 100 }).catch(() => []),
-          listBrandStorageFoldersPaged().catch(() => []),
+        const [generations, files, folders, licensed] = await Promise.all([
+          listGenerations({ limit: 100 }).catch((e) => {
+            console.error("Failed to load generations:", e);
+            return [];
+          }),
+          listBrandStorageFilesPaged({ limit: 100, root_only: false }).catch((e) => {
+            console.error("Failed to load brand files:", e);
+            return [];
+          }),
+          listBrandStorageFoldersPaged().catch((e) => {
+            console.error("Failed to load brand folders:", e);
+            return [];
+          }),
+          listLicensedAssets().catch((e) => {
+            console.error("Failed to load licensed assets:", e);
+            return [];
+          }),
         ]);
+        console.log("Refreshed licensed assets:", licensed);
         const cacheData = {
+          version: 4,
           files: files || [],
           generations: generations || [],
           folders: folders || [],
+          licensed: licensed || [],
           timestamp: Date.now(),
         };
         setStudioDataCache(cacheData);
         setStudioGenerations(generations || []);
         setStudioFiles(files || []);
         setStudioFolders(folders || []);
+        setLicensedAssets(licensed || []);
         localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
         setSignedUrlsCache({});
         toast({
@@ -2190,6 +2260,7 @@ export default function BrandDashboard() {
           assetIds: c.assetIds.filter((id) => id !== assetToDelete.id),
         })),
       );
+
       setSelectedAssetIds((prev) => {
         const next = new Set(prev);
         next.delete(assetToDelete.id);
@@ -8441,6 +8512,11 @@ export default function BrandDashboard() {
                     Studio
                   </Badge>
                 )}
+                {asset.source_type === "licensed" && (
+                  <Badge className="bg-emerald-100 text-emerald-700">
+                    Licensed
+                  </Badge>
+                )}
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"
@@ -8469,7 +8545,7 @@ export default function BrandDashboard() {
         </Card>
       )}
 
-      {/* Organization Features */}
+      {/* Collections */}
       <Card className="p-6 bg-white border border-gray-200">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Collections</h3>
         <div className="flex gap-3 flex-wrap">
@@ -8481,6 +8557,28 @@ export default function BrandDashboard() {
             <Plus className="w-4 h-4 mr-2" />
             Create Collection
           </Button>
+          <Badge
+            className={`px-4 py-2 cursor-pointer border border-gray-300 ${
+              selectedCollectionId === null
+                ? "bg-indigo-100 text-indigo-700 border-indigo-300"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+            onClick={() => setSelectedCollectionId(null)}
+          >
+            Studio ({studioAssets.length} assets)
+          </Badge>
+          {licensedAssets.length > 0 && (
+            <Badge
+              className={`px-4 py-2 cursor-pointer border border-gray-300 ${
+                selectedCollectionId === "licensed"
+                  ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+              onClick={() => setSelectedCollectionId("licensed")}
+            >
+              Licensed ({licensedAssets.length} assets)
+            </Badge>
+          )}
           {collections.map((collection) => (
             <Badge
               key={collection.id}
