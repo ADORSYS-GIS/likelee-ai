@@ -607,13 +607,19 @@ export function TeamManagementCard({
       await loadContext();
       await loadAuditLogs();
       toast({
-        title: "Member removed",
-        description: `${selectedMember.email} has been removed from the team.`,
+        title: teamT("memberRemoved", "Member removed"),
+        description: teamT(
+          "memberRemovedDescription",
+          "{{email}} has been removed from the team.",
+          { email: selectedMember.email },
+        ),
       });
     } catch (err: any) {
       toast({
-        title: "Removal failed",
-        description: err?.message || "Could not remove the member.",
+        title: teamT("removalFailed", "Removal failed"),
+        description:
+          err?.message ||
+          teamT("removalFailedDescription", "Could not remove the member."),
         variant: "destructive",
       });
     } finally {
@@ -622,43 +628,68 @@ export function TeamManagementCard({
   };
 
   const decorateActivity = (log: TeamAuditLogRecord) => {
+    const target = log.target_email || teamT("aMember", "A member");
     switch (log.action) {
       case "team_invite_created":
         return {
-          label: "Invitation created",
-          details: `${log.target_email || "A member"} invited as ${formatTeamRoleLabel(log.new_role || "")}`,
+          label: teamActivityT("invitationCreated", "Invitation created"),
+          details: teamActivityT(
+            "invitedAs",
+            "{{target}} invited as {{role}}",
+            {
+              target,
+              role: formatRoleLabel(log.new_role || ""),
+            },
+          ),
           icon: Mail,
         };
       case "member_role_updated":
         return {
-          label: "Role updated",
-          details: `${log.target_email || "A member"} changed from ${formatTeamRoleLabel(
-            log.old_role || "",
-          )} to ${formatTeamRoleLabel(log.new_role || "")}`,
+          label: teamActivityT("roleUpdated", "Role updated"),
+          details: teamActivityT(
+            "changedRole",
+            "{{target}} changed from {{oldRole}} to {{newRole}}",
+            {
+              target,
+              oldRole: formatRoleLabel(log.old_role || ""),
+              newRole: formatRoleLabel(log.new_role || ""),
+            },
+          ),
           icon: Shield,
         };
       case "team_invite_accepted":
         return {
-          label: "Invitation accepted",
-          details: `${log.target_email || "A member"} joined the team`,
+          label: teamActivityT("invitationAccepted", "Invitation accepted"),
+          details: teamActivityT("joinedTeam", "{{target}} joined the team", {
+            target,
+          }),
           icon: BadgeCheck,
         };
       case "team_invite_declined":
         return {
-          label: "Invitation declined",
-          details: `${log.target_email || "A member"} declined the invitation`,
+          label: teamActivityT("invitationDeclined", "Invitation declined"),
+          details: teamActivityT(
+            "declinedInvitation",
+            "{{target}} declined the invitation",
+            { target },
+          ),
           icon: XCircle,
         };
       case "member_removed":
         return {
-          label: "Member removed",
-          details: `${log.target_email || "A member"} was removed from the team`,
+          label: teamActivityT("memberRemoved", "Member removed"),
+          details: teamActivityT(
+            "removedFromTeam",
+            "{{target}} was removed from the team",
+            { target },
+          ),
           icon: User,
         };
       default:
         return {
           label: log.action.replaceAll("_", " "),
-          details: log.target_email || "Team activity",
+          details:
+            log.target_email || teamActivityT("fallback", "Team activity"),
           icon: Activity,
         };
     }
@@ -716,7 +747,7 @@ export function TeamManagementCard({
               <Plus className="w-4 h-4 mr-1 sm:mr-2" />
               {seatLimitBlocked
                 ? teamT("upgradeToAddMembers", "Upgrade to Add Members")
-                : teamT("inviteTeamMember", "Invite")}
+                : teamT("invite", "Invite")}
             </Button>
           </div>
         </div>
