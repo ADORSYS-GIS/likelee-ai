@@ -23,6 +23,7 @@ import {
 } from "@/api/functions";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import { useTranslation } from "react-i18next";
 
 interface PaymentMethodModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ const CardForm = ({
   isLoading: boolean;
   onSubmit: (setupIntentClientSecret: string) => Promise<void>;
 }) => {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ const CardForm = ({
     setError(null);
 
     if (!stripe || !elements) {
-      setError("Stripe is not loaded. Please try again.");
+      setError(t("dashboard.settingsPage.billing.modal.stripeNotLoaded"));
       return;
     }
 
@@ -57,7 +59,9 @@ const CardForm = ({
       const setupIntentData = await createBrandPaymentMethodSetupIntent();
 
       if (!setupIntentData?.client_secret) {
-        throw new Error("Failed to create setup intent");
+        throw new Error(
+          t("dashboard.settingsPage.billing.modal.setupIntentFailed"),
+        );
       }
 
       const { setupIntent, error: confirmError } =
@@ -78,7 +82,10 @@ const CardForm = ({
         await onSubmit(setupIntentData.client_secret);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "An error occurred";
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("dashboard.settingsPage.billing.modal.genericError");
       setError(message);
       toast.error(message);
     } finally {
@@ -89,7 +96,9 @@ const CardForm = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label className="text-sm font-medium">Card Details</Label>
+        <Label className="text-sm font-medium">
+          {t("dashboard.settingsPage.billing.modal.cardDetails")}
+        </Label>
         <div className="p-3 border border-gray-200 rounded-lg bg-white">
           <CardElement
             options={{
@@ -125,10 +134,10 @@ const CardForm = ({
         {isProcessing ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
+            {t("dashboard.settingsPage.billing.modal.processing")}
           </>
         ) : (
-          "Add Card"
+          t("dashboard.settingsPage.billing.paymentMethods.addCard")
         )}
       </Button>
     </form>
@@ -140,6 +149,7 @@ const PaymentMethodModalContent = ({
   onClose,
   onSuccess,
 }: PaymentMethodModalProps) => {
+  const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [stripePromise, setStripePromise] = useState<ReturnType<
@@ -154,20 +164,27 @@ const PaymentMethodModalContent = ({
           if (data.publishable_key) {
             setStripePromise(loadStripe(data.publishable_key));
           } else {
-            toast.error("Stripe is not configured. Please contact support.");
+            toast.error(
+              t("dashboard.settingsPage.billing.modal.stripeNotConfigured"),
+            );
           }
         })
         .catch(() => {
-          toast.error("Failed to load Stripe configuration.");
+          toast.error(
+            t("dashboard.settingsPage.billing.modal.stripeConfigFailed"),
+          );
         });
     }
-  }, [isOpen, stripePromise]);
+  }, [isOpen, stripePromise, t]);
 
   const handleCardSubmit = async (setupIntentClientSecret: string) => {
     setIsLoading(true);
     try {
       const stripe = await stripePromise;
-      if (!stripe) throw new Error("Stripe failed to load");
+      if (!stripe)
+        throw new Error(
+          t("dashboard.settingsPage.billing.modal.stripeLoadFailed"),
+        );
 
       const setupIntent = await stripe.retrieveSetupIntent(
         setupIntentClientSecret,
@@ -181,8 +198,8 @@ const PaymentMethodModalContent = ({
           stripe_payment_method_id: setupIntent.setupIntent.payment_method,
         });
 
-        setSuccessMessage("Card added successfully!");
-        toast.success("Payment method added successfully");
+        setSuccessMessage(t("dashboard.settingsPage.billing.modal.success"));
+        toast.success(t("dashboard.settingsPage.billing.modal.successToast"));
 
         setTimeout(() => {
           onSuccess();
@@ -191,7 +208,10 @@ const PaymentMethodModalContent = ({
         }, 1500);
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "An error occurred";
+      const message =
+        err instanceof Error
+          ? err.message
+          : t("dashboard.settingsPage.billing.modal.genericError");
       console.error("Error in handleCardSubmit:", message);
       toast.error(message);
     } finally {
@@ -203,10 +223,11 @@ const PaymentMethodModalContent = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add Payment Method</DialogTitle>
+          <DialogTitle>
+            {t("dashboard.settingsPage.billing.modal.title")}
+          </DialogTitle>
           <DialogDescription>
-            Enter your card details to add a new payment method for your brand
-            account.
+            {t("dashboard.settingsPage.billing.modal.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -230,8 +251,7 @@ const PaymentMethodModalContent = ({
             )}
 
             <p className="text-xs text-gray-500 text-center">
-              Your card information is securely processed by Stripe and never
-              stored on our servers.
+              {t("dashboard.settingsPage.billing.modal.securityNote")}
             </p>
           </div>
         )}

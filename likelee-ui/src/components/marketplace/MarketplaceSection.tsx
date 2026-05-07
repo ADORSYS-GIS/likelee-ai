@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   ArrowRight,
   ChevronDown,
@@ -202,7 +203,7 @@ export function MarketplaceSection({
   title = "Likelee Marketplace",
   subtitle = "Verified creators only",
   verifiedBadgeLabel = "Verified Profiles",
-  searchPlaceholder = "Search by name, role, bio, or skills...",
+  searchPlaceholder,
   searchEndpoint = "marketplace/search",
   connectEndpoint = "marketplace/connect",
   resultLimit = 120,
@@ -221,10 +222,15 @@ export function MarketplaceSection({
   connectLockedReason = "",
   onConnectLocked,
 }: MarketplaceSectionProps) {
+  const { t } = useTranslation("brand");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const entityLabel = entityType === "agency" ? "agency" : "creator";
-  const entityLabelTitle = entityType === "agency" ? "Agency" : "Creator";
+  const entityLabel = t(
+    `dashboard.marketplace.entities.${entityType}` as const,
+  );
+  const entityLabelTitle = t(
+    `dashboard.marketplace.entities.${entityType}Title` as const,
+  );
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(
@@ -266,15 +272,22 @@ export function MarketplaceSection({
   const lockedHighlights =
     entityType === "agency"
       ? [
-          "Connect with agencies",
-          "Unlock collaborator workflows",
-          "Launch full campaign handoff",
+          t("dashboard.marketplace.locked.highlights.connectAgencies"),
+          t("dashboard.marketplace.locked.highlights.collaboratorWorkflows"),
+          t("dashboard.marketplace.locked.highlights.campaignHandoff"),
         ]
       : [
-          "Connect with creators",
-          "Request licenses",
-          "Unlock collaborator workflows",
+          t("dashboard.marketplace.locked.highlights.connectCreators"),
+          t("dashboard.marketplace.locked.highlights.requestLicenses"),
+          t("dashboard.marketplace.locked.highlights.collaboratorWorkflows"),
         ];
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ||
+    t(
+      entityType === "agency"
+        ? "dashboard.marketplace.search.agencyPlaceholder"
+        : "dashboard.marketplace.search.creatorPlaceholder",
+    );
   const selectedProfileId = String(selectedProfile?.id || "").trim();
   const selectedProfileType = selectedProfile?.profile_type || entityType;
   const canFetchDetails = detailsOpen && selectedProfileId.length > 0;
@@ -540,7 +553,7 @@ export function MarketplaceSection({
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <p className="text-center text-xs font-semibold text-[#B16B12]">
-                  Visible in preview. Pro makes every action live.
+                  {t("dashboard.marketplace.locked.previewFootnote")}
                 </p>
               </div>
             </div>
@@ -553,7 +566,7 @@ export function MarketplaceSection({
             <Input
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={searchPlaceholder}
+              placeholder={resolvedSearchPlaceholder}
               className="h-9 border-blue-200 bg-white rounded-lg pl-9 focus-visible:ring-blue-300"
             />
           </div>
@@ -576,7 +589,7 @@ export function MarketplaceSection({
                     : "text-slate-500"
               }`}
             />
-            Filters
+            {t("dashboard.marketplace.filters.button")}
             {hasActiveFilters && (
               <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[11px] font-semibold text-white">
                 {activeFilterCount}
@@ -585,7 +598,7 @@ export function MarketplaceSection({
             {hasActiveFilters && (
               <span
                 role="button"
-                aria-label="Reset all filters"
+                aria-label={t("dashboard.marketplace.filters.resetAllAria")}
                 className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-red-600 hover:bg-red-50 hover:text-red-700"
                 onClick={(e) => {
                   e.preventDefault();
@@ -606,7 +619,7 @@ export function MarketplaceSection({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                Filter Options
+                {t("dashboard.marketplace.filters.optionsTitle")}
               </p>
               {hasActiveFilters && (
                 <button
@@ -618,7 +631,7 @@ export function MarketplaceSection({
                     setSortBy(entityType === "agency" ? "recent" : "followers");
                   }}
                 >
-                  Reset filters
+                  {t("dashboard.marketplace.filters.reset")}
                 </button>
               )}
             </div>
@@ -628,14 +641,18 @@ export function MarketplaceSection({
                 onValueChange={(v) => setCategoryFilter(v || "all")}
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue
+                    placeholder={t(
+                      "dashboard.marketplace.filters.allCategories",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="all"
                   >
-                    All Categories
+                    {t("dashboard.marketplace.filters.allCategories")}
                   </SelectItem>
                   {entityType === "creator" ? (
                     <>
@@ -643,25 +660,25 @@ export function MarketplaceSection({
                         className={marketplaceSelectItemClass}
                         value="models"
                       >
-                        Models
+                        {t("dashboard.marketplace.categories.models")}
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="actors"
                       >
-                        Actors
+                        {t("dashboard.marketplace.categories.actors")}
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="influencers"
                       >
-                        Influencers
+                        {t("dashboard.marketplace.categories.influencers")}
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="athletes"
                       >
-                        Athletes
+                        {t("dashboard.marketplace.categories.athletes")}
                       </SelectItem>
                     </>
                   ) : (
@@ -670,13 +687,13 @@ export function MarketplaceSection({
                         className={marketplaceSelectItemClass}
                         value="talent_agency"
                       >
-                        Talent Agencies
+                        {t("dashboard.marketplace.categories.talentAgencies")}
                       </SelectItem>
                       <SelectItem
                         className={marketplaceSelectItemClass}
                         value="sports_agency"
                       >
-                        Sports Agencies
+                        {t("dashboard.marketplace.categories.sportsAgencies")}
                       </SelectItem>
                     </>
                   )}
@@ -696,32 +713,38 @@ export function MarketplaceSection({
                 }
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                  <SelectValue placeholder="All" />
+                  <SelectValue
+                    placeholder={t("dashboard.marketplace.filters.all")}
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="all"
                   >
-                    All
+                    {t("dashboard.marketplace.filters.all")}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value={entityType}
                   >
-                    {`Verified ${entityType === "agency" ? "Agencies" : "Creators"}`}
+                    {t(
+                      entityType === "agency"
+                        ? "dashboard.marketplace.filters.verifiedAgencies"
+                        : "dashboard.marketplace.filters.verifiedCreators",
+                    )}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="connected"
                   >
-                    Connected
+                    {t("dashboard.marketplace.filters.connected")}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="waiting"
                   >
-                    Waiting
+                    {t("dashboard.marketplace.filters.waiting")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -737,7 +760,9 @@ export function MarketplaceSection({
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
                   <SelectValue
                     placeholder={
-                      entityType === "agency" ? "Recently Updated" : "Followers"
+                      entityType === "agency"
+                        ? t("dashboard.marketplace.sort.recent")
+                        : t("dashboard.marketplace.sort.followers")
                     }
                   />
                 </SelectTrigger>
@@ -747,20 +772,20 @@ export function MarketplaceSection({
                       className={marketplaceSelectItemClass}
                       value="followers"
                     >
-                      Followers
+                      {t("dashboard.marketplace.sort.followers")}
                     </SelectItem>
                   )}
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="name"
                   >
-                    Name
+                    {t("dashboard.marketplace.sort.name")}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="recent"
                   >
-                    Recently Updated
+                    {t("dashboard.marketplace.sort.recent")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -772,7 +797,9 @@ export function MarketplaceSection({
           <div className="border border-dashed border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center mt-4">
             <Loader2 className="w-6 h-6 text-gray-400 animate-spin mb-4" />
             <p className="text-sm text-gray-500 font-medium">
-              {`Loading verified ${entityLabel}s...`}
+              {t("dashboard.marketplace.states.loadingProfiles", {
+                entityLabel,
+              })}
             </p>
           </div>
         ) : profiles.length === 0 ? (
@@ -781,11 +808,12 @@ export function MarketplaceSection({
               <Globe className="w-10 h-10 text-gray-300" />
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">
-              No verified profiles found
+              {t("dashboard.marketplace.states.noProfilesTitle")}
             </h3>
             <p className="text-gray-500 max-w-md font-medium">
-              Try adjusting your search terms or filters to discover more
-              {entityType === "agency" ? " agencies." : " creators."}
+              {t("dashboard.marketplace.states.noProfilesDescription", {
+                role: t(`dashboard.marketplace.roles.${entityType}s` as const),
+              })}
             </p>
           </div>
         ) : (
@@ -818,13 +846,13 @@ export function MarketplaceSection({
                 connectLocked;
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
-              const roleLabel = `Verified ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
+              const roleLabel = `${t("dashboard.marketplace.labels.verified")} ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
               const ownershipLabel =
                 profile.profile_type === "creator" &&
                 profile.talent_ownership === "agency_owned"
-                  ? "Agency-Owned"
+                  ? t("dashboard.marketplace.ownership.agency_owned")
                   : profile.profile_type === "creator"
-                    ? "Regular"
+                    ? t("dashboard.marketplace.ownership.regular")
                     : null;
               const ownershipBadgeClass =
                 profile.talent_ownership === "agency_owned"
@@ -865,20 +893,20 @@ export function MarketplaceSection({
                         )}
                         {profile.is_connected && (
                           <Badge className="h-5 px-2 rounded-md bg-blue-50/95 text-blue-700 border border-blue-200 text-[10px] font-semibold shadow-sm">
-                            Connected
+                            {t("dashboard.marketplace.statuses.connected")}
                           </Badge>
                         )}
                         {!profile.is_connected &&
                           (connectionStatus === "waiting" ||
                             connectionStatus === "pending") && (
                             <Badge className="h-5 px-2 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[10px] font-semibold shadow-sm">
-                              Waiting
+                              {t("dashboard.marketplace.statuses.waiting")}
                             </Badge>
                           )}
                         {!profile.is_connected &&
                           connectionStatus === "declined" && (
                             <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
-                              Declined
+                              {t("dashboard.marketplace.statuses.declined")}
                             </Badge>
                           )}
                         <div className="h-5 w-5 rounded-md bg-white/90 border border-slate-200 shadow-sm flex items-center justify-center">
@@ -920,8 +948,8 @@ export function MarketplaceSection({
                     >
                       <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
                         {expandedCardIds.has(profile.id)
-                          ? "Less info"
-                          : "More info"}
+                          ? t("common:actions.showLess", "Less info")
+                          : t("common:actions.showMore", "More info")}
                       </span>
                       <ChevronDown
                         className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
@@ -942,7 +970,7 @@ export function MarketplaceSection({
                         )}
                         {!(profile.tagline || profile.bio) && (
                           <p className="text-xs text-slate-400 min-h-[32px]">
-                            No bio available yet.
+                            {t("dashboard.marketplace.states.noBio")}
                           </p>
                         )}
 
@@ -968,8 +996,8 @@ export function MarketplaceSection({
                           <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                             <p className="text-slate-500 text-[11px] font-medium">
                               {entityType === "agency"
-                                ? "Agency Type"
-                                : "Followers"}
+                                ? t("dashboard.marketplace.card.agencyType")
+                                : t("dashboard.marketplace.card.followers")}
                             </p>
                             <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                               {entityType === "agency"
@@ -982,7 +1010,7 @@ export function MarketplaceSection({
                           {entityType === "agency" && (
                             <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                               <p className="text-slate-500 text-[11px] font-medium">
-                                Services
+                                {t("dashboard.marketplace.card.services")}
                               </p>
                               <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                                 {(profile.skills || []).length || "N/A"}
@@ -1052,19 +1080,32 @@ export function MarketplaceSection({
                                 );
                                 if (status === "declined") {
                                   toast({
-                                    title: "Request already declined",
-                                    description: `This connection was declined previously. You can re-invite this ${entityLabel}.`,
+                                    title: t(
+                                      "dashboard.marketplace.toasts.requestAlreadyDeclinedTitle",
+                                    ),
+                                    description: t(
+                                      "dashboard.marketplace.toasts.requestAlreadyDeclinedDescription",
+                                      { entityLabel },
+                                    ),
                                   });
                                 } else if (status === "connected") {
                                   toast({
-                                    title: "Already connected",
-                                    description:
-                                      "This profile is already in your network.",
+                                    title: t(
+                                      "dashboard.marketplace.toasts.alreadyConnectedTitle",
+                                    ),
+                                    description: t(
+                                      "dashboard.marketplace.toasts.alreadyConnectedDescription",
+                                    ),
                                   });
                                 } else {
                                   toast({
-                                    title: "Connection request sent",
-                                    description: `Waiting for ${entityLabel} response. You will be notified after they accept or decline.`,
+                                    title: t(
+                                      "dashboard.marketplace.toasts.connectionRequestSentTitle",
+                                    ),
+                                    description: t(
+                                      "dashboard.marketplace.toasts.connectionRequestSentDescription",
+                                      { entityLabel },
+                                    ),
                                   });
                                   setPendingConnectKeys((prev) =>
                                     new Set(prev).add(profileKey),
@@ -1088,8 +1129,13 @@ export function MarketplaceSection({
                                     new Set(prev).add(profileKey),
                                   );
                                   toast({
-                                    title: "Request already pending",
-                                    description: `Waiting for ${entityLabel} response.`,
+                                    title: t(
+                                      "dashboard.marketplace.toasts.requestPendingTitle",
+                                    ),
+                                    description: t(
+                                      "dashboard.marketplace.toasts.requestPendingDescription",
+                                      { entityLabel },
+                                    ),
                                   });
                                   await queryClient.invalidateQueries({
                                     queryKey: [queryScope],
@@ -1097,10 +1143,14 @@ export function MarketplaceSection({
                                   return;
                                 }
                                 toast({
-                                  title: "Failed to send connection request",
+                                  title: t(
+                                    "dashboard.marketplace.toasts.failedConnectionRequestTitle",
+                                  ),
                                   description: parseApiErrorMessage(
                                     e,
-                                    "Unable to send connection request right now.",
+                                    t(
+                                      "dashboard.marketplace.toasts.failedConnectionRequestDescription",
+                                    ),
                                     entityLabel,
                                   ),
                                   variant: "destructive" as any,
@@ -1115,13 +1165,18 @@ export function MarketplaceSection({
                             }}
                           >
                             {isRequestingConnect
-                              ? "Sending..."
+                              ? t("dashboard.marketplace.actions.sending")
                               : actionsLocked || connectLocked
-                                ? "Upgrade to Connect"
+                                ? t(
+                                    "dashboard.marketplace.actions.upgradeToConnect",
+                                  )
                                 : connectionStatus === "pending" ||
                                     connectionStatus === "waiting"
-                                  ? `Waiting for ${entityLabel} response`
-                                  : "Connect"}
+                                  ? t(
+                                      "dashboard.marketplace.actions.waitingForResponse",
+                                      { entityLabel },
+                                    )
+                                  : t("dashboard.marketplace.actions.connect")}
                           </Button>
                           {connectLockedReason ? (
                             <span className="text-[10px] font-semibold text-amber-700">
@@ -1148,10 +1203,12 @@ export function MarketplaceSection({
           const profileKey = `${contractConnectProfile.profile_type}:${contractConnectProfile.id}`;
           setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
           toast({
-            title: "Contract sent",
+            title: t("dashboard.marketplace.toasts.contractSentTitle"),
             description: contract?.agency_sign_url
-              ? "The contract has been sent for signature and the agency signing link opened in a new tab."
-              : "The contract has been sent for signature.",
+              ? t(
+                  "dashboard.marketplace.toasts.contractSentWithLinkDescription",
+                )
+              : t("dashboard.marketplace.toasts.contractSentDescription"),
           });
           queryClient.invalidateQueries({
             queryKey: [queryScope],
@@ -1171,35 +1228,36 @@ export function MarketplaceSection({
             <div className="absolute inset-0 z-50 bg-white/75 backdrop-blur-[1px] flex items-center justify-center">
               <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm text-sm font-medium text-slate-700">
                 <Loader2 className="h-4 w-4 animate-spin text-cyan-600" />
-                Processing disconnect request...
+                {t("dashboard.marketplace.details.processingDisconnect")}
               </div>
             </div>
           ) : null}
           <SheetHeader>
             <SheetTitle>
-              {selectedProfile?.display_name || "Marketplace Profile"}
+              {selectedProfile?.display_name ||
+                t("dashboard.marketplace.details.marketplaceProfile")}
             </SheetTitle>
             <SheetDescription>
               {selectedProfile?.profile_type === "agency"
-                ? "Agency profile and connection status"
-                : "Availability, rates, portfolio, and campaign history"}
+                ? t("dashboard.marketplace.details.agencyDescription")
+                : t("dashboard.marketplace.details.creatorDescription")}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-6">
             {detailsQuery.isLoading ? (
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Loading profile details...
+                {t("dashboard.marketplace.details.loading")}
               </div>
             ) : detailsQuery.error ? (
               <Card className="p-4 border border-rose-200 bg-rose-50 rounded-xl">
                 <div className="text-sm font-semibold text-rose-900">
-                  Failed to load profile details
+                  {t("dashboard.marketplace.details.loadFailedTitle")}
                 </div>
                 <div className="text-sm text-rose-800 mt-1">
                   {parseApiErrorMessage(
                     detailsQuery.error,
-                    "Please try again.",
+                    t("dashboard.marketplace.details.tryAgain"),
                     entityLabel,
                   )}
                 </div>
@@ -1247,7 +1305,7 @@ export function MarketplaceSection({
                         <div className="space-y-4">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 mb-2">
-                              Services
+                              {t("dashboard.marketplace.details.services")}
                             </h4>
                             {services.length ? (
                               <div className="flex flex-wrap gap-2">
@@ -1262,21 +1320,34 @@ export function MarketplaceSection({
                               </div>
                             ) : (
                               <p className="text-sm text-gray-500">
-                                No services shared yet.
+                                {t(
+                                  "dashboard.marketplace.details.noServicesShared",
+                                )}
                               </p>
                             )}
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                             <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <p className="text-gray-500">Website</p>
+                              <p className="text-gray-500">
+                                {t("dashboard.marketplace.details.website")}
+                              </p>
                               <p className="font-semibold text-gray-900 mt-1 break-all">
-                                {profile?.website || "Not specified"}
+                                {profile?.website ||
+                                  t(
+                                    "dashboard.marketplace.details.notSpecified",
+                                  )}
                               </p>
                             </div>
                             <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                              <p className="text-gray-500">Connection Status</p>
+                              <p className="text-gray-500">
+                                {t(
+                                  "dashboard.marketplace.details.connectionStatusLabel",
+                                )}
+                              </p>
                               <p className="font-semibold text-gray-900 mt-1 capitalize">
-                                {detailsQuery.data?.connection_status || "none"}
+                                {t(
+                                  `dashboard.marketplace.status.${detailsQuery.data?.connection_status || "none"}` as const,
+                                )}
                               </p>
                             </div>
                           </div>
@@ -1291,7 +1362,7 @@ export function MarketplaceSection({
                         <div className="space-y-5">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 mb-2">
-                              Open to work
+                              {t("dashboard.marketplace.details.openToWork")}
                             </h4>
                             {openToWork.length ? (
                               <div className="flex flex-wrap gap-2">
@@ -1306,14 +1377,16 @@ export function MarketplaceSection({
                               </div>
                             ) : (
                               <p className="text-sm text-gray-500">
-                                No open-work preferences shared yet.
+                                {t(
+                                  "dashboard.marketplace.details.noOpenWorkPreferences",
+                                )}
                               </p>
                             )}
                           </div>
 
                           <div>
                             <h4 className="text-sm font-bold text-gray-900 mb-2">
-                              Industries
+                              {t("dashboard.marketplace.details.industries")}
                             </h4>
                             {industries.length ? (
                               <div className="flex flex-wrap gap-2">
@@ -1329,7 +1402,9 @@ export function MarketplaceSection({
                               </div>
                             ) : (
                               <p className="text-sm text-gray-500">
-                                No industries shared yet.
+                                {t(
+                                  "dashboard.marketplace.details.noIndustriesShared",
+                                )}
                               </p>
                             )}
                           </div>
@@ -1340,15 +1415,19 @@ export function MarketplaceSection({
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <h4 className="text-sm font-bold text-gray-900">
-                              Licensing rate
+                              {t("dashboard.marketplace.details.licensingRate")}
                             </h4>
                             <p className="text-xs text-gray-500 mt-1">
-                              Base rate from public profile
+                              {t("dashboard.marketplace.details.baseRate")}
                             </p>
                             <p className="text-xs text-emerald-700 mt-2 font-medium">
                               {openToNegotiations
-                                ? "Open to negotiations"
-                                : "Negotiation preferences not specified"}
+                                ? t(
+                                    "dashboard.marketplace.details.openToNegotiations",
+                                  )
+                                : t(
+                                    "dashboard.marketplace.details.negotiationPreferences",
+                                  )}
                             </p>
                           </div>
                           <div className="text-right">
@@ -1357,7 +1436,9 @@ export function MarketplaceSection({
                                 ? formatMoney(baseRateCents, rateCurrency)
                                 : "N/A"}
                             </p>
-                            <p className="text-xs text-gray-500">/month</p>
+                            <p className="text-xs text-gray-500">
+                              {t("dashboard.marketplace.details.perMonth")}
+                            </p>
                           </div>
                         </div>
                       </Card>
@@ -1373,17 +1454,20 @@ export function MarketplaceSection({
                           {selectedProfile?.display_name || "Profile"}
                         </h4>
                         <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
-                          Verified
+                          {t("dashboard.marketplace.details.verified")}
                         </Badge>
                         {/* Regular/Agency-Owned badge removed to keep layout clean */}
                       </div>
                       <p className="text-xs font-medium text-slate-500">
-                        {selectedProfile?.location || "Location not specified"}
+                        {selectedProfile?.location ||
+                          t(
+                            "dashboard.marketplace.details.locationNotSpecified",
+                          )}
                       </p>
                       <p className="text-sm text-slate-600 mt-3 break-words whitespace-pre-line">
                         {selectedProfile?.tagline ||
                           selectedProfile?.bio ||
-                          "No profile summary available yet."}
+                          t("dashboard.marketplace.states.noBio")}
                       </p>
                       <div
                         className={`grid gap-3 mt-4 text-xs ${
@@ -1395,8 +1479,12 @@ export function MarketplaceSection({
                         <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
                           <p className="text-slate-500 font-medium">
                             {selectedProfile?.profile_type === "agency"
-                              ? "Agency Type"
-                              : "Followers"}
+                              ? t(
+                                  "dashboard.marketplace.details.agencyTypeLabel",
+                                )
+                              : t(
+                                  "dashboard.marketplace.details.followersLabel",
+                                )}
                           </p>
                           <p className="text-slate-900 font-bold mt-0.5">
                             {selectedProfile?.profile_type === "agency"
@@ -1411,7 +1499,7 @@ export function MarketplaceSection({
                         {selectedProfile?.profile_type === "agency" && (
                           <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
                             <p className="text-slate-500 font-medium">
-                              Services
+                              {t("dashboard.marketplace.details.servicesLabel")}
                             </p>
                             <p className="text-slate-900 font-bold mt-0.5">
                               {(selectedProfile?.skills || []).length || "N/A"}
@@ -1463,16 +1551,21 @@ export function MarketplaceSection({
                             <div className="flex items-start justify-between gap-3">
                               <div>
                                 <h4 className="text-sm font-bold text-gray-900">
-                                  Marketplace contract
+                                  {t(
+                                    "dashboard.marketplace.details.marketplaceContract",
+                                  )}
                                 </h4>
                                 <p className="text-xs text-gray-500 mt-1">
-                                  Contract terms for this agency-creator
-                                  connection.
+                                  {t(
+                                    "dashboard.marketplace.details.contractTermsDescription",
+                                  )}
                                 </p>
                               </div>
                               {pendingDisconnect ? (
                                 <Badge className="bg-rose-100 text-rose-700 border border-rose-200">
-                                  Creator requested disconnect
+                                  {t(
+                                    "dashboard.marketplace.details.creatorRequestedDisconnect",
+                                  )}
                                 </Badge>
                               ) : null}
                             </div>
@@ -1481,7 +1574,9 @@ export function MarketplaceSection({
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <Percent className="w-3 h-3" />
-                                  Commission
+                                  {t(
+                                    "dashboard.marketplace.details.commission",
+                                  )}
                                 </div>
                                 <p className="font-semibold text-gray-900 mt-1">
                                   {Number(
@@ -1491,7 +1586,9 @@ export function MarketplaceSection({
                                 </p>
                               </div>
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                                <div className="text-gray-500">Status</div>
+                                <div className="text-gray-500">
+                                  {t("dashboard.marketplace.details.status")}
+                                </div>
                                 <p className="font-semibold text-gray-900 mt-1 capitalize">
                                   {String(
                                     marketplaceContract?.status || "unknown",
@@ -1501,7 +1598,7 @@ export function MarketplaceSection({
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <CalendarDays className="w-3 h-3" />
-                                  Start date
+                                  {t("dashboard.marketplace.details.startDate")}
                                 </div>
                                 <p className="font-semibold text-gray-900 mt-1">
                                   {marketplaceContract?.valid_from || "—"}
@@ -1510,7 +1607,7 @@ export function MarketplaceSection({
                               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                                 <div className="flex items-center gap-2 text-gray-500">
                                   <CalendarDays className="w-3 h-3" />
-                                  End date
+                                  {t("dashboard.marketplace.details.endDate")}
                                 </div>
                                 <p className="font-semibold text-gray-900 mt-1">
                                   {marketplaceContract?.valid_until || "—"}
@@ -1521,7 +1618,9 @@ export function MarketplaceSection({
                             {pendingDisconnect ? (
                               <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">
                                 <div className="font-semibold">
-                                  Creator is requesting disconnect
+                                  {t(
+                                    "dashboard.marketplace.details.creatorRequestingDisconnect",
+                                  )}
                                 </div>
                                 {marketplaceContract?.disconnect_reason ? (
                                   <div className="mt-2 whitespace-pre-wrap">
@@ -1529,7 +1628,9 @@ export function MarketplaceSection({
                                   </div>
                                 ) : (
                                   <div className="mt-2">
-                                    No reason was provided.
+                                    {t(
+                                      "dashboard.marketplace.details.noReasonProvided",
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -1550,7 +1651,9 @@ export function MarketplaceSection({
                                   }
                                 >
                                   <ExternalLink className="w-4 h-4 mr-2" />
-                                  View signed contract
+                                  {t(
+                                    "dashboard.marketplace.details.viewSignedContract",
+                                  )}
                                 </Button>
                               ) : null}
                               {pendingDisconnect ? (
@@ -1562,7 +1665,9 @@ export function MarketplaceSection({
                                       setDisconnectDecision("approve")
                                     }
                                   >
-                                    Approve disconnect
+                                    {t(
+                                      "dashboard.marketplace.details.approveDisconnect",
+                                    )}
                                   </Button>
                                   <Button
                                     variant="outline"
@@ -1572,7 +1677,9 @@ export function MarketplaceSection({
                                       setDisconnectDecision("reject")
                                     }
                                   >
-                                    Reject request
+                                    {t(
+                                      "dashboard.marketplace.details.rejectRequest",
+                                    )}
                                   </Button>
                                 </>
                               ) : null}
@@ -1584,31 +1691,43 @@ export function MarketplaceSection({
 
                     <Card className="p-4 border border-gray-200 rounded-xl">
                       <h4 className="text-sm font-bold text-gray-900 mb-3">
-                        Availability & Rates
+                        {t(
+                          "dashboard.marketplace.details.availabilityAndRates",
+                        )}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                         <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                          <p className="text-gray-500">Willing to Travel</p>
+                          <p className="text-gray-500">
+                            {t("dashboard.marketplace.details.willingToTravel")}
+                          </p>
                           <p className="font-semibold text-gray-900 mt-1">
                             {typeof detailsQuery.data?.availability
                               ?.willing_to_travel === "boolean"
                               ? detailsQuery.data?.availability
                                   ?.willing_to_travel
-                                ? "Yes"
-                                : "No"
-                              : "Not specified"}
+                                ? t("campaigns.jobs.details.yes")
+                                : t("campaigns.jobs.details.no")
+                              : t("dashboard.marketplace.details.notSpecified")}
                           </p>
                         </div>
                         <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                          <p className="text-gray-500">Connection Status</p>
+                          <p className="text-gray-500">
+                            {t(
+                              "dashboard.marketplace.details.connectionStatusLabel",
+                            )}
+                          </p>
                           <div className="flex flex-col">
                             <p className="font-semibold text-gray-900 mt-1 capitalize leading-none">
-                              {detailsQuery.data?.connection_status || "none"}
+                              {t(
+                                `dashboard.marketplace.status.${detailsQuery.data?.connection_status || "none"}` as const,
+                              )}
                             </p>
                             {selectedProfile?.talent_ownership ===
                               "agency_owned" && (
                               <p className="text-[10px] text-indigo-600 font-semibold mt-1.5">
-                                Automatically connected (Created by you)
+                                {t(
+                                  "dashboard.marketplace.details.autoConnectedByYou",
+                                )}
                               </p>
                             )}
                           </div>
@@ -1635,7 +1754,9 @@ export function MarketplaceSection({
                           ))}
                         {(detailsQuery.data?.rates || []).length === 0 && (
                           <p className="text-sm text-gray-500">
-                            No rates published yet.
+                            {t(
+                              "dashboard.marketplace.details.noRatesPublished",
+                            )}
                           </p>
                         )}
                       </div>
@@ -1646,7 +1767,7 @@ export function MarketplaceSection({
                 {selectedProfile?.profile_type === "creator" && (
                   <Card className="p-4 border border-gray-200 rounded-xl">
                     <h4 className="text-sm font-bold text-gray-900 mb-3">
-                      Portfolio
+                      {t("dashboard.marketplace.details.portfolio")}
                     </h4>
                     {!!detailsQuery.data?.profile?.portfolio_link && (
                       <a
@@ -1655,7 +1776,7 @@ export function MarketplaceSection({
                         rel="noreferrer"
                         className="mb-3 inline-flex items-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-100"
                       >
-                        Open portfolio link
+                        {t("dashboard.marketplace.details.openPortfolioLink")}
                       </a>
                     )}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -1871,7 +1992,10 @@ export function MarketplaceSection({
                   setSelectedProfile(null);
                 } catch (error: any) {
                   toast({
-                    title: `Failed to ${disconnectDecision} request`,
+                    title:
+                      disconnectDecision === "approve"
+                        ? t("dashboard.marketplace.details.failedToApprove")
+                        : t("dashboard.marketplace.details.failedToReject"),
                     description: error?.message || String(error),
                     variant: "destructive" as any,
                   });
@@ -1886,11 +2010,11 @@ export function MarketplaceSection({
               ) : null}
               {disconnectDecision === "approve"
                 ? disconnectActionLoading === "approve"
-                  ? "Approving..."
-                  : "Approve disconnect"
+                  ? t("dashboard.marketplace.details.approving")
+                  : t("dashboard.marketplace.details.approveDisconnect")
                 : disconnectActionLoading === "reject"
-                  ? "Rejecting..."
-                  : "Reject request"}
+                  ? t("dashboard.marketplace.details.rejecting")
+                  : t("dashboard.marketplace.details.rejectRequest")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

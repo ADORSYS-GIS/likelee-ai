@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +31,7 @@ import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserFriendlyError } from "@/utils";
 import WalletTransactionsDialog from "@/components/WalletTransactionsDialog";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import {
   generate as studioGenerate,
   getJobStatus,
@@ -129,6 +131,7 @@ const imageSizes = [
 ];
 
 export default function StudioImage() {
+  const { t } = useTranslation("brand");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -324,7 +327,7 @@ export default function StudioImage() {
               className="text-gray-400 hover:text-white hover:bg-white/5 transition-all"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Studio
+              {t("studio.image.backToStudio")}
             </Button>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#32C8D1] to-[#6366F1] flex items-center justify-center shadow-[0_0_20px_rgba(50,200,209,0.3)]">
@@ -335,15 +338,16 @@ export default function StudioImage() {
                   className="text-xl font-bold tracking-tight text-white"
                   style={{ textShadow: "0 0 20px rgba(50,200,209,0.3)" }}
                 >
-                  AI Image Generator
+                  {t("studio.image.title")}
                 </h1>
                 <p className="text-[10px] text-[#32C8D1] font-bold uppercase tracking-widest opacity-80">
-                  Premium Studio
+                  {t("studio.image.subtitle")}
                 </p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <LanguageSwitcher className="text-white hover:text-gray-200" />
             <div className="flex items-center gap-3 px-4 py-2 bg-white/[0.03] rounded-full border border-white/10 backdrop-blur-md shadow-inner">
               <Coins className="w-4 h-4 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
               <span className="text-sm font-bold tracking-tight">
@@ -359,13 +363,13 @@ export default function StudioImage() {
               onClick={() => setShowTransactions(true)}
               className="text-gray-400 hover:text-white hover:bg-white/5"
             >
-              History
+              {t("studio.image.ui.recentArtifacts")}
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("StudioSubscribe"))}
               className="bg-white text-black hover:bg-gray-200 font-bold px-6 rounded-full transition-all hover:scale-105 active:scale-95 shadow-[0_4px_15px_rgba(255,255,255,0.2)]"
             >
-              Top Up
+              {t("studio.image.topUp")}
             </Button>
           </div>
         </div>
@@ -385,14 +389,14 @@ export default function StudioImage() {
               <div className="flex items-center gap-2 mb-6">
                 <Settings2 className="w-5 h-5 text-[#32C8D1]" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">
-                  Settings
+                  {t("studio.image.ui.settings")}
                 </h3>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    Intelligence
+                    {t("studio.image.ui.intelligence")}
                   </label>
                   <Select
                     value={selectedModel}
@@ -413,7 +417,10 @@ export default function StudioImage() {
                               {model.name}
                             </div>
                             <div className="text-[10px] text-gray-400 uppercase tracking-tight">
-                              {model.cost} Credits • {model.description}
+                              {t("studio.image.ui.creditCount", {
+                                count: model.cost,
+                              })}{" "}
+                              • {model.description}
                             </div>
                           </div>
                         </SelectItem>
@@ -424,13 +431,13 @@ export default function StudioImage() {
 
                 <div className="space-y-3">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    Visual Prompt
+                    {t("studio.image.ui.visualPrompt")}
                   </label>
                   <div className="relative group">
                     <Textarea
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="Surreal landscape with floating islands..."
+                      placeholder={t("studio.image.ui.visualPromptPlaceholder")}
                       className="bg-white/5 border-white/10 text-white min-h-[160px] rounded-2xl resize-none text-sm p-4 focus:ring-[#32C8D1]/30 transition-all group-hover:bg-white/[0.08]"
                     />
                     <div className="absolute top-3 right-3 opacity-30 group-hover:opacity-100 transition-opacity">
@@ -441,7 +448,7 @@ export default function StudioImage() {
 
                 <div className="space-y-2">
                   <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                    Canvas Size
+                    {t("studio.image.ui.canvasSize")}
                   </label>
                   <Select value={imageSize} onValueChange={setImageSize}>
                     <SelectTrigger className="bg-white/5 border-white/10 text-white h-11 rounded-xl hover:bg-white/10 transition-all">
@@ -466,7 +473,7 @@ export default function StudioImage() {
                 <div className="space-y-4 pt-2">
                   <div className="flex justify-between items-end">
                     <label className="text-[11px] font-bold uppercase tracking-widest text-[#32C8D1] opacity-70 ml-1">
-                      Batch Count
+                      {t("studio.image.ui.batchCount")}
                     </label>
                     <span className="text-xl font-bold bg-gradient-to-t from-[#32C8D1] to-white bg-clip-text text-transparent">
                       {numImages}
@@ -485,7 +492,7 @@ export default function StudioImage() {
                 <details className="overflow-hidden">
                   <summary className="cursor-pointer text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-[#32C8D1] transition-colors py-2 flex items-center gap-2">
                     <Layers className="w-3 h-3" />
-                    Fine-tune Parameters
+                    {t("studio.image.ui.fineTuneParameters")}
                   </summary>
                   <div className="mt-4 space-y-6 p-4 bg-black/20 rounded-2xl border border-white/5 animate-in slide-in-from-top-2 duration-300">
                     <div className="space-y-3">
@@ -540,12 +547,14 @@ export default function StudioImage() {
                   {generateMutation.isPending || generatingJobId ? (
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 border-2 border-[#32C8D1]/30 border-t-[#32C8D1] rounded-full animate-spin" />
-                      <span>Evolving...</span>
+                      <span>{t("studio.image.ui.evolving")}</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Wand2 className="w-5 h-5" />
-                      <span>Synthesize ({totalCost})</span>
+                      <span>
+                        {t("studio.image.ui.synthesize", { count: totalCost })}
+                      </span>
                     </div>
                   )}
                 </Button>
@@ -558,11 +567,10 @@ export default function StudioImage() {
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-gray-500 mb-1">
-                  Notice
+                  {t("studio.image.ui.notice")}
                 </p>
                 <p className="text-[11px] text-gray-400 leading-relaxed">
-                  Higher guidance scales follow prompts strictly but may reduce
-                  overall realism.
+                  {t("studio.image.ui.noticeText")}
                 </p>
               </div>
             </div>
@@ -571,14 +579,16 @@ export default function StudioImage() {
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-3 text-white">
                 <History className="w-6 h-6 text-[#6366F1]" />
-                Recent Artifacts
+                {t("studio.image.ui.recentArtifacts")}
               </h2>
               <div className="flex gap-2">
                 <Badge
                   variant="outline"
                   className="border-white/5 bg-white/5 text-[10px] uppercase font-bold px-3 py-1"
                 >
-                  Grid View
+                  {t("studio.image.ui.gridView", {
+                    defaultValue: "Grid View",
+                  })}
                 </Badge>
               </div>
             </div>
@@ -611,20 +621,20 @@ export default function StudioImage() {
                               className="bg-white text-black hover:bg-white/90 rounded-full font-bold px-6 shadow-2xl"
                             >
                               <Download className="w-3 h-3 mr-2" />
-                              Expand
+                              {t("studio.image.ui.expand")}
                             </Button>
                           </div>
                         </div>
                         <div className="p-4 space-y-3">
                           <p className="text-[11px] text-gray-300 leading-relaxed line-clamp-2 font-medium">
                             {gen.input_params?.prompt ||
-                              "Mysterious generation..."}
+                              t("studio.image.ui.mysteriousGeneration")}
                           </p>
                           <div className="flex items-center justify-between pt-1">
                             <div className="flex items-center gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-[#32C8D1] shadow-[0_0_8px_#32C8D1]" />
                               <span className="text-[10px] font-black uppercase tracking-tighter text-[#32C8D1]">
-                                Ready
+                                {t("studio.image.ui.ready")}
                               </span>
                             </div>
                             <span className="text-[10px] font-bold text-gray-500 tabular-nums bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
@@ -643,7 +653,7 @@ export default function StudioImage() {
                           Evolving
                         </p>
                         <p className="text-[9px] text-gray-600 mt-2 uppercase font-bold">
-                          Please wait...
+                          {t("studio.image.ui.pleaseWait")}
                         </p>
                       </div>
                     )}
@@ -655,7 +665,7 @@ export default function StudioImage() {
                 <div className="col-span-full text-center py-16">
                   <ImageIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-400 text-lg">
-                    No images yet. Create your first one!
+                    {t("studio.image.ui.emptyState")}
                   </p>
                 </div>
               )}
@@ -670,11 +680,10 @@ export default function StudioImage() {
               <Coins className="w-8 h-8 text-yellow-500" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-3 text-center">
-              Credit Exhaustion
+              {t("studio.image.ui.creditExhaustionTitle")}
             </h3>
             <p className="text-sm text-gray-400 mb-8 text-center leading-relaxed">
-              Your creative fuel is low. To continue synthesizing high-fidelity
-              imagery, please replenish your balance.
+              {t("studio.image.ui.creditExhaustionBody")}
             </p>
             <div className="grid grid-cols-2 gap-4">
               <Button
@@ -682,13 +691,13 @@ export default function StudioImage() {
                 onClick={() => setShowSubscriptionModal(false)}
                 className="rounded-xl h-12 text-gray-500 hover:text-white"
               >
-                Maybe Later
+                {t("studio.image.ui.maybeLater")}
               </Button>
               <Button
                 onClick={() => navigate(createPageUrl("StudioSubscribe"))}
                 className="bg-[#32C8D1] hover:bg-[#32C8D1]/80 text-black font-bold h-12 rounded-xl"
               >
-                Top Up Now
+                {t("studio.image.ui.topUpNow")}
               </Button>
             </div>
           </div>
