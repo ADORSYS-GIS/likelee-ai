@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { parseBackendError } from "@/utils/errorParser";
 import * as crmApi from "@/api/crm";
+import { useTranslation } from "react-i18next";
 
 const LogCommunicationModal = ({
   clientId,
@@ -33,6 +34,7 @@ const LogCommunicationModal = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
+  const { t } = useTranslation("agency");
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -50,8 +52,10 @@ const LogCommunicationModal = ({
         queryKey: ["client-communications", clientId],
       });
       toast({
-        title: "Success",
-        description: "Communication logged successfully",
+        title: t("agencyDashboard.clientCRM.toasts.successTitle"),
+        description: t(
+          "agencyDashboard.clientCRM.modal.profile.logCommunication.toasts.created",
+        ),
       });
       onClose();
       setFormData({
@@ -64,8 +68,12 @@ const LogCommunicationModal = ({
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: parseBackendError(error) || "Failed to log communication",
+        title: t("agencyDashboard.clientCRM.toasts.errorTitle"),
+        description:
+          parseBackendError(error) ||
+          t(
+            "agencyDashboard.clientCRM.modal.profile.logCommunication.toasts.failed",
+          ),
         variant: "destructive",
       });
     },
@@ -76,13 +84,19 @@ const LogCommunicationModal = ({
       <DialogContent className="sm:max-w-[600px] rounded-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            Log Communication
+            {t(
+              "agencyDashboard.clientCRM.modal.profile.actions.logCommunication",
+            )}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="font-bold">Contact</Label>
+              <Label className="font-bold">
+                {t(
+                  "agencyDashboard.clientCRM.modal.profile.logCommunication.contact",
+                )}
+              </Label>
               <Select
                 value={formData.contact_id}
                 onValueChange={(val) =>
@@ -90,7 +104,11 @@ const LogCommunicationModal = ({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select contact" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.clientCRM.modal.profile.logCommunication.selectContact",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {contacts.map((c) => (
@@ -102,7 +120,11 @@ const LogCommunicationModal = ({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="font-bold">Type</Label>
+              <Label className="font-bold">
+                {t(
+                  "agencyDashboard.clientCRM.modal.profile.logCommunication.type",
+                )}
+              </Label>
               <Select
                 value={formData.communication_type}
                 onValueChange={(val) =>
@@ -110,19 +132,43 @@ const LogCommunicationModal = ({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue
+                    placeholder={t(
+                      "agencyDashboard.clientCRM.modal.profile.logCommunication.selectType",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="call">Phone Call</SelectItem>
-                  <SelectItem value="meeting">Meeting</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="email">
+                    {t(
+                      "agencyDashboard.clientCRM.modal.profile.logCommunication.types.email",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="call">
+                    {t(
+                      "agencyDashboard.clientCRM.modal.profile.logCommunication.types.call",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="meeting">
+                    {t(
+                      "agencyDashboard.clientCRM.modal.profile.logCommunication.types.meeting",
+                    )}
+                  </SelectItem>
+                  <SelectItem value="other">
+                    {t(
+                      "agencyDashboard.clientCRM.modal.profile.logCommunication.types.other",
+                    )}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Date</Label>
+            <Label className="font-bold">
+              {t(
+                "agencyDashboard.clientCRM.modal.profile.logCommunication.date",
+              )}
+            </Label>
             <Input
               type="date"
               value={formData.occurred_at}
@@ -132,37 +178,53 @@ const LogCommunicationModal = ({
             />
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Subject</Label>
+            <Label className="font-bold">
+              {t(
+                "agencyDashboard.clientCRM.modal.profile.logCommunication.subject",
+              )}
+            </Label>
             <Input
               value={formData.subject}
               onChange={(e) =>
                 setFormData({ ...formData, subject: e.target.value })
               }
-              placeholder="Meeting summary..."
+              placeholder={t(
+                "agencyDashboard.clientCRM.modal.profile.logCommunication.placeholders.subject",
+              )}
             />
           </div>
           <div className="space-y-2">
-            <Label className="font-bold">Notes</Label>
+            <Label className="font-bold">
+              {t(
+                "agencyDashboard.clientCRM.modal.profile.logCommunication.notes",
+              )}
+            </Label>
             <Textarea
               value={formData.content}
               onChange={(e) =>
                 setFormData({ ...formData, content: e.target.value })
               }
-              placeholder="Details about the communication..."
+              placeholder={t(
+                "agencyDashboard.clientCRM.modal.profile.logCommunication.placeholders.notes",
+              )}
               className="min-h-[150px]"
             />
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t("agencyDashboard.clientCRM.actions.cancel")}
           </Button>
           <Button
             onClick={() => mutation.mutate(formData)}
             disabled={mutation.isPending}
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
           >
-            {mutation.isPending ? "Saving..." : "Log Communication"}
+            {mutation.isPending
+              ? t("agencyDashboard.performanceTiers.states.saving")
+              : t(
+                  "agencyDashboard.clientCRM.modal.profile.actions.logCommunication",
+                )}
           </Button>
         </DialogFooter>
       </DialogContent>
