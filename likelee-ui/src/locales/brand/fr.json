@@ -1565,16 +1565,16 @@
       "campaign": "Campagne",
       "progress": "Progression",
       "completion": "Achevement",
-      "deliverablesApproved": "livrables approuves",
+      "deliverablesApproved": "livrables approuvés",
       "loadingCampaigns": "Chargement des campagnes...",
       "noActiveCampaigns": "Aucune campagne active disponible.",
       "campaignAssetSubmission": "Soumission des assets de campagne",
       "campaignOffer": "Offre de campagne",
       "agency": "Agence",
-      "creator": "Createur",
+      "creator": "Créateur",
       "collaborator": "Collaborateur",
-      "creatorAgency": "Createur • Agence",
-      "creatorCreator": "Createur • Createur",
+      "creatorAgency": "Créateur • Agence",
+      "creatorCreator": "Créateur • Créateur",
       "approvingDeliverableTriggers": "L'approbation d'un livrable declenche le paiement escrow (une seule fois).",
       "approvalsAreFinal": "Apres approbation d'un livrable, le telechargement sera active. Les approbations sont definitives et ne peuvent pas etre annulees.",
       "loadingDeliverables": "Chargement des livrables...",
@@ -1652,6 +1652,10 @@
       "title": "Marquer la campagne comme terminée ?",
       "description": "Cette action est irréversible. La campagne sera marquée comme terminée et retirée des campagnes actives.",
       "confirm": "Marquer comme terminé"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Statut d’achèvement",
+      "markedDoneOn": "Marqué comme terminé le"
     }
   },
   "campaignsDashboard": {
@@ -1674,7 +1678,9 @@
     "status": {
       "completed": "Terminé",
       "incomplete": "Incomplet",
-      "active": "Actif"
+      "active": "Actif",
+      "pending_approval": "Approbation en attente",
+      "pendingApproval": "Approbation en attente"
     },
     "plan": {
       "basicBriefOnly": "Les forfaits Basic peuvent enregistrer les détails et briefs de campagne, mais la sélection des collaborateurs et l'envoi des offres commencent avec Pro.",

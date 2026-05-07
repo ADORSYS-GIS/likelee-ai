@@ -1591,6 +1591,10 @@
       "title": "¿Marcar la campaña como completada?",
       "description": "Esta acción es irreversible. La campaña se marcará como completada y se quitará de Activas.",
       "confirm": "Marcar como completada"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Estado de finalización",
+      "markedDoneOn": "Marcado como completado el"
     }
   },
   "campaignsDashboard": {
@@ -1613,7 +1617,9 @@
     "status": {
       "completed": "Completado",
       "incomplete": "Incompleto",
-      "active": "Activo"
+      "active": "Activo",
+      "pending_approval": "Aprobación pendiente",
+      "pendingApproval": "Aprobación pendiente"
     },
     "plan": {
       "basicBriefOnly": "Los planes Basic pueden guardar detalles y briefs de campaña, pero la selección de colaboradores y el envío de ofertas comienzan en Pro.",

@@ -746,6 +746,41 @@ export default function BrandCampaignDashboard({
     if (targetName) return `Collaborator • ${targetName}`;
     return shortId ? `Collaborator ${shortId}` : "Collaborator";
   };
+  const formatCollaboratorLabel = (label: unknown) => {
+    const text = String(label || "").trim();
+    const separatorMatch = text.match(
+      /^(Creator|Agency|Collaborator)\s*•\s*(.+)$/i,
+    );
+    if (separatorMatch) {
+      const type = separatorMatch[1].toLowerCase();
+      const name = separatorMatch[2];
+      const typeLabel =
+        type === "creator"
+          ? t("campaigns.campaignDetails.creator")
+          : type === "agency"
+            ? t("campaigns.campaignDetails.agency")
+            : t("campaigns.campaignDetails.collaborator");
+      return `${typeLabel} • ${name}`;
+    }
+    const prefixMatch = text.match(/^(Creator|Agency|Collaborator)\s+(.+)$/i);
+    if (prefixMatch) {
+      const type = prefixMatch[1].toLowerCase();
+      const suffix = prefixMatch[2];
+      const typeLabel =
+        type === "creator"
+          ? t("campaigns.campaignDetails.creator")
+          : type === "agency"
+            ? t("campaigns.campaignDetails.agency")
+            : t("campaigns.campaignDetails.collaborator");
+      return `${typeLabel} ${suffix}`;
+    }
+    if (/^creator$/i.test(text)) return t("campaigns.campaignDetails.creator");
+    if (/^agency$/i.test(text)) return t("campaigns.campaignDetails.agency");
+    if (/^collaborator$/i.test(text)) {
+      return t("campaigns.campaignDetails.collaborator");
+    }
+    return text;
+  };
   const extractFirstNumber = (value: unknown): number => {
     const text = String(value || "");
     const match = text.match(/(\d+)/);
@@ -2686,7 +2721,9 @@ export default function BrandCampaignDashboard({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">Progress</p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {t("campaignsDashboard.overview.progress")}
+                    </p>
                     <Progress
                       value={
                         campaign.deliverables > 0
@@ -2696,12 +2733,16 @@ export default function BrandCampaignDashboard({
                       className="h-2 mb-2"
                     />
                     <p className="text-sm text-gray-600">
-                      {campaign.approved} / {campaign.deliverables} deliverables
-                      approved
+                      {t("campaignsDashboard.overview.deliverablesApproved", {
+                        approved: campaign.approved,
+                        total: campaign.deliverables,
+                      })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 mb-2">Collaborators</p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {t("campaignsDashboard.overview.collaborators")}
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {campaign.collaborators.length === 0 ? (
                         <span className="text-sm text-gray-500">
@@ -2713,7 +2754,7 @@ export default function BrandCampaignDashboard({
                             key={idx}
                             className="bg-gray-200 text-gray-700"
                           >
-                            {collab}
+                            {formatCollaboratorLabel(collab)}
                           </Badge>
                         ))
                       )}
@@ -4536,7 +4577,7 @@ export default function BrandCampaignDashboard({
                           key={`${label}-${idx}`}
                           className="bg-gray-200 text-gray-700"
                         >
-                          {label}
+                          {formatCollaboratorLabel(label)}
                         </Badge>
                       );
                     })
@@ -4599,7 +4640,7 @@ export default function BrandCampaignDashboard({
                             )}
                           </div>
                           <h4 className="font-black text-gray-900 uppercase tracking-widest text-[11px]">
-                            {label}
+                            {formatCollaboratorLabel(label)}
                           </h4>
                           <span className="ml-auto text-[10px] text-gray-400 font-black bg-gray-50 px-2 py-0.5 border border-gray-100 uppercase tracking-tighter">
                             {t("campaigns.campaignDetails.assetsCount", {
