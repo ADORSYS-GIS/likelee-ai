@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const languages = {
   en: "English",
@@ -16,7 +17,11 @@ const languages = {
   fr: "Français",
 };
 
-const LanguageSwitcher: React.FC = () => {
+type LanguageSwitcherProps = {
+  className?: string;
+};
+
+const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ className }) => {
   const { i18n } = useTranslation();
 
   const changeLanguage = (lng: string) => {
@@ -28,7 +33,10 @@ const LanguageSwitcher: React.FC = () => {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="flex items-center gap-2 text-black hover:text-gray-700 hover:bg-transparent px-2"
+          className={cn(
+            "flex items-center gap-2 text-black hover:text-gray-700 hover:bg-transparent px-2",
+            className,
+          )}
         >
           {languages[i18n.language.split("-")[0] as keyof typeof languages] ||
             "Language"}
