@@ -39,7 +39,7 @@ fn offer_contract_status_is_signed(value: &serde_json::Value) -> bool {
     st == "completed" || st == "signed"
 }
 
-fn offer_status_is_signed(value: &serde_json::Value) -> bool {
+pub fn offer_status_is_signed(value: &serde_json::Value) -> bool {
     let st = value
         .get("status")
         .and_then(|v| v.as_str())
@@ -8283,11 +8283,26 @@ pub async fn review_offer_deliverable(
     }
 
     if user.role == "brand" && action == "approve" {
+        // Read the offer's actual payment_status so the fallback outcome is accurate
+        // even if the escrow release fails (e.g. Stripe not connected yet).
+        let fallback_payment_status = _offer
+            .get("payment_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unpaid")
+            .trim()
+            .to_lowercase();
+        let fallback_escrow_status = _offer
+            .get("escrow_status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("holding")
+            .trim()
+            .to_lowercase();
+
         let outcome = try_release_campaign_offer_escrow(&state, &offer_id)
             .await
             .unwrap_or(EscrowReleaseOutcome {
-                payment_status: "unknown".to_string(),
-                escrow_status: "unknown".to_string(),
+                payment_status: fallback_payment_status,
+                escrow_status: fallback_escrow_status,
                 released_now: false,
             });
 
@@ -8322,19 +8337,28 @@ async fn try_release_campaign_offer_escrow(
     let offer_text = offer_resp.text().await.map_err(|e| e.to_string())?;
     let offer: serde_json::Value = serde_json::from_str(&offer_text).unwrap_or_default();
 
-    let escrow_status = offer
+    let escrow_status_raw = offer
         .get("escrow_status")
         .and_then(|v| v.as_str())
-        .unwrap_or("holding");
+        .unwrap_or("holding")
+        .trim()
+        .to_lowercase();
+    let escrow_status = escrow_status_raw.as_str();
 
     let target_type = offer
         .get("target_type")
         .and_then(|v| v.as_str())
-        .unwrap_or("");
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let target_type = target_type.as_str();
     let payment_status = offer
         .get("payment_status")
         .and_then(|v| v.as_str())
-        .unwrap_or("unpaid");
+        .unwrap_or("unpaid")
+        .trim()
+        .to_lowercase();
+    let payment_status = payment_status.as_str();
 
     // Escrow release applies to both agency-collaborated offers and independent creator offers.
     if target_type != "agency" && target_type != "creator" {
@@ -8362,8 +8386,7 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    // Escrow releases when MORE THAN HALF of submitted deliverables are approved.
-    // This ensures the brand has reviewed the majority of work before funds are released.
+    // Escrow releases when at least ONE deliverable is approved.
     let total_deliverables_resp = state
         .pg
         .from("campaign_offer_deliverables")
@@ -8426,8 +8449,9 @@ async fn try_release_campaign_offer_escrow(
         serde_json::from_str(&approved_text).unwrap_or_default();
     let approved_count = approved_rows.len();
 
-    // More than half must be approved: approved_count > total_count / 2
-    if approved_count <= total_count / 2 {
+    // Escrow releases when at least one deliverable is approved.
+    // This ensures the brand has reviewed and accepted work before funds are released.
+    if approved_count < 1 {
         return Ok(EscrowReleaseOutcome {
             payment_status: payment_status.to_string(),
             escrow_status: escrow_status.to_string(),
@@ -8855,9 +8879,21 @@ async fn release_campaign_offer_transfers(
             continue;
         }
 
-        let talent_account_id = get_creator_stripe_account(state, &creator_id)
-            .await
-            .map_err(|e| format!("Failed to get creator Stripe account for split: {}", e))?;
+        // If a talent hasn't connected their Stripe account yet, skip their split
+        // rather than failing the entire escrow release. Their payout can be retried later.
+        let talent_account_id = match get_creator_stripe_account(state, &creator_id).await {
+            Ok(id) => id,
+            Err(e) => {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    creator_id = %creator_id,
+                    talent_id = %talent_id,
+                    error = %e,
+                    "Skipping talent split — Stripe account not connected"
+                );
+                continue;
+            }
+        };
 
         let mut metadata = std::collections::HashMap::from([
             ("offer_id".to_string(), offer_id.to_string()),

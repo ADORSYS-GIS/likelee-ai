@@ -22,6 +22,7 @@ type Props = {
   fieldErrors?: Record<string, string>;
   onFieldChange?: (field: string) => void;
   hideBack?: boolean;
+  platformFeePercent?: number;
 };
 
 export default function CampaignBriefStep({
@@ -36,6 +37,7 @@ export default function CampaignBriefStep({
   fieldErrors = {},
   onFieldChange,
   hideBack = false,
+  platformFeePercent = 2,
 }: Props) {
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const assetInputRef = useRef<HTMLInputElement | null>(null);
@@ -531,7 +533,8 @@ export default function CampaignBriefStep({
               value={campaignBrief.budget_creator_payment}
               onChange={(e) => {
                 const payout = Number(e.target.value) || 0;
-                const total = (payout * 1.02).toFixed(2);
+                const feeMultiplier = 1 + platformFeePercent / 100;
+                const total = (payout * feeMultiplier).toFixed(2);
                 setCampaignBrief((prev) => ({
                   ...prev,
                   budget_creator_payment: e.target.value,
@@ -549,7 +552,7 @@ export default function CampaignBriefStep({
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              Offer Amount (Gross + 2% Fee){" "}
+              Offer Amount (Gross + {platformFeePercent}% Fee){" "}
               <span className="text-red-600">*</span>
             </p>
             <Input
@@ -561,7 +564,7 @@ export default function CampaignBriefStep({
             />
             <FieldError field="budget_total" />
             <p className="text-[10px] text-blue-600 font-medium">
-              Includes 2% Likelee platform fee ($
+              Includes {platformFeePercent}% Likelee platform fee ($
               {(
                 Number(campaignBrief.budget_total || 0) -
                 Number(campaignBrief.budget_creator_payment || 0)
