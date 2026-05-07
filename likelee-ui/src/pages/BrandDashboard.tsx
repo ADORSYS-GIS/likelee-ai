@@ -5297,7 +5297,11 @@ export default function BrandDashboard() {
             amount: off?.budget,
             currency: off?.currency_code || "USD",
           });
-        } else if (String(escrow?.payment_status || "") !== "paid") {
+        } else if (
+          String(escrow?.payment_status || "")
+            .trim()
+            .toLowerCase() !== "paid"
+        ) {
           toast({
             title: "Approved, but payment not received",
             description:

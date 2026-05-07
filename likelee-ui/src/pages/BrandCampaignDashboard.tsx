@@ -1118,7 +1118,11 @@ export default function BrandCampaignDashboard({
         if (escrow?.released_now) {
           setEscrowReleaseInfo(escrow);
           setShowEscrowReleaseModal(true);
-        } else if (String(escrow?.payment_status || "") !== "paid") {
+        } else if (
+          String(escrow?.payment_status || "")
+            .trim()
+            .toLowerCase() !== "paid"
+        ) {
           toast({
             title: "Approved, but payment not received",
             description:
