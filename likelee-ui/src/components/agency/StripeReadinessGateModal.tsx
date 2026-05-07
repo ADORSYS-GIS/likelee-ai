@@ -29,11 +29,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   ExternalLink,
-  Users,
+  MessageSquare,
   ShieldAlert,
   ShieldCheck,
   ShieldX,
   ArrowRight,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -108,7 +109,13 @@ function PartyStatusPill({
   );
 }
 
-function PartyRow({ party }: { party: StripeReadinessParty }) {
+function PartyRow({
+  party,
+  onMessage,
+}: {
+  party: StripeReadinessParty;
+  onMessage?: (party: StripeReadinessParty) => void;
+}) {
   const roleLabel = party.party_type === "agency" ? "Agency" : "Talent";
   const initials = party.name
     .split(" ")
@@ -116,6 +123,9 @@ function PartyRow({ party }: { party: StripeReadinessParty }) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const canMessage =
+    onMessage && party.party_type === "creator" && !party.connected;
 
   return (
     <div className="flex items-center gap-3 py-3 border-b border-gray-100 last:border-0">
@@ -130,6 +140,16 @@ function PartyRow({ party }: { party: StripeReadinessParty }) {
         </p>
         <p className="text-xs text-gray-400 leading-tight">{roleLabel}</p>
       </div>
+      {/* Message shortcut — only for unconnected talents */}
+      {canMessage && (
+        <button
+          onClick={() => onMessage(party)}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors shrink-0"
+          title={`Message ${party.name}`}
+        >
+          <MessageSquare className="w-4 h-4" />
+        </button>
+      )}
       {/* Status pill */}
       <PartyStatusPill
         connected={party.connected}
@@ -174,6 +194,19 @@ export function StripeReadinessGateModal({
 
   // ── HARD BLOCK ─────────────────────────────────────────────────────────────
   if (gate === "hard_block") {
+    // Unconnected talents (not the agency) — these are the ones to message
+    const unconnectedTalents = unconnectedParties.filter(
+      (p) => p.party_type === "creator",
+    );
+
+    const handleMessageParty = (party: StripeReadinessParty) => {
+      onClose();
+      // creator_id is stored in party.id — openCreatorId pre-opens the conversation
+      navigate(
+        `/AgencyDashboard?tab=messages&openCreatorId=${encodeURIComponent(party.id)}`,
+      );
+    };
+
     return (
       <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
         <DialogContent className="sm:max-w-[460px] p-0 overflow-hidden gap-0">
@@ -202,7 +235,15 @@ export function StripeReadinessGateModal({
             </p>
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 divide-y divide-gray-100">
               {allParties.map((p) => (
-                <PartyRow key={p.id} party={p} />
+                <PartyRow
+                  key={p.id}
+                  party={p}
+                  onMessage={
+                    unconnectedTalents.length > 0
+                      ? handleMessageParty
+                      : undefined
+                  }
+                />
               ))}
             </div>
           </div>
@@ -210,12 +251,19 @@ export function StripeReadinessGateModal({
           {/* Explanation */}
           <div className="px-6 pb-2">
             <p className="text-xs text-gray-500 leading-relaxed">
-              Ask the{" "}
+              Ask{" "}
               {unconnectedParties.map((p) => p.name).join(", ")}{" "}
               to go to their{" "}
               <span className="font-semibold text-gray-700">Payouts</span>{" "}
               section and complete Stripe onboarding. Once connected, you can
-              send this contract.
+              send this contract.{" "}
+              {unconnectedTalents.length > 0 && (
+                <span>
+                  Use the{" "}
+                  <MessageSquare className="w-3 h-3 inline-block -mt-0.5 text-blue-500" />{" "}
+                  icon next to each talent to message them directly.
+                </span>
+              )}
             </p>
           </div>
 
@@ -231,6 +279,29 @@ export function StripeReadinessGateModal({
               >
                 <ExternalLink className="w-4 h-4" />
                 Go to Payouts
+              </Button>
+            )}
+            {unconnectedTalents.length === 1 && (
+              <Button
+                variant="outline"
+                className="gap-2 border-gray-300"
+                onClick={() => handleMessageParty(unconnectedTalents[0])}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Message {unconnectedTalents[0].name}
+              </Button>
+            )}
+            {unconnectedTalents.length > 1 && (
+              <Button
+                variant="outline"
+                className="gap-2 border-gray-300"
+                onClick={() => {
+                  onClose();
+                  navigate("/AgencyDashboard?tab=messages");
+                }}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Go to Messages
               </Button>
             )}
             <Button
