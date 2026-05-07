@@ -204,7 +204,18 @@
       },
       "examples": {
         "title": "What people are making",
-        "subtitle": "Created using Likelee Studio tools and models."
+        "subtitle": "Created using Likelee Studio tools and models.",
+        "types": {
+          "video": "video",
+          "image": "image"
+        },
+        "tryStyle": "Try this style →",
+        "captions": {
+          "cinematicAiVideo": "Cinematic AI video",
+          "aiPortraitGeneration": "AI portrait generation",
+          "aiShortFilm": "AI short film",
+          "digitalArtStyle": "Digital art style"
+        }
       },
       "faq": {
         "title": "Frequently Asked Questions",
@@ -1575,6 +1586,11 @@
       "noAssetsProvided": "No assets provided.",
       "referenceCount": "Reference {{current}} of {{total}}",
       "reference": "Reference"
+    },
+    "markDone": {
+      "title": "Mark campaign as done?",
+      "description": "This action is irreversible. The campaign will be marked as completed and removed from Active.",
+      "confirm": "Mark as Done"
     }
   },
   "campaignsDashboard": {
@@ -1596,7 +1612,8 @@
     "newCampaign": "New Campaign",
     "status": {
       "completed": "Completed",
-      "incomplete": "Incomplete"
+      "incomplete": "Incomplete",
+      "active": "Active"
     },
     "plan": {
       "basicBriefOnly": "Basic plans can save campaign details and briefs, but collaborator selection and offer sending start on Pro.",
@@ -2225,6 +2242,95 @@
     "upgradePlanForMembers": "Upgrade your plan to add more team members and unlock additional features.",
     "upgradePlan": "Upgrade Plan",
     "upgradeForSeats": "Upgrade to Basic or above to unlock team seats.",
-    "seatLimitReachedDescription": "You've reached your {{count}} seat limit. Upgrade to add more team members."
+    "seatLimitReachedDescription": "You've reached your {{count}} seat limit. Upgrade to add more team members.",
+    "activity": "Activity",
+    "upgradeToAddMembers": "Upgrade to Add Members",
+    "inviteTeamMember": "Invite Team Member",
+    "inviteTeamMemberTitle": "Invite Team Member",
+    "loadingMembers": "Loading team members...",
+    "activeMembers": "Active Members",
+    "membersCount_one": "{{count}} member",
+    "membersCount_other": "{{count}} members",
+    "added": "Added",
+    "noMembers": "No team members found yet.",
+    "pendingInvites": "Pending Invites",
+    "pending": "Pending",
+    "expires": "Expires",
+    "noPendingInvites": "No pending invites.",
+    "inviteBrandDescription": "Add a new collaborator to your brand",
+    "inviteDescription": "Send an email invitation to join your team",
+    "emailAddress": "Email Address",
+    "emailPlaceholder": "colleague@example.com",
+    "userRole": "User Role",
+    "selectRole": "Select role",
+    "accessRights": "Access Rights",
+    "note": "Note",
+    "inviteNote": "Invited teammates will receive an email to join your workspace.",
+    "sending": "Sending...",
+    "sendInvitation": "Send Invitation",
+    "member": "Member",
+    "aMember": "A member",
+    "isCurrently": "is currently",
+    "newRole": "New Role",
+    "roleChangeImmediate": "Role changes take effect immediately.",
+    "confirmRoleChange": "Confirm Role Change",
+    "teamActivity": "Team Activity",
+    "activityDescription": "Recent changes to team members and invitations.",
+    "empty": "No team activity recorded yet.",
+    "noActivity": "No team activity recorded yet.",
+    "updateRoleTitle": "Update Team Role",
+    "invitationCreated": "Invitation created",
+    "invitedAs": "{{target}} invited as {{role}}",
+    "roleUpdated": "Role updated",
+    "changedRole": "{{target}} changed from {{oldRole}} to {{newRole}}",
+    "invitationAccepted": "Invitation accepted",
+    "joinedTeam": "{{target}} joined the team",
+    "invitationDeclined": "Invitation declined",
+    "declinedInvitation": "{{target}} declined the invitation",
+    "memberRemoved": "Member removed",
+    "memberRemovedDescription": "{{email}} has been removed from the team.",
+    "removedFromTeam": "{{target}} was removed from the team",
+    "removalFailed": "Removal failed",
+    "removalFailedDescription": "Could not remove the member.",
+    "fallback": "Team activity",
+    "roleDescriptions": {
+      "admin": "Full team management, billing, campaigns, and approvals.",
+      "projectManager": "Campaign creation and deliverable approvals without billing.",
+      "reviewer": "Read-only access to deliverables with team visibility."
+    },
+    "permissions": {
+      "fullTeamManagement": "Full team management",
+      "billingSubscriptions": "Billing & subscriptions",
+      "campaignsApprovals": "Campaigns & approvals",
+      "payOffers": "Pay offers",
+      "jobsManagement": "Jobs management",
+      "contractsManagement": "Contracts management",
+      "licenseManagement": "License management",
+      "brandConnections": "Brand connections",
+      "manageJobs": "Manage jobs",
+      "manageContracts": "Manage contracts",
+      "manageLicenses": "Manage licenses",
+      "manageBrandConnections": "Manage brand connections",
+      "manageClients": "Manage clients",
+      "viewSubscriptionsBilling": "View subscriptions & billing",
+      "campaignCreation": "Campaign creation",
+      "deliverableApprovals": "Deliverable approvals",
+      "viewPayOffers": "View pay offers",
+      "viewJobs": "View jobs",
+      "viewContracts": "View contracts",
+      "viewDeliverables": "View deliverables",
+      "viewTeamMembers": "View team members",
+      "viewBrandConnections": "View brand connections",
+      "viewClients": "View clients",
+      "viewLicenses": "View licenses"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "projectManager": "Project Manager",
+      "reviewer": "Reviewer",
+      "unknown": "Unknown"
+    },
+    "invite": "Invite"
   }
 }

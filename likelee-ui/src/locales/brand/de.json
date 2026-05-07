@@ -1321,6 +1321,11 @@
       "noAssetsProvided": "Keine Assets bereitgestellt.",
       "referenceCount": "Referenz {{current}} von {{total}}",
       "reference": "Referenz"
+    },
+    "markDone": {
+      "title": "Kampagne als erledigt markieren?",
+      "description": "Diese Aktion kann nicht rückgängig gemacht werden. Die Kampagne wird als abgeschlossen markiert und aus „Aktiv“ entfernt.",
+      "confirm": "Als erledigt markieren"
     }
   },
   "brandCompanyPage": {
@@ -1569,7 +1574,18 @@
       },
       "examples": {
         "title": "Was andere erstellen",
-        "subtitle": "Erstellt mit Likelee Studio Tools und Modellen."
+        "subtitle": "Erstellt mit Likelee Studio Tools und Modellen.",
+        "types": {
+          "video": "Video",
+          "image": "Bild"
+        },
+        "tryStyle": "Diesen Stil ausprobieren →",
+        "captions": {
+          "cinematicAiVideo": "Kinematisches KI-Video",
+          "aiPortraitGeneration": "KI-Porträtgenerierung",
+          "aiShortFilm": "KI-Kurzfilm",
+          "digitalArtStyle": "Digitaler Kunststil"
+        }
       },
       "faq": {
         "title": "Häufige Fragen",
@@ -1651,7 +1667,8 @@
     "newCampaign": "Neue Kampagne",
     "status": {
       "completed": "Abgeschlossen",
-      "incomplete": "Unvollständig"
+      "incomplete": "Unvollständig",
+      "active": "Aktiv"
     },
     "plan": {
       "basicBriefOnly": "Basic-Pläne können Kampagnendetails und Briefings speichern, aber Mitarbeiterauswahl und Angebotsversand starten erst mit Pro.",
@@ -2246,6 +2263,95 @@
     "upgradePlanForMembers": "Upgrade deinen Plan, um weitere Teammitglieder hinzuzufügen und zusätzliche Funktionen freizuschalten.",
     "upgradePlan": "Plan upgraden",
     "upgradeForSeats": "Upgrade auf Basic oder höher, um Teamsitze freizuschalten.",
-    "seatLimitReachedDescription": "Du hast dein Limit von {{count}} Sitzen erreicht. Upgrade, um weitere Teammitglieder hinzuzufügen."
+    "seatLimitReachedDescription": "Du hast dein Limit von {{count}} Sitzen erreicht. Upgrade, um weitere Teammitglieder hinzuzufügen.",
+    "activity": "Aktivität",
+    "upgradeToAddMembers": "Upgrade zum Hinzufügen von Mitgliedern",
+    "inviteTeamMember": "Teammitglied einladen",
+    "inviteTeamMemberTitle": "Teammitglied einladen",
+    "loadingMembers": "Teammitglieder werden geladen...",
+    "activeMembers": "Aktive Mitglieder",
+    "membersCount_one": "{{count}} Mitglied",
+    "membersCount_other": "{{count}} Mitglieder",
+    "added": "Hinzugefügt",
+    "noMembers": "Noch keine Teammitglieder gefunden.",
+    "pendingInvites": "Ausstehende Einladungen",
+    "pending": "Ausstehend",
+    "expires": "Läuft ab",
+    "noPendingInvites": "Keine ausstehenden Einladungen.",
+    "inviteBrandDescription": "Füge deiner Marke einen neuen Mitarbeiter hinzu",
+    "inviteDescription": "Sende eine E-Mail-Einladung, um deinem Team beizutreten",
+    "emailAddress": "E-Mail-Adresse",
+    "emailPlaceholder": "kollege@beispiel.de",
+    "userRole": "Benutzerrolle",
+    "selectRole": "Rolle auswählen",
+    "accessRights": "Zugriffsrechte",
+    "note": "Hinweis",
+    "inviteNote": "Eingeladene Teammitglieder erhalten eine E-Mail, um deinem Workspace beizutreten.",
+    "sending": "Wird gesendet...",
+    "sendInvitation": "Einladung senden",
+    "member": "Mitglied",
+    "aMember": "Ein Mitglied",
+    "isCurrently": "ist derzeit",
+    "newRole": "Neue Rolle",
+    "roleChangeImmediate": "Rollenänderungen werden sofort wirksam.",
+    "confirmRoleChange": "Rollenänderung bestätigen",
+    "teamActivity": "Teamaktivität",
+    "activityDescription": "Letzte Änderungen an Teammitgliedern und Einladungen.",
+    "empty": "Noch keine Teamaktivität erfasst.",
+    "noActivity": "Noch keine Teamaktivität erfasst.",
+    "updateRoleTitle": "Teamrolle aktualisieren",
+    "invitationCreated": "Einladung erstellt",
+    "invitedAs": "{{target}} wurde als {{role}} eingeladen",
+    "roleUpdated": "Rolle aktualisiert",
+    "changedRole": "{{target}} wurde von {{oldRole}} zu {{newRole}} geändert",
+    "invitationAccepted": "Einladung angenommen",
+    "joinedTeam": "{{target}} ist dem Team beigetreten",
+    "invitationDeclined": "Einladung abgelehnt",
+    "declinedInvitation": "{{target}} hat die Einladung abgelehnt",
+    "memberRemoved": "Mitglied entfernt",
+    "memberRemovedDescription": "{{email}} wurde aus dem Team entfernt.",
+    "removedFromTeam": "{{target}} wurde aus dem Team entfernt",
+    "removalFailed": "Entfernen fehlgeschlagen",
+    "removalFailedDescription": "Das Mitglied konnte nicht entfernt werden.",
+    "fallback": "Teamaktivität",
+    "roleDescriptions": {
+      "admin": "Vollständige Teamverwaltung, Abrechnung, Kampagnen und Freigaben.",
+      "projectManager": "Kampagnenerstellung und Freigabe von Deliverables ohne Abrechnung.",
+      "reviewer": "Schreibgeschützter Zugriff auf Deliverables mit Teamsichtbarkeit."
+    },
+    "permissions": {
+      "fullTeamManagement": "Vollständige Teamverwaltung",
+      "billingSubscriptions": "Abrechnung und Abonnements",
+      "campaignsApprovals": "Kampagnen und Freigaben",
+      "payOffers": "Angebote anzeigen",
+      "jobsManagement": "Jobs verwalten",
+      "contractsManagement": "Verträge verwalten",
+      "licenseManagement": "Lizenzen verwalten",
+      "brandConnections": "Markenverbindungen",
+      "manageJobs": "Jobs verwalten",
+      "manageContracts": "Verträge verwalten",
+      "manageLicenses": "Lizenzen verwalten",
+      "manageBrandConnections": "Markenverbindungen verwalten",
+      "manageClients": "Kunden verwalten",
+      "viewSubscriptionsBilling": "Abos und Abrechnung anzeigen",
+      "campaignCreation": "Kampagnenerstellung",
+      "deliverableApprovals": "Deliverables freigeben",
+      "viewPayOffers": "Angebote anzeigen",
+      "viewJobs": "Jobs anzeigen",
+      "viewContracts": "Verträge anzeigen",
+      "viewDeliverables": "Deliverables anzeigen",
+      "viewTeamMembers": "Teammitglieder anzeigen",
+      "viewBrandConnections": "Markenverbindungen anzeigen",
+      "viewClients": "Kunden anzeigen",
+      "viewLicenses": "Lizenzen anzeigen"
+    },
+    "roles": {
+      "owner": "Inhaber",
+      "admin": "Admin",
+      "projectManager": "Projektmanager",
+      "reviewer": "Prüfer",
+      "unknown": "Unbekannt"
+    },
+    "invite": "Einladen"
   }
 }
