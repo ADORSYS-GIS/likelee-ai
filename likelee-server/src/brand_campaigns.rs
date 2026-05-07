@@ -8322,19 +8322,28 @@ async fn try_release_campaign_offer_escrow(
     let offer_text = offer_resp.text().await.map_err(|e| e.to_string())?;
     let offer: serde_json::Value = serde_json::from_str(&offer_text).unwrap_or_default();
 
-    let escrow_status = offer
+    let escrow_status_raw = offer
         .get("escrow_status")
         .and_then(|v| v.as_str())
-        .unwrap_or("holding");
+        .unwrap_or("holding")
+        .trim()
+        .to_lowercase();
+    let escrow_status = escrow_status_raw.as_str();
 
     let target_type = offer
         .get("target_type")
         .and_then(|v| v.as_str())
-        .unwrap_or("");
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let target_type = target_type.as_str();
     let payment_status = offer
         .get("payment_status")
         .and_then(|v| v.as_str())
-        .unwrap_or("unpaid");
+        .unwrap_or("unpaid")
+        .trim()
+        .to_lowercase();
+    let payment_status = payment_status.as_str();
 
     // Escrow release applies to both agency-collaborated offers and independent creator offers.
     if target_type != "agency" && target_type != "creator" {
