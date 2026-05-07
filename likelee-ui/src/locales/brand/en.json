@@ -91,6 +91,7 @@
         "notice": "Notice",
         "noticeText": "Higher guidance scales follow prompts strictly but may reduce overall realism.",
         "recentArtifacts": "Recent Artifacts",
+        "gridView": "Grid View",
         "expand": "Expand",
         "mysteriousGeneration": "Mysterious generation...",
         "ready": "Ready",
@@ -677,6 +678,43 @@
       "teamActivity": "Team Activity",
       "activityDescription": "Recent changes to team members and invitations.",
       "noActivity": "No recent activity.",
+      "updateRoleTitle": "Update Team Role",
+      "roleDescriptions": {
+        "admin": "Full team management, billing, campaigns, and approvals.",
+        "projectManager": "Campaign creation and deliverable approvals without billing.",
+        "reviewer": "Read-only access to deliverables with team visibility."
+      },
+      "permissions": {
+        "fullTeamManagement": "Full team management",
+        "billingSubscriptions": "Billing & subscriptions",
+        "campaignsApprovals": "Campaigns & approvals",
+        "payOffers": "Pay offers",
+        "jobsManagement": "Jobs management",
+        "contractsManagement": "Contracts management",
+        "licenseManagement": "License management",
+        "brandConnections": "Brand connections",
+        "manageJobs": "Manage jobs",
+        "manageContracts": "Manage contracts",
+        "manageLicenses": "Manage licenses",
+        "manageBrandConnections": "Manage brand connections",
+        "manageClients": "Manage clients",
+        "viewSubscriptionsBilling": "View subscriptions & billing",
+        "campaignCreation": "Campaign creation",
+        "deliverableApprovals": "Deliverable approvals",
+        "viewPayOffers": "View pay offers",
+        "viewJobs": "View jobs",
+        "viewContracts": "View contracts",
+        "viewDeliverables": "View deliverables",
+        "viewTeamMembers": "View team members",
+        "viewBrandConnections": "View brand connections",
+        "viewClients": "View clients",
+        "viewLicenses": "View licenses"
+      },
+      "removeMemberTitle": "Remove Team Member",
+      "removeMemberDescription": "Are you sure you want to remove {{member}} from the team?",
+      "removeMemberWarning": "This action cannot be undone. The member will lose access to all organization resources immediately.",
+      "removing": "Removing...",
+      "removeMember": "Remove Member",
       "roles": {
         "owner": "Owner",
         "admin": "Admin",
@@ -1087,6 +1125,8 @@
         "sentDate": "Sent Date",
         "actions": "Actions"
       },
+      "contractOverview": "Contract Overview",
+      "contract": "Contract",
       "actions": {
         "resend": "Resend",
         "archive": "Archive",
@@ -1405,6 +1445,7 @@
       "loadingDeliverables": "Loading deliverables...",
       "noContentSubmitted": "No content has been submitted yet.",
       "viewFullContract": "View Full Contract",
+      "downloadBriefPdf": "Download Brief PDF",
       "premiumVideo": "Premium Video",
       "locked": "Locked",
       "deliverable": "Deliverable",
@@ -1423,7 +1464,8 @@
       "inviteCompanySeat": "Invite Company Seat",
       "aiStudioAddon": "AI Studio Add-On",
       "postJob": "Post a Job",
-      "comingSoon": "Coming Soon"
+      "comingSoon": "Coming Soon",
+      "upToSeats": "Up to {{count}} seats"
     },
     "stats": {
       "campaignsLaunched": "Campaigns Launched",

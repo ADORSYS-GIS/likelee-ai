@@ -489,6 +489,43 @@
       "teamActivity": "Teamaktivität",
       "activityDescription": "Letzte Änderungen an Teammitgliedern und Einladungen.",
       "noActivity": "Keine aktuelle Aktivität.",
+      "updateRoleTitle": "Teamrolle aktualisieren",
+      "roleDescriptions": {
+        "admin": "Vollständige Teamverwaltung, Abrechnung, Kampagnen und Freigaben.",
+        "projectManager": "Kampagnenerstellung und Freigabe von Deliverables ohne Abrechnung.",
+        "reviewer": "Schreibgeschützter Zugriff auf Deliverables mit Teamsichtbarkeit."
+      },
+      "permissions": {
+        "fullTeamManagement": "Vollständige Teamverwaltung",
+        "billingSubscriptions": "Abrechnung und Abonnements",
+        "campaignsApprovals": "Kampagnen und Freigaben",
+        "payOffers": "Angebote verwalten",
+        "jobsManagement": "Jobs verwalten",
+        "contractsManagement": "Verträge verwalten",
+        "licenseManagement": "Lizenzen verwalten",
+        "brandConnections": "Markenverbindungen",
+        "manageJobs": "Jobs verwalten",
+        "manageContracts": "Verträge verwalten",
+        "manageLicenses": "Lizenzen verwalten",
+        "manageBrandConnections": "Markenverbindungen verwalten",
+        "manageClients": "Kunden verwalten",
+        "viewSubscriptionsBilling": "Abos und Abrechnung anzeigen",
+        "campaignCreation": "Kampagnenerstellung",
+        "deliverableApprovals": "Deliverables freigeben",
+        "viewPayOffers": "Angebote anzeigen",
+        "viewJobs": "Jobs anzeigen",
+        "viewContracts": "Verträge anzeigen",
+        "viewDeliverables": "Deliverables anzeigen",
+        "viewTeamMembers": "Teammitglieder anzeigen",
+        "viewBrandConnections": "Markenverbindungen anzeigen",
+        "viewClients": "Kunden anzeigen",
+        "viewLicenses": "Lizenzen anzeigen"
+      },
+      "removeMemberTitle": "Teammitglied entfernen",
+      "removeMemberDescription": "Möchten Sie {{member}} wirklich aus dem Team entfernen?",
+      "removeMemberWarning": "Diese Aktion kann nicht rückgängig gemacht werden. Das Mitglied verliert sofort den Zugriff auf alle Organisationsressourcen.",
+      "removing": "Wird entfernt...",
+      "removeMember": "Mitglied entfernen",
       "roles": {
         "owner": "Inhaber",
         "admin": "Admin",
@@ -897,6 +934,8 @@
         "sentDate": "Sendedatum",
         "actions": "Aktionen"
       },
+      "contractOverview": "Vertragsübersicht",
+      "contract": "Vertrag",
       "actions": {
         "resend": "Erneut senden",
         "archive": "Archivieren",
@@ -1215,6 +1254,7 @@
       "loadingDeliverables": "Deliverables werden geladen...",
       "noContentSubmitted": "Es wurde noch kein Inhalt eingereicht.",
       "viewFullContract": "Vollständigen Vertrag ansehen",
+      "downloadBriefPdf": "Briefing als PDF herunterladen",
       "premiumVideo": "Premium-Video",
       "locked": "Gesperrt",
       "deliverable": "Deliverable",
@@ -1477,7 +1517,8 @@
       "inviteCompanySeat": "Unternehmenssitz einladen",
       "aiStudioAddon": "KI-Studio Add-On",
       "postJob": "Job veröffentlichen",
-      "comingSoon": "Demnächst"
+      "comingSoon": "Demnächst",
+      "upToSeats": "Bis zu {{count}} Plätze"
     },
     "stats": {
       "campaignsLaunched": "Kampagnen gestartet",
