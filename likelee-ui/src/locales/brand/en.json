@@ -2338,5 +2338,207 @@
       "unknown": "Unknown"
     },
     "invite": "Invite"
+  },
+  "brandPricing": {
+    "requiredBanner": "Almost there! Choose your plan to activate your account",
+    "hero": {
+      "setupPill": "Complete your setup in 2 minutes",
+      "titlePrefix": "Start with a",
+      "trialTitle": "{{days}}-Day Free Trial",
+      "subtitleBefore": "Get full access to all features.",
+      "subtitleStrong": "No charge until your trial ends.",
+      "subtitleAfter": "Cancel anytime before the {{days}} days are up.",
+      "noChargeTitle": "Your card won't be charged today",
+      "noChargeSubtitle": "We'll charge it automatically after {{days}} days • Cancel anytime",
+      "brandPlans": "Brand plans",
+      "publicTitleLine1": "The right plan for",
+      "publicTitleLine2": "every stage of growth",
+      "publicSubtitle": "From your first campaign to a full-stack creator ecosystem. Likelee scales with you.",
+      "basePlanNote": "Choose a base plan first, then unlock AI Studio with a one-time add-on.",
+      "annualBasePlanNote": "Annual base plans are billed upfront and save 20%. AI Studio is a separate one-time add-on."
+    },
+    "billing": {
+      "monthly": "Monthly",
+      "annual": "Annual",
+      "save20": "Save 20%",
+      "perMonth": "per month",
+      "perMonthEquivalent": "per month equivalent",
+      "billedAnnually": "{{total}} billed annually",
+      "trialCaption": "{{days}}-day free trial • Cancel anytime",
+      "cardRequired": "Card required • Auto-renews after trial",
+      "oneTime": "one-time"
+    },
+    "planNames": {
+      "free": "Free",
+      "basic": "Basic",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "plans": {
+      "basic": {
+        "eyebrow": "Starter",
+        "description": "Test the platform. Run your first campaigns with an in-house team.",
+        "cta": "Get started"
+      },
+      "pro": {
+        "eyebrow": "Most popular",
+        "description": "Full campaign ops — agencies, AI creators, licensing, and analytics.",
+        "cta": "Pay now"
+      },
+      "enterprise": {
+        "eyebrow": "Full suite",
+        "description": "Unlimited scale, AI Studio included, and white-glove support.",
+        "priceLabel": "Custom",
+        "priceNote": "tailored to your team",
+        "cta": "Talk to sales"
+      }
+    },
+    "sections": {
+      "campaigns": "Campaigns",
+      "collaboration": "Collaboration",
+      "assetsReporting": "Assets & Reporting",
+      "everythingInPro": "Everything in Pro, plus",
+      "platformSettings": "Platform & Settings",
+      "assetsApprovals": "Assets & Approvals",
+      "analyticsPlatform": "Analytics & Platform"
+    },
+    "pills": {
+      "activeCampaigns": "{{count}} active",
+      "seats": "{{count}} seats"
+    },
+    "values": {
+      "unlimited": "Unlimited",
+      "included": "Included",
+      "basic": "Basic",
+      "full": "Full",
+      "oneTimePrice": "${{price}} one-time",
+      "addOnOnly": "Add-On only"
+    },
+    "features": {
+      "campaignList": "Campaign list & filter tabs",
+      "newCampaignWizardBasic": "New Campaign wizard (Steps 1–2)",
+      "metricsOverview": "Metrics overview (4 cards)",
+      "talentBrowseLicense": "Talent browse & license (Step 3)",
+      "inviteCompanySeats": "Invite Company Seats",
+      "inviteAgency": "Invite Modeling Agency",
+      "addAiCreator": "Add AI Creator",
+      "campaignDetailsDeliverables": "Campaign details & deliverables",
+      "approveRequestDownload": "Approve / request edit / download",
+      "assetComments": "Per-asset comment threads",
+      "fullCampaignWizard": "Full Campaign wizard (Steps 1–3)",
+      "talentBrowseLicenseAgency": "Talent browse & license from agency",
+      "inviteAgencyMarketplace": "Invite Modeling Agency (marketplace)",
+      "addAiCreatorCollaborators": "Add AI Creator + collaborator list",
+      "contractsLicensingTab": "Contracts & Licensing tab",
+      "analyticsReporting": "Analytics & reporting",
+      "unlimitedCampaigns": "Unlimited active campaigns",
+      "unlimitedSeatsAgency": "Unlimited seats + multi-agency",
+      "aiStudio": "AI Studio",
+      "notificationsActivity": "Notifications & activity feed",
+      "fullSettings": "Full Settings (roles, billing, profile)",
+      "advancedAnalyticsCsv": "Advanced analytics & CSV export",
+      "customContractTemplates": "Custom contract templates",
+      "ssoAuditLogs": "SSO + audit logs",
+      "apiZapier": "API access + Zapier integration",
+      "dedicatedCsm": "Dedicated CSM + priority onboarding"
+    },
+    "badges": {
+      "publicPricing": "Pricing is public. Brand signup happens after plan selection.",
+      "billingUpdated": "Billing updated",
+      "checkoutCanceled": "Checkout canceled",
+      "current": "Current",
+      "daysFree": "{{days}} DAYS FREE"
+    },
+    "actions": {
+      "continue": "Continue",
+      "redirecting": "Redirecting...",
+      "currentPlan": "Current plan",
+      "upgradeTo": "Upgrade to",
+      "startTrial": "Start {{days}}-Day Free Trial",
+      "or": "or",
+      "contactSalesActivation": "contact sales for immediate activation",
+      "openStudio": "Open Studio",
+      "activateStudio": "Activate Studio",
+      "getStudioAddon": "Get Studio Add-On"
+    },
+    "subscription": {
+      "currentSubscription": "Current subscription",
+      "base": "Base: {{status}}",
+      "aiStudio": "AI Studio: {{status}}",
+      "trialEndsOn": "Free trial ends on {{date}}.",
+      "baseRenewsOn": "Base plan renews on {{date}}.",
+      "studioLifetimeActive": "AI Studio access is active (lifetime).",
+      "baseAlreadyActiveNotice": "Your base plan is already active. AI Studio remains a separate line item, but base-plan changes are not self-serve yet."
+    },
+    "addon": {
+      "eyebrow": "AI Studio add-on",
+      "title": "Separate from the base plan",
+      "descriptionPrefix": "Unlock AI Studio with a single one-time payment of",
+      "descriptionMiddle": ". Your brand gets permanent access to",
+      "descriptionAnd": "and",
+      "credits": "initial credits",
+      "descriptionSuffix": "credited to your Studio wallet. Enterprise includes Studio access automatically.",
+      "badges": {
+        "initialCredits": "{{credits}} initial Studio credits",
+        "walletPlan": "Studio Pro wallet plan",
+        "oneTimePayment": "One-time payment",
+        "permanentAccess": "Permanent /studio access",
+        "enterpriseIncluded": "Included with Enterprise"
+      }
+    },
+    "comparison": {
+      "title": "Full comparison",
+      "subtitle": "Everything side by side.",
+      "feature": "Feature",
+      "activeCampaigns": "Active campaigns",
+      "talentBrowseLicense": "Talent browse & license",
+      "companySeats": "Company seats",
+      "multiAgencyManagement": "Multi-agency management",
+      "deliverableApproveDownload": "Deliverable approve / download",
+      "notificationsActivityFeed": "Notifications / activity feed",
+      "aiStudioActivation": "AI Studio (one-time activation)",
+      "editInStudio": "\"Edit in Studio\" on deliverables"
+    },
+    "faq": {
+      "title": "Common questions",
+      "upgrade": {
+        "question": "Can I upgrade mid-cycle?",
+        "answer": "Yes — upgrades take effect immediately and are prorated. Downgrades apply at the start of the next billing period."
+      },
+      "activeCampaign": {
+        "question": "What counts as an \"active\" campaign?",
+        "answer": "Any campaign with a status of Active or Pending Approval counts toward your limit. Completed campaigns don't count."
+      },
+      "studioAccess": {
+        "question": "How does AI Studio access work?",
+        "answer": "AI Studio is a one-time add-on for ${{price}}. After purchase, your brand gets permanent access to /studio and {{credits}} initial Studio credits. Enterprise includes Studio access at no extra charge."
+      },
+      "agencySeats": {
+        "question": "Do agency invites count as seats?",
+        "answer": "No — seat limits apply to in-house Company Seats only. Agency and AI Creator collaborators are managed separately and don't count toward your cap."
+      },
+      "talentLicensing": {
+        "question": "How does talent licensing work?",
+        "answer": "Pro and above unlocks Step 3 of the Campaign wizard — browse verified agencies on the Likelee marketplace and license talent directly."
+      },
+      "enterprise": {
+        "question": "What's included in Enterprise?",
+        "answer": "Enterprise is custom-quoted and includes unlimited everything, a dedicated CSM, SSO, audit logs, advanced exports, custom contracts, and API access."
+      }
+    },
+    "errors": {
+      "baseAlreadyActive": "This base plan is already active.",
+      "studioAlreadyActive": "The AI Studio add-on is already active.",
+      "studioIncludedEnterprise": "AI Studio is already included with Enterprise.",
+      "enterpriseSales": "Enterprise plans are handled by sales.",
+      "annualNotConfigured": "Annual billing is not configured yet. Use monthly billing or add the annual Stripe price IDs.",
+      "tryAgain": "Please try again.",
+      "noCheckoutUrl": "No checkout URL returned.",
+      "checkoutFailed": "Checkout failed",
+      "brandAccountRequired": "Brand account required",
+      "brandAccountRequiredDescription": "This pricing page is public, but checkout is only available for brand accounts.",
+      "studioBrandAccountRequiredDescription": "AI Studio add-on billing is only available for brand accounts.",
+      "checkoutSignedInBrandsOnly": "This page is public, but checkout only works for signed-in brand accounts."
+    }
   }
 }

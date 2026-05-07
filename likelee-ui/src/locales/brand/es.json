@@ -2338,5 +2338,207 @@
       "unknown": "Desconocido"
     },
     "invite": "Invitar"
+  },
+  "brandPricing": {
+    "requiredBanner": "¡Ya casi! Elige tu plan para activar tu cuenta",
+    "hero": {
+      "setupPill": "Completa tu configuración en 2 minutos",
+      "titlePrefix": "Empieza con una",
+      "trialTitle": "prueba gratuita de {{days}} días",
+      "subtitleBefore": "Obtén acceso completo a todas las funciones.",
+      "subtitleStrong": "No se cobrará nada hasta que termine la prueba.",
+      "subtitleAfter": "Cancela en cualquier momento antes de que pasen los {{days}} días.",
+      "noChargeTitle": "Tu tarjeta no se cobrará hoy",
+      "noChargeSubtitle": "La cobraremos automáticamente después de {{days}} días • cancela cuando quieras",
+      "brandPlans": "Planes para marcas",
+      "publicTitleLine1": "El plan adecuado para",
+      "publicTitleLine2": "cada etapa de crecimiento",
+      "publicSubtitle": "Desde tu primera campaña hasta un ecosistema completo de creadores. Likelee crece contigo.",
+      "basePlanNote": "Elige primero un plan base y luego desbloquea AI Studio con un complemento de pago único.",
+      "annualBasePlanNote": "Los planes base anuales se cobran por adelantado y ahorran un 20 %. AI Studio es un complemento separado de pago único."
+    },
+    "billing": {
+      "monthly": "Mensual",
+      "annual": "Anual",
+      "save20": "AHORRA 20 %",
+      "perMonth": "al mes",
+      "perMonthEquivalent": "equivalente al mes",
+      "billedAnnually": "{{total}} facturado anualmente",
+      "trialCaption": "Prueba gratis de {{days}} días • cancela cuando quieras",
+      "cardRequired": "Tarjeta requerida • se renueva automáticamente tras la prueba",
+      "oneTime": "pago único"
+    },
+    "planNames": {
+      "free": "Gratis",
+      "basic": "Basic",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "plans": {
+      "basic": {
+        "eyebrow": "Inicial",
+        "description": "Prueba la plataforma. Lanza tus primeras campañas con un equipo interno.",
+        "cta": "Comenzar"
+      },
+      "pro": {
+        "eyebrow": "Más popular",
+        "description": "Operaciones completas de campaña: agencias, creadores IA, licencias y analíticas.",
+        "cta": "Pagar ahora"
+      },
+      "enterprise": {
+        "eyebrow": "Suite completa",
+        "description": "Escala ilimitada, AI Studio incluido y soporte premium personalizado.",
+        "priceLabel": "Personalizado",
+        "priceNote": "adaptado a tu equipo",
+        "cta": "Hablar con ventas"
+      }
+    },
+    "sections": {
+      "campaigns": "Campañas",
+      "collaboration": "Colaboración",
+      "assetsReporting": "Assets e informes",
+      "everythingInPro": "Todo lo de Pro, más",
+      "platformSettings": "Plataforma y ajustes",
+      "assetsApprovals": "Assets y aprobaciones",
+      "analyticsPlatform": "Analíticas y plataforma"
+    },
+    "pills": {
+      "activeCampaigns": "{{count}} activas",
+      "seats": "{{count}} plazas"
+    },
+    "values": {
+      "unlimited": "Ilimitado",
+      "included": "Incluido",
+      "basic": "Basic",
+      "full": "Completo",
+      "oneTimePrice": "${{price}} pago único",
+      "addOnOnly": "Solo con complemento"
+    },
+    "features": {
+      "campaignList": "Lista de campañas y pestañas de filtro",
+      "newCampaignWizardBasic": "Asistente de nueva campaña (pasos 1-2)",
+      "metricsOverview": "Resumen de métricas (4 tarjetas)",
+      "talentBrowseLicense": "Buscar y licenciar talento (paso 3)",
+      "inviteCompanySeats": "Invitar plazas de empresa",
+      "inviteAgency": "Invitar agencia de modelos",
+      "addAiCreator": "Añadir creador IA",
+      "campaignDetailsDeliverables": "Detalles de campaña y entregables",
+      "approveRequestDownload": "Aprobar / solicitar cambios / descargar",
+      "assetComments": "Hilos de comentarios por asset",
+      "fullCampaignWizard": "Asistente completo de campaña (pasos 1-3)",
+      "talentBrowseLicenseAgency": "Buscar y licenciar talento desde agencia",
+      "inviteAgencyMarketplace": "Invitar agencia de modelos (marketplace)",
+      "addAiCreatorCollaborators": "Añadir creador IA + lista de colaboradores",
+      "contractsLicensingTab": "Pestaña contratos y licencias",
+      "analyticsReporting": "Analíticas e informes",
+      "unlimitedCampaigns": "Campañas activas ilimitadas",
+      "unlimitedSeatsAgency": "Plazas ilimitadas + multiagencia",
+      "aiStudio": "AI Studio",
+      "notificationsActivity": "Notificaciones y actividad",
+      "fullSettings": "Ajustes completos (roles, facturación, perfil)",
+      "advancedAnalyticsCsv": "Analíticas avanzadas y exportación CSV",
+      "customContractTemplates": "Plantillas de contrato personalizadas",
+      "ssoAuditLogs": "SSO + registros de auditoría",
+      "apiZapier": "Acceso API + integración Zapier",
+      "dedicatedCsm": "CSM dedicado + onboarding prioritario"
+    },
+    "badges": {
+      "publicPricing": "Los precios son públicos. El registro de marca ocurre después de elegir el plan.",
+      "billingUpdated": "Facturación actualizada",
+      "checkoutCanceled": "Checkout cancelado",
+      "current": "Actual",
+      "daysFree": "{{days}} DÍAS GRATIS"
+    },
+    "actions": {
+      "continue": "Continuar",
+      "redirecting": "Redirigiendo...",
+      "currentPlan": "Plan actual",
+      "upgradeTo": "Subir a",
+      "startTrial": "Iniciar prueba gratuita de {{days}} días",
+      "or": "o",
+      "contactSalesActivation": "contactar con ventas para activación inmediata",
+      "openStudio": "Abrir Studio",
+      "activateStudio": "Activar Studio",
+      "getStudioAddon": "Obtener complemento Studio"
+    },
+    "subscription": {
+      "currentSubscription": "Suscripción actual",
+      "base": "Base: {{status}}",
+      "aiStudio": "AI Studio: {{status}}",
+      "trialEndsOn": "La prueba gratuita termina el {{date}}.",
+      "baseRenewsOn": "El plan base se renueva el {{date}}.",
+      "studioLifetimeActive": "El acceso a AI Studio está activo (de por vida).",
+      "baseAlreadyActiveNotice": "Tu plan base ya está activo. AI Studio sigue siendo una línea separada, pero los cambios del plan base aún no son autoservicio."
+    },
+    "addon": {
+      "eyebrow": "Complemento AI Studio",
+      "title": "Separado del plan base",
+      "descriptionPrefix": "Desbloquea AI Studio con un pago único de",
+      "descriptionMiddle": ". Tu marca obtiene acceso permanente a",
+      "descriptionAnd": "y",
+      "credits": "créditos iniciales",
+      "descriptionSuffix": "acreditados en tu wallet de Studio. Enterprise incluye automáticamente acceso a Studio.",
+      "badges": {
+        "initialCredits": "{{credits}} créditos iniciales de Studio",
+        "walletPlan": "Plan wallet Studio Pro",
+        "oneTimePayment": "Pago único",
+        "permanentAccess": "Acceso permanente a /studio",
+        "enterpriseIncluded": "Incluido con Enterprise"
+      }
+    },
+    "comparison": {
+      "title": "Comparación completa",
+      "subtitle": "Todo lado a lado.",
+      "feature": "Función",
+      "activeCampaigns": "Campañas activas",
+      "talentBrowseLicense": "Buscar y licenciar talento",
+      "companySeats": "Plazas de empresa",
+      "multiAgencyManagement": "Gestión multiagencia",
+      "deliverableApproveDownload": "Aprobar / descargar entregable",
+      "notificationsActivityFeed": "Notificaciones / actividad",
+      "aiStudioActivation": "AI Studio (activación única)",
+      "editInStudio": "“Editar en Studio” en entregables"
+    },
+    "faq": {
+      "title": "Preguntas frecuentes",
+      "upgrade": {
+        "question": "¿Puedo subir de plan a mitad de ciclo?",
+        "answer": "Sí, las mejoras se aplican de inmediato y se prorratean. Las bajadas se aplican al inicio del siguiente periodo de facturación."
+      },
+      "activeCampaign": {
+        "question": "¿Qué cuenta como campaña “activa”?",
+        "answer": "Toda campaña con estado Activa o Pendiente de aprobación cuenta para tu límite. Las campañas completadas no cuentan."
+      },
+      "studioAccess": {
+        "question": "¿Cómo funciona el acceso a AI Studio?",
+        "answer": "AI Studio es un complemento de pago único por ${{price}}. Tras la compra, tu marca obtiene acceso permanente a /studio y {{credits}} créditos iniciales de Studio. Enterprise incluye acceso a Studio sin coste adicional."
+      },
+      "agencySeats": {
+        "question": "¿Las invitaciones a agencias cuentan como plazas?",
+        "answer": "No, los límites de plazas solo se aplican a plazas internas de empresa. Las agencias y creadores IA se gestionan por separado y no cuentan para tu límite."
+      },
+      "talentLicensing": {
+        "question": "¿Cómo funciona la licencia de talento?",
+        "answer": "Pro y superiores desbloquean el paso 3 del asistente de campaña: explora agencias verificadas en el marketplace de Likelee y licencia talento directamente."
+      },
+      "enterprise": {
+        "question": "¿Qué incluye Enterprise?",
+        "answer": "Enterprise se cotiza a medida e incluye todo ilimitado, CSM dedicado, SSO, registros de auditoría, exportaciones avanzadas, contratos personalizados y acceso API."
+      }
+    },
+    "errors": {
+      "baseAlreadyActive": "Este plan base ya está activo.",
+      "studioAlreadyActive": "El complemento AI Studio ya está activo.",
+      "studioIncludedEnterprise": "AI Studio ya está incluido con Enterprise.",
+      "enterpriseSales": "Los planes Enterprise los gestiona ventas.",
+      "annualNotConfigured": "La facturación anual aún no está configurada. Usa la facturación mensual o añade los IDs de precio anual de Stripe.",
+      "tryAgain": "Inténtalo de nuevo.",
+      "noCheckoutUrl": "No se devolvió URL de checkout.",
+      "checkoutFailed": "Checkout fallido",
+      "brandAccountRequired": "Se requiere cuenta de marca",
+      "brandAccountRequiredDescription": "Esta página de precios es pública, pero el checkout solo está disponible para cuentas de marca.",
+      "studioBrandAccountRequiredDescription": "La facturación del complemento AI Studio solo está disponible para cuentas de marca.",
+      "checkoutSignedInBrandsOnly": "Esta página es pública, pero el checkout solo funciona para cuentas de marca con sesión iniciada."
+    }
   }
 }
