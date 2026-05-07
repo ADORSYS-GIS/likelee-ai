@@ -643,10 +643,12 @@ export default function BrandDashboard() {
       setSelectedJobForApplications((prev) =>
         prev && prev.id === job.id ? { ...prev, brand_assets: updated } : prev,
       );
-      queryClient.setQueryData(["brand-jobs", user?.id], (old: any[] | undefined) =>
-        (old || []).map((item) =>
-          item.id === job.id ? { ...item, brand_assets: updated } : item,
-        ),
+      queryClient.setQueryData(
+        ["brand-jobs", user?.id],
+        (old: any[] | undefined) =>
+          (old || []).map((item) =>
+            item.id === job.id ? { ...item, brand_assets: updated } : item,
+          ),
       );
     } catch {
       // ignore resolve failures
@@ -830,7 +832,8 @@ export default function BrandDashboard() {
 
     setBrand((prev: any) => ({
       ...(prev ?? {}),
-      name: profileData?.company_name || profileData?.name || prev?.name || "Brand",
+      name:
+        profileData?.company_name || profileData?.name || prev?.name || "Brand",
       industry: profileData?.industry || prev?.industry,
       website: profileData?.website || prev?.website,
       contact_email: profileData?.email || prev?.contact_email,
@@ -869,7 +872,9 @@ export default function BrandDashboard() {
   // Sync inbox packages state from query
   const inboxPackages = inboxPackagesQuery.data ?? [];
   const inboxPendingCount = useMemo(
-    () => inboxPackages.filter((p: any) => String(p?.status || "") === "sent").length,
+    () =>
+      inboxPackages.filter((p: any) => String(p?.status || "") === "sent")
+        .length,
     [inboxPackages],
   );
   const loadingInboxPackages = inboxPackagesQuery.isLoading;
@@ -888,11 +893,11 @@ export default function BrandDashboard() {
         { params: { limit: 120 } },
       );
       const offers = Array.isArray(response?.offers) ? response.offers : [];
-      
+
       // Fire background enrichment without blocking
       if (!offersEnrichmentInProgressRef.current && offers.length > 0) {
         offersEnrichmentInProgressRef.current = true;
-        
+
         // Enrich offers asynchronously in background
         Promise.all(
           offers.map(async (offer: any) => {
@@ -902,7 +907,9 @@ export default function BrandDashboard() {
               const [delResp, contractsResp] = await Promise.all([
                 listOfferDeliverables(offerId),
                 base44
-                  .get<{ contracts?: any[] }>(`/api/campaign-offers/${offerId}/contracts`)
+                  .get<{
+                    contracts?: any[];
+                  }>(`/api/campaign-offers/${offerId}/contracts`)
                   .catch(() => ({ contracts: [] })),
               ]);
               const deliverables = Array.isArray(delResp?.deliverables)
@@ -919,16 +926,21 @@ export default function BrandDashboard() {
             } catch {
               return offer;
             }
+          }),
+        )
+          .then((enriched) => {
+            // Update cache with enriched data
+            queryClient.setQueryData(
+              ["brand-campaign-offers", user?.id],
+              enriched,
+            );
+            offersEnrichmentInProgressRef.current = false;
           })
-        ).then((enriched) => {
-          // Update cache with enriched data
-          queryClient.setQueryData(["brand-campaign-offers", user?.id], enriched);
-          offersEnrichmentInProgressRef.current = false;
-        }).catch(() => {
-          offersEnrichmentInProgressRef.current = false;
-        });
+          .catch(() => {
+            offersEnrichmentInProgressRef.current = false;
+          });
       }
-      
+
       // Return base offers immediately - enrichment happens in background
       return offers;
     },
@@ -951,7 +963,7 @@ export default function BrandDashboard() {
         listBrandInvoices().catch(() => null),
         getBrandEscrowSummary().catch(() => null),
       ]);
-      
+
       return {
         status: statusRes,
         spend: spendRes,
@@ -974,10 +986,10 @@ export default function BrandDashboard() {
   // Compute escrow summary from cached data
   const escrowSummary = useMemo(() => {
     if (!escrowData) return { breakdown: "$0", projectCount: 0 };
-    
+
     const entries = Object.entries(escrowData.currencies || {});
     let breakdown: string;
-    
+
     if (entries.length === 0) {
       breakdown = "$0";
     } else if (entries.length === 1) {
@@ -1001,7 +1013,7 @@ export default function BrandDashboard() {
         )
         .join(", ");
     }
-    
+
     return {
       breakdown,
       projectCount: escrowData.project_count || 0,
@@ -1233,8 +1245,10 @@ export default function BrandDashboard() {
       });
       const updated = res?.job;
       if (updated?.id) {
-        queryClient.setQueryData(["brand-jobs", user?.id], (old: any[] | undefined) =>
-          (old || []).map((job) => (job.id === updated.id ? updated : job)),
+        queryClient.setQueryData(
+          ["brand-jobs", user?.id],
+          (old: any[] | undefined) =>
+            (old || []).map((job) => (job.id === updated.id ? updated : job)),
         );
         toast({
           title: "Job updated",

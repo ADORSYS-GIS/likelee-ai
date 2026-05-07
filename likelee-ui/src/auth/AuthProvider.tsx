@@ -142,10 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isOAuthUser?: boolean,
   ): Promise<void> => {
     if (fetchingRef.current === userId) {
-      debugLog(
-        "[AuthProvider] fetchProfile ALREADY IN PROGRESS for:",
-        userId,
-      );
+      debugLog("[AuthProvider] fetchProfile ALREADY IN PROGRESS for:", userId);
       return;
     }
     fetchingRef.current = userId;
@@ -380,14 +377,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // No profile found yet. Let the onboarding flow create the record explicitly.
-        debugLog(
-          "[AuthProvider] No profile found, setting profile to null",
-          {
-            isOAuthUser,
-            userEmail,
-            table,
-          },
-        );
+        debugLog("[AuthProvider] No profile found, setting profile to null", {
+          isOAuthUser,
+          userEmail,
+          table,
+        });
         profileRef.current = null;
         setProfile(null);
         // Wait for next tick to ensure state update is processed
@@ -638,9 +632,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // For brand/agency users, retry fetching profile to handle race condition
           // after invitation acceptance (membership may not be immediately available)
           if (roleHint === "brand" || roleHint === "agency") {
-            debugLog(
-              `[AuthProvider] Using retry logic for ${roleHint} user`,
-            );
+            debugLog(`[AuthProvider] Using retry logic for ${roleHint} user`);
             const maxRetries = 5;
             const retryDelay = 800; // ms - increased for database replication
 
