@@ -69,7 +69,21 @@
         "estimatedCostValue": "{{count}} créditos",
         "generating": "Generando...",
         "generateVideo": "Generar video",
-        "previewOutput": "Vista previa"
+        "previewOutput": "Vista previa",
+        "configurationHint": "Ajusta los parámetros para perfeccionar tu generación con IA.",
+        "selectAiModel": "Seleccionar modelo IA",
+        "creditCount": "{{count}} créditos",
+        "prompt": "Prompt",
+        "assets": "Assets",
+        "startFrame": "Fotograma inicial",
+        "endFrame": "Fotograma final",
+        "reference": "Referencia",
+        "audio": "Audio",
+        "swapFrames": "Intercambiar fotogramas",
+        "generatingVideo": "Generando vídeo...",
+        "processingRequest": "Procesando tu solicitud en el clúster de IA.",
+        "recentArtifacts": "Artefactos recientes",
+        "totalCount": "{{count}} en total"
       }
     },
     "image": {
@@ -99,7 +113,8 @@
         "creditExhaustionTitle": "Sin créditos",
         "creditExhaustionBody": "Te quedan pocos créditos. Para seguir generando, recarga tu saldo.",
         "maybeLater": "Más tarde",
-        "topUpNow": "Recargar ahora"
+        "topUpNow": "Recargar ahora",
+        "creditCount": "{{count}} créditos"
       }
     },
     "landing": {
@@ -198,6 +213,56 @@
         "a2": "No. Solo sube un archivo o describe lo que quieres.",
         "q3": "¿Es ilimitado?",
         "a3": "Cada plan tiene un límite de uso justo para garantizar el rendimiento. El plan de Agencia incluye generaciones ilimitadas."
+      },
+      "dropdowns": {
+        "textToVideoAi": "Texto a vídeo IA",
+        "imageToVideoAi": "Imagen a vídeo IA",
+        "photoToVideoAvatar": "Foto a avatar de vídeo",
+        "aiVideoEditor": "Editor de vídeo IA",
+        "aiShorts": "Shorts IA",
+        "mimicMotion": "Imitar movimiento",
+        "canvas": "Canvas",
+        "videoToVideoAi": "Vídeo a vídeo IA",
+        "consistentCharacterVideo": "Vídeo de personaje consistente",
+        "aiVideoEnhancer": "Mejorador de vídeo IA",
+        "aiVideoExtender": "Extensor de vídeo IA",
+        "moreTools": "Más herramientas →",
+        "aiImageGenerator": "Generador de imágenes IA",
+        "imageToImageAi": "Imagen a imagen IA",
+        "chatToImage": "Chat a imagen",
+        "aiArtGenerator": "Generador de arte IA",
+        "editEnhance": "Editar y mejorar",
+        "removeBg": "Quitar fondo",
+        "objectRemover": "Eliminador de objetos",
+        "imageEnhancer": "Mejorador de imagen",
+        "stylesModels": "Estilos y modelos",
+        "ghibliAiGenerator": "Generador IA Ghibli",
+        "animeUpscaler": "Escalador anime",
+        "imageGenerators": "Generadores de imágenes",
+        "aiEffectsHub": "Hub de efectos IA",
+        "overlaysTemplates": "Overlays y plantillas",
+        "transitions": "Transiciones",
+        "textCaptions": "Texto y subtítulos",
+        "utilities": "Utilidades",
+        "batchQueue": "Cola por lotes",
+        "presets": "Ajustes predefinidos",
+        "changelog": "Registro de cambios"
+      },
+      "features": {
+        "feature": "Función",
+        "items": {
+          "videosPerMonth": "Vídeos / mes",
+          "imagesPerMonth": "Imágenes / mes",
+          "parallelTasks": "Tareas paralelas",
+          "multiModel": "Soporte multi-modelo todo en uno",
+          "textToVideo": "Texto a vídeo",
+          "imageToVideo": "Imagen a vídeo",
+          "textImageVideoToVideo": "Texto/Imagen/Vídeo a vídeo",
+          "consistentCharacterVideo": "Vídeo de personaje consistente",
+          "aiAnimationGenerator": "Generador de animación IA",
+          "textImageChatToImage": "Texto/Imagen/Chat a imagen",
+          "templatesEffects": "300+ plantillas y efectos"
+        }
       }
     }
   },
@@ -1452,7 +1517,64 @@
       "approve": "Aprobar",
       "requestChanges": "Solicitar cambios",
       "new": "Nuevo",
-      "download": "Descargar"
+      "download": "Descargar",
+      "startDate": "Fecha de inicio",
+      "submittedCount": "{{count}} enviados",
+      "collaborators": "Colaboradores",
+      "noCollaborators": "Aún no hay colaboradores asignados.",
+      "deliverablesFeedback": "Entregables y comentarios",
+      "approvalThresholdWarning": "Aprobar más de la mitad de los entregables activa el pago en escrow una vez y desbloquea las descargas de todos los entregables. Las aprobaciones son definitivas.",
+      "assetsCount_one": "{{count}} asset",
+      "assetsCount_other": "{{count}} assets",
+      "videoLocked": "Video bloqueado",
+      "deliverableNumber": "Entregable {{count}}",
+      "uploadedOn": "Subido el {{date}}",
+      "user": "Usuario",
+      "send": "Enviar",
+      "feedbackPlaceholder": "Escribe tus comentarios aquí..."
+    },
+    "campaignBriefBuilder": {
+      "sections": {
+        "generalDialogue": "Diálogo general",
+        "visualGuide": "Guía visual",
+        "scopeDetails": "Detalles del alcance"
+      },
+      "fields": {
+        "voice": "Voz",
+        "tone": "Tono",
+        "personality": "Personalidad",
+        "campaignDuration": "Duración de campaña",
+        "keyMessages": "Mensajes clave",
+        "scriptGuidelines": "Guía de guion",
+        "opening": "Apertura",
+        "middle": "Desarrollo",
+        "closing": "Cierre",
+        "do": "Hacer",
+        "dont": "No hacer",
+        "deliverables": "Entregables",
+        "heroImage": "Imagen principal",
+        "styleAesthetic": "Estilo y estética",
+        "palette": "Paleta",
+        "setting": "Entorno",
+        "framing": "Encuadre",
+        "editing": "Edición",
+        "referenceImages": "Imágenes de referencia",
+        "brandAssets": "Assets de marca",
+        "objective": "Objetivo",
+        "targetAudience": "Audiencia objetivo",
+        "launchDate": "Fecha de lanzamiento",
+        "revisionPolicy": "Política de revisiones",
+        "includedRevisions": "Revisiones incluidas",
+        "revisionTurnaround": "Plazo de revisiones",
+        "approvalProcess": "Proceso de aprobación",
+        "watermarkProtection": "Marca de agua y protección",
+        "legalTerms": "Términos legales",
+        "majorChanges": "Cambios importantes"
+      },
+      "noReferenceImages": "No se proporcionaron imágenes de referencia.",
+      "noAssetsProvided": "No se proporcionaron assets.",
+      "referenceCount": "Referencia {{current}} de {{total}}",
+      "reference": "Referencia"
     }
   },
   "campaignsDashboard": {
@@ -2088,5 +2210,21 @@
     "pending_approval": "Aprobación pendiente",
     "fully_signed": "Completamente firmado",
     "contract_fully_signed": "Contrato completamente firmado"
+  },
+  "common": {
+    "close": "Cerrar",
+    "cancel": "Cancelar",
+    "saving": "Guardando...",
+    "credits": "Créditos",
+    "credits_lower": "créditos",
+    "history": "Historial"
+  },
+  "teamManagement": {
+    "seatLimitReached": "Límite de asientos alcanzado",
+    "teamMemberLimitReached": "Has alcanzado el límite de miembros de tu equipo.",
+    "upgradePlanForMembers": "Mejora tu plan para añadir más miembros y desbloquear funciones adicionales.",
+    "upgradePlan": "Mejorar plan",
+    "upgradeForSeats": "Mejora a Basic o superior para desbloquear asientos de equipo.",
+    "seatLimitReachedDescription": "Has alcanzado tu límite de {{count}} asientos. Mejora tu plan para añadir más miembros."
   }
 }

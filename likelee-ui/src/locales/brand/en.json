@@ -69,7 +69,21 @@
         "estimatedCostValue": "{{count}} Credits",
         "generating": "Generating...",
         "generateVideo": "Generate Video",
-        "previewOutput": "Preview Output"
+        "previewOutput": "Preview Output",
+        "configurationHint": "Tweak parameters to perfect your AI generation.",
+        "selectAiModel": "Select AI Model",
+        "creditCount": "{{count}} credits",
+        "prompt": "Prompt",
+        "assets": "Assets",
+        "startFrame": "Start Frame",
+        "endFrame": "End Frame",
+        "reference": "Reference",
+        "audio": "Audio",
+        "swapFrames": "Swap Frames",
+        "generatingVideo": "Generating Video...",
+        "processingRequest": "Processing your request on the AI cluster.",
+        "recentArtifacts": "Recent Artifacts",
+        "totalCount": "{{count}} Total"
       }
     },
     "image": {
@@ -100,7 +114,8 @@
         "creditExhaustionTitle": "Credit Exhaustion",
         "creditExhaustionBody": "Your creative fuel is low. To continue synthesizing high-fidelity imagery, please replenish your balance.",
         "maybeLater": "Maybe Later",
-        "topUpNow": "Top Up Now"
+        "topUpNow": "Top Up Now",
+        "creditCount": "{{count}} Credits"
       }
     },
     "landing": {
@@ -199,6 +214,56 @@
         "a2": "Nope. Just upload or describe what you want.",
         "q3": "Is this unlimited?",
         "a3": "Each plan has a fair-use limit to ensure performance. The Agency Plan includes unlimited generations."
+      },
+      "dropdowns": {
+        "textToVideoAi": "Text to Video AI",
+        "imageToVideoAi": "Image to Video AI",
+        "photoToVideoAvatar": "Photo to Video Avatar",
+        "aiVideoEditor": "AI Video Editor",
+        "aiShorts": "AI Shorts",
+        "mimicMotion": "Mimic Motion",
+        "canvas": "Canvas",
+        "videoToVideoAi": "Video to Video AI",
+        "consistentCharacterVideo": "Consistent Character Video",
+        "aiVideoEnhancer": "AI Video Enhancer",
+        "aiVideoExtender": "AI Video Extender",
+        "moreTools": "More Tools →",
+        "aiImageGenerator": "AI Image Generator",
+        "imageToImageAi": "Image to Image AI",
+        "chatToImage": "Chat to Image",
+        "aiArtGenerator": "AI Art Generator",
+        "editEnhance": "Edit & Enhance",
+        "removeBg": "Remove BG",
+        "objectRemover": "Object Remover",
+        "imageEnhancer": "Image Enhancer",
+        "stylesModels": "Styles & Models",
+        "ghibliAiGenerator": "Ghibli AI Generator",
+        "animeUpscaler": "Anime Upscaler",
+        "imageGenerators": "Image Generators",
+        "aiEffectsHub": "AI Effects Hub",
+        "overlaysTemplates": "Overlays & Templates",
+        "transitions": "Transitions",
+        "textCaptions": "Text & Captions",
+        "utilities": "Utilities",
+        "batchQueue": "Batch Queue",
+        "presets": "Presets",
+        "changelog": "Changelog"
+      },
+      "features": {
+        "feature": "Feature",
+        "items": {
+          "videosPerMonth": "Videos / month",
+          "imagesPerMonth": "Images / month",
+          "parallelTasks": "Parallel tasks",
+          "multiModel": "All-in-one multi-model support",
+          "textToVideo": "Text to video",
+          "imageToVideo": "Image to video",
+          "textImageVideoToVideo": "Text/Image/Video to video",
+          "consistentCharacterVideo": "Consistent character video",
+          "aiAnimationGenerator": "AI animation generator",
+          "textImageChatToImage": "Text/Image/Chat to image",
+          "templatesEffects": "300+ templates & effects"
+        }
       }
     }
   },
@@ -943,7 +1008,6 @@
         "rejectRequest": "Reject request",
         "availabilityRates": "Availability & Rates",
         "pastCampaigns": "Past Campaigns",
-        "portfolio": "Portfolio",
         "noCampaignHistory": "No campaign history yet.",
         "licensingUnavailable": "Licensing unavailable",
         "licensingUnavailableDesc": "This creator is not currently represented by an active agency roster entry, so licensing requests can't be sent from marketplace right now.",
@@ -1237,7 +1301,6 @@
       "clearSearchButton": "Clear search",
       "viewDetails": "View Details",
       "viewDetailsJobPosting": "View this job posting and its applications.",
-      "viewApplications": "View Applications",
       "closeJob": "Close Job",
       "noRoleDescription": "No role description added yet.",
       "budget": "Budget",
@@ -1454,7 +1517,64 @@
       "approve": "Approve",
       "requestChanges": "Request changes",
       "new": "New",
-      "download": "Download"
+      "download": "Download",
+      "startDate": "Start Date",
+      "submittedCount": "{{count}} submitted",
+      "collaborators": "Collaborators",
+      "noCollaborators": "No collaborators assigned yet.",
+      "deliverablesFeedback": "Deliverables & Feedback",
+      "approvalThresholdWarning": "Approving more than half of deliverables triggers escrow payout (once) and unlocks downloads for all deliverables. Approvals are final and cannot be undone.",
+      "assetsCount_one": "{{count}} asset",
+      "assetsCount_other": "{{count}} assets",
+      "videoLocked": "Video locked",
+      "deliverableNumber": "Deliverable {{count}}",
+      "uploadedOn": "Uploaded {{date}}",
+      "user": "User",
+      "send": "Send",
+      "feedbackPlaceholder": "Type feedback here..."
+    },
+    "campaignBriefBuilder": {
+      "sections": {
+        "generalDialogue": "General Dialogue",
+        "visualGuide": "Visual Guide",
+        "scopeDetails": "Scope Details"
+      },
+      "fields": {
+        "voice": "Voice",
+        "tone": "Tone",
+        "personality": "Personality",
+        "campaignDuration": "Campaign Duration",
+        "keyMessages": "Key Messages",
+        "scriptGuidelines": "Script Guidelines",
+        "opening": "Opening",
+        "middle": "Middle",
+        "closing": "Closing",
+        "do": "Do",
+        "dont": "Do not",
+        "deliverables": "Deliverables",
+        "heroImage": "Hero Image",
+        "styleAesthetic": "Style & Aesthetic",
+        "palette": "Palette",
+        "setting": "Setting",
+        "framing": "Framing",
+        "editing": "Editing",
+        "referenceImages": "Reference Images",
+        "brandAssets": "Brand Assets",
+        "objective": "Objective",
+        "targetAudience": "Target Audience",
+        "launchDate": "Launch Date",
+        "revisionPolicy": "Revision Policy",
+        "includedRevisions": "Included Revisions",
+        "revisionTurnaround": "Turnaround for Revisions",
+        "approvalProcess": "Approval Process",
+        "watermarkProtection": "Watermark & Protection",
+        "legalTerms": "Legal Terms",
+        "majorChanges": "Major Changes"
+      },
+      "noReferenceImages": "No reference images provided.",
+      "noAssetsProvided": "No assets provided.",
+      "referenceCount": "Reference {{current}} of {{total}}",
+      "reference": "Reference"
     }
   },
   "campaignsDashboard": {
@@ -2090,5 +2210,21 @@
       "getStartedButton": "Get Started",
       "bookDemoButton": "Book a Demo"
     }
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "credits": "Credits",
+    "credits_lower": "credits",
+    "history": "History"
+  },
+  "teamManagement": {
+    "seatLimitReached": "Seat Limit Reached",
+    "teamMemberLimitReached": "You've reached your team member limit.",
+    "upgradePlanForMembers": "Upgrade your plan to add more team members and unlock additional features.",
+    "upgradePlan": "Upgrade Plan",
+    "upgradeForSeats": "Upgrade to Basic or above to unlock team seats.",
+    "seatLimitReachedDescription": "You've reached your {{count}} seat limit. Upgrade to add more team members."
   }
 }

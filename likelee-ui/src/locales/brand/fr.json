@@ -5,7 +5,9 @@
     "sending": "Envoi...",
     "credits": "Crédits",
     "credits_lower": "crédits",
-    "history": "Historique"
+    "history": "Historique",
+    "close": "Fermer",
+    "saving": "Enregistrement..."
   },
   "studio": {
     "video": {
@@ -30,7 +32,21 @@
         "estimatedCostValue": "{{count}} crédits",
         "generating": "Génération…",
         "generateVideo": "Générer une vidéo",
-        "previewOutput": "Aperçu"
+        "previewOutput": "Aperçu",
+        "configurationHint": "Ajustez les paramètres pour perfectionner votre génération IA.",
+        "selectAiModel": "Sélectionner un modèle IA",
+        "creditCount": "{{count}} crédits",
+        "prompt": "Prompt",
+        "assets": "Assets",
+        "startFrame": "Image de début",
+        "endFrame": "Image de fin",
+        "reference": "Référence",
+        "audio": "Audio",
+        "swapFrames": "Inverser les images",
+        "generatingVideo": "Génération de la vidéo...",
+        "processingRequest": "Votre demande est traitée sur le cluster IA.",
+        "recentArtifacts": "Artefacts récents",
+        "totalCount": "{{count}} au total"
       }
     },
     "image": {
@@ -60,7 +76,8 @@
         "creditExhaustionTitle": "Crédits insuffisants",
         "creditExhaustionBody": "Vos crédits sont faibles. Pour continuer à générer des images haute fidélité, veuillez recharger votre solde.",
         "maybeLater": "Plus tard",
-        "topUpNow": "Recharger maintenant"
+        "topUpNow": "Recharger maintenant",
+        "creditCount": "{{count}} crédits"
       }
     },
     "landing": {
@@ -159,6 +176,56 @@
         "a2": "Non. Téléchargez simplement un fichier ou décrivez ce que vous voulez.",
         "q3": "Est-ce illimité ?",
         "a3": "Chaque offre a une limite d’utilisation raisonnable pour garantir les performances. L’offre Agence inclut des générations illimitées."
+      },
+      "dropdowns": {
+        "textToVideoAi": "Texte vers vidéo IA",
+        "imageToVideoAi": "Image vers vidéo IA",
+        "photoToVideoAvatar": "Photo vers avatar vidéo",
+        "aiVideoEditor": "Éditeur vidéo IA",
+        "aiShorts": "Shorts IA",
+        "mimicMotion": "Mouvement mimétique",
+        "canvas": "Canvas",
+        "videoToVideoAi": "Vidéo vers vidéo IA",
+        "consistentCharacterVideo": "Vidéo de personnage cohérent",
+        "aiVideoEnhancer": "Améliorateur vidéo IA",
+        "aiVideoExtender": "Extension vidéo IA",
+        "moreTools": "Plus d’outils →",
+        "aiImageGenerator": "Générateur d’image IA",
+        "imageToImageAi": "Image vers image IA",
+        "chatToImage": "Chat vers image",
+        "aiArtGenerator": "Générateur d’art IA",
+        "editEnhance": "Modifier et améliorer",
+        "removeBg": "Supprimer le fond",
+        "objectRemover": "Suppression d’objet",
+        "imageEnhancer": "Améliorateur d’image",
+        "stylesModels": "Styles et modèles",
+        "ghibliAiGenerator": "Générateur IA Ghibli",
+        "animeUpscaler": "Upscaler anime",
+        "imageGenerators": "Générateurs d’images",
+        "aiEffectsHub": "Hub d’effets IA",
+        "overlaysTemplates": "Overlays et modèles",
+        "transitions": "Transitions",
+        "textCaptions": "Texte et sous-titres",
+        "utilities": "Utilitaires",
+        "batchQueue": "File de traitement",
+        "presets": "Préréglages",
+        "changelog": "Journal des changements"
+      },
+      "features": {
+        "feature": "Fonctionnalité",
+        "items": {
+          "videosPerMonth": "Vidéos / mois",
+          "imagesPerMonth": "Images / mois",
+          "parallelTasks": "Tâches parallèles",
+          "multiModel": "Prise en charge multi-modèles tout-en-un",
+          "textToVideo": "Texte vers vidéo",
+          "imageToVideo": "Image vers vidéo",
+          "textImageVideoToVideo": "Texte/Image/Vidéo vers vidéo",
+          "consistentCharacterVideo": "Vidéo de personnage cohérent",
+          "aiAnimationGenerator": "Générateur d’animation IA",
+          "textImageChatToImage": "Texte/Image/Chat vers image",
+          "templatesEffects": "300+ modèles et effets"
+        }
       }
     }
   },
@@ -1511,7 +1578,64 @@
       "approve": "Approuver",
       "requestChanges": "Demander des modifications",
       "new": "Nouveau",
-      "download": "Telecharger"
+      "download": "Telecharger",
+      "startDate": "Date de début",
+      "submittedCount": "{{count}} soumis",
+      "collaborators": "Collaborateurs",
+      "noCollaborators": "Aucun collaborateur assigné pour le moment.",
+      "deliverablesFeedback": "Livrables et feedback",
+      "approvalThresholdWarning": "L'approbation de plus de la moitié des livrables déclenche le paiement escrow une fois et débloque les téléchargements pour tous les livrables. Les approbations sont définitives.",
+      "assetsCount_one": "{{count}} asset",
+      "assetsCount_other": "{{count}} assets",
+      "videoLocked": "Vidéo verrouillée",
+      "deliverableNumber": "Livrable {{count}}",
+      "uploadedOn": "Téléversé le {{date}}",
+      "user": "Utilisateur",
+      "send": "Envoyer",
+      "feedbackPlaceholder": "Saisissez votre feedback ici..."
+    },
+    "campaignBriefBuilder": {
+      "sections": {
+        "generalDialogue": "Dialogue général",
+        "visualGuide": "Guide visuel",
+        "scopeDetails": "Détails du périmètre"
+      },
+      "fields": {
+        "voice": "Voix",
+        "tone": "Ton",
+        "personality": "Personnalité",
+        "campaignDuration": "Durée de la campagne",
+        "keyMessages": "Messages clés",
+        "scriptGuidelines": "Consignes de script",
+        "opening": "Ouverture",
+        "middle": "Milieu",
+        "closing": "Conclusion",
+        "do": "À faire",
+        "dont": "À éviter",
+        "deliverables": "Livrables",
+        "heroImage": "Image principale",
+        "styleAesthetic": "Style et esthétique",
+        "palette": "Palette",
+        "setting": "Décor",
+        "framing": "Cadrage",
+        "editing": "Montage",
+        "referenceImages": "Images de référence",
+        "brandAssets": "Assets de marque",
+        "objective": "Objectif",
+        "targetAudience": "Audience cible",
+        "launchDate": "Date de lancement",
+        "revisionPolicy": "Politique de révision",
+        "includedRevisions": "Révisions incluses",
+        "revisionTurnaround": "Délai des révisions",
+        "approvalProcess": "Processus d'approbation",
+        "watermarkProtection": "Filigrane et protection",
+        "legalTerms": "Conditions juridiques",
+        "majorChanges": "Changements majeurs"
+      },
+      "noReferenceImages": "Aucune image de référence fournie.",
+      "noAssetsProvided": "Aucun asset fourni.",
+      "referenceCount": "Référence {{current}} sur {{total}}",
+      "reference": "Référence"
     }
   },
   "campaignsDashboard": {
@@ -2153,5 +2277,13 @@
     "pending_approval": "Approbation en attente",
     "fully_signed": "Entièrement signé",
     "contract_fully_signed": "Contrat entièrement signé"
+  },
+  "teamManagement": {
+    "seatLimitReached": "Limite de sièges atteinte",
+    "teamMemberLimitReached": "Vous avez atteint la limite de membres de votre équipe.",
+    "upgradePlanForMembers": "Passez à une offre supérieure pour ajouter plus de membres et débloquer des fonctionnalités supplémentaires.",
+    "upgradePlan": "Changer d'offre",
+    "upgradeForSeats": "Passez à Basic ou supérieur pour débloquer les sièges d’équipe.",
+    "seatLimitReachedDescription": "Vous avez atteint votre limite de {{count}} sièges. Passez à une offre supérieure pour ajouter plus de membres."
   }
 }

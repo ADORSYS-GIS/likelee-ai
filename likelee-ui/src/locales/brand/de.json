@@ -1263,7 +1263,64 @@
       "approve": "Genehmigen",
       "requestChanges": "Änderungen anfordern",
       "new": "Neu",
-      "download": "Herunterladen"
+      "download": "Herunterladen",
+      "startDate": "Startdatum",
+      "submittedCount": "{{count}} eingereicht",
+      "collaborators": "Mitarbeiter",
+      "noCollaborators": "Noch keine Mitarbeiter zugewiesen.",
+      "deliverablesFeedback": "Deliverables & Feedback",
+      "approvalThresholdWarning": "Wenn mehr als die Hälfte der Deliverables genehmigt wird, wird die Treuhand-Auszahlung einmalig ausgelöst und Downloads für alle Deliverables freigeschaltet. Genehmigungen sind endgültig und können nicht rückgängig gemacht werden.",
+      "assetsCount_one": "{{count}} Asset",
+      "assetsCount_other": "{{count}} Assets",
+      "videoLocked": "Video gesperrt",
+      "deliverableNumber": "Deliverable {{count}}",
+      "uploadedOn": "Hochgeladen am {{date}}",
+      "user": "Benutzer",
+      "send": "Senden",
+      "feedbackPlaceholder": "Feedback hier eingeben..."
+    },
+    "campaignBriefBuilder": {
+      "sections": {
+        "generalDialogue": "Allgemeiner Dialog",
+        "visualGuide": "Visueller Leitfaden",
+        "scopeDetails": "Umfangsdetails"
+      },
+      "fields": {
+        "voice": "Stimme",
+        "tone": "Ton",
+        "personality": "Persönlichkeit",
+        "campaignDuration": "Kampagnendauer",
+        "keyMessages": "Kernbotschaften",
+        "scriptGuidelines": "Skript-Richtlinien",
+        "opening": "Einstieg",
+        "middle": "Mittelteil",
+        "closing": "Abschluss",
+        "do": "Tun",
+        "dont": "Nicht tun",
+        "deliverables": "Deliverables",
+        "heroImage": "Hero-Bild",
+        "styleAesthetic": "Stil & Ästhetik",
+        "palette": "Farbpalette",
+        "setting": "Setting",
+        "framing": "Bildaufbau",
+        "editing": "Schnitt",
+        "referenceImages": "Referenzbilder",
+        "brandAssets": "Marken-Assets",
+        "objective": "Ziel",
+        "targetAudience": "Zielgruppe",
+        "launchDate": "Startdatum",
+        "revisionPolicy": "Revisionsrichtlinie",
+        "includedRevisions": "Enthaltene Revisionen",
+        "revisionTurnaround": "Bearbeitungszeit für Revisionen",
+        "approvalProcess": "Freigabeprozess",
+        "watermarkProtection": "Wasserzeichen & Schutz",
+        "legalTerms": "Rechtliche Bedingungen",
+        "majorChanges": "Wesentliche Änderungen"
+      },
+      "noReferenceImages": "Keine Referenzbilder bereitgestellt.",
+      "noAssetsProvided": "Keine Assets bereitgestellt.",
+      "referenceCount": "Referenz {{current}} von {{total}}",
+      "reference": "Referenz"
     }
   },
   "brandCompanyPage": {
@@ -1378,7 +1435,21 @@
         "estimatedCostValue": "{{count}} Credits",
         "generating": "Wird generiert...",
         "generateVideo": "Video generieren",
-        "previewOutput": "Vorschau"
+        "previewOutput": "Vorschau",
+        "configurationHint": "Passe die Parameter an, um deine KI-Generierung zu perfektionieren.",
+        "selectAiModel": "KI-Modell auswählen",
+        "creditCount": "{{count}} Credits",
+        "prompt": "Prompt",
+        "assets": "Assets",
+        "startFrame": "Startframe",
+        "endFrame": "Endframe",
+        "reference": "Referenz",
+        "audio": "Audio",
+        "swapFrames": "Frames tauschen",
+        "generatingVideo": "Video wird generiert...",
+        "processingRequest": "Deine Anfrage wird im KI-Cluster verarbeitet.",
+        "recentArtifacts": "Neueste Ergebnisse",
+        "totalCount": "{{count}} Gesamt"
       }
     },
     "image": {
@@ -1408,7 +1479,8 @@
         "creditExhaustionTitle": "Keine Credits",
         "creditExhaustionBody": "Dein Guthaben ist niedrig. Um weiter zu generieren, lade bitte Credits nach.",
         "maybeLater": "Vielleicht später",
-        "topUpNow": "Jetzt aufladen"
+        "topUpNow": "Jetzt aufladen",
+        "creditCount": "{{count}} Credits"
       }
     },
     "landing": {
@@ -1507,6 +1579,56 @@
         "a2": "Nein. Lade einfach etwas hoch oder beschreibe, was du möchtest.",
         "q3": "Ist das unbegrenzt?",
         "a3": "Jeder Plan hat ein Fair-Use-Limit, um die Performance zu gewährleisten. Der Agentur-Plan beinhaltet unbegrenzte Generationen."
+      },
+      "dropdowns": {
+        "textToVideoAi": "Text zu Video KI",
+        "imageToVideoAi": "Bild zu Video KI",
+        "photoToVideoAvatar": "Foto-zu-Video-Avatar",
+        "aiVideoEditor": "KI-Videoeditor",
+        "aiShorts": "KI-Shorts",
+        "mimicMotion": "Bewegung nachahmen",
+        "canvas": "Canvas",
+        "videoToVideoAi": "Video zu Video KI",
+        "consistentCharacterVideo": "Konsistentes Charaktervideo",
+        "aiVideoEnhancer": "KI-Videoverbesserung",
+        "aiVideoExtender": "KI-Videoverlängerung",
+        "moreTools": "Weitere Tools →",
+        "aiImageGenerator": "KI-Bildgenerator",
+        "imageToImageAi": "Bild zu Bild KI",
+        "chatToImage": "Chat zu Bild",
+        "aiArtGenerator": "KI-Kunstgenerator",
+        "editEnhance": "Bearbeiten & Verbessern",
+        "removeBg": "Hintergrund entfernen",
+        "objectRemover": "Objektentferner",
+        "imageEnhancer": "Bildverbesserung",
+        "stylesModels": "Stile & Modelle",
+        "ghibliAiGenerator": "Ghibli-KI-Generator",
+        "animeUpscaler": "Anime-Upscaler",
+        "imageGenerators": "Bildgeneratoren",
+        "aiEffectsHub": "KI-Effekt-Hub",
+        "overlaysTemplates": "Overlays & Vorlagen",
+        "transitions": "Übergänge",
+        "textCaptions": "Text & Untertitel",
+        "utilities": "Dienstprogramme",
+        "batchQueue": "Batch-Warteschlange",
+        "presets": "Voreinstellungen",
+        "changelog": "Änderungsprotokoll"
+      },
+      "features": {
+        "feature": "Funktion",
+        "items": {
+          "videosPerMonth": "Videos / Monat",
+          "imagesPerMonth": "Bilder / Monat",
+          "parallelTasks": "Parallele Aufgaben",
+          "multiModel": "All-in-one-Unterstützung für mehrere Modelle",
+          "textToVideo": "Text zu Video",
+          "imageToVideo": "Bild zu Video",
+          "textImageVideoToVideo": "Text/Bild/Video zu Video",
+          "consistentCharacterVideo": "Konsistentes Charaktervideo",
+          "aiAnimationGenerator": "KI-Animationsgenerator",
+          "textImageChatToImage": "Text/Bild/Chat zu Bild",
+          "templatesEffects": "300+ Vorlagen & Effekte"
+        }
       }
     }
   },
@@ -2109,5 +2231,21 @@
     "pending_approval": "Ausstehende Genehmigung",
     "fully_signed": "Vollständig unterzeichnet",
     "contract_fully_signed": "Vertrag vollständig unterzeichnet"
+  },
+  "common": {
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "saving": "Wird gespeichert...",
+    "credits": "Credits",
+    "credits_lower": "Credits",
+    "history": "Verlauf"
+  },
+  "teamManagement": {
+    "seatLimitReached": "Sitzlimit erreicht",
+    "teamMemberLimitReached": "Du hast dein Teammitglieder-Limit erreicht.",
+    "upgradePlanForMembers": "Upgrade deinen Plan, um weitere Teammitglieder hinzuzufügen und zusätzliche Funktionen freizuschalten.",
+    "upgradePlan": "Plan upgraden",
+    "upgradeForSeats": "Upgrade auf Basic oder höher, um Teamsitze freizuschalten.",
+    "seatLimitReachedDescription": "Du hast dein Limit von {{count}} Sitzen erreicht. Upgrade, um weitere Teammitglieder hinzuzufügen."
   }
 }
