@@ -454,8 +454,15 @@ export function TeamManagementCard({
     if (seatLimitBlocked) {
       const message =
         seatLimit === 0
-          ? "Upgrade to Basic or above to unlock team seats."
-          : `You've reached your ${seatLimit ?? 0} seat limit. Upgrade to add more team members.`;
+          ? teamT(
+              "upgradeForSeats",
+              "Upgrade to Basic or above to unlock team seats.",
+            )
+          : teamT(
+              "seatLimitReachedDescription",
+              "You've reached your {{count}} seat limit. Upgrade to add more team members.",
+              { count: seatLimit ?? 0 },
+            );
       setSeatLimitError(message);
       setShowUpgradeModal(true);
     } else {
@@ -1300,7 +1307,7 @@ export function TeamManagementCard({
                   : "text-xl font-bold text-gray-900"
               }
             >
-              Seat Limit Reached
+              {teamT("seatLimitReached", "Seat Limit Reached")}
             </DialogTitle>
             <DialogDescription
               className={
@@ -1309,7 +1316,11 @@ export function TeamManagementCard({
                   : "text-sm text-gray-500 font-medium"
               }
             >
-              {seatLimitError || "You've reached your team member limit."}
+              {seatLimitError ||
+                teamT(
+                  "teamMemberLimitReached",
+                  "You've reached your team member limit.",
+                )}
             </DialogDescription>
           </DialogHeader>
           <div
@@ -1326,8 +1337,10 @@ export function TeamManagementCard({
                   : "text-xs text-indigo-700 font-medium leading-relaxed"
               }
             >
-              Upgrade your plan to add more team members and unlock additional
-              features.
+              {teamT(
+                "upgradePlanForMembers",
+                "Upgrade your plan to add more team members and unlock additional features.",
+              )}
             </p>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -1343,7 +1356,7 @@ export function TeamManagementCard({
                   : "font-bold"
               }
             >
-              Cancel
+              {t("common.cancel", { defaultValue: "Cancel" })}
             </Button>
             <Button
               onClick={() => {
@@ -1361,7 +1374,7 @@ export function TeamManagementCard({
                   : "bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl flex items-center gap-2"
               }
             >
-              Upgrade Plan
+              {teamT("upgradePlan", "Upgrade Plan")}
               <ArrowRight className="w-4 h-4" />
             </Button>
           </DialogFooter>
