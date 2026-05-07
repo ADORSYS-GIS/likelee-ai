@@ -139,7 +139,7 @@ export async function listCampaignGenerations(
 
 export type LicensedAsset = {
   id: string;
-  type: "image" | "audio";
+  type: "image" | "audio" | "video";
   name: string;
   url: string;
   campaign_name?: string;

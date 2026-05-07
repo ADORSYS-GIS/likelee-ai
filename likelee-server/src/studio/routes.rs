@@ -1164,6 +1164,74 @@ async fn fetch_brand_licensed_assets(state: &AppState, brand_id: &str, now: &str
         }
     }
 
+    // 6. Get campaign offer deliverables for paid offers
+    let cod_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .select("id,asset_type,caption,status,offer_id,brand_campaigns(name),campaign_offers(payment_status,expires_at)")
+        .eq("brand_id", brand_id)
+        .eq("status", "approved")
+        .execute()
+        .await;
+
+    if let Ok(resp) = cod_resp {
+        if let Ok(text) = resp.text().await {
+            let deliverables: Vec<serde_json::Value> =
+                serde_json::from_str(&text).unwrap_or_default();
+
+            for del in deliverables {
+                let offer = del.get("campaign_offers");
+                let payment_status = offer
+                    .and_then(|o| o.get("payment_status"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unpaid");
+                let expires_at = offer
+                    .and_then(|o| o.get("expires_at"))
+                    .and_then(|v| v.as_str());
+
+                if payment_status != "paid" {
+                    continue;
+                }
+                if let Some(exp) = expires_at {
+                    if exp < now {
+                        continue;
+                    }
+                }
+
+                let del_id = del.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                let offer_id = del.get("offer_id").and_then(|v| v.as_str()).unwrap_or("");
+                let asset_type = del.get("asset_type").and_then(|v| v.as_str()).unwrap_or("file");
+                let campaign_name = del
+                    .get("brand_campaigns")
+                    .and_then(|bc| bc.get("name"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Campaign")
+                    .to_string();
+
+                if !del_id.is_empty() && !offer_id.is_empty() {
+                    let secure_url = format!(
+                        "/api/campaign-offers/{}/deliverables/{}/file",
+                        offer_id, del_id
+                    );
+                    let type_str = match asset_type {
+                        "video" => "video",
+                        "audio" => "audio",
+                        _ => "image",
+                    };
+
+                    assets.push(json!({
+                        "id": format!("campaign-deliverable-{}", del_id),
+                        "type": type_str,
+                        "name": del.get("caption").and_then(|v| v.as_str()).unwrap_or("Campaign Deliverable").to_string(),
+                        "url": secure_url,
+                        "campaign_name": campaign_name,
+                        "source": "licensed"
+                    }));
+                }
+            }
+        }
+    }
+
     assets
 }
 

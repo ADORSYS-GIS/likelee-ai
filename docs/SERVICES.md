@@ -19,6 +19,7 @@ This document provides a comprehensive reference for all external services used 
 | **ElevenLabs** | Voice synthesis, TTS | Free or Starter | Free (20min/mo) | ✅ Yes |
 | **Apify** | Instagram profile scraping | Free or Starter | $1.39/1000 request|  ✅ Yes
 | **SMTP Provider** | Transactional email | Included | google smtp srver | ✅ Yes |
+| **Fal AI** | AI image/video generation for Studio | Pro Plan | $49/mo + usage | ✅ Yes |
 
 ---
 
