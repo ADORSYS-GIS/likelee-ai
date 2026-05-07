@@ -401,10 +401,10 @@
       "networkVerify": "Unable to verify the code. Please check your internet connection and try again.",
       "verifyGeneric": "Verification failed. Please check the code and try again.",
       "authUnavailable": "Authentication service not available. Please refresh the page.",
-      "cleanupFailed": "Failed to remove incomplete setup: {{message}}",
-      "unknownError": "Unknown error",
-      "failedToDisable": "Failed to disable 2FA",
-      "failedToRemove": "Failed to remove"
+      "cleanupFailed": "No se pudo eliminar la configuración incompleta: {{message}}",
+      "unknownError": "Error desconocido",
+      "failedToDisable": "No se pudo desactivar la 2FA",
+      "failedToRemove": "No se pudo eliminar"
     }
   },
   "unauthorized": {
