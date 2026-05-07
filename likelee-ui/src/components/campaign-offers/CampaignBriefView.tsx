@@ -480,8 +480,11 @@ export function CampaignBriefView({
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="text-sm font-bold text-slate-900">
                 {lightboxIndex !== null
-                  ? `Reference ${lightboxIndex + 1} of ${referenceImageUrls.length}`
-                  : "Reference"}
+                  ? t("campaigns.campaignBriefBuilder.referenceCount", {
+                      current: lightboxIndex + 1,
+                      total: referenceImageUrls.length,
+                    })
+                  : t("campaigns.campaignBriefBuilder.reference")}
               </div>
               <button
                 type="button"
@@ -494,7 +497,7 @@ export function CampaignBriefView({
             <div className="relative bg-slate-50 flex items-center justify-center">
               <img
                 src={lightboxUrl}
-                alt="Reference"
+                alt={t("campaigns.campaignBriefBuilder.reference")}
                 className="max-w-full max-h-[75vh] object-contain"
               />
               {referenceImageUrls.length > 1 && (
