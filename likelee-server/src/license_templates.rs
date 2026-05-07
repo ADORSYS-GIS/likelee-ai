@@ -591,10 +591,8 @@ pub async fn create_builder_token(
                 // Perform placeholder replacement
                 let rendered_contract = replace_placeholders(&contract_body, &replacements);
 
-                let document_html = render_contract_to_html(
-                    &rendered_contract,
-                    &contract_body_format,
-                );
+                let document_html =
+                    render_contract_to_html(&rendered_contract, &contract_body_format);
 
                 let docuseal = DocuSealClient::new(
                     state.docuseal_api_key.clone(),
