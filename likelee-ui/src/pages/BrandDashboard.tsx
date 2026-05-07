@@ -530,17 +530,18 @@ export default function BrandDashboard() {
   const handleCompanySeatEntry = () => {
     if ((brandSeatLimit ?? 0) === 0) {
       toast({
-        title: "Upgrade required",
-        description:
-          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
+        title: t("toasts.upgradeRequired"),
+        description: t("toasts.upgradeRequiredSeatsDesc"),
       });
       navigate("/brandpricing");
       return;
     }
     if (brandSeatLimitReached) {
       toast({
-        title: "Seat limit reached",
-        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
+        title: t("toasts.seatLimitReached"),
+        description: t("toasts.seatLimitReachedDesc", {
+          count: brandSeatLimitLabel,
+        }),
         variant: "destructive" as any,
       });
       return;
@@ -3232,7 +3233,6 @@ export default function BrandDashboard() {
             </p>
             {campaignMetrics.pending_approvals_count > 0 && (
               <Badge className="mt-1 bg-yellow-100 text-yellow-700 border border-yellow-300">
-                Action needed
                 {t("dashboard.home.stats.actionNeeded")}
               </Badge>
             )}
@@ -3604,10 +3604,11 @@ export default function BrandDashboard() {
                     }
                   }
                   if (actorTypeRaw === "brand" && message) {
+                    const localizedYou = t("dashboard.home.activityFeed.you");
                     if (actor && message.startsWith(actor)) {
-                      message = `You${message.slice(actor.length)}`;
+                      message = `${localizedYou}${message.slice(actor.length)}`;
                     } else if (message.startsWith("Brand")) {
-                      message = `You${message.slice("Brand".length)}`;
+                      message = `${localizedYou}${message.slice("Brand".length)}`;
                     }
                   }
                   return (
@@ -7400,60 +7401,95 @@ export default function BrandDashboard() {
 
             <Card className="p-6 bg-white border border-gray-200 space-y-6">
               <h2 className="text-2xl font-bold text-slate-900">
-                Campaign Scope &amp; Contract Details
+                {t("campaigns.campaignBriefBuilder.sections.scopeDetails")}
               </h2>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
                   <p className="text-slate-900">
-                    <span className="font-semibold">Objective:</span>{" "}
+                    <span className="font-semibold">
+                      {t("campaigns.campaignBriefBuilder.fields.objective")}:
+                    </span>{" "}
                     {briefValue("overview_objective")}
                   </p>
                   <p className="text-slate-900">
-                    <span className="font-semibold">Target Audience:</span>{" "}
+                    <span className="font-semibold">
+                      {t(
+                        "campaigns.campaignBriefBuilder.fields.targetAudience",
+                      )}
+                      :
+                    </span>{" "}
                     {briefValue("overview_target_audience")}
                   </p>
                   <p className="text-slate-900">
-                    <span className="font-semibold">Campaign Duration:</span>{" "}
+                    <span className="font-semibold">
+                      {t(
+                        "campaigns.campaignBriefBuilder.fields.campaignDuration",
+                      )}
+                      :
+                    </span>{" "}
                     {briefValue("overview_campaign_duration")}
                   </p>
                   <p className="text-slate-900">
-                    <span className="font-semibold">Launch Date:</span>{" "}
+                    <span className="font-semibold">
+                      {t("campaigns.campaignBriefBuilder.fields.launchDate")}:
+                    </span>{" "}
                     {briefValue("overview_launch_date")}
                   </p>
                 </div>
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
                   <p className="text-slate-900">
-                    <span className="font-semibold">Total Budget:</span>{" "}
+                    <span className="font-semibold">
+                      {t("campaigns.campaignDetails.totalBudget")}:
+                    </span>{" "}
                     {briefValue("budget_total")}
                   </p>
                   <p className="text-slate-900">
-                    <span className="font-semibold">Creator Payment:</span>{" "}
+                    <span className="font-semibold">
+                      {t("campaigns.campaignDetails.creatorPayment")}:
+                    </span>{" "}
                     {briefValue("budget_creator_payment")}
                   </p>
                   <p className="text-slate-900">
-                    <span className="font-semibold">Submission Deadline:</span>{" "}
+                    <span className="font-semibold">
+                      {t("campaigns.campaignDetails.submissionDeadline")}:
+                    </span>{" "}
                     {briefValue("budget_submission_deadline")}
                   </p>
                 </div>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                 <p className="text-slate-900">
-                  <span className="font-semibold">Renewal Terms:</span>{" "}
+                  <span className="font-semibold">
+                    {t("campaigns.campaignDetails.renewalTerms")}:
+                  </span>{" "}
                   {briefValue("budget_renewal_terms")}
                 </p>
               </div>
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
                 <p className="text-slate-900">
-                  <span className="font-semibold">Included Revisions:</span>{" "}
+                  <span className="font-semibold">
+                    {t(
+                      "campaigns.campaignBriefBuilder.fields.includedRevisions",
+                    )}
+                    :
+                  </span>{" "}
                   {briefValue("revision_included")}
                 </p>
                 <p className="text-slate-900">
-                  <span className="font-semibold">Major Changes:</span>{" "}
+                  <span className="font-semibold">
+                    {t("campaigns.campaignBriefBuilder.fields.majorChanges", {
+                      defaultValue: "Major Changes",
+                    })}
+                    :
+                  </span>{" "}
                   {briefValue("revision_major_changes")}
                 </p>
                 <p className="text-slate-900">
                   <span className="font-semibold">
-                    Turnaround for Revisions:
+                    {t(
+                      "campaigns.campaignBriefBuilder.fields.revisionTurnaround",
+                    )}
+                    :
                   </span>{" "}
                   {briefValue("revision_turnaround")}
                 </p>
@@ -7478,14 +7514,18 @@ export default function BrandDashboard() {
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                 <p className="font-semibold text-slate-900 mb-1">
-                  Watermark &amp; Protection
+                  {t(
+                    "campaigns.campaignBriefBuilder.fields.watermarkProtection",
+                  )}
                 </p>
                 <p className="text-slate-900 whitespace-pre-wrap">
                   {briefValue("watermark_protection")}
                 </p>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <p className="font-semibold text-slate-900 mb-1">Legal Terms</p>
+                <p className="font-semibold text-slate-900 mb-1">
+                  {t("campaigns.campaignBriefBuilder.fields.legalTerms")}
+                </p>
                 {briefLines("legal_terms").length > 0 ? (
                   <ul className="list-disc pl-5 space-y-1 text-slate-900">
                     {briefLines("legal_terms").map((line, idx) => (
