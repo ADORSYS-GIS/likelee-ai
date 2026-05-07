@@ -4669,7 +4669,7 @@ export default function BrandDashboard() {
         {!loadingBrandLicensingRequests &&
           filteredRequests.map((req: any) => {
             const agencyName =
-              req?.agencies?.agency_name || req?.agency_name || "Agency";
+              req?.agencies?.agency_name || req?.agency_name || t("common.agency");
             const status = formatLicenseStatus(req?.status || "pending");
             const statusClass =
               status === t("campaigns.licensingRequests.status.approved")
@@ -6752,10 +6752,10 @@ export default function BrandDashboard() {
                                                   }`}
                                                 >
                                                   {del.status === "submitted"
-                                                    ? "New"
+                                                    ? t("common.new")
                                                     : del.status ===
                                                         "brand_approved"
-                                                      ? "approved"
+                                                      ? t("common.approved")
                                                       : del.status.replace(
                                                           /_/g,
                                                           " ",

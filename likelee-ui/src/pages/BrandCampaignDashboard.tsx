@@ -633,17 +633,18 @@ export default function BrandCampaignDashboard({
   const handleCompanySeatEntry = () => {
     if ((brandSeatLimit ?? 0) === 0) {
       toast({
-        title: "Upgrade required",
-        description:
-          "Company seats are only available on paid brand plans. Upgrade to Basic or above to unlock them.",
+        title: t("toasts.upgradeRequired"),
+        description: t("toasts.upgradeRequiredSeatsDesc"),
       });
       navigate("/brandpricing");
       return;
     }
     if (brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit) {
       toast({
-        title: "Seat limit reached",
-        description: `You've used all ${brandSeatLimitLabel} company seats on your current plan.`,
+        title: t("toasts.seatLimitReached"),
+        description: t("toasts.seatLimitReachedDesc", {
+          count: brandSeatLimitLabel,
+        }),
         variant: "destructive" as any,
       });
       return;
@@ -2453,8 +2454,10 @@ export default function BrandCampaignDashboard({
               {(brandSeatLimit ?? 0) === 0
                 ? t("campaignsDashboard.overview.upgradePlan")
                 : brandSeatLimit != null && brandTeamSeatsUsed >= brandSeatLimit
-                  ? "Seat limit reached"
-                  : `Up to ${brandSeatLimitLabel} seats`}
+                  ? t("campaignsDashboard.quickActions.seatLimitReached")
+                  : t("campaignsDashboard.quickActions.upToSeats", {
+                      count: brandSeatLimitLabel,
+                    })}
             </Button>
           </Card>
 
@@ -4434,7 +4437,7 @@ export default function BrandCampaignDashboard({
                       onClick={() => setMarkDoneOpen(true)}
                       className="bg-green-600 hover:bg-green-700 text-white rounded-none"
                     >
-                      Mark as Done
+                      {t("campaigns.markDone.confirm")}
                     </Button>
                   )}
                   <Button
@@ -4454,23 +4457,31 @@ export default function BrandCampaignDashboard({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <Card className="p-4 border-2 border-gray-200 rounded-none">
-                  <p className="text-sm text-gray-600 mb-1">Budget</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {t("campaigns.campaignDetails.budget")}
+                  </p>
                   <p className="text-xl font-bold text-gray-900">
                     ${selectedCampaign.budget.toLocaleString()}
                   </p>
                 </Card>
                 <Card className="p-4 border-2 border-gray-200 rounded-none">
-                  <p className="text-sm text-gray-600 mb-1">Deliverables</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {t("campaigns.campaignDetails.deliverables")}
+                  </p>
                   <p className="text-xl font-bold text-gray-900">
                     {selectedCampaignApprovedCount} /{" "}
                     {selectedCampaignTotalExpected}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {selectedCampaignSubmittedCount} submitted
+                    {t("campaigns.campaignDetails.submittedCount", {
+                      count: selectedCampaignSubmittedCount,
+                    })}
                   </p>
                 </Card>
                 <Card className="p-4 border-2 border-gray-200 rounded-none">
-                  <p className="text-sm text-gray-600 mb-1">Start Date</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {t("campaigns.campaignDetails.startDate")}
+                  </p>
                   <p className="text-xl font-bold text-gray-900">
                     {selectedCampaign.start_date}
                   </p>
@@ -4479,14 +4490,16 @@ export default function BrandCampaignDashboard({
               {selectedCampaign.status === "completed" && (
                 <Card className="p-4 border-2 border-gray-200 rounded-none mb-8">
                   <p className="text-sm text-gray-600 mb-1">
-                    Completion Status
+                    {t("campaigns.selectedCampaign.completionStatus")}
                   </p>
                   <p className="text-xl font-bold text-gray-900">
-                    {selectedCampaign.completed_at ? "Completed" : "Incomplete"}
+                    {selectedCampaign.completed_at
+                      ? t("campaignsDashboard.status.completed")
+                      : t("campaignsDashboard.status.incomplete")}
                   </p>
                   {selectedCampaign.completed_at && (
                     <p className="text-xs text-gray-500 mt-1">
-                      Marked done on{" "}
+                      {t("campaigns.selectedCampaign.markedDoneOn")}{" "}
                       {new Date(
                         String(selectedCampaign.completed_at),
                       ).toLocaleString()}
@@ -4495,11 +4508,13 @@ export default function BrandCampaignDashboard({
                 </Card>
               )}
               <div className="mb-8">
-                <p className="text-sm text-gray-600 mb-2">Collaborators</p>
+                <p className="text-sm text-gray-600 mb-2">
+                  {t("campaigns.campaignDetails.collaborators")}
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {selectedCampaignCollaborators.length === 0 ? (
                     <span className="text-sm text-gray-500">
-                      No collaborators assigned yet.
+                      {t("campaigns.campaignDetails.noCollaborators")}
                     </span>
                   ) : (
                     selectedCampaignCollaborators.map((collaborator, idx) => {
@@ -4522,21 +4537,19 @@ export default function BrandCampaignDashboard({
 
               <div className="space-y-6">
                 <h3 className="text-xl font-bold text-gray-900 uppercase tracking-widest text-sm">
-                  Deliverables & Feedback
+                  {t("campaigns.campaignDetails.deliverablesFeedback")}
                 </h3>
                 <Alert className="border-2 border-gray-200 rounded-none">
                   <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
                     <Lock className="w-4 h-4" />
-                    Approving more than half of deliverables triggers escrow
-                    payout (once) and unlocks downloads for all deliverables.
-                    Approvals are final and can’t be undone.
+                    {t("campaigns.campaignDetails.approvalThresholdWarning")}
                   </AlertDescription>
                 </Alert>
                 {loadingSelectedCampaignDetails && (
                   <Card className="p-6 border-2 border-gray-200 rounded-none">
                     <p className="text-xs text-gray-600 flex items-center gap-2">
                       <Loader2 className="w-3 h-3 animate-spin" />
-                      Loading campaign deliverables...
+                      {t("campaigns.campaignDetails.loadingDeliverables")}
                     </p>
                   </Card>
                 )}
@@ -4544,7 +4557,7 @@ export default function BrandCampaignDashboard({
                   selectedCampaignDeliverables.length === 0 && (
                     <Card className="p-6 border-2 border-gray-200 rounded-none">
                       <p className="text-sm text-gray-600">
-                        No deliverables submitted yet for this campaign.
+                        {t("campaigns.campaignDetails.noContentSubmitted")}
                       </p>
                     </Card>
                   )}
@@ -4580,8 +4593,9 @@ export default function BrandCampaignDashboard({
                             {label}
                           </h4>
                           <span className="ml-auto text-[10px] text-gray-400 font-black bg-gray-50 px-2 py-0.5 border border-gray-100 uppercase tracking-tighter">
-                            {items.length}{" "}
-                            {items.length === 1 ? "Asset" : "Assets"}
+                            {t("campaigns.campaignDetails.assetsCount", {
+                              count: items.length,
+                            })}
                           </span>
                         </div>
                         <div className="space-y-6">
@@ -4671,7 +4685,9 @@ export default function BrandCampaignDashboard({
                                           <Sparkles className="w-4 h-4 text-indigo-400 absolute -top-3 -right-3 animate-pulse" />
                                         </div>
                                         <span className="text-[8px] font-black uppercase tracking-[0.2em] text-center px-2 leading-tight">
-                                          Video Locked
+                                          {t(
+                                            "campaigns.campaignDetails.videoLocked",
+                                          )}
                                         </span>
                                       </div>
                                     ) : (
@@ -4692,10 +4708,20 @@ export default function BrandCampaignDashboard({
                                     <div className="flex items-start justify-between mb-4">
                                       <div>
                                         <h4 className="font-black text-gray-900 mb-1 uppercase tracking-tight">
-                                          Deliverable {idx + 1}
+                                          {t(
+                                            "campaigns.campaignDetails.deliverableNumber",
+                                            {
+                                              count: idx + 1,
+                                            },
+                                          )}
                                         </h4>
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2">
-                                          Uploaded {uploadedAt}
+                                          {t(
+                                            "campaigns.campaignDetails.uploadedOn",
+                                            {
+                                              date: uploadedAt,
+                                            },
+                                          )}
                                         </p>
                                         <Badge
                                           className={`${statusClass} text-[10px] uppercase tracking-wider h-5 rounded-none px-2`}
@@ -4717,10 +4743,14 @@ export default function BrandCampaignDashboard({
                                           }}
                                         >
                                           {isApproved
-                                            ? "Approved"
+                                            ? t(
+                                                "campaigns.campaignDetails.approved",
+                                              )
                                             : isBusy
                                               ? "..."
-                                              : "Approve"}
+                                              : t(
+                                                  "campaigns.campaignDetails.approve",
+                                                )}
                                         </Button>
                                         <Button
                                           variant="outline"
@@ -4735,7 +4765,9 @@ export default function BrandCampaignDashboard({
                                             );
                                           }}
                                         >
-                                          Request Edit
+                                          {t(
+                                            "campaigns.campaignDetails.requestChanges",
+                                          )}
                                         </Button>
                                         {isApproved && (
                                           <Button
@@ -4766,7 +4798,9 @@ export default function BrandCampaignDashboard({
                                               <div className="flex justify-between items-center mb-1.5">
                                                 <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">
                                                   {comment?.author_role ||
-                                                    "User"}
+                                                    t(
+                                                      "campaigns.campaignDetails.user",
+                                                    )}
                                                 </span>
                                                 <span className="text-[9px] text-gray-400 font-bold">
                                                   {comment?.created_at
@@ -4786,7 +4820,9 @@ export default function BrandCampaignDashboard({
 
                                       <div className="flex gap-2">
                                         <Input
-                                          placeholder="Type feedback here..."
+                                          placeholder={t(
+                                            "campaigns.campaignDetails.feedbackPlaceholder",
+                                          )}
                                           value={
                                             deliverableCommentDrafts[
                                               deliverableId
@@ -4810,7 +4846,7 @@ export default function BrandCampaignDashboard({
                                           }
                                           className="bg-gray-900 hover:bg-black text-white rounded-none h-9 text-[10px] font-black uppercase tracking-widest px-5 shadow-none"
                                         >
-                                          Send
+                                          {t("campaigns.campaignDetails.send")}
                                         </Button>
                                       </div>
                                     </div>
@@ -5017,21 +5053,22 @@ export default function BrandCampaignDashboard({
       <AlertDialog open={markDoneOpen} onOpenChange={setMarkDoneOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Mark campaign as done?</AlertDialogTitle>
+            <AlertDialogTitle>{t("campaigns.markDone.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This action is irreversible. The campaign will be marked as
-              completed and removed from Active.
+              {t("campaigns.markDone.description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={markDoneBusy}>
-              Cancel
+              {t("common.cancel", { defaultValue: "Cancel" })}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleMarkCampaignDone}
               disabled={markDoneBusy}
             >
-              {markDoneBusy ? "Saving..." : "Mark as Done"}
+              {markDoneBusy
+                ? t("common.saving", { defaultValue: "Saving..." })
+                : t("campaigns.markDone.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
