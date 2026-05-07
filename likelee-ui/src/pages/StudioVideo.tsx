@@ -747,7 +747,7 @@ const StudioVideo = () => {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <LanguageSwitcher />
+          <LanguageSwitcher className="text-white hover:text-gray-200" />
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <button
               onClick={() => setShowTransactions(true)}

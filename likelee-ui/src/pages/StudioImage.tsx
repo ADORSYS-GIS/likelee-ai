@@ -347,7 +347,7 @@ export default function StudioImage() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <LanguageSwitcher />
+            <LanguageSwitcher className="text-white hover:text-gray-200" />
             <div className="flex items-center gap-3 px-4 py-2 bg-white/[0.03] rounded-full border border-white/10 backdrop-blur-md shadow-inner">
               <Coins className="w-4 h-4 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
               <span className="text-sm font-bold tracking-tight">
@@ -583,7 +583,9 @@ export default function StudioImage() {
                   variant="outline"
                   className="border-white/5 bg-white/5 text-[10px] uppercase font-bold px-3 py-1"
                 >
-                  Grid View
+                  {t("studio.image.ui.gridView", {
+                    defaultValue: "Grid View",
+                  })}
                 </Badge>
               </div>
             </div>

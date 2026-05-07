@@ -32,7 +32,7 @@ import {
 
 const toolCards = [
   {
-    title: "Generate AI Video",
+    titleKey: "video",
     icon: Film,
     path: createPageUrl("StudioVideo"),
     badge: null,
@@ -40,7 +40,7 @@ const toolCards = [
     bgColor: "bg-orange-500",
   },
   {
-    title: "Generate AI Image",
+    titleKey: "image",
     icon: Image,
     path: createPageUrl("StudioImage"),
     badge: null,
@@ -48,7 +48,7 @@ const toolCards = [
     bgColor: "bg-cyan-500",
   },
   {
-    title: "Generate AI Shorts",
+    titleKey: "shorts",
     icon: Clapperboard,
     path: createPageUrl("StudioVideo"),
     badge: "Beta",
@@ -56,7 +56,7 @@ const toolCards = [
     bgColor: "bg-amber-500",
   },
   {
-    title: "Generate AI Effects",
+    titleKey: "effects",
     icon: Sparkles,
     path: createPageUrl("StudioImage"),
     badge: "New",
@@ -405,19 +405,19 @@ export default function Studio() {
               {/* Video AI Dropdown */}
               <div className="dropdown-parent">
                 <button className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors flex items-center gap-1">
-                  Video AI
+                  {t("studio.landing.nav.videoAi")}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute top-full left-0 mt-0 w-64 bg-[#1A1A1F] border border-white/10 rounded-lg shadow-2xl p-4">
                   <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">
-                    Generate
+                    {t("studio.landing.nav.generate")}
                   </h4>
                   <div className="space-y-1">
                     <button
                       onClick={() => navigate(createPageUrl("StudioVideo"))}
                       className="block w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors"
                     >
-                      AI Video Generator
+                      {t("studio.landing.nav.aiVideoGenerator")}
                     </button>
                     <button
                       onClick={() => navigate(createPageUrl("StudioVideo"))}
@@ -606,7 +606,7 @@ export default function Studio() {
               {/* Effects Dropdown */}
               <div className="dropdown-parent">
                 <button className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors flex items-center gap-1">
-                  Effects
+                  {t("studio.landing.nav.effects")}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute top-full left-0 mt-0 w-56 bg-[#1A1A1F] border border-white/10 rounded-lg shadow-2xl p-4">
@@ -642,14 +642,14 @@ export default function Studio() {
               {/* AI Tools Dropdown */}
               <div className="dropdown-parent">
                 <button className="px-4 py-2 text-sm text-white hover:text-gray-300 transition-colors flex items-center gap-1">
-                  AI Tools
+                  {t("studio.landing.nav.aiTools")}
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 <div className="dropdown-menu absolute top-full right-0 mt-0 w-[650px] bg-[#1A1A1F] border border-white/10 rounded-lg shadow-2xl p-6">
                   <div className="grid grid-cols-3 gap-6">
                     <div>
                       <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">
-                        Video Models
+                        {t("studio.landing.models.videoModels")}
                       </h4>
                       <div className="space-y-1">
                         {videoModels.map((model, index) => (
@@ -670,7 +670,7 @@ export default function Studio() {
                     </div>
                     <div>
                       <h4 className="text-xs font-semibold text-gray-400 mb-3 uppercase tracking-wider">
-                        Image Models
+                        {t("studio.landing.models.imageModels")}
                       </h4>
                       <div className="space-y-1">
                         {imageModels.map((model, index) => (
@@ -714,7 +714,7 @@ export default function Studio() {
                           }
                           className="block w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors"
                         >
-                          Templates
+                          {t("studio.landing.stats.templates")}
                         </button>
                         <button
                           onClick={() => navigate(createPageUrl("Studio"))}
@@ -740,7 +740,7 @@ export default function Studio() {
             {/* Right Side */}
             <div className="flex items-center gap-4">
               <div>
-                <LanguageSwitcher />
+                <LanguageSwitcher className="text-white hover:text-gray-200" />
               </div>
               <button
                 onClick={() => navigate(getDashboardRoute())}
@@ -781,7 +781,7 @@ export default function Studio() {
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="video" className="border-none">
                     <AccordionTrigger className="px-4 py-2 text-white hover:bg-white/5 rounded hover:no-underline">
-                      Video AI
+                      {t("studio.landing.nav.videoAi")}
                     </AccordionTrigger>
                     <AccordionContent className="px-4 space-y-1">
                       <button
@@ -791,7 +791,7 @@ export default function Studio() {
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 rounded"
                       >
-                        AI Video Generator
+                        {t("studio.landing.nav.aiVideoGenerator")}
                       </button>
                       <button
                         onClick={() => {
@@ -906,7 +906,7 @@ export default function Studio() {
 
                   <AccordionItem value="image" className="border-none">
                     <AccordionTrigger className="px-4 py-2 text-white hover:bg-white/5 rounded hover:no-underline">
-                      Image AI
+                      {t("studio.landing.nav.imageAi")}
                     </AccordionTrigger>
                     <AccordionContent className="px-4 space-y-1">
                       <button
@@ -1022,7 +1022,7 @@ export default function Studio() {
 
                   <AccordionItem value="effects" className="border-none">
                     <AccordionTrigger className="px-4 py-2 text-white hover:bg-white/5 rounded hover:no-underline">
-                      Effects
+                      {t("studio.landing.nav.effects")}
                     </AccordionTrigger>
                     <AccordionContent className="px-4 space-y-1">
                       <button
@@ -1032,7 +1032,9 @@ export default function Studio() {
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 rounded"
                       >
-                        AI Effects Hub
+                        {t("studio.landing.nav.aiEffectsHub", {
+                          defaultValue: "AI Effects Hub",
+                        })}
                       </button>
                       <button
                         onClick={() => {
@@ -1066,11 +1068,11 @@ export default function Studio() {
 
                   <AccordionItem value="tools" className="border-none">
                     <AccordionTrigger className="px-4 py-2 text-white hover:bg-white/5 rounded hover:no-underline">
-                      AI Tools
+                      {t("studio.landing.nav.aiTools")}
                     </AccordionTrigger>
                     <AccordionContent className="px-4 space-y-1">
                       <h4 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-                        Video Models
+                        {t("studio.landing.models.videoModels")}
                       </h4>
                       {videoModels.map((model, index) => (
                         <button
@@ -1182,13 +1184,13 @@ export default function Studio() {
           {/* Title */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
-              What would you like to
+              {t("studio.landing.hero.titlePrefix")}
               <span className="block bg-gradient-to-r from-[#32C8D1] via-[#F18B6A] to-[#F7B750] bg-clip-text text-transparent">
-                create today?
+                {t("studio.landing.hero.titleAccent")}
               </span>
             </h1>
             <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
-              Choose your creative tool and start generating
+              {t("studio.landing.hero.subtitle")}
             </p>
           </div>
 
@@ -1229,15 +1231,17 @@ export default function Studio() {
 
                       {/* Title */}
                       <h3 className="text-lg font-bold text-white mb-2">
-                        {tool.title}
+                        {t(`studio.landing.tools.${tool.titleKey}`)}
                       </h3>
                       <p className="text-sm text-gray-400 mb-4">
-                        Start creating with AI
+                        {t("studio.landing.tools.cardSubtitle")}
                       </p>
 
                       {/* Arrow */}
                       <div className="flex items-center text-sm text-gray-400 group-hover:text-white transition-colors">
-                        <span className="mr-2">Get started</span>
+                        <span className="mr-2">
+                          {t("studio.landing.tools.getStarted")}
+                        </span>
                         <ArrowRight
                           className={`w-4 h-4 transition-all ${hoveredTool === index ? "translate-x-2" : ""}`}
                         />
@@ -1253,18 +1257,24 @@ export default function Studio() {
           <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto mb-8">
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-[#32C8D1] mb-1">8+</div>
-              <div className="text-xs text-gray-400">AI Models</div>
+              <div className="text-xs text-gray-400">
+                {t("studio.landing.stats.aiModels")}
+              </div>
             </div>
             <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-[#F18B6A] mb-1">5</div>
-              <div className="text-xs text-gray-400">Creative Tools</div>
+              <div className="text-xs text-gray-400">
+                {t("studio.landing.stats.creativeTools")}
+              </div>
             </div>
             <div
               className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-4 text-center cursor-pointer hover:bg-white/10 transition-colors"
               onClick={() => navigate(createPageUrl("StudioTemplates"))}
             >
               <div className="text-2xl font-bold text-[#F7B750] mb-1">300+</div>
-              <div className="text-xs text-gray-400">Templates</div>
+              <div className="text-xs text-gray-400">
+                {t("studio.landing.stats.templates")}
+              </div>
             </div>
           </div>
         </div>
