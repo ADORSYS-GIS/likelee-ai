@@ -284,6 +284,32 @@ const DashboardView = ({
     return `$${val}`;
   };
 
+  const formatRosterStatusLabel = (value: unknown) => {
+    const key = String(value || "")
+      .trim()
+      .toLowerCase();
+    if (["active", "pending", "inactive"].includes(key)) {
+      return t(`agencyDashboard.roster.filters.${key}`);
+    }
+    return String(value || "");
+  };
+
+  const formatActivityTitle = (value: unknown) => {
+    const raw = String(value || "");
+    if (raw === "New Licensing Request") {
+      return t("agencyDashboard.dashboard.recentActivity.newLicensingRequest");
+    }
+    return raw;
+  };
+
+  const formatActivityTime = (value: unknown) => {
+    const raw = String(value || "");
+    if (raw.toLowerCase() === "recently") {
+      return t("agencyDashboard.dashboard.time.recently");
+    }
+    return raw;
+  };
+
   return (
     <div className="space-y-8">
       {/* KYC Verification Alert */}
@@ -539,7 +565,7 @@ const DashboardView = ({
                       {talent.name}
                     </span>
                     <Badge variant="outline" className="text-[10px] py-0">
-                      {talent.status}
+                      {formatRosterStatusLabel(talent.status)}
                     </Badge>
                   </div>
                 ))
@@ -573,7 +599,7 @@ const DashboardView = ({
                           variant="default"
                           className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
                         >
-                          {talent.status}
+                          {formatRosterStatusLabel(talent.status)}
                         </Badge>
                       </div>
                       <p className="text-xs text-gray-500">
@@ -593,7 +619,7 @@ const DashboardView = ({
                       variant="default"
                       className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
                     >
-                      {newestTalent.status}
+                      {formatRosterStatusLabel(newestTalent.status)}
                     </Badge>
                   </div>
                   <p className="text-xs text-gray-500">
@@ -756,9 +782,7 @@ const DashboardView = ({
             >
               {pendingApprovalCount > 0
                 ? t("agencyDashboard.dashboard.pipeline.reviewNow")
-                : t("agencyDashboard.dashboard.pipeline.noPending", {
-                    defaultValue: "No Pending",
-                  })}
+                : t("agencyDashboard.dashboard.pipeline.noPending")}
             </Button>
           </Card>
 
@@ -807,9 +831,7 @@ const DashboardView = ({
             >
               {expiringSoonCount > 0
                 ? t("agencyDashboard.dashboard.pipeline.review")
-                : t("agencyDashboard.dashboard.pipeline.noneExpiring", {
-                    defaultValue: "None Expiring",
-                  })}
+                : t("agencyDashboard.dashboard.pipeline.noneExpiring")}
             </Button>
           </Card>
 
@@ -893,10 +915,10 @@ const DashboardView = ({
                 />
                 <div>
                   <p className="text-sm font-bold text-gray-900">
-                    {item.title}
+                    {formatActivityTitle(item.title)}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {item.relative_time ?? ""}
+                    {formatActivityTime(item.relative_time)}
                   </p>
                 </div>
               </div>
