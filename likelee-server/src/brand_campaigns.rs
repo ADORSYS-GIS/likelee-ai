@@ -9712,6 +9712,368 @@ pub async fn ensure_campaign_billing_stub(
 }
 
 // =============================================================================
+// GET /api/agency/campaign-offers/:offer_id/stripe-readiness
+//
+// Pre-flight check called by the agency UI before sending a DocuSeal contract.
+// Returns Stripe connectivity + transfer-capability status for:
+//   - the agency itself
+//   - every talent currently assigned to the offer
+//
+// Two-tier result:
+//   all_connected = false  → HARD BLOCK: at least one party has no Stripe account
+//   all_connected = true,
+//   all_transfers_enabled = false → SOFT WARNING: everyone connected but some
+//                                   transfers not yet enabled (can still send)
+//
+// Stripe API calls are made in parallel (tokio::join!) to keep latency low.
+// Only the owning agency can call this endpoint.
+// =============================================================================
+
+#[derive(Debug, Serialize)]
+pub struct StripeReadinessParty {
+    /// "agency" | "creator"
+    pub party_type: String,
+    pub id: String,
+    pub name: String,
+    pub connected: bool,
+    pub transfers_enabled: bool,
+    pub details_submitted: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OfferStripeReadinessResponse {
+    pub offer_id: String,
+    pub agency: StripeReadinessParty,
+    pub talents: Vec<StripeReadinessParty>,
+    /// true only when agency AND every talent have a connected Stripe account
+    pub all_connected: bool,
+    /// true only when all_connected AND every party has transfers_enabled
+    pub all_transfers_enabled: bool,
+}
+
+pub async fn get_offer_stripe_readiness(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(offer_id): Path<String>,
+) -> Result<Json<OfferStripeReadinessResponse>, (StatusCode, String)> {
+    // Agency-only — must have billing visibility to see payout readiness
+    let access =
+        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = access.organization_id.clone();
+
+    // Verify the offer belongs to this agency
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,target_type,target_id")
+        .eq("id", &offer_id)
+        .eq("target_type", "agency")
+        .eq("target_id", &agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            offer_resp.status().as_u16(),
+            offer_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    if offer_rows.is_empty() {
+        return Err((StatusCode::NOT_FOUND, "offer_not_found".to_string()));
+    }
+
+    // Load all assigned talents for this offer
+    let assignments_resp = state
+        .pg
+        .from("offer_talent_assignments")
+        .select("creator_id,talent_id")
+        .eq("offer_id", &offer_id)
+        .eq("agency_id", &agency_id)
+        .eq("status", "assigned")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let assignments_text = assignments_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".into());
+    let assignment_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&assignments_text).unwrap_or_default();
+
+    // Collect unique creator_ids from assignments
+    let mut creator_ids: Vec<String> = assignment_rows
+        .iter()
+        .filter_map(|r| {
+            r.get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
+        .collect();
+    creator_ids.sort();
+    creator_ids.dedup();
+
+    // Resolve talent names — try agency_users first (has stage_name / full_legal_name),
+    // then fall back to creators.full_name for connected creators who have no agency_users row.
+    let mut name_by_creator_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+
+        // 1) agency_users — preferred source (has stage_name / full_legal_name)
+        if let Ok(au_resp) = state
+            .pg
+            .from("agency_users")
+            .select("creator_id,full_legal_name,stage_name")
+            .eq("agency_id", &agency_id)
+            .in_("creator_id", creator_refs.clone())
+            .execute()
+            .await
+        {
+            if au_resp.status().is_success() {
+                let au_text = au_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let au_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&au_text).unwrap_or_default();
+                for row in &au_rows {
+                    let cid = row
+                        .get("creator_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+                    if cid.is_empty() {
+                        continue;
+                    }
+                    let name = row
+                        .get("full_legal_name")
+                        .or_else(|| row.get("stage_name"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or_else(|| "Talent".to_string());
+                    name_by_creator_id.insert(cid, name);
+                }
+            }
+        }
+
+        // 2) creators table — fallback for connected creators without an agency_users row,
+        //    and also the source for stripe_connect_account_id (fetched together to save a round-trip).
+        //    We only need names for creator_ids not already resolved above.
+        let missing_name_ids: Vec<&str> = creator_refs
+            .iter()
+            .copied()
+            .filter(|id| !name_by_creator_id.contains_key(*id))
+            .collect();
+
+        if !missing_name_ids.is_empty() {
+            if let Ok(cr_name_resp) = state
+                .pg
+                .from("creators")
+                .select("id,full_name,email")
+                .in_("id", missing_name_ids)
+                .execute()
+                .await
+            {
+                if cr_name_resp.status().is_success() {
+                    let cr_name_text = cr_name_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let cr_name_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&cr_name_text).unwrap_or_default();
+                    for row in &cr_name_rows {
+                        let cid = row
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        if cid.is_empty() {
+                            continue;
+                        }
+                        // Prefer full_name, fall back to email prefix, then "Creator"
+                        let name = row
+                            .get("full_name")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .or_else(|| {
+                                row.get("email")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .filter(|s| !s.is_empty())
+                            })
+                            .unwrap_or_else(|| "Creator".to_string());
+                        name_by_creator_id.insert(cid, name);
+                    }
+                }
+            }
+        }
+    }
+
+    // Resolve Stripe account IDs for all creators in one DB round-trip
+    let mut stripe_account_by_creator_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        if let Ok(cr_resp) = state
+            .pg
+            .from("creators")
+            .select("id,stripe_connect_account_id")
+            .in_("id", creator_refs)
+            .execute()
+            .await
+        {
+            if cr_resp.status().is_success() {
+                let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let cr_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&cr_text).unwrap_or_default();
+                for row in &cr_rows {
+                    let cid = row
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+                    let acct = row
+                        .get("stripe_connect_account_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+                    if !cid.is_empty() {
+                        stripe_account_by_creator_id.insert(cid, acct);
+                    }
+                }
+            }
+        }
+    }
+
+    // Resolve agency name + Stripe account
+    let agency_stripe_account = get_agency_stripe_account(&state, &agency_id)
+        .await
+        .unwrap_or_default();
+    let agency_name = {
+        let resp = state
+            .pg
+            .from("agencies")
+            .select("agency_name")
+            .eq("id", &agency_id)
+            .limit(1)
+            .execute()
+            .await;
+        if let Ok(r) = resp {
+            let t = r.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&t).unwrap_or_default();
+            rows.first()
+                .and_then(|r| r.get("agency_name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Agency")
+                .to_string()
+        } else {
+            "Agency".to_string()
+        }
+    };
+
+    // -------------------------------------------------------------------------
+    // Fire all Stripe account health checks in parallel.
+    // We build a flat list of (id, account_id) pairs, check them concurrently,
+    // then reassemble the results.
+    // -------------------------------------------------------------------------
+    let stripe_client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    // Inline helper — same logic as the one inside get_offer_transfer_status
+    async fn check_stripe_health(
+        client: &stripe_sdk::Client,
+        account_id: &str,
+    ) -> (bool, bool, bool) {
+        // Returns (connected, transfers_enabled, details_submitted)
+        if account_id.is_empty() {
+            return (false, false, false);
+        }
+        match account_id.parse::<stripe_sdk::AccountId>() {
+            Ok(aid) => match stripe_sdk::Account::retrieve(client, &aid, &[]).await {
+                Ok(acct) => {
+                    let transfers_enabled = acct
+                        .capabilities
+                        .as_ref()
+                        .and_then(|c| c.transfers.as_ref())
+                        .map(|s| s == &stripe_sdk::CapabilityStatus::Active)
+                        .unwrap_or(false);
+                    let details_submitted = acct.details_submitted.unwrap_or(false);
+                    (true, transfers_enabled, details_submitted)
+                }
+                // Account exists in DB but Stripe returned an error — treat as
+                // connected (account ID is present) but not transfer-ready.
+                Err(_) => (true, false, false),
+            },
+            // Malformed account ID stored in DB — treat as not connected.
+            Err(_) => (false, false, false),
+        }
+    }
+
+    // Agency health check
+    let (ag_connected, ag_transfers, ag_details) =
+        check_stripe_health(&stripe_client, &agency_stripe_account).await;
+
+    let agency_party = StripeReadinessParty {
+        party_type: "agency".to_string(),
+        id: agency_id.clone(),
+        name: agency_name,
+        connected: ag_connected,
+        transfers_enabled: ag_transfers,
+        details_submitted: ag_details,
+    };
+
+    // Per-talent health checks — run concurrently
+    let talent_futures: Vec<_> = creator_ids
+        .iter()
+        .map(|cid| {
+            let acct = stripe_account_by_creator_id
+                .get(cid)
+                .cloned()
+                .unwrap_or_default();
+            let name = name_by_creator_id
+                .get(cid)
+                .cloned()
+                .unwrap_or_else(|| "Talent".to_string());
+            let cid = cid.clone();
+            let client = stripe_client.clone();
+            async move {
+                let (connected, transfers_enabled, details_submitted) =
+                    check_stripe_health(&client, &acct).await;
+                StripeReadinessParty {
+                    party_type: "creator".to_string(),
+                    id: cid,
+                    name,
+                    connected,
+                    transfers_enabled,
+                    details_submitted,
+                }
+            }
+        })
+        .collect();
+
+    let talent_parties: Vec<StripeReadinessParty> =
+        futures::future::join_all(talent_futures).await;
+
+    // Compute aggregate flags
+    let all_connected = ag_connected && talent_parties.iter().all(|p| p.connected);
+    let all_transfers_enabled =
+        all_connected && ag_transfers && talent_parties.iter().all(|p| p.transfers_enabled);
+
+    Ok(Json(OfferStripeReadinessResponse {
+        offer_id,
+        agency: agency_party,
+        talents: talent_parties,
+        all_connected,
+        all_transfers_enabled,
+    }))
+}
+
+// =============================================================================
 // GET /api/agency/campaign-offers/:offer_id/transfer-status
 //
 // Returns the Stripe account health + transfer row status for every recipient

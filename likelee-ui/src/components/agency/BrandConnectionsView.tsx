@@ -49,8 +49,17 @@ import {
   Mail,
   UserX,
   Clock,
+  ExternalLink,
 } from "lucide-react";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
+import {
+  StripeReadinessGateModal,
+  ContractPrecheckModal,
+  deriveGate,
+  type OfferStripeReadiness,
+  type ReadinessGate,
+  type ContractPrecheckAction,
+} from "@/components/agency/StripeReadinessGateModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -186,12 +195,28 @@ const BrandConnectionsView = ({
   });
 
   const [sendPrecheckOpen, setSendPrecheckOpen] = useState(false);
-  const [sendPrecheckTitle, setSendPrecheckTitle] = useState("");
-  const [sendPrecheckBody, setSendPrecheckBody] =
-    useState<React.ReactNode>(null);
-  const [sendPrecheckActions, setSendPrecheckActions] = useState<
-    { label: string; onClick: () => void; variant?: "default" | "outline" }[]
-  >([]);
+  const [sendPrecheckConfig, setSendPrecheckConfig] = useState<{
+    severity: "block" | "warning" | "info";
+    title: string;
+    description: string;
+    body?: React.ReactNode;
+    actions: ContractPrecheckAction[];
+  }>({
+    severity: "warning",
+    title: "",
+    description: "",
+    actions: [],
+  });
+
+  // Stripe readiness gate state
+  const [stripeGateOpen, setStripeGateOpen] = useState(false);
+  const [stripeGateData, setStripeGateData] = useState<OfferStripeReadiness | null>(null);
+  const [stripeGate, setStripeGate] = useState<ReadinessGate>("ok");
+  const [stripeGatePendingOffer, setStripeGatePendingOffer] = useState<{
+    offerId: string;
+    contractId: string;
+  } | null>(null);
+  const [stripeReadinessLoading, setStripeReadinessLoading] = useState(false);
 
   // Load DocuSeal Builder script
   const loadDocuSealBuilder = () => {
@@ -457,17 +482,19 @@ const BrandConnectionsView = ({
     agencyStripeConnected && agencyStripeTransfersEnabled;
 
   const openSendPrecheckModal = (opts: {
+    severity?: "block" | "warning" | "info";
     title: string;
-    body: React.ReactNode;
-    actions: {
-      label: string;
-      onClick: () => void;
-      variant?: "default" | "outline";
-    }[];
+    description: string;
+    body?: React.ReactNode;
+    actions: ContractPrecheckAction[];
   }) => {
-    setSendPrecheckTitle(opts.title);
-    setSendPrecheckBody(opts.body);
-    setSendPrecheckActions(opts.actions);
+    setSendPrecheckConfig({
+      severity: opts.severity ?? "warning",
+      title: opts.title,
+      description: opts.description,
+      body: opts.body,
+      actions: opts.actions,
+    });
     setSendPrecheckOpen(true);
   };
 
@@ -476,22 +503,13 @@ const BrandConnectionsView = ({
 
     if (!hasAssignedTalent) {
       openSendPrecheckModal({
+        severity: "block",
         title: "Assign talents before sending",
-        body: (
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>
-              This offer has no assigned talents. Assign at least 1 talent
-              before sending the contract.
-            </p>
-            <p className="text-xs text-gray-500">
-              Assignments are locked after the contract is sent.
-            </p>
-          </div>
-        ),
+        description:
+          "This offer has no assigned talents. Assign at least 1 talent before sending the contract. Assignments are locked after the contract is sent.",
         actions: [
           {
-            label: "Close",
-            variant: "outline",
+            label: "Got it",
             onClick: () => setSendPrecheckOpen(false),
           },
         ],
@@ -499,79 +517,92 @@ const BrandConnectionsView = ({
       return;
     }
 
-    if (!agencyStripeConnected) {
-      openSendPrecheckModal({
-        title: "Connect Stripe before sending",
-        body: (
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>
-              Connect your agency Stripe account before sending contracts. This
-              ensures payouts and commissions can be transferred correctly when
-              the brand pays.
-            </p>
-          </div>
-        ),
-        actions: [
-          {
-            label: "Go to Payouts",
-            onClick: () => {
-              setSendPrecheckOpen(false);
-              navigate("/AgencyDashboard?tab=payouts");
-            },
-          },
-          {
-            label: "Close",
-            variant: "outline",
-            onClick: () => setSendPrecheckOpen(false),
-          },
-        ],
-      });
-      return;
-    }
+    // ── Stripe readiness gate ──────────────────────────────────────────────
+    // Call the backend to check Stripe connectivity for the agency + all
+    // assigned talents before creating the DocuSeal submission.
+    setStripeReadinessLoading(true);
+    base44
+      .get<OfferStripeReadiness>(
+        `/api/agency/campaign-offers/${encodeURIComponent(offerId)}/stripe-readiness`,
+      )
+      .then((data) => {
+        const gate = deriveGate(data);
+        if (gate === "ok") {
+          // All clear — proceed directly
+          handleSendContract(offerId, contractId);
+          return;
+        }
+        // Show the appropriate gate modal
+        setStripeGateData(data);
+        setStripeGate(gate);
+        setStripeGatePendingOffer({ offerId, contractId });
+        setStripeGateOpen(true);
+      })
+      .catch((err) => {
+        // If the readiness check itself fails (network error, 403, etc.)
+        // fall back to the existing agency-only stripe check so we never
+        // silently skip the gate.
+        console.error("stripe-readiness check failed", err);
 
-    if (agencyStripeConnected && !agencyStripeTransfersEnabled) {
-      openSendPrecheckModal({
-        title: "Stripe transfers not enabled",
-        body: (
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>
-              Your Stripe account is connected, but Stripe reports that{" "}
-              <span className="font-semibold">transfers are not enabled</span>{" "}
-              for this account yet.
-            </p>
-            <p>
-              If you send this contract now, the brand may be able to pay, but
-              transfers to your agency and creators can fail until Stripe
-              enables transfers.
-            </p>
-            <p className="text-xs text-gray-500">
-              Recommendation: finish Stripe onboarding in Payouts. If transfers
-              stay disabled, contact system support for help.
-            </p>
-          </div>
-        ),
-        actions: [
-          {
-            label: "Send anyway",
-            onClick: () => {
-              setSendPrecheckOpen(false);
-              handleSendContract(offerId, contractId);
-            },
-          },
-          {
-            label: "Go to Payouts",
-            variant: "outline",
-            onClick: () => {
-              setSendPrecheckOpen(false);
-              navigate("/AgencyDashboard?tab=payouts");
-            },
-          },
-        ],
-      });
-      return;
-    }
+        if (!agencyStripeConnected) {
+          openSendPrecheckModal({
+            severity: "block",
+            title: "Connect Stripe before sending",
+            description:
+              "Connect your agency Stripe account before sending contracts. This ensures payouts and commissions can be transferred correctly when the brand pays.",
+            actions: [
+              {
+                label: "Go to Payouts",
+                icon: <ExternalLink className="w-4 h-4" />,
+                onClick: () => {
+                  setSendPrecheckOpen(false);
+                  navigate("/AgencyDashboard?tab=payouts");
+                },
+              },
+              {
+                label: "Close",
+                variant: "outline",
+                onClick: () => setSendPrecheckOpen(false),
+              },
+            ],
+          });
+          return;
+        }
 
-    handleSendContract(offerId, contractId);
+        if (agencyStripeConnected && !agencyStripeTransfersEnabled) {
+          openSendPrecheckModal({
+            severity: "warning",
+            title: "Stripe transfers not enabled",
+            description:
+              "Your Stripe account is connected, but transfers are not enabled yet. The brand can still pay, but payouts may fail until Stripe onboarding is complete.",
+            actions: [
+              {
+                label: "Send anyway",
+                onClick: () => {
+                  setSendPrecheckOpen(false);
+                  handleSendContract(offerId, contractId);
+                },
+              },
+              {
+                label: "Go to Payouts",
+                variant: "outline",
+                icon: <ExternalLink className="w-4 h-4" />,
+                onClick: () => {
+                  setSendPrecheckOpen(false);
+                  navigate("/AgencyDashboard?tab=payouts");
+                },
+              },
+            ],
+          });
+          return;
+        }
+
+        // Readiness check failed but agency looks fine locally — proceed
+        handleSendContract(offerId, contractId);
+      })
+      .finally(() => {
+        setStripeReadinessLoading(false);
+      });
   };
 
   const builderSendDisabledReason = useMemo(() => {
@@ -2781,9 +2812,9 @@ const BrandConnectionsView = ({
                                                         cId,
                                                       )
                                                     }
-                                                    disabled={isBusy}
+                                                    disabled={isBusy || stripeReadinessLoading}
                                                   >
-                                                    {isBusy ? (
+                                                    {isBusy || stripeReadinessLoading ? (
                                                       <Loader2 className="w-4 h-4 animate-spin" />
                                                     ) : (
                                                       <>
@@ -3338,28 +3369,36 @@ const BrandConnectionsView = ({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={sendPrecheckOpen} onOpenChange={setSendPrecheckOpen}>
-        <DialogContent className="sm:max-w-[520px]">
-          <DialogHeader>
-            <DialogTitle>{sendPrecheckTitle || "Before you send"}</DialogTitle>
-            <DialogDescription>
-              Please review the information below.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-1">{sendPrecheckBody}</div>
-          <DialogFooter className="gap-2 sm:gap-2">
-            {sendPrecheckActions.map((a, idx) => (
-              <Button
-                key={`${a.label}-${idx}`}
-                variant={a.variant === "outline" ? "outline" : "default"}
-                onClick={a.onClick}
-              >
-                {a.label}
-              </Button>
-            ))}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Contract pre-check modal (no talents assigned, fallback stripe checks) */}
+      <ContractPrecheckModal
+        open={sendPrecheckOpen}
+        onOpenChange={setSendPrecheckOpen}
+        severity={sendPrecheckConfig.severity}
+        title={sendPrecheckConfig.title}
+        description={sendPrecheckConfig.description}
+        body={sendPrecheckConfig.body}
+        actions={sendPrecheckConfig.actions}
+      />
+
+      {/* Stripe readiness gate — hard block or soft warning before sending contract */}
+      <StripeReadinessGateModal
+        open={stripeGateOpen}
+        gate={stripeGate}
+        readiness={stripeGateData}
+        onClose={() => {
+          setStripeGateOpen(false);
+          setStripeGatePendingOffer(null);
+        }}
+        onSendAnyway={() => {
+          if (stripeGatePendingOffer) {
+            handleSendContract(
+              stripeGatePendingOffer.offerId,
+              stripeGatePendingOffer.contractId,
+            );
+          }
+          setStripeGatePendingOffer(null);
+        }}
+      />
 
       {/* DocuSeal Builder Modal */}
       {builderOpen && builderToken && (
@@ -3393,12 +3432,15 @@ const BrandConnectionsView = ({
                   disabled={
                     !selectedOfferId ||
                     !currentContractId ||
-                    busyIds.has(currentContractId)
+                    busyIds.has(currentContractId) ||
+                    stripeReadinessLoading
                   }
                   title={builderSendDisabledReason || undefined}
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  {busyIds.has(currentContractId) ? "Sending..." : "Send"}
+                  {busyIds.has(currentContractId) || stripeReadinessLoading
+                    ? "Checking..."
+                    : "Send"}
                 </Button>
               </div>
               <Button

@@ -1142,6 +1142,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::brand_campaigns::comment_offer_deliverable),
         )
         .route(
+            "/api/agency/campaign-offers/:offer_id/stripe-readiness",
+            get(crate::brand_campaigns::get_offer_stripe_readiness),
+        )
+        .route(
             "/api/agency/campaign-offers/:offer_id/transfer-status",
             get(crate::brand_campaigns::get_offer_transfer_status),
         )
