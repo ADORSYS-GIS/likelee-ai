@@ -242,7 +242,13 @@
         "enableLicensing": "Habilitar Licencias",
         "enableLicensingDesc": "Aceptar solicitudes de licencia de marcas",
         "emailNotifications": "Notificaciones por Correo",
-        "emailNotificationsDesc": "Recibir actualizaciones sobre campañas y aprobaciones"
+        "emailNotificationsDesc": "Recibir actualizaciones sobre campañas y aprobaciones",
+        "syncing": "Sincronizando...",
+        "connectAndSync": "Conectar y sincronizar",
+        "followers": "Seguidores: {{count}}",
+        "marketplaceVisibility": "Visibilidad en el marketplace",
+        "marketplaceVisibleToast": "El perfil ahora está visible en el marketplace.",
+        "marketplaceHiddenToast": "El perfil ahora está oculto del marketplace."
       },
       "rules": {
         "title": "Mis reglas",
@@ -266,7 +272,12 @@
         "acceptNegotiations": "Aceptar negociaciones",
         "acceptNegotiationsDesc": "Permitir a las marcas proponer contraofertas a tu tarifa base",
         "negotiationEnabled": "¡Negociación habilitada!",
-        "negotiationDisabled": "¡Negociación deshabilitada!"
+        "negotiationDisabled": "¡Negociación deshabilitada!",
+        "plans": {
+          "free": "Gratis",
+          "basic": "Basic",
+          "pro": "Pro"
+        }
       },
       "billing": {
         "title": "Billing",
@@ -768,6 +779,25 @@
             "desc": "Ayudamos a presentar informes de DMCA y de plataforma"
           }
         }
+      },
+      "comingSoon": "Próximamente",
+      "tracking": {
+        "title": "Seguimiento de contenido",
+        "description": "Ve cada pieza de contenido que las marcas crean usando tu imagen: vistas, interacción, plataformas y estado en vivo, todo en un solo lugar.",
+        "features": {
+          "feed": {
+            "label": "Feed de contenido de marca",
+            "desc": "Todo el contenido autorizado en una vista"
+          },
+          "metrics": {
+            "label": "Métricas de interacción",
+            "desc": "Vistas, alcance y tasas de interacción"
+          },
+          "live": {
+            "label": "Detección en vivo",
+            "desc": "Sabe cuándo el contenido se publica"
+          }
+        }
       }
     },
     "publicProfile": {
@@ -1194,7 +1224,9 @@
       "noW9OnFile": "No W-9 on file",
       "download1099": "Descargar 1099 ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
-      "requesting": "Requesting..."
+      "requesting": "Requesting...",
+      "paypalDescription": "Recibe pagos directamente en tu cuenta de PayPal.",
+      "wiseDescription": "Transferencias internacionales con comisiones bajas. Ideal para pagos transfronterizos."
     },
     "agencyConnection": {
       "subtitle": "Administre las invitaciones de las agencias y sus agencias conectadas.",

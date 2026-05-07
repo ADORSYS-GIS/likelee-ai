@@ -400,6 +400,25 @@
             "desc": "Nous aidons à déposer des rapports DMCA et de plateforme"
           }
         }
+      },
+      "comingSoon": "Bientôt disponible",
+      "tracking": {
+        "title": "Suivi du contenu",
+        "description": "Consultez chaque contenu que les marques créent avec votre image : vues, engagement, plateformes et statut en direct, le tout au même endroit.",
+        "features": {
+          "feed": {
+            "label": "Flux de contenu de marque",
+            "desc": "Tout le contenu autorisé dans une seule vue"
+          },
+          "metrics": {
+            "label": "Mesures d’engagement",
+            "desc": "Vues, portée et taux d’engagement"
+          },
+          "live": {
+            "label": "Détection en direct",
+            "desc": "Sachez quand le contenu est mis en ligne"
+          }
+        }
       }
     },
     "approvals": {
@@ -739,7 +758,13 @@
         "enableLicensing": "Activer les Licences",
         "enableLicensingDesc": "Accepter les demandes de licence des marques",
         "emailNotifications": "Notifications par E-mail",
-        "emailNotificationsDesc": "Recevoir des mises à jour sur les campagnes et les approbations"
+        "emailNotificationsDesc": "Recevoir des mises à jour sur les campagnes et les approbations",
+        "syncing": "Synchronisation...",
+        "connectAndSync": "Connecter et synchroniser",
+        "followers": "Abonnés : {{count}}",
+        "marketplaceVisibility": "Visibilité sur le marketplace",
+        "marketplaceVisibleToast": "Le profil est maintenant visible sur le marketplace.",
+        "marketplaceHiddenToast": "Le profil est maintenant masqué du marketplace."
       },
       "rules": {
         "title": "Mes règles",
@@ -763,7 +788,12 @@
         "acceptNegotiations": "Accepter les négociations",
         "acceptNegotiationsDesc": "Permettre aux marques de proposer des contre-offres à votre tarif de base",
         "negotiationEnabled": "Négociation activée !",
-        "negotiationDisabled": "Négociation désactivée !"
+        "negotiationDisabled": "Négociation désactivée !",
+        "plans": {
+          "free": "Gratuit",
+          "basic": "Basic",
+          "pro": "Pro"
+        }
       },
       "billing": {
         "title": "Billing",
@@ -1223,7 +1253,9 @@
       "noW9OnFile": "Aucun W-9 au dossier",
       "download1099": "Télécharger le 1099 ({{year}})",
       "cashOutEarnings": "Retirer les revenus",
-      "requesting": "Demande en cours..."
+      "requesting": "Demande en cours...",
+      "paypalDescription": "Recevez les paiements directement sur votre compte PayPal.",
+      "wiseDescription": "Virements internationaux avec frais réduits. Idéal pour les paiements transfrontaliers."
     },
     "profileSettings": "Profile Settings",
     "myRules": "My Rules",
