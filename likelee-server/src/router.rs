@@ -1006,6 +1006,15 @@ pub fn build_router(state: AppState) -> Router {
             "/api/brand/docuseal/templates/upload",
             post(crate::brand_campaigns::upload_campaign_contract_template),
         )
+        // --- Brand Licensed Deliverables ---
+        .route(
+            "/api/brand/licensed-deliverables",
+            get(crate::licensed_deliverables::list_licensed_deliverables),
+        )
+        .route(
+            "/api/brand/licensed-deliverables/:id",
+            delete(crate::licensed_deliverables::delete_licensed_deliverable),
+        )
         .route(
             "/api/campaign-offers/:offer_id/respond",
             post(crate::brand_campaigns::respond_to_campaign_offer),

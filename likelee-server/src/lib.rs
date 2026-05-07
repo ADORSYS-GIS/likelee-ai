@@ -45,6 +45,7 @@ pub mod kyc;
 pub mod license_submissions;
 pub mod license_templates;
 pub mod licenses;
+pub mod licensed_deliverables;
 pub mod licensing_requests;
 pub mod messages;
 pub mod notifications;

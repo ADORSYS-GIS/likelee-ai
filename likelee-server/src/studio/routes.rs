@@ -8,7 +8,7 @@ use crate::storage::{
     sanitize_file_name, upload_object, StorageAssetRecord, StorageContextType, StorageOwnerType,
     StorageVisibility,
 };
-use crate::team::{require_agency_access, require_brand_access};
+use crate::team::{require_agency_access, require_brand_access, resolve_effective_brand_id};
 use anyhow::anyhow;
 use axum::{
     extract::{Multipart, Path, Query, State},
@@ -824,15 +824,33 @@ pub async fn upload_file(
 /// GET /api/studio/licensed-assets
 /// Returns image and audio assets the brand can use in the Studio.
 /// Scoped to campaigns where the brand has an approved (active) licensing request.
+/// Sources: both legacy `licensing_requests` and newer `brand_license_requests` tables.
 pub async fn list_licensed_assets(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    // 1. Find all talent_ids from approved licensing requests for this brand user
-    let lr_resp = state.pg
+    // Resolve the effective brand organization ID from the authenticated user
+    let effective_brand_id = resolve_effective_brand_id(&state, &auth_user).await?;
+
+    // Structure to hold talent info with deduplication
+    use std::collections::HashMap;
+    #[derive(Clone)]
+    struct TalentInfo {
+        talent_id: String,
+        talent_name: String,
+        campaign_name: String,
+        avatar: Option<String>,
+    }
+
+    let mut talents: HashMap<String, TalentInfo> = HashMap::new();
+
+    // 1. Query legacy `licensing_requests` table (agency-initiated)
+    // Uses brand_id (organization ID), not brand_user_id (user ID)
+    let lr_resp = state
+        .pg
         .from("licensing_requests")
         .select("talent_id,campaign_title,talent_name,agency_users(full_legal_name,stage_name,profile_photo_url)")
-        .eq("brand_user_id", &auth_user.id)
+        .eq("brand_id", &effective_brand_id)
         .eq("status", "approved")
         .execute()
         .await
@@ -841,10 +859,8 @@ pub async fn list_licensed_assets(
     let lr_text = lr_resp.text().await.unwrap_or_else(|_| "[]".into());
     let lr_rows: Vec<serde_json::Value> = serde_json::from_str(&lr_text).unwrap_or_default();
 
-    let mut assets: Vec<serde_json::Value> = Vec::new();
-
     for row in &lr_rows {
-        let talent_id = row["talent_id"].as_str().unwrap_or("");
+        let talent_id = row["talent_id"].as_str().unwrap_or("").to_string();
         if talent_id.is_empty() {
             continue;
         }
@@ -871,20 +887,91 @@ pub async fn list_licensed_assets(
             .and_then(|u| u["profile_photo_url"].as_str())
             .map(String::from);
 
-        // 2a. Portrait / profile image asset
+        // Add to deduplication map (won't overwrite if already exists)
+        talents.entry(talent_id.clone()).or_insert(TalentInfo {
+            talent_id,
+            talent_name: talent_display,
+            campaign_name,
+            avatar,
+        });
+    }
+
+    // 2. Query `brand_license_requests` table (brand-initiated)
+    // Only process licenses with specific talent_id set
+    // Agency-wide licenses (talent_id = null) are handled via brand_licensed_deliverables below
+    let blr_resp = state
+        .pg
+        .from("brand_license_requests")
+        .select("talent_id,campaign_title,talent_name")
+        .eq("brand_id", &effective_brand_id)
+        .eq("status", "approved")
+        .not("talent_id", "is", "null") // Only licenses with specific talent
+        .execute()
+        .await;
+
+    if let Ok(blr_resp) = blr_resp {
+        let blr_text = blr_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let blr_rows: Vec<serde_json::Value> = serde_json::from_str(&blr_text).unwrap_or_default();
+
+        for row in &blr_rows {
+            let talent_id = row["talent_id"].as_str().unwrap_or("").to_string();
+            if talent_id.is_empty() {
+                continue;
+            }
+
+            let campaign_name = row["campaign_title"]
+                .as_str()
+                .or_else(|| row["talent_name"].as_str())
+                .unwrap_or("Licensed Campaign")
+                .to_string();
+
+            let talent_display = row["talent_name"]
+                .as_str()
+                .unwrap_or("Talent")
+                .to_string();
+
+            // Add to deduplication map (won't overwrite if already exists)
+            talents.entry(talent_id.clone()).or_insert(TalentInfo {
+                talent_id,
+                talent_name: talent_display,
+                campaign_name,
+                avatar: None,
+            });
+        }
+    }
+
+    info!(
+        user_id = %auth_user.id,
+        brand_id = %effective_brand_id,
+        unique_talents = talents.len(),
+        "licensed_assets_talents_found"
+    );
+
+    let mut assets: Vec<serde_json::Value> = Vec::new();
+
+    // 3. For each unique talent, fetch assets
+    for (_tid, info) in talents.iter() {
+        let TalentInfo {
+            talent_id,
+            talent_name,
+            campaign_name,
+            avatar,
+        } = info;
+
+        // 3a. Portrait / profile image asset
         if let Some(ref av) = avatar {
             assets.push(json!({
                 "id": format!("avatar-{}", talent_id),
                 "type": "image",
-                "name": format!("{} – Profile Photo", talent_display),
+                "name": format!("{} – Profile Photo", talent_name),
                 "url": av,
                 "campaign_name": campaign_name,
-                "talent_name": talent_display,
+                "talent_name": talent_name,
                 "source": "licensed"
             }));
         }
 
-        // 2b. Voice recordings accessible for this talent
+        // 3b. Voice recordings accessible for this talent
         let vr_resp = state
             .pg
             .from("voice_recordings")
@@ -912,16 +999,16 @@ pub async fn list_licensed_assets(
                 assets.push(json!({
                     "id": format!("voice-{}", rec_id),
                     "type": "audio",
-                    "name": format!("{} – {}", talent_display, file_name),
+                    "name": format!("{} – {}", talent_name, file_name),
                     "url": url,
                     "campaign_name": campaign_name,
-                    "talent_name": talent_display,
+                    "talent_name": talent_name,
                     "source": "licensed"
                 }));
             }
         }
 
-        // 2c. Agency talent portfolio images
+        // 3c. Agency talent portfolio images
         let pa_resp = state
             .pg
             .from("portfolio_items")
@@ -948,13 +1035,73 @@ pub async fn list_licensed_assets(
                 assets.push(json!({
                     "id": format!("portfolio-{}", item_id),
                     "type": "image",
-                    "name": format!("{} – {}", talent_display, title),
+                    "name": format!("{} – {}", talent_name, title),
                     "url": url,
                     "campaign_name": campaign_name,
-                    "talent_name": talent_display,
+                    "talent_name": talent_name,
                     "source": "licensed"
                 }));
             }
+        }
+    }
+
+    // 4. Also include persisted licensed deliverables from brand_licensed_deliverables
+    // Only show deliverables where the associated license_request is approved
+    let bld_resp = state
+        .pg
+        .from("brand_licensed_deliverables")
+        .select("id,asset_type,asset_name,asset_url,talent_name,campaign_title,mime_type,license_request_id,brand_license_requests(status)")
+        .eq("brand_id", &effective_brand_id)
+        .is("deleted_at", "null")
+        .order("created_at.desc")
+        .execute()
+        .await;
+
+    if let Ok(bld_resp) = bld_resp {
+        let bld_text = bld_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let deliverables: Vec<serde_json::Value> =
+            serde_json::from_str(&bld_text).unwrap_or_default();
+
+        for del in deliverables {
+            // Only include if license_request status is "approved"
+            let license_status = del
+                .get("brand_license_requests")
+                .and_then(|lr| lr.get("status"))
+                .and_then(|s| s.as_str())
+                .unwrap_or("");
+            
+            if license_status != "approved" {
+                continue;
+            }
+
+            let del_id = del["id"].as_str().unwrap_or("").to_string();
+            let asset_type = del["asset_type"].as_str().unwrap_or("image");
+            let asset_name = del["asset_name"].as_str().unwrap_or("Deliverable").to_string();
+            let asset_url = del["asset_url"].as_str().unwrap_or("").to_string();
+            let talent_name = del["talent_name"].as_str().unwrap_or("").to_string();
+            let campaign_title = del["campaign_title"].as_str().unwrap_or("").to_string();
+            let mime_type = del["mime_type"].as_str().unwrap_or("");
+
+            if asset_url.is_empty() {
+                continue;
+            }
+
+            // Determine type from asset_type or mime_type
+            let type_str = if asset_type == "voice_recording" || mime_type.starts_with("audio/") {
+                "audio"
+            } else {
+                "image"
+            };
+
+            assets.push(json!({
+                "id": format!("deliverable-{}", del_id),
+                "type": type_str,
+                "name": asset_name,
+                "url": asset_url,
+                "campaign_name": campaign_title,
+                "talent_name": talent_name,
+                "source": "licensed"
+            }));
         }
     }
 
