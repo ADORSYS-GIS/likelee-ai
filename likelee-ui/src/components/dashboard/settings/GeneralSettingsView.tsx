@@ -272,18 +272,26 @@ const TEAM_ROLE_OPTIONS: Array<{
 }> = [
   {
     value: "admin",
-    label: "Admin",
-    description: "Full team management, billing, campaigns, and approvals.",
+    label: i18n.t("settings.team.roles.admin.label", { ns: "agency" }),
+    description: i18n.t("settings.team.roles.admin.description", {
+      ns: "agency",
+    }),
   },
   {
     value: "project_manager",
-    label: "Project Manager",
-    description: "Campaign creation and deliverable approvals without billing.",
+    label: i18n.t("settings.team.roles.projectManager.label", {
+      ns: "agency",
+    }),
+    description: i18n.t("settings.team.roles.projectManager.description", {
+      ns: "agency",
+    }),
   },
   {
     value: "reviewer",
-    label: "Reviewer",
-    description: "Read-only access to deliverables with team visibility.",
+    label: i18n.t("settings.team.roles.reviewer.label", { ns: "agency" }),
+    description: i18n.t("settings.team.roles.reviewer.description", {
+      ns: "agency",
+    }),
   },
 ];
 

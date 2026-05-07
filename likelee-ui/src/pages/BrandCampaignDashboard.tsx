@@ -4854,17 +4854,23 @@ export default function BrandCampaignDashboard({
                   <Briefcase className="w-10 h-10 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                  {t("campaignsDashboard.postJobModal.title")}
+                  {t("campaignsDashboard.postJobModal.title", {
+                    defaultValue: t("campaigns.postJobModal.title"),
+                  })}
                 </h2>
                 <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
-                  {t("campaignsDashboard.postJobModal.description")}
+                  {t("campaignsDashboard.postJobModal.description", {
+                    defaultValue: t("campaigns.postJobModal.description"),
+                  })}
                 </p>
                 <Button
                   onClick={() => navigate(createPageUrl("PostJob"))}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   <Plus className="w-5 h-5 mr-2" />
-                  {t("campaignsDashboard.postJobModal.cta")}
+                  {t("campaignsDashboard.postJobModal.cta", {
+                    defaultValue: t("campaigns.postJobModal.createJobPosting"),
+                  })}
                 </Button>
               </div>
             </Card>

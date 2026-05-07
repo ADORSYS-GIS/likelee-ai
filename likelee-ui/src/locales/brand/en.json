@@ -1074,6 +1074,9 @@
       "noPendingSignatures": "No pending signatures at this time.",
       "noContractsYet": "No contracts yet",
       "contractsWillAppear": "Contracts will appear here once campaigns are created and sent.",
+      "noCreatorContractsYet": "No Creator Contracts Yet",
+      "creatorContractsWillAppear": "Creator contracts will appear here once you send campaign offers to individual creators and they sign the agreements.",
+      "creatorContractsTip": "Tip: Send offers from your campaigns to get started!",
       "noActiveContracts": "No active contracts",
       "contractsAttentionHere": "Contracts requiring your attention will appear here.",
       "error": "Failed to load contracts",
@@ -1303,6 +1306,7 @@
       "empty": "No licensing requests yet.",
       "emptyActive": "No active licensing requests",
       "emptyArchive": "No archived licensing requests",
+      "archivedDescription": "Licensing request has been archived.",
       "requestFallback": "Licensing Request",
       "agency": "Agency",
       "talent": "Talent",
@@ -1471,6 +1475,15 @@
       "title": "Post a Job to Find Talent",
       "description": "Create a detailed job posting to connect with AI creators, marketing agencies, and verified talent for your next campaign.",
       "cta": "Create Job Posting"
+    },
+    "teamManagement": {
+      "title": "Team Management",
+      "manageTeam": "Manage your team ({{count}} / 5 seats used)",
+      "seatsBadge": "{{count}} / 5 Seats",
+      "admin": "Admin",
+      "projectManager": "Project Manager",
+      "reviewer": "Reviewer",
+      "inviteCollaborator": "Invite New Collaborator"
     },
     "selectedCampaign": {
       "completionStatus": "Completion Status",
@@ -1937,7 +1950,23 @@
     "lookingFor": "Looking for:",
     "licensingRequired": "Licensing Required",
     "noDescription": "No description provided",
-    "backToEdit": "Back to Edit"
+    "backToEdit": "Back to Edit",
+    "validation": {
+      "requiredField": "Required Field",
+      "jobTitleRequired": "Job title is required.",
+      "contactEmailRequired": "Contact email is required.",
+      "categoryRequired": "Category is required.",
+      "callTypeRequired": "Call type is required.",
+      "jobTypeRequired": "Job type is required.",
+      "aboutRoleRequired": "About the role is required.",
+      "budgetRequired": "Budget is required.",
+      "paymentTypeRequired": "Payment type is required.",
+      "missingTitle": "Missing title",
+      "success": "Success",
+      "jobPostedSuccessfully": "Job posted successfully!",
+      "draftUpdated": "Draft updated",
+      "draftSaved": "Draft saved"
+    }
   },
   "statuses": {
     "draft": "Draft",
@@ -1958,7 +1987,12 @@
     "inProgress": "In progress",
     "signed": "Signed",
     "voided": "Voided",
-    "opened": "Opened"
+    "opened": "Opened",
+    "archived": "Archived",
+    "in_progress": "In progress",
+    "pending_approval": "Pending Approval",
+    "fully_signed": "Fully signed",
+    "contract_fully_signed": "Contract fully signed"
   },
   "brandCompanyPage": {
     "hero": {

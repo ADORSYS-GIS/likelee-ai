@@ -1070,6 +1070,9 @@
       "noPendingSignatures": "Aucune signature en attente pour le moment.",
       "noContractsYet": "Aucun contrat pour le moment",
       "contractsWillAppear": "Les contrats apparaîtront ici une fois les campagnes créées et envoyées.",
+      "noCreatorContractsYet": "Aucun contrat créateur pour le moment",
+      "creatorContractsWillAppear": "Les contrats créateur apparaîtront ici une fois que vous aurez envoyé des offres de campagne à des créateurs individuels et qu'ils auront signé les accords.",
+      "creatorContractsTip": "Astuce : envoyez des offres depuis vos campagnes pour commencer !",
       "noActiveContracts": "Aucun contrat actif",
       "contractsAttentionHere": "Les contrats nécessitant votre attention apparaîtront ici.",
       "error": "Erreur lors du chargement des contrats",
@@ -1361,6 +1364,7 @@
       "empty": "Aucune demande de licence pour le moment.",
       "emptyActive": "Aucune demande de licence active",
       "emptyArchive": "Aucune demande de licence archivée",
+      "archivedDescription": "La demande de licence a été archivée.",
       "requestFallback": "Demande de licence",
       "agency": "Agence",
       "talent": "Talent",
@@ -1529,6 +1533,15 @@
       "title": "Publier un emploi pour trouver des talents",
       "description": "Créez une offre d'emploi détaillée pour vous connecter avec des créateurs IA, des agences de marketing et des talents vérifiés pour votre prochaine campagne.",
       "cta": "Créer une offre d'emploi"
+    },
+    "teamManagement": {
+      "title": "Gestion d'équipe",
+      "manageTeam": "Gérez votre équipe ({{count}} / 5 sièges utilisés)",
+      "seatsBadge": "{{count}} / 5 sièges",
+      "admin": "Admin",
+      "projectManager": "Chef de projet",
+      "reviewer": "Réviseur",
+      "inviteCollaborator": "Inviter un nouveau collaborateur"
     },
     "selectedCampaign": {
       "completionStatus": "Statut d'achèvement",
@@ -1995,7 +2008,23 @@
     "lookingFor": "Recherche :",
     "licensingRequired": "Licence requise",
     "noDescription": "Aucune description fournie",
-    "backToEdit": "Retour à l'édition"
+    "backToEdit": "Retour à l'édition",
+    "validation": {
+      "requiredField": "Champ requis",
+      "jobTitleRequired": "Le titre du poste est requis.",
+      "contactEmailRequired": "L'e-mail de contact est requis.",
+      "categoryRequired": "La catégorie est requise.",
+      "callTypeRequired": "Le type d'appel est requis.",
+      "jobTypeRequired": "Le type de poste est requis.",
+      "aboutRoleRequired": "La description du rôle est requise.",
+      "budgetRequired": "Le budget est requis.",
+      "paymentTypeRequired": "Le type de paiement est requis.",
+      "missingTitle": "Titre manquant",
+      "success": "Succès",
+      "jobPostedSuccessfully": "Offre publiée avec succès !",
+      "draftUpdated": "Brouillon mis à jour",
+      "draftSaved": "Brouillon enregistré"
+    }
   },
   "brandCompanyPage": {
     "hero": {
@@ -2077,6 +2106,11 @@
     "inProgress": "En cours",
     "signed": "Signé",
     "voided": "Annulé",
-    "opened": "Ouvert"
+    "opened": "Ouvert",
+    "archived": "Archivé",
+    "in_progress": "En cours",
+    "pending_approval": "Approbation en attente",
+    "fully_signed": "Entièrement signé",
+    "contract_fully_signed": "Contrat entièrement signé"
   }
 }

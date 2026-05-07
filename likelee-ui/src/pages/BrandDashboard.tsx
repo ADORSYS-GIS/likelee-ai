@@ -6029,7 +6029,9 @@ export default function BrandDashboard() {
                     <th className="px-2 py-2">Creator</th>
                     <th className="px-2 py-2">Template</th>
                     <th className="px-2 py-2">Status</th>
-                    <th className="px-2 py-2">Sent Date</th>
+                    <th className="px-2 py-2">
+                      {t("campaigns.contractHub.table.sentDate")}
+                    </th>
                     <th className="px-2 py-2">Actions</th>
                   </tr>
                 </thead>
@@ -6223,10 +6225,15 @@ export default function BrandDashboard() {
                                           String(x?.id) !== String(row?.id),
                                       ),
                                     );
-                                    toast({ title: "Contract archived" });
+                                    toast({
+                                      title: t(
+                                        "campaigns.contractHub.actions.archive",
+                                      ),
+                                      description: t("statuses.archived"),
+                                    });
                                   } catch (e: any) {
                                     toast({
-                                      title: "Archive failed",
+                                      title: t("campaigns.inbox.error"),
                                       description:
                                         e?.message || "Please try again.",
                                       variant: "destructive" as any,
@@ -9113,13 +9120,15 @@ export default function BrandDashboard() {
             onClick={() => setSelectedContract(null)}
             className="border-2 border-gray-300"
           >
-            ← Back to Contract Hub
+            {t("campaigns.contractHub.backToHub")}
           </Button>
           <div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
               {contract.project_name}
             </h1>
-            <p className="text-gray-600">Contract Details</p>
+            <p className="text-gray-600">
+              {t("campaigns.contractHub.contractDetails")}
+            </p>
           </div>
         </div>
 
@@ -9127,51 +9136,59 @@ export default function BrandDashboard() {
         <div className="flex gap-3">
           <Button variant="outline" className="border-2 border-gray-300">
             <Download className="w-4 h-4 mr-2" />
-            Download PDF
+            {t("campaigns.contractHub.actions.downloadPdf")}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Download className="w-4 h-4 mr-2" />
-            Download Word
+            {t("campaigns.contractHub.actions.downloadWord")}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Send className="w-4 h-4 mr-2" />
-            Email
+            {t("campaigns.contractHub.actions.email")}
           </Button>
           <Button variant="outline" className="border-2 border-gray-300">
             <Copy className="w-4 h-4 mr-2" />
-            Print
+            {t("campaigns.contractHub.actions.print")}
           </Button>
         </div>
 
         {/* Project Overview */}
         <Card className="p-6 bg-white border border-gray-200">
           <h3 className="text-xl font-bold text-gray-900 mb-6">
-            Project Overview
+            {t("campaigns.contractHub.projectOverview")}
           </h3>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-3 text-sm">
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Project:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.project")}:
+                </span>
                 <span className="font-semibold text-gray-900">
                   {contract.project_name}
                 </span>
               </div>
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Creator:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.creator")}:
+                </span>
                 <span className="font-semibold text-gray-900">
                   {contract.creator_name} ({contract.creator_handle})
                 </span>
               </div>
               {contract.agency && (
                 <div className="flex justify-between py-2 border-b border-gray-200">
-                  <span className="text-gray-600">Agency:</span>
+                  <span className="text-gray-600">
+                    {t("campaigns.contractHub.fields.agency")}:
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {contract.agency}
                   </span>
                 </div>
               )}
               <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Status:</span>
+                <span className="text-gray-600">
+                  {t("campaigns.contractHub.fields.status")}:
+                </span>
                 <Badge
                   className={
                     contract.status === "signed"

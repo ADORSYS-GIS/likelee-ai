@@ -884,6 +884,9 @@
       "noPendingSignatures": "Derzeit stehen keine Unterschriften aus.",
       "noContractsYet": "Noch keine Verträge",
       "contractsWillAppear": "Verträge erscheinen hier, sobald Kampagnen erstellt und gesendet wurden.",
+      "noCreatorContractsYet": "Noch keine Creator-Verträge",
+      "creatorContractsWillAppear": "Creator-Verträge erscheinen hier, sobald Sie Kampagnenangebote an einzelne Creator senden und diese die Vereinbarungen unterzeichnen.",
+      "creatorContractsTip": "Tipp: Senden Sie Angebote aus Ihren Kampagnen, um loszulegen!",
       "noActiveContracts": "Keine aktiven Verträge",
       "contractsAttentionHere": "Verträge, die Ihre Aufmerksamkeit benötigen, werden hier angezeigt.",
       "error": "Fehler beim Laden von Verträgen",
@@ -1113,6 +1116,7 @@
       "empty": "Noch keine Lizenzanfragen.",
       "emptyActive": "Keine aktiven Lizenzanfragen",
       "emptyArchive": "Keine archivierten Lizenzanfragen",
+      "archivedDescription": "Die Lizenzanfrage wurde archiviert.",
       "requestFallback": "Lizenzanfrage",
       "agency": "Agentur",
       "talent": "Talent",
@@ -1525,6 +1529,15 @@
       "title": "Job veröffentlichen, um Talente zu finden",
       "description": "Erstellen Sie eine detaillierte Stellenausschreibung, um sich mit KI-Creators, Marketing-Agenturen und verifizierten Talenten für Ihre nächste Kampagne zu verbinden.",
       "cta": "Stellenausschreibung erstellen"
+    },
+    "teamManagement": {
+      "title": "Teamverwaltung",
+      "manageTeam": "Verwalten Sie Ihr Team ({{count}} / 5 genutzte Sitze)",
+      "seatsBadge": "{{count}} / 5 Sitze",
+      "admin": "Admin",
+      "projectManager": "Projektmanager",
+      "reviewer": "Prüfer",
+      "inviteCollaborator": "Neuen Mitwirkenden einladen"
     },
     "selectedCampaign": {
       "completionStatus": "Abschlussstatus",
@@ -1991,7 +2004,23 @@
     "lookingFor": "Gesucht:",
     "licensingRequired": "Lizenzierung erforderlich",
     "noDescription": "Keine Beschreibung vorhanden",
-    "backToEdit": "Zurück zur Bearbeitung"
+    "backToEdit": "Zurück zur Bearbeitung",
+    "validation": {
+      "requiredField": "Pflichtfeld",
+      "jobTitleRequired": "Der Jobtitel ist erforderlich.",
+      "contactEmailRequired": "Die Kontakt-E-Mail ist erforderlich.",
+      "categoryRequired": "Die Kategorie ist erforderlich.",
+      "callTypeRequired": "Der Aufruftyp ist erforderlich.",
+      "jobTypeRequired": "Der Jobtyp ist erforderlich.",
+      "aboutRoleRequired": "Die Rollenbeschreibung ist erforderlich.",
+      "budgetRequired": "Das Budget ist erforderlich.",
+      "paymentTypeRequired": "Die Zahlungsart ist erforderlich.",
+      "missingTitle": "Titel fehlt",
+      "success": "Erfolg",
+      "jobPostedSuccessfully": "Job erfolgreich veröffentlicht!",
+      "draftUpdated": "Entwurf aktualisiert",
+      "draftSaved": "Entwurf gespeichert"
+    }
   },
   "licensingRequest": {
     "title": "Lizenz anfordern",
@@ -2033,6 +2062,11 @@
     "inProgress": "In Bearbeitung",
     "signed": "Unterschrieben",
     "voided": "Ungültig",
-    "opened": "Geöffnet"
+    "opened": "Geöffnet",
+    "archived": "Archiviert",
+    "in_progress": "In Bearbeitung",
+    "pending_approval": "Ausstehende Genehmigung",
+    "fully_signed": "Vollständig unterzeichnet",
+    "contract_fully_signed": "Vertrag vollständig unterzeichnet"
   }
 }
