@@ -552,7 +552,7 @@ export default function CampaignBriefStep({
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
-              Offer Amount (Gross + 2% Fee){" "}
+              Offer Amount (Gross + {platformFeePercent}% Fee){" "}
               <span className="text-red-600">*</span>
             </p>
             <Input

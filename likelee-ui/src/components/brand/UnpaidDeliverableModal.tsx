@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { CreditCard, Lock, AlertCircle, Loader2, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 
