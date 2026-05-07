@@ -4420,7 +4420,7 @@ export default function BrandCampaignDashboard({
                 <Alert className="border-2 border-gray-200 rounded-none">
                   <AlertDescription className="flex items-center gap-2 text-sm text-gray-700">
                     <Lock className="w-4 h-4" />
-                    Approving more than half of deliverables triggers escrow
+                    Approving a deliverable triggers escrow
                     payout (once) and unlocks downloads for all deliverables.
                     Approvals are final and can’t be undone.
                   </AlertDescription>

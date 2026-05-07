@@ -6350,7 +6350,7 @@ export default function BrandDashboard() {
                                 </div>
                                 <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
                                   <p className="text-sm font-semibold text-amber-900">
-                                    Approving more than half of deliverables
+                                    Approving a deliverable
                                     triggers escrow payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
