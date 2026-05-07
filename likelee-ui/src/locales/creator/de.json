@@ -242,7 +242,13 @@
         "enableLicensing": "Lizenzierung aktivieren",
         "enableLicensingDesc": "Lizenzanfragen von Marken akzeptieren",
         "emailNotifications": "E-Mail-Benachrichtigungen",
-        "emailNotificationsDesc": "Updates zu Kampagnen und Genehmigungen erhalten"
+        "emailNotificationsDesc": "Updates zu Kampagnen und Genehmigungen erhalten",
+        "syncing": "Synchronisierung...",
+        "connectAndSync": "Verbinden & synchronisieren",
+        "followers": "Follower: {{count}}",
+        "marketplaceVisibility": "Marketplace-Sichtbarkeit",
+        "marketplaceVisibleToast": "Profil ist jetzt im Marketplace sichtbar.",
+        "marketplaceHiddenToast": "Profil ist jetzt im Marketplace ausgeblendet."
       },
       "rules": {
         "title": "Meine Regeln",
@@ -266,7 +272,12 @@
         "acceptNegotiations": "Verhandlungen akzeptieren",
         "acceptNegotiationsDesc": "Marken erlauben, Gegenangebote zu Ihrem Grundpreis zu machen",
         "negotiationEnabled": "Verhandlung aktiviert!",
-        "negotiationDisabled": "Verhandlung deaktiviert!"
+        "negotiationDisabled": "Verhandlung deaktiviert!",
+        "plans": {
+          "free": "Kostenlos",
+          "basic": "Basic",
+          "pro": "Pro"
+        }
       },
       "billing": {
         "title": "Billing",
@@ -456,7 +467,7 @@
       "subtitle": "Sehen Sie sich Ihre abgeschlossenen Kampagnen an und verwalten Sie die Sichtbarkeit Ihres Portfolios",
       "completedCount": "{{count}} abgeschlossen",
       "loadingPastCampaigns": "Vergangene Kampagnen werden geladen...",
-      "fetchingCompletedCampaigns": "Ihre abgeschlossenen Kampagnen werden abgerufen.",
+      "fetchingCompletedCampaigns": "Deine abgeschlossenen Kampagnen werden abgerufen.",
       "noPastCampaigns": "Noch keine vergangenen Kampagnen.",
       "completedCampaignsWillAppear": "Abgeschlossene Kampagnen werden hier angezeigt.",
       "welcome": {
@@ -475,9 +486,6 @@
       "visibleOnPortfolio": "Sichtbar für Marken, die Ihr Profil anzeigen",
       "hiddenFromPortfolio": "Aus dem öffentlichen Portfolio ausgeblendet",
       "viewDetails": "Details anzeigen",
-      "loadingPastCampaigns": "Vergangene Kampagnen werden geladen...",
-      "fetchingCompletedCampaigns": "Deine abgeschlossenen Kampagnen werden abgerufen.",
-      "noPastCampaigns": "Noch keine vergangenen Kampagnen.",
       "completedCampaignsAppearHere": "Abgeschlossene Kampagnen werden hier angezeigt."
     },
     "approvals": {
@@ -784,6 +792,25 @@
           "takedown": {
             "title": "Unterstützung bei der Entfernung",
             "desc": "Wir unterstützen bei der Einreichung von DMCA- und Plattform-Meldungen"
+          }
+        }
+      },
+      "comingSoon": "Demnächst",
+      "tracking": {
+        "title": "Inhaltsverfolgung",
+        "description": "Sieh jedes Inhaltselement, das Marken mit deinem Abbild erstellen: Aufrufe, Engagement, Plattformen und Live-Status an einem Ort.",
+        "features": {
+          "feed": {
+            "label": "Marken-Content-Feed",
+            "desc": "Alle autorisierten Inhalte in einer Ansicht"
+          },
+          "metrics": {
+            "label": "Engagement-Metriken",
+            "desc": "Aufrufe, Reichweite und Engagement-Raten"
+          },
+          "live": {
+            "label": "Live-Erkennung",
+            "desc": "Erfahre, wann Inhalte live gehen"
           }
         }
       }
@@ -1243,7 +1270,9 @@
       "noW9OnFile": "No W-9 on file",
       "download1099": "1099 herunterladen ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
-      "requesting": "Requesting..."
+      "requesting": "Requesting...",
+      "paypalDescription": "Erhalte Zahlungen direkt auf dein PayPal-Konto.",
+      "wiseDescription": "Internationale Überweisungen mit niedrigen Gebühren. Ideal für grenzüberschreitende Zahlungen."
     },
     "agencyConnection": {
       "subtitle": "Verwalten Sie Agentureinladungen und Ihre verbundenen Agenturen.",

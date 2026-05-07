@@ -129,7 +129,10 @@
         "pendingApprovals": "Ausstehende Genehmigungen",
         "actionNeeded": "Aktion erforderlich",
         "thisMonthSpend": "Ausgaben diesen Monat",
-        "avgTurnaround": "Durchschn. Bearbeitungszeit"
+        "avgTurnaround": "Durchschn. Bearbeitungszeit",
+        "spendVsLastMonth": "{{value}} vs. letzter Monat",
+        "newSpendThisMonth": "Neue Ausgaben in diesem Monat",
+        "noSpendRecorded": "Noch keine Ausgaben erfasst"
       },
       "quickActions": {
         "title": "Schnellaktionen",
@@ -172,6 +175,14 @@
           "connectionRequestAccepted": "hat eine Verbindungsanfrage angenommen",
           "connectionRequestDeclined": "hat eine Verbindungsanfrage abgelehnt",
           "performedAction": "hat eine Aktion durchgeführt"
+        },
+        "templates": {
+          "campaignCreated": "{{actor}} hat {{campaign}} erstellt.",
+          "campaignCompleted": "{{actor}} hat {{campaign}} als erledigt markiert.",
+          "jobCreated": "{{actor}} hat einen Job erstellt: {{job}}.",
+          "jobInviteSent": "{{actor}} hat {{target}} eingeladen, sich für {{job}} zu bewerben.",
+          "jobInviteAccepted": "{{actor}} hat die Einladung für {{job}} angenommen.",
+          "jobInviteDeclined": "{{actor}} hat die Einladung für {{job}} abgelehnt."
         }
       },
       "monthlySpendTrend": "Monatlicher Ausgabentrend"
@@ -382,7 +393,38 @@
         "taxIdentificationPlaceholder": "XX-XXXXXXX",
         "primaryPaymentMethod": "Primäre Zahlungsmethode",
         "primaryPaymentMethodValue": "Visa mit Endziffer 4242",
-        "manage": "Verwalten"
+        "manage": "Verwalten",
+        "paymentMethods": {
+          "loadFailed": "Zahlungsmethoden konnten nicht geladen werden",
+          "cannotDeletePrimary": "Die primäre Zahlungsmethode kann nicht gelöscht werden",
+          "removed": "Zahlungsmethode entfernt",
+          "deleteFailed": "Zahlungsmethode konnte nicht gelöscht werden",
+          "primaryUpdated": "Primäre Zahlungsmethode aktualisiert",
+          "setPrimaryFailed": "Primäre Zahlungsmethode konnte nicht festgelegt werden",
+          "expires": "Läuft ab",
+          "none": "Keine Zahlungsmethode hinterlegt",
+          "addCard": "Karte hinzufügen",
+          "saved": "Gespeicherte Zahlungsmethoden",
+          "empty": "Keine gespeicherten Zahlungsmethoden",
+          "emptyHelp": "Fügen Sie eine Karte hinzu, um loszulegen",
+          "primary": "Primär",
+          "setPrimary": "Als primär festlegen"
+        },
+        "modal": {
+          "title": "Zahlungsmethode hinzufügen",
+          "description": "Geben Sie Ihre Kartendaten ein, um eine neue Zahlungsmethode für Ihr Markenkonto hinzuzufügen.",
+          "cardDetails": "Kartendetails",
+          "processing": "Wird verarbeitet...",
+          "stripeNotLoaded": "Stripe ist nicht geladen. Bitte versuchen Sie es erneut.",
+          "setupIntentFailed": "Setup-Intent konnte nicht erstellt werden",
+          "genericError": "Es ist ein Fehler aufgetreten",
+          "stripeNotConfigured": "Stripe ist nicht konfiguriert. Bitte kontaktieren Sie den Support.",
+          "stripeConfigFailed": "Stripe-Konfiguration konnte nicht geladen werden.",
+          "stripeLoadFailed": "Stripe konnte nicht geladen werden",
+          "success": "Karte erfolgreich hinzugefügt!",
+          "successToast": "Zahlungsmethode erfolgreich hinzugefügt",
+          "securityNote": "Ihre Karteninformationen werden sicher von Stripe verarbeitet und niemals auf unseren Servern gespeichert."
+        }
       },
       "team": {
         "title": "Teamverwaltung",
@@ -390,7 +432,8 @@
       },
       "integrations": {
         "title": "Deinen Workflow erweitern",
-        "description": "Verbinde Likelee mit deinen bevorzugten Marketing-Tools, um Deliverables, Tracking und Zahlungen zu automatisieren."
+        "description": "Verbinde Likelee mit deinen bevorzugten Marketing-Tools, um Deliverables, Tracking und Zahlungen zu automatisieren.",
+        "comingSoon": "Demnächst"
       },
       "security": {
         "title": "Sicherheitseinstellungen",
@@ -403,7 +446,8 @@
         "terms": "AGB",
         "privacy": "Datenschutzerklärung",
         "sagAftra": "SAG-AFTRA-Vereinbarung",
-        "dataExport": "Datenexport (DSGVO)"
+        "dataExport": "Datenexport (DSGVO)",
+        "comingSoon": "Demnächst"
       },
       "support": {
         "title": "Brauchst du Hilfe?",
@@ -445,6 +489,43 @@
       "teamActivity": "Teamaktivität",
       "activityDescription": "Letzte Änderungen an Teammitgliedern und Einladungen.",
       "noActivity": "Keine aktuelle Aktivität.",
+      "updateRoleTitle": "Teamrolle aktualisieren",
+      "roleDescriptions": {
+        "admin": "Vollständige Teamverwaltung, Abrechnung, Kampagnen und Freigaben.",
+        "projectManager": "Kampagnenerstellung und Freigabe von Deliverables ohne Abrechnung.",
+        "reviewer": "Schreibgeschützter Zugriff auf Deliverables mit Teamsichtbarkeit."
+      },
+      "permissions": {
+        "fullTeamManagement": "Vollständige Teamverwaltung",
+        "billingSubscriptions": "Abrechnung und Abonnements",
+        "campaignsApprovals": "Kampagnen und Freigaben",
+        "payOffers": "Angebote verwalten",
+        "jobsManagement": "Jobs verwalten",
+        "contractsManagement": "Verträge verwalten",
+        "licenseManagement": "Lizenzen verwalten",
+        "brandConnections": "Markenverbindungen",
+        "manageJobs": "Jobs verwalten",
+        "manageContracts": "Verträge verwalten",
+        "manageLicenses": "Lizenzen verwalten",
+        "manageBrandConnections": "Markenverbindungen verwalten",
+        "manageClients": "Kunden verwalten",
+        "viewSubscriptionsBilling": "Abos und Abrechnung anzeigen",
+        "campaignCreation": "Kampagnenerstellung",
+        "deliverableApprovals": "Deliverables freigeben",
+        "viewPayOffers": "Angebote anzeigen",
+        "viewJobs": "Jobs anzeigen",
+        "viewContracts": "Verträge anzeigen",
+        "viewDeliverables": "Deliverables anzeigen",
+        "viewTeamMembers": "Teammitglieder anzeigen",
+        "viewBrandConnections": "Markenverbindungen anzeigen",
+        "viewClients": "Kunden anzeigen",
+        "viewLicenses": "Lizenzen anzeigen"
+      },
+      "removeMemberTitle": "Teammitglied entfernen",
+      "removeMemberDescription": "Möchten Sie {{member}} wirklich aus dem Team entfernen?",
+      "removeMemberWarning": "Diese Aktion kann nicht rückgängig gemacht werden. Das Mitglied verliert sofort den Zugriff auf alle Organisationsressourcen.",
+      "removing": "Wird entfernt...",
+      "removeMember": "Mitglied entfernen",
       "roles": {
         "owner": "Inhaber",
         "admin": "Admin",
@@ -640,6 +721,7 @@
         "willingToTravel": "Bereit zu reisen",
         "notSpecified": "Nicht angegeben",
         "noRatesPublished": "Keine Tarife veröffentlicht.",
+        "autoConnectedByYou": "Automatisch verbunden (von Ihnen erstellt)",
         "openPortfolioLink": "Portfolio-Link öffnen",
         "noUploadedPortfolioMedia": "Noch keine Portfolio-Medien hochgeladen.",
         "confirmed": "Bestätigt",
@@ -693,6 +775,8 @@
     }
   },
   "campaigns": {
+    "showCampaignSubtabs": "Kampagnen-Untertabs anzeigen",
+    "hideCampaignSubtabs": "Kampagnen-Untertabs ausblenden",
     "myOffers": {
       "title": "Meine Angebote",
       "subtitle": "Überprüfen und verwalten Sie Kampagnenangebote und laufende Zusammenarbeit",
@@ -768,7 +852,22 @@
       "error": "Fehler beim Laden des Posteingangs",
       "new": "Neu",
       "confirmSelectionTitle": "Auswahl bestätigen",
-      "confirmSelectionDescription": "Sie sind dabei, Ihre Talentauswahl für {{title}} abzuschließen."
+      "confirmSelectionDescription": "Sie sind dabei, Ihre Talentauswahl für {{title}} abzuschließen.",
+      "dismissModal": {
+        "title": "Aus dem Posteingang entfernen",
+        "descriptionPrefix": "Sie sind dabei",
+        "thisPackage": "dieses Paket",
+        "from": "von",
+        "theAgency": "der Agentur",
+        "descriptionSuffix": "aus Ihrem Posteingang zu entfernen.",
+        "goodToKnow": "Gut zu wissen",
+        "confirm": "Ja, entfernen",
+        "points": {
+          "viewOnly": "Die Agentur behält ihre Kopie – dies betrifft nur Ihre Ansicht",
+          "noAssignments": "Keine Talentzuweisungen oder Verträge werden beeinflusst",
+          "receiveNew": "Sie können weiterhin neue Pakete von dieser Agentur erhalten"
+        }
+      }
     },
     "contractHub": {
       "title": "Vertrags-Hub",
@@ -818,6 +917,13 @@
       "viewContracts": "Verträge anzeigen",
       "noContracts": "Keine Verträge gefunden",
       "loading": "Verträge werden geladen...",
+      "allContractsSigned": "Alle Verträge sind unterzeichnet",
+      "noPendingSignatures": "Derzeit stehen keine Unterschriften aus.",
+      "noContractsYet": "Noch keine Verträge",
+      "contractsWillAppear": "Verträge erscheinen hier, sobald Kampagnen erstellt und gesendet wurden.",
+      "noCreatorContractsYet": "Noch keine Creator-Verträge",
+      "creatorContractsWillAppear": "Creator-Verträge erscheinen hier, sobald Sie Kampagnenangebote an einzelne Creator senden und diese die Vereinbarungen unterzeichnen.",
+      "creatorContractsTip": "Tipp: Senden Sie Angebote aus Ihren Kampagnen, um loszulegen!",
       "noActiveContracts": "Keine aktiven Verträge",
       "contractsAttentionHere": "Verträge, die Ihre Aufmerksamkeit benötigen, werden hier angezeigt.",
       "error": "Fehler beim Laden von Verträgen",
@@ -828,6 +934,8 @@
         "sentDate": "Sendedatum",
         "actions": "Aktionen"
       },
+      "contractOverview": "Vertragsübersicht",
+      "contract": "Vertrag",
       "actions": {
         "resend": "Erneut senden",
         "archive": "Archivieren",
@@ -839,6 +947,8 @@
       },
       "status": {
         "sent": "Gesendet",
+        "signRequired": "Unterschrift erforderlich",
+        "awaitingCreator": "Wartet auf Creator",
         "opened": "Geöffnet",
         "completed": "Abgeschlossen",
         "signed": "Unterzeichnet",
@@ -909,6 +1019,11 @@
       "error": "Fehler beim Laden von Jobs",
       "postJob": "Neuen Job veröffentlichen",
       "viewApplications": "Bewerbungen anzeigen",
+      "loadingApplications": "Bewerbungen werden geladen...",
+      "noApplications": "Noch keine Bewerbungen.",
+      "viewResume": "Lebenslauf ansehen",
+      "compCard": "Comp Card",
+      "portfolio": "Portfolio",
       "applications": "Bewerbungen",
       "jobPostings": "Stellenausschreibungen",
       "postJobButton": "Job veröffentlichen",
@@ -981,7 +1096,20 @@
       "error": "Fehler beim Laden von Assets",
       "uploadAsset": "Asset hochladen",
       "deleteAsset": "Löschen",
-      "downloadAsset": "Herunterladen"
+      "downloadAsset": "Herunterladen",
+      "filterDialog": {
+        "title": "Assets filtern",
+        "description": "Grenzen Sie die Ansicht Ihrer Asset-Bibliothek ein.",
+        "assetType": "Asset-Typ",
+        "dateRange": "Datumsbereich",
+        "all": "Alle",
+        "allTime": "Gesamte Zeit",
+        "lastWeek": "Letzte Woche",
+        "lastMonth": "Letzter Monat",
+        "lastYear": "Letztes Jahr",
+        "reset": "Filter zurücksetzen",
+        "apply": "Filter anwenden"
+      }
     },
     "licensingRequest": {
       "title": "Lizenz anfordern",
@@ -1025,6 +1153,9 @@
       "subtitle": "Verfolgen Sie die Lizenzierungsanfragen, die Sie an Agenturen gesendet haben.",
       "loading": "Lizenzanfragen werden geladen...",
       "empty": "Noch keine Lizenzanfragen.",
+      "emptyActive": "Keine aktiven Lizenzanfragen",
+      "emptyArchive": "Keine archivierten Lizenzanfragen",
+      "archivedDescription": "Die Lizenzanfrage wurde archiviert.",
       "requestFallback": "Lizenzanfrage",
       "agency": "Agentur",
       "talent": "Talent",
@@ -1042,6 +1173,19 @@
       "signContractDescription": "Prüfen und unterschreiben Sie den Lizenzvertrag.",
       "contractSigned": "Vertrag unterschrieben",
       "awaitingAgencyContract": "Warte auf Vertrag von der Agentur",
+      "tabs": {
+        "active": "Aktiv",
+        "archive": "Archiv"
+      },
+      "deleteDialog": {
+        "title": "Lizenzanfrage löschen",
+        "description": "Diese archivierte Lizenzanfrage wird dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirmPrefix": "Möchten Sie die Lizenzanfrage für",
+        "unknownCampaign": "Unbekannte Kampagne",
+        "cancel": "Abbrechen",
+        "deleting": "Wird gelöscht...",
+        "delete": "Dauerhaft löschen"
+      },
       "status": {
         "approved": "Genehmigt",
         "declined": "Abgelehnt",
@@ -1062,11 +1206,13 @@
       "projects": "Projekte",
       "successRate": "Erfolgsquote",
       "totalCost": "Gesamtkosten",
+      "totalSpend": "Ausgaben",
       "loadingTalentPerformance": "Talent-Performance wird geladen...",
       "noTalentPerformance": "Noch keine Talent-Performance-Daten.",
       "topPerformer": "Top-Performer",
       "spendByMonth": "Ausgaben nach Monat",
       "budgetForecast": "Budgetprognose",
+      "loadingBudgetForecast": "Budgetprognose wird geladen...",
       "ytdSpend": "YTD-Ausgaben",
       "monthlyAvg": "Monatl. Durchschnitt",
       "projectedEoy": "Prognose Jahresende"
@@ -1085,7 +1231,7 @@
       "due": "Fällig",
       "briefAndScope": "Brief & Umfang",
       "viewFullDetails": "Vollständige Details anzeigen →",
-      "deliverables": "Deliverables",
+      "deliverables": "Lieferobjekte",
       "totalBudget": "Gesamtbudget",
       "creatorPayment": "Creator-Zahlung",
       "submissionDeadline": "Abgabefrist",
@@ -1093,20 +1239,22 @@
       "campaign": "Kampagne",
       "progress": "Fortschritt",
       "completion": "Fertigstellung",
-      "deliverablesApproved": "genehmigte Deliverables",
+      "deliverablesApproved": "Lieferobjekte genehmigt",
       "loadingCampaigns": "Kampagnen werden geladen...",
       "noActiveCampaigns": "Keine aktiven Kampagnen verfügbar.",
       "campaignAssetSubmission": "Kampagnen-Asset-Einreichung",
       "campaignOffer": "Kampagnenangebot",
       "agency": "Agentur",
-      "creator": "Creator",
+      "creator": "Ersteller",
       "collaborator": "Mitarbeiter",
-      "creatorAgency": "Creator • Agentur",
-      "creatorCreator": "Creator • Creator",
+      "creatorAgency": "Ersteller • Agentur",
+      "creatorCreator": "Ersteller • Ersteller",
       "approvingDeliverableTriggers": "Die Genehmigung einer Lieferung löst die Treuhand-Auszahlung aus (einmalig).",
       "approvalsAreFinal": "Nach der Genehmigung einer Lieferung wird der Download aktiviert. Genehmigungen sind endgültig und können nicht rückgängig gemacht werden.",
       "loadingDeliverables": "Deliverables werden geladen...",
       "noContentSubmitted": "Es wurde noch kein Inhalt eingereicht.",
+      "viewFullContract": "Vollständigen Vertrag ansehen",
+      "downloadBriefPdf": "Briefing als PDF herunterladen",
       "premiumVideo": "Premium-Video",
       "locked": "Gesperrt",
       "deliverable": "Deliverable",
@@ -1115,7 +1263,73 @@
       "approve": "Genehmigen",
       "requestChanges": "Änderungen anfordern",
       "new": "Neu",
-      "download": "Herunterladen"
+      "download": "Herunterladen",
+      "startDate": "Startdatum",
+      "submittedCount": "{{count}} eingereicht",
+      "collaborators": "Mitarbeiter",
+      "noCollaborators": "Noch keine Mitarbeiter zugewiesen.",
+      "deliverablesFeedback": "Deliverables & Feedback",
+      "approvalThresholdWarning": "Wenn mehr als die Hälfte der Deliverables genehmigt wird, wird die Treuhand-Auszahlung einmalig ausgelöst und Downloads für alle Deliverables freigeschaltet. Genehmigungen sind endgültig und können nicht rückgängig gemacht werden.",
+      "assetsCount_one": "{{count}} Asset",
+      "assetsCount_other": "{{count}} Assets",
+      "videoLocked": "Video gesperrt",
+      "deliverableNumber": "Deliverable {{count}}",
+      "uploadedOn": "Hochgeladen am {{date}}",
+      "user": "Benutzer",
+      "send": "Senden",
+      "feedbackPlaceholder": "Feedback hier eingeben..."
+    },
+    "campaignBriefBuilder": {
+      "sections": {
+        "generalDialogue": "Allgemeiner Dialog",
+        "visualGuide": "Visueller Leitfaden",
+        "scopeDetails": "Umfangsdetails"
+      },
+      "fields": {
+        "voice": "Stimme",
+        "tone": "Ton",
+        "personality": "Persönlichkeit",
+        "campaignDuration": "Kampagnendauer",
+        "keyMessages": "Kernbotschaften",
+        "scriptGuidelines": "Skript-Richtlinien",
+        "opening": "Einstieg",
+        "middle": "Mittelteil",
+        "closing": "Abschluss",
+        "do": "Tun",
+        "dont": "Nicht tun",
+        "deliverables": "Deliverables",
+        "heroImage": "Hero-Bild",
+        "styleAesthetic": "Stil & Ästhetik",
+        "palette": "Farbpalette",
+        "setting": "Setting",
+        "framing": "Bildaufbau",
+        "editing": "Schnitt",
+        "referenceImages": "Referenzbilder",
+        "brandAssets": "Marken-Assets",
+        "objective": "Ziel",
+        "targetAudience": "Zielgruppe",
+        "launchDate": "Startdatum",
+        "revisionPolicy": "Revisionsrichtlinie",
+        "includedRevisions": "Enthaltene Revisionen",
+        "revisionTurnaround": "Bearbeitungszeit für Revisionen",
+        "approvalProcess": "Freigabeprozess",
+        "watermarkProtection": "Wasserzeichen & Schutz",
+        "legalTerms": "Rechtliche Bedingungen",
+        "majorChanges": "Wesentliche Änderungen"
+      },
+      "noReferenceImages": "Keine Referenzbilder bereitgestellt.",
+      "noAssetsProvided": "Keine Assets bereitgestellt.",
+      "referenceCount": "Referenz {{current}} von {{total}}",
+      "reference": "Referenz"
+    },
+    "markDone": {
+      "title": "Kampagne als erledigt markieren?",
+      "description": "Diese Aktion kann nicht rückgängig gemacht werden. Die Kampagne wird als abgeschlossen markiert und aus „Aktiv“ entfernt.",
+      "confirm": "Als erledigt markieren"
+    },
+    "selectedCampaign": {
+      "completionStatus": "Abschlussstatus",
+      "markedDoneOn": "Als erledigt markiert am"
     }
   },
   "brandCompanyPage": {
@@ -1230,7 +1444,21 @@
         "estimatedCostValue": "{{count}} Credits",
         "generating": "Wird generiert...",
         "generateVideo": "Video generieren",
-        "previewOutput": "Vorschau"
+        "previewOutput": "Vorschau",
+        "configurationHint": "Passe die Parameter an, um deine KI-Generierung zu perfektionieren.",
+        "selectAiModel": "KI-Modell auswählen",
+        "creditCount": "{{count}} Credits",
+        "prompt": "Prompt",
+        "assets": "Assets",
+        "startFrame": "Startframe",
+        "endFrame": "Endframe",
+        "reference": "Referenz",
+        "audio": "Audio",
+        "swapFrames": "Frames tauschen",
+        "generatingVideo": "Video wird generiert...",
+        "processingRequest": "Deine Anfrage wird im KI-Cluster verarbeitet.",
+        "recentArtifacts": "Neueste Ergebnisse",
+        "totalCount": "{{count}} Gesamt"
       }
     },
     "image": {
@@ -1260,7 +1488,8 @@
         "creditExhaustionTitle": "Keine Credits",
         "creditExhaustionBody": "Dein Guthaben ist niedrig. Um weiter zu generieren, lade bitte Credits nach.",
         "maybeLater": "Vielleicht später",
-        "topUpNow": "Jetzt aufladen"
+        "topUpNow": "Jetzt aufladen",
+        "creditCount": "{{count}} Credits"
       }
     },
     "landing": {
@@ -1349,7 +1578,18 @@
       },
       "examples": {
         "title": "Was andere erstellen",
-        "subtitle": "Erstellt mit Likelee Studio Tools und Modellen."
+        "subtitle": "Erstellt mit Likelee Studio Tools und Modellen.",
+        "types": {
+          "video": "Video",
+          "image": "Bild"
+        },
+        "tryStyle": "Diesen Stil ausprobieren →",
+        "captions": {
+          "cinematicAiVideo": "Kinematisches KI-Video",
+          "aiPortraitGeneration": "KI-Porträtgenerierung",
+          "aiShortFilm": "KI-Kurzfilm",
+          "digitalArtStyle": "Digitaler Kunststil"
+        }
       },
       "faq": {
         "title": "Häufige Fragen",
@@ -1359,6 +1599,56 @@
         "a2": "Nein. Lade einfach etwas hoch oder beschreibe, was du möchtest.",
         "q3": "Ist das unbegrenzt?",
         "a3": "Jeder Plan hat ein Fair-Use-Limit, um die Performance zu gewährleisten. Der Agentur-Plan beinhaltet unbegrenzte Generationen."
+      },
+      "dropdowns": {
+        "textToVideoAi": "Text zu Video KI",
+        "imageToVideoAi": "Bild zu Video KI",
+        "photoToVideoAvatar": "Foto-zu-Video-Avatar",
+        "aiVideoEditor": "KI-Videoeditor",
+        "aiShorts": "KI-Shorts",
+        "mimicMotion": "Bewegung nachahmen",
+        "canvas": "Canvas",
+        "videoToVideoAi": "Video zu Video KI",
+        "consistentCharacterVideo": "Konsistentes Charaktervideo",
+        "aiVideoEnhancer": "KI-Videoverbesserung",
+        "aiVideoExtender": "KI-Videoverlängerung",
+        "moreTools": "Weitere Tools →",
+        "aiImageGenerator": "KI-Bildgenerator",
+        "imageToImageAi": "Bild zu Bild KI",
+        "chatToImage": "Chat zu Bild",
+        "aiArtGenerator": "KI-Kunstgenerator",
+        "editEnhance": "Bearbeiten & Verbessern",
+        "removeBg": "Hintergrund entfernen",
+        "objectRemover": "Objektentferner",
+        "imageEnhancer": "Bildverbesserung",
+        "stylesModels": "Stile & Modelle",
+        "ghibliAiGenerator": "Ghibli-KI-Generator",
+        "animeUpscaler": "Anime-Upscaler",
+        "imageGenerators": "Bildgeneratoren",
+        "aiEffectsHub": "KI-Effekt-Hub",
+        "overlaysTemplates": "Overlays & Vorlagen",
+        "transitions": "Übergänge",
+        "textCaptions": "Text & Untertitel",
+        "utilities": "Dienstprogramme",
+        "batchQueue": "Batch-Warteschlange",
+        "presets": "Voreinstellungen",
+        "changelog": "Änderungsprotokoll"
+      },
+      "features": {
+        "feature": "Funktion",
+        "items": {
+          "videosPerMonth": "Videos / Monat",
+          "imagesPerMonth": "Bilder / Monat",
+          "parallelTasks": "Parallele Aufgaben",
+          "multiModel": "All-in-one-Unterstützung für mehrere Modelle",
+          "textToVideo": "Text zu Video",
+          "imageToVideo": "Bild zu Video",
+          "textImageVideoToVideo": "Text/Bild/Video zu Video",
+          "consistentCharacterVideo": "Konsistentes Charaktervideo",
+          "aiAnimationGenerator": "KI-Animationsgenerator",
+          "textImageChatToImage": "Text/Bild/Chat zu Bild",
+          "templatesEffects": "300+ Vorlagen & Effekte"
+        }
       }
     }
   },
@@ -1369,7 +1659,8 @@
       "inviteCompanySeat": "Unternehmenssitz einladen",
       "aiStudioAddon": "KI-Studio Add-On",
       "postJob": "Job veröffentlichen",
-      "comingSoon": "Demnächst"
+      "comingSoon": "Demnächst",
+      "upToSeats": "Bis zu {{count}} Plätze"
     },
     "stats": {
       "campaignsLaunched": "Kampagnen gestartet",
@@ -1380,7 +1671,10 @@
     "newCampaign": "Neue Kampagne",
     "status": {
       "completed": "Abgeschlossen",
-      "incomplete": "Unvollständig"
+      "incomplete": "Unvollständig",
+      "active": "Aktiv",
+      "pending_approval": "Ausstehende Freigabe",
+      "pendingApproval": "Ausstehende Freigabe"
     },
     "plan": {
       "basicBriefOnly": "Basic-Pläne können Kampagnendetails und Briefings speichern, aber Mitarbeiterauswahl und Angebotsversand starten erst mit Pro.",
@@ -1403,7 +1697,7 @@
       "collaborators": "Mitarbeiter",
       "collaboratorsCount_one": "{{count}} Mitarbeiter",
       "collaboratorsCount_other": "{{count}} Mitarbeiter",
-      "deliverablesApproved": "{{approved}} / {{total}} Deliverables genehmigt",
+      "deliverablesApproved": "{{approved}} / {{total}} Lieferobjekte genehmigt",
       "noCollaboratorsYet": "Noch keine Mitarbeiter."
     },
     "inviteAgency": {
@@ -1421,6 +1715,15 @@
       "title": "Job veröffentlichen, um Talente zu finden",
       "description": "Erstellen Sie eine detaillierte Stellenausschreibung, um sich mit KI-Creators, Marketing-Agenturen und verifizierten Talenten für Ihre nächste Kampagne zu verbinden.",
       "cta": "Stellenausschreibung erstellen"
+    },
+    "teamManagement": {
+      "title": "Teamverwaltung",
+      "manageTeam": "Verwalten Sie Ihr Team ({{count}} / 5 genutzte Sitze)",
+      "seatsBadge": "{{count}} / 5 Sitze",
+      "admin": "Admin",
+      "projectManager": "Projektmanager",
+      "reviewer": "Prüfer",
+      "inviteCollaborator": "Neuen Mitwirkenden einladen"
     },
     "selectedCampaign": {
       "completionStatus": "Abschlussstatus",
@@ -1674,7 +1977,15 @@
     "collectionsCount_other": "{{count}} Assets",
     "searchPlaceholder": "Nach Projekt, Creator oder Dateiname suchen...",
     "emptyState": "Noch keine Assets verfügbar. Assets erscheinen hier, sobald Kampagnen abgeschlossen sind.",
-    "collections": "Sammlungen"
+    "collections": "Sammlungen",
+    "createCollectionDialog": {
+      "description": "Organisieren Sie Ihre ausgewählten Assets in einer neuen Sammlung.",
+      "collectionName": "Name der Sammlung",
+      "collectionNamePlaceholder": "z. B. Sommerkampagne 2025",
+      "assetsSelected_one": "{{count}} Asset wird dieser Sammlung hinzugefügt.",
+      "assetsSelected_other": "{{count}} Assets werden dieser Sammlung hinzugefügt.",
+      "noAssetsSelected": "Keine Assets ausgewählt. Sie können später Assets hinzufügen."
+    }
   },
   "postJobPage": {
     "backToDashboard": "Zurück zum Dashboard",
@@ -1879,7 +2190,23 @@
     "lookingFor": "Gesucht:",
     "licensingRequired": "Lizenzierung erforderlich",
     "noDescription": "Keine Beschreibung vorhanden",
-    "backToEdit": "Zurück zur Bearbeitung"
+    "backToEdit": "Zurück zur Bearbeitung",
+    "validation": {
+      "requiredField": "Pflichtfeld",
+      "jobTitleRequired": "Der Jobtitel ist erforderlich.",
+      "contactEmailRequired": "Die Kontakt-E-Mail ist erforderlich.",
+      "categoryRequired": "Die Kategorie ist erforderlich.",
+      "callTypeRequired": "Der Aufruftyp ist erforderlich.",
+      "jobTypeRequired": "Der Jobtyp ist erforderlich.",
+      "aboutRoleRequired": "Die Rollenbeschreibung ist erforderlich.",
+      "budgetRequired": "Das Budget ist erforderlich.",
+      "paymentTypeRequired": "Die Zahlungsart ist erforderlich.",
+      "missingTitle": "Titel fehlt",
+      "success": "Erfolg",
+      "jobPostedSuccessfully": "Job erfolgreich veröffentlicht!",
+      "draftUpdated": "Entwurf aktualisiert",
+      "draftSaved": "Entwurf gespeichert"
+    }
   },
   "licensingRequest": {
     "title": "Lizenz anfordern",
@@ -1921,6 +2248,318 @@
     "inProgress": "In Bearbeitung",
     "signed": "Unterschrieben",
     "voided": "Ungültig",
-    "opened": "Geöffnet"
+    "opened": "Geöffnet",
+    "archived": "Archiviert",
+    "in_progress": "In Bearbeitung",
+    "pending_approval": "Ausstehende Genehmigung",
+    "fully_signed": "Vollständig unterzeichnet",
+    "contract_fully_signed": "Vertrag vollständig unterzeichnet"
+  },
+  "common": {
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "saving": "Wird gespeichert...",
+    "credits": "Credits",
+    "credits_lower": "Credits",
+    "history": "Verlauf"
+  },
+  "teamManagement": {
+    "seatLimitReached": "Sitzlimit erreicht",
+    "teamMemberLimitReached": "Du hast dein Teammitglieder-Limit erreicht.",
+    "upgradePlanForMembers": "Upgrade deinen Plan, um weitere Teammitglieder hinzuzufügen und zusätzliche Funktionen freizuschalten.",
+    "upgradePlan": "Plan upgraden",
+    "upgradeForSeats": "Upgrade auf Basic oder höher, um Teamsitze freizuschalten.",
+    "seatLimitReachedDescription": "Du hast dein Limit von {{count}} Sitzen erreicht. Upgrade, um weitere Teammitglieder hinzuzufügen.",
+    "activity": "Aktivität",
+    "upgradeToAddMembers": "Upgrade zum Hinzufügen von Mitgliedern",
+    "inviteTeamMember": "Teammitglied einladen",
+    "inviteTeamMemberTitle": "Teammitglied einladen",
+    "loadingMembers": "Teammitglieder werden geladen...",
+    "activeMembers": "Aktive Mitglieder",
+    "membersCount_one": "{{count}} Mitglied",
+    "membersCount_other": "{{count}} Mitglieder",
+    "added": "Hinzugefügt",
+    "noMembers": "Noch keine Teammitglieder gefunden.",
+    "pendingInvites": "Ausstehende Einladungen",
+    "pending": "Ausstehend",
+    "expires": "Läuft ab",
+    "noPendingInvites": "Keine ausstehenden Einladungen.",
+    "inviteBrandDescription": "Füge deiner Marke einen neuen Mitarbeiter hinzu",
+    "inviteDescription": "Sende eine E-Mail-Einladung, um deinem Team beizutreten",
+    "emailAddress": "E-Mail-Adresse",
+    "emailPlaceholder": "kollege@beispiel.de",
+    "userRole": "Benutzerrolle",
+    "selectRole": "Rolle auswählen",
+    "accessRights": "Zugriffsrechte",
+    "note": "Hinweis",
+    "inviteNote": "Eingeladene Teammitglieder erhalten eine E-Mail, um deinem Workspace beizutreten.",
+    "sending": "Wird gesendet...",
+    "sendInvitation": "Einladung senden",
+    "member": "Mitglied",
+    "aMember": "Ein Mitglied",
+    "isCurrently": "ist derzeit",
+    "newRole": "Neue Rolle",
+    "roleChangeImmediate": "Rollenänderungen werden sofort wirksam.",
+    "confirmRoleChange": "Rollenänderung bestätigen",
+    "teamActivity": "Teamaktivität",
+    "activityDescription": "Letzte Änderungen an Teammitgliedern und Einladungen.",
+    "empty": "Noch keine Teamaktivität erfasst.",
+    "noActivity": "Noch keine Teamaktivität erfasst.",
+    "updateRoleTitle": "Teamrolle aktualisieren",
+    "invitationCreated": "Einladung erstellt",
+    "invitedAs": "{{target}} wurde als {{role}} eingeladen",
+    "roleUpdated": "Rolle aktualisiert",
+    "changedRole": "{{target}} wurde von {{oldRole}} zu {{newRole}} geändert",
+    "invitationAccepted": "Einladung angenommen",
+    "joinedTeam": "{{target}} ist dem Team beigetreten",
+    "invitationDeclined": "Einladung abgelehnt",
+    "declinedInvitation": "{{target}} hat die Einladung abgelehnt",
+    "memberRemoved": "Mitglied entfernt",
+    "memberRemovedDescription": "{{email}} wurde aus dem Team entfernt.",
+    "removedFromTeam": "{{target}} wurde aus dem Team entfernt",
+    "removalFailed": "Entfernen fehlgeschlagen",
+    "removalFailedDescription": "Das Mitglied konnte nicht entfernt werden.",
+    "fallback": "Teamaktivität",
+    "roleDescriptions": {
+      "admin": "Vollständige Teamverwaltung, Abrechnung, Kampagnen und Freigaben.",
+      "projectManager": "Kampagnenerstellung und Freigabe von Deliverables ohne Abrechnung.",
+      "reviewer": "Schreibgeschützter Zugriff auf Deliverables mit Teamsichtbarkeit."
+    },
+    "permissions": {
+      "fullTeamManagement": "Vollständige Teamverwaltung",
+      "billingSubscriptions": "Abrechnung und Abonnements",
+      "campaignsApprovals": "Kampagnen und Freigaben",
+      "payOffers": "Angebote anzeigen",
+      "jobsManagement": "Jobs verwalten",
+      "contractsManagement": "Verträge verwalten",
+      "licenseManagement": "Lizenzen verwalten",
+      "brandConnections": "Markenverbindungen",
+      "manageJobs": "Jobs verwalten",
+      "manageContracts": "Verträge verwalten",
+      "manageLicenses": "Lizenzen verwalten",
+      "manageBrandConnections": "Markenverbindungen verwalten",
+      "manageClients": "Kunden verwalten",
+      "viewSubscriptionsBilling": "Abos und Abrechnung anzeigen",
+      "campaignCreation": "Kampagnenerstellung",
+      "deliverableApprovals": "Deliverables freigeben",
+      "viewPayOffers": "Angebote anzeigen",
+      "viewJobs": "Jobs anzeigen",
+      "viewContracts": "Verträge anzeigen",
+      "viewDeliverables": "Deliverables anzeigen",
+      "viewTeamMembers": "Teammitglieder anzeigen",
+      "viewBrandConnections": "Markenverbindungen anzeigen",
+      "viewClients": "Kunden anzeigen",
+      "viewLicenses": "Lizenzen anzeigen"
+    },
+    "roles": {
+      "owner": "Inhaber",
+      "admin": "Admin",
+      "projectManager": "Projektmanager",
+      "reviewer": "Prüfer",
+      "unknown": "Unbekannt"
+    },
+    "invite": "Einladen"
+  },
+  "brandPricing": {
+    "requiredBanner": "Fast geschafft! Wähle deinen Plan, um dein Konto zu aktivieren",
+    "hero": {
+      "setupPill": "Schließe deine Einrichtung in 2 Minuten ab",
+      "titlePrefix": "Starte mit einer",
+      "trialTitle": "{{days}}-tägigen kostenlosen Testphase",
+      "subtitleBefore": "Erhalte vollen Zugriff auf alle Funktionen.",
+      "subtitleStrong": "Keine Abbuchung bis zum Ende deiner Testphase.",
+      "subtitleAfter": "Du kannst jederzeit vor Ablauf der {{days}} Tage kündigen.",
+      "noChargeTitle": "Deine Karte wird heute nicht belastet",
+      "noChargeSubtitle": "Wir belasten sie automatisch nach {{days}} Tagen • jederzeit kündbar",
+      "brandPlans": "Markenpläne",
+      "publicTitleLine1": "Der richtige Plan für",
+      "publicTitleLine2": "jede Wachstumsphase",
+      "publicSubtitle": "Von deiner ersten Kampagne bis zu einem vollständigen Creator-Ökosystem. Likelee wächst mit dir.",
+      "basePlanNote": "Wähle zuerst einen Basisplan und schalte AI Studio anschließend mit einem einmaligen Add-on frei.",
+      "annualBasePlanNote": "Jährliche Basispläne werden im Voraus berechnet und sparen 20 %. AI Studio ist ein separates einmaliges Add-on."
+    },
+    "billing": {
+      "monthly": "Monatlich",
+      "annual": "Jährlich",
+      "save20": "20 % SPAREN",
+      "perMonth": "pro Monat",
+      "perMonthEquivalent": "entspricht pro Monat",
+      "billedAnnually": "{{total}} jährlich abgerechnet",
+      "trialCaption": "{{days}} Tage kostenlos testen • jederzeit kündbar",
+      "cardRequired": "Karte erforderlich • verlängert sich nach der Testphase automatisch",
+      "oneTime": "einmalig"
+    },
+    "planNames": {
+      "free": "Kostenlos",
+      "basic": "Basic",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "plans": {
+      "basic": {
+        "eyebrow": "Starter",
+        "description": "Teste die Plattform. Starte deine ersten Kampagnen mit einem internen Team.",
+        "cta": "Loslegen"
+      },
+      "pro": {
+        "eyebrow": "Am beliebtesten",
+        "description": "Vollständige Kampagnenabläufe mit Agenturen, KI-Creators, Lizenzierung und Analysen.",
+        "cta": "Jetzt bezahlen"
+      },
+      "enterprise": {
+        "eyebrow": "Komplettpaket",
+        "description": "Unbegrenzte Skalierung, AI Studio inklusive und persönlicher Premium-Support.",
+        "priceLabel": "Individuell",
+        "priceNote": "auf dein Team zugeschnitten",
+        "cta": "Vertrieb kontaktieren"
+      }
+    },
+    "sections": {
+      "campaigns": "Kampagnen",
+      "collaboration": "Zusammenarbeit",
+      "assetsReporting": "Assets & Reporting",
+      "everythingInPro": "Alles aus Pro, plus",
+      "platformSettings": "Plattform & Einstellungen",
+      "assetsApprovals": "Assets & Freigaben",
+      "analyticsPlatform": "Analytik & Plattform"
+    },
+    "pills": {
+      "activeCampaigns": "{{count}} aktiv",
+      "seats": "{{count}} Plätze"
+    },
+    "values": {
+      "unlimited": "Unbegrenzt",
+      "included": "Inklusive",
+      "basic": "Basic",
+      "full": "Vollständig",
+      "oneTimePrice": "${{price}} einmalig",
+      "addOnOnly": "Nur mit Add-on"
+    },
+    "features": {
+      "campaignList": "Kampagnenliste & Filter-Tabs",
+      "newCampaignWizardBasic": "Assistent für neue Kampagnen (Schritte 1-2)",
+      "metricsOverview": "Metrikübersicht (4 Karten)",
+      "talentBrowseLicense": "Talente suchen & lizenzieren (Schritt 3)",
+      "inviteCompanySeats": "Unternehmensplätze einladen",
+      "inviteAgency": "Modelagentur einladen",
+      "addAiCreator": "KI-Creator hinzufügen",
+      "campaignDetailsDeliverables": "Kampagnendetails & Lieferobjekte",
+      "approveRequestDownload": "Genehmigen / Änderungen anfordern / herunterladen",
+      "assetComments": "Kommentarverläufe pro Asset",
+      "fullCampaignWizard": "Vollständiger Kampagnenassistent (Schritte 1-3)",
+      "talentBrowseLicenseAgency": "Talente von Agenturen suchen & lizenzieren",
+      "inviteAgencyMarketplace": "Modelagentur einladen (Marketplace)",
+      "addAiCreatorCollaborators": "KI-Creator + Mitarbeiterliste hinzufügen",
+      "contractsLicensingTab": "Tab Verträge & Lizenzierung",
+      "analyticsReporting": "Analytik & Reporting",
+      "unlimitedCampaigns": "Unbegrenzte aktive Kampagnen",
+      "unlimitedSeatsAgency": "Unbegrenzte Plätze + mehrere Agenturen",
+      "aiStudio": "AI Studio",
+      "notificationsActivity": "Benachrichtigungen & Aktivitätsfeed",
+      "fullSettings": "Vollständige Einstellungen (Rollen, Abrechnung, Profil)",
+      "advancedAnalyticsCsv": "Erweiterte Analytik & CSV-Export",
+      "customContractTemplates": "Individuelle Vertragsvorlagen",
+      "ssoAuditLogs": "SSO + Audit-Logs",
+      "apiZapier": "API-Zugriff + Zapier-Integration",
+      "dedicatedCsm": "Dedizierter CSM + priorisiertes Onboarding"
+    },
+    "badges": {
+      "publicPricing": "Preise sind öffentlich. Die Markenregistrierung erfolgt nach der Planauswahl.",
+      "billingUpdated": "Abrechnung aktualisiert",
+      "checkoutCanceled": "Checkout abgebrochen",
+      "current": "Aktuell",
+      "daysFree": "{{days}} TAGE KOSTENLOS"
+    },
+    "actions": {
+      "continue": "Weiter",
+      "redirecting": "Weiterleitung...",
+      "currentPlan": "Aktueller Plan",
+      "upgradeTo": "Upgrade auf",
+      "startTrial": "{{days}} Tage kostenlos testen",
+      "or": "oder",
+      "contactSalesActivation": "Vertrieb für sofortige Aktivierung kontaktieren",
+      "openStudio": "Studio öffnen",
+      "activateStudio": "Studio aktivieren",
+      "getStudioAddon": "Studio-Add-on erhalten"
+    },
+    "subscription": {
+      "currentSubscription": "Aktuelles Abonnement",
+      "base": "Basis: {{status}}",
+      "aiStudio": "AI Studio: {{status}}",
+      "trialEndsOn": "Kostenlose Testphase endet am {{date}}.",
+      "baseRenewsOn": "Basisplan verlängert sich am {{date}}.",
+      "studioLifetimeActive": "AI-Studio-Zugriff ist aktiv (lebenslang).",
+      "baseAlreadyActiveNotice": "Dein Basisplan ist bereits aktiv. AI Studio bleibt ein separater Posten, aber Änderungen am Basisplan sind noch nicht zur Selbstbedienung verfügbar."
+    },
+    "addon": {
+      "eyebrow": "AI-Studio-Add-on",
+      "title": "Separat vom Basisplan",
+      "descriptionPrefix": "Schalte AI Studio mit einer einmaligen Zahlung von",
+      "descriptionMiddle": "frei. Deine Marke erhält dauerhaften Zugriff auf",
+      "descriptionAnd": "und",
+      "credits": "Start-Credits",
+      "descriptionSuffix": "für dein Studio-Wallet. Enterprise enthält Studio-Zugriff automatisch.",
+      "badges": {
+        "initialCredits": "{{credits}} Studio-Start-Credits",
+        "walletPlan": "Studio-Pro-Wallet-Plan",
+        "oneTimePayment": "Einmalige Zahlung",
+        "permanentAccess": "Dauerhafter /studio-Zugriff",
+        "enterpriseIncluded": "In Enterprise enthalten"
+      }
+    },
+    "comparison": {
+      "title": "Vollständiger Vergleich",
+      "subtitle": "Alles direkt nebeneinander.",
+      "feature": "Funktion",
+      "activeCampaigns": "Aktive Kampagnen",
+      "talentBrowseLicense": "Talente suchen & lizenzieren",
+      "companySeats": "Unternehmensplätze",
+      "multiAgencyManagement": "Verwaltung mehrerer Agenturen",
+      "deliverableApproveDownload": "Lieferobjekt genehmigen / herunterladen",
+      "notificationsActivityFeed": "Benachrichtigungen / Aktivitätsfeed",
+      "aiStudioActivation": "AI Studio (einmalige Aktivierung)",
+      "editInStudio": "„In Studio bearbeiten“ bei Lieferobjekten"
+    },
+    "faq": {
+      "title": "Häufige Fragen",
+      "upgrade": {
+        "question": "Kann ich mitten im Abrechnungszeitraum upgraden?",
+        "answer": "Ja, Upgrades werden sofort wirksam und anteilig berechnet. Downgrades gelten ab dem nächsten Abrechnungszeitraum."
+      },
+      "activeCampaign": {
+        "question": "Was zählt als „aktive“ Kampagne?",
+        "answer": "Jede Kampagne mit dem Status Aktiv oder Ausstehende Genehmigung zählt zu deinem Limit. Abgeschlossene Kampagnen zählen nicht."
+      },
+      "studioAccess": {
+        "question": "Wie funktioniert der Zugriff auf AI Studio?",
+        "answer": "AI Studio ist ein einmaliges Add-on für ${{price}}. Nach dem Kauf erhält deine Marke dauerhaften Zugriff auf /studio und {{credits}} Studio-Start-Credits. Enterprise enthält Studio-Zugriff ohne Aufpreis."
+      },
+      "agencySeats": {
+        "question": "Zählen Agentureinladungen als Plätze?",
+        "answer": "Nein, Platzlimits gelten nur für interne Unternehmensplätze. Agenturen und KI-Creator werden separat verwaltet und zählen nicht zu deinem Limit."
+      },
+      "talentLicensing": {
+        "question": "Wie funktioniert Talentlizenzierung?",
+        "answer": "Pro und höher schalten Schritt 3 des Kampagnenassistenten frei: Suche verifizierte Agenturen im Likelee-Marketplace und lizenziere Talente direkt."
+      },
+      "enterprise": {
+        "question": "Was ist in Enterprise enthalten?",
+        "answer": "Enterprise wird individuell angeboten und enthält unbegrenzte Nutzung, einen dedizierten CSM, SSO, Audit-Logs, erweiterte Exporte, individuelle Verträge und API-Zugriff."
+      }
+    },
+    "errors": {
+      "baseAlreadyActive": "Dieser Basisplan ist bereits aktiv.",
+      "studioAlreadyActive": "Das AI-Studio-Add-on ist bereits aktiv.",
+      "studioIncludedEnterprise": "AI Studio ist in Enterprise bereits enthalten.",
+      "enterpriseSales": "Enterprise-Pläne werden vom Vertrieb betreut.",
+      "annualNotConfigured": "Jährliche Abrechnung ist noch nicht konfiguriert. Nutze die monatliche Abrechnung oder füge die jährlichen Stripe-Preis-IDs hinzu.",
+      "tryAgain": "Bitte versuche es erneut.",
+      "noCheckoutUrl": "Keine Checkout-URL zurückgegeben.",
+      "checkoutFailed": "Checkout fehlgeschlagen",
+      "brandAccountRequired": "Markenkonto erforderlich",
+      "brandAccountRequiredDescription": "Diese Preisseite ist öffentlich, aber Checkout ist nur für Markenkonten verfügbar.",
+      "studioBrandAccountRequiredDescription": "Die Abrechnung des AI-Studio-Add-ons ist nur für Markenkonten verfügbar.",
+      "checkoutSignedInBrandsOnly": "Diese Seite ist öffentlich, aber Checkout funktioniert nur für angemeldete Markenkonten."
+    }
   }
 }

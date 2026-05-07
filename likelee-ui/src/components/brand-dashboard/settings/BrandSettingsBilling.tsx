@@ -9,6 +9,7 @@ import {
   setBrandPrimaryPaymentMethod,
 } from "@/api/functions";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface PaymentMethod {
   id: string;
@@ -30,6 +31,7 @@ interface PrimaryPaymentMethod {
 }
 
 export const BrandSettingsBilling = () => {
+  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [primaryPaymentMethod, setPrimaryPaymentMethod] =
@@ -53,7 +55,9 @@ export const BrandSettingsBilling = () => {
       setPaymentMethods(deduped);
       setPrimaryPaymentMethod(data.primary_payment_method || null);
     } catch (err) {
-      toast.error("Failed to load payment methods");
+      toast.error(
+        t("dashboard.settingsPage.billing.paymentMethods.loadFailed"),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -63,7 +67,9 @@ export const BrandSettingsBilling = () => {
     if (
       primaryPaymentMethod?.stripe_payment_method_id === stripePaymentMethodId
     ) {
-      toast.error("Cannot delete the primary payment method");
+      toast.error(
+        t("dashboard.settingsPage.billing.paymentMethods.cannotDeletePrimary"),
+      );
       return;
     }
     try {
@@ -71,10 +77,12 @@ export const BrandSettingsBilling = () => {
       await deleteBrandPaymentMethod({
         stripe_payment_method_id: stripePaymentMethodId,
       });
-      toast.success("Payment method removed");
+      toast.success(t("dashboard.settingsPage.billing.paymentMethods.removed"));
       await loadPaymentMethods();
     } catch (err) {
-      toast.error("Failed to delete payment method");
+      toast.error(
+        t("dashboard.settingsPage.billing.paymentMethods.deleteFailed"),
+      );
     } finally {
       setIsDeleting(null);
     }
@@ -86,10 +94,14 @@ export const BrandSettingsBilling = () => {
       await setBrandPrimaryPaymentMethod({
         stripe_payment_method_id: stripePaymentMethodId,
       });
-      toast.success("Primary payment method updated");
+      toast.success(
+        t("dashboard.settingsPage.billing.paymentMethods.primaryUpdated"),
+      );
       await loadPaymentMethods();
     } catch (err) {
-      toast.error("Failed to set primary payment method");
+      toast.error(
+        t("dashboard.settingsPage.billing.paymentMethods.setPrimaryFailed"),
+      );
     } finally {
       setIsSettingPrimary(null);
     }
@@ -117,13 +129,14 @@ export const BrandSettingsBilling = () => {
     <>
       <Card className="p-8 bg-white border border-gray-200 rounded-lg shadow-none">
         <h3 className="text-xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-          <CreditCard className="w-6 h-6" /> Billing & Payment
+          <CreditCard className="w-6 h-6" />{" "}
+          {t("dashboard.settingsPage.billing.title")}
         </h3>
 
         {/* Primary Payment Method Display */}
         <div className="mb-8">
           <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-            Primary Payment Method
+            {t("dashboard.settingsPage.billing.primaryPaymentMethod")}
           </h4>
           {primaryPaymentMethod ? (
             <div className="p-5 border-2 border-gray-900 rounded-lg bg-gray-50 flex items-center justify-between">
@@ -142,7 +155,7 @@ export const BrandSettingsBilling = () => {
                     •••• {primaryPaymentMethod.card_last_four}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Expires{" "}
+                    {t("dashboard.settingsPage.billing.paymentMethods.expires")}{" "}
                     {String(primaryPaymentMethod.card_exp_month).padStart(
                       2,
                       "0",
@@ -157,7 +170,7 @@ export const BrandSettingsBilling = () => {
                 size="sm"
                 className="rounded-lg border border-gray-900 font-semibold text-xs text-gray-900 hover:bg-gray-900 hover:text-white"
               >
-                Manage
+                {t("dashboard.settingsPage.billing.manage")}
               </Button>
             </div>
           ) : (
@@ -168,7 +181,7 @@ export const BrandSettingsBilling = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">
-                    No payment method on file
+                    {t("dashboard.settingsPage.billing.paymentMethods.none")}
                   </p>
                 </div>
               </div>
@@ -178,7 +191,7 @@ export const BrandSettingsBilling = () => {
                 className="rounded-lg bg-gray-900 text-white hover:bg-gray-800 font-semibold text-xs"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Card
+                {t("dashboard.settingsPage.billing.paymentMethods.addCard")}
               </Button>
             </div>
           )}
@@ -188,7 +201,7 @@ export const BrandSettingsBilling = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-              Saved Payment Methods
+              {t("dashboard.settingsPage.billing.paymentMethods.saved")}
             </h4>
             <Button
               onClick={() => setIsModalOpen(true)}
@@ -196,7 +209,7 @@ export const BrandSettingsBilling = () => {
               className="rounded-lg bg-gray-900 text-white hover:bg-gray-800 font-semibold text-xs"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Card
+              {t("dashboard.settingsPage.billing.paymentMethods.addCard")}
             </Button>
           </div>
 
@@ -207,9 +220,11 @@ export const BrandSettingsBilling = () => {
           ) : paymentMethods.length === 0 ? (
             <div className="p-6 border border-gray-200 rounded-lg text-center">
               <CreditCard className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500">No saved payment methods</p>
+              <p className="text-sm text-gray-500">
+                {t("dashboard.settingsPage.billing.paymentMethods.empty")}
+              </p>
               <p className="text-xs text-gray-400 mt-1">
-                Add a card to get started
+                {t("dashboard.settingsPage.billing.paymentMethods.emptyHelp")}
               </p>
             </div>
           ) : (
@@ -238,7 +253,9 @@ export const BrandSettingsBilling = () => {
                           •••• {method.card_last_four}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          Expires{" "}
+                          {t(
+                            "dashboard.settingsPage.billing.paymentMethods.expires",
+                          )}{" "}
                           {String(method.card_exp_month).padStart(2, "0")}/
                           {method.card_exp_year}
                         </p>
@@ -246,7 +263,9 @@ export const BrandSettingsBilling = () => {
                       {isPrimary && (
                         <span className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full flex-shrink-0">
                           <Check className="w-3 h-3" />
-                          Primary
+                          {t(
+                            "dashboard.settingsPage.billing.paymentMethods.primary",
+                          )}
                         </span>
                       )}
                     </div>
@@ -267,7 +286,9 @@ export const BrandSettingsBilling = () => {
                           method.stripe_payment_method_id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
-                            "Set Primary"
+                            t(
+                              "dashboard.settingsPage.billing.paymentMethods.setPrimary",
+                            )
                           )}
                         </Button>
                       )}

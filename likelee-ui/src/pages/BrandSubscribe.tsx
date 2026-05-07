@@ -1,5 +1,6 @@
 import React from "react";
 import { ArrowRight, Check, Loader2, Sparkles, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -17,7 +18,6 @@ import {
   BRAND_STUDIO_ADDON_CREDITS,
   BRAND_STUDIO_ADDON_PRICE,
   BRAND_TRIAL_DAYS,
-  formatBrandPlanLabel,
   formatBrandStudioAddonStatus,
   formatBrandSubscriptionStatus,
   hasActiveBrandBaseSubscription,
@@ -76,15 +76,16 @@ type BrandPlanCard = {
   sections: PlanSection[];
 };
 
-const brandPlans: BrandPlanCard[] = [
+type BrandPricingT = (key: string, options?: Record<string, unknown>) => string;
+
+const getBrandPlans = (t: BrandPricingT): BrandPlanCard[] => [
   {
     tier: "basic",
-    eyebrow: "Starter",
-    description:
-      "Test the platform. Run your first campaigns with an in-house team.",
+    eyebrow: t("brandPricing.plans.basic.eyebrow"),
+    description: t("brandPricing.plans.basic.description"),
     monthlyPrice: 149,
-    priceNote: "per month",
-    cta: "Get started",
+    priceNote: t("brandPricing.billing.perMonth"),
+    cta: t("brandPricing.plans.basic.cta"),
     cardClassName:
       "border border-[#D7E6ED] bg-white shadow-[0_22px_60px_rgba(7,28,58,0.08)]",
     badgeClassName:
@@ -97,40 +98,48 @@ const brandPlans: BrandPlanCard[] = [
     mutedClassName: "text-[#B7C1D4]",
     sections: [
       {
-        title: "Campaigns",
+        title: t("brandPricing.sections.campaigns"),
         items: [
-          { label: "Campaign list & filter tabs", pill: "3 active" },
-          { label: "New Campaign wizard (Steps 1–2)" },
-          { label: "Metrics overview (4 cards)" },
-          { label: "Talent browse & license (Step 3)", disabled: true },
+          {
+            label: t("brandPricing.features.campaignList"),
+            pill: t("brandPricing.pills.activeCampaigns", { count: 3 }),
+          },
+          { label: t("brandPricing.features.newCampaignWizardBasic") },
+          { label: t("brandPricing.features.metricsOverview") },
+          {
+            label: t("brandPricing.features.talentBrowseLicense"),
+            disabled: true,
+          },
         ],
       },
       {
-        title: "Collaboration",
+        title: t("brandPricing.sections.collaboration"),
         items: [
-          { label: "Invite Company Seats", pill: "2 seats" },
-          { label: "Invite Modeling Agency", disabled: true },
-          { label: "Add AI Creator", disabled: true },
+          {
+            label: t("brandPricing.features.inviteCompanySeats"),
+            pill: t("brandPricing.pills.seats", { count: 2 }),
+          },
+          { label: t("brandPricing.features.inviteAgency"), disabled: true },
+          { label: t("brandPricing.features.addAiCreator"), disabled: true },
         ],
       },
       {
-        title: "Assets & Reporting",
+        title: t("brandPricing.sections.assetsReporting"),
         items: [
-          { label: "Campaign details & deliverables" },
-          { label: "Approve / request edit / download" },
-          { label: "Per-asset comment threads", disabled: true },
+          { label: t("brandPricing.features.campaignDetailsDeliverables") },
+          { label: t("brandPricing.features.approveRequestDownload") },
+          { label: t("brandPricing.features.assetComments"), disabled: true },
         ],
       },
     ],
   },
   {
     tier: "pro",
-    eyebrow: "Most popular",
-    description:
-      "Full campaign ops — agencies, AI creators, licensing, and analytics.",
+    eyebrow: t("brandPricing.plans.pro.eyebrow"),
+    description: t("brandPricing.plans.pro.description"),
     monthlyPrice: 349,
-    priceNote: "per month",
-    cta: "Pay now",
+    priceNote: t("brandPricing.billing.perMonth"),
+    cta: t("brandPricing.plans.pro.cta"),
     cardClassName:
       "border border-[#2B4B8A] bg-[#17315E] text-white shadow-[0_30px_70px_rgba(7,28,58,0.25)]",
     badgeClassName:
@@ -143,40 +152,45 @@ const brandPlans: BrandPlanCard[] = [
     mutedClassName: "text-[#6780AC]",
     sections: [
       {
-        title: "Campaigns",
+        title: t("brandPricing.sections.campaigns"),
         items: [
-          { label: "Campaign list & filter tabs", pill: "10 active" },
-          { label: "Full Campaign wizard (Steps 1–3)" },
-          { label: "Talent browse & license from agency" },
+          {
+            label: t("brandPricing.features.campaignList"),
+            pill: t("brandPricing.pills.activeCampaigns", { count: 10 }),
+          },
+          { label: t("brandPricing.features.fullCampaignWizard") },
+          { label: t("brandPricing.features.talentBrowseLicenseAgency") },
         ],
       },
       {
-        title: "Collaboration",
+        title: t("brandPricing.sections.collaboration"),
         items: [
-          { label: "Invite Company Seats", pill: "5 seats" },
-          { label: "Invite Modeling Agency (marketplace)" },
-          { label: "Add AI Creator + collaborator list" },
+          {
+            label: t("brandPricing.features.inviteCompanySeats"),
+            pill: t("brandPricing.pills.seats", { count: 5 }),
+          },
+          { label: t("brandPricing.features.inviteAgencyMarketplace") },
+          { label: t("brandPricing.features.addAiCreatorCollaborators") },
         ],
       },
       {
-        title: "Assets & Reporting",
+        title: t("brandPricing.sections.assetsReporting"),
         items: [
-          { label: "Campaign details & deliverables" },
-          { label: "Per-asset comment threads" },
-          { label: "Contracts & Licensing tab" },
-          { label: "Analytics & reporting" },
+          { label: t("brandPricing.features.campaignDetailsDeliverables") },
+          { label: t("brandPricing.features.assetComments") },
+          { label: t("brandPricing.features.contractsLicensingTab") },
+          { label: t("brandPricing.features.analyticsReporting") },
         ],
       },
     ],
   },
   {
     tier: "enterprise",
-    eyebrow: "Full suite",
-    description:
-      "Unlimited scale, AI Studio included, and white-glove support.",
-    priceLabel: "Custom",
-    priceNote: "tailored to your team",
-    cta: "Talk to sales",
+    eyebrow: t("brandPricing.plans.enterprise.eyebrow"),
+    description: t("brandPricing.plans.enterprise.description"),
+    priceLabel: t("brandPricing.plans.enterprise.priceLabel"),
+    priceNote: t("brandPricing.plans.enterprise.priceNote"),
+    cta: t("brandPricing.plans.enterprise.cta"),
     cardClassName:
       "border border-[#D9E4FF] bg-white shadow-[0_22px_60px_rgba(7,28,58,0.08)]",
     badgeClassName:
@@ -189,41 +203,44 @@ const brandPlans: BrandPlanCard[] = [
     mutedClassName: "text-[#B7C1D4]",
     sections: [
       {
-        title: "Everything in Pro, plus",
+        title: t("brandPricing.sections.everythingInPro"),
         items: [
-          { label: "Unlimited active campaigns" },
-          { label: "Unlimited seats + multi-agency" },
-          { label: "AI Studio", pill: "Included" },
-          { label: "Notifications & activity feed" },
+          { label: t("brandPricing.features.unlimitedCampaigns") },
+          { label: t("brandPricing.features.unlimitedSeatsAgency") },
+          {
+            label: t("brandPricing.features.aiStudio"),
+            pill: t("brandPricing.values.included"),
+          },
+          { label: t("brandPricing.features.notificationsActivity") },
         ],
       },
       {
-        title: "Platform & Settings",
+        title: t("brandPricing.sections.platformSettings"),
         items: [
-          { label: "Full Settings (roles, billing, profile)" },
-          { label: "Advanced analytics & CSV export" },
-          { label: "Custom contract templates" },
-          { label: "SSO + audit logs" },
-          { label: "API access + Zapier integration" },
-          { label: "Dedicated CSM + priority onboarding" },
+          { label: t("brandPricing.features.fullSettings") },
+          { label: t("brandPricing.features.advancedAnalyticsCsv") },
+          { label: t("brandPricing.features.customContractTemplates") },
+          { label: t("brandPricing.features.ssoAuditLogs") },
+          { label: t("brandPricing.features.apiZapier") },
+          { label: t("brandPricing.features.dedicatedCsm") },
         ],
       },
     ],
   },
 ];
 
-const comparisonSections: ComparisonSection[] = [
+const getComparisonSections = (t: BrandPricingT): ComparisonSection[] => [
   {
-    title: "Campaigns",
+    title: t("brandPricing.sections.campaigns"),
     rows: [
       {
-        feature: "Active campaigns",
+        feature: t("brandPricing.comparison.activeCampaigns"),
         basic: "3",
         pro: "10",
-        enterprise: "Unlimited",
+        enterprise: t("brandPricing.values.unlimited"),
       },
       {
-        feature: "Talent browse & license",
+        feature: t("brandPricing.comparison.talentBrowseLicense"),
         basic: "cross",
         pro: "check",
         enterprise: "check",
@@ -231,28 +248,28 @@ const comparisonSections: ComparisonSection[] = [
     ],
   },
   {
-    title: "Collaboration",
+    title: t("brandPricing.sections.collaboration"),
     rows: [
       {
-        feature: "Company seats",
+        feature: t("brandPricing.comparison.companySeats"),
         basic: "2",
         pro: "5",
-        enterprise: "Unlimited",
+        enterprise: t("brandPricing.values.unlimited"),
       },
       {
-        feature: "Invite Modeling Agency",
+        feature: t("brandPricing.features.inviteAgency"),
         basic: "cross",
         pro: "check",
         enterprise: "check",
       },
       {
-        feature: "Add AI Creator",
+        feature: t("brandPricing.features.addAiCreator"),
         basic: "cross",
         pro: "check",
         enterprise: "check",
       },
       {
-        feature: "Multi-agency management",
+        feature: t("brandPricing.comparison.multiAgencyManagement"),
         basic: "cross",
         pro: "cross",
         enterprise: "check",
@@ -260,28 +277,28 @@ const comparisonSections: ComparisonSection[] = [
     ],
   },
   {
-    title: "Assets & Approvals",
+    title: t("brandPricing.sections.assetsApprovals"),
     rows: [
       {
-        feature: "Deliverable approve / download",
+        feature: t("brandPricing.comparison.deliverableApproveDownload"),
         basic: "check",
         pro: "check",
         enterprise: "check",
       },
       {
-        feature: "Per-asset comment threads",
+        feature: t("brandPricing.features.assetComments"),
         basic: "cross",
         pro: "check",
         enterprise: "check",
       },
       {
-        feature: "Contracts & Licensing tab",
+        feature: t("brandPricing.features.contractsLicensingTab"),
         basic: "cross",
         pro: "check",
         enterprise: "check",
       },
       {
-        feature: "Custom contract templates",
+        feature: t("brandPricing.features.customContractTemplates"),
         basic: "cross",
         pro: "cross",
         enterprise: "check",
@@ -289,34 +306,34 @@ const comparisonSections: ComparisonSection[] = [
     ],
   },
   {
-    title: "Analytics & Platform",
+    title: t("brandPricing.sections.analyticsPlatform"),
     rows: [
       {
-        feature: "Analytics & reporting",
+        feature: t("brandPricing.features.analyticsReporting"),
         basic: "cross",
         pro: "check",
         enterprise: "check",
       },
       {
-        feature: "Advanced analytics + CSV export",
+        feature: t("brandPricing.features.advancedAnalyticsCsv"),
         basic: "cross",
         pro: "cross",
         enterprise: "check",
       },
       {
-        feature: "Notifications / activity feed",
+        feature: t("brandPricing.comparison.notificationsActivityFeed"),
         basic: "cross",
         pro: "cross",
         enterprise: "check",
       },
       {
-        feature: "Full Settings (roles, billing, profile)",
-        basic: "Basic",
-        pro: "Basic",
-        enterprise: "Full",
+        feature: t("brandPricing.features.fullSettings"),
+        basic: t("brandPricing.values.basic"),
+        pro: t("brandPricing.values.basic"),
+        enterprise: t("brandPricing.values.full"),
       },
       {
-        feature: "SSO + audit logs",
+        feature: t("brandPricing.features.ssoAuditLogs"),
         basic: "cross",
         pro: "cross",
         enterprise: "check",
@@ -324,53 +341,55 @@ const comparisonSections: ComparisonSection[] = [
     ],
   },
   {
-    title: "AI Studio",
+    title: t("brandPricing.features.aiStudio"),
     rows: [
       {
-        feature: "AI Studio (one-time activation)",
-        basic: `$${BRAND_STUDIO_ADDON_PRICE} one-time`,
-        pro: `$${BRAND_STUDIO_ADDON_PRICE} one-time`,
-        enterprise: "Included",
+        feature: t("brandPricing.comparison.aiStudioActivation"),
+        basic: t("brandPricing.values.oneTimePrice", {
+          price: BRAND_STUDIO_ADDON_PRICE,
+        }),
+        pro: t("brandPricing.values.oneTimePrice", {
+          price: BRAND_STUDIO_ADDON_PRICE,
+        }),
+        enterprise: t("brandPricing.values.included"),
       },
       {
-        feature: '"Edit in Studio" on deliverables',
-        basic: "Add-On only",
-        pro: "Add-On only",
+        feature: t("brandPricing.comparison.editInStudio"),
+        basic: t("brandPricing.values.addOnOnly"),
+        pro: t("brandPricing.values.addOnOnly"),
         enterprise: "check",
       },
     ],
   },
 ];
 
-const pricingFaqs: PricingFaq[] = [
+const getPricingFaqs = (t: BrandPricingT): PricingFaq[] => [
   {
-    question: "Can I upgrade mid-cycle?",
-    answer:
-      "Yes — upgrades take effect immediately and are prorated. Downgrades apply at the start of the next billing period.",
+    question: t("brandPricing.faq.upgrade.question"),
+    answer: t("brandPricing.faq.upgrade.answer"),
   },
   {
-    question: 'What counts as an "active" campaign?',
-    answer:
-      "Any campaign with a status of Active or Pending Approval counts toward your limit. Completed campaigns don't count.",
+    question: t("brandPricing.faq.activeCampaign.question"),
+    answer: t("brandPricing.faq.activeCampaign.answer"),
   },
   {
-    question: "How does AI Studio access work?",
-    answer: `AI Studio is a one-time add-on for $${BRAND_STUDIO_ADDON_PRICE}. After purchase, your brand gets permanent access to /studio and ${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial Studio credits. Enterprise includes Studio access at no extra charge.`,
+    question: t("brandPricing.faq.studioAccess.question"),
+    answer: t("brandPricing.faq.studioAccess.answer", {
+      price: BRAND_STUDIO_ADDON_PRICE,
+      credits: BRAND_STUDIO_ADDON_CREDITS.toLocaleString(),
+    }),
   },
   {
-    question: "Do agency invites count as seats?",
-    answer:
-      "No — seat limits apply to in-house Company Seats only. Agency and AI Creator collaborators are managed separately and don't count toward your cap.",
+    question: t("brandPricing.faq.agencySeats.question"),
+    answer: t("brandPricing.faq.agencySeats.answer"),
   },
   {
-    question: "How does talent licensing work?",
-    answer:
-      "Pro and above unlocks Step 3 of the Campaign wizard — browse verified agencies on the Likelee marketplace and license talent directly.",
+    question: t("brandPricing.faq.talentLicensing.question"),
+    answer: t("brandPricing.faq.talentLicensing.answer"),
   },
   {
-    question: "What's included in Enterprise?",
-    answer:
-      "Enterprise is custom-quoted and includes unlimited everything, a dedicated CSM, SSO, audit logs, advanced exports, custom contracts, and API access.",
+    question: t("brandPricing.faq.enterprise.question"),
+    answer: t("brandPricing.faq.enterprise.answer"),
   },
 ];
 
@@ -379,6 +398,7 @@ const BRAND_PLAN_ANNUAL_DISCOUNT = 0.2;
 function getPlanPriceDisplay(
   plan: BrandPlanCard,
   billingCycle: BillingCycle,
+  t: BrandPricingT,
 ): {
   priceLabel: string;
   priceNote: string;
@@ -399,8 +419,10 @@ function getPlanPriceDisplay(
     const monthlyEquivalent = Math.round(annualTotal / 12);
     return {
       priceLabel: currencyFormatter.format(monthlyEquivalent),
-      priceNote: "per month equivalent",
-      priceCaption: `${currencyFormatter.format(annualTotal)} billed annually`,
+      priceNote: t("brandPricing.billing.perMonthEquivalent"),
+      priceCaption: t("brandPricing.billing.billedAnnually", {
+        total: currencyFormatter.format(annualTotal),
+      }),
       previousPriceLabel: `${currencyFormatter.format(plan.monthlyPrice)}/mo`,
     };
   }
@@ -410,7 +432,7 @@ function getPlanPriceDisplay(
     priceNote: plan.priceNote,
     priceCaption:
       plan.tier === "basic" || plan.tier === "pro"
-        ? `${BRAND_TRIAL_DAYS}-day free trial • Cancel anytime`
+        ? t("brandPricing.billing.trialCaption", { days: BRAND_TRIAL_DAYS })
         : undefined,
   };
 }
@@ -431,26 +453,26 @@ function formatDateLabel(value: unknown): string | null {
   });
 }
 
-function getCheckoutErrorMessage(message: string): string {
+function getCheckoutErrorMessage(message: string, t: BrandPricingT): string {
   if (message.includes("brand_subscription_already_active")) {
-    return "This base plan is already active.";
+    return t("brandPricing.errors.baseAlreadyActive");
   }
   if (message.includes("studio_addon_already_active")) {
-    return "The AI Studio add-on is already active.";
+    return t("brandPricing.errors.studioAlreadyActive");
   }
   if (message.includes("studio_addon_included_with_enterprise")) {
-    return "AI Studio is already included with Enterprise.";
+    return t("brandPricing.errors.studioIncludedEnterprise");
   }
   if (message.includes("enterprise_contact_sales")) {
-    return "Enterprise plans are handled by sales.";
+    return t("brandPricing.errors.enterpriseSales");
   }
   if (
     message.includes("STRIPE_BRAND_BASIC_ANNUAL_PRICE_ID") ||
     message.includes("STRIPE_BRAND_PRO_ANNUAL_PRICE_ID")
   ) {
-    return "Annual billing is not configured yet. Use monthly billing or add the annual Stripe price IDs.";
+    return t("brandPricing.errors.annualNotConfigured");
   }
-  return message || "Please try again.";
+  return message || t("brandPricing.errors.tryAgain");
 }
 
 function buildBrandSignupPath(input: {
@@ -563,6 +585,7 @@ function ComparisonPlanCell({
 }
 
 export default function BrandSubscribe() {
+  const { t } = useTranslation("brand");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { initialized, authenticated, profile, refreshProfile } = useAuth();
@@ -590,6 +613,9 @@ export default function BrandSubscribe() {
   const [billingCycle, setBillingCycle] =
     React.useState<BillingCycle>(searchBillingCycle);
   const autoCheckoutStartedRef = React.useRef(false);
+  const brandPlans = React.useMemo(() => getBrandPlans(t), [t]);
+  const comparisonSections = React.useMemo(() => getComparisonSections(t), [t]);
+  const pricingFaqs = React.useMemo(() => getPricingFaqs(t), [t]);
 
   const isBrandAccount = profile?.role === "brand";
   const planTier = normalizeBrandPlanTier(profile?.plan_tier);
@@ -598,7 +624,10 @@ export default function BrandSubscribe() {
   const hasStudioAddon = isBrandAccount && hasBrandStudioAccess(profile);
   const baseStatusLabel = formatBrandSubscriptionStatus(profile);
   const studioStatusLabel = formatBrandStudioAddonStatus(profile);
-  const planLabel = formatBrandPlanLabel(planTier);
+  const planLabel =
+    planTier === "free"
+      ? t("brandPricing.planNames.free")
+      : t(`brandPricing.planNames.${planTier}`);
   const trialEndsAt = formatDateLabel(profile?.subscription_trial_end);
   const currentPeriodEnd = formatDateLabel(
     profile?.subscription_current_period_end,
@@ -698,14 +727,15 @@ export default function BrandSubscribe() {
       });
       const checkoutUrl = (response as any)?.checkout_url as string | undefined;
       if (!checkoutUrl) {
-        throw new Error("No checkout URL returned.");
+        throw new Error(t("brandPricing.errors.noCheckoutUrl"));
       }
       window.location.href = checkoutUrl;
     } catch (error: any) {
       toast({
-        title: "Checkout failed",
+        title: t("brandPricing.errors.checkoutFailed"),
         description: getCheckoutErrorMessage(
           String(error?.message || error || ""),
+          t,
         ),
         variant: "destructive",
       });
@@ -724,9 +754,8 @@ export default function BrandSubscribe() {
 
     if (!isBrandAccount) {
       toast({
-        title: "Brand account required",
-        description:
-          "This pricing page is public, but checkout is only available for brand accounts.",
+        title: t("brandPricing.errors.brandAccountRequired"),
+        description: t("brandPricing.errors.brandAccountRequiredDescription"),
         variant: "destructive",
       });
       redirectToBrandSignup(tier);
@@ -764,9 +793,10 @@ export default function BrandSubscribe() {
 
     if (!isBrandAccount) {
       toast({
-        title: "Brand account required",
-        description:
-          "AI Studio add-on billing is only available for brand accounts.",
+        title: t("brandPricing.errors.brandAccountRequired"),
+        description: t(
+          "brandPricing.errors.studioBrandAccountRequiredDescription",
+        ),
         variant: "destructive",
       });
       redirectToBrandSignup("pro", { focusStudio: true });
@@ -780,14 +810,15 @@ export default function BrandSubscribe() {
       });
       const checkoutUrl = (response as any)?.checkout_url as string | undefined;
       if (!checkoutUrl) {
-        throw new Error("No checkout URL returned.");
+        throw new Error(t("brandPricing.errors.noCheckoutUrl"));
       }
       window.location.href = checkoutUrl;
     } catch (error: any) {
       toast({
-        title: "Checkout failed",
+        title: t("brandPricing.errors.checkoutFailed"),
         description: getCheckoutErrorMessage(
           String(error?.message || error || ""),
+          t,
         ),
         variant: "destructive",
       });
@@ -805,7 +836,7 @@ export default function BrandSubscribe() {
             <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5">
               <span className="text-lg">🎉</span>
               <span className="text-sm font-bold">
-                Almost there! Choose your plan to activate your account
+                {t("brandPricing.requiredBanner")}
               </span>
             </div>
           </div>
@@ -823,24 +854,30 @@ export default function BrandSubscribe() {
                 <div className="inline-flex items-center gap-2 rounded-full border-2 border-[#B8E6E4] bg-gradient-to-r from-[#EDFAF8] to-[#E5F9F5] px-4 py-2 mb-6">
                   <span className="text-xl">✨</span>
                   <span className="text-sm font-semibold text-[#107573]">
-                    Complete your setup in 2 minutes
+                    {t("brandPricing.hero.setupPill")}
                   </span>
                 </div>
 
                 <h1 className="mt-4 font-serif text-5xl font-bold tracking-tight text-[#17315E] sm:text-6xl lg:text-[72px] lg:leading-[1.1]">
-                  <span className="block">Start with a</span>
+                  <span className="block">
+                    {t("brandPricing.hero.titlePrefix")}
+                  </span>
                   <span className="mt-2 block bg-gradient-to-r from-[#18B1AE] to-[#14A3A0] bg-clip-text text-transparent">
-                    {BRAND_TRIAL_DAYS}-Day Free Trial
+                    {t("brandPricing.hero.trialTitle", {
+                      days: BRAND_TRIAL_DAYS,
+                    })}
                   </span>
                 </h1>
 
                 <p className="mx-auto mt-6 max-w-2xl text-lg leading-7 text-[#6E7E9F] sm:text-xl">
-                  Get full access to all features.{" "}
+                  {t("brandPricing.hero.subtitleBefore")}{" "}
                   <span className="font-semibold text-[#17315E]">
-                    No charge until your trial ends.
+                    {t("brandPricing.hero.subtitleStrong")}
                   </span>
                   <br />
-                  Cancel anytime before the {BRAND_TRIAL_DAYS} days are up.
+                  {t("brandPricing.hero.subtitleAfter", {
+                    days: BRAND_TRIAL_DAYS,
+                  })}
                 </p>
 
                 <div className="mt-8 inline-flex items-center gap-4 rounded-2xl border-2 border-[#B8E6E4] bg-white px-6 py-4 shadow-lg shadow-[#18B1AE]/10">
@@ -851,11 +888,12 @@ export default function BrandSubscribe() {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-semibold text-[#17315E]">
-                      Your card won't be charged today
+                      {t("brandPricing.hero.noChargeTitle")}
                     </p>
                     <p className="text-xs text-[#6E7E9F]">
-                      We'll charge it automatically after {BRAND_TRIAL_DAYS}{" "}
-                      days • Cancel anytime
+                      {t("brandPricing.hero.noChargeSubtitle", {
+                        days: BRAND_TRIAL_DAYS,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -863,19 +901,20 @@ export default function BrandSubscribe() {
             ) : (
               <>
                 <Badge className="rounded-full border border-[#9FDCD7] bg-[#F1FBF9] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.28em] text-[#18A7A5] hover:bg-[#F1FBF9]">
-                  Brand plans
+                  {t("brandPricing.hero.brandPlans")}
                 </Badge>
 
                 <h1 className="mt-8 font-serif text-4xl font-bold tracking-tight text-[#17315E] sm:text-5xl lg:text-[64px] lg:leading-[1.02]">
-                  <span className="block">The right plan for</span>
+                  <span className="block">
+                    {t("brandPricing.hero.publicTitleLine1")}
+                  </span>
                   <span className="mt-1 block italic text-[#18B1AE]">
-                    every stage of growth
+                    {t("brandPricing.hero.publicTitleLine2")}
                   </span>
                 </h1>
 
                 <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#6E7E9F] sm:text-xl">
-                  From your first campaign to a full-stack creator ecosystem.
-                  Likelee scales with you.
+                  {t("brandPricing.hero.publicSubtitle")}
                 </p>
               </>
             )}
@@ -896,36 +935,38 @@ export default function BrandSubscribe() {
                       )}
                       onClick={() => setBillingCycle(cycle)}
                     >
-                      {cycle === "monthly" ? "Monthly" : "Annual"}
+                      {cycle === "monthly"
+                        ? t("brandPricing.billing.monthly")
+                        : t("brandPricing.billing.annual")}
                     </button>
                   );
                 })}
                 <span className="rounded-full bg-[#E9FFF2] px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[#2EB875]">
-                  Save 20%
+                  {t("brandPricing.billing.save20")}
                 </span>
               </div>
             </div>
 
             <p className="mx-auto mt-4 max-w-2xl text-sm text-[#7D8CA9]">
               {billingCycle === "annual"
-                ? "Annual base plans are billed upfront and save 20%. AI Studio is a separate one-time add-on."
-                : "Choose a base plan first, then unlock AI Studio with a one-time add-on."}
+                ? t("brandPricing.hero.annualBasePlanNote")
+                : t("brandPricing.hero.basePlanNote")}
             </p>
 
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               {!authenticated && (
                 <Badge className="border border-[#D7E6ED] bg-white text-[#4B638E] hover:bg-white">
-                  Pricing is public. Brand signup happens after plan selection.
+                  {t("brandPricing.badges.publicPricing")}
                 </Badge>
               )}
               {success && isBrandAccount && (
                 <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
-                  Billing updated
+                  {t("brandPricing.badges.billingUpdated")}
                 </Badge>
               )}
               {canceled && (
                 <Badge className="border border-[#D7E6ED] bg-white text-[#4B638E] hover:bg-white">
-                  Checkout canceled
+                  {t("brandPricing.badges.checkoutCanceled")}
                 </Badge>
               )}
               {success && nextPath && hasStudioAddon && (
@@ -934,7 +975,7 @@ export default function BrandSubscribe() {
                   className="rounded-xl border-[#D7E6ED] bg-white"
                   onClick={() => navigate(nextPath)}
                 >
-                  Continue
+                  {t("brandPricing.actions.continue")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
@@ -945,8 +986,7 @@ export default function BrandSubscribe() {
         {authenticated && !isBrandAccount && (
           <Alert className="mx-auto mt-8 max-w-4xl border border-amber-200 bg-amber-50 text-amber-900">
             <AlertDescription>
-              This page is public, but checkout only works for signed-in brand
-              accounts.
+              {t("brandPricing.errors.checkoutSignedInBrandsOnly")}
             </AlertDescription>
           </Alert>
         )}
@@ -956,7 +996,7 @@ export default function BrandSubscribe() {
             const dark = plan.tier === "pro";
             const isCurrentPlan = hasBaseSubscription && planTier === plan.tier;
             const isLoading = checkingOutPlan === plan.tier;
-            const priceDisplay = getPlanPriceDisplay(plan, billingCycle);
+            const priceDisplay = getPlanPriceDisplay(plan, billingCycle, t);
 
             return (
               <Card
@@ -980,7 +1020,7 @@ export default function BrandSubscribe() {
                     </Badge>
                     {isCurrentPlan && (
                       <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
-                        Current
+                        {t("brandPricing.badges.current")}
                       </Badge>
                     )}
                   </div>
@@ -989,7 +1029,7 @@ export default function BrandSubscribe() {
                     <h2
                       className={`font-serif text-4xl font-bold ${plan.headingClassName}`}
                     >
-                      {formatBrandPlanLabel(plan.tier)}
+                      {t(`brandPricing.planNames.${plan.tier}`)}
                     </h2>
                     <p
                       className={`mt-3 max-w-[16rem] text-sm ${plan.bodyClassName}`}
@@ -1016,7 +1056,9 @@ export default function BrandSubscribe() {
                       </div>
                       {plan.tier !== "enterprise" && !hasBaseSubscription && (
                         <Badge className="bg-gradient-to-r from-[#18B1AE] to-[#14A3A0] text-white border-0 text-xs font-bold px-2 py-0.5 animate-pulse">
-                          {BRAND_TRIAL_DAYS} DAYS FREE
+                          {t("brandPricing.badges.daysFree", {
+                            days: BRAND_TRIAL_DAYS,
+                          })}
                         </Badge>
                       )}
                     </div>
@@ -1035,7 +1077,7 @@ export default function BrandSubscribe() {
                     {plan.tier !== "enterprise" && !hasBaseSubscription && (
                       <p className="mt-3 text-xs text-[#18B1AE] font-semibold flex items-center gap-1">
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#18B1AE] animate-ping"></span>
-                        Card required • Auto-renews after trial
+                        {t("brandPricing.billing.cardRequired")}
                       </p>
                     )}
                   </div>
@@ -1064,21 +1106,25 @@ export default function BrandSubscribe() {
                             {isLoading ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin" />
-                                Redirecting...
+                                {t("brandPricing.actions.redirecting")}
                               </>
                             ) : isCurrentPlan ? (
-                              "Current plan"
+                              t("brandPricing.actions.currentPlan")
                             ) : hasBaseSubscription ? (
                               <>
-                                <span>Upgrade to</span>
+                                <span>
+                                  {t("brandPricing.actions.upgradeTo")}
+                                </span>
                                 <span className="font-bold">
-                                  {formatBrandPlanLabel(plan.tier)}
+                                  {t(`brandPricing.planNames.${plan.tier}`)}
                                 </span>
                               </>
                             ) : (
                               <>
                                 <span className="font-bold">
-                                  Start {BRAND_TRIAL_DAYS}-Day Free Trial
+                                  {t("brandPricing.actions.startTrial", {
+                                    days: BRAND_TRIAL_DAYS,
+                                  })}
                                 </span>
                                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                               </>
@@ -1087,12 +1133,12 @@ export default function BrandSubscribe() {
                         </Button>
                         {!hasBaseSubscription && !isCurrentPlan && (
                           <p className="text-center text-xs text-[#6E7E9F]">
-                            or{" "}
+                            {t("brandPricing.actions.or")}{" "}
                             <button
                               onClick={() => navigate("/SalesInquiry")}
                               className="text-[#18B1AE] font-semibold hover:underline underline-offset-2"
                             >
-                              contact sales for immediate activation
+                              {t("brandPricing.actions.contactSalesActivation")}
                             </button>
                           </p>
                         )}
@@ -1141,27 +1187,41 @@ export default function BrandSubscribe() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#8797B4]">
-                  Current subscription
+                  {t("brandPricing.subscription.currentSubscription")}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <span className="font-serif text-3xl font-bold text-[#17315E]">
                     {planLabel}
                   </span>
                   <Badge className="border border-[#D7E6ED] bg-[#F6F8FB] text-[#4B638E] hover:bg-[#F6F8FB]">
-                    Base: {baseStatusLabel}
+                    {t("brandPricing.subscription.base", {
+                      status: baseStatusLabel,
+                    })}
                   </Badge>
                   <Badge className="border border-[#D7E6ED] bg-[#F6F8FB] text-[#4B638E] hover:bg-[#F6F8FB]">
-                    AI Studio: {studioStatusLabel}
+                    {t("brandPricing.subscription.aiStudio", {
+                      status: studioStatusLabel,
+                    })}
                   </Badge>
                 </div>
               </div>
               <div className="text-sm text-[#6E7E9F]">
-                {trialEndsAt && <p>Free trial ends on {trialEndsAt}.</p>}
+                {trialEndsAt && (
+                  <p>
+                    {t("brandPricing.subscription.trialEndsOn", {
+                      date: trialEndsAt,
+                    })}
+                  </p>
+                )}
                 {!trialEndsAt && currentPeriodEnd && (
-                  <p>Base plan renews on {currentPeriodEnd}.</p>
+                  <p>
+                    {t("brandPricing.subscription.baseRenewsOn", {
+                      date: currentPeriodEnd,
+                    })}
+                  </p>
                 )}
                 {hasStudioAddon && planTier !== "enterprise" && (
-                  <p>AI Studio access is active (lifetime).</p>
+                  <p>{t("brandPricing.subscription.studioLifetimeActive")}</p>
                 )}
               </div>
             </div>
@@ -1171,8 +1231,7 @@ export default function BrandSubscribe() {
         {hasBaseSubscription && (
           <Alert className="mx-auto mt-6 max-w-5xl border border-amber-200 bg-amber-50 text-amber-900">
             <AlertDescription>
-              Your base plan is already active. AI Studio remains a separate
-              line item, but base-plan changes are not self-serve yet.
+              {t("brandPricing.subscription.baseAlreadyActiveNotice")}
             </AlertDescription>
           </Alert>
         )}
@@ -1193,35 +1252,36 @@ export default function BrandSubscribe() {
                   </span>
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.26em] text-[#F2994A]">
-                      AI Studio add-on
+                      {t("brandPricing.addon.eyebrow")}
                     </p>
                     <h3 className="font-serif text-3xl font-bold text-[#17315E]">
-                      Separate from the base plan
+                      {t("brandPricing.addon.title")}
                     </h3>
                   </div>
                 </div>
                 <p className="mt-4 text-sm text-[#6E7E9F] sm:text-base">
-                  Unlock AI Studio with a single one-time payment of{" "}
+                  {t("brandPricing.addon.descriptionPrefix")}{" "}
                   <span className="font-semibold text-[#17315E]">
                     ${BRAND_STUDIO_ADDON_PRICE}
                   </span>
-                  . Your brand gets permanent access to{" "}
+                  {t("brandPricing.addon.descriptionMiddle")}{" "}
                   <span className="font-semibold text-[#17315E]">/studio</span>{" "}
-                  and{" "}
+                  {t("brandPricing.addon.descriptionAnd")}{" "}
                   <span className="font-semibold text-[#17315E]">
-                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial
-                    credits
+                    {BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial{" "}
+                    {t("brandPricing.addon.credits")}
                   </span>{" "}
-                  credited to your Studio wallet. Enterprise includes Studio
-                  access automatically.
+                  {t("brandPricing.addon.descriptionSuffix")}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {[
-                    `${BRAND_STUDIO_ADDON_CREDITS.toLocaleString()} initial Studio credits`,
-                    "Studio Pro wallet plan",
-                    "One-time payment",
-                    "Permanent /studio access",
-                    "Included with Enterprise",
+                    t("brandPricing.addon.badges.initialCredits", {
+                      credits: BRAND_STUDIO_ADDON_CREDITS.toLocaleString(),
+                    }),
+                    t("brandPricing.addon.badges.walletPlan"),
+                    t("brandPricing.addon.badges.oneTimePayment"),
+                    t("brandPricing.addon.badges.permanentAccess"),
+                    t("brandPricing.addon.badges.enterpriseIncluded"),
                   ].map((item) => (
                     <Badge
                       key={item}
@@ -1239,7 +1299,9 @@ export default function BrandSubscribe() {
                     <div className="font-serif text-4xl font-bold text-[#17315E]">
                       ${BRAND_STUDIO_ADDON_PRICE}
                     </div>
-                    <p className="mt-1 text-sm text-[#8D7459]">one-time</p>
+                    <p className="mt-1 text-sm text-[#8D7459]">
+                      {t("brandPricing.billing.oneTime")}
+                    </p>
                   </div>
                   <Badge className="border border-[#F4DCC5] bg-white text-[#9A6A37] hover:bg-white">
                     {studioStatusLabel}
@@ -1254,16 +1316,16 @@ export default function BrandSubscribe() {
                   {checkingOutAddon ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Redirecting
+                      {t("brandPricing.actions.redirecting")}
                     </>
                   ) : authenticated &&
                     isBrandAccount &&
                     (hasStudioAddon || planTier === "enterprise") ? (
-                    "Open Studio"
+                    t("brandPricing.actions.openStudio")
                   ) : authenticated && isBrandAccount ? (
-                    "Activate Studio"
+                    t("brandPricing.actions.activateStudio")
                   ) : (
-                    "Get Studio Add-On"
+                    t("brandPricing.actions.getStudioAddon")
                   )}
                 </Button>
               </div>
@@ -1274,10 +1336,10 @@ export default function BrandSubscribe() {
         <section className="mt-14">
           <div className="max-w-2xl">
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#17315E]">
-              Full comparison
+              {t("brandPricing.comparison.title")}
             </h2>
             <p className="mt-3 sm:mt-4 text-base text-[#7D8CA9]">
-              Everything side by side.
+              {t("brandPricing.comparison.subtitle")}
             </p>
           </div>
 
@@ -1286,16 +1348,16 @@ export default function BrandSubscribe() {
               <thead>
                 <tr className="text-sm font-semibold">
                   <th className="border-b border-[#D8E4F2] bg-[#F3F7FC] px-6 py-7 text-left text-[#6F83A9]">
-                    Feature
+                    {t("brandPricing.comparison.feature")}
                   </th>
                   <th className="border-b border-[#D8E4F2] bg-[#F3F7FC] px-6 py-7 text-center text-[#17315E]">
-                    Basic
+                    {t("brandPricing.planNames.basic")}
                   </th>
                   <th className="border-b border-[#D8E4F2] bg-[#17315E] px-6 py-7 text-center text-white">
-                    Pro
+                    {t("brandPricing.planNames.pro")}
                   </th>
                   <th className="border-b border-[#D8E4F2] bg-[#F3F7FC] px-6 py-7 text-center text-[#17315E]">
-                    Enterprise
+                    {t("brandPricing.planNames.enterprise")}
                   </th>
                 </tr>
               </thead>
@@ -1336,7 +1398,7 @@ export default function BrandSubscribe() {
         <section className="mt-12">
           <div className="rounded-[30px] border border-[#D7E6ED] bg-[linear-gradient(180deg,#F6F9FF_0%,#FFFFFF_32%)] px-4 py-6 shadow-[0_18px_45px_rgba(7,28,58,0.08)] sm:px-8 sm:py-10">
             <h2 className="text-center font-serif text-3xl sm:text-4xl font-bold text-[#17315E]">
-              Common questions
+              {t("brandPricing.faq.title")}
             </h2>
 
             <div className="mt-10 space-y-0">

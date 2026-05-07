@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Download, FileDown, X } from "lucide-react";
 import { generateBriefPDF } from "@/services/BriefPDFService";
@@ -12,7 +13,11 @@ export function CampaignBriefView({
   brandName?: string;
   campaignName?: string;
 }) {
-  const briefValue = (key: string, fallback = "Not specified") => {
+  const { t } = useTranslation("brand");
+
+  const notSpecified = t("campaigns.myOffers.notSpecified");
+
+  const briefValue = (key: string, fallback = notSpecified) => {
     const value = brief?.[key];
     if (value === null || value === undefined) return fallback;
     const text = String(value).trim();
@@ -87,7 +92,7 @@ export function CampaignBriefView({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-            Voice
+            {t("campaigns.campaignBriefBuilder.fields.voice")}
           </p>
           <p className="text-sm font-semibold text-slate-900">
             {briefValue("voice")}
@@ -95,7 +100,7 @@ export function CampaignBriefView({
         </div>
         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-            Tone
+            {t("campaigns.campaignBriefBuilder.fields.tone")}
           </p>
           <p className="text-sm font-semibold text-slate-900">
             {briefValue("tone")}
@@ -103,7 +108,7 @@ export function CampaignBriefView({
         </div>
         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-            Personality
+            {t("campaigns.campaignBriefBuilder.fields.personality")}
           </p>
           <p className="text-sm font-semibold text-slate-900">
             {briefValue("personality")}
@@ -111,7 +116,7 @@ export function CampaignBriefView({
         </div>
         <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-            Duration
+            {t("campaigns.campaignBriefBuilder.fields.campaignDuration")}
           </p>
           <p className="text-sm font-semibold text-slate-900">
             {briefValue("overview_campaign_duration")}
@@ -125,12 +130,12 @@ export function CampaignBriefView({
           <div className="p-2 sm:p-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-blue-500 rounded-full" />
-              General Dialogue &amp; Voice Direction
+              {t("campaigns.campaignBriefBuilder.sections.generalDialogue")}
             </h2>
 
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                Key Messages
+                {t("campaigns.campaignBriefBuilder.fields.keyMessages")}
               </h3>
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 {briefLines("key_messages").length > 0 ? (
@@ -142,19 +147,21 @@ export function CampaignBriefView({
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-slate-400 italic">Not specified</p>
+                  <p className="text-sm text-slate-400 italic">
+                    {notSpecified}
+                  </p>
                 )}
               </div>
             </div>
 
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                Script Guidelines
+                {t("campaigns.campaignBriefBuilder.fields.scriptGuidelines")}
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Opening (0-5s)
+                    {t("campaigns.campaignBriefBuilder.fields.opening")}
                   </p>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     {briefValue("script_opening")}
@@ -162,7 +169,7 @@ export function CampaignBriefView({
                 </div>
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Middle (5-20s)
+                    {t("campaigns.campaignBriefBuilder.fields.middle")}
                   </p>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     {briefValue("script_middle")}
@@ -170,7 +177,7 @@ export function CampaignBriefView({
                 </div>
                 <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Closing (20-30s)
+                    {t("campaigns.campaignBriefBuilder.fields.closing")}
                   </p>
                   <p className="text-xs text-slate-700 leading-relaxed">
                     {briefValue("script_closing")}
@@ -182,7 +189,7 @@ export function CampaignBriefView({
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl">
                 <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">
-                  ✓ DO:
+                  ✓ {t("campaigns.campaignBriefBuilder.fields.do")}
                 </p>
                 {briefLines("dos").length > 0 ? (
                   <ul className="list-disc pl-5 space-y-1 text-emerald-900">
@@ -194,13 +201,13 @@ export function CampaignBriefView({
                   </ul>
                 ) : (
                   <p className="text-sm text-emerald-600 italic">
-                    Not specified
+                    {notSpecified}
                   </p>
                 )}
               </div>
               <div className="p-4 bg-red-50/50 border border-red-100 rounded-xl">
                 <p className="text-xs font-bold text-red-700 uppercase tracking-wider mb-2">
-                  ✗ DON&apos;T:
+                  ✗ {t("campaigns.campaignBriefBuilder.fields.dont")}
                 </p>
                 {briefLines("donts").length > 0 ? (
                   <ul className="list-disc pl-5 space-y-1 text-red-900">
@@ -211,7 +218,7 @@ export function CampaignBriefView({
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-red-600 italic">Not specified</p>
+                  <p className="text-sm text-red-600 italic">{notSpecified}</p>
                 )}
               </div>
             </div>
@@ -220,13 +227,13 @@ export function CampaignBriefView({
           <div className="p-2 sm:p-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-              Visual Requirements &amp; Style Guide
+              {t("campaigns.campaignBriefBuilder.sections.visualGuide")}
             </h2>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 <p className="text-xs font-bold text-slate-500 mb-1">
-                  Instagram Reels
+                  {t("campaigns.campaignBriefBuilder.fields.deliverables")}
                 </p>
                 <p className="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed">
                   {briefValue("deliverables_reels")}
@@ -234,7 +241,7 @@ export function CampaignBriefView({
               </div>
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 <p className="text-xs font-bold text-slate-500 mb-1">
-                  Hero Image
+                  {t("campaigns.campaignBriefBuilder.fields.heroImage")}
                 </p>
                 <p className="text-sm text-slate-900 whitespace-pre-wrap leading-relaxed">
                   {briefValue("deliverables_hero_image")}
@@ -244,12 +251,12 @@ export function CampaignBriefView({
 
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                Style &amp; Aesthetic
+                {t("campaigns.campaignBriefBuilder.fields.styleAesthetic")}
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Palette
+                    {t("campaigns.campaignBriefBuilder.fields.palette")}
                   </p>
                   <p className="text-xs font-medium text-slate-700 truncate">
                     {briefValue("visual_color_palette")}
@@ -257,7 +264,7 @@ export function CampaignBriefView({
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Setting
+                    {t("campaigns.campaignBriefBuilder.fields.setting")}
                   </p>
                   <p className="text-xs font-medium text-slate-700 truncate">
                     {briefValue("visual_setting")}
@@ -265,7 +272,7 @@ export function CampaignBriefView({
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Framing
+                    {t("campaigns.campaignBriefBuilder.fields.framing")}
                   </p>
                   <p className="text-xs font-medium text-slate-700 truncate">
                     {briefValue("visual_framing")}
@@ -273,7 +280,7 @@ export function CampaignBriefView({
                 </div>
                 <div className="p-3 bg-slate-50 border border-slate-50 rounded-lg text-center">
                   <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                    Editing
+                    {t("campaigns.campaignBriefBuilder.fields.editing")}
                   </p>
                   <p className="text-xs font-medium text-slate-700 truncate">
                     {briefValue("visual_editing")}
@@ -284,7 +291,7 @@ export function CampaignBriefView({
 
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                Reference Images
+                {t("campaigns.campaignBriefBuilder.fields.referenceImages")}
               </h3>
               {referenceImages.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -311,14 +318,16 @@ export function CampaignBriefView({
                 </div>
               ) : (
                 <div className="p-6 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl text-xs text-slate-400">
-                  No reference images provided.
+                  {t("campaigns.campaignBriefBuilder.noReferenceImages", {
+                    defaultValue: "No reference images provided.",
+                  })}
                 </div>
               )}
             </div>
 
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">
-                Brand Assets (PDFs)
+                {t("campaigns.campaignBriefBuilder.fields.brandAssets")}
               </h3>
               {brandAssets.length > 0 ? (
                 <div className="space-y-1.5 mt-2">
@@ -345,7 +354,9 @@ export function CampaignBriefView({
                 </div>
               ) : (
                 <p className="text-[11px] text-slate-400 italic">
-                  No assets provided.
+                  {t("campaigns.campaignBriefBuilder.noAssetsProvided", {
+                    defaultValue: "No assets provided.",
+                  })}
                 </p>
               )}
             </div>
@@ -357,14 +368,14 @@ export function CampaignBriefView({
           <div className="p-2 sm:p-4 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <span className="w-1.5 h-6 bg-amber-500 rounded-full" />
-              Scope & Details
+              {t("campaigns.campaignBriefBuilder.sections.scopeDetails")}
             </h2>
 
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                    Objective
+                    {t("campaigns.campaignBriefBuilder.fields.objective")}
                   </p>
                   <p className="text-xs font-medium text-slate-900">
                     {briefValue("overview_objective")}
@@ -372,7 +383,7 @@ export function CampaignBriefView({
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                    Target Audience
+                    {t("campaigns.campaignBriefBuilder.fields.targetAudience")}
                   </p>
                   <p className="text-xs font-medium text-slate-900">
                     {briefValue("overview_target_audience")}
@@ -381,7 +392,7 @@ export function CampaignBriefView({
                 <div className="flex items-center justify-between gap-4 pt-1">
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                      Budget
+                      {t("campaigns.campaignDetails.budget")}
                     </p>
                     <p className="text-xs font-bold text-slate-900">
                       {briefValue("budget_total")}
@@ -389,7 +400,7 @@ export function CampaignBriefView({
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
-                      Launch Date
+                      {t("campaigns.campaignBriefBuilder.fields.launchDate")}
                     </p>
                     <p className="text-xs font-bold text-slate-900">
                       {briefValue("overview_launch_date")}
@@ -400,23 +411,32 @@ export function CampaignBriefView({
 
               <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl space-y-2">
                 <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1">
-                  Revisions
+                  {t("campaigns.campaignBriefBuilder.fields.revisionPolicy")}
                 </p>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-amber-700">Included</span>
+                  <span className="text-amber-700">
+                    {t(
+                      "campaigns.campaignBriefBuilder.fields.includedRevisions",
+                    )}
+                  </span>
                   <span className="font-bold text-amber-900">
                     {briefValue("revision_included")}
                   </span>
                 </div>
                 <div className="text-[10px] text-amber-600 leading-tight">
-                  <span className="font-semibold italic">Turnaround:</span>{" "}
+                  <span className="font-semibold italic">
+                    {t(
+                      "campaigns.campaignBriefBuilder.fields.revisionTurnaround",
+                    )}
+                    :
+                  </span>{" "}
                   {briefValue("revision_turnaround")}
                 </div>
               </div>
 
               <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                  Approval Process
+                  {t("campaigns.campaignBriefBuilder.fields.approvalProcess")}
                 </p>
                 {briefLines("approval_process").length > 0 ? (
                   <ol className="list-decimal pl-4 space-y-1.5">
@@ -431,7 +451,7 @@ export function CampaignBriefView({
                   </ol>
                 ) : (
                   <p className="text-[11px] text-slate-400 italic">
-                    Not specified
+                    {notSpecified}
                   </p>
                 )}
               </div>
@@ -443,7 +463,7 @@ export function CampaignBriefView({
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95"
               >
                 <FileDown className="w-4 h-4" />
-                Download Brief PDF
+                {t("campaigns.campaignDetails.downloadBriefPdf")}
               </button>
             </div>
           </div>
@@ -460,8 +480,11 @@ export function CampaignBriefView({
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="text-sm font-bold text-slate-900">
                 {lightboxIndex !== null
-                  ? `Reference ${lightboxIndex + 1} of ${referenceImageUrls.length}`
-                  : "Reference"}
+                  ? t("campaigns.campaignBriefBuilder.referenceCount", {
+                      current: lightboxIndex + 1,
+                      total: referenceImageUrls.length,
+                    })
+                  : t("campaigns.campaignBriefBuilder.reference")}
               </div>
               <button
                 type="button"
@@ -474,7 +497,7 @@ export function CampaignBriefView({
             <div className="relative bg-slate-50 flex items-center justify-center">
               <img
                 src={lightboxUrl}
-                alt="Reference"
+                alt={t("campaigns.campaignBriefBuilder.reference")}
                 className="max-w-full max-h-[75vh] object-contain"
               />
               {referenceImageUrls.length > 1 && (

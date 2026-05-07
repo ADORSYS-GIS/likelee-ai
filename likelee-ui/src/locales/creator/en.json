@@ -261,7 +261,13 @@
         "enableLicensing": "Enable Licensing",
         "enableLicensingDesc": "Accept licensing requests from brands",
         "emailNotifications": "Email Notifications",
-        "emailNotificationsDesc": "Receive updates about campaigns and approvals"
+        "emailNotificationsDesc": "Receive updates about campaigns and approvals",
+        "syncing": "Syncing...",
+        "connectAndSync": "Connect & Sync",
+        "followers": "Followers: {{count}}",
+        "marketplaceVisibility": "Marketplace Visibility",
+        "marketplaceVisibleToast": "Profile is now visible in the marketplace.",
+        "marketplaceHiddenToast": "Profile is now hidden from the marketplace."
       },
       "rules": {
         "title": "My Rules",
@@ -285,7 +291,12 @@
         "acceptNegotiations": "Accept Negotiations",
         "acceptNegotiationsDesc": "Allow brands to propose counter-offers to your base rate",
         "negotiationEnabled": "Negotiation enabled!",
-        "negotiationDisabled": "Negotiation disabled!"
+        "negotiationDisabled": "Negotiation disabled!",
+        "plans": {
+          "free": "Free",
+          "basic": "Basic",
+          "pro": "Pro"
+        }
       },
       "billing": {
         "title": "Billing",
@@ -915,6 +926,25 @@
         "instagramReel": "Instagram Reel",
         "webBanner": "Web Banner",
         "tvCommercial": "TV Commercial"
+      },
+      "comingSoon": "Coming Soon",
+      "tracking": {
+        "title": "Content Tracking",
+        "description": "See every piece of content brands create using your likeness — views, engagement, platforms, and live status — all in one place.",
+        "features": {
+          "feed": {
+            "label": "Brand Content Feed",
+            "desc": "All authorized content in one view"
+          },
+          "metrics": {
+            "label": "Engagement Metrics",
+            "desc": "Views, reach & engagement rates"
+          },
+          "live": {
+            "label": "Live Detection",
+            "desc": "Know when content goes live"
+          }
+        }
       }
     },
     "voiceScripts": {
@@ -1256,7 +1286,9 @@
       "noW9OnFile": "No W-9 on file",
       "download1099": "Download 1099 ({{year}})",
       "cashOutEarnings": "Cash Out Earnings",
-      "requesting": "Requesting..."
+      "requesting": "Requesting...",
+      "paypalDescription": "Receive payments directly to your PayPal account.",
+      "wiseDescription": "International transfers with low fees. Great for cross-border payments."
     }
   },
   "talentPortal": {

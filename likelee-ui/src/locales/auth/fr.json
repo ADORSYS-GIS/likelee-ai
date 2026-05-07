@@ -583,7 +583,8 @@
       "subtitle": "Ajoutez une couche de sécurité supplémentaire à votre compte",
       "enabled": "L'A2F est actuellement activée",
       "addAnother": "Ajouter une autre méthode",
-      "back": "Retour"
+      "back": "Retour",
+      "remove": "Supprimer"
     },
     "enroll": {
       "title": "Ajouter une méthode d'authentification",
@@ -629,7 +630,7 @@
       "cleanupFailed": "Failed to remove incomplete setup: {{message}}",
       "unknownError": "Unknown error",
       "failedToDisable": "Failed to disable 2FA",
-      "failedToRemove": "Failed to remove"
+      "failedToRemove": "Échec de la suppression"
     }
   }
 }

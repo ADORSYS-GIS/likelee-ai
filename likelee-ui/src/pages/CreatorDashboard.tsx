@@ -4375,26 +4375,36 @@ export default function CreatorDashboard() {
           </div>
           <div className="inline-flex items-center gap-2 bg-[#32C8D1]/10 text-[#32C8D1] text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#32C8D1] animate-pulse" />
-            Coming Soon
+            {t("creatorDashboard.content.comingSoon")}
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-3">
-            Content Tracking
+            {t("creatorDashboard.content.tracking.title")}
           </h3>
           <p className="text-gray-500 max-w-md leading-relaxed mb-8">
-            See every piece of content brands create using your likeness —
-            views, engagement, platforms, and live status — all in one place.
+            {t("creatorDashboard.content.tracking.description")}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-lg">
             {[
               {
-                label: "Brand Content Feed",
-                desc: "All authorized content in one view",
+                label: t(
+                  "creatorDashboard.content.tracking.features.feed.label",
+                ),
+                desc: t("creatorDashboard.content.tracking.features.feed.desc"),
               },
               {
-                label: "Engagement Metrics",
-                desc: "Views, reach & engagement rates",
+                label: t(
+                  "creatorDashboard.content.tracking.features.metrics.label",
+                ),
+                desc: t(
+                  "creatorDashboard.content.tracking.features.metrics.desc",
+                ),
               },
-              { label: "Live Detection", desc: "Know when content goes live" },
+              {
+                label: t(
+                  "creatorDashboard.content.tracking.features.live.label",
+                ),
+                desc: t("creatorDashboard.content.tracking.features.live.desc"),
+              },
             ].map((feature) => (
               <div
                 key={feature.label}
@@ -11814,19 +11824,23 @@ export default function CreatorDashboard() {
                     {instagramSyncing ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Syncing...
+                        {t("creatorDashboard.settingsView.profile.syncing")}
                       </>
                     ) : (
                       <>
                         <Instagram className="w-4 h-4 mr-2" />
-                        Connect & Sync
+                        {t(
+                          "creatorDashboard.settingsView.profile.connectAndSync",
+                        )}
                       </>
                     )}
                   </Button>
                 </div>
                 {creator.instagram_followers > 0 && (
                   <p className="text-sm text-gray-500 mt-2">
-                    Followers: {creator.instagram_followers.toLocaleString()}
+                    {t("creatorDashboard.settingsView.profile.followers", {
+                      count: creator.instagram_followers.toLocaleString(),
+                    })}
                   </p>
                 )}
               </div>
@@ -11892,7 +11906,9 @@ export default function CreatorDashboard() {
               <div className="flex items-center justify-between py-4">
                 <div>
                   <Label className="text-base font-semibold text-gray-900 block mb-1">
-                    Marketplace Visibility
+                    {t(
+                      "creatorDashboard.settingsView.profile.marketplaceVisibility",
+                    )}
                   </Label>
                   <p className="text-sm text-gray-600">
                     {t(
@@ -11906,8 +11922,12 @@ export default function CreatorDashboard() {
                     setCreator({ ...creator, is_public_brands: checked });
                     await handleSaveRules(
                       checked
-                        ? "Profile is now visible in the marketplace."
-                        : "Profile is now hidden from the marketplace.",
+                        ? t(
+                            "creatorDashboard.settingsView.profile.marketplaceVisibleToast",
+                          )
+                        : t(
+                            "creatorDashboard.settingsView.profile.marketplaceHiddenToast",
+                          ),
                       { is_public_brands: checked },
                     );
                   }}
@@ -11934,8 +11954,16 @@ export default function CreatorDashboard() {
             <div className="p-6 pt-2 space-y-8">
               <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
                 {effectivePlanTier === "pro"
-                  ? "Pro creators have unlimited category selection."
-                  : `You are on the ${effectivePlanTier === "basic" ? "Basic" : "Free"} creator plan. You can select up to ${creatorCategoryLimit} combined content categories and industries.`}
+                  ? t(
+                      "creatorDashboard.settingsView.rules.proCreatorsUnlimitedSelection",
+                    )
+                  : t("creatorDashboard.settingsView.rules.planLimitMessage", {
+                      plan:
+                        effectivePlanTier === "basic"
+                          ? t("creatorDashboard.settingsView.rules.plans.basic")
+                          : t("creatorDashboard.settingsView.rules.plans.free"),
+                      limit: creatorCategoryLimit,
+                    })}
               </div>
               {/* Content I'm Open To */}
               <div>
@@ -14595,7 +14623,7 @@ export default function CreatorDashboard() {
               <div className="p-4 border-2 rounded-lg border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed relative">
                 <div className="absolute top-2 right-2">
                   <Badge className="bg-amber-100 text-amber-700 border-amber-300">
-                    Coming Soon
+                    {t("creatorDashboard.content.comingSoon")}
                   </Badge>
                 </div>
                 <div className="flex items-start gap-3">
@@ -14610,7 +14638,7 @@ export default function CreatorDashboard() {
                       />
                     </div>
                     <p className="text-sm text-gray-400 mt-1">
-                      Receive payments directly to your PayPal account.
+                      {t("creatorDashboard.payouts.paypalDescription")}
                     </p>
                   </div>
                 </div>
@@ -14620,7 +14648,7 @@ export default function CreatorDashboard() {
               <div className="p-4 border-2 rounded-lg border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed relative">
                 <div className="absolute top-2 right-2">
                   <Badge className="bg-amber-100 text-amber-700 border-amber-300">
-                    Coming Soon
+                    {t("creatorDashboard.content.comingSoon")}
                   </Badge>
                 </div>
                 <div className="flex items-start gap-3">
@@ -14637,8 +14665,7 @@ export default function CreatorDashboard() {
                       />
                     </div>
                     <p className="text-sm text-gray-400 mt-1">
-                      International transfers with low fees. Great for
-                      cross-border payments.
+                      {t("creatorDashboard.payouts.wiseDescription")}
                     </p>
                   </div>
                 </div>
