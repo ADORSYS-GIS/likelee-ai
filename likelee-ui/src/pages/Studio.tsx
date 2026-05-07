@@ -114,27 +114,27 @@ const features = [
 const exampleProjects = [
   {
     type: "video",
+    captionKey: "cinematicAiVideo",
     thumbnail:
       "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",
-    caption: "Cinematic AI video",
   },
   {
     type: "image",
+    captionKey: "aiPortraitGeneration",
     thumbnail:
       "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400",
-    caption: "AI portrait generation",
   },
   {
     type: "video",
+    captionKey: "aiShortFilm",
     thumbnail:
       "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400",
-    caption: "AI short film",
   },
   {
     type: "image",
+    captionKey: "digitalArtStyle",
     thumbnail:
       "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400",
-    caption: "Digital art style",
   },
 ];
 
@@ -1375,7 +1375,7 @@ export default function Studio() {
             <Card className="p-8 bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-white/20 transition-all rounded-lg">
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-white mb-2 font-display">
-                  Lite Plan
+                  {t("studio.landing.pricing.litePlan.title")}
                 </h3>
                 <div className="flex items-baseline mb-2">
                   <span className="text-5xl font-bold text-white font-display">
@@ -1385,63 +1385,45 @@ export default function Studio() {
                     {t("studio.landing.pricing.perMonth")}
                   </span>
                 </div>
-                <p className="text-gray-400">60 credits</p>
+                <p className="text-gray-400">
+                  {t("studio.landing.pricing.litePlan.credits")}
+                </p>
               </div>
 
               <p className="text-gray-300 mb-6">
-                For individuals who want to explore Likelee Studio.
+                {t("studio.landing.pricing.litePlan.description")}
               </p>
 
               <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>12 videos / month</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>60 images / month</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>2 parallel tasks</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>All-in-one multi-model support</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Text to video</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Image to video</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Text/Image/Video to video</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Consistent character video</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>AI animation generator</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>Text/Image/Chat to image</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-300">
-                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span>300+ templates & effects</span>
-                </li>
+                {features.map((feature) => (
+                  <li
+                    key={`lite-${feature.nameKey}`}
+                    className="flex items-center gap-3 text-gray-300"
+                  >
+                    <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
+                    <span>
+                      {feature.nameKey === "videosPerMonth"
+                        ? t(
+                            "studio.landing.pricing.litePlan.features.videosPerMonth",
+                          )
+                        : feature.nameKey === "imagesPerMonth"
+                          ? t(
+                              "studio.landing.pricing.litePlan.features.imagesPerMonth",
+                            )
+                          : feature.nameKey === "parallelTasks"
+                            ? t(
+                                "studio.landing.pricing.litePlan.features.parallelTasks",
+                              )
+                            : t(
+                                `studio.landing.features.items.${feature.nameKey}`,
+                              )}
+                    </span>
+                  </li>
+                ))}
               </ul>
 
               <p className="text-sm text-gray-400 mb-6">
-                Perfect for creators just starting with AI image and video
-                generation.
+                {t("studio.landing.pricing.litePlan.note")}
               </p>
 
               <Button
@@ -1452,7 +1434,7 @@ export default function Studio() {
                 {checkingOut ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  "Subscribe Now"
+                  t("studio.landing.pricing.subscribeNow")
                 )}
               </Button>
             </Card>
@@ -1461,29 +1443,32 @@ export default function Studio() {
             <Card className="p-8 bg-white/5 backdrop-blur-sm border-2 border-white/10 hover:border-white/20 transition-all rounded-lg">
               <div className="mb-6">
                 <h3 className="text-2xl font-bold text-white mb-2 font-display">
-                  Pro Plan — Flexible Credits
+                  {t("studio.landing.pricing.proPlan.title")}
                 </h3>
                 <div className="flex items-baseline mb-2">
                   <span className="text-5xl font-bold text-white font-display">
                     ${selectedTier.price}
                   </span>
-                  <span className="text-gray-400 ml-2">/ month</span>
+                  <span className="text-gray-400 ml-2">
+                    {t("studio.landing.pricing.perMonth")}
+                  </span>
                 </div>
                 <p className="text-gray-400">
-                  {selectedTier.label} credits per month
+                  {t("studio.landing.pricing.proPlan.creditsPerMonth", {
+                    credits: selectedTier.label,
+                  })}
                 </p>
               </div>
 
               <p className="text-gray-300 mb-6">
-                Use credits for any generation type (image, video, avatar, or
-                animation).
+                {t("studio.landing.pricing.proPlan.description")}
               </p>
 
               {/* Credit Slider */}
               <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
                 <div className="mb-6">
                   <label className="text-sm font-semibold text-gray-300 mb-4 block">
-                    Choose your monthly credits:
+                    {t("studio.landing.pricing.proPlan.chooseCredits")}
                   </label>
                   <input
                     type="range"
@@ -1512,13 +1497,17 @@ export default function Studio() {
                 {/* Price Display */}
                 <div className="mt-6 pt-6 border-t border-white/10">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Monthly total:</span>
+                    <span className="text-gray-300">
+                      {t("studio.landing.pricing.proPlan.monthlyTotal")}
+                    </span>
                     <span className="text-3xl font-bold text-white font-display">
                       ${selectedTier.price}
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 mt-2">
-                    for {selectedTier.label} credits
+                    {t("studio.landing.pricing.proPlan.forCredits", {
+                      credits: selectedTier.label,
+                    })}
                   </p>
                 </div>
               </div>
@@ -1527,16 +1516,20 @@ export default function Studio() {
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                   <span>
-                    Credits renew monthly and can be used across all AI tools
+                    {t("studio.landing.pricing.proPlan.bullets.renew")}
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>Unused credits roll over for 30 days</span>
+                  <span>
+                    {t("studio.landing.pricing.proPlan.bullets.rollover")}
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>Cancel anytime</span>
+                  <span>
+                    {t("studio.landing.pricing.proPlan.bullets.cancel")}
+                  </span>
                 </li>
               </ul>
 
@@ -1554,7 +1547,7 @@ export default function Studio() {
                 {checkingOut ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  "Subscribe Now"
+                  t("studio.landing.pricing.subscribeNow")
                 )}
               </Button>
             </Card>
@@ -1615,10 +1608,10 @@ export default function Studio() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What people are making
+              {t("studio.landing.examples.title")}
             </h2>
             <p className="text-xl text-gray-400">
-              Created using Likelee Studio tools and models.
+              {t("studio.landing.examples.subtitle")}
             </p>
           </div>
 
@@ -1631,18 +1624,22 @@ export default function Studio() {
                 <div className="relative aspect-video overflow-hidden">
                   <img
                     src={project.thumbnail}
-                    alt={project.caption}
+                    alt={t(
+                      `studio.landing.examples.captions.${project.captionKey}`,
+                    )}
                     loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <Badge className="absolute top-3 right-3 bg-white/10 backdrop-blur-sm text-white border-white/20 rounded-full">
-                    {project.type}
+                    {t(`studio.landing.examples.types.${project.type}`)}
                   </Badge>
                 </div>
                 <div className="p-4">
                   <p className="text-white font-medium mb-2">
-                    {project.caption}
+                    {t(
+                      `studio.landing.examples.captions.${project.captionKey}`,
+                    )}
                   </p>
                   <Button
                     variant="ghost"
@@ -1656,7 +1653,7 @@ export default function Studio() {
                       )
                     }
                   >
-                    Try this style →
+                    {t("studio.landing.examples.tryStyle")}
                   </Button>
                 </div>
               </Card>
@@ -1678,11 +1675,10 @@ export default function Studio() {
               className="border-2 border-white/10 rounded-lg bg-white/5 px-6"
             >
               <AccordionTrigger className="text-lg font-semibold text-white hover:no-underline py-4">
-                What can I make with Likelee Studio?
+                {t("studio.landing.faq.q1")}
               </AccordionTrigger>
               <AccordionContent className="text-base text-gray-300 leading-relaxed pb-4">
-                AI-generated videos, images, avatars, and creative effects — all
-                in one place.
+                {t("studio.landing.faq.a1")}
               </AccordionContent>
             </AccordionItem>
 
@@ -1691,10 +1687,10 @@ export default function Studio() {
               className="border-2 border-white/10 rounded-lg bg-white/5 px-6"
             >
               <AccordionTrigger className="text-lg font-semibold text-white hover:no-underline py-4">
-                Do I need to code?
+                {t("studio.landing.faq.q2")}
               </AccordionTrigger>
               <AccordionContent className="text-base text-gray-300 leading-relaxed pb-4">
-                Nope. Just upload or describe what you want.
+                {t("studio.landing.faq.a2")}
               </AccordionContent>
             </AccordionItem>
 
@@ -1703,11 +1699,10 @@ export default function Studio() {
               className="border-2 border-white/10 rounded-lg bg-white/5 px-6"
             >
               <AccordionTrigger className="text-lg font-semibold text-white hover:no-underline py-4">
-                Is this unlimited?
+                {t("studio.landing.faq.q3")}
               </AccordionTrigger>
               <AccordionContent className="text-base text-gray-300 leading-relaxed pb-4">
-                Each plan has a fair-use limit to ensure performance. The Agency
-                Plan includes unlimited generations.
+                {t("studio.landing.faq.a3")}
               </AccordionContent>
             </AccordionItem>
           </Accordion>

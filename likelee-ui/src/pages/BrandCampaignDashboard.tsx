@@ -529,10 +529,19 @@ export default function BrandCampaignDashboard({
     const status = String(campaign?.status || "").toLowerCase();
     if (status === "completed") {
       const label = campaign?.completed_at ? "completed" : "incomplete";
-      return label.charAt(0).toUpperCase() + label.slice(1);
+      return t(`campaignsDashboard.status.${label}`, {
+        defaultValue: label.charAt(0).toUpperCase() + label.slice(1),
+      });
+    }
+    if (status === "active") {
+      return t("campaignsDashboard.status.active", {
+        defaultValue: "Active",
+      });
     }
     const cleaned = status.replace("_", " ");
-    return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    return t(`campaignsDashboard.status.${status}`, {
+      defaultValue: cleaned.charAt(0).toUpperCase() + cleaned.slice(1),
+    });
   };
 
   const budgetParts = parseBudgetRange(campaignForm.budget_range);
