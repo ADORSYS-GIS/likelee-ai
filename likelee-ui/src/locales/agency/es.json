@@ -92,7 +92,9 @@
         "active": "Activo",
         "expiringSoon30d": "Vence pronto (30d)",
         "review": "Revisar",
-        "totalThisMonth": "Total este mes"
+        "totalThisMonth": "Total este mes",
+        "noneExpiring": "Ninguna vence",
+        "noPending": "Nada pendiente"
       },
       "recentActivity": {
         "rosterAdded": "{{name}} añadido al roster",
@@ -1190,7 +1192,13 @@
         "campaignsPerMonth": "campañas/mes",
         "totalEntities": "{{entityPlural}} totales",
         "percentOfRoster": "% del roster",
-        "campaignsCount": "{{count}} campañas"
+        "campaignsCount": "{{count}} campañas",
+        "avgDealFrequency": "Frecuencia media de acuerdos",
+        "dealsPerMonth": "acuerdos/mes",
+        "deal": "acuerdo",
+        "deal_other": "acuerdos",
+        "booking": "reserva",
+        "booking_other": "reservas"
       },
       "thresholds": {
         "dynamic": "Umbrales: {{earnings}}/mes • {{bookings}} bookings",
@@ -1206,7 +1214,15 @@
         "minMonthlyEarnings": "Ingresos mensuales mínimos ($)",
         "minBookingsPerMonth": "Bookings mínimos/mes",
         "noteLabel": "Nota:",
-        "noteBody": "El nivel 4 incluye todos los perfiles del roster que no cumplen con los requisitos del nivel 3."
+        "noteBody": "El nivel 4 incluye todos los perfiles del roster que no cumplen con los requisitos del nivel 3.",
+        "aiDescription": "Define los requisitos minimos de ingresos para cada nivel",
+        "talentPayoutNet": "Pago al talento % (del neto)",
+        "talentPayoutHelp": "El talento recibe este % del neto despues de la tarifa de plataforma",
+        "agencyCommission": "Comision de agencia %",
+        "agencyCommissionHelp": "La agencia toma este % de la parte bruta del talento",
+        "splitPreview": "Vista previa del reparto - en un acuerdo neto de $1,000",
+        "talent": "Talento",
+        "agency": "Agencia"
       },
       "tiers": {
         "Premium": {
@@ -1614,6 +1630,45 @@
             "fileUploadedTitle": "Archivo subido",
             "fileUploadedDescription": "El documento se ha subido correctamente.",
             "uploadFailedTitle": "Error al subir"
+          },
+          "addContact": {
+            "title": "Anadir contacto",
+            "fullName": "Nombre completo *",
+            "role": "Rol",
+            "email": "Email",
+            "phone": "Telefono",
+            "primary": "Contacto principal",
+            "placeholders": {
+              "fullName": "Juan Perez",
+              "role": "Director de casting"
+            },
+            "toasts": {
+              "created": "Contacto anadido correctamente",
+              "failed": "No se pudo anadir el contacto"
+            }
+          },
+          "logCommunication": {
+            "contact": "Contacto",
+            "type": "Tipo",
+            "selectContact": "Seleccionar contacto",
+            "selectType": "Seleccionar tipo",
+            "date": "Fecha",
+            "subject": "Asunto",
+            "notes": "Notas",
+            "types": {
+              "email": "Email",
+              "call": "Llamada telefonica",
+              "meeting": "Reunion",
+              "other": "Otro"
+            },
+            "placeholders": {
+              "subject": "Resumen de la reunion...",
+              "notes": "Detalles sobre la comunicacion..."
+            },
+            "toasts": {
+              "created": "Comunicacion registrada correctamente",
+              "failed": "No se pudo registrar la comunicacion"
+            }
           }
         }
       }
@@ -2204,7 +2259,10 @@
         "savedTitle": "Talent guardado",
         "savedDescription": "Información del talent actualizada correctamente.",
         "failedToSaveTitle": "Error al guardar",
-        "failedToSaveDescription": "No se pudo guardar la información del talent. Inténtalo de nuevo."
+        "failedToSaveDescription": "No se pudo guardar la información del talent. Inténtalo de nuevo.",
+        "photoUpdatedTitle": "Foto actualizada correctamente",
+        "photoUploadFailedTitle": "No se pudo subir la foto",
+        "unknownError": "Error desconocido"
       },
       "specialSkills": "Habilidades especiales",
       "heroVideo": "Video principal",
@@ -2247,7 +2305,23 @@
       "country": "País",
       "licensingRate": "Tarifa de licencia (USD/mes)",
       "negotiation": "Negociación",
-      "loadingCampaigns": "Cargando campañas…"
+      "loadingCampaigns": "Cargando campañas…",
+      "title": "Detalles del talento",
+      "identity": "Identidad",
+      "social": "Social",
+      "syncing": "Sincronizando",
+      "connect": "Conectar",
+      "categories": "Categorias",
+      "appearance": "Apariencia",
+      "details": "Detalles",
+      "business": "Negocio",
+      "openToNegotiations": "Abierto a negociaciones",
+      "instagramFollowers": "Seguidores de Instagram",
+      "totalAssets": "Assets totales",
+      "earnings30d": "Ingresos 30D",
+      "recentCampaigns": "Campanas recientes",
+      "untitledCampaign": "Campana sin titulo",
+      "talentEarns": "El talento gana"
     },
     "licensingRequests": {
       "title": "Solicitudes de licencia",
@@ -2702,7 +2776,15 @@
         "description": "Un {{entityLower}} con este correo ya existe en {{agencyType}}.",
         "sameAgency": "su agencia",
         "otherAgency": "otra agencia"
-      }
+      },
+      "negotiationHelp": "Permite que las marcas propongan tarifas personalizadas para este {{entityLower}}.",
+      "profile": "Perfil",
+      "setAsProfile": "Definir como perfil",
+      "addMorePhotos": "Anadir mas fotos",
+      "mediaLaterHelp": "Siempre puedes anadir mas medios y actualizar detalles despues desde la pantalla de gestion del roster.",
+      "addingEntity": "Anadiendo {{entityLower}}...",
+      "addToRoster": "Anadir {{entityTitle}} al roster",
+      "photosUploadFailedDesc": "No se pudieron subir las fotos. {{entityTitle}} se creara sin fotos."
     },
     "header": {
       "notifications": {
@@ -2755,7 +2837,8 @@
       "talent": {
         "label": "Seleccionar talento",
         "noTalent": "No se encontró talento activo.",
-        "selected": "{{count}} talento seleccionado"
+        "selected": "{{count}} talento seleccionado",
+        "selectToPreview": "Selecciona un talento para previsualizar"
       },
       "export": {
         "label": "Formato de exportación",
@@ -2791,8 +2874,16 @@
         "send": "Enviar",
         "sending": "Enviando...",
         "success": "Enlace de comp card enviado a los clientes seleccionados.",
-        "failed": "Error al compartir"
-      }
+        "failed": "No se pudo compartir la comp card",
+        "notSignedInTitle": "Sesion no iniciada",
+        "signInAgain": "Vuelve a iniciar sesion y reintenta compartir la comp card.",
+        "sessionExpiredTitle": "Sesion expirada",
+        "partiallySent": "Enviado parcialmente",
+        "partialDescription": "{{sent}} enviados, {{failed}} fallidos.",
+        "sent": "Enviado",
+        "shareFailed": "No se pudo compartir"
+      },
+      "bannerDescription": "Genera automaticamente comp cards profesionales a partir de perfiles de talento"
     },
     "analytics": {
       "title": "Panel de Analíticas",

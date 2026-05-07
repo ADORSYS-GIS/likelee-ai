@@ -92,7 +92,9 @@
         "active": "Active",
         "expiringSoon30d": "Expiring Soon (30d)",
         "review": "Review",
-        "totalThisMonth": "Total This Month"
+        "totalThisMonth": "Total This Month",
+        "noneExpiring": "None Expiring",
+        "noPending": "No Pending"
       },
       "recentActivity": {
         "rosterAdded": "{{name}} added to roster",
@@ -741,7 +743,13 @@
         "campaignsPerMonth": "campaigns/month",
         "totalEntities": "Total {{entityPlural}}",
         "percentOfRoster": "% of roster",
-        "campaignsCount": "{{count}} campaigns"
+        "campaignsCount": "{{count}} campaigns",
+        "avgDealFrequency": "Avg Deal Frequency",
+        "dealsPerMonth": "deals/month",
+        "deal": "deal",
+        "deal_other": "deals",
+        "booking": "booking",
+        "booking_other": "bookings"
       },
       "thresholds": {
         "dynamic": "Thresholds: {{earnings}}/mo • {{bookings}} bookings",
@@ -757,7 +765,15 @@
         "minMonthlyEarnings": "Min Monthly Earnings ($)",
         "minBookingsPerMonth": "Min Bookings/Month",
         "noteLabel": "Note:",
-        "noteBody": "Tier 4 includes all roster profiles that don't meet Tier 3 requirements."
+        "noteBody": "Tier 4 includes all roster profiles that don't meet Tier 3 requirements.",
+        "aiDescription": "Set minimum earnings requirements for each tier",
+        "talentPayoutNet": "Talent Payout % (of net)",
+        "talentPayoutHelp": "Talent receives this % of net after platform fee",
+        "agencyCommission": "Agency Commission %",
+        "agencyCommissionHelp": "Agency takes this % from talent's gross share",
+        "splitPreview": "Split Preview - on a $1,000 net deal",
+        "talent": "Talent",
+        "agency": "Agency"
       },
       "tiers": {
         "Premium": {
@@ -1161,6 +1177,45 @@
             "fileUploadedTitle": "File Uploaded",
             "fileUploadedDescription": "The document has been uploaded successfully.",
             "uploadFailedTitle": "Upload Failed"
+          },
+          "addContact": {
+            "title": "Add Contact",
+            "fullName": "Full Name *",
+            "role": "Role",
+            "email": "Email",
+            "phone": "Phone",
+            "primary": "Primary Contact",
+            "placeholders": {
+              "fullName": "John Doe",
+              "role": "Casting Director"
+            },
+            "toasts": {
+              "created": "Contact added successfully",
+              "failed": "Failed to add contact"
+            }
+          },
+          "logCommunication": {
+            "contact": "Contact",
+            "type": "Type",
+            "selectContact": "Select contact",
+            "selectType": "Select type",
+            "date": "Date",
+            "subject": "Subject",
+            "notes": "Notes",
+            "types": {
+              "email": "Email",
+              "call": "Phone Call",
+              "meeting": "Meeting",
+              "other": "Other"
+            },
+            "placeholders": {
+              "subject": "Meeting summary...",
+              "notes": "Details about the communication..."
+            },
+            "toasts": {
+              "created": "Communication logged successfully",
+              "failed": "Failed to log communication"
+            }
           }
         }
       }
@@ -1751,7 +1806,10 @@
         "savedTitle": "Talent saved",
         "savedDescription": "Talent information updated successfully.",
         "failedToSaveTitle": "Failed to save",
-        "failedToSaveDescription": "Could not save talent information. Please try again."
+        "failedToSaveDescription": "Could not save talent information. Please try again.",
+        "photoUpdatedTitle": "Photo updated successfully",
+        "photoUploadFailedTitle": "Photo upload failed",
+        "unknownError": "Unknown error"
       },
       "specialSkills": "Special skills",
       "heroVideo": "Hero Video",
@@ -1794,7 +1852,23 @@
       "country": "Country",
       "licensingRate": "Licensing rate (USD/month)",
       "negotiation": "Negotiation",
-      "loadingCampaigns": "Loading campaigns…"
+      "loadingCampaigns": "Loading campaigns…",
+      "title": "Talent Details",
+      "identity": "Identity",
+      "social": "Social",
+      "syncing": "Syncing",
+      "connect": "Connect",
+      "categories": "Categories",
+      "appearance": "Appearance",
+      "details": "Details",
+      "business": "Business",
+      "openToNegotiations": "Open to negotiations",
+      "instagramFollowers": "Instagram Followers",
+      "totalAssets": "Total Assets",
+      "earnings30d": "30D Earnings",
+      "recentCampaigns": "Recent Campaigns",
+      "untitledCampaign": "Untitled campaign",
+      "talentEarns": "Talent earns"
     },
     "licensingRequests": {
       "title": "Licensing Requests",
@@ -2236,7 +2310,15 @@
         "description": "A {{entityLower}} with this email already exists in {{agencyType}}.",
         "sameAgency": "your agency",
         "otherAgency": "another agency"
-      }
+      },
+      "negotiationHelp": "Allow brands to propose custom rates for this {{entityLower}}.",
+      "profile": "Profile",
+      "setAsProfile": "Set as profile",
+      "addMorePhotos": "Add More Photos",
+      "mediaLaterHelp": "You can always add more media and update details later from the roster management screen.",
+      "addingEntity": "Adding {{entityLower}}...",
+      "addToRoster": "Add {{entityTitle}} to Roster",
+      "photosUploadFailedDesc": "Could not upload photos. {{entityTitle}} will be created without photos."
     },
     "header": {
       "notifications": {
@@ -2289,7 +2371,8 @@
       "talent": {
         "label": "Select Talent",
         "noTalent": "No active talent found.",
-        "selected": "{{count}} talent selected"
+        "selected": "{{count}} talent selected",
+        "selectToPreview": "Select a talent to preview"
       },
       "export": {
         "label": "Export format",
@@ -2325,8 +2408,16 @@
         "send": "Send",
         "sending": "Sending...",
         "success": "Comp card link sent to selected clients.",
-        "failed": "Error al compartir"
-      }
+        "failed": "Failed to share comp card",
+        "notSignedInTitle": "Not signed in",
+        "signInAgain": "Please sign in again, then retry sharing the comp card.",
+        "sessionExpiredTitle": "Session expired",
+        "partiallySent": "Partially sent",
+        "partialDescription": "{{sent}} sent, {{failed}} failed.",
+        "sent": "Sent",
+        "shareFailed": "Share failed"
+      },
+      "bannerDescription": "Auto-generate professional comp cards from talent profiles"
     },
     "analytics": {
       "title": "Analytics Dashboard",
@@ -3173,76 +3264,19 @@
           "subtitle": "Set the default commission rate for new talent"
         },
         "team": {
-          "title": "Team Management",
-          "subtitle": "Manage team members, roles, and permissions",
-          "userRole": "User Role",
-          "selectRole": "Select role",
-          "newRole": "New Role",
-          "note": "Note",
-          "inviteNote": "Invited teammates will receive an email to join your workspace.",
-          "memberStatus": "Status",
-          "loadingMembers": "Loading team members...",
-          "activeMembers": "Active Team Members",
-          "memberCount_one": "{{count}} Member",
-          "memberCount_other": "{{count}} Members",
-          "emptyMembers": "No active team members yet.",
-          "actions": {
-            "inviteUser": "Invite User",
-            "editRole": "Edit Role"
-          },
+          "title": "Team Members",
+          "invite": "Invite Member",
+          "remove": "Remove Member",
+          "editPermissions": "Edit Permissions",
           "roles": {
-            "owner": "Owner",
-            "unknown": "Unknown",
-            "admin": {
-              "label": "Admin",
-              "description": "Can invite members and manage most workspace settings."
-            },
-            "projectManager": {
-              "label": "Project Manager",
-              "description": "Can manage projects, collaborators, and delivery workflows."
-            },
-            "reviewer": {
-              "label": "Reviewer",
-              "description": "Can review work and participate in approvals."
-            }
+            "admin": "Admin",
+            "manager": "Manager",
+            "member": "Member"
           },
-          "modals": {
-            "inviteTitle": "Invite Team Member",
-            "inviteDescription": "Send an email invitation to add someone to your workspace.",
-            "emailAddress": "Email Address",
-            "emailPlaceholder": "colleague@example.com",
-            "sending": "Sending...",
-            "sendInvitation": "Send Invitation",
-            "updateRoleTitle": "Update Team Role",
-            "currentRole": "{{email}} is currently {{role}}.",
-            "saving": "Saving...",
-            "confirmRoleChange": "Confirm Role Change",
-            "roleChangeWarning": "Role changes take effect immediately and update access across the workspace."
-          },
-          "pendingInvitations": {
-            "title": "Pending Invitations",
-            "description": "Invitations sent to teammates who haven't joined yet.",
-            "pending": "Pending",
-            "empty": "No pending invitations.",
-            "expires": "Expires"
-          },
-          "activity": {
-            "title": "Activity",
-            "logTitle": "Team Activity Log",
-            "logDescription": "Recent invite, role, and membership events",
-            "empty": "No team activity recorded yet.",
-            "memberFallback": "A member",
-            "invitationCreated": "Invitation created",
-            "invitationCreatedDetails": "{{member}} was invited as {{role}}.",
-            "roleUpdated": "Role updated",
-            "roleUpdatedDetails": "{{member}} changed from {{oldRole}} to {{newRole}}.",
-            "invitationAccepted": "Invitation accepted",
-            "invitationAcceptedDetails": "{{member}} joined as {{role}}.",
-            "invitationDeclined": "Invitation declined",
-            "invitationDeclinedDetails": "{{member}} declined the invitation",
-            "memberRemoved": "Member removed",
-            "memberRemovedDetails": "{{member}} was removed from the team"
-          }
+          "inviteSuccess": "Member invited successfully",
+          "inviteFailed": "Failed to invite member",
+          "removeSuccess": "Member removed successfully",
+          "removeFailed": "Failed to remove member"
         },
         "taxAndCurrency": {
           "title": "Tax & Currency Settings",
@@ -3391,21 +3425,6 @@
             "of": "of",
             "total": "Total Storage"
           }
-        },
-        "team": {
-          "title": "Team Members",
-          "invite": "Invite Member",
-          "remove": "Remove Member",
-          "editPermissions": "Edit Permissions",
-          "roles": {
-            "admin": "Admin",
-            "manager": "Manager",
-            "member": "Member"
-          },
-          "inviteSuccess": "Member invited successfully",
-          "inviteFailed": "Failed to invite member",
-          "removeSuccess": "Member removed successfully",
-          "removeFailed": "Failed to remove member"
         },
         "integrations": {
           "title": "Integrations",

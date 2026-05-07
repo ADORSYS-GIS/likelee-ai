@@ -92,7 +92,9 @@
         "active": "Aktiv",
         "expiringSoon30d": "Läuft bald ab (30 T.)",
         "review": "Prüfen",
-        "totalThisMonth": "Gesamt diesen Monat"
+        "totalThisMonth": "Gesamt diesen Monat",
+        "noneExpiring": "Keine laufen ab",
+        "noPending": "Keine ausstehend"
       },
       "recentActivity": {
         "rosterAdded": "{{name}} zum Roster hinzugefügt",
@@ -1288,7 +1290,13 @@
         "campaignsPerMonth": "Kampagnen/Monat",
         "totalEntities": "{{entityPlural}} gesamt",
         "percentOfRoster": "% des Rosters",
-        "campaignsCount": "{{count}} Kampagnen"
+        "campaignsCount": "{{count}} Kampagnen",
+        "avgDealFrequency": "Durchschn. Deal-Frequenz",
+        "dealsPerMonth": "Deals/Monat",
+        "deal": "Deal",
+        "deal_other": "Deals",
+        "booking": "Buchung",
+        "booking_other": "Buchungen"
       },
       "thresholds": {
         "dynamic": "Schwellen: {{earnings}}/Monat • {{bookings}} Bookings",
@@ -1304,7 +1312,15 @@
         "minMonthlyEarnings": "Mindesteinnahmen pro Monat ($)",
         "minBookingsPerMonth": "Min. Bookings/Monat",
         "noteLabel": "Hinweis:",
-        "noteBody": "Stufe 4 enthält alle Roster-Profile, die die Anforderungen für Stufe 3 nicht erfüllen."
+        "noteBody": "Stufe 4 enthält alle Roster-Profile, die die Anforderungen für Stufe 3 nicht erfüllen.",
+        "aiDescription": "Mindestumsatze fur jede Stufe festlegen",
+        "talentPayoutNet": "Talent-Auszahlung % (vom Netto)",
+        "talentPayoutHelp": "Talent erhalt diesen Prozentsatz des Netto nach Plattformgebuhr",
+        "agencyCommission": "Agenturprovision %",
+        "agencyCommissionHelp": "Agentur nimmt diesen Prozentsatz vom Bruttoanteil des Talents",
+        "splitPreview": "Split-Vorschau - bei einem Netto-Deal von 1.000 $",
+        "talent": "Talent",
+        "agency": "Agentur"
       },
       "tiers": {
         "Premium": {
@@ -1708,6 +1724,45 @@
             "fileUploadedTitle": "Datei hochgeladen",
             "fileUploadedDescription": "Das Dokument wurde erfolgreich hochgeladen.",
             "uploadFailedTitle": "Upload fehlgeschlagen"
+          },
+          "addContact": {
+            "title": "Kontakt hinzufugen",
+            "fullName": "Vollstandiger Name *",
+            "role": "Rolle",
+            "email": "E-Mail",
+            "phone": "Telefon",
+            "primary": "Primarer Kontakt",
+            "placeholders": {
+              "fullName": "Max Mustermann",
+              "role": "Casting Director"
+            },
+            "toasts": {
+              "created": "Kontakt erfolgreich hinzugefugt",
+              "failed": "Kontakt konnte nicht hinzugefugt werden"
+            }
+          },
+          "logCommunication": {
+            "contact": "Kontakt",
+            "type": "Typ",
+            "selectContact": "Kontakt auswahlen",
+            "selectType": "Typ auswahlen",
+            "date": "Datum",
+            "subject": "Betreff",
+            "notes": "Notizen",
+            "types": {
+              "email": "E-Mail",
+              "call": "Telefonanruf",
+              "meeting": "Meeting",
+              "other": "Sonstiges"
+            },
+            "placeholders": {
+              "subject": "Meeting-Zusammenfassung...",
+              "notes": "Details zur Kommunikation..."
+            },
+            "toasts": {
+              "created": "Kommunikation erfolgreich protokolliert",
+              "failed": "Kommunikation konnte nicht protokolliert werden"
+            }
           }
         }
       }
@@ -2298,7 +2353,10 @@
         "savedTitle": "Talent gespeichert",
         "savedDescription": "Talentinformationen erfolgreich aktualisiert.",
         "failedToSaveTitle": "Speichern fehlgeschlagen",
-        "failedToSaveDescription": "Talentinformationen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut."
+        "failedToSaveDescription": "Talentinformationen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+        "photoUpdatedTitle": "Foto erfolgreich aktualisiert",
+        "photoUploadFailedTitle": "Foto-Upload fehlgeschlagen",
+        "unknownError": "Unbekannter Fehler"
       },
       "specialSkills": "Spezielle Fähigkeiten",
       "heroVideo": "Hauptvideo",
@@ -2341,7 +2399,23 @@
       "country": "Land",
       "licensingRate": "Lizenzrate (USD/Monat)",
       "negotiation": "Verhandlung",
-      "loadingCampaigns": "Kampagnen werden geladen…"
+      "loadingCampaigns": "Kampagnen werden geladen…",
+      "title": "Talentdetails",
+      "identity": "Identitat",
+      "social": "Social",
+      "syncing": "Synchronisieren",
+      "connect": "Verbinden",
+      "categories": "Kategorien",
+      "appearance": "Aussehen",
+      "details": "Details",
+      "business": "Business",
+      "openToNegotiations": "Offen fur Verhandlungen",
+      "instagramFollowers": "Instagram-Follower",
+      "totalAssets": "Assets gesamt",
+      "earnings30d": "30T Einnahmen",
+      "recentCampaigns": "Aktuelle Kampagnen",
+      "untitledCampaign": "Unbenannte Kampagne",
+      "talentEarns": "Talent verdient"
     },
     "licensingRequests": {
       "title": "Lizenzanfragen",
@@ -2783,7 +2857,15 @@
         "description": "Ein {{entityLower}} mit dieser E-Mail existiert bereits in {{agencyType}}.",
         "sameAgency": "Ihrer Agentur",
         "otherAgency": "einer anderen Agentur"
-      }
+      },
+      "negotiationHelp": "Marken durfen individuelle Preise fur dieses {{entityLower}} vorschlagen.",
+      "profile": "Profil",
+      "setAsProfile": "Als Profil festlegen",
+      "addMorePhotos": "Weitere Fotos hinzufugen",
+      "mediaLaterHelp": "Sie konnen spater in der Roster-Verwaltung weitere Medien hinzufugen und Details aktualisieren.",
+      "addingEntity": "{{entityLower}} wird hinzugefugt...",
+      "addToRoster": "{{entityTitle}} zum Roster hinzufugen",
+      "photosUploadFailedDesc": "Fotos konnten nicht hochgeladen werden. {{entityTitle}} wird ohne Fotos erstellt."
     },
     "compCard": {
       "title": "Comp Card Generator",
@@ -2800,7 +2882,8 @@
       "talent": {
         "label": "Talent auswählen",
         "noTalent": "Kein aktives Talent gefunden.",
-        "selected": "{{count}} Talent ausgewählt"
+        "selected": "{{count}} Talent ausgewählt",
+        "selectToPreview": "Talent fur die Vorschau auswahlen"
       },
       "export": {
         "label": "Exportformat",
@@ -2836,8 +2919,16 @@
         "send": "Senden",
         "sending": "Wird gesendet...",
         "success": "Comp Card-Link an ausgewählte Kunden gesendet.",
-        "failed": "Teilen fehlgeschlagen"
-      }
+        "failed": "Sedcard konnte nicht geteilt werden",
+        "notSignedInTitle": "Nicht angemeldet",
+        "signInAgain": "Bitte melden Sie sich erneut an und versuchen Sie dann, die Sedcard zu teilen.",
+        "sessionExpiredTitle": "Sitzung abgelaufen",
+        "partiallySent": "Teilweise gesendet",
+        "partialDescription": "{{sent}} gesendet, {{failed}} fehlgeschlagen.",
+        "sent": "Gesendet",
+        "shareFailed": "Teilen fehlgeschlagen"
+      },
+      "bannerDescription": "Professionelle Sedcards automatisch aus Talentprofilen erstellen"
     },
     "analytics": {
       "title": "Analytics-Dashboard",
