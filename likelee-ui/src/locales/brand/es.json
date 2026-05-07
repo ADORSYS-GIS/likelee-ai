@@ -203,7 +203,18 @@
       },
       "examples": {
         "title": "Lo que la gente está creando",
-        "subtitle": "Creado con herramientas y modelos de Likelee Studio."
+        "subtitle": "Creado con herramientas y modelos de Likelee Studio.",
+        "types": {
+          "video": "video",
+          "image": "imagen"
+        },
+        "tryStyle": "Probar este estilo →",
+        "captions": {
+          "cinematicAiVideo": "Video IA cinematográfico",
+          "aiPortraitGeneration": "Generación de retrato IA",
+          "aiShortFilm": "Cortometraje IA",
+          "digitalArtStyle": "Estilo de arte digital"
+        }
       },
       "faq": {
         "title": "Preguntas frecuentes",
@@ -1575,6 +1586,11 @@
       "noAssetsProvided": "No se proporcionaron assets.",
       "referenceCount": "Referencia {{current}} de {{total}}",
       "reference": "Referencia"
+    },
+    "markDone": {
+      "title": "¿Marcar la campaña como completada?",
+      "description": "Esta acción es irreversible. La campaña se marcará como completada y se quitará de Activas.",
+      "confirm": "Marcar como completada"
     }
   },
   "campaignsDashboard": {
@@ -1596,7 +1612,8 @@
     "newCampaign": "Nueva campaña",
     "status": {
       "completed": "Completado",
-      "incomplete": "Incompleto"
+      "incomplete": "Incompleto",
+      "active": "Activo"
     },
     "plan": {
       "basicBriefOnly": "Los planes Basic pueden guardar detalles y briefs de campaña, pero la selección de colaboradores y el envío de ofertas comienzan en Pro.",
@@ -2225,6 +2242,95 @@
     "upgradePlanForMembers": "Mejora tu plan para añadir más miembros y desbloquear funciones adicionales.",
     "upgradePlan": "Mejorar plan",
     "upgradeForSeats": "Mejora a Basic o superior para desbloquear asientos de equipo.",
-    "seatLimitReachedDescription": "Has alcanzado tu límite de {{count}} asientos. Mejora tu plan para añadir más miembros."
+    "seatLimitReachedDescription": "Has alcanzado tu límite de {{count}} asientos. Mejora tu plan para añadir más miembros.",
+    "activity": "Actividad",
+    "upgradeToAddMembers": "Mejorar para añadir miembros",
+    "inviteTeamMember": "Invitar miembro del equipo",
+    "inviteTeamMemberTitle": "Invitar miembro del equipo",
+    "loadingMembers": "Cargando miembros del equipo...",
+    "activeMembers": "Miembros activos",
+    "membersCount_one": "{{count}} miembro",
+    "membersCount_other": "{{count}} miembros",
+    "added": "Añadido",
+    "noMembers": "Aún no hay miembros del equipo.",
+    "pendingInvites": "Invitaciones pendientes",
+    "pending": "Pendiente",
+    "expires": "Vence",
+    "noPendingInvites": "No hay invitaciones pendientes.",
+    "inviteBrandDescription": "Añade un nuevo colaborador a tu marca",
+    "inviteDescription": "Envía una invitación por correo para unirse a tu equipo",
+    "emailAddress": "Correo electrónico",
+    "emailPlaceholder": "colega@ejemplo.com",
+    "userRole": "Rol de usuario",
+    "selectRole": "Seleccionar rol",
+    "accessRights": "Derechos de acceso",
+    "note": "Nota",
+    "inviteNote": "Los compañeros invitados recibirán un correo para unirse a tu espacio de trabajo.",
+    "sending": "Enviando...",
+    "sendInvitation": "Enviar invitación",
+    "member": "Miembro",
+    "aMember": "Un miembro",
+    "isCurrently": "actualmente es",
+    "newRole": "Nuevo rol",
+    "roleChangeImmediate": "Los cambios de rol se aplican inmediatamente.",
+    "confirmRoleChange": "Confirmar cambio de rol",
+    "teamActivity": "Actividad del equipo",
+    "activityDescription": "Cambios recientes en miembros e invitaciones.",
+    "empty": "Aún no hay actividad del equipo.",
+    "noActivity": "Aún no hay actividad del equipo.",
+    "updateRoleTitle": "Actualizar rol del equipo",
+    "invitationCreated": "Invitación creada",
+    "invitedAs": "{{target}} invitado como {{role}}",
+    "roleUpdated": "Rol actualizado",
+    "changedRole": "{{target}} cambió de {{oldRole}} a {{newRole}}",
+    "invitationAccepted": "Invitación aceptada",
+    "joinedTeam": "{{target}} se unió al equipo",
+    "invitationDeclined": "Invitación rechazada",
+    "declinedInvitation": "{{target}} rechazó la invitación",
+    "memberRemoved": "Miembro eliminado",
+    "memberRemovedDescription": "{{email}} fue eliminado del equipo.",
+    "removedFromTeam": "{{target}} fue eliminado del equipo",
+    "removalFailed": "No se pudo eliminar",
+    "removalFailedDescription": "No se pudo eliminar al miembro.",
+    "fallback": "Actividad del equipo",
+    "roleDescriptions": {
+      "admin": "Gestión completa del equipo, facturación, campañas y aprobaciones.",
+      "projectManager": "Creación de campañas y aprobaciones de entregables sin facturación.",
+      "reviewer": "Acceso de solo lectura a entregables con visibilidad del equipo."
+    },
+    "permissions": {
+      "fullTeamManagement": "Gestión completa del equipo",
+      "billingSubscriptions": "Facturación y suscripciones",
+      "campaignsApprovals": "Campañas y aprobaciones",
+      "payOffers": "Ver ofertas",
+      "jobsManagement": "Gestión de trabajos",
+      "contractsManagement": "Gestión de contratos",
+      "licenseManagement": "Gestión de licencias",
+      "brandConnections": "Conexiones de marca",
+      "manageJobs": "Gestionar trabajos",
+      "manageContracts": "Gestionar contratos",
+      "manageLicenses": "Gestionar licencias",
+      "manageBrandConnections": "Gestionar conexiones de marca",
+      "manageClients": "Gestionar clientes",
+      "viewSubscriptionsBilling": "Ver suscripciones y facturación",
+      "campaignCreation": "Creación de campañas",
+      "deliverableApprovals": "Aprobación de entregables",
+      "viewPayOffers": "Ver ofertas",
+      "viewJobs": "Ver trabajos",
+      "viewContracts": "Ver contratos",
+      "viewDeliverables": "Ver entregables",
+      "viewTeamMembers": "Ver miembros del equipo",
+      "viewBrandConnections": "Ver conexiones de marca",
+      "viewClients": "Ver clientes",
+      "viewLicenses": "Ver licencias"
+    },
+    "roles": {
+      "owner": "Propietario",
+      "admin": "Admin",
+      "projectManager": "Gestor de proyecto",
+      "reviewer": "Revisor",
+      "unknown": "Desconocido"
+    },
+    "invite": "Invitar"
   }
 }
