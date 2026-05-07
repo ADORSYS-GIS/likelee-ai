@@ -689,6 +689,43 @@
       "teamActivity": "Activité de l'équipe",
       "activityDescription": "Modifications récentes des membres et des invitations.",
       "noActivity": "Aucune activité récente.",
+      "updateRoleTitle": "Mettre à jour le rôle de l'équipe",
+      "roleDescriptions": {
+        "admin": "Gestion complète de l'équipe, facturation, campagnes et validations.",
+        "projectManager": "Création de campagnes et validations des livrables sans facturation.",
+        "reviewer": "Accès en lecture seule aux livrables avec visibilité sur l'équipe."
+      },
+      "permissions": {
+        "fullTeamManagement": "Gestion complète de l'équipe",
+        "billingSubscriptions": "Facturation et abonnements",
+        "campaignsApprovals": "Campagnes et validations",
+        "payOffers": "Offres de paiement",
+        "jobsManagement": "Gestion des emplois",
+        "contractsManagement": "Gestion des contrats",
+        "licenseManagement": "Gestion des licences",
+        "brandConnections": "Connexions marque",
+        "manageJobs": "Gérer les emplois",
+        "manageContracts": "Gérer les contrats",
+        "manageLicenses": "Gérer les licences",
+        "manageBrandConnections": "Gérer les connexions marque",
+        "manageClients": "Gérer les clients",
+        "viewSubscriptionsBilling": "Voir les abonnements et la facturation",
+        "campaignCreation": "Création de campagnes",
+        "deliverableApprovals": "Validation des livrables",
+        "viewPayOffers": "Voir les offres de paiement",
+        "viewJobs": "Voir les emplois",
+        "viewContracts": "Voir les contrats",
+        "viewDeliverables": "Voir les livrables",
+        "viewTeamMembers": "Voir les membres de l'équipe",
+        "viewBrandConnections": "Voir les connexions marque",
+        "viewClients": "Voir les clients",
+        "viewLicenses": "Voir les licences"
+      },
+      "removeMemberTitle": "Retirer un membre de l'équipe",
+      "removeMemberDescription": "Voulez-vous vraiment retirer {{member}} de l'équipe ?",
+      "removeMemberWarning": "Cette action est irréversible. Le membre perdra immédiatement l'accès à toutes les ressources de l'organisation.",
+      "removing": "Suppression...",
+      "removeMember": "Retirer le membre",
       "roles": {
         "owner": "Propriétaire",
         "admin": "Admin",
@@ -1096,6 +1133,8 @@
         "sentDate": "Date d'envoi",
         "actions": "Actions"
       },
+      "contractOverview": "Aperçu du contrat",
+      "contract": "Contrat",
       "actions": {
         "resend": "Renvoyer",
         "archive": "Archiver",
@@ -1463,6 +1502,7 @@
       "loadingDeliverables": "Chargement des livrables...",
       "noContentSubmitted": "Aucun contenu n'a encore ete soumis.",
       "viewFullContract": "Voir le contrat complet",
+      "downloadBriefPdf": "Telecharger le brief PDF",
       "premiumVideo": "Video premium",
       "locked": "Verrouille",
       "deliverable": "Livrable",
@@ -1481,7 +1521,8 @@
       "inviteCompanySeat": "Inviter un siège d'entreprise",
       "aiStudioAddon": "Module AI Studio",
       "postJob": "Publier un emploi",
-      "comingSoon": "Bientôt disponible"
+      "comingSoon": "Bientôt disponible",
+      "upToSeats": "Jusqu'à {{count}} sièges"
     },
     "stats": {
       "campaignsLaunched": "Campagnes lancées",

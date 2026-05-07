@@ -678,6 +678,43 @@
       "teamActivity": "Actividad del equipo",
       "activityDescription": "Cambios recientes en miembros e invitaciones.",
       "noActivity": "No hay actividad reciente.",
+      "updateRoleTitle": "Actualizar rol del equipo",
+      "roleDescriptions": {
+        "admin": "Gestión completa del equipo, facturación, campañas y aprobaciones.",
+        "projectManager": "Creación de campañas y aprobación de entregables sin facturación.",
+        "reviewer": "Acceso de solo lectura a los entregables con visibilidad del equipo."
+      },
+      "permissions": {
+        "fullTeamManagement": "Gestión completa del equipo",
+        "billingSubscriptions": "Facturación y suscripciones",
+        "campaignsApprovals": "Campañas y aprobaciones",
+        "payOffers": "Ofertas de pago",
+        "jobsManagement": "Gestión de trabajos",
+        "contractsManagement": "Gestión de contratos",
+        "licenseManagement": "Gestión de licencias",
+        "brandConnections": "Conexiones de marca",
+        "manageJobs": "Gestionar trabajos",
+        "manageContracts": "Gestionar contratos",
+        "manageLicenses": "Gestionar licencias",
+        "manageBrandConnections": "Gestionar conexiones de marca",
+        "manageClients": "Gestionar clientes",
+        "viewSubscriptionsBilling": "Ver suscripciones y facturación",
+        "campaignCreation": "Creación de campañas",
+        "deliverableApprovals": "Aprobaciones de entregables",
+        "viewPayOffers": "Ver ofertas de pago",
+        "viewJobs": "Ver trabajos",
+        "viewContracts": "Ver contratos",
+        "viewDeliverables": "Ver entregables",
+        "viewTeamMembers": "Ver miembros del equipo",
+        "viewBrandConnections": "Ver conexiones de marca",
+        "viewClients": "Ver clientes",
+        "viewLicenses": "Ver licencias"
+      },
+      "removeMemberTitle": "Eliminar miembro del equipo",
+      "removeMemberDescription": "¿Seguro que quieres eliminar a {{member}} del equipo?",
+      "removeMemberWarning": "Esta acción no se puede deshacer. El miembro perderá inmediatamente el acceso a todos los recursos de la organización.",
+      "removing": "Eliminando...",
+      "removeMember": "Eliminar miembro",
       "roles": {
         "owner": "Propietario",
         "admin": "Administrador",
@@ -1086,6 +1123,8 @@
         "sentDate": "Fecha de envío",
         "actions": "Acciones"
       },
+      "contractOverview": "Resumen del contrato",
+      "contract": "Contrato",
       "actions": {
         "resend": "Reenviar",
         "archive": "Archivar",
@@ -1404,6 +1443,7 @@
       "loadingDeliverables": "Cargando entregables...",
       "noContentSubmitted": "Aún no se ha enviado contenido.",
       "viewFullContract": "Ver contrato completo",
+      "downloadBriefPdf": "Descargar brief PDF",
       "premiumVideo": "Video premium",
       "locked": "Bloqueado",
       "deliverable": "Entregable",
@@ -1422,7 +1462,8 @@
       "inviteCompanySeat": "Invitar a un asiento de empresa",
       "aiStudioAddon": "Complemento AI Studio",
       "postJob": "Publicar un Trabajo",
-      "comingSoon": "Próximamente"
+      "comingSoon": "Próximamente",
+      "upToSeats": "Hasta {{count}} asientos"
     },
     "stats": {
       "campaignsLaunched": "Campañas Lanzadas",
