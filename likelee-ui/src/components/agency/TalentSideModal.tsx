@@ -34,6 +34,7 @@ import {
   uploadTalentAsset,
   scrapeInstagramProfile,
 } from "@/api/functions";
+import { useTranslation } from "react-i18next";
 
 interface TalentSideModalProps {
   talent: any;
@@ -48,6 +49,7 @@ const TalentSideModal = ({
   onOpenChange,
   onSaved,
 }: TalentSideModalProps) => {
+  const { t } = useTranslation("agency");
   const { toast } = useToast();
   const safeTextFromMaybeJsonArray = (v: any): string => {
     if (v === null || v === undefined) return "";
@@ -163,15 +165,28 @@ const TalentSideModal = ({
       if (newImg) {
         await updateAgencyTalent(talent.id, { profile_photo_url: newImg });
         setLocalPhotoUrl(newImg);
-        toast({ title: "Photo updated successfully" });
+        toast({
+          title: t("agencyDashboard.talentSideModal.toast.photoUpdatedTitle", {
+            defaultValue: "Photo updated successfully",
+          }),
+        });
         onSaved?.();
       } else {
         throw new Error("No URL returned from upload");
       }
     } catch (err: any) {
       toast({
-        title: "Photo upload failed",
-        description: err.message || "Unknown error",
+        title: t(
+          "agencyDashboard.talentSideModal.toast.photoUploadFailedTitle",
+          {
+            defaultValue: "Photo upload failed",
+          },
+        ),
+        description:
+          err.message ||
+          t("agencyDashboard.talentSideModal.toast.unknownError", {
+            defaultValue: "Unknown error",
+          }),
         variant: "destructive",
       });
     } finally {
@@ -249,8 +264,10 @@ const TalentSideModal = ({
     const email = String((talent as any)?.email || "").trim();
     if (!email) {
       toast({
-        title: "Missing email",
-        description: "This talent does not have an email on file.",
+        title: t("agencyDashboard.talentSideModal.toast.missingEmailTitle"),
+        description: t(
+          "agencyDashboard.talentSideModal.toast.missingEmailDescription",
+        ),
         variant: "destructive",
       });
       return;
@@ -261,19 +278,27 @@ const TalentSideModal = ({
       const res: any = await createAgencyTalentInvite({ email });
       if (String(res?.invite_status || "") === "already_connected") {
         toast({
-          title: "Already connected",
-          description:
-            "This creator is already connected to your agency. No new invite was sent.",
+          title: t(
+            "agencyDashboard.talentSideModal.toast.alreadyConnectedTitle",
+          ),
+          description: t(
+            "agencyDashboard.talentSideModal.toast.alreadyConnectedDescription",
+          ),
         });
         return;
       }
       toast({
-        title: "Portal invite sent",
-        description: `Invitation sent to ${email}`,
+        title: t("agencyDashboard.talentSideModal.toast.portalInviteSentTitle"),
+        description: t(
+          "agencyDashboard.talentSideModal.toast.portalInviteSentDescription",
+          { email },
+        ),
       });
     } catch (e: any) {
       toast({
-        title: "Failed to send portal invite",
+        title: t(
+          "agencyDashboard.talentSideModal.toast.failedToSendInviteTitle",
+        ),
         description: e?.message || String(e),
         variant: "destructive",
       });
@@ -339,17 +364,21 @@ const TalentSideModal = ({
       <SheetContent className="sm:max-w-md w-full overflow-y-auto bg-white p-6 border-l border-gray-200 shadow-2xl">
         <SheetHeader className="mb-6 flex flex-row items-center justify-between border-b border-gray-100 pb-4 space-y-0">
           <SheetTitle className="text-xl font-bold text-gray-900">
-            Talent Details
+            {t("agencyDashboard.talentSideModal.title", {
+              defaultValue: "Talent Details",
+            })}
           </SheetTitle>
           <SheetDescription className="sr-only">
-            Talent details
+            {t("agencyDashboard.talentSideModal.title", {
+              defaultValue: "Talent Details",
+            })}
           </SheetDescription>
           {/* Close button is handled by Sheet primitive usually, but we can have custom if needed */}
         </SheetHeader>
 
         {!talent ? (
           <div className="py-10 text-center text-sm text-gray-500 font-medium">
-            No talent selected.
+            {t("agencyDashboard.talentSideModal.noTalentSelected")}
           </div>
         ) : (
           <div className="space-y-6">
@@ -404,7 +433,7 @@ const TalentSideModal = ({
                       onClick={() => setShowPhotoFull(false)}
                       className="absolute -top-10 right-0 text-white hover:text-[#32C8D1] transition-colors"
                     >
-                      Close X
+                      {t("agencyDashboard.talentSideModal.close")}
                     </button>
                   </div>
                 </DialogContent>
@@ -431,7 +460,8 @@ const TalentSideModal = ({
                       variant="secondary"
                       className="bg-gray-100 text-gray-600 border-none font-bold text-[10px]"
                     >
-                      {safeTextFromMaybeJsonArray(talent.role) || "Model"}
+                      {safeTextFromMaybeJsonArray(talent.role) ||
+                        t("agencyDashboard.roster.categories.model")}
                     </Badge>
                   )}
                 </div>
@@ -444,7 +474,7 @@ const TalentSideModal = ({
             {skillsText && (
               <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
                 <div className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                  Special skills
+                  {t("agencyDashboard.talentSideModal.specialSkills")}
                 </div>
                 <div className="text-sm text-gray-700">{skillsText}</div>
               </div>
@@ -456,7 +486,7 @@ const TalentSideModal = ({
                 {talent.video_url && (
                   <div>
                     <div className="text-[10px] uppercase font-bold text-gray-400 mb-2">
-                      Hero Video
+                      {t("agencyDashboard.talentSideModal.heroVideo")}
                     </div>
                     <div className="rounded-xl overflow-hidden border border-gray-100 bg-black shadow-sm">
                       <video
@@ -470,7 +500,7 @@ const TalentSideModal = ({
                 {talent.voice_sample_url && (
                   <div>
                     <div className="text-[10px] uppercase font-bold text-gray-400 mb-2">
-                      Voice Sample
+                      {t("agencyDashboard.talentSideModal.voiceSample")}
                     </div>
                     <div className="p-3 rounded-xl border border-gray-100 bg-gray-50 flex flex-col gap-2 shadow-sm">
                       <audio
@@ -488,7 +518,7 @@ const TalentSideModal = ({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-[10px] uppercase font-bold text-gray-400">
-                    Photo Gallery
+                    {t("agencyDashboard.talentSideModal.photoGallery")}
                   </div>
                   <div className="text-[10px] font-bold text-gray-400">
                     {galleryUrls.length}
@@ -504,7 +534,7 @@ const TalentSideModal = ({
                     >
                       <img
                         src={u}
-                        alt="Gallery"
+                        alt={t("agencyDashboard.talentSideModal.gallery")}
                         className="w-full h-full object-contain"
                       />
                     </button>
@@ -518,13 +548,15 @@ const TalentSideModal = ({
                 {/* Identity */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Identity
+                    {t("agencyDashboard.talentSideModal.identity", {
+                      defaultValue: "Identity",
+                    })}
                   </h4>
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Full name
+                          {t("agencyDashboard.talentSideModal.fullName")}
                         </label>
                         <Input
                           value={editForm.full_name}
@@ -536,7 +568,7 @@ const TalentSideModal = ({
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Stage name
+                          {t("agencyDashboard.talentSideModal.stageName")}
                         </label>
                         <Input
                           value={editForm.stage_name}
@@ -550,7 +582,7 @@ const TalentSideModal = ({
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Email
+                          {t("agencyDashboard.talentSideModal.email")}
                         </label>
                         <Input
                           type="email"
@@ -561,7 +593,7 @@ const TalentSideModal = ({
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Phone
+                          {t("agencyDashboard.talentSideModal.phone")}
                         </label>
                         <Input
                           value={editForm.phone}
@@ -576,12 +608,14 @@ const TalentSideModal = ({
                 {/* Social */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Social
+                    {t("agencyDashboard.talentSideModal.social", {
+                      defaultValue: "Social",
+                    })}
                   </h4>
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        Instagram
+                        {t("agencyDashboard.talentSideModal.instagram")}
                       </label>
                       <div className="flex gap-2">
                         <div className="relative flex-1">
@@ -597,7 +631,9 @@ const TalentSideModal = ({
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2 py-1 bg-indigo-50 rounded-md">
                               <Loader2 className="w-3 h-3 text-indigo-500 animate-spin" />
                               <span className="text-[11px] font-medium text-indigo-600">
-                                Syncing
+                                {t("agencyDashboard.talentSideModal.syncing", {
+                                  defaultValue: "Syncing",
+                                })}
                               </span>
                             </div>
                           ) : editForm.instagram_followers > 0 ? (
@@ -625,7 +661,9 @@ const TalentSideModal = ({
                           ) : (
                             <>
                               <Instagram className="w-3 h-3 mr-1" />
-                              Connect
+                              {t("agencyDashboard.talentSideModal.connect", {
+                                defaultValue: "Connect",
+                              })}
                             </>
                           )}
                         </Button>
@@ -634,7 +672,7 @@ const TalentSideModal = ({
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Followers
+                          {t("agencyDashboard.talentSideModal.followers")}
                         </label>
                         <Input
                           type="number"
@@ -650,7 +688,7 @@ const TalentSideModal = ({
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Engagement rate (%)
+                          {t("agencyDashboard.talentSideModal.engagementRate")}
                         </label>
                         <Input
                           type="number"
@@ -672,7 +710,9 @@ const TalentSideModal = ({
                 {/* Categories */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Categories
+                    {t("agencyDashboard.talentSideModal.categories", {
+                      defaultValue: "Categories",
+                    })}
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {roleCategories.map((v) => {
@@ -696,7 +736,10 @@ const TalentSideModal = ({
                                 : "bg-gray-100 text-gray-700 border-none font-bold"
                             }
                           >
-                            {v}
+                            {t(
+                              `agencyDashboard.roster.categories.${v.toLowerCase()}`,
+                              { defaultValue: v },
+                            )}
                           </Badge>
                         </button>
                       );
@@ -707,13 +750,15 @@ const TalentSideModal = ({
                 {/* Appearance */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Appearance
+                    {t("agencyDashboard.talentSideModal.appearance", {
+                      defaultValue: "Appearance",
+                    })}
                   </h4>
                   <div className="space-y-3">
                     <div className="grid grid-cols-3 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Gender
+                          {t("agencyDashboard.talentSideModal.genderIdentity")}
                         </label>
                         <Input
                           value={editForm.gender_identity}
@@ -725,7 +770,7 @@ const TalentSideModal = ({
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Hair color
+                          {t("agencyDashboard.talentSideModal.hairColor")}
                         </label>
                         <Input
                           value={editForm.hair_color}
@@ -737,7 +782,7 @@ const TalentSideModal = ({
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Eye color
+                          {t("agencyDashboard.talentSideModal.eyeColor")}
                         </label>
                         <Input
                           value={editForm.eye_color}
@@ -751,7 +796,7 @@ const TalentSideModal = ({
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Height (ft)
+                          {t("agencyDashboard.addTalent.attributes.feet")}
                         </label>
                         <Input
                           type="number"
@@ -764,7 +809,7 @@ const TalentSideModal = ({
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-gray-600">
-                          Height (in)
+                          {t("agencyDashboard.addTalent.attributes.inches")}
                         </label>
                         <Input
                           type="number"
@@ -778,7 +823,7 @@ const TalentSideModal = ({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        Race / Ethnicity
+                        {t("agencyDashboard.talentSideModal.raceEthnicity")}
                       </label>
                       <Input
                         value={(editForm.race_ethnicity || []).join(", ")}
@@ -800,12 +845,14 @@ const TalentSideModal = ({
                 {/* Details */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Details
+                    {t("agencyDashboard.talentSideModal.details", {
+                      defaultValue: "Details",
+                    })}
                   </h4>
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        Bio
+                        {t("agencyDashboard.talentSideModal.bio")}
                       </label>
                       <Textarea
                         value={editForm.bio}
@@ -815,7 +862,9 @@ const TalentSideModal = ({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        Special skills
+                        {t(
+                          "agencyDashboard.talentSideModal.specialSkillsLabel",
+                        )}
                       </label>
                       <Input
                         value={editForm.special_skills}
@@ -831,12 +880,12 @@ const TalentSideModal = ({
                 {/* Location */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Location
+                    {t("agencyDashboard.talentSideModal.location")}
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        City
+                        {t("agencyDashboard.talentSideModal.city")}
                       </label>
                       <Input
                         value={editForm.city}
@@ -846,7 +895,7 @@ const TalentSideModal = ({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        State
+                        {t("agencyDashboard.talentSideModal.state")}
                       </label>
                       <Input
                         value={editForm.state_province}
@@ -858,7 +907,7 @@ const TalentSideModal = ({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        Country
+                        {t("agencyDashboard.talentSideModal.country")}
                       </label>
                       <Input
                         value={editForm.country}
@@ -872,12 +921,14 @@ const TalentSideModal = ({
                 {/* Business */}
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Business
+                    {t("agencyDashboard.talentSideModal.business", {
+                      defaultValue: "Business",
+                    })}
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        Licensing rate (USD/mo)
+                        {t("agencyDashboard.talentSideModal.licensingRate")}
                       </label>
                       <Input
                         type="number"
@@ -892,7 +943,7 @@ const TalentSideModal = ({
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-gray-600">
-                        Negotiation
+                        {t("agencyDashboard.talentSideModal.negotiation")}
                       </label>
                       <label className="inline-flex items-center gap-2 text-sm text-gray-700 mt-1">
                         <input
@@ -902,7 +953,12 @@ const TalentSideModal = ({
                             setField("accept_negotiations", e.target.checked)
                           }
                         />
-                        Open to negotiations
+                        {t(
+                          "agencyDashboard.talentSideModal.openToNegotiations",
+                          {
+                            defaultValue: "Open to negotiations",
+                          },
+                        )}
                       </label>
                     </div>
                   </div>
@@ -914,7 +970,9 @@ const TalentSideModal = ({
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 border border-gray-100 rounded-xl bg-white shadow-sm">
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                  Instagram Followers
+                  {t("agencyDashboard.talentSideModal.instagramFollowers", {
+                    defaultValue: "Instagram Followers",
+                  })}
                 </p>
                 <p className="text-xl font-bold text-gray-900 flex items-center gap-1">
                   {talent.followers || "0"}
@@ -922,7 +980,7 @@ const TalentSideModal = ({
               </div>
               <div className="p-4 border border-gray-100 rounded-xl bg-white shadow-sm">
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                  Engagement Rate
+                  {t("agencyDashboard.talentSideModal.engagementRate")}
                 </p>
                 <p className="text-xl font-bold text-gray-900">
                   {talent.engagement_rate || 0}%
@@ -930,7 +988,9 @@ const TalentSideModal = ({
               </div>
               <div className="p-4 border border-gray-100 rounded-xl bg-white shadow-sm">
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                  Total Assets
+                  {t("agencyDashboard.talentSideModal.totalAssets", {
+                    defaultValue: "Total Assets",
+                  })}
                 </p>
                 <p className="text-xl font-bold text-gray-900">
                   {talent.assets || 0}
@@ -938,7 +998,9 @@ const TalentSideModal = ({
               </div>
               <div className="p-4 border border-gray-100 rounded-xl bg-white shadow-sm">
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                  30D Earnings
+                  {t("agencyDashboard.talentSideModal.earnings30d", {
+                    defaultValue: "30D Earnings",
+                  })}
                 </p>
                 <p className="text-xl font-bold text-gray-900">
                   {talent.earnings || "$0"}
@@ -949,15 +1011,18 @@ const TalentSideModal = ({
             {/* Recent Campaigns */}
             <div className="space-y-3">
               <h3 className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                <FileText className="w-4 h-4" /> Recent Campaigns
+                <FileText className="w-4 h-4" />{" "}
+                {t("agencyDashboard.talentSideModal.recentCampaigns", {
+                  defaultValue: "Recent Campaigns",
+                })}
               </h3>
               {campaignsLoading ? (
                 <div className="p-8 text-center text-gray-400 text-sm italic border border-dashed border-gray-200 rounded-xl">
-                  Loading campaigns…
+                  {t("agencyDashboard.talentSideModal.loadingCampaigns")}
                 </div>
               ) : campaigns.length === 0 ? (
                 <div className="p-8 text-center text-gray-400 text-sm italic border border-dashed border-gray-200 rounded-xl">
-                  No campaigns yet
+                  {t("agencyDashboard.talentSideModal.noCampaigns")}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -968,7 +1033,13 @@ const TalentSideModal = ({
                     >
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-gray-900 truncate">
-                          {c.name || "Untitled campaign"}
+                          {c.name ||
+                            t(
+                              "agencyDashboard.talentSideModal.untitledCampaign",
+                              {
+                                defaultValue: "Untitled campaign",
+                              },
+                            )}
                         </p>
                         <p className="text-xs text-gray-500 font-medium mt-0.5">
                           {c.date || "—"}
@@ -976,7 +1047,9 @@ const TalentSideModal = ({
 
                         <div className="mt-3 flex items-center justify-between">
                           <div className="text-xs text-gray-500 font-bold">
-                            Talent earns
+                            {t("agencyDashboard.talentSideModal.talentEarns", {
+                              defaultValue: "Talent earns",
+                            })}
                           </div>
                           <div className="text-xs font-bold text-gray-900">
                             {(() => {
@@ -1011,7 +1084,9 @@ const TalentSideModal = ({
                     onClick={save}
                     disabled={isSaving}
                   >
-                    {isSaving ? "Saving..." : "Save"}
+                    {isSaving
+                      ? t("agencyDashboard.talentSideModal.saving")
+                      : t("agencyDashboard.talentSideModal.save")}
                   </Button>
                   <Button
                     variant="outline"
@@ -1022,7 +1097,7 @@ const TalentSideModal = ({
                     }}
                     disabled={isSaving}
                   >
-                    Cancel
+                    {t("agencyDashboard.talentSideModal.cancel")}
                   </Button>
                 </>
               ) : (
@@ -1035,11 +1110,12 @@ const TalentSideModal = ({
                     {inviteSending ? (
                       <span className="inline-flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Sending…
+                        {t("agencyDashboard.talentSideModal.sending")}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
-                        <Mail className="w-4 h-4" /> Send Portal Invite
+                        <Mail className="w-4 h-4" />{" "}
+                        {t("agencyDashboard.talentSideModal.sendPortalInvite")}
                       </span>
                     )}
                   </Button>
@@ -1049,7 +1125,8 @@ const TalentSideModal = ({
                     onClick={() => setIsEditing(true)}
                     disabled={isSaving || inviteSending}
                   >
-                    <Pencil className="w-4 h-4" /> Edit Profile
+                    <Pencil className="w-4 h-4" />{" "}
+                    {t("agencyDashboard.roster.header.editProfile")}
                   </Button>
                 </>
               )}
