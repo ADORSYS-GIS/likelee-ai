@@ -75,6 +75,8 @@ export default function TalentDashboard() {
       return profiles[0] || null;
     },
     enabled: !!currentUser,
+    staleTime: 5 * 60 * 1000, // 5 minutes - profile data rarely changes
+    refetchOnWindowFocus: false,
   });
 
   // Fetch projects
@@ -88,6 +90,8 @@ export default function TalentDashboard() {
       );
     },
     enabled: !!currentUser,
+    staleTime: 2 * 60 * 1000, // 2 minutes - projects change occasionally
+    refetchOnWindowFocus: false,
   });
 
   // Fetch job matches
@@ -101,6 +105,8 @@ export default function TalentDashboard() {
       );
     },
     enabled: !!currentUser,
+    staleTime: 2 * 60 * 1000, // 2 minutes - job matches change occasionally
+    refetchOnWindowFocus: false,
   });
 
   // Create/Update portfolio

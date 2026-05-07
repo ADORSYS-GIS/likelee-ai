@@ -19,6 +19,13 @@ import type {
 } from "@supabase/supabase-js";
 import { readAuthIntent } from "./onboarding";
 
+// Debug logging helper - only logs in development
+const debugLog = (...args: unknown[]) => {
+  if (import.meta.env.DEV) {
+    console.log(...args);
+  }
+};
+
 export type MFAResult = {
   requiresMFA: boolean;
   factors: { id: string; friendly_name?: string; status: string }[];
@@ -135,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isOAuthUser?: boolean,
   ): Promise<void> => {
     if (fetchingRef.current === userId) {
-      console.log(
+      debugLog(
         "[AuthProvider] fetchProfile ALREADY IN PROGRESS for:",
         userId,
       );
@@ -143,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     fetchingRef.current = userId;
 
-    console.log("[AuthProvider] fetchProfile START", {
+    debugLog("[AuthProvider] fetchProfile START", {
       userId,
       userEmail,
       role,
@@ -180,7 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .limit(1)
           .maybeSingle();
 
-        console.log("[AuthProvider] tryFetchMembership result:", {
+        debugLog("[AuthProvider] tryFetchMembership result:", {
           data,
           error,
           userId,
@@ -224,7 +231,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Set profile with the organization's data plus membership info
             // This gives team members access to the same data as the owner
-            console.log(
+            debugLog(
               "[AuthProvider] Found membership, using organization profile",
             );
             const newProfile = {
@@ -289,7 +296,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data) {
-        console.log("[AuthProvider] Profile found in table:", table);
+        debugLog("[AuthProvider] Profile found in table:", table);
         // Add role to profile object for convenience
         let resolvedRole = roleHint;
         if (!resolvedRole) {
@@ -314,7 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
 
-        console.log("[AuthProvider] Setting profile with role:", resolvedRole);
+        debugLog("[AuthProvider] Setting profile with role:", resolvedRole);
         const nextProfile = {
           ...data,
           role: resolvedRole || (data as any)?.role,
@@ -373,7 +380,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // No profile found yet. Let the onboarding flow create the record explicitly.
-        console.log(
+        debugLog(
           "[AuthProvider] No profile found, setting profile to null",
           {
             isOAuthUser,
@@ -387,7 +394,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
 
-      console.log("[AuthProvider] fetchProfile END", {
+      debugLog("[AuthProvider] fetchProfile END", {
         finalProfileState: data ? "FOUND" : "NULL",
       });
     } catch (err) {
@@ -624,21 +631,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const roleHint =
             getUserRoleHint(user) || readAuthIntent()?.role || "";
 
-          console.log(
+          debugLog(
             `[AuthProvider] refreshProfile called for role: ${roleHint}`,
           );
 
           // For brand/agency users, retry fetching profile to handle race condition
           // after invitation acceptance (membership may not be immediately available)
           if (roleHint === "brand" || roleHint === "agency") {
-            console.log(
+            debugLog(
               `[AuthProvider] Using retry logic for ${roleHint} user`,
             );
             const maxRetries = 5;
             const retryDelay = 800; // ms - increased for database replication
 
             for (let attempt = 0; attempt < maxRetries; attempt++) {
-              console.log(
+              debugLog(
                 `[AuthProvider] Attempt ${attempt + 1}/${maxRetries}, profileRef.current:`,
                 profileRef.current,
               );
@@ -646,7 +653,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Reset fetching ref to allow retry
               if (attempt > 0) {
                 fetchingRef.current = null;
-                console.log(
+                debugLog(
                   `[AuthProvider] Retry attempt ${attempt + 1}/${maxRetries} - reset fetchingRef`,
                 );
               }
@@ -659,7 +666,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 isOAuth,
               );
 
-              console.log(
+              debugLog(
                 `[AuthProvider] After fetchProfile, profileRef.current:`,
                 profileRef.current,
               );
@@ -669,7 +676,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 profileRef.current !== null &&
                 profileRef.current !== undefined
               ) {
-                console.log(
+                debugLog(
                   `[AuthProvider] Profile loaded successfully on attempt ${attempt + 1}`,
                   profileRef.current,
                 );
@@ -678,7 +685,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
               // If not the last attempt, wait before retrying
               if (attempt < maxRetries - 1) {
-                console.log(
+                debugLog(
                   `[AuthProvider] Profile is null, retrying in ${retryDelay}ms (attempt ${attempt + 1}/${maxRetries})`,
                 );
                 await new Promise((resolve) => setTimeout(resolve, retryDelay));
