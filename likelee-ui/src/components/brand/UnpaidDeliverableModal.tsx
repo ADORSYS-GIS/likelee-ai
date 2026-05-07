@@ -68,7 +68,9 @@ export function UnpaidDeliverableModal({
             <div className="mx-auto w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mb-4 ring-4 ring-white/5">
               <Lock className="w-8 h-8 text-amber-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Payment Required</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              Payment Required
+            </h2>
             <p className="text-slate-400 mt-2 text-sm max-w-xs mx-auto">
               Secure your deliverables by completing the offer payment.
             </p>
@@ -78,10 +80,13 @@ export function UnpaidDeliverableModal({
             <div className="flex items-start gap-4 p-4 bg-amber-50 rounded-xl border border-amber-100 mb-6">
               <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="text-sm font-semibold text-amber-900">Approval & Downloads Locked</p>
+                <p className="text-sm font-semibold text-amber-900">
+                  Approval & Downloads Locked
+                </p>
                 <p className="text-xs text-amber-700 leading-relaxed">
-                  You cannot approve or download content for this offer until the payment is received. 
-                  Once paid, all assets will be instantly unlocked for your review and use.
+                  You cannot approve or download content for this offer until
+                  the payment is received. Once paid, all assets will be
+                  instantly unlocked for your review and use.
                 </p>
               </div>
             </div>
@@ -113,7 +118,7 @@ export function UnpaidDeliverableModal({
                 Maybe later
               </Button>
             </div>
-            
+
             <p className="text-center text-[10px] text-gray-400 mt-6 tracking-wide uppercase font-semibold">
               <Shield className="w-3 h-3 inline-block mr-1 -mt-0.5" />
               Secure Payment via Stripe

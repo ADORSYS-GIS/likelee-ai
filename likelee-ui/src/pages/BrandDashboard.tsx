@@ -665,9 +665,9 @@ export default function BrandDashboard() {
   const formatJobLabel = (value: string) =>
     value
       ? value
-        .split("_")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ")
+          .split("_")
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(" ")
       : "";
   useEffect(() => {
     if (
@@ -843,7 +843,7 @@ export default function BrandDashboard() {
     brandPlanTier === "enterprise"
       ? null
       : (brandBasePrice || 0) +
-      (brandHasStudioAddon ? BRAND_STUDIO_ADDON_PRICE : 0);
+        (brandHasStudioAddon ? BRAND_STUDIO_ADDON_PRICE : 0);
   const brandSeatLimitLabel =
     brandSeatLimit == null ? "Unlimited" : String(brandSeatLimit);
   const brandCampaignLimitLabel =
@@ -1480,8 +1480,8 @@ export default function BrandDashboard() {
                 offer_id: offerId,
                 campaign_name: String(
                   offer?.brand_campaigns?.name ||
-                  offer?.offer_title ||
-                  "Campaign offer",
+                    offer?.offer_title ||
+                    "Campaign offer",
                 ),
                 // Preserve creator/agency name from the offer for display
                 creator_name: String(offer?.target_name || "").trim() || null,
@@ -1715,7 +1715,7 @@ export default function BrandDashboard() {
                 setStudioLoading(false);
               }
             }
-          } catch { }
+          } catch {}
         }
 
         if (!useCache || forceRefresh) {
@@ -1914,7 +1914,7 @@ export default function BrandDashboard() {
                 setAssetSizesCache((prev) => ({ ...prev, [url]: size }));
               }
             })
-            .catch(() => { });
+            .catch(() => {});
         }
       }
     }
@@ -2285,9 +2285,9 @@ export default function BrandDashboard() {
             id: creator.id || Math.random().toString(36).substr(2, 9),
             name: getDisplayName(
               creator.full_name ||
-              creator.display_name ||
-              creator.stage_name ||
-              creator.name,
+                creator.display_name ||
+                creator.stage_name ||
+                creator.name,
             ),
             image: creator.profile_photo_url || creator.image || null,
             location:
@@ -2490,8 +2490,8 @@ export default function BrandDashboard() {
           : 30;
       const endDate = startDate
         ? new Date(
-          startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
-        )
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
         : null;
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -2523,8 +2523,8 @@ export default function BrandDashboard() {
       const deliverableDates = deliverables.flatMap((deliverable: any) => {
         const commentDates = Array.isArray(deliverable?.meta?.feedback_comments)
           ? deliverable.meta.feedback_comments.map((comment: any) =>
-            parseDate(comment?.created_at),
-          )
+              parseDate(comment?.created_at),
+            )
           : [];
         return [
           parseDate(deliverable?.created_at),
@@ -3054,7 +3054,7 @@ export default function BrandDashboard() {
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 overflow-hidden">
                           {project.creatorAvatars &&
-                            project.creatorAvatars.length > 0 ? (
+                          project.creatorAvatars.length > 0 ? (
                             <img
                               src={project.creatorAvatars[0]}
                               className="w-full h-full object-cover"
@@ -3432,15 +3432,17 @@ export default function BrandDashboard() {
                   return (
                     <div
                       key={String(event?.id || Math.random())}
-                      className={`p-3 rounded-lg border ${isAttention
+                      className={`p-3 rounded-lg border ${
+                        isAttention
                           ? "bg-yellow-50 border-yellow-300"
                           : "bg-gray-50 border-gray-200"
-                        }`}
+                      }`}
                     >
                       <div className="flex items-start gap-3">
                         <div
-                          className={`w-2 h-2 rounded-full mt-2 ${isAttention ? "bg-yellow-500" : "bg-gray-400"
-                            }`}
+                          className={`w-2 h-2 rounded-full mt-2 ${
+                            isAttention ? "bg-yellow-500" : "bg-gray-400"
+                          }`}
                         />
                         <div className="flex-1">
                           <p className="text-sm text-gray-900 font-medium">
@@ -3467,11 +3469,11 @@ export default function BrandDashboard() {
             <LineChart
               data={
                 brandSpendData?.monthly_spend &&
-                  brandSpendData.monthly_spend.length > 0
+                brandSpendData.monthly_spend.length > 0
                   ? brandSpendData.monthly_spend.map((d) => ({
-                    month: d.month,
-                    spend: d.spend / 100,
-                  }))
+                      month: d.month,
+                      spend: d.spend / 100,
+                    }))
                   : []
               }
             >
@@ -3574,51 +3576,51 @@ export default function BrandDashboard() {
             {(selectedCreator.instagram ||
               selectedCreator.tiktok ||
               selectedCreator.portfolio_url) && (
-                <Card className="p-6 bg-white border border-gray-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Links</h3>
-                  <div className="space-y-2">
-                    {selectedCreator.instagram && (
-                      <a
-                        href={selectedCreator.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                      >
-                        <Globe className="w-4 h-4" />
-                        <span>Instagram</span>
-                      </a>
-                    )}
-                    {selectedCreator.tiktok && (
-                      <a
-                        href={selectedCreator.tiktok}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                      >
-                        <Globe className="w-4 h-4" />
-                        <span>TikTok</span>
-                      </a>
-                    )}
-                    {selectedCreator.portfolio_url && (
-                      <a
-                        href={selectedCreator.portfolio_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                      >
-                        <Globe className="w-4 h-4" />
-                        <span>Portfolio</span>
-                      </a>
-                    )}
-                    {selectedCreator.sport && (
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Star className="w-4 h-4" />
-                        <span>Sport: {selectedCreator.sport}</span>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              )}
+              <Card className="p-6 bg-white border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Links</h3>
+                <div className="space-y-2">
+                  {selectedCreator.instagram && (
+                    <a
+                      href={selectedCreator.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                      <span>Instagram</span>
+                    </a>
+                  )}
+                  {selectedCreator.tiktok && (
+                    <a
+                      href={selectedCreator.tiktok}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                      <span>TikTok</span>
+                    </a>
+                  )}
+                  {selectedCreator.portfolio_url && (
+                    <a
+                      href={selectedCreator.portfolio_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                      <span>Portfolio</span>
+                    </a>
+                  )}
+                  {selectedCreator.sport && (
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Star className="w-4 h-4" />
+                      <span>Sport: {selectedCreator.sport}</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
           </div>
 
           {/* Right Column - Details */}
@@ -4143,38 +4145,38 @@ export default function BrandDashboard() {
               {/* Model Measurements */}
               {(filters.creator_types.length === 0 ||
                 filters.creator_types.includes("model")) && (
-                  <div className="pt-4 border-t border-gray-100">
-                    <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                      Model Measurements (inches)
-                    </Label>
-                    <div className="flex gap-4 max-w-md">
-                      <Input
-                        placeholder="Bust"
-                        value={filters.bust}
-                        onChange={(e) =>
-                          setFilters({ ...filters, bust: e.target.value })
-                        }
-                        className="border-2 border-gray-300"
-                      />
-                      <Input
-                        placeholder="Waist"
-                        value={filters.waist}
-                        onChange={(e) =>
-                          setFilters({ ...filters, waist: e.target.value })
-                        }
-                        className="border-2 border-gray-300"
-                      />
-                      <Input
-                        placeholder="Hips"
-                        value={filters.hips}
-                        onChange={(e) =>
-                          setFilters({ ...filters, hips: e.target.value })
-                        }
-                        className="border-2 border-gray-300"
-                      />
-                    </div>
+                <div className="pt-4 border-t border-gray-100">
+                  <Label className="text-sm font-semibold text-gray-900 mb-3 block">
+                    Model Measurements (inches)
+                  </Label>
+                  <div className="flex gap-4 max-w-md">
+                    <Input
+                      placeholder="Bust"
+                      value={filters.bust}
+                      onChange={(e) =>
+                        setFilters({ ...filters, bust: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                    <Input
+                      placeholder="Waist"
+                      value={filters.waist}
+                      onChange={(e) =>
+                        setFilters({ ...filters, waist: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                    <Input
+                      placeholder="Hips"
+                      value={filters.hips}
+                      onChange={(e) =>
+                        setFilters({ ...filters, hips: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
                   </div>
-                )}
+                </div>
+              )}
             </div>
           </Card>
         )}
@@ -4508,37 +4510,37 @@ export default function BrandDashboard() {
 
             const submission = Array.isArray(submissions)
               ? submissions
-                .filter((sub: any) => sub?.status !== "draft")
-                .sort((a: any, b: any) => {
-                  const linkedSubmissionId = String(
-                    req?.submission_id || "",
-                  ).trim();
-                  const aId = String(a?.id || "").trim();
-                  const bId = String(b?.id || "").trim();
-                  const aMatchesLinked = linkedSubmissionId
-                    ? aId === linkedSubmissionId
-                    : false;
-                  const bMatchesLinked = linkedSubmissionId
-                    ? bId === linkedSubmissionId
-                    : false;
+                  .filter((sub: any) => sub?.status !== "draft")
+                  .sort((a: any, b: any) => {
+                    const linkedSubmissionId = String(
+                      req?.submission_id || "",
+                    ).trim();
+                    const aId = String(a?.id || "").trim();
+                    const bId = String(b?.id || "").trim();
+                    const aMatchesLinked = linkedSubmissionId
+                      ? aId === linkedSubmissionId
+                      : false;
+                    const bMatchesLinked = linkedSubmissionId
+                      ? bId === linkedSubmissionId
+                      : false;
 
-                  if (aMatchesLinked && !bMatchesLinked) return -1;
-                  if (!aMatchesLinked && bMatchesLinked) return 1;
+                    if (aMatchesLinked && !bMatchesLinked) return -1;
+                    if (!aMatchesLinked && bMatchesLinked) return 1;
 
-                  const aHasUrl = !!(
-                    a?.client_submitter_slug || a?.docuseal_slug
-                  );
-                  const bHasUrl = !!(
-                    b?.client_submitter_slug || b?.docuseal_slug
-                  );
+                    const aHasUrl = !!(
+                      a?.client_submitter_slug || a?.docuseal_slug
+                    );
+                    const bHasUrl = !!(
+                      b?.client_submitter_slug || b?.docuseal_slug
+                    );
 
-                  if (aHasUrl && !bHasUrl) return -1;
-                  if (!aHasUrl && bHasUrl) return 1;
+                    if (aHasUrl && !bHasUrl) return -1;
+                    if (!aHasUrl && bHasUrl) return 1;
 
-                  const aDate = new Date(a?.created_at || 0);
-                  const bDate = new Date(b?.created_at || 0);
-                  return bDate.getTime() - aDate.getTime();
-                })[0]
+                    const aDate = new Date(a?.created_at || 0);
+                    const bDate = new Date(b?.created_at || 0);
+                    return bDate.getTime() - aDate.getTime();
+                  })[0]
               : null;
 
             const slug =
@@ -4573,8 +4575,8 @@ export default function BrandDashboard() {
                       <p className="font-semibold text-gray-900">
                         {req?.license_start_date
                           ? new Date(
-                            req.license_start_date,
-                          ).toLocaleDateString()
+                              req.license_start_date,
+                            ).toLocaleDateString()
                           : "\u2014"}
                       </p>
                     </div>
@@ -4817,19 +4819,21 @@ export default function BrandDashboard() {
         <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
           <button
             onClick={() => setInboxSubTab("talent_packages")}
-            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${inboxSubTab === "talent_packages"
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+              inboxSubTab === "talent_packages"
                 ? "bg-white shadow-sm text-gray-900"
                 : "text-gray-500"
-              }`}
+            }`}
           >
             Talent Packages ({inboxPackages.length})
           </button>
           <button
             onClick={() => setInboxSubTab("direct_requests")}
-            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${inboxSubTab === "direct_requests"
+            className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+              inboxSubTab === "direct_requests"
                 ? "bg-white shadow-sm text-gray-900"
                 : "text-gray-500"
-              }`}
+            }`}
           >
             Direct Requests
           </button>
@@ -4899,10 +4903,11 @@ export default function BrandDashboard() {
                       </p>
                       {pkg?.expires_at && (
                         <p
-                          className={`text-sm ${isExpired
+                          className={`text-sm ${
+                            isExpired
                               ? "text-red-600 font-bold"
                               : "text-gray-500"
-                            }`}
+                          }`}
                         >
                           Expires:{" "}
                           {new Date(pkg.expires_at).toLocaleDateString()}
@@ -4923,10 +4928,11 @@ export default function BrandDashboard() {
 
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Button
-                      className={`flex-1 min-w-[120px] rounded-none text-sm ${isExpired || !canManagePayOffers
+                      className={`flex-1 min-w-[120px] rounded-none text-sm ${
+                        isExpired || !canManagePayOffers
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-black hover:bg-gray-800 text-white"
-                        }`}
+                      }`}
                       disabled={isExpired || isDone || !canManagePayOffers}
                       onClick={async () => {
                         setConfirmingDonePkg(pkg);
@@ -4981,10 +4987,11 @@ export default function BrandDashboard() {
                     </Button>
                     <Button
                       variant="outline"
-                      className={`border rounded-none flex-shrink-0 transition-colors ${isDone
+                      className={`border rounded-none flex-shrink-0 transition-colors ${
+                        isDone
                           ? "border-gray-200 text-gray-400 cursor-not-allowed"
                           : "border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50"
-                        }`}
+                      }`}
                       disabled={!canManagePayOffers}
                       title={
                         !canManagePayOffers
@@ -5377,45 +5384,47 @@ export default function BrandDashboard() {
       <div className="flex gap-1 border-b border-gray-200">
         <button
           onClick={() => setContractHubSubTab("agency")}
-          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${contractHubSubTab === "agency"
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            contractHubSubTab === "agency"
               ? "border-blue-600 text-blue-600"
               : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}
+          }`}
         >
           Agency Contracts
           {brandOfferItems.filter(
             (offer: any) => offer?.target_type === "agency",
           ).length > 0 && (
-              <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
-                {
-                  brandOfferItems.filter(
-                    (offer: any) => offer?.target_type === "agency",
-                  ).length
-                }
-              </span>
-            )}
+            <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+              {
+                brandOfferItems.filter(
+                  (offer: any) => offer?.target_type === "agency",
+                ).length
+              }
+            </span>
+          )}
         </button>
         <button
           onClick={() => setContractHubSubTab("creator")}
-          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${contractHubSubTab === "creator"
+          className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+            contractHubSubTab === "creator"
               ? "border-blue-600 text-blue-600"
               : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}
+          }`}
         >
           Creator Contracts
           {contractHubRows.filter((row: any) => {
             const offer = offerMap.get(String(row?.offer_id));
             return offer?.target_type === "creator";
           }).length > 0 && (
-              <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
-                {
-                  contractHubRows.filter((row: any) => {
-                    const offer = offerMap.get(String(row?.offer_id));
-                    return offer?.target_type === "creator";
-                  }).length
-                }
-              </span>
-            )}
+            <span className="ml-1.5 text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+              {
+                contractHubRows.filter((row: any) => {
+                  const offer = offerMap.get(String(row?.offer_id));
+                  return offer?.target_type === "creator";
+                }).length
+              }
+            </span>
+          )}
         </button>
       </div>
 
@@ -5432,8 +5441,8 @@ export default function BrandDashboard() {
               </div>
             </Card>
           ) : brandOfferItems.filter(
-            (offer: any) => offer?.target_type === "agency",
-          ).length === 0 ? (
+              (offer: any) => offer?.target_type === "agency",
+            ).length === 0 ? (
             <Card className="p-6 bg-white border border-gray-300 rounded-none">
               <div className="flex flex-col items-center justify-center py-16 px-4">
                 <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -5463,11 +5472,11 @@ export default function BrandDashboard() {
                 : offer?.offer_contracts;
               const hasCompletedContract = Array.isArray(contractsForStatus)
                 ? contractsForStatus.some((c: any) => {
-                  const st = String(
-                    c?.docuseal_status || c?.status || "",
-                  ).toLowerCase();
-                  return st === "completed" || st === "signed";
-                })
+                    const st = String(
+                      c?.docuseal_status || c?.status || "",
+                    ).toLowerCase();
+                    return st === "completed" || st === "signed";
+                  })
                 : false;
               const isFullySigned =
                 Boolean(offer?.is_fully_signed) || hasCompletedContract;
@@ -5497,20 +5506,46 @@ export default function BrandDashboard() {
                   {isFullySigned && offer?.payment_status !== "paid" && (
                     <div className="flex flex-col gap-3 bg-amber-50 border border-amber-200 rounded-md p-4">
                       <span className="text-amber-800 text-sm font-semibold">
-                        ⏳ Contract signed. Payment required before deliverables can be downloaded.
+                        ⏳ Contract signed. Payment required before deliverables
+                        can be downloaded.
                       </span>
                       <div className="bg-white border border-amber-200 rounded-lg p-3">
                         <div className="flex justify-between items-center text-sm py-1">
                           <span className="text-gray-600">Creator Payment</span>
-                          <span className="font-medium">${Number(offer?.budget_snapshot?.budget_creator_payment || 0).toFixed(2)}</span>
+                          <span className="font-medium">
+                            $
+                            {Number(
+                              offer?.budget_snapshot?.budget_creator_payment ||
+                                0,
+                            ).toFixed(2)}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center text-sm py-1">
-                          <span className="text-gray-600">Likelee Platform Fee ({brandPlanTier === "pro" ? 3 : 5}%)</span>
-                          <span className="font-medium">${(Number(offer?.budget_snapshot?.budget_creator_payment || 0) * (brandPlanTier === "pro" ? 0.03 : 0.05)).toFixed(2)}</span>
+                          <span className="text-gray-600">
+                            Likelee Platform Fee (
+                            {brandPlanTier === "pro" ? 3 : 5}%)
+                          </span>
+                          <span className="font-medium">
+                            $
+                            {(
+                              Number(
+                                offer?.budget_snapshot
+                                  ?.budget_creator_payment || 0,
+                              ) * (brandPlanTier === "pro" ? 0.03 : 0.05)
+                            ).toFixed(2)}
+                          </span>
                         </div>
                         <div className="flex justify-between items-center text-sm py-2 mt-1 border-t border-gray-100 font-bold text-gray-900">
                           <span>Total Due</span>
-                          <span>${(Number(offer?.budget_snapshot?.budget_creator_payment || 0) * (brandPlanTier === "pro" ? 1.03 : 1.05)).toFixed(2)}</span>
+                          <span>
+                            $
+                            {(
+                              Number(
+                                offer?.budget_snapshot
+                                  ?.budget_creator_payment || 0,
+                              ) * (brandPlanTier === "pro" ? 1.03 : 1.05)
+                            ).toFixed(2)}
+                          </span>
                         </div>
                       </div>
                       <div className="flex justify-end mt-1">
@@ -5543,7 +5578,9 @@ export default function BrandDashboard() {
                                   title: msg.includes("no_talents_assigned")
                                     ? "Talent assignment required"
                                     : "Payment Error",
-                                  description: msg.includes("no_talents_assigned")
+                                  description: msg.includes(
+                                    "no_talents_assigned",
+                                  )
                                     ? "The agency must assign at least 1 talent to this offer before you can pay. Please contact the agency and try again."
                                     : msg || "Could not start checkout.",
                                   variant: "destructive" as any,
@@ -5559,7 +5596,8 @@ export default function BrandDashboard() {
                           </Button>
                         ) : (
                           <span className="text-xs text-amber-600 italic">
-                            View only - payment requires admin or project manager role
+                            View only - payment requires admin or project
+                            manager role
                           </span>
                         )}
                       </div>
@@ -5609,9 +5647,9 @@ export default function BrandDashboard() {
                           </p>
                         </div>
                       ) : selectedOfferHubContracts.filter(
-                        (c: any) =>
-                          c?.docuseal_status && c.docuseal_status !== "draft",
-                      ).length === 0 ? (
+                          (c: any) =>
+                            c?.docuseal_status && c.docuseal_status !== "draft",
+                        ).length === 0 ? (
                         <div className="p-8 text-center bg-white">
                           <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
                           <p className="text-sm text-gray-500 font-medium">
@@ -5642,8 +5680,9 @@ export default function BrandDashboard() {
                               >
                                 <div className="flex items-center gap-4">
                                   <div
-                                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${isCompleted ? "bg-green-50" : "bg-blue-50"
-                                      }`}
+                                    className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                      isCompleted ? "bg-green-50" : "bg-blue-50"
+                                    }`}
                                   >
                                     {isCompleted ? (
                                       <CheckCircle className="w-5 h-5 text-green-500" />
@@ -5659,16 +5698,17 @@ export default function BrandDashboard() {
                                     </h4>
                                     <div className="flex items-center gap-2 mt-1">
                                       <span
-                                        className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${isCompleted
+                                        className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
+                                          isCompleted
                                             ? "bg-green-100 text-green-700"
                                             : isPending
                                               ? "bg-blue-100 text-blue-700"
                                               : "bg-gray-100 text-gray-700"
-                                          }`}
+                                        }`}
                                       >
                                         {String(
                                           contract?.docuseal_status ||
-                                          "Unknown",
+                                            "Unknown",
                                         ).replace(/_/g, " ")}
                                       </span>
                                       {contract?.updated_at && (
@@ -5763,9 +5803,9 @@ export default function BrandDashboard() {
               </p>
             </div>
           ) : contractHubRows.filter((row: any) => {
-            const offer = offerMap.get(String(row?.offer_id));
-            return offer?.target_type === "creator";
-          }).length === 0 ? (
+              const offer = offerMap.get(String(row?.offer_id));
+              return offer?.target_type === "creator";
+            }).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
                 <FileText className="w-8 h-8 text-gray-400" />
@@ -5819,9 +5859,9 @@ export default function BrandDashboard() {
                           <td className="px-2 py-2 text-gray-700">
                             {String(
                               row?.title ||
-                              `Template ${String(
-                                row?.docuseal_template_id || "N/A",
-                              )}`,
+                                `Template ${String(
+                                  row?.docuseal_template_id || "N/A",
+                                )}`,
                             )}
                           </td>
                           <td className="px-2 py-2">
@@ -5918,16 +5958,16 @@ export default function BrandDashboard() {
                                           setContractHubRows((prev) =>
                                             prev.map((existing: any) =>
                                               String(existing?.id) ===
-                                                contractId
+                                              contractId
                                                 ? {
-                                                  ...newContract,
-                                                  offer_id:
-                                                    existing?.offer_id,
-                                                  campaign_name:
-                                                    existing?.campaign_name,
-                                                  creator_name:
-                                                    existing?.creator_name,
-                                                }
+                                                    ...newContract,
+                                                    offer_id:
+                                                      existing?.offer_id,
+                                                    campaign_name:
+                                                      existing?.campaign_name,
+                                                    creator_name:
+                                                      existing?.creator_name,
+                                                  }
                                                 : existing,
                                             ),
                                           );
@@ -6222,8 +6262,8 @@ export default function BrandDashboard() {
                         const completionPct =
                           expectedDeliverables > 0
                             ? Math.round(
-                              (approvedCount / expectedDeliverables) * 100,
-                            )
+                                (approvedCount / expectedDeliverables) * 100,
+                              )
                             : 0;
 
                         const collaboratorName = (() => {
@@ -6350,8 +6390,8 @@ export default function BrandDashboard() {
                                 </div>
                                 <div className="mb-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
                                   <p className="text-sm font-semibold text-amber-900">
-                                    Approving a deliverable
-                                    triggers escrow payout (once).
+                                    Approving a deliverable triggers escrow
+                                    payout (once).
                                   </p>
                                   <p className="text-xs text-amber-800 mt-1">
                                     After you approve a deliverable, Downloading
@@ -6360,7 +6400,7 @@ export default function BrandDashboard() {
                                   </p>
                                 </div>
                                 {loadingOfferHubDetails &&
-                                  selectedOfferHubId === offerId ? (
+                                selectedOfferHubId === offerId ? (
                                   <div className="py-12 text-center">
                                     <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
                                     <p className="text-sm text-gray-500 font-medium">
@@ -6397,10 +6437,11 @@ export default function BrandDashboard() {
                                         return (
                                           <Card
                                             key={String(del.id)}
-                                            className={`group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all ${isPaid
+                                            className={`group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all ${
+                                              isPaid
                                                 ? "cursor-zoom-in"
                                                 : "cursor-default"
-                                              }`}
+                                            }`}
                                             onClick={() => {
                                               setPreviewItems(
                                                 selectedOfferHubDeliverables,
@@ -6471,25 +6512,26 @@ export default function BrandDashboard() {
                                               )}
                                               <div className="absolute top-2 left-2">
                                                 <Badge
-                                                  className={`rounded-none border-0 ${del.status === "approved" ||
-                                                      del.status ===
+                                                  className={`rounded-none border-0 ${
+                                                    del.status === "approved" ||
+                                                    del.status ===
                                                       "brand_approved"
                                                       ? "bg-emerald-600 text-white"
                                                       : del.status ===
-                                                        "changes_requested"
+                                                          "changes_requested"
                                                         ? "bg-rose-600 text-white"
                                                         : "bg-blue-600 text-white"
-                                                    }`}
+                                                  }`}
                                                 >
                                                   {del.status === "submitted"
                                                     ? "New"
                                                     : del.status ===
-                                                      "brand_approved"
+                                                        "brand_approved"
                                                       ? "approved"
                                                       : del.status.replace(
-                                                        /_/g,
-                                                        " ",
-                                                      )}
+                                                          /_/g,
+                                                          " ",
+                                                        )}
                                                 </Badge>
                                               </div>
                                             </div>
@@ -6588,7 +6630,7 @@ export default function BrandDashboard() {
         start_date: campaign?.start_date || "",
         brief_snapshot:
           campaign?.brief_snapshot &&
-            typeof campaign.brief_snapshot === "object"
+          typeof campaign.brief_snapshot === "object"
             ? campaign.brief_snapshot
             : {},
         category: campaign?.category || "",
@@ -6635,8 +6677,8 @@ export default function BrandDashboard() {
           : 30;
       const endDate = startDate
         ? new Date(
-          startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
-        )
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
         : null;
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -6749,7 +6791,7 @@ export default function BrandDashboard() {
       const statuses = new Set(offers.map((o: any) => String(o?.status || "")));
       const campaignMeta =
         offers[0]?.brand_campaigns &&
-          typeof offers[0].brand_campaigns === "object"
+        typeof offers[0].brand_campaigns === "object"
           ? offers[0].brand_campaigns
           : {};
       const completedAt =
@@ -6768,8 +6810,8 @@ export default function BrandDashboard() {
           : 30;
       const endDate = startDate
         ? new Date(
-          startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
-        )
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
         : null;
       const today = new Date();
       const todayOnly = new Date(
@@ -6788,12 +6830,12 @@ export default function BrandDashboard() {
         | "in_progress"
         | "completed"
         | "draft" = isExpired
-          ? "completed"
-          : statuses.has("in_progress")
-            ? "in_progress"
-            : statuses.has("pending_approval")
-              ? "pending_approval"
-              : "draft";
+        ? "completed"
+        : statuses.has("in_progress")
+          ? "in_progress"
+          : statuses.has("pending_approval")
+            ? "pending_approval"
+            : "draft";
 
       const representative = offers[0] || {};
       return {
@@ -6844,7 +6886,7 @@ export default function BrandDashboard() {
       if (showBriefDetails) {
         const brief =
           campaign?.brief_snapshot &&
-            typeof campaign.brief_snapshot === "object"
+          typeof campaign.brief_snapshot === "object"
             ? campaign.brief_snapshot
             : {};
         const briefValue = (key: string, fallback = "Not specified") => {
@@ -7465,10 +7507,11 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setCampaignView("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "active"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              campaignView === "active"
                 ? "border-[#F7B750] text-[#F7B750]"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             Active (
             {
@@ -7479,10 +7522,11 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setCampaignView("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "pending"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              campaignView === "pending"
                 ? "border-[#F7B750] text-[#F7B750]"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             Pending Approval (
             {
@@ -7494,10 +7538,11 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setCampaignView("completed")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "completed"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              campaignView === "completed"
                 ? "border-[#F7B750] text-[#F7B750]"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             Expired ({groupedCampaigns.filter((c: any) => c.is_expired).length})
           </button>
@@ -7580,8 +7625,8 @@ export default function BrandDashboard() {
                       <span className="font-medium text-gray-900">
                         {campaign.start_date && campaign.start_date !== "N/A"
                           ? new Date(
-                            `${campaign.start_date}T00:00:00`,
-                          ).toLocaleDateString()
+                              `${campaign.start_date}T00:00:00`,
+                            ).toLocaleDateString()
                           : "—"}
                       </span>
                     </div>
@@ -7590,8 +7635,8 @@ export default function BrandDashboard() {
                       <span className="font-medium text-gray-900">
                         {campaign.due_date
                           ? new Date(
-                            String(campaign.due_date),
-                          ).toLocaleDateString()
+                              String(campaign.due_date),
+                            ).toLocaleDateString()
                           : "—"}
                       </span>
                     </div>
@@ -8013,12 +8058,13 @@ export default function BrandDashboard() {
                             <div className="flex flex-wrap gap-2">
                               <Badge
                                 variant="outline"
-                                className={`border ${job.status === "open"
+                                className={`border ${
+                                  job.status === "open"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
                                     : job.status === "draft"
                                       ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50"
                                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
-                                  }`}
+                                }`}
                               >
                                 {job.status || "open"}
                               </Badge>
@@ -8485,10 +8531,11 @@ export default function BrandDashboard() {
           {collections.map((collection) => (
             <Badge
               key={collection.id}
-              className={`px-4 py-2 cursor-pointer border border-gray-300 ${selectedCollectionId === collection.id
+              className={`px-4 py-2 cursor-pointer border border-gray-300 ${
+                selectedCollectionId === collection.id
                   ? "bg-indigo-100 text-indigo-700 border-indigo-300"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+              }`}
               onClick={() => handleSelectCollection(collection.id)}
             >
               {collection.name} ({collection.assetIds.length} assets)
@@ -8531,8 +8578,8 @@ export default function BrandDashboard() {
           <p className="text-2xl sm:text-3xl font-bold text-gray-900">
             {billingYtdSpend > 0 && brandAnalytics.total_projects_ytd > 0
               ? currencyFormatter.format(
-                billingYtdSpend / 100 / brandAnalytics.total_projects_ytd,
-              )
+                  billingYtdSpend / 100 / brandAnalytics.total_projects_ytd,
+                )
               : "$0"}
           </p>
         </Card>
@@ -8573,14 +8620,14 @@ export default function BrandDashboard() {
                 .join("\n");
               const monthlyRows =
                 brandSpendData?.monthly_spend &&
-                  brandSpendData.monthly_spend.length > 0
+                brandSpendData.monthly_spend.length > 0
                   ? "\n\nMonth,Spend ($)\n" +
-                  brandSpendData.monthly_spend
-                    .map(
-                      (d: any) =>
-                        `${sanitizeCsvField(d.month)},${(d.spend / 100).toFixed(2)}`,
-                    )
-                    .join("\n")
+                    brandSpendData.monthly_spend
+                      .map(
+                        (d: any) =>
+                          `${sanitizeCsvField(d.month)},${(d.spend / 100).toFixed(2)}`,
+                      )
+                      .join("\n")
                   : "";
               const totalProjects = brandAnalytics.total_projects_ytd;
               const totalSpend =
@@ -8690,10 +8737,10 @@ export default function BrandDashboard() {
                         </td>
                         <td className="px-4 py-4 font-bold text-gray-900">
                           {talent.total_cost_cents != null &&
-                            Number(talent.total_cost_cents) > 0
+                          Number(talent.total_cost_cents) > 0
                             ? currencyFormatter.format(
-                              Number(talent.total_cost_cents) / 100,
-                            )
+                                Number(talent.total_cost_cents) / 100,
+                              )
                             : "—"}
                         </td>
                       </tr>
@@ -8715,11 +8762,11 @@ export default function BrandDashboard() {
             <LineChart
               data={
                 brandSpendData?.monthly_spend &&
-                  brandSpendData.monthly_spend.length > 0
+                brandSpendData.monthly_spend.length > 0
                   ? brandSpendData.monthly_spend.map((d) => ({
-                    month: d.month,
-                    spend: d.spend / 100,
-                  }))
+                      month: d.month,
+                      spend: d.spend / 100,
+                    }))
                   : []
               }
             >
@@ -8902,28 +8949,31 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractDetailTab("summary")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "summary"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractDetailTab === "summary"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             Summary
           </button>
           <button
             onClick={() => setContractDetailTab("full_text")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "full_text"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractDetailTab === "full_text"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             Full Text
           </button>
           <button
             onClick={() => setContractDetailTab("custom")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "custom"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractDetailTab === "custom"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             Custom Clauses{" "}
             {contract.custom_clauses.length > 0 &&
@@ -8931,10 +8981,11 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setContractDetailTab("history")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "history"
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractDetailTab === "history"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            }`}
           >
             History
           </button>
@@ -9546,10 +9597,11 @@ export default function BrandDashboard() {
             <button
               key={tab.key}
               onClick={() => setContractHubTab(tab.key)}
-              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${contractHubTab === tab.key
+              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                contractHubTab === tab.key
                   ? "border-blue-600 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              }`}
             >
               {tab.label}
               {tab.count > 0 && (
@@ -9744,10 +9796,11 @@ export default function BrandDashboard() {
             <button
               key={tab.key}
               onClick={() => setUsageRightsTab(tab.key)}
-              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${usageRightsTab === tab.key
+              className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                usageRightsTab === tab.key
                   ? "border-blue-600 text-blue-600"
                   : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              }`}
             >
               {tab.label}
               {tab.count != null && tab.count > 0 && (
@@ -9862,8 +9915,8 @@ export default function BrandDashboard() {
                           <td className="px-4 py-3 text-gray-600">
                             {r.license_end_date
                               ? new Date(
-                                r.license_end_date,
-                              ).toLocaleDateString()
+                                  r.license_end_date,
+                                ).toLocaleDateString()
                               : "—"}
                           </td>
                           <td className="px-4 py-3">{licenseStatusBadge(r)}</td>
@@ -9934,16 +9987,18 @@ export default function BrandDashboard() {
             {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit * 0.8 && (
               <div className="mt-3 flex items-center gap-2">
                 <AlertTriangle
-                  className={`w-5 h-5 ${(billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                  className={`w-5 h-5 ${
+                    (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
                       ? "text-red-600"
                       : "text-amber-600"
-                    }`}
+                  }`}
                 />
                 <span
-                  className={`text-sm font-medium ${(billingCurrentMonthSpend || 0) / 100 >= budgetLimit
+                  className={`text-sm font-medium ${
+                    (billingCurrentMonthSpend || 0) / 100 >= budgetLimit
                       ? "text-red-700"
                       : "text-amber-700"
-                    }`}
+                  }`}
                 >
                   {(billingCurrentMonthSpend || 0) / 100 >= budgetLimit
                     ? "You've reached your monthly budget limit"
@@ -10003,10 +10058,11 @@ export default function BrandDashboard() {
 
       {/* Budget Management */}
       <Card
-        className={`p-4 sm:p-6 border-2 ${budgetLimit === null || budgetLimit === 0
+        className={`p-4 sm:p-6 border-2 ${
+          budgetLimit === null || budgetLimit === 0
             ? "bg-amber-50 border-amber-300"
             : "bg-white border-gray-200"
-          }`}
+        }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
           <div>
@@ -10362,9 +10418,9 @@ export default function BrandDashboard() {
               const amountDollars = (invoice.amount || 0) / 100;
               const monthLabel = invoice.created_at
                 ? new Date(invoice.created_at).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "long",
-                })
+                    year: "numeric",
+                    month: "long",
+                  })
                 : "Unknown";
               return (
                 <div
@@ -11098,7 +11154,7 @@ export default function BrandDashboard() {
                         <p className="font-semibold text-gray-900">
                           {String(
                             selectedCampaignContracts[0]?.title ||
-                            "Campaign contract",
+                              "Campaign contract",
                           )}
                         </p>
                       </div>
@@ -11107,7 +11163,7 @@ export default function BrandDashboard() {
                         <Badge className="bg-blue-100 text-blue-700 border border-blue-300">
                           {String(
                             selectedCampaignContracts[0]?.docuseal_status ||
-                            "sent",
+                              "sent",
                           ).replace(/_/g, " ")}
                         </Badge>
                       </div>
@@ -11117,14 +11173,14 @@ export default function BrandDashboard() {
                     {String(
                       selectedCampaignContracts[0]?.meta
                         ?.docuseal_document_url ||
-                      selectedCampaignContracts[0]?.file_url ||
-                      "",
+                        selectedCampaignContracts[0]?.file_url ||
+                        "",
                     ).trim() ? (
                       <iframe
                         src={String(
                           selectedCampaignContracts[0]?.meta
                             ?.docuseal_document_url ||
-                          selectedCampaignContracts[0]?.file_url,
+                            selectedCampaignContracts[0]?.file_url,
                         )}
                         className="w-full h-[70vh] border border-gray-200 rounded"
                         title="Campaign Contract Document"
@@ -11437,13 +11493,13 @@ export default function BrandDashboard() {
                 (selectedJobForApplications.work_with_agency ||
                   selectedJobForApplications.invite_creator ||
                   (selectedJobForApplications.invited_agency_ids || []).length >
-                  0 ||
+                    0 ||
                   (selectedJobForApplications.invited_creator_ids || [])
                     .length > 0 ||
                   (selectedJobForApplications.invited_agencies || []).length >
-                  0 ||
+                    0 ||
                   (selectedJobForApplications.invited_creators || []).length >
-                  0) && (
+                    0) && (
                   <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <h4 className="text-sm font-semibold text-gray-900">
                       Collaboration Preferences
@@ -11467,15 +11523,15 @@ export default function BrandDashboard() {
                       selectedJobForApplications.invited_agencies,
                     ) &&
                       selectedJobForApplications.invited_agencies.length > 0) ||
-                      (Array.isArray(
-                        selectedJobForApplications.declined_agencies,
-                      ) &&
-                        selectedJobForApplications.declined_agencies.length >
+                    (Array.isArray(
+                      selectedJobForApplications.declined_agencies,
+                    ) &&
+                      selectedJobForApplications.declined_agencies.length >
                         0) ||
-                      (Array.isArray(
-                        selectedJobForApplications.accepted_agencies,
-                      ) &&
-                        selectedJobForApplications.accepted_agencies.length >
+                    (Array.isArray(
+                      selectedJobForApplications.accepted_agencies,
+                    ) &&
+                      selectedJobForApplications.accepted_agencies.length >
                         0) ? (
                       <div className="pt-1">
                         <p className="text-xs font-semibold text-gray-700 mb-2">
@@ -11544,8 +11600,8 @@ export default function BrandDashboard() {
                                   <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
                                     {String(
                                       agency?.agency_name ||
-                                      agency?.display_name ||
-                                      "A",
+                                        agency?.display_name ||
+                                        "A",
                                     )
                                       .trim()
                                       .slice(0, 1)
@@ -11574,15 +11630,15 @@ export default function BrandDashboard() {
                       selectedJobForApplications.invited_creators,
                     ) &&
                       selectedJobForApplications.invited_creators.length > 0) ||
-                      (Array.isArray(
-                        selectedJobForApplications.declined_creators,
-                      ) &&
-                        selectedJobForApplications.declined_creators.length >
+                    (Array.isArray(
+                      selectedJobForApplications.declined_creators,
+                    ) &&
+                      selectedJobForApplications.declined_creators.length >
                         0) ||
-                      (Array.isArray(
-                        selectedJobForApplications.accepted_creators,
-                      ) &&
-                        selectedJobForApplications.accepted_creators.length >
+                    (Array.isArray(
+                      selectedJobForApplications.accepted_creators,
+                    ) &&
+                      selectedJobForApplications.accepted_creators.length >
                         0) ? (
                       <div className="pt-3">
                         <p className="text-xs font-semibold text-gray-700 mb-2">
@@ -11642,8 +11698,8 @@ export default function BrandDashboard() {
                                   <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
                                     {String(
                                       creator?.full_name ||
-                                      creator?.display_name ||
-                                      "C",
+                                        creator?.display_name ||
+                                        "C",
                                     )
                                       .trim()
                                       .slice(0, 1)
@@ -11755,7 +11811,7 @@ export default function BrandDashboard() {
                   {selectedAssetIndex !== null &&
                     Array.isArray(selectedJobForApplications?.brand_assets) &&
                     selectedJobForApplications.brand_assets[
-                    selectedAssetIndex
+                      selectedAssetIndex
                     ] && (
                       <div className="relative w-full h-full flex flex-col">
                         {/* Header */}
@@ -11918,7 +11974,7 @@ export default function BrandDashboard() {
                           </a>
                         )}
                         {Array.isArray(app.comp_cards) &&
-                          app.comp_cards.length > 0 ? (
+                        app.comp_cards.length > 0 ? (
                           app.comp_cards.map((cc: any, i: number) => (
                             <a
                               key={cc.url || i}
@@ -12713,26 +12769,26 @@ export default function BrandDashboard() {
                     contractData.add_restrictions ||
                     contractData.add_liability ||
                     contractData.add_special_terms) && (
-                      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="font-semibold text-yellow-900 mb-2">
-                          Custom Terms Added:
-                        </p>
-                        <ul className="text-sm text-yellow-800 space-y-1">
-                          {contractData.add_disclaimer && (
-                            <li>• Required disclaimer included</li>
-                          )}
-                          {contractData.add_restrictions && (
-                            <li>• Content restrictions added</li>
-                          )}
-                          {contractData.add_liability && (
-                            <li>• Liability waiver included</li>
-                          )}
-                          {contractData.add_special_terms && (
-                            <li>• Special terms added</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
+                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="font-semibold text-yellow-900 mb-2">
+                        Custom Terms Added:
+                      </p>
+                      <ul className="text-sm text-yellow-800 space-y-1">
+                        {contractData.add_disclaimer && (
+                          <li>• Required disclaimer included</li>
+                        )}
+                        {contractData.add_restrictions && (
+                          <li>• Content restrictions added</li>
+                        )}
+                        {contractData.add_liability && (
+                          <li>• Liability waiver included</li>
+                        )}
+                        {contractData.add_special_terms && (
+                          <li>• Special terms added</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
                 </Card>
 
                 <Card className="p-6 bg-green-50 border-2 border-green-300">
@@ -12810,20 +12866,21 @@ export default function BrandDashboard() {
               const isCampaignGroup = item.id === "campaigns";
               const isActive = isCampaignGroup
                 ? activeSection === "campaigns-hub" ||
-                activeSection === "campaigns-inbox" ||
-                activeSection === "campaign-offers" ||
-                activeSection === "campaigns-contract-hub" ||
-                activeSection === "campaigns-deliverables" ||
-                activeSection === "studio"
+                  activeSection === "campaigns-inbox" ||
+                  activeSection === "campaign-offers" ||
+                  activeSection === "campaigns-contract-hub" ||
+                  activeSection === "campaigns-deliverables" ||
+                  activeSection === "studio"
                 : activeSection === item.id;
 
               return (
                 <div key={item.id}>
                   <div
-                    className={`w-full flex items-center gap-2 rounded-lg transition-all ${isActive
+                    className={`w-full flex items-center gap-2 rounded-lg transition-all ${
+                      isActive
                         ? "bg-[#F7B750] text-white"
                         : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                    }`}
                   >
                     <button
                       onClick={() => {
@@ -12891,8 +12948,9 @@ export default function BrandDashboard() {
                         className="inline-flex items-center justify-center px-2 mr-2"
                       >
                         <ChevronDown
-                          className={`w-4 h-4 transition-transform ${showCampaignSubtabs ? "rotate-0" : "-rotate-90"
-                            }`}
+                          className={`w-4 h-4 transition-transform ${
+                            showCampaignSubtabs ? "rotate-0" : "-rotate-90"
+                          }`}
                         />
                       </button>
                     )}
@@ -12906,10 +12964,11 @@ export default function BrandDashboard() {
                             campaignView: "active",
                           });
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaign-offers"
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaign-offers"
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        }`}
                       >
                         <Target className="w-4 h-4" />
                         <span className="flex-1 text-left">My Offers</span>
@@ -12921,12 +12980,13 @@ export default function BrandDashboard() {
                           }
                         }}
                         disabled={!canViewInbox}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-inbox"
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-inbox"
                             ? "bg-gray-100 text-gray-900"
                             : canViewInbox
                               ? "text-gray-600 hover:bg-gray-100"
                               : "text-gray-400 cursor-not-allowed"
-                          }`}
+                        }`}
                         title={
                           !canViewInbox
                             ? "You do not have permission to view the inbox"
@@ -12945,10 +13005,11 @@ export default function BrandDashboard() {
                         onClick={() => {
                           navigateToSection("campaigns-contract-hub");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-contract-hub"
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-contract-hub"
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        }`}
                       >
                         <FileText className="w-4 h-4" />
                         <span className="flex-1 text-left">Contract Hub</span>
@@ -12962,10 +13023,11 @@ export default function BrandDashboard() {
                         onClick={() => {
                           navigateToSection("campaigns-deliverables");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-deliverables"
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-deliverables"
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        }`}
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         <span className="flex-1 text-left">Deliverables</span>
@@ -12976,21 +13038,23 @@ export default function BrandDashboard() {
                             campaignHubTab: "jobs",
                           });
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-hub" &&
-                            campaignHubTab === "jobs"
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-hub" &&
+                          campaignHubTab === "jobs"
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        }`}
                       >
                         <Briefcase className="w-4 h-4" />
                         <span className="flex-1 text-left">Jobs</span>
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "studio"
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "studio"
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        }`}
                       >
                         <ImageIcon className="w-4 h-4" />
                         <span className="text-left">Asset Library</span>
@@ -13143,12 +13207,13 @@ export default function BrandDashboard() {
                             <div className="flex flex-wrap gap-2">
                               <Badge
                                 variant="outline"
-                                className={`border ${job.status === "open"
+                                className={`border ${
+                                  job.status === "open"
                                     ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
                                     : job.status === "draft"
                                       ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-50"
                                       : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
-                                  }`}
+                                }`}
                               >
                                 {job.status || "open"}
                               </Badge>
@@ -13757,8 +13822,8 @@ export default function BrandDashboard() {
                     src={
                       previewImage
                         ? getPublicUrl(previewImage, {
-                          thumbnail: previewImage?.payment_status !== "paid",
-                        })
+                            thumbnail: previewImage?.payment_status !== "paid",
+                          })
                         : ""
                     }
                     className="max-w-full max-h-full object-contain"
@@ -13804,18 +13869,18 @@ export default function BrandDashboard() {
                 {["approved", "accepted", "brand_approved"].includes(
                   String(previewImage?.status || "").toLowerCase(),
                 ) && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md"
-                      onClick={() => {
-                        if (previewImage)
-                          void downloadOfferHubDeliverable(previewImage);
-                      }}
-                    >
-                      <Download className="w-4 h-4 mr-2" /> Download
-                    </Button>
-                  )}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md"
+                    onClick={() => {
+                      if (previewImage)
+                        void downloadOfferHubDeliverable(previewImage);
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Download
+                  </Button>
+                )}
               </div>
             </div>
             {previewImage?.caption && (
@@ -13950,9 +14015,9 @@ export default function BrandDashboard() {
                 <span className="text-4xl font-black text-gray-900 leading-none">
                   {escrowReleasedModal.amount
                     ? new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: escrowReleasedModal.currency || "USD",
-                    }).format(escrowReleasedModal.amount / 100)
+                        style: "currency",
+                        currency: escrowReleasedModal.currency || "USD",
+                      }).format(escrowReleasedModal.amount / 100)
                     : "--"}
                 </span>
                 <span className="text-xs font-bold text-gray-500 uppercase">
