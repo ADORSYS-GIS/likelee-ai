@@ -39,7 +39,7 @@ fn offer_contract_status_is_signed(value: &serde_json::Value) -> bool {
     st == "completed" || st == "signed"
 }
 
-fn offer_status_is_signed(value: &serde_json::Value) -> bool {
+pub fn offer_status_is_signed(value: &serde_json::Value) -> bool {
     let st = value
         .get("status")
         .and_then(|v| v.as_str())

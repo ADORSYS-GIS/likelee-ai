@@ -85,6 +85,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { DocuSealBuilderModal } from "@/components/licensing/DocuSealBuilderModal";
 import { DocusealForm } from "@docuseal/react";
+import { UnpaidDeliverableModal } from "@/components/brand/UnpaidDeliverableModal";
 
 // Brand data is now loaded from API via getBrandProfile()
 
@@ -199,6 +200,8 @@ export default function BrandCampaignDashboard({
   const [contractUploadName, setContractUploadName] = useState("");
   const [showCampaignDocuSealBuilder, setShowCampaignDocuSealBuilder] =
     useState(false);
+  const [showUnpaidModal, setShowUnpaidModal] = useState(false);
+  const [unpaidOfferId, setUnpaidOfferId] = useState<string>("");
   const [isSendingFromBuilder, setIsSendingFromBuilder] = useState(false);
   const [brandSignUrl, setBrandSignUrl] = useState("");
   const [brandSignOpen, setBrandSignOpen] = useState(false);
@@ -1135,12 +1138,8 @@ export default function BrandCampaignDashboard({
     } catch (e: any) {
       const msg = String(e?.message || "");
       if (e?.status === 402 || msg.includes("payment_required")) {
-        toast({
-          title: "Payment required",
-          description:
-            "You can’t approve deliverables until payment for this offer is completed.",
-          variant: "destructive" as any,
-        });
+        setUnpaidOfferId(offerId);
+        setShowUnpaidModal(true);
         return;
       }
       toast({
@@ -1224,12 +1223,8 @@ export default function BrandCampaignDashboard({
       );
       if (!response.ok) {
         if (response.status === 402) {
-          toast({
-            title: "Payment required",
-            description:
-              "Payment has not been received for this offer. Please complete payment to download deliverables.",
-            variant: "destructive" as any,
-          });
+          setUnpaidOfferId(offerId);
+          setShowUnpaidModal(true);
           return;
         }
         throw new Error("Failed to fetch deliverable file.");
@@ -4924,6 +4919,13 @@ export default function BrandCampaignDashboard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {showUnpaidModal && (
+        <UnpaidDeliverableModal
+          open={showUnpaidModal}
+          onOpenChange={setShowUnpaidModal}
+          offerId={unpaidOfferId}
+        />
+      )}
     </div>
   );
 }
