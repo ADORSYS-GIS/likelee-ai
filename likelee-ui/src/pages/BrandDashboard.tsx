@@ -5500,15 +5500,29 @@ export default function BrandDashboard() {
                 >
                   {/* Payment Pending Banner */}
                   {isFullySigned && offer?.payment_status !== "paid" && (
-                    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                      <span className="text-amber-700 text-xs font-semibold">
-                        ⏳ Contract signed. Payment required before deliverables
-                        can start.
+                    <div className="flex flex-col gap-3 bg-amber-50 border border-amber-200 rounded-md p-4">
+                      <span className="text-amber-800 text-sm font-semibold">
+                        ⏳ Contract signed. Payment required before deliverables can start.
                       </span>
+                      <div className="bg-white border border-amber-200 rounded-lg p-3">
+                        <div className="flex justify-between items-center text-sm py-1">
+                           <span className="text-gray-600">Creator Payment</span>
+                           <span className="font-medium">${Number(offer?.budget_snapshot?.budget_creator_payment || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm py-1">
+                           <span className="text-gray-600">Likelee Platform Fee ({brandPlanTier === "pro" ? 3 : 5}%)</span>
+                           <span className="font-medium">${(Number(offer?.budget_snapshot?.budget_creator_payment || 0) * (brandPlanTier === "pro" ? 0.03 : 0.05)).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm py-2 mt-1 border-t border-gray-100 font-bold text-gray-900">
+                           <span>Total Due</span>
+                           <span>${(Number(offer?.budget_snapshot?.budget_creator_payment || 0) * (brandPlanTier === "pro" ? 1.03 : 1.05)).toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-end mt-1">
                       {canManagePayOffers ? (
                         <Button
                           size="sm"
-                          className="ml-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-md px-3 py-1"
+                          className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-md px-4 py-2"
                           disabled={payingOfferId === offerId}
                           onClick={async () => {
                             setPayingOfferId(offerId);
@@ -5549,11 +5563,11 @@ export default function BrandDashboard() {
                             : "💳 Pay Offer"}
                         </Button>
                       ) : (
-                        <span className="ml-auto text-xs text-amber-600 italic">
-                          View only - payment requires admin or project manager
-                          role
+                        <span className="text-xs text-amber-600 italic">
+                          View only - payment requires admin or project manager role
                         </span>
                       )}
+                      </div>
                     </div>
                   )}
                   {isFullySigned && offer?.payment_status === "paid" && (

@@ -240,6 +240,7 @@ export default function BrandCampaignDashboard({
     : 0;
   const canUseCampaignCollaboration = brandAllowsCampaignCollaboration(profile);
   const maxCampaignWizardStep = brandMaxCampaignWizardStep(profile);
+  const platformFee = brandPlanTier === "pro" ? 3 : 5;
   const [previewImage, setPreviewImage] = useState<any>(null);
   const [previewItems, setPreviewItems] = useState<any[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
@@ -3206,6 +3207,7 @@ export default function BrandCampaignDashboard({
                   <CampaignBriefStep
                     campaignBrief={campaignBrief}
                     setCampaignBrief={setCampaignBrief}
+                    platformFeePercent={platformFee}
                     onReferenceImagesUpload={handleReferenceImageUpload}
                     onBrandAssetsUpload={handleBrandAssetsUpload}
                     fieldErrors={step2FieldErrors}
@@ -3617,7 +3619,7 @@ export default function BrandCampaignDashboard({
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-600">
-                          Likelee Platform Fee (2%)
+                          Likelee Platform Fee ({platformFee}%)
                         </span>
                         <span className="text-blue-600 font-medium">
                           +$

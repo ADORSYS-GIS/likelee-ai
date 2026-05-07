@@ -8426,8 +8426,9 @@ async fn try_release_campaign_offer_escrow(
         serde_json::from_str(&approved_text).unwrap_or_default();
     let approved_count = approved_rows.len();
 
-    // More than half must be approved: approved_count > total_count / 2
-    if approved_count <= total_count / 2 {
+    // Escrow releases when at least one deliverable is approved.
+    // This ensures the brand has reviewed and accepted work before funds are released.
+    if approved_count < 1 {
         return Ok(EscrowReleaseOutcome {
             payment_status: payment_status.to_string(),
             escrow_status: escrow_status.to_string(),
