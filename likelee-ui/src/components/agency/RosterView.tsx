@@ -336,9 +336,9 @@ const RosterView = ({
     0,
   );
   const expiringLicensesCount = useMemo(() => {
-    return safeRosterData.filter((t) => {
-      if (!t?.expiry || t.expiry === "—") return false;
-      const expiryDate = new Date(t.expiry);
+    return safeRosterData.filter((talent) => {
+      if (!talent?.expiry || talent.expiry === "—") return false;
+      const expiryDate = new Date(talent.expiry);
       if (Number.isNaN(expiryDate.getTime())) return false;
       const today = new Date();
       const diffTime = expiryDate.getTime() - today.getTime();
@@ -445,12 +445,12 @@ const RosterView = ({
 
   const reminderTargetTalentIds = useMemo(() => {
     return safeRosterData
-      .filter((t) => {
-        const last = digitalsSummaryByTalent.get(t.id)?.lastUpdated;
+      .filter((talent) => {
+        const last = digitalsSummaryByTalent.get(talent.id)?.lastUpdated;
         const days = calculateDaysSinceUpdate(last);
         return !!last && days >= 75;
       })
-      .map((t) => t.id);
+      .map((talent) => talent.id);
   }, [safeRosterData, digitalsSummaryByTalent]);
 
   const openReminderModal = (talentIds: string[], mode: "single" | "all") => {
@@ -474,19 +474,22 @@ const RosterView = ({
     talentIds: string[],
     opts: { subject: string; body: string },
   ) => {
-    const byId = new Map(safeRosterData.map((t) => [t.id, t] as const));
+    const byId = new Map(
+      safeRosterData.map((talent) => [talent.id, talent] as const),
+    );
     const fromName = `Likelee.ai from ${agencyName}`;
 
     const targets = talentIds
       .map((id) => {
-        const t = byId.get(id);
-        const email = String(t?.email || "").trim();
+        const talent = byId.get(id);
+        const email = String(talent?.email || "").trim();
         const name =
-          String(t?.name || t?.stage_name || t?.full_name || "there").trim() ||
-          "there";
+          String(
+            talent?.name || talent?.stage_name || talent?.full_name || "there",
+          ).trim() || "there";
         return { email, name };
       })
-      .filter((t) => t.email.length > 0);
+      .filter((item) => item.email.length > 0);
 
     if (!targets.length) {
       toast({
@@ -502,12 +505,12 @@ const RosterView = ({
       let sent = 0;
       let failed = 0;
       const failures: string[] = [];
-      for (const t of targets) {
+      for (const target of targets) {
         const subject = opts.subject;
-        const body = opts.body.replace("{name}", t.name);
+        const body = opts.body.replace("{name}", target.name);
         try {
           await sendCoreEmail({
-            to: t.email,
+            to: target.email,
             subject,
             body,
             from_name: fromName,
@@ -516,7 +519,7 @@ const RosterView = ({
         } catch (e: any) {
           failed += 1;
           const msg = String(e?.message || "");
-          failures.push(msg || `Failed to send to ${t.email}`);
+          failures.push(msg || `Failed to send to ${target.email}`);
         }
       }
 
@@ -549,18 +552,18 @@ const RosterView = ({
   };
 
   const digitalsStats = {
-    current: safeRosterData.filter((t) => {
-      const last = digitalsSummaryByTalent.get(t.id)?.lastUpdated;
+    current: safeRosterData.filter((talent) => {
+      const last = digitalsSummaryByTalent.get(talent.id)?.lastUpdated;
       const days = calculateDaysSinceUpdate(last);
       return days < 75;
     }).length,
-    needsReminder: safeRosterData.filter((t) => {
-      const last = digitalsSummaryByTalent.get(t.id)?.lastUpdated;
+    needsReminder: safeRosterData.filter((talent) => {
+      const last = digitalsSummaryByTalent.get(talent.id)?.lastUpdated;
       const days = calculateDaysSinceUpdate(last);
       return !!last && days >= 75 && days < 90;
     }).length,
-    outdated: safeRosterData.filter((t) => {
-      const last = digitalsSummaryByTalent.get(t.id)?.lastUpdated;
+    outdated: safeRosterData.filter((talent) => {
+      const last = digitalsSummaryByTalent.get(talent.id)?.lastUpdated;
       const days = calculateDaysSinceUpdate(last);
       return !!last && days >= 90;
     }).length,
@@ -693,18 +696,18 @@ const RosterView = ({
 
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      data = data.filter((t) => {
-        const name = String(t?.name ?? "").toLowerCase();
-        const stage = String(t?.stage_name ?? "").toLowerCase();
-        const email = String(t?.email ?? "").toLowerCase();
-        const role = String(t?.role ?? "").toLowerCase();
-        const roleTypesText = Array.isArray((t as any)?.role_types)
-          ? ((t as any).role_types as any[])
+      data = data.filter((talent) => {
+        const name = String(talent?.name ?? "").toLowerCase();
+        const stage = String(talent?.stage_name ?? "").toLowerCase();
+        const email = String(talent?.email ?? "").toLowerCase();
+        const role = String(talent?.role ?? "").toLowerCase();
+        const roleTypesText = Array.isArray((talent as any)?.role_types)
+          ? ((talent as any).role_types as any[])
               .filter((x) => typeof x === "string")
               .join(",")
               .toLowerCase()
           : "";
-        const skills = String(t?.special_skills ?? "").toLowerCase();
+        const skills = String(talent?.special_skills ?? "").toLowerCase();
         return (
           name.includes(q) ||
           stage.includes(q) ||
@@ -718,16 +721,17 @@ const RosterView = ({
 
     if (statusFilter !== "All Status") {
       data = data.filter(
-        (t) => (t.status || "").toLowerCase() === statusFilter.toLowerCase(),
+        (talent) =>
+          (talent.status || "").toLowerCase() === statusFilter.toLowerCase(),
       );
     }
 
     if (categoryFilter !== "All Categories") {
       const target = categoryFilter.toLowerCase();
-      data = data.filter((t) => {
-        const role = String(t?.role ?? "").toLowerCase();
-        const roleTypes = Array.isArray((t as any)?.role_types)
-          ? ((t as any).role_types as any[])
+      data = data.filter((talent) => {
+        const role = String(talent?.role ?? "").toLowerCase();
+        const roleTypes = Array.isArray((talent as any)?.role_types)
+          ? ((talent as any).role_types as any[])
               .filter((x) => typeof x === "string")
               .map((s) => String(s).toLowerCase())
           : [];
@@ -807,8 +811,10 @@ const RosterView = ({
         if (target === "other") return s.includes("other");
         return s.includes(target);
       };
-      data = data.filter((t) => {
-        const arr = Array.isArray(t.race_ethnicity) ? t.race_ethnicity : [];
+      data = data.filter((talent) => {
+        const arr = Array.isArray(talent.race_ethnicity)
+          ? talent.race_ethnicity
+          : [];
         return arr.some((x: any) => typeof x === "string" && matchesEth(x));
       });
     }
@@ -820,8 +826,8 @@ const RosterView = ({
       const max = advancedFilters.heightMaxCm
         ? Number(advancedFilters.heightMaxCm)
         : null;
-      data = data.filter((t) => {
-        const h = heightCm(t);
+      data = data.filter((talent) => {
+        const h = heightCm(talent);
         if (h == null) return true;
         if (min != null && Number.isFinite(min) && h < min) return false;
         if (max != null && Number.isFinite(max) && h > max) return false;
@@ -836,8 +842,8 @@ const RosterView = ({
       const max = advancedFilters.ageMax
         ? Number(advancedFilters.ageMax)
         : null;
-      data = data.filter((t) => {
-        const a = ageYears(t.date_of_birth);
+      data = data.filter((talent) => {
+        const a = ageYears(talent.date_of_birth);
         if (a == null) return true;
         if (min != null && Number.isFinite(min) && a < min) return false;
         if (max != null && Number.isFinite(max) && a > max) return false;
@@ -846,9 +852,11 @@ const RosterView = ({
     }
 
     if (advancedFilters.tattoos !== "any") {
-      data = data.filter((t: any) => {
+      data = data.filter((talent: any) => {
         const has =
-          typeof t?.tattoos === "boolean" ? (t.tattoos as boolean) : null;
+          typeof talent?.tattoos === "boolean"
+            ? (talent.tattoos as boolean)
+            : null;
         if (advancedFilters.tattoos === "yes") return has === true;
         if (advancedFilters.tattoos === "no") return has === false;
         return true;
@@ -856,9 +864,11 @@ const RosterView = ({
     }
 
     if (advancedFilters.piercings !== "any") {
-      data = data.filter((t: any) => {
+      data = data.filter((talent: any) => {
         const has =
-          typeof t?.piercings === "boolean" ? (t.piercings as boolean) : null;
+          typeof talent?.piercings === "boolean"
+            ? (talent.piercings as boolean)
+            : null;
         if (advancedFilters.piercings === "yes") return has === true;
         if (advancedFilters.piercings === "no") return has === false;
         return true;
@@ -907,8 +917,8 @@ const RosterView = ({
 
   const digitalsRows = React.useMemo(() => {
     return safeRosterData
-      .filter((t) => {
-        const summary = digitalsSummaryByTalent.get(t.id);
+      .filter((talent) => {
+        const summary = digitalsSummaryByTalent.get(talent.id);
         const last = summary?.lastUpdated;
         const daysAgo = calculateDaysSinceUpdate(last);
         if (digitalsFilter === "Current Only") return daysAgo < 75;
@@ -917,11 +927,11 @@ const RosterView = ({
         if (digitalsFilter === "Outdated Only") return !!last && daysAgo >= 90;
         return true;
       })
-      .map((t) => {
-        const summary = digitalsSummaryByTalent.get(t.id);
+      .map((talent) => {
+        const summary = digitalsSummaryByTalent.get(talent.id);
         const last = summary?.lastUpdated;
-        const totalPhotos = summary?.totalPhotos ?? (t.assets || 0);
-        return { talent: t, lastUpdated: last, totalPhotos };
+        const totalPhotos = summary?.totalPhotos ?? (talent.assets || 0);
+        return { talent, lastUpdated: last, totalPhotos };
       });
   }, [safeRosterData, digitalsFilter, digitalsSummaryByTalent]);
 
@@ -2294,11 +2304,11 @@ const RosterView = ({
                 const rows = Array.isArray(rosterData) ? rosterData : [];
                 const filtered = !q
                   ? rows
-                  : rows.filter((t: any) => {
+                  : rows.filter((talent: any) => {
                       const name = String(
-                        t?.name || t?.full_legal_name || "",
+                        talent?.name || talent?.full_legal_name || "",
                       ).toLowerCase();
-                      const email = String(t?.email || "").toLowerCase();
+                      const email = String(talent?.email || "").toLowerCase();
                       return name.includes(q) || email.includes(q);
                     });
 
@@ -2314,16 +2324,18 @@ const RosterView = ({
 
                 return (
                   <div className="max-h-56 overflow-y-auto space-y-2">
-                    {filtered.slice(0, 30).map((t: any) => {
-                      const email = String(t?.email || "").trim();
+                    {filtered.slice(0, 30).map((talent: any) => {
+                      const email = String(talent?.email || "").trim();
                       const name = String(
-                        t?.name || t?.full_legal_name || singularTitleLabel,
+                        talent?.name ||
+                          talent?.full_legal_name ||
+                          singularTitleLabel,
                       ).trim();
                       const rowSending =
                         !!inviteSendingEmail && inviteSendingEmail === email;
                       return (
                         <div
-                          key={t?.id || `${name}:${email}`}
+                          key={talent?.id || `${name}:${email}`}
                           className="flex flex-col gap-3 rounded-lg border bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="min-w-0">
