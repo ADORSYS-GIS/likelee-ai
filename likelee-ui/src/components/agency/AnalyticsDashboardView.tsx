@@ -1070,7 +1070,7 @@ const AnalyticsDashboardView = ({
                   <TrendingUp className="w-5 h-5 text-green-500" />
                 </div>
                 <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">
-                  Total Earnings (30d)
+                  {t("agencyDashboard.analytics.overview.totalEarnings30d")}
                 </p>
                 <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter mb-4 break-words">
                   {analytics.overview.total_earnings_formatted}
@@ -1086,8 +1086,8 @@ const AnalyticsDashboardView = ({
                   {analytics.overview.earnings_growth_percentage >= 0
                     ? "+"
                     : ""}
-                  {analytics.overview.earnings_growth_percentage}% vs last
-                  period
+                  {analytics.overview.earnings_growth_percentage}%{" "}
+                  {t("agencyDashboard.analytics.overview.vsLastPeriod")}
                 </p>
               </div>
             </Card>
@@ -1102,7 +1102,7 @@ const AnalyticsDashboardView = ({
                         <BarChart2 className="w-8 h-8 text-indigo-600" />
                       </div>
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
-                        Active Licenses
+                        {t("agencyDashboard.analytics.overview.activeLicenses")}
                       </p>
                       <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.overview.active_campaigns}
@@ -1136,7 +1136,7 @@ const AnalyticsDashboardView = ({
                         <TrendingUp className="w-8 h-8 text-purple-600" />
                       </div>
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
-                        AI Usages (30d)
+                        {t("agencyDashboard.analytics.overview.aiUsages30d")}
                       </p>
                       <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.ai_usage.total_usages_30d}
@@ -1165,7 +1165,9 @@ const AnalyticsDashboardView = ({
                     </div>
                     <div>
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                        Active Campaigns
+                        {t(
+                          "agencyDashboard.analytics.overview.activeCampaigns",
+                        )}
                       </p>
                       <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.overview.active_campaigns}
@@ -1177,7 +1179,7 @@ const AnalyticsDashboardView = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 sm:mb-10">
                   <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Total Value
+                      {t("agencyDashboard.analytics.overview.totalValue")}
                     </p>
                     <p className="text-2xl font-black text-gray-900">
                       {analytics.overview.total_earnings_formatted}
@@ -1185,7 +1187,7 @@ const AnalyticsDashboardView = ({
                   </div>
                   <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Avg Value
+                      {t("agencyDashboard.analytics.overview.avgValue")}
                     </p>
                     <p className="text-2xl font-black text-gray-900">
                       {analytics.overview.avg_value_formatted}
@@ -1193,7 +1195,7 @@ const AnalyticsDashboardView = ({
                   </div>
                   <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Top Scope
+                      {t("agencyDashboard.analytics.overview.topScope")}
                     </p>
                     <p className="text-lg font-black text-gray-900 tracking-tight">
                       {analytics.overview.top_scope}
@@ -1202,7 +1204,9 @@ const AnalyticsDashboardView = ({
                 </div>
                 <div>
                   <p className="text-[11px] font-black text-gray-400 uppercase mb-5 tracking-[0.2em]">
-                    Campaign Status Breakdown
+                    {t(
+                      "agencyDashboard.analytics.overview.campaignStatusBreakdown",
+                    )}
                   </p>
                   <div className="space-y-6">
                     {campaignStatusData.map((status, i) => (
@@ -1232,7 +1236,9 @@ const AnalyticsDashboardView = ({
           <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
             <div className="flex justify-between items-center mb-6 sm:mb-10">
               <h3 className="text-lg font-black text-gray-900 uppercase tracking-[0.15em]">
-                Monthly Performance Trends
+                {t(
+                  "agencyDashboard.analytics.overview.monthlyPerformanceTrends",
+                )}
               </h3>
               <TrendingUp className="w-5 h-5 text-indigo-600" />
             </div>
@@ -1332,7 +1338,9 @@ const AnalyticsDashboardView = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
             <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
               <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
-                AI Usage Type Distribution
+                {t(
+                  "agencyDashboard.analytics.overview.aiUsageTypeDistribution",
+                )}
               </h3>
               <div className="flex flex-col items-center">
                 <div className="h-[280px] w-full">
@@ -1405,7 +1413,7 @@ const AnalyticsDashboardView = ({
 
             <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
               <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
-                Consent Status Breakdown
+                {t("agencyDashboard.analytics.overview.consentStatusBreakdown")}
               </h3>
               <div className="flex flex-col items-center">
                 <div className="h-[280px] w-full">
