@@ -346,21 +346,21 @@ const InviteTeamMemberModal = ({
             {t("settings.team.modals.inviteDescription")}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 sm:space-y-6 py-4">
-          <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm font-bold text-gray-900">
-              {t("settings.team.modals.emailAddress")}
+        <div className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              {t("settings.team.fields.email")}
             </Label>
             <Input
               value={email}
-              onChange={(event) => onEmailChange(event.target.value)}
-              placeholder={t("settings.team.modals.emailPlaceholder")}
-              className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm"
+              onChange={(e) => onEmailChange(e.target.value)}
+              placeholder="teammate@example.com"
+              className="h-10 sm:h-11 rounded-xl bg-gray-50 border-gray-200 text-sm"
             />
           </div>
-          <div className="space-y-1.5 sm:space-y-2">
-            <Label className="text-xs sm:text-sm font-bold text-gray-900">
-              {t("settings.team.userRole")}
+          <div className="space-y-2">
+            <Label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              {t("settings.team.fields.role")}
             </Label>
             <Select
               value={role}
@@ -368,73 +368,134 @@ const InviteTeamMemberModal = ({
                 onRoleChange(value as Exclude<TeamRoleValue, "owner">)
               }
             >
-              <SelectTrigger className="h-9 sm:h-11 bg-gray-50 border-gray-200 rounded-xl text-xs sm:text-sm">
-                <SelectValue placeholder={t("settings.team.selectRole")} />
+              <SelectTrigger className="h-10 sm:h-11 rounded-xl bg-gray-50 border-gray-200 text-sm">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {TEAM_ROLE_OPTIONS.map((option) => (
-                  <SelectItem
-                    key={option.value}
-                    value={option.value}
-                    className="text-xs font-bold py-2.5"
-                  >
-                    <div className="flex flex-col gap-0.5">
-                      <span>
-                        {option.value === "admin"
-                          ? t("settings.team.roles.admin.label")
-                          : option.value === "project_manager"
-                            ? t("settings.team.roles.projectManager.label")
-                            : t("settings.team.roles.reviewer.label")}
-                      </span>
-                      <span className="text-[10px] text-gray-400 font-medium">
-                        {option.value === "admin"
-                          ? t("settings.team.roles.admin.description")
-                          : option.value === "project_manager"
-                            ? t(
-                                "settings.team.roles.projectManager.description",
-                              )
-                            : t("settings.team.roles.reviewer.description")}
-                      </span>
-                    </div>
+                  <SelectItem key={option.value} value={option.value}>
+                    {t(option.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="p-3 sm:p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-            <p className="text-[10px] sm:text-xs text-indigo-700 font-medium leading-relaxed">
-              <span className="font-bold">{t("settings.team.note")}:</span>{" "}
-              {t("settings.team.inviteNote")}
-            </p>
-          </div>
         </div>
-        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+        <DialogFooter className="mt-5 gap-2 sm:gap-0">
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto font-bold text-xs sm:text-sm"
-            disabled={submitting}
+            className="font-bold rounded-xl"
           >
-            {t("common.cancel", { ns: "common", defaultValue: "Cancel" })}
+            {t("settings.team.actions.cancel")}
           </Button>
           <Button
             onClick={onSubmit}
-            disabled={submitting}
-            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 sm:h-11 px-6 rounded-xl flex items-center justify-center gap-2 text-xs sm:text-sm"
+            disabled={submitting || !email.trim()}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl px-5"
           >
             {submitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : (
-              <Mail className="w-4 h-4" />
+              <Mail className="w-4 h-4 mr-2" />
             )}
-            {submitting
-              ? t("settings.team.modals.sending")
-              : t("settings.team.modals.sendInvitation")}
+            {t("settings.team.actions.sendInvite")}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+};
+
+const SETTINGS_COPY: Record<string, Record<string, string>> = {
+    en: {
+      agencySettings: "Agency Settings",
+      settingsDescription: "Configure your agency profile and preferences",
+      profile: "Profile",
+      subscription: "Subscription",
+      commissions: "Commissions",
+      emailTemplates: "Email Templates",
+      notifications: "Notifications",
+      taxCurrency: "Tax & Currency",
+      team: "Team",
+      fileStorage: "File Storage",
+      integrations: "Integrations",
+      currentPlan: "Current Plan",
+      viewPlans: "View Plans",
+      billingSubscription: "Billing & Subscription",
+      agencyInformation: "Agency Information",
+      verified: "Verified",
+      agencyName: "Agency Name *",
+      legalEntityName: "Legal Entity Name",
+      address: "Address",
+      city: "City",
+      stateProvince: "State/Province",
+      zipPostalCode: "ZIP/Postal Code",
+      country: "Country",
+      selectCountry: "Select country",
+      unitedStates: "United States",
+      unitedKingdom: "United Kingdom",
+      canada: "Canada",
+      germany: "Germany",
+      timeZone: "Time Zone",
+      selectTimezone: "Select timezone",
+      easternTime: "Eastern Time (EST)",
+      centralTime: "Central Time (CST)",
+      pacificTime: "Pacific Time (PST)",
+      phone: "Phone",
+      email: "Email",
+      website: "Website",
+      taxIdEin: "Tax ID / EIN",
+      branding: "Branding",
+      agencyLogo: "Agency Logo",
+      uploading: "Uploading...",
+      uploadNewLogo: "Upload New Logo",
+      emailSignature: "Email Signature",
+    },
+    es: {
+      agencySettings: "Configuración de la agencia",
+      settingsDescription: "Configura el perfil y las preferencias de tu agencia",
+      profile: "Perfil",
+      subscription: "Suscripción",
+      commissions: "Comisiones",
+      emailTemplates: "Plantillas de correo",
+      notifications: "Notificaciones",
+      taxCurrency: "Impuestos y moneda",
+      team: "Equipo",
+      fileStorage: "Almacenamiento de archivos",
+      integrations: "Integraciones",
+      currentPlan: "Plan actual",
+      viewPlans: "Ver planes",
+      billingSubscription: "Facturación y suscripción",
+      agencyInformation: "Información de la agencia",
+      verified: "Verificada",
+      agencyName: "Nombre de la agencia *",
+      legalEntityName: "Nombre legal de la entidad",
+      address: "Dirección",
+      city: "Ciudad",
+      stateProvince: "Estado/Provincia",
+      zipPostalCode: "Código postal",
+      country: "País",
+      selectCountry: "Seleccionar país",
+      unitedStates: "Estados Unidos",
+      unitedKingdom: "Reino Unido",
+      canada: "Canadá",
+      germany: "Alemania",
+      timeZone: "Zona horaria",
+      selectTimezone: "Seleccionar zona horaria",
+      easternTime: "Hora del Este (EST)",
+      centralTime: "Hora Central (CST)",
+      pacificTime: "Hora del Pacífico (PST)",
+      phone: "Teléfono",
+      email: "Correo",
+      website: "Sitio web",
+      taxIdEin: "ID fiscal / EIN",
+      branding: "Marca",
+      agencyLogo: "Logo de la agencia",
+      uploading: "Subiendo...",
+      uploadNewLogo: "Subir nuevo logo",
+      emailSignature: "Firma de correo",
+    },
 };
 
 const EditPermissionsModal = ({
@@ -661,7 +722,11 @@ const GeneralSettingsView = ({
   hasProAccess = false,
   agencyDisplayPlanLabel,
 }: GeneralSettingsViewProps) => {
-  const { t } = useTranslation("agency");
+  const { t, i18n } = useTranslation("agency");
+  const st = (key: string) => {
+    const lng = String(i18n.language || "en").split("-")[0];
+    return SETTINGS_COPY[lng]?.[key] || SETTINGS_COPY.en[key] || key;
+  };
   const { profile, refreshProfile, token } = useAuth();
   const { toast } = useToast();
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -2034,8 +2099,8 @@ const GeneralSettingsView = ({
     <div className="max-w-full mx-auto">
       <div className="space-y-6 animate-in fade-in duration-500">
         <DashboardSectionHeader
-          title="Agency Settings"
-          description="Configure your agency profile and preferences"
+          title={st("agencySettings")}
+          description={st("settingsDescription")}
         />
 
         <div className="flex gap-2 p-1 bg-gray-100/50 rounded-xl w-full overflow-x-auto no-scrollbar lg:w-fit">
@@ -2063,7 +2128,15 @@ const GeneralSettingsView = ({
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
               }`}
             >
-              {tab}
+              {st(
+                tab === "Tax & Currency"
+                  ? "taxCurrency"
+                  : tab === "Email Templates"
+                    ? "emailTemplates"
+                    : tab === "File Storage"
+                      ? "fileStorage"
+                      : tab.charAt(0).toLowerCase() + tab.slice(1),
+              )}
             </button>
           ))}
         </div>
@@ -2088,7 +2161,7 @@ const GeneralSettingsView = ({
                       planTier === "pro" ? "text-indigo-300" : "text-gray-400"
                     }`}
                   >
-                    Current Plan
+                    {st("currentPlan")}
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <div
@@ -2116,7 +2189,9 @@ const GeneralSettingsView = ({
                               : "border-gray-200 text-gray-600 hover:bg-gray-50"
                       }`}
                     >
-                      <a href={createPageUrl("AgencySubscribe")}>View Plans</a>
+                      <a href={createPageUrl("AgencySubscribe")}>
+                        {st("viewPlans")}
+                      </a>
                     </Button>
                     <Button
                       asChild
@@ -2138,7 +2213,7 @@ const GeneralSettingsView = ({
                       }`}
                     >
                       <a href={createPageUrl("AgencySubscribe")}>
-                        Billing & Subscription
+                        {st("billingSubscription")}
                       </a>
                     </Button>
                   </div>
@@ -2155,7 +2230,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                    Agency Information
+                    {st("agencyInformation")}
                   </h3>
                   {(kycStatus === "approved" ||
                     kycStatus === "verified" ||
@@ -2163,7 +2238,7 @@ const GeneralSettingsView = ({
                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
                       <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
                       <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
-                        Verified
+                        {st("verified")}
                       </span>
                     </div>
                   )}
@@ -2173,7 +2248,7 @@ const GeneralSettingsView = ({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Agency Name *
+                    {st("agencyName")}
                   </Label>
                   <Input
                     value={formData.agency_name}
@@ -2185,7 +2260,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Legal Entity Name
+                    {st("legalEntityName")}
                   </Label>
                   <Input
                     value={formData.legal_entity_name}
@@ -2197,7 +2272,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Address
+                    {st("address")}
                   </Label>
                   <Input
                     value={formData.address}
@@ -2209,7 +2284,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    City
+                    {st("city")}
                   </Label>
                   <Input
                     value={formData.city}
@@ -2220,7 +2295,7 @@ const GeneralSettingsView = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      State/Province
+                      {st("stateProvince")}
                     </Label>
                     <Input
                       value={formData.state}
@@ -2232,7 +2307,7 @@ const GeneralSettingsView = ({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-gray-900">
-                      ZIP/Postal Code
+                      {st("zipPostalCode")}
                     </Label>
                     <Input
                       value={formData.zip_postal_code}
@@ -2245,44 +2320,44 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Country
+                    {st("country")}
                   </Label>
                   <Select
                     value={formData.country}
                     onValueChange={(val) => handleInputChange("country", val)}
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
-                      <SelectValue placeholder="Select country" />
+                      <SelectValue placeholder={st("selectCountry")} />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="us">United States</SelectItem>
-                      <SelectItem value="uk">United Kingdom</SelectItem>
-                      <SelectItem value="ca">Canada</SelectItem>
-                      <SelectItem value="de">Germany</SelectItem>
+                      <SelectItem value="us">{st("unitedStates")}</SelectItem>
+                      <SelectItem value="uk">{st("unitedKingdom")}</SelectItem>
+                      <SelectItem value="ca">{st("canada")}</SelectItem>
+                      <SelectItem value="de">{st("germany")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Time Zone
+                    {st("timeZone")}
                   </Label>
                   <Select
                     value={formData.time_zone}
                     onValueChange={(val) => handleInputChange("time_zone", val)}
                   >
                     <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
-                      <SelectValue placeholder="Select timezone" />
+                      <SelectValue placeholder={st("selectTimezone")} />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="est">Eastern Time (EST)</SelectItem>
-                      <SelectItem value="cst">Central Time (CST)</SelectItem>
-                      <SelectItem value="pst">Pacific Time (PST)</SelectItem>
+                      <SelectItem value="est">{st("easternTime")}</SelectItem>
+                      <SelectItem value="cst">{st("centralTime")}</SelectItem>
+                      <SelectItem value="pst">{st("pacificTime")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Phone
+                    {st("phone")}
                   </Label>
                   <Input
                     value={formData.phone_number}
@@ -2294,7 +2369,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Email
+                    {st("email")}
                   </Label>
                   <Input
                     value={formData.email}
@@ -2304,7 +2379,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Website
+                    {st("website")}
                   </Label>
                   <Input
                     value={formData.website}
@@ -2316,7 +2391,7 @@ const GeneralSettingsView = ({
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Tax ID / EIN
+                    {st("taxIdEin")}
                   </Label>
                   <Input
                     value={formData.tax_id_ein}
@@ -2333,12 +2408,12 @@ const GeneralSettingsView = ({
             {/* Branding */}
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <h3 className="text-lg font-bold text-gray-900 mb-6 tracking-tight">
-                Branding
+                {st("branding")}
               </h3>
               <div className="space-y-8">
                 <div className="space-y-4">
                   <Label className="text-sm font-bold text-gray-900">
-                    Agency Logo
+                    {st("agencyLogo")}
                   </Label>
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
                     <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
@@ -2372,14 +2447,14 @@ const GeneralSettingsView = ({
                       ) : (
                         <Upload className="w-4 h-4" />
                       )}
-                      {isUploading ? "Uploading..." : "Upload New Logo"}
+                      {isUploading ? st("uploading") : st("uploadNewLogo")}
                     </Button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Email Signature
+                    {st("emailSignature")}
                   </Label>
                   <Textarea
                     value={formData.email_signature}
