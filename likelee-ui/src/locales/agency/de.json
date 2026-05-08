@@ -3267,6 +3267,11 @@
           "whyMattersDescription": "Ohne Portal-Zugang kann dieses {{entity}} keine Zahlungen erhalten, Verträge unterzeichnen oder über die Plattform kommunizieren.",
           "goToRoster": "Zum Roster gehen & Einladen"
         }
+      },
+      "templateCard": {
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "sendToClient": "An Kunden senden"
       }
     },
     "catalogs": {

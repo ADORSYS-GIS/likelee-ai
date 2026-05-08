@@ -3231,6 +3231,11 @@
           "whyMattersDescription": "Sin acceso al portal, este {{entity}} no puede recibir pagos, firmar contratos o comunicarse a través de la plataforma.",
           "goToRoster": "Ir a la Lista e Invitar"
         }
+      },
+      "templateCard": {
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "sendToClient": "Enviar al Cliente"
       }
     },
     "catalogs": {

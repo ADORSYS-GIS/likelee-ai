@@ -4855,6 +4855,11 @@
           "whyMattersDescription": "Without portal access, this {{entity}} can't receive payments, sign contracts, or communicate through the platform.",
           "goToRoster": "Go to Roster & Invite"
         }
+      },
+      "templateCard": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "sendToClient": "Send to Client"
       }
     },
     "payouts": {

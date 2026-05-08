@@ -3266,6 +3266,11 @@
           "whyMattersDescription": "Sans accès au portail, ce {{entity}} ne peut pas recevoir de paiements, signer de contrats ou communiquer via la plateforme.",
           "goToRoster": "Aller à la Liste et Inviter"
         }
+      },
+      "templateCard": {
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "sendToClient": "Envoyer au Client"
       }
     },
     "catalogs": {
