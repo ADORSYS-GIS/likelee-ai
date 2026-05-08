@@ -1764,7 +1764,10 @@ const AnalyticsDashboardView = ({
                           <Badge
                             className={`font-bold text-[10px] py-0.5 ${talent.status === "Active" ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-100 text-gray-500 border-gray-200"}`}
                           >
-                            {talent.status}
+                            {t(
+                              `agencyDashboard.roster.statuses.${talent.status.toLowerCase()}`,
+                              { defaultValue: talent.status },
+                            )}
                           </Badge>
                         </td>
                       </tr>
