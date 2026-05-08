@@ -1851,14 +1851,34 @@
         "consentStatusBreakdown": "Consent Status Breakdown",
         "complete": "Complete",
         "missing": "Missing",
-        "expired": "Expired"
+        "expired": "Expired",
+        "of": "of",
+        "campaignStatus": {
+          "inProgress": "In Progress",
+          "readyToLaunch": "Ready to Launch",
+          "completed": "Completed"
+        },
+        "aiUsageTypes": {
+          "image": "Image",
+          "video": "Video",
+          "voice": "Voice"
+        },
+        "consentStatus": {
+          "complete": "Complete",
+          "missing": "Missing",
+          "expired": "Expired"
+        },
+        "chart": {
+          "earnings": "Earnings ($)",
+          "aiUsages": "AI Usages"
+        }
       },
       "rosterInsights": {
         "title": "Roster Insights",
-        "topPerformer": "Top Performer",
+        "topPerformer": "Top Performer (Earnings)",
         "highestFollowers": "Highest Followers",
         "avgValue": "Avg Value",
-        "noData": "No roster insights data available.",
+        "noData": "No data available",
         "totalTalent": "Total Talent",
         "activeTalent": "Active Talent",
         "performanceMetrics": "Performance Metrics",
@@ -1869,7 +1889,12 @@
         "talent": "Talent",
         "earnings30d": "Earnings (30d)",
         "projected": "Projected",
-        "status": "Status"
+        "status": "Status",
+        "earningsByTalent": "Earnings by Talent (Last 30 Days)",
+        "chart": {
+          "earnings30d": "30D Earnings ($)",
+          "projected": "Projected ($)"
+        }
       },
       "clientsCampaigns": {
         "title": "Clients & Campaigns",
@@ -1889,7 +1914,10 @@
         "earningsByClient": "Earnings by Client",
         "geographicDistribution": "Geographic Distribution",
         "region": "Region",
-        "value": "Value"
+        "value": "Value",
+        "fromBookingToCompletion": "From booking to completion",
+        "newClientsLast30Days": "New clients in the last 30 days",
+        "ofTotal": "of total"
       },
       "compliance": {
         "title": "Compliance",
@@ -1898,7 +1926,7 @@
         "expiringSoon": "Expiring Soon",
         "assignedTalent": "Assigned Talent",
         "renewLicense": "Renew License",
-        "noData": "No compliance data available.",
+        "noData": "No expired licenses found",
         "complianceScore": "Compliance Score",
         "documentsRequired": "Documents Required",
         "verificationsComplete": "Verifications Complete",
@@ -1907,7 +1935,19 @@
         "expiryDate": "Expiry Date",
         "noExpiredLicenses": "No expired licenses found",
         "refreshData": "Refresh Data",
-        "lastUpdated": "Last updated"
+        "lastUpdated": "Last updated",
+        "renew": "Renew",
+        "expiredContractsMessage": "Expired contracts will appear here for renewal.",
+        "refreshing": "Refreshing...",
+        "refresh": "Refresh",
+        "expiredContracts": "Expired Contracts",
+        "verified": "verified",
+        "complete": "complete",
+        "terminatedOrExpired": "Terminated or expired",
+        "consentStatusDistribution": "Consent Status Distribution",
+        "comingSoon": "Coming Soon",
+        "expiredContractsAppearHere": "Expired contracts will appear here for renewal.",
+        "likenessProtection": "Likeness Protection"
       },
       "labels": {
         "growthPercent": "+{{value}}% growth",
