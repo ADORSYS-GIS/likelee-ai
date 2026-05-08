@@ -3310,7 +3310,9 @@ export default function CreatorDashboard() {
   const [creatorTransfers, setCreatorTransfers] = useState<any[]>([]);
   const [loadingCreatorTransfers, setLoadingCreatorTransfers] = useState(false);
   // Tracks which offer_id is currently being retried (one at a time)
-  const [retryingTransferOfferId, setRetryingTransferOfferId] = useState<string | null>(null);
+  const [retryingTransferOfferId, setRetryingTransferOfferId] = useState<
+    string | null
+  >(null);
   // Stripe readiness gate modal for deliverable submission
   const [stripeGateModalOpen, setStripeGateModalOpen] = useState(false);
   const [stripeGateModalConfig, setStripeGateModalConfig] = useState<{
@@ -3364,7 +3366,11 @@ export default function CreatorDashboard() {
     if (retryingTransferOfferId) return;
     setRetryingTransferOfferId(offerId);
     try {
-      const resp = await base44.post<{ status: string; transfer_id?: string; message?: string }>(
+      const resp = await base44.post<{
+        status: string;
+        transfer_id?: string;
+        message?: string;
+      }>(
         `/api/talent/campaign-offers/${encodeURIComponent(offerId)}/retry-transfer`,
         {},
       );
@@ -3372,7 +3378,8 @@ export default function CreatorDashboard() {
         setStripeGateModalConfig({
           severity: "info",
           title: "Transfer succeeded",
-          description: resp.message || "Funds are on their way to your Stripe account.",
+          description:
+            resp.message || "Funds are on their way to your Stripe account.",
           actions: [
             {
               label: "Done",
@@ -3388,7 +3395,9 @@ export default function CreatorDashboard() {
       const isNotConnected = msg.includes("stripe_account_not_connected");
       setStripeGateModalConfig({
         severity: "block",
-        title: isNotConnected ? "Stripe account not connected" : "Transfer failed",
+        title: isNotConnected
+          ? "Stripe account not connected"
+          : "Transfer failed",
         description: isNotConnected
           ? "Your Stripe account is not connected. Go to Payouts to complete setup, then try again."
           : "The transfer could not be completed. Ensure your Stripe account has completed onboarding and try again.",
@@ -9554,7 +9563,10 @@ export default function CreatorDashboard() {
                       setStripeGateModalOpen(true);
                       return;
                     }
-                    if (payoutAccountStatus?.connected && !payoutAccountStatus?.transfers_enabled) {
+                    if (
+                      payoutAccountStatus?.connected &&
+                      !payoutAccountStatus?.transfers_enabled
+                    ) {
                       setStripeGateModalConfig({
                         severity: "warning",
                         title: "Stripe transfers not fully enabled",
@@ -9672,11 +9684,17 @@ export default function CreatorDashboard() {
                                     t("brandConnections.sendDeliverable"),
                                 )}
                               </div>
-                              {deliverableBlobUrls[String(deliverable?.id || "")] && (
+                              {deliverableBlobUrls[
+                                String(deliverable?.id || "")
+                              ] && (
                                 <div className="mt-2">
                                   {deliverableIsImage(deliverable) && (
                                     <img
-                                      src={deliverableBlobUrls[String(deliverable?.id || "")]}
+                                      src={
+                                        deliverableBlobUrls[
+                                          String(deliverable?.id || "")
+                                        ]
+                                      }
                                       alt={String(
                                         deliverable?.caption ||
                                           deliverable?.meta?.original_name ||
@@ -9687,7 +9705,11 @@ export default function CreatorDashboard() {
                                   )}
                                   {deliverableIsVideo(deliverable) && (
                                     <video
-                                      src={deliverableBlobUrls[String(deliverable?.id || "")]}
+                                      src={
+                                        deliverableBlobUrls[
+                                          String(deliverable?.id || "")
+                                        ]
+                                      }
                                       controls
                                       className="h-32 w-auto max-w-full rounded border border-gray-200 bg-black"
                                     />
@@ -9732,7 +9754,8 @@ export default function CreatorDashboard() {
                   {independentTransfers.map((transfer: any) => {
                     const isFailed = transfer.transfer_status === "failed";
                     const isCreated = transfer.transfer_status === "created";
-                    const isPendingRetry = transfer.transfer_status === "pending_retry";
+                    const isPendingRetry =
+                      transfer.transfer_status === "pending_retry";
                     return (
                       <div
                         key={transfer.offer_id}
@@ -9761,7 +9784,8 @@ export default function CreatorDashboard() {
                                   )
                                     ? "Stripe account not fully set up — transfers not enabled"
                                     : transfer.failure_reason.length > 100
-                                      ? transfer.failure_reason.slice(0, 100) + "…"
+                                      ? transfer.failure_reason.slice(0, 100) +
+                                        "…"
                                       : transfer.failure_reason}
                                 </p>
                               )}
@@ -9794,10 +9818,15 @@ export default function CreatorDashboard() {
                               <Button
                                 size="sm"
                                 className="h-7 px-3 text-xs bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg gap-1"
-                                disabled={retryingTransferOfferId === transfer.offer_id}
-                                onClick={() => retryCreatorTransfer(transfer.offer_id)}
+                                disabled={
+                                  retryingTransferOfferId === transfer.offer_id
+                                }
+                                onClick={() =>
+                                  retryCreatorTransfer(transfer.offer_id)
+                                }
                               >
-                                {retryingTransferOfferId === transfer.offer_id ? (
+                                {retryingTransferOfferId ===
+                                transfer.offer_id ? (
                                   <>
                                     <Loader2 className="w-3 h-3 animate-spin" />
                                     Retrying…
@@ -11471,22 +11500,27 @@ export default function CreatorDashboard() {
                           </span>
                           {transfer.transfer_status === "failed" &&
                             transfer.target_type === "creator" && (
-                            <Button
-                              size="sm"
-                              className="h-7 px-3 text-xs bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg gap-1"
-                              disabled={retryingTransferOfferId === transfer.offer_id}
-                              onClick={() => retryCreatorTransfer(transfer.offer_id)}
-                            >
-                              {retryingTransferOfferId === transfer.offer_id ? (
-                                <>
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                  Retrying…
-                                </>
-                              ) : (
-                                "Claim payment"
-                              )}
-                            </Button>
-                          )}
+                              <Button
+                                size="sm"
+                                className="h-7 px-3 text-xs bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg gap-1"
+                                disabled={
+                                  retryingTransferOfferId === transfer.offer_id
+                                }
+                                onClick={() =>
+                                  retryCreatorTransfer(transfer.offer_id)
+                                }
+                              >
+                                {retryingTransferOfferId ===
+                                transfer.offer_id ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Retrying…
+                                  </>
+                                ) : (
+                                  "Claim payment"
+                                )}
+                              </Button>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -13586,9 +13620,7 @@ export default function CreatorDashboard() {
               <Button
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 onClick={sendDeliverable}
-                disabled={
-                  offerActionLoading
-                }
+                disabled={offerActionLoading}
               >
                 {offerActionLoading
                   ? t("brandConnections.sending")
