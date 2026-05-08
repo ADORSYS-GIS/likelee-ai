@@ -1108,6 +1108,12 @@ async fn fetch_brand_licensed_assets(
         }
     }
 
+    info!(
+        brand_id = %brand_id,
+        lr_assets_count = assets.len(),
+        "licensed_assets_from_lr_path"
+    );
+
     // 6. Get campaign offer deliverables for paid offers
     let cod_resp = state
         .pg
@@ -1131,6 +1137,7 @@ async fn fetch_brand_licensed_assets(
                 );
 
                 for del in deliverables {
+                    let del_id = del.get("id").and_then(|v| v.as_str()).unwrap_or("");
                     let offer = del.get("campaign_offers");
                     let payment_status = offer
                         .and_then(|o| o.get("payment_status"))
@@ -1140,11 +1147,20 @@ async fn fetch_brand_licensed_assets(
                         .and_then(|o| o.get("expires_at"))
                         .and_then(|v| v.as_str());
 
+                    info!(
+                        deliverable_id = %del_id,
+                        payment_status = %payment_status,
+                        expires_at = ?expires_at,
+                        "campaign_deliverable_checking"
+                    );
+
                     if payment_status != "paid" {
+                        info!(deliverable_id = %del_id, payment_status = %payment_status, "campaign_deliverable_skipped_not_paid");
                         continue;
                     }
                     if let Some(exp) = expires_at {
                         if exp < now {
+                            info!(deliverable_id = %del_id, expires_at = %exp, "campaign_deliverable_skipped_expired");
                             continue;
                         }
                     }
@@ -1173,6 +1189,13 @@ async fn fetch_brand_licensed_assets(
                             _ => "image",
                         };
 
+                        info!(
+                            deliverable_id = %del_id,
+                            offer_id = %offer_id,
+                            asset_type = %type_str,
+                            "campaign_deliverable_added"
+                        );
+
                         assets.push(json!({
                             "id": format!("campaign-deliverable-{}", del_id),
                             "type": type_str,
@@ -1193,6 +1216,12 @@ async fn fetch_brand_licensed_assets(
             );
         }
     }
+
+    info!(
+        brand_id = %brand_id,
+        total_assets = assets.len(),
+        "licensed_assets_final"
+    );
 
     assets
 }
