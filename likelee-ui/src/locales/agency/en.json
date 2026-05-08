@@ -3943,7 +3943,8 @@
       },
       "empty": {
         "title": "No catalogs yet",
-        "description": "After a licensing payment clears, create a catalog to deliver the assets and recordings to your client."
+        "description": "After a licensing payment clears, create a catalog to deliver the assets and recordings to your client.",
+        "createButton": "Create Catalog"
       },
       "deleteDialog": {
         "title": "Delete Catalog?",
@@ -3969,7 +3970,52 @@
       "toasts": {
         "deleted": "Catalog deleted",
         "deleteFailedTitle": "Failed to delete catalog",
-        "linkCopied": "Link copied to clipboard!"
+        "linkCopied": "Link copied to clipboard!",
+        "catalogDeleted": "Catalog deleted",
+        "failedToDelete": "Failed to delete catalog"
+      },
+      "description": "Deliver licensed assets and voice recordings to clients after payment.",
+      "newCatalog": "New Catalog",
+      "card": {
+        "created": "Created",
+        "expires": "Expires",
+        "paid": "Paid",
+        "unpaid": "Unpaid",
+        "expired": "Expired",
+        "sent": "Sent",
+        "draft": "Draft",
+        "copyLink": "Copy Link"
+      },
+      "deleteModal": {
+        "title": "Delete Catalog?",
+        "description": "This will permanently remove the catalog and its share link. This cannot be undone.",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "deleting": "Deleting…"
+      },
+      "previewModal": {
+        "title": "Catalog Preview",
+        "description": "Summary of the distribution settings for this catalog.",
+        "fields": {
+          "title": "Title",
+          "client": "Client",
+          "recipient": "Recipient",
+          "payment": "Payment",
+          "talents": "Talents",
+          "athletes": "Athletes",
+          "assets": "Assets",
+          "voice": "Voice",
+          "linkedReceipt": "Linked Receipt",
+          "createdOn": "Created On",
+          "expiration": "Expiration",
+          "active": "Active",
+          "no": "No",
+          "expired": "Expired",
+          "mandatoryMissing": "Mandatory (Missing)"
+        },
+        "internalNotes": "Internal Notes",
+        "close": "Close",
+        "copyLink": "Copy Link"
       }
     },
     "chat": {
@@ -6386,6 +6432,264 @@
         "deliverableDeleted": "Deliverable deleted",
         "deleteFailed": "Delete failed"
       }
+    },
+    "brandConnections": {
+      "title": "Brand Connections",
+      "tabs": {
+        "connections": "Connections",
+        "requests": "Requests",
+        "offers": "Offers",
+        "contractHub": "Contract Hub",
+        "deliverables": "Deliverables",
+        "feedback": "Feedback"
+      },
+      "toasts": {
+        "requestAccepted": "Request accepted",
+        "requestApproved": "Connection request approved",
+        "requestDeclined": "Request declined",
+        "requestDeclinedDesc": "Connection request declined",
+        "actionFailed": "Action failed",
+        "pleaseTryAgain": "Please try again",
+        "pleaseTryAgainShort": "Please try again",
+        "disconnected": "Disconnected",
+        "disconnectedDesc": "Brand connection removed",
+        "disconnectFailed": "Disconnect failed",
+        "messageSent": "Message sent",
+        "failedToSend": "Failed to send"
+      }
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "profile": "Profile",
+      "subscription": "Subscription",
+      "commissions": "Commissions",
+      "emailTemplates": "Email Templates",
+      "notifications": "Notifications",
+      "taxCurrency": "Tax & Currency",
+      "team": "Team",
+      "integrations": "Integrations",
+      "fileStorage": "File Storage"
+    },
+    "profile": {
+      "title": "Agency Profile",
+      "description": "Manage your agency information and branding",
+      "fields": {
+        "agencyName": "Agency Name",
+        "agencyNamePlaceholder": "Enter agency name",
+        "email": "Email",
+        "emailPlaceholder": "agency@example.com",
+        "website": "Website",
+        "websitePlaceholder": "https://yourwebsite.com",
+        "phone": "Phone",
+        "phonePlaceholder": "+1 (555) 000-0000",
+        "description": "Description",
+        "descriptionPlaceholder": "Tell us about your agency...",
+        "logo": "Agency Logo",
+        "uploadLogo": "Upload Logo",
+        "primaryColor": "Primary Color",
+        "secondaryColor": "Secondary Color"
+      },
+      "buttons": {
+        "save": "Save Changes",
+        "saving": "Saving...",
+        "cancel": "Cancel"
+      },
+      "toasts": {
+        "saved": "Profile saved",
+        "savedDescription": "Your agency profile has been updated",
+        "saveFailed": "Save failed",
+        "uploadSuccess": "Logo uploaded",
+        "uploadFailed": "Upload failed"
+      }
+    },
+    "team": {
+      "title": "Team Management",
+      "description": "Manage team members and permissions",
+      "inviteButton": "Invite Team Member",
+      "userRole": "User Role",
+      "selectRole": "Select role",
+      "note": "Note",
+      "inviteNote": "The invited user will receive an email with instructions to join your team.",
+      "newRole": "New Role",
+      "members": "Team Members",
+      "pendingInvites": "Pending Invitations",
+      "activityLog": "Activity Log",
+      "noMembers": "No team members yet",
+      "noInvites": "No pending invitations",
+      "roles": {
+        "owner": "Owner",
+        "admin": {
+          "label": "Admin",
+          "description": "Full access to all features and settings"
+        },
+        "projectManager": {
+          "label": "Project Manager",
+          "description": "Manage projects, campaigns, and deliverables"
+        },
+        "reviewer": {
+          "label": "Reviewer",
+          "description": "View and review deliverables only"
+        },
+        "unknown": "Unknown"
+      },
+      "modals": {
+        "inviteTitle": "Invite Team Member",
+        "inviteDescription": "Send an invitation to join your agency team",
+        "emailAddress": "Email Address",
+        "emailPlaceholder": "colleague@example.com",
+        "sending": "Sending...",
+        "sendInvitation": "Send Invitation",
+        "updateRoleTitle": "Update Team Member Role",
+        "currentRole": "{{email}} is currently a {{role}}",
+        "roleChangeWarning": "Changing this member's role will immediately update their permissions across the platform.",
+        "saving": "Saving...",
+        "confirmRoleChange": "Confirm Role Change"
+      },
+      "actions": {
+        "editPermissions": "Edit Permissions",
+        "resendInvite": "Resend Invite",
+        "revokeInvite": "Revoke Invite",
+        "removeMember": "Remove Member"
+      },
+      "toasts": {
+        "inviteSent": "Invitation sent",
+        "inviteSentDescription": "Team invitation has been sent",
+        "inviteFailed": "Invite failed",
+        "roleUpdated": "Role updated",
+        "roleUpdateFailed": "Role update failed",
+        "memberRemoved": "Member removed",
+        "removeFailed": "Remove failed"
+      }
+    },
+    "commissions": {
+      "title": "Commission Settings",
+      "description": "Configure default commission rates for your talent",
+      "defaultRate": "Default Commission Rate",
+      "defaultRateDescription": "This rate applies to all talent unless individually customized",
+      "saveButton": "Save Commission Settings",
+      "saving": "Saving...",
+      "toasts": {
+        "saved": "Commission settings saved",
+        "saveFailed": "Failed to save commission settings"
+      }
+    },
+    "emailTemplates": {
+      "title": "Email Templates",
+      "description": "Customize automated email templates",
+      "newTemplate": "New Template",
+      "editTemplate": "Edit Template",
+      "fields": {
+        "name": "Template Name",
+        "subject": "Email Subject",
+        "body": "Email Body",
+        "active": "Active"
+      },
+      "placeholders": {
+        "talentName": "{talent_name}",
+        "athleteName": "{athlete_name}",
+        "agencyName": "{agency_name}",
+        "brandName": "{brand_name}"
+      },
+      "toasts": {
+        "saved": "Template saved",
+        "saveFailed": "Failed to save template",
+        "deleted": "Template deleted",
+        "deleteFailed": "Failed to delete template"
+      }
+    },
+    "notifications": {
+      "title": "Notification Preferences",
+      "description": "Manage how you receive notifications",
+      "emailNotifications": "Email Notifications",
+      "pushNotifications": "Push Notifications",
+      "types": {
+        "newOffers": "New Offers",
+        "deliverables": "Deliverable Updates",
+        "payments": "Payment Notifications",
+        "teamActivity": "Team Activity"
+      }
+    },
+    "taxCurrency": {
+      "title": "Tax & Currency",
+      "description": "Configure tax and currency settings",
+      "currency": "Currency",
+      "taxId": "Tax ID",
+      "taxIdPlaceholder": "Enter tax ID",
+      "vatNumber": "VAT Number",
+      "vatNumberPlaceholder": "Enter VAT number"
+    },
+    "integrations": {
+      "title": "Integrations",
+      "description": "Connect third-party services",
+      "calendly": {
+        "title": "Calendly Integration",
+        "description": "Connect Calendly for booking management",
+        "apiToken": "API Token",
+        "apiTokenPlaceholder": "Enter Calendly API token",
+        "schedulingUrl": "Scheduling URL",
+        "schedulingUrlPlaceholder": "https://calendly.com/your-link",
+        "enabled": "Enable Calendly",
+        "fetchEventTypes": "Fetch Event Types",
+        "fetching": "Fetching...",
+        "mappings": "Event Type Mappings",
+        "noEventTypes": "No event types found",
+        "saveButton": "Save Calendly Settings",
+        "saving": "Saving...",
+        "saved": "Saved",
+        "saveFailed": "Save failed"
+      },
+      "stripe": {
+        "title": "Stripe Integration",
+        "description": "Manage payment processing",
+        "connected": "Connected",
+        "notConnected": "Not Connected",
+        "connect": "Connect Stripe"
+      }
+    },
+    "fileStorage": {
+      "title": "File Storage",
+      "description": "Manage your file storage and uploads"
+    }
+  },
+  "subscribe": {
+    "title": "Choose Your Plan",
+    "description": "Select the perfect plan for your agency",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "savePercent": "Save {{percent}}%",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "currentPlan": "Current Plan",
+    "selectPlan": "Select Plan",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "features": {
+      "title": "Features",
+      "unlimited": "Unlimited",
+      "included": "Included",
+      "notIncluded": "Not Included"
+    },
+    "plans": {
+      "starter": {
+        "name": "Starter",
+        "description": "Perfect for small agencies getting started"
+      },
+      "professional": {
+        "name": "Professional",
+        "description": "For growing agencies with more needs"
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "description": "For large agencies with advanced requirements"
+      }
+    },
+    "toasts": {
+      "subscribed": "Subscription updated",
+      "subscribedDescription": "Your plan has been updated successfully",
+      "subscribeFailed": "Subscription failed",
+      "tryAgain": "Please try again"
     }
   }
 }

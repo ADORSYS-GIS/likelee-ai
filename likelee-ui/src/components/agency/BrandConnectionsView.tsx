@@ -552,7 +552,7 @@ const BrandConnectionsView = ({
         ),
         actions: [
           {
-            label: "Send anyway",
+            label: t("agencyDashboard.brandConnections.precheck.sendAnyway"),
             onClick: () => {
               setSendPrecheckOpen(false);
               handleSendContract(offerId, contractId);
@@ -753,7 +753,10 @@ const BrandConnectionsView = ({
         }),
       ]);
       toast({
-        title: action === "accept" ? "Offer accepted" : "Offer declined",
+        title:
+          action === "accept"
+            ? t("agencyDashboard.brandConnections.toasts.offerAccepted")
+            : t("agencyDashboard.brandConnections.toasts.offerDeclined"),
       });
     } catch (e: any) {
       toast({
@@ -784,8 +787,8 @@ const BrandConnectionsView = ({
         formData,
       );
       toast({
-        title: "Contract uploaded",
-        description: "Draft created successfully.",
+        title: t("agencyDashboard.brandConnections.toasts.contractUploaded"),
+        description: t("agencyDashboard.brandConnections.toasts.draftCreated"),
       });
       queryClient.invalidateQueries({
         queryKey: ["agency", "offer-contracts", offerId],
@@ -795,9 +798,10 @@ const BrandConnectionsView = ({
     } catch (err: any) {
       console.error("upload_offer_contract failed", err);
       toast({
-        title: "Upload failed",
-        description:
-          "Failed to upload contract. Please try again with a valid PDF.",
+        title: t("agencyDashboard.brandConnections.toasts.uploadFailed"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.uploadFailedDesc",
+        ),
         variant: "destructive" as any,
       });
     } finally {
@@ -852,13 +856,19 @@ const BrandConnectionsView = ({
       if (status === "agency_pending" && agencySignUrl) {
         window.open(agencySignUrl, "_blank");
         toast({
-          title: "Agency signature required",
-          description: "Sign the contract to release it to the brand.",
+          title: t(
+            "agencyDashboard.brandConnections.toasts.agencySignatureRequired",
+          ),
+          description: t(
+            "agencyDashboard.brandConnections.toasts.signToRelease",
+          ),
         });
       } else {
         toast({
-          title: "Contract sent",
-          description: "The contract has been sent to the brand.",
+          title: t("agencyDashboard.brandConnections.toasts.contractSent"),
+          description: t(
+            "agencyDashboard.brandConnections.toasts.contractSentDesc",
+          ),
         });
       }
       queryClient.invalidateQueries({
@@ -872,12 +882,12 @@ const BrandConnectionsView = ({
       console.error("send_offer_contract failed", err);
       const msg = String(err?.message || "");
       toast({
-        title: "Send failed",
+        title: t("agencyDashboard.brandConnections.toasts.sendFailed"),
         description: msg.includes("no_talents_assigned")
-          ? "Assign at least 1 talent to this offer before sending the contract."
+          ? t("agencyDashboard.brandConnections.toasts.assignTalentFirst")
           : msg.toLowerCase().includes("template does not contain fields")
-            ? "This PDF template has no signature fields. Open Prepare, place fields, save, then try again."
-            : "Failed to send contract. Please try again.",
+            ? t("agencyDashboard.brandConnections.toasts.noSignatureFields")
+            : t("agencyDashboard.brandConnections.toasts.sendFailedGeneric"),
         variant: "destructive",
       });
     } finally {
@@ -897,8 +907,10 @@ const BrandConnectionsView = ({
         contract_id: contractId,
       });
       toast({
-        title: "Status synced",
-        description: "Contract status updated from DocuSeal.",
+        title: t("agencyDashboard.brandConnections.toasts.statusSynced"),
+        description: t(
+          "agencyDashboard.brandConnections.toasts.statusSyncedDesc",
+        ),
       });
       queryClient.invalidateQueries({
         queryKey: ["agency", "offer-contracts", offerId],
@@ -908,8 +920,10 @@ const BrandConnectionsView = ({
       });
     } catch (err: any) {
       toast({
-        title: "Sync failed",
-        description: err.message || "Failed to sync status.",
+        title: t("agencyDashboard.brandConnections.toasts.syncFailed"),
+        description:
+          err.message ||
+          t("agencyDashboard.brandConnections.toasts.syncFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -953,9 +967,10 @@ const BrandConnectionsView = ({
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
       toast({
-        title: "Download failed",
+        title: t("agencyDashboard.brandConnections.toasts.downloadFailed"),
         description:
-          err?.message || "We couldn't download the signed contract.",
+          err?.message ||
+          t("agencyDashboard.brandConnections.toasts.downloadFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -977,16 +992,18 @@ const BrandConnectionsView = ({
         `/api/campaign-offers/${offerId}/contracts/${contractId}`,
       );
       toast({
-        title: "Contract deleted",
-        description: "Draft removed successfully.",
+        title: t("agencyDashboard.brandConnections.toasts.contractDeleted"),
+        description: t("agencyDashboard.brandConnections.toasts.draftRemoved"),
       });
       queryClient.invalidateQueries({
         queryKey: ["agency", "offer-contracts", offerId],
       });
     } catch (err: any) {
       toast({
-        title: "Delete failed",
-        description: err.message || "Failed to delete contract.",
+        title: t("agencyDashboard.brandConnections.toasts.deleteFailed"),
+        description:
+          err.message ||
+          t("agencyDashboard.brandConnections.toasts.deleteFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -1021,7 +1038,9 @@ const BrandConnectionsView = ({
       const createResp = await base44.post<{ package?: any }>(
         `/api/campaign-offers/${offerId}/packages`,
         {
-          title: draft.title || "Talent Package",
+          title:
+            draft.title ||
+            t("agencyDashboard.brandConnections.packageDefaults.talentPackage"),
           message: draft.message || "",
           package_snapshot: { items: snapshotItems },
         },
@@ -1044,10 +1063,12 @@ const BrandConnectionsView = ({
         }),
       ]);
       toast({
-        title: "Package sent",
+        title: t("agencyDashboard.brandConnections.toasts.packageSent"),
         description: (
           <div className="flex items-center gap-2">
-            <span>Talent package has been sent to the brand inbox.</span>
+            <span>
+              {t("agencyDashboard.brandConnections.toasts.packageSentDesc")}
+            </span>
             <Button
               variant="link"
               className="p-0 h-auto text-sm"
@@ -1056,15 +1077,17 @@ const BrandConnectionsView = ({
                 window.open(shareLink, "_blank");
               }}
             >
-              View
+              {t("agencyDashboard.brandConnections.actions.view")}
             </Button>
           </div>
         ),
       });
     } catch (e: any) {
       toast({
-        title: "Package send failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.brandConnections.toasts.packageSendFailed"),
+        description:
+          e?.message ||
+          t("agencyDashboard.brandConnections.toasts.pleaseTryAgain"),
         variant: "destructive" as any,
       });
     } finally {
@@ -1670,7 +1693,10 @@ const BrandConnectionsView = ({
                               </h2>
                             </div>
                             <p className="text-gray-500 font-medium ml-9">
-                              {offer?.offer_title || "Direct Request"}
+                              {offer?.offer_title ||
+                                t(
+                                  "agencyDashboard.brandConnections.fallbacks.directRequest",
+                                )}
                             </p>
                           </div>
                           <div className="flex items-center gap-3">
@@ -2405,7 +2431,12 @@ const BrandConnectionsView = ({
                   className="border border-gray-200 rounded-lg p-4"
                 >
                   <p className="font-semibold text-gray-900">
-                    {String(item?.title || "Talent package")}
+                    {String(
+                      item?.title ||
+                        t(
+                          "agencyDashboard.brandConnections.fallbacks.talentPackage",
+                        ),
+                    )}
                   </p>
                   <p className="text-xs text-gray-500">
                     Status: {String(item?.status || "feedback_received")}
@@ -3037,17 +3068,21 @@ const BrandConnectionsView = ({
                                                                 url,
                                                               );
                                                               toast({
-                                                                title:
-                                                                  "Link Copied",
-                                                                description:
-                                                                  "Signing link copied to clipboard.",
+                                                                title: t(
+                                                                  "agencyDashboard.brandConnections.toasts.linkCopied",
+                                                                ),
+                                                                description: t(
+                                                                  "agencyDashboard.brandConnections.toasts.linkCopiedDesc",
+                                                                ),
                                                               });
                                                             } else {
                                                               toast({
-                                                                title:
-                                                                  "Link Unavailable",
-                                                                description:
-                                                                  "No submission found for this contract.",
+                                                                title: t(
+                                                                  "agencyDashboard.brandConnections.toasts.linkUnavailable",
+                                                                ),
+                                                                description: t(
+                                                                  "agencyDashboard.brandConnections.toasts.linkUnavailableDesc",
+                                                                ),
                                                                 variant:
                                                                   "destructive",
                                                               });
@@ -3213,18 +3248,26 @@ const BrandConnectionsView = ({
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-semibold text-gray-900">
-                    {String(offer?.brand_campaigns?.name || "Campaign offer")}
+                    {String(
+                      offer?.brand_campaigns?.name ||
+                        t(
+                          "agencyDashboard.brandConnections.fallbacks.campaignOffer",
+                        ),
+                    )}
                   </p>
                   <Button
                     size="sm"
                     variant="outline"
+                    className="border-gray-200 hover:bg-gray-50"
                     onClick={() =>
                       setSelectedOfferId((prev) =>
                         prev === offerId ? "" : offerId,
                       )
                     }
                   >
-                    {selectedOfferId === offerId ? "Hide" : "Open"}
+                    {selectedOfferId === offerId
+                      ? t("agencyDashboard.brandConnections.actions.hide")
+                      : t("agencyDashboard.brandConnections.actions.open")}
                   </Button>
                 </div>
                 {selectedOfferId === offerId && (
@@ -3339,7 +3382,9 @@ const BrandConnectionsView = ({
               onClick={handleSendTalentMessage}
               disabled={messageDialog.sending}
             >
-              {messageDialog.sending ? "Sending..." : "Send Message"}
+              {messageDialog.sending
+                ? t("agencyDashboard.brandConnections.actions.sending")
+                : t("agencyDashboard.brandConnections.actions.sendMessage")}
             </Button>
           </div>
         </DialogContent>
@@ -3389,8 +3434,12 @@ const BrandConnectionsView = ({
                   onClick={() => {
                     if (!selectedOfferId || !currentContractId) {
                       toast({
-                        title: "Missing contract",
-                        description: "Select a contract before sending.",
+                        title: t(
+                          "agencyDashboard.brandConnections.toasts.missingContract",
+                        ),
+                        description: t(
+                          "agencyDashboard.brandConnections.toasts.selectContractFirst",
+                        ),
                         variant: "destructive" as any,
                       });
                       return;
@@ -3447,7 +3496,9 @@ const BrandConnectionsView = ({
                 <docuseal-builder
                   data-token={builderToken}
                   data-autosave={true}
-                  data-save-button-text="Save Contract"
+                  data-save-button-text={t(
+                    "agencyDashboard.brandConnections.contractHub.saveContract",
+                  )}
                   data-with-send-button={false}
                   data-with-sign-yourself-button={false}
                   className="w-full h-full block"
