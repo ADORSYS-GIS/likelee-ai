@@ -4595,6 +4595,77 @@ pub async fn download_offer_contract_document(
             )
         })?;
 
+    // DocuSeal pre-signed file URLs expire after a few hours. If the stored URL
+    // returns 401/403, fall back to fetching a fresh URL via the submissions API.
+    let upstream = if upstream.status().as_u16() == 401
+        || upstream.status().as_u16() == 403
+        || upstream.status().as_u16() == 404
+    {
+        tracing::info!(
+            contract_id = %contract_id,
+            status = %upstream.status(),
+            "Stored DocuSeal document URL expired; fetching fresh URL via submissions API"
+        );
+        let submission_id = contract
+            .get("docuseal_submission_id")
+            .and_then(|v| v.as_i64())
+            .unwrap_or_default();
+        if submission_id <= 0 || state.docuseal_api_key.trim().is_empty() {
+            return Err((
+                StatusCode::NOT_FOUND,
+                "Signed contract PDF is no longer available. Please contact support.".to_string(),
+            ));
+        }
+        let docuseal = DocuSealClient::new(
+            state.docuseal_api_key.clone(),
+            state.docuseal_api_url.clone(),
+        );
+        let fresh_url = match docuseal.get_submission(submission_id as i32).await {
+            Ok(details) => details
+                .documents
+                .first()
+                .map(|doc| doc.url.trim().to_string())
+                .filter(|u| !u.is_empty()),
+            Err(e) => {
+                tracing::warn!(contract_id = %contract_id, error = %e, "Failed to refresh DocuSeal document URL");
+                None
+            }
+        };
+        let fresh_url = fresh_url.ok_or((
+            StatusCode::NOT_FOUND,
+            "Signed contract PDF is no longer available from DocuSeal.".to_string(),
+        ))?;
+
+        // Persist the fresh URL so subsequent downloads don't need to re-fetch
+        let _ = state
+            .pg
+            .from("campaign_offer_contracts")
+            .eq("id", &contract_id)
+            .update(
+                json!({
+                    "signed_document_url": fresh_url,
+                    "updated_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+
+        Client::new()
+            .get(&fresh_url)
+            .header("X-Auth-Token", state.docuseal_api_key.clone())
+            .send()
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::BAD_GATEWAY,
+                    format!("Failed to fetch refreshed contract PDF: {e}"),
+                )
+            })?
+    } else {
+        upstream
+    };
+
     if !upstream.status().is_success() {
         let upstream_status = upstream.status();
         let upstream_body = upstream.text().await.unwrap_or_default();
