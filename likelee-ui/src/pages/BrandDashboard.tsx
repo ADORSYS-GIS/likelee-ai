@@ -165,6 +165,7 @@ import { TrialCountdownBanner } from "@/components/brand/TrialCountdownBanner";
 import { useTeamAccess } from "@/features/team/useTeamAccess";
 import { TeamManagementCard } from "@/features/team/TeamManagementCard";
 import { BrandSettingsBilling } from "@/components/brand-dashboard/settings/BrandSettingsBilling";
+import { UnpaidDeliverableModal } from "@/components/brand/UnpaidDeliverableModal";
 import { currencyFormatter } from "@/lib/utils";
 import {
   LineChart,
@@ -351,6 +352,8 @@ export default function BrandDashboard() {
     amount?: number;
     currency?: string;
   }>({ open: false });
+  const [showUnpaidModal, setShowUnpaidModal] = useState(false);
+  const [unpaidOfferId, setUnpaidOfferId] = useState("");
 
   const billingSuccess = searchParams.get("billing_success") === "1";
   const billingSuccessProcessedRef = useRef(false);
@@ -5132,12 +5135,8 @@ export default function BrandDashboard() {
       return;
     }
     if (!isPaid) {
-      toast({
-        title: "Payment required",
-        description:
-          "Payment has not been received for this offer. Please complete payment to download deliverables.",
-        variant: "destructive" as any,
-      });
+      setUnpaidOfferId(offerId);
+      setShowUnpaidModal(true);
       return;
     }
     try {
@@ -5240,12 +5239,8 @@ export default function BrandDashboard() {
         .trim()
         .toLowerCase() === "paid";
     if (!isPaid) {
-      toast({
-        title: "Payment required",
-        description:
-          "You can’t approve or review deliverables until payment for this offer is completed.",
-        variant: "destructive" as any,
-      });
+      setUnpaidOfferId(offerId);
+      setShowUnpaidModal(true);
       deliverableReviewBusyRef.current.delete(deliverableId);
       return;
     }
@@ -14724,6 +14719,12 @@ export default function BrandDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <UnpaidDeliverableModal
+        open={showUnpaidModal}
+        onOpenChange={setShowUnpaidModal}
+        offerId={unpaidOfferId}
+      />
     </div>
   );
 }
