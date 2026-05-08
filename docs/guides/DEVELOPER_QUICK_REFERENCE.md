@@ -181,7 +181,7 @@ releasing  → released   (after all transfers attempted — always, even if som
 released   → released   (permanent — idempotent)
 ```
 
-**Recovery from stuck `releasing`:** If a previous release attempt was interrupted (e.g. server crash mid-transfer), the next deliverable approval detects failed transfer rows and automatically retries the full release. No manual SQL intervention needed for new offers.
+**Recovery from stuck `releasing`:** If a previous release attempt was interrupted before our fix (offer stuck in `releasing` with failed transfers), the next deliverable approval detects the failed transfer rows and automatically retries the full release. This only applies to pre-existing stuck offers — for all new offers, `escrow_status` is always set to `"released"` immediately after the first approval regardless of transfer outcomes, and failed transfers are recovered via the manual retry button in the agency Deliverables tab.
 
 ### Transfer Status Flow
 
