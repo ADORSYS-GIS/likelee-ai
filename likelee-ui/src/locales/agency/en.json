@@ -1495,7 +1495,7 @@
         "title": "Digitals-Tracking",
         "subtitle": "Verwalten Sie die Digitals von {{entity}} (schlichte Fotos, kein Make-up)",
         "remindAll": "Alle erinnern",
-        "loading": "Digitals werden geladen...",
+        "loading": "Loading...",
         "current": "Aktuell",
         "upToDate": "Aktuell",
         "reminderDue": "Erinnerung fällig",
@@ -4445,7 +4445,14 @@
       "noSubmissions": "No submissions found",
       "noActiveSubmissions": "No active submissions found.",
       "noArchivedSubmissions": "No archived submissions found.",
-      "searchPlaceholder": "Search submissions..."
+      "searchPlaceholder": "Search submissions...",
+      "resendingContractEmail": "Resending contract email",
+      "refreshingSubmissions": "Refreshing submissions so the updated send appears here.",
+      "signHere": "Sign here",
+      "resend": "Resend",
+      "resending": "Resending...",
+      "agencyLink": "Agency link",
+      "clientLink": "Client link"
     },
     "licenseTemplates": {
       "title": "License Templates",
@@ -4596,7 +4603,8 @@
       "noMatch": "No templates match your criteria.",
       "delete": {
         "title": "Delete Template"
-      }
+      },
+      "useContract": "Use Contract"
     },
     "licensingRequests": {
       "title": "Licensing Requests",
@@ -4658,17 +4666,22 @@
       },
       "counterOfferModal": {
         "title": "Send Counter Offer",
-        "description": "Enter your counter offer message below.",
-        "messagePlaceholder": "Enter your counter offer message...",
+        "description": "Explain your proposed terms to the client. They will be notified by email.",
+        "messagePlaceholder": "Describe your counter offer terms...",
         "send": "Send Counter Offer",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "messageLabel": "Message to Client"
       },
       "declineModal": {
-        "title": "Decline Request",
-        "description": "Enter a reason for declining this request.",
+        "title": "Confirm Decline",
+        "description": "Are you sure you want to decline this licensing request? This action cannot be undone.",
         "reasonPlaceholder": "Enter reason for decline...",
         "decline": "Decline Request",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "confirmQuestion": "You are about to decline the request from",
+        "thisBrand": "this brand",
+        "yesDecline": "Yes, Decline",
+        "declining": "Declining..."
       },
       "status": {
         "approved": "Approved",
@@ -4690,8 +4703,8 @@
         "decline": "Decline"
       },
       "brandRequests": {
-        "unknownBrand": "Unknown brand",
-        "noDescription": "No description",
+        "unknownBrand": "Unknown Brand",
+        "noDescription": "No description provided",
         "licenseFee": "License fee",
         "territory": "Territory",
         "exclusivity": "Exclusivity",
@@ -4700,8 +4713,8 @@
         "timeline": "Timeline",
         "from": "From",
         "modificationsAllowed": "Modifications allowed",
-        "customTerms": "Custom terms",
-        "contractPhase": "Contract phase",
+        "customTerms": "Custom Terms",
+        "contractPhase": "Contract Phase",
         "declined": "Declined"
       },
       "archiveNotice": "Licensing requests past their end date are automatically moved to the Archive tab.",
@@ -4747,7 +4760,69 @@
       "messages": {
         "recovering": "Recovering...",
         "deleting": "Deleting...",
-        "sending": "Sending..."
+        "sending": "Sending...",
+        "sendingCounterOffer": "Sending...",
+        "counterOfferSent": "Counter offer sent",
+        "clientNotified": "The client has been notified.",
+        "failedToSendCounterOffer": "Failed to send counter offer",
+        "couldNotSendCounterOffer": "Could not send counter offer",
+        "updateFailed": "Update failed",
+        "couldNotFindIds": "Could not find licensing request IDs to update. Please refresh and try again.",
+        "requestDeclined": "Request declined",
+        "requestDeclinedDescription": "The licensing request has been declined.",
+        "requestApproved": "Request approved",
+        "requestApprovedDescription": "The licensing request has been approved.",
+        "couldNotUpdate": "Could not update licensing request",
+        "paymentLinkSent": "Payment link sent",
+        "paymentLinkGenerated": "Payment link generated and sent.",
+        "paymentLinkSentSimple": "Payment link sent.",
+        "sendPaymentLinkFailed": "Send payment link failed",
+        "couldNotGenerateSendPaymentLink": "Could not generate/send payment link",
+        "recovered": "Recovered",
+        "recoveredDescription": "Licensing request has been moved back to active.",
+        "recoveryFailed": "Recovery failed",
+        "couldNotRecover": "Could not recover licensing request",
+        "deleted": "Deleted",
+        "deletedDescription": "Licensing request(s) permanently deleted.",
+        "deleteFailed": "Delete failed",
+        "couldNotDelete": "Could not delete licensing request",
+        "close": "Close",
+        "messageTalent": "Message Talent",
+        "messageAthlete": "Message Athlete",
+        "yesDecline": "Yes, Decline",
+        "declining": "Declining...",
+        "sendCounterOffer": "Send Counter Offer",
+        "cancel": "Cancel"
+      },
+      "deleteModal": {
+        "title": "Delete Licensing Request",
+        "description": "This will permanently delete this archived licensing request. This action cannot be undone.",
+        "descriptionActive": "This will archive and then permanently delete this licensing request. This action cannot be undone.",
+        "confirmQuestion": "Are you sure you want to delete the licensing request for",
+        "unknownBrand": "Unknown brand",
+        "cancel": "Cancel",
+        "delete": "Delete Permanently",
+        "deleting": "Deleting..."
+      },
+      "detailsModal": {
+        "title": "Licensing Request Details",
+        "description": "Description",
+        "campaign": "Campaign",
+        "category": "Category",
+        "exclusivity": "Exclusivity",
+        "offerAmount": "Offer Amount",
+        "customTerms": "Custom Terms",
+        "modificationsAllowed": "Modifications Allowed"
+      },
+      "paymentReadinessModal": {
+        "title": "Talent setup required",
+        "titleAthlete": "Athlete setup required",
+        "description": "The following talents need to complete their account setup before a payment link can be sent.",
+        "descriptionAthlete": "The following athletes need to complete their account setup before a payment link can be sent.",
+        "accountSetupIncomplete": "Account setup incomplete",
+        "close": "Close",
+        "messageTalent": "Message Talent",
+        "messageAthlete": "Message Athlete"
       }
     },
     "packages": {
