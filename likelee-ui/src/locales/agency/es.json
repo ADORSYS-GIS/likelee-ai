@@ -2974,62 +2974,263 @@
         "talentCount_other": "{{count}} {{entity}}s"
       },
       "stats": {
-        "totalPackages": "Paquetes totales",
-        "activeShares": "Enlaces activos",
-        "totalViews": "Vistas totales"
+        "totalPackages": "Total Packages",
+        "activeShares": "Active Shares",
+        "totalViews": "Total Views"
       },
       "tabs": {
-        "templates": "Plantillas",
-        "sent": "Paquetes enviados",
-        "packagesSent": "Paquetes enviados"
+        "templates": "Templates",
+        "sent": "Packages Sent",
+        "packagesSent": "Packages Sent"
       },
       "actions": {
-        "useExisting": "Usar existente",
-        "createNew": "Crear nuevo",
-        "template": "Plantilla",
-        "package": "Paquete",
-        "packagePlural": "Paquetes",
-        "edit": "Editar",
-        "delete": "Eliminar",
-        "sendToClient": "Enviar al cliente",
-        "createPackage": "Crear paquete",
-        "newPackage": "Nuevo paquete"
+        "useExisting": "Use Existing",
+        "createNew": "Create New",
+        "template": "Template",
+        "package": "Package",
+        "packagePlural": "Packages",
+        "edit": "Edit",
+        "delete": "Delete",
+        "sendToClient": "Send to Client",
+        "createPackage": "Create Package",
+        "newPackage": "New Package"
       },
       "offerBanner": {
-        "title": "Envío para oferta",
-        "description": "Elige si quieres enviar un paquete/plantilla existente o crear uno nuevo.",
-        "pickTemplate": "Elige una plantilla (o reenvía un paquete existente) abajo, luego haz clic en \"Enviar\" para mandarlo a la bandeja de entrada de la marca para esta oferta."
+        "title": "Sending for offer",
+        "description": "Choose whether to send an existing package/template or create a new one.",
+        "pickTemplate": "Pick a template (or resend an existing package) below, then click \"Send\" to send it to the brand inbox for this offer."
       },
-      "search": "Buscar {{target}}...",
+      "search": "Search {{target}}...",
       "empty": {
-        "title": "No se encontraron {{target}}",
-        "templatesDescription": "Crea plantillas reutilizables para enviar a múltiples clientes."
+        "title": "No {{target}} Found",
+        "templatesDescription": "Create reusable templates to send to multiple clients."
       },
       "pagination": {
-        "previous": "Anterior",
-        "next": "Siguiente"
+        "previous": "Previous",
+        "next": "Next"
       },
       "status": {
-        "expired": "Vencido",
-        "active": "Activo"
+        "expired": "Expired",
+        "active": "Active"
       },
       "labels": {
-        "campaignOffer": "Oferta de campaña"
+        "campaignOffer": "Campaign Offer"
       },
       "toasts": {
-        "deleted": "Paquete eliminado",
-        "linkCopied": "¡Enlace copiado al portapapeles!"
+        "deleted": "Package deleted",
+        "linkCopied": "Link copied to clipboard!"
       },
       "clientActivity": {
-        "title": "Actividad del cliente",
-        "description": "Ver las interacciones del cliente con este paquete",
-        "views": "Vistas",
-        "downloads": "Descargas",
-        "favorites": "Favoritos",
-        "comments": "Comentarios",
-        "lastViewed": "Visto por última vez",
-        "noActivity": "Sin actividad aún",
-        "close": "Cerrar"
+        "title": "Client Activity",
+        "description": "View client interactions with this package",
+        "views": "Views",
+        "downloads": "Downloads",
+        "favorites": "Favorites",
+        "comments": "Comments",
+        "lastViewed": "Last Viewed",
+        "noActivity": "No activity yet",
+        "close": "Close"
+      },
+      "view": {
+        "stats": {
+          "totalPackages": "Paquetes Totales",
+          "activeShares": "Compartidos Activos",
+          "totalViews": "Vistas Totales"
+        },
+        "tabs": {
+          "templates": "Plantillas",
+          "packagesSent": "Paquetes Enviados"
+        },
+        "search": {
+          "templates": "Buscar plantillas...",
+          "sent": "Buscar paquetes enviados..."
+        },
+        "buttons": {
+          "template": "Plantilla",
+          "package": "Paquete",
+          "useExisting": "Usar Existente",
+          "createNew": "Crear Nuevo"
+        },
+        "empty": {
+          "noTemplatesFound": "No se encontraron plantillas",
+          "noPackagesFound": "No se encontraron paquetes",
+          "templatesDescription": "Cree plantillas reutilizables para enviar a múltiples clientes.",
+          "packagesDescription": "Comience creando su primer portafolio de {{entity}} para un cliente."
+        },
+        "offerBanner": {
+          "sendingForOffer": "Enviando para oferta",
+          "chooseDescription": "Elija si desea enviar un paquete/plantilla existente o crear uno nuevo.",
+          "pickTemplate": "Elija una plantilla (o reenvíe un paquete existente) a continuación, luego haga clic en \"Enviar\" para enviarlo a la bandeja de entrada de la marca para esta oferta."
+        },
+        "packageCard": {
+          "created": "Creado",
+          "expires": "Expira",
+          "noExpiry": "Sin Expiración",
+          "views": "Vistas",
+          "expired": "Expirado",
+          "active": "Activo",
+          "campaignOffer": "Oferta de Campaña",
+          "resend": "Reenviar",
+          "activity": "Actividad",
+          "editPackage": "Editar Paquete",
+          "delete": "Eliminar"
+        },
+        "pagination": {
+          "previous": "Anterior",
+          "next": "Siguiente"
+        },
+        "deleteDialog": {
+          "title": "¿Está seguro?",
+          "description": "Esta acción no se puede deshacer. Esto eliminará permanentemente el paquete \"{{title}}\".",
+          "cancel": "Cancelar",
+          "confirm": "Eliminar"
+        },
+        "toasts": {
+          "packageDeleted": "Paquete eliminado",
+          "linkCopied": "¡Enlace copiado al portapapeles!"
+        }
+      },
+      "wizard": {
+        "title": "Crear un Nuevo Paquete de {{entity}}",
+        "editTitle": "Editar Paquete de {{entity}}",
+        "subtitle": "Cree un hermoso paquete de portafolio para mostrar su {{entity}} a los clientes",
+        "templateBanner": "Creando nuevo paquete desde la plantilla \"{{title}}\"",
+        "steps": {
+          "basicInfo": "Información Básica",
+          "selectTalents": "Seleccionar {{entities}}",
+          "customize": "Personalizar",
+          "consents": "Consentimientos",
+          "send": "Enviar"
+        },
+        "basicInfo": {
+          "title": "Título del Paquete *",
+          "titlePlaceholder": "ej. Campaña de Verano 2026",
+          "introductionNote": "Nota de Introducción",
+          "introductionPlaceholder": "Comparta la visión para esta selección...",
+          "coverImage": "Imagen de Portada",
+          "coverImageDescription": "JPG, PNG o GIF. Máximo {{maxMB}}MB.",
+          "coverImagePlaceholder": "https://images.unsplash.com/...",
+          "upload": "Subir",
+          "uploading": "Subiendo...",
+          "agencyBranding": "Marca de la Agencia",
+          "primaryAccent": "Acento Primario",
+          "secondaryAccent": "Acento Secundario",
+          "customFooterMessage": "Mensaje de Pie de Página Personalizado",
+          "customFooterPlaceholder": "Una nota personal para el cliente..."
+        },
+        "selectTalents": {
+          "title": "{{entities}} Seleccionados",
+          "description": "Seleccione {{entities}} y elija sus mejores activos para este paquete",
+          "addButton": "Agregar {{entity}}",
+          "assets": "Activos",
+          "selected": "Seleccionado",
+          "updateSelection": "Actualizar Selección",
+          "selectAssets": "Seleccionar Activos",
+          "noTalentsAdded": "Aún no se han agregado {{entities}}",
+          "noTalentsDescription": "Agregue {{entity}} de su lista para comenzar a construir el paquete",
+          "searchPlaceholder": "Filtrar por nombre o categoría...",
+          "confirmSelection": "Confirmar Selección ({{count}})",
+          "inviteRequired": "Invitación Requerida",
+          "connected": "Conectado"
+        },
+        "customize": {
+          "title": "Controles del Paquete",
+          "description": "Ajuste la experiencia del cliente y los permisos",
+          "clientFeedback": "Comentarios del Cliente",
+          "clientFeedbackDesc": "Permitir que los clientes dejen notas sobre {{entities}} específicos",
+          "interestTracking": "Seguimiento de Interés",
+          "interestTrackingDesc": "Permitir que los clientes marquen como favoritos {{entities}} para preseleccionarlos",
+          "callbackRequests": "Solicitudes de Devolución de Llamada",
+          "callbackRequestsDesc": "Los clientes pueden solicitar directamente consultas o devoluciones de llamada",
+          "accessControl": "Control de Acceso",
+          "accessControlDesc": "Asegure este paquete con una contraseña privada",
+          "gatewayPassword": "Contraseña de Acceso",
+          "passwordPlaceholder": "Cree una contraseña segura...",
+          "hidePassword": "Ocultar contraseña",
+          "showPassword": "Mostrar contraseña",
+          "privacyExpiration": "Expiración de Privacidad",
+          "expirationDescription": "Dejar vacío para un enlace de paquete permanente"
+        },
+        "consents": {
+          "title": "Lista de Verificación de Consentimientos",
+          "description": "Los puntos predeterminados están prellenados. Edite, elimine o agregue puntos personalizados para este paquete.",
+          "addPoint": "Agregar Punto",
+          "consentPlaceholder": "Punto de consentimiento {{number}}",
+          "defaultConsents": {
+            "0": "Use cada activo seleccionado solo para el objetivo de campaña aprobado y los canales.",
+            "1": "No altere la imagen del atleta/talento de manera engañosa, dañina o difamatoria.",
+            "2": "No sublicencie, revenda, transfiera o comparta archivos sin procesar con terceros.",
+            "3": "No use los activos para contenido político, adulto, tabaco, juegos de azar o ilegal.",
+            "4": "Detenga todo uso inmediatamente después de la expiración del paquete o licencia a menos que se renueve por escrito."
+          }
+        },
+        "send": {
+          "title": "¿Listo para enviar?",
+          "description": "Complete los detalles del destinatario para publicar el paquete",
+          "offerDescription": "Confirme el destinatario de la marca para este paquete de oferta",
+          "passwordMissing": "Falta Contraseña",
+          "passwordMissingDescription": "Este paquete tiene control de acceso habilitado pero no se ha establecido ninguna contraseña. Vuelva al paso Personalizar para establecer una.",
+          "recipientBrand": "Marca Destinataria *",
+          "selectBrand": "Seleccionar una marca…",
+          "brandDeliveryNote": "Este paquete se entregará a la bandeja de entrada del panel de la marca para esta oferta.",
+          "permissionRequired": "Permiso Requerido: No tiene acceso para ver las conexiones de marca.",
+          "clientContact": "Contacto del Cliente *",
+          "clientContactPlaceholder": "ej. Juan Pérez",
+          "deliveryEmail": "Correo de Entrega *",
+          "deliveryEmailPlaceholder": "cliente@empresa.com",
+          "deliveryEmailNote": "Entregado a través de la bandeja de entrada (el correo es informativo).",
+          "livePreviewSummary": "Resumen de Vista Previa en Vivo",
+          "untitledSelection": "Selección Sin Título",
+          "noIntroduction": "No se proporcionó nota de introducción.",
+          "activeExperience": "Experiencia Activa",
+          "favorites": "Favoritos",
+          "notes": "Notas",
+          "callbacks": "Devoluciones de Llamada",
+          "locked": "Bloqueado",
+          "lockedSet": "Bloqueado (Establecido)",
+          "lockedEmpty": "Bloqueado (¡Vacío!)",
+          "consent": "Consentimiento",
+          "brandingApplied": "Marca aplicada"
+        },
+        "buttons": {
+          "cancel": "Cancelar",
+          "back": "Atrás",
+          "continue": "Continuar",
+          "saveTemplate": "Guardar Plantilla",
+          "done": "Hecho",
+          "publishAndSend": "Publicar y Enviar"
+        },
+        "toasts": {
+          "required": "Requerido",
+          "titleRequired": "El título es requerido",
+          "empty": "Vacío",
+          "selectAtLeastOne": "Por favor seleccione al menos un {{entity}}",
+          "consentRequired": "Consentimiento Requerido",
+          "consentDescription": "Agregue al menos un punto de consentimiento antes de continuar.",
+          "clientNameRequired": "El nombre del contacto del cliente es requerido.",
+          "deliveryEmailRequired": "El correo de entrega es requerido.",
+          "invalidEmail": "Correo Inválido",
+          "invalidEmailDescription": "Por favor ingrese una dirección de correo válida para la entrega.",
+          "passwordRequired": "Contraseña Requerida",
+          "passwordDescription": "Por favor establezca una contraseña para este paquete protegido en el paso 'Personalizar'.",
+          "missingOffer": "Falta oferta",
+          "offerDescription": "Este paquete no está vinculado a una oferta.",
+          "selectBrandRequired": "Por favor seleccione una marca conectada.",
+          "invalidFile": "Archivo inválido",
+          "invalidFileDescription": "Por favor seleccione un archivo de imagen.",
+          "fileTooLarge": "Archivo demasiado grande",
+          "fileTooLargeDescription": "La imagen de portada del paquete debe ser de {{maxMB}}MB o menos. Su archivo es de {{fileSizeMB}}MB. Por favor comprima o redimensione su imagen e intente nuevamente.",
+          "imageUploaded": "Imagen subida",
+          "uploadFailed": "Subida fallida",
+          "uploadFailedDescription": "Por favor intente nuevamente."
+        },
+        "inviteModal": {
+          "title": "Invitación Requerida",
+          "description": "{{name}} aún no ha aceptado su invitación al portal. Necesitan completar la incorporación antes de que puedan ser agregados a un paquete o asignados a un contrato.",
+          "whyMatters": "Por qué esto importa",
+          "whyMattersDescription": "Sin acceso al portal, este {{entity}} no puede recibir pagos, firmar contratos o comunicarse a través de la plataforma.",
+          "goToRoster": "Ir a la Lista e Invitar"
+        }
       }
     },
     "catalogs": {
