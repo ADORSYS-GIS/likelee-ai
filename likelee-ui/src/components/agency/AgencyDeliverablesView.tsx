@@ -1728,7 +1728,10 @@ export function AgencyDeliverablesView() {
                                           <span className="text-[10px] text-red-600 font-semibold">
                                             {t(
                                               "agencyDashboard.deliverables.payoutStatus.noStripeAccount",
-                                              { defaultValue: "No Stripe account" },
+                                              {
+                                                defaultValue:
+                                                  "No Stripe account",
+                                              },
                                             )}
                                           </span>
                                         ) : !r.stripe_transfers_enabled ? (
@@ -2077,10 +2080,9 @@ export function AgencyDeliverablesView() {
                                   }
                                 >
                                   <Upload className="w-4 h-4 mr-2" />{" "}
-                                  {t(
-                                    "agencyDashboard.deliverables.upload",
-                                    { defaultValue: "Upload" },
-                                  )}
+                                  {t("agencyDashboard.deliverables.upload", {
+                                    defaultValue: "Upload",
+                                  })}
                                 </Button>
                               </div>
                             </div>
@@ -2232,9 +2234,12 @@ export function AgencyDeliverablesView() {
               <div className="h-[420px] flex flex-col items-center justify-center text-center">
                 <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
                 <p className="text-sm font-bold text-gray-500">
-                  {t("agencyDashboard.deliverables.assignTalent.loadingTalents", {
-                    defaultValue: "Loading talents...",
-                  })}
+                  {t(
+                    "agencyDashboard.deliverables.assignTalent.loadingTalents",
+                    {
+                      defaultValue: "Loading talents...",
+                    },
+                  )}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
                   {t(

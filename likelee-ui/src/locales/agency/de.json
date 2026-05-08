@@ -360,9 +360,9 @@
           "sentTitle": "Erinnerungen gesendet",
           "sentDescription": "Gesendet: {{sent}}, Fehlgeschlagen: {{failed}}"
         },
-  "photos": "{{count}} Foto",
-  "photos_other": "{{count}} Fotos",
-  "viewHistory": "Verlauf anzeigen",
+        "photos": "{{count}} Foto",
+        "photos_other": "{{count}} Fotos",
+        "viewHistory": "Verlauf anzeigen",
         "sendReminder": "Erinnerung senden",
         "uploadNew": "Neu hochladen",
         "history": {
@@ -371,10 +371,10 @@
         "upload": {
           "uploadDigitals": "Digitals hochladen"
         },
-  "view": "Anzeigen",
-  "uploadPhoto": "Foto hochladen",
-  "previousUpdates": "Vorherige Updates",
-  "loadingHistory": "Verlauf wird geladen..."
+        "view": "Anzeigen",
+        "uploadPhoto": "Foto hochladen",
+        "previousUpdates": "Vorherige Updates",
+        "loadingHistory": "Verlauf wird geladen..."
       },
       "licenses": {
         "comingSoon": "Lizenzverwaltung kommt bald"

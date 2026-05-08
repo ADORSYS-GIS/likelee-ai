@@ -145,15 +145,18 @@ const BrandConnectionsView = ({
       "ui.noPendingRequests": "No pending requests.",
       "ui.noEmailProvided": "No email provided",
       "ui.disconnectFromBrand": "Disconnect from brand",
-      "ui.noDisconnectPermission": "You do not have permission to disconnect brands.",
+      "ui.noDisconnectPermission":
+        "You do not have permission to disconnect brands.",
       "ui.brandFallback": "Brand",
       "ui.pending": "Pending",
       "ui.requestedOn": "Requested on {{date}}",
       "ui.working": "Working...",
       "ui.accept": "Accept",
       "ui.decline": "Decline",
-      "ui.noAcceptRequestPermission": "You do not have permission to accept requests.",
-      "ui.noDeclineRequestPermission": "You do not have permission to decline requests.",
+      "ui.noAcceptRequestPermission":
+        "You do not have permission to accept requests.",
+      "ui.noDeclineRequestPermission":
+        "You do not have permission to decline requests.",
       "ui.loadingOffers": "Loading offers...",
       "ui.noOffers": "No offers available.",
       "ui.offerNotFound": "Offer not found.",
@@ -169,8 +172,10 @@ const BrandConnectionsView = ({
       "contractHub.title": "Contract Hub",
       "contractHub.submissions": "Submissions",
       "contractHub.newContract": "New Contract",
-      "contractHub.assignTalentBeforeContract": "Assign talent before creating a contract.",
-      "contractHub.connectStripeBeforeSending": "Connect Stripe before sending.",
+      "contractHub.assignTalentBeforeContract":
+        "Assign talent before creating a contract.",
+      "contractHub.connectStripeBeforeSending":
+        "Connect Stripe before sending.",
       "contractHub.setupPayouts": "Set up payouts",
       "contractHub.noContractsForOffer": "No contracts for this offer yet.",
       "contractHub.createFirstContract": "Create first contract",
@@ -190,7 +195,8 @@ const BrandConnectionsView = ({
       "contractHub.uploadingPdf": "Uploading PDF...",
       "contractHub.creatingTemplate": "Creating template...",
       "contractHub.uploadContractPdf": "Upload Contract PDF",
-      "contractHub.uploadPdfDescription": "Upload a contract PDF to send for signature.",
+      "contractHub.uploadPdfDescription":
+        "Upload a contract PDF to send for signature.",
       "contractHub.assignTalentFirst": "Assign talent first",
       "contractHub.saveContract": "Save Contract",
       "toasts.requestAccepted": "Request accepted",
@@ -262,8 +268,10 @@ const BrandConnectionsView = ({
       "ui.working": "Procesando...",
       "ui.accept": "Aceptar",
       "ui.decline": "Rechazar",
-      "ui.noAcceptRequestPermission": "No tienes permiso para aceptar solicitudes.",
-      "ui.noDeclineRequestPermission": "No tienes permiso para rechazar solicitudes.",
+      "ui.noAcceptRequestPermission":
+        "No tienes permiso para aceptar solicitudes.",
+      "ui.noDeclineRequestPermission":
+        "No tienes permiso para rechazar solicitudes.",
       "ui.loadingOffers": "Cargando ofertas...",
       "ui.noOffers": "No hay ofertas disponibles.",
       "ui.offerNotFound": "Oferta no encontrada.",
@@ -279,10 +287,13 @@ const BrandConnectionsView = ({
       "contractHub.title": "Centro de contratos",
       "contractHub.submissions": "Envíos",
       "contractHub.newContract": "Nuevo contrato",
-      "contractHub.assignTalentBeforeContract": "Asigna talento antes de crear un contrato.",
-      "contractHub.connectStripeBeforeSending": "Conecta Stripe antes de enviar.",
+      "contractHub.assignTalentBeforeContract":
+        "Asigna talento antes de crear un contrato.",
+      "contractHub.connectStripeBeforeSending":
+        "Conecta Stripe antes de enviar.",
       "contractHub.setupPayouts": "Configurar pagos",
-      "contractHub.noContractsForOffer": "Aún no hay contratos para esta oferta.",
+      "contractHub.noContractsForOffer":
+        "Aún no hay contratos para esta oferta.",
       "contractHub.createFirstContract": "Crear primer contrato",
       "contractHub.contractTemplates": "Plantillas de contrato",
       "contractHub.readyToPrepare": "Listo para preparar",
@@ -300,7 +311,8 @@ const BrandConnectionsView = ({
       "contractHub.uploadingPdf": "Subiendo PDF...",
       "contractHub.creatingTemplate": "Creando plantilla...",
       "contractHub.uploadContractPdf": "Subir PDF de contrato",
-      "contractHub.uploadPdfDescription": "Sube un PDF de contrato para enviarlo a firma.",
+      "contractHub.uploadPdfDescription":
+        "Sube un PDF de contrato para enviarlo a firma.",
       "contractHub.assignTalentFirst": "Asigna talento primero",
       "contractHub.saveContract": "Guardar contrato",
     },

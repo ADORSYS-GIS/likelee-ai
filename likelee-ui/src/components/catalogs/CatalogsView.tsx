@@ -505,7 +505,7 @@ export function CatalogsView({
 
               {previewCatalog.notes && (
                 <div className="space-y-1.5">
-                      <span className="text-xs font-black uppercase tracking-widest text-gray-400">
+                  <span className="text-xs font-black uppercase tracking-widest text-gray-400">
                     {t("agencyDashboard.catalogs.previewModal.internalNotes")}
                   </span>
                   <div className="p-4 bg-white border border-gray-100 rounded-xl text-sm text-gray-600 italic">

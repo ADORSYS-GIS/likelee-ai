@@ -314,10 +314,10 @@
         "upload": {
           "uploadDigitals": "Subir Digitales"
         },
-  "view": "Ver",
-  "uploadPhoto": "Subir foto",
-  "previousUpdates": "Actualizaciones anteriores",
-  "loadingHistory": "Cargando historial..."
+        "view": "Ver",
+        "uploadPhoto": "Subir foto",
+        "previousUpdates": "Actualizaciones anteriores",
+        "loadingHistory": "Cargando historial..."
       },
       "licenses": {
         "comingSoon": "La gestión de licencias llegará pronto"

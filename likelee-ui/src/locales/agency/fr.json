@@ -313,10 +313,10 @@
         "upload": {
           "uploadDigitals": "Télécharger des Digitales"
         },
-  "view": "Voir",
-  "uploadPhoto": "Téléverser une photo",
-  "previousUpdates": "Mises à jour précédentes",
-  "loadingHistory": "Chargement de l'historique..."
+        "view": "Voir",
+        "uploadPhoto": "Téléverser une photo",
+        "previousUpdates": "Mises à jour précédentes",
+        "loadingHistory": "Chargement de l'historique..."
       },
       "licenses": {
         "comingSoon": "La gestion des licences arrive bientôt"

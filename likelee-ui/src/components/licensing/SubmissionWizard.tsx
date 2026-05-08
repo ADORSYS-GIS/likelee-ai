@@ -495,14 +495,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
             "agencyDashboard.licenseTemplates.wizard.contractBodyRequired",
             { defaultValue: "Contract Body Required" },
           ),
-          description:
-            t(
-              "agencyDashboard.licenseTemplates.wizard.contractBodyRequiredDesc",
-              {
-                defaultValue:
-                  "The contract body cannot be empty. Please ensure the template has contract content or add content before proceeding.",
-              },
-            ),
+          description: t(
+            "agencyDashboard.licenseTemplates.wizard.contractBodyRequiredDesc",
+            {
+              defaultValue:
+                "The contract body cannot be empty. Please ensure the template has contract content or add content before proceeding.",
+            },
+          ),
           variant: "warning",
         });
         return;
@@ -535,8 +534,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           title: t(
             "agencyDashboard.licenseTemplates.wizard.contractMissingIdentity",
             {
-              defaultValue:
-                "Contract is missing required identity information",
+              defaultValue: "Contract is missing required identity information",
             },
           ),
           description: `The contract body must include the ${identityErrors.join(" and ")}. Use the insert buttons below the editor to add them, or type them directly.`,
@@ -668,11 +666,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
             "agencyDashboard.licenseTemplates.wizard.agencySignatureRequired",
             { defaultValue: "Agency signature required" },
           ),
-          description:
-            t("agencyDashboard.licenseTemplates.wizard.signToRelease", {
+          description: t(
+            "agencyDashboard.licenseTemplates.wizard.signToRelease",
+            {
               defaultValue:
                 "Complete your signature to release this contract to the client.",
-            }),
+            },
+          ),
         });
         return;
       }
@@ -1565,7 +1565,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         const label =
                           placeholder === "talent_name_placeholder"
                             ? t("agencyDashboard.dashboard.entities.talent")
-                            : t("agencyDashboard.brandConnections.ui.brandFallback");
+                            : t(
+                                "agencyDashboard.brandConnections.ui.brandFallback",
+                              );
                         const value =
                           placeholder === "talent_name_placeholder"
                             ? formData.talent_name
@@ -1601,7 +1603,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                               {
                                 label,
                                 value,
-                                defaultValue: "Insert {{label}} Name ({{value}})",
+                                defaultValue:
+                                  "Insert {{label}} Name ({{value}})",
                               },
                             )}
                           </button>

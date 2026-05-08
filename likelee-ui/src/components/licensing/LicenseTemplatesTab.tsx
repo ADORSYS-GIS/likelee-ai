@@ -167,7 +167,9 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
       toast({
         title: t("agencyDashboard.licenseTemplates.toast.success"),
-        description: t("agencyDashboard.licenseTemplates.toast.templateCreated"),
+        description: t(
+          "agencyDashboard.licenseTemplates.toast.templateCreated",
+        ),
       });
       // Automatically open builder for the new template
       if (data.docuseal_template_id) {
@@ -196,7 +198,9 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
       toast({
         title: t("agencyDashboard.licenseTemplates.toast.success"),
-        description: t("agencyDashboard.licenseTemplates.toast.templateUpdated"),
+        description: t(
+          "agencyDashboard.licenseTemplates.toast.templateUpdated",
+        ),
       });
       // Automatically open builder after update
       if (data.docuseal_template_id) {
@@ -224,7 +228,9 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
       queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
       toast({
         title: t("agencyDashboard.licenseTemplates.toast.success"),
-        description: t("agencyDashboard.licenseTemplates.toast.templateDeleted"),
+        description: t(
+          "agencyDashboard.licenseTemplates.toast.templateDeleted",
+        ),
       });
     },
     onError: () => {
@@ -293,11 +299,12 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
     );
     if (!linkedTemplate) {
       toast({
-        title: t("agencyDashboard.licenseTemplates.toast.linkedTemplateNotFound"),
-        description:
-          t(
-            "agencyDashboard.licenseTemplates.toast.linkedTemplateNotFoundDescription",
-          ),
+        title: t(
+          "agencyDashboard.licenseTemplates.toast.linkedTemplateNotFound",
+        ),
+        description: t(
+          "agencyDashboard.licenseTemplates.toast.linkedTemplateNotFoundDescription",
+        ),
         variant: "destructive",
         duration: 3000,
       });
