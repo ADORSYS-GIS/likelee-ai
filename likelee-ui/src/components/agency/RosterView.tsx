@@ -2742,11 +2742,13 @@ const RosterView = ({
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Insufficient seats!
+                {t("agencyDashboard.roster.seats.insufficientTitle")}
               </h3>
               <p className="text-gray-500 mb-8 font-medium">
-                Your current plan allows {seatsLimit || 0} {singularLabel}
-                {seatsLimit === 1 ? "" : "s"}. Upgrade to add more.
+                {t("agencyDashboard.roster.seats.insufficientMessage", {
+                  count: seatsLimit || 0,
+                  entity: `${singularLabel}${seatsLimit === 1 ? "" : "s"}`,
+                })}
               </p>
               <div className="flex flex-col w-full gap-3">
                 <Button
@@ -2756,7 +2758,7 @@ const RosterView = ({
                   }}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl"
                 >
-                  View plans
+                  {t("agencyDashboard.roster.seats.viewPlans")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -2916,7 +2918,7 @@ const RosterView = ({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">
-                  agencyDashboard.roster.digitals.history.title -{" "}
+                  {t("agencyDashboard.roster.digitals.history.title")} -{" "}
                   {historyTalent.name}
                 </h3>
               </div>
