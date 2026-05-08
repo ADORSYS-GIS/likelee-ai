@@ -281,13 +281,13 @@
         "daysOld90Plus": "90+ jours",
         "totalEntities": "{{entityPlural}} au total",
         "inRoster": "Dans le roster",
-        "lastUpdated": "Dernière mise à jour :",
-        "never": "Jamais",
+        "lastUpdated": "Last updated:",
+        "never": "Never",
         "daysAgo": "il y a {{count}} jour",
         "daysAgo_other": "il y a {{count}} jours",
-        "photos": "{{count}} photo",
+        "photos": "photos",
         "photos_other": "{{count}} photos",
-        "viewHistory": "Voir l'historique",
+        "viewHistory": "View History",
         "sendReminder": "Envoyer un rappel",
         "uploadNew": "Téléverser nouveau",
         "reminder": {
@@ -311,7 +311,11 @@
         },
         "upload": {
           "uploadDigitals": "Télécharger des Digitales"
-        }
+        },
+        "view": "view",
+        "uploadPhoto": "Upload photo",
+        "previousUpdates": "Previous Updates",
+        "loadingHistory": "loading history..."
       },
       "licenses": {
         "comingSoon": "La gestion des licences arrive bientôt"
@@ -3946,7 +3950,10 @@
         "title": "Filtrer les demandes",
         "status": "Statut",
         "date": "Date",
-        "reset": "Réinitialiser les filtres"
+        "reset": "Réinitialiser les filtres",
+        "button": "Filter",
+        "clear": "Clear",
+        "apply": "Apply"
       },
       "loading": "Chargement...",
       "loadFailed": "Échec du chargement des demandes de licence",
@@ -4037,6 +4044,51 @@
         "customTerms": "Conditions personnalisées",
         "contractPhase": "Phase du contrat",
         "declined": "Refusé"
+      },
+      "filterModal": {
+        "title": "Filter Licensing Requests",
+        "description": "Narrow down your licensing requests by status, license fee, and duration.",
+        "status": "Status",
+        "allStatuses": "All Statuses",
+        "licenseFee": "License Fee",
+        "duration": "Duration",
+        "apply": "Apply",
+        "clear": "Clear"
+      },
+      "archiveNotice": "Licensing requests past their end date are automatically moved to the Archive tab.",
+      "noActive": "No active licensing requests",
+      "noArchived": "No archived licensing requests",
+      "statusLabels": {
+        "approved": "Approved",
+        "declined": "Declined",
+        "pending": "Pending"
+      },
+      "actions": {
+        "decline": "Decline",
+        "approve": "Approve",
+        "counterOffer": "Counter Offer",
+        "sendPaymentLink": "Send payment link",
+        "resendPaymentLink": "Resend payment link",
+        "recoverToActive": "Recover to Active",
+        "deletePermanently": "Delete Permanently",
+        "acceptWriteContract": "Accept & Write Contract"
+      },
+      "fields": {
+        "licenseFee": "License Fee",
+        "regions": "Regions",
+        "usageScope": "Usage Scope",
+        "deadline": "Deadline",
+        "duration": "Duration",
+        "timeline": "Timeline",
+        "modsAllowed": "Mods Allowed",
+        "contractPhase": "Contract Phase",
+        "territory": "Territory",
+        "exclusivity": "Exclusivity"
+      },
+      "messages": {
+        "recovering": "Recovering...",
+        "deleting": "Deleting...",
+        "sending": "Sending..."
       }
     },
     "activeLicenses": {
@@ -4115,22 +4167,22 @@
         "active": "Actif",
         "archive": "Archive"
       },
-      "outboundContracts": "Contrats sortants",
+      "outboundContracts": "Outbound Contracts",
       "status": {
-        "signed": "Signé",
-        "sent": "Envoyé",
-        "opened": "Ouvert",
-        "agencyPending": "Agence en attente",
-        "clientPending": "Client en attente",
-        "archived": "Archivé",
+        "signed": "signed",
+        "sent": "sent",
+        "opened": "opened",
+        "agencyPending": "agency_pending",
+        "clientPending": "client_pending",
+        "archived": "archived",
         "declined": "Refusé",
         "expired": "Expiré"
       },
       "table": {
         "client": "Client",
-        "template": "Modèle",
-        "status": "Statut",
-        "sentDate": "Date d'envoi",
+        "template": "Template",
+        "status": "Status",
+        "sentDate": "Sent Date",
         "actions": "Actions"
       },
       "reason": "Raison :",
@@ -4154,19 +4206,19 @@
       "loadingDescription": "Actualisation des soumissions pour que l'envoi mis à jour apparaisse ici.",
       "actions": {
         "resendEmail": "Renvoyer l'e-mail",
-        "archive": "Archiver",
+        "archive": "Archive",
         "recover": "Récupérer",
         "signHere": "Signer ici",
         "download": "Télécharger",
-        "downloadPdf": "Télécharger le PDF",
+        "downloadPdf": "Download PDF",
         "moreActions": "Plus d'actions",
         "openAgencySigningLink": "Ouvrir le lien de signature de l'agence",
-        "openAgencyLink": "Ouvrir le lien de l'agence",
-        "openClientLink": "Ouvrir le lien client",
-        "copyClientLink": "Copier le lien client",
-        "copyAgencyLink": "Copier le lien agence",
+        "openAgencyLink": "Open Agency Link",
+        "openClientLink": "Open Client Link",
+        "copyClientLink": "Copy Client Link",
+        "copyAgencyLink": "Copy Agency Link",
         "viewDocument": "Voir le document",
-        "recoverToActive": "Rétablir en actif"
+        "recoverToActive": "Recover to Active"
       },
       "noSubmissions": "Aucune soumission trouvée",
       "noActiveSubmissions": "Aucune soumission active trouvée.",
@@ -4211,7 +4263,12 @@
         "copyTemplate": "Copier le modèle",
         "useTemplate": "Utiliser le modèle",
         "editInBuilder": "Modifier dans le constructeur",
-        "sendContract": "Envoyer le contrat"
+        "sendContract": "Envoyer le contrat",
+        "editDetails": "Edit Details",
+        "editLayout": "Edit Layout",
+        "duplicate": "Duplicate",
+        "delete": "Delete",
+        "useContract": "Use Contract"
       },
       "modal": {
         "newTitle": "Nouveau modèle de contrat",
@@ -4305,13 +4362,19 @@
         "totalSubmissions": "Total des soumissions"
       },
       "searchPlaceholder": "Rechercher des modèles...",
-      "noTemplates": "Aucun modèle trouvé",
+      "noTemplates": "No templates yet. Create your first one to get started!",
       "noTemplatesInCategory": "Aucun modèle dans cette catégorie",
       "loadingTemplates": "Chargement des modèles...",
       "noTemplatesMatch": "Aucun modèle ne correspond à vos critères.",
       "noTemplatesYet": "Aucun modèle pour le moment. Créez le vôtre pour commencer !",
       "notSet": "Non défini",
-      "brandContext": "Toute soumission de contrat créée sera envoyée à {{brand}}."
+      "brandContext": "Toute soumission de contrat créée sera envoyée à {{brand}}.",
+      "newTemplate": "New template",
+      "loading": "Loading...",
+      "noMatch": "No templates match your criteria.",
+      "delete": {
+        "title": "Delete Template"
+      }
     },
     "addTalent": {
       "title": "Ajouter un nouveau {{entityTitle}}",
@@ -6086,51 +6149,73 @@
     },
     "deliverables": {
       "toasts": {
-        "assignmentsLocked": "Affectations verrouillées",
+        "assignmentsLocked": "Assignments locked",
         "contractAlreadySigned": "Le contrat est déjà signé et vous ne pouvez pas modifier les talents assignés.",
         "cantChangeAfterSent": "Vous ne pouvez pas modifier les talents assignés après l'envoi du contrat.",
-        "talentUnassigned": "Talent non assigné",
-        "talentRemoved": "Le talent a été retiré de cette offre.",
-        "unassignFailed": "Échec de la désaffectation",
-        "pleaseTryAgain": "Veuillez réessayer.",
-        "nothingToRetry": "Rien à réessayer",
-        "allTransfersSuccessful": "Tous les transferts sont déjà réussis.",
-        "notYetAvailable": "Pas encore disponible",
-        "retryAfterApproval": "Les transferts ne peuvent être réessayés qu'après l'approbation des livrables par la marque.",
-        "retryFailed": "Échec de la nouvelle tentative",
-        "talentAssigned": "Talent assigné",
-        "deliverablesUploaded": "Livrables téléchargés",
-        "uploadFailed": "Échec du téléchargement",
-        "permissionRequired": "Permission requise",
-        "cannotSubmitDeliverables": "Votre rôle ne peut pas soumettre de livrables pour approbation.",
-        "submittedToBrand": "Soumis à la marque",
-        "submitFailed": "Échec de la soumission",
-        "cannotReviewDeliverables": "Votre rôle ne peut pas examiner les livrables.",
-        "reviewSubmitted": "Examen soumis",
-        "reviewFailed": "Échec de l'examen",
-        "deliverableDeleted": "Livrable supprimé",
-        "deleteFailed": "Échec de la suppression"
+        "talentUnassigned": "Talent unassigned",
+        "talentRemoved": "Talent removed from this offer.",
+        "unassignFailed": "Unassign failed",
+        "pleaseTryAgain": "Please try again.",
+        "nothingToRetry": "Nothing to retry",
+        "allTransfersSuccessful": "All transfers were successful.",
+        "notYetAvailable": "Not yet available",
+        "retryAfterApproval": "Retry transfers after escrow approval.",
+        "retryFailed": "Retry failed",
+        "talentAssigned": "Talent assigned",
+        "deliverablesUploaded": "Deliverables uploaded",
+        "uploadFailed": "Upload failed",
+        "permissionRequired": "Permission required",
+        "cannotSubmitDeliverables": "Your role cannot submit deliverables.",
+        "submittedToBrand": "Submitted to brand",
+        "submitFailed": "Submit failed",
+        "cannotReviewDeliverables": "Your role cannot review deliverables.",
+        "reviewSubmitted": "Review submitted",
+        "reviewFailed": "Review failed",
+        "deliverableDeleted": "Deliverable deleted",
+        "deleteFailed": "Delete failed",
+        "assignmentFailed": "Assignment failed"
       },
       "statusLabels": {
-        "draft": "Brouillon",
-        "sentToBrand": "Envoyé à la Marque",
-        "brandApproved": "Approuvé par la Marque",
-        "new": "Nouveau",
-        "contractSigned": "Contrat Signé",
-        "contractSent": "Contrat Envoyé",
-        "sent": "Envoyé",
-        "accepted": "Accepté",
-        "open": "Ouvert"
+        "draft": "Draft",
+        "sentToBrand": "Sent to Brand",
+        "brandApproved": "Brand Approved",
+        "new": "New",
+        "contractSigned": "Contract Signed",
+        "contractSent": "Contract Sent",
+        "sent": "Sent",
+        "accepted": "Accepted",
+        "open": "Open"
       },
       "deliverableCard": {
-        "feedback": "Commentaires",
-        "noCaption": "Pas de légende",
-        "yourFeedback": "Vos Commentaires :",
-        "brandFeedback": "Commentaires de la Marque :",
-        "approve": "Approuver",
-        "revise": "Réviser",
-        "reject": "Rejeter",
-        "deliverable": "Livrable"
+        "feedback": "Feedback",
+        "noCaption": "No caption",
+        "yourFeedback": "Your Feedback:",
+        "brandFeedback": "Brand Feedback:",
+        "approve": "Approve",
+        "revise": "Revise",
+        "reject": "Reject",
+        "deliverable": "Deliverable"
+      },
+      "offerCard": {
+        "offer": "Offer",
+        "brand": "Brand",
+        "signed": "Signed",
+        "notSigned": "Not signed",
+        "paid": "Paid",
+        "awaitingPayment": "Awaiting Payment",
+        "hide": "Hide",
+        "open": "Open",
+        "assignTalent": "Assign Talent",
+        "addTalent": "Add Talent"
+      },
+      "payoutStatus": {
+        "agency": "agency",
+        "talent": "talent"
+      },
+      "retryTransferDialog": {
+        "failed": "failed",
+        "transferred": "Transferred",
+        "transfersNotAllowed": "Transfers not allowed on this Stripe account."
       }
     }
   },

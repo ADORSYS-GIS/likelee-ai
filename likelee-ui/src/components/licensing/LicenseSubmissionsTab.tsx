@@ -283,7 +283,7 @@ export const LicenseSubmissionsTab = ({
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium">
-            Outbound Contracts
+            {t("agencyDashboard.licenseSubmissions.outboundContracts")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -291,11 +291,21 @@ export const LicenseSubmissionsTab = ({
             <Table className="min-w-[860px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Template</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Sent Date</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.client")}
+                  </TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.template")}
+                  </TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.status")}
+                  </TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.sentDate")}
+                  </TableHead>
+                  <TableHead>
+                    {t("agencyDashboard.licenseSubmissions.table.actions")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

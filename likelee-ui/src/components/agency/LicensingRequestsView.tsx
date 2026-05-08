@@ -696,7 +696,8 @@ const LicensingRequestsView = ({
               className={`flex w-full items-center justify-center gap-2 border-gray-300 font-bold text-gray-700 bg-white sm:w-auto ${hasActiveFilters ? "border-indigo-300 bg-indigo-50" : ""}`}
               onClick={() => setShowFilterDialog(true)}
             >
-              <Filter className="w-4 h-4" /> F
+              <Filter className="w-4 h-4" />{" "}
+              {t("agencyDashboard.licensingRequests.filter.button")}
               {hasActiveFilters && (
                 <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-indigo-500 text-white rounded-full">
                   {
@@ -731,8 +732,7 @@ const LicensingRequestsView = ({
                 />
               </svg>
               <p className="text-xs text-amber-800">
-                Licensing requests past their end date are automatically moved
-                to the Archive tab.
+                {t("agencyDashboard.licensingRequests.archiveNotice")}
               </p>
             </div>
           )}
@@ -805,15 +805,21 @@ const LicensingRequestsView = ({
 
                 <div className="mb-8 grid grid-cols-2 gap-3">
                   <DetailMetric
-                    label="License Fee"
+                    label={t(
+                      "agencyDashboard.licensingRequests.fields.licenseFee",
+                    )}
                     value={formatLicenseFee(group.license_fee)}
                   />
                   <DetailMetric
-                    label="Regions"
+                    label={t(
+                      "agencyDashboard.licensingRequests.fields.regions",
+                    )}
                     value={group.regions || "\u2014"}
                   />
                   <DetailMetric
-                    label="Usage Scope"
+                    label={t(
+                      "agencyDashboard.licensingRequests.fields.usageScope",
+                    )}
                     value={(() => {
                       const details = getRequestDetails(group);
                       const territory = String(details?.territory || "").trim();
@@ -822,7 +828,11 @@ const LicensingRequestsView = ({
                     })()}
                   />
                   <DetailMetric
-                    label={group.license_start_date ? "Duration" : "Deadline"}
+                    label={
+                      group.license_start_date
+                        ? t("agencyDashboard.licensingRequests.fields.duration")
+                        : t("agencyDashboard.licensingRequests.fields.deadline")
+                    }
                     value={
                       group.license_start_date && group.license_end_date
                         ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
@@ -923,7 +933,7 @@ const LicensingRequestsView = ({
                       <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
                         <span className="text-[10px] font-bold">✓</span>
                       </div>
-                      Approve
+                      {t("agencyDashboard.licensingRequests.actions.approve")}
                     </Button>
                     <Button
                       variant="outline"
@@ -933,7 +943,9 @@ const LicensingRequestsView = ({
                       }}
                       className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
                     >
-                      Counter Offer
+                      {t(
+                        "agencyDashboard.licensingRequests.actions.counterOffer",
+                      )}
                     </Button>
                     <Button
                       variant="outline"
@@ -946,7 +958,7 @@ const LicensingRequestsView = ({
                       <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
                         <X className="w-3 h-3" />
                       </div>
-                      Decline
+                      {t("agencyDashboard.licensingRequests.actions.decline")}
                     </Button>
                   </div>
                 )}

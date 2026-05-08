@@ -541,8 +541,10 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                             onClick={() => openEditModal(template)}
                             className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
                           >
-                            <Edit className="h-4 w-4 text-slate-500" /> Edit
-                            Details
+                            <Edit className="h-4 w-4 text-slate-500" />{" "}
+                            {t(
+                              "agencyDashboard.licenseTemplates.actions.editDetails",
+                            )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -556,15 +558,19 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                             }}
                             className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
                           >
-                            <Layout className="h-4 w-4 text-slate-500" /> Edit
-                            Layout
+                            <Layout className="h-4 w-4 text-slate-500" />{" "}
+                            {t(
+                              "agencyDashboard.licenseTemplates.actions.editLayout",
+                            )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => handleCopy(template.id)}
                             className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
                           >
                             <Copy className="h-4 w-4 text-slate-500" />{" "}
-                            Duplicate
+                            {t(
+                              "agencyDashboard.licenseTemplates.actions.duplicate",
+                            )}
                           </DropdownMenuItem>
                           <div className="h-px bg-slate-100 my-1" />
                           <DropdownMenuItem
@@ -573,7 +579,10 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                             }
                             className="rounded-lg gap-2 cursor-pointer font-semibold text-red-600 py-2.5 hover:bg-red-50 focus:bg-red-50"
                           >
-                            <Trash2 className="h-4 w-4" /> Delete
+                            <Trash2 className="h-4 w-4" />{" "}
+                            {t(
+                              "agencyDashboard.licenseTemplates.actions.delete",
+                            )}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -608,7 +617,9 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
                           handleUseTemplate(template);
                         }}
                       >
-                        Use Contract
+                        {t(
+                          "agencyDashboard.licenseTemplates.actions.useContract",
+                        )}
                       </Button>
                     </div>
                   </CardContent>
