@@ -313,7 +313,7 @@
       },
       "analytics": {
         "title": "Analysen",
-        "comingSoonDescription": "Demnächst verfügbar.",
+        "comingSoonDescription": "Analytics Dashboard für IRL-Modus kommt bald.",
         "comingSoonButton": "Kommt bald",
         "comingSoon": "Demnächst verfügbar",
         "exportReport": "Export Report",
@@ -366,6 +366,9 @@
         "uploadNew": "Neu hochladen",
         "history": {
           "title": "Digitals-Verlauf"
+        },
+        "upload": {
+          "uploadDigitals": "Digitals hochladen"
         }
       },
       "licenses": {
@@ -414,7 +417,8 @@
       "seats": {
         "insufficientTitle": "Nicht genügend Plätze!",
         "insufficientDescription": "Ihr aktueller Plan erlaubt {{count}} {{entity}}. Upgraden Sie, um mehr hinzuzufügen.",
-        "viewPlans": "Pläne ansehen"
+        "viewPlans": "Pläne ansehen",
+        "insufficientMessage": "Ihr aktueller Plan erlaubt {{count}} {{entity}}. Upgraden Sie, um mehr hinzuzufügen."
       },
       "upload": {
         "title": "Neue Digitals hochladen - {{name}}",
@@ -4136,7 +4140,22 @@
       "mediaLaterHelp": "Sie konnen spater in der Roster-Verwaltung weitere Medien hinzufugen und Details aktualisieren.",
       "addingEntity": "{{entityLower}} wird hinzugefugt...",
       "addToRoster": "{{entityTitle}} zum Roster hinzufugen",
-      "photosUploadFailedDesc": "Fotos konnten nicht hochgeladen werden. {{entityTitle}} wird ohne Fotos erstellt."
+      "photosUploadFailedDesc": "Fotos konnten nicht hochgeladen werden. {{entityTitle}} wird ohne Fotos erstellt.",
+      "roleCategories": {
+        "model": "Model",
+        "actor": "Schauspieler",
+        "creator": "Creator",
+        "voice": "Stimme",
+        "athlete": "Athlet",
+        "music": "Musik"
+      },
+      "genderOptions": {
+        "female": "Weiblich",
+        "male": "Männlich",
+        "nonBinary": "Nicht-binär",
+        "genderFluid": "Genderfluid",
+        "preferNotToSay": "Keine Angabe"
+      }
     },
     "compCard": {
       "title": "Comp-Card-Generator",
@@ -5632,7 +5651,7 @@
       }
     },
     "licenses": {
-      "comingSoon": "License management coming soon"
+      "comingSoon": "Lizenzverwaltung kommt bald"
     },
     "campaigns": {
       "comingSoon": "Campaign tracking coming soon"
