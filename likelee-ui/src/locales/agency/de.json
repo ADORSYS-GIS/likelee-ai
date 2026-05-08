@@ -3272,6 +3272,41 @@
         "edit": "Bearbeiten",
         "delete": "Löschen",
         "sendToClient": "An Kunden senden"
+      },
+      "feedbackDialog": {
+        "title": "Kundenaktivität",
+        "client": "Kunde",
+        "description": "Detaillierte Zeitleiste der Kundeninteraktionen mit",
+        "consent": "Einwilligung",
+        "consentStatus": {
+          "complete": "vollständig",
+          "missing": "fehlend",
+          "expired": "abgelaufen"
+        },
+        "noSelectionsYet": "Noch keine Auswahl",
+        "noFavoritesYet": "Noch keine Favoriten",
+        "noCallbacksYet": "Noch keine Rückrufe",
+        "loadingActivity": "Aktivität wird geladen...",
+        "noActivityYet": "Noch keine Aktivität",
+        "noActivityDescription": "Der Kunde hat noch nicht mit diesem Paket interagiert.",
+        "unknownTalent": "Unbekanntes Talent",
+        "interactionTypes": {
+          "favoritedTalent": "Talent favorisiert",
+          "selectedTalent": "Talent ausgewählt",
+          "updatedConsent": "Einwilligung aktualisiert",
+          "requestedAssets": "Vollständige Assets angefordert",
+          "commentedOnTalent": "Kommentar zu Talent",
+          "requestedCallback": "Rückruf angefordert"
+        },
+        "hasComment": "Hat Kommentar",
+        "clientContactDetails": "Kundenkontaktdetails",
+        "assetRequest": "Asset-Anfrage",
+        "fullName": "Vollständiger Name",
+        "emailAddress": "E-Mail-Adresse",
+        "personalMessage": "Persönliche Nachricht",
+        "notSpecified": "Nicht angegeben",
+        "consentUpdated": "Einwilligung aktualisiert",
+        "close": "Schließen"
       }
     },
     "catalogs": {

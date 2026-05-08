@@ -4860,6 +4860,41 @@
         "edit": "Edit",
         "delete": "Delete",
         "sendToClient": "Send to Client"
+      },
+      "feedbackDialog": {
+        "title": "Client Activity",
+        "client": "Client",
+        "description": "Detailed timeline of client interactions with",
+        "consent": "Consent",
+        "consentStatus": {
+          "complete": "complete",
+          "missing": "missing",
+          "expired": "expired"
+        },
+        "noSelectionsYet": "No selections yet",
+        "noFavoritesYet": "No favorites yet",
+        "noCallbacksYet": "No callbacks yet",
+        "loadingActivity": "Loading activity...",
+        "noActivityYet": "No activity yet",
+        "noActivityDescription": "The client hasn't interacted with this package yet.",
+        "unknownTalent": "Unknown Talent",
+        "interactionTypes": {
+          "favoritedTalent": "Favorited a Talent",
+          "selectedTalent": "Selected a Talent",
+          "updatedConsent": "Updated Consent",
+          "requestedAssets": "Requested Full Assets",
+          "commentedOnTalent": "Commented on a Talent",
+          "requestedCallback": "Requested Callback"
+        },
+        "hasComment": "Has Comment",
+        "clientContactDetails": "Client Contact Details",
+        "assetRequest": "Asset Request",
+        "fullName": "Full Name",
+        "emailAddress": "Email Address",
+        "personalMessage": "Personal Message",
+        "notSpecified": "Not specified",
+        "consentUpdated": "Consent updated",
+        "close": "Close"
       }
     },
     "payouts": {

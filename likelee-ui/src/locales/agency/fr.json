@@ -3271,6 +3271,41 @@
         "edit": "Modifier",
         "delete": "Supprimer",
         "sendToClient": "Envoyer au Client"
+      },
+      "feedbackDialog": {
+        "title": "Activité du Client",
+        "client": "Client",
+        "description": "Chronologie détaillée des interactions du client avec",
+        "consent": "Consentement",
+        "consentStatus": {
+          "complete": "complet",
+          "missing": "manquant",
+          "expired": "expiré"
+        },
+        "noSelectionsYet": "Aucune sélection pour le moment",
+        "noFavoritesYet": "Aucun favori pour le moment",
+        "noCallbacksYet": "Aucun rappel pour le moment",
+        "loadingActivity": "Chargement de l'activité...",
+        "noActivityYet": "Aucune activité pour le moment",
+        "noActivityDescription": "Le client n'a pas encore interagi avec ce paquet.",
+        "unknownTalent": "Talent Inconnu",
+        "interactionTypes": {
+          "favoritedTalent": "Talent Favori",
+          "selectedTalent": "Talent Sélectionné",
+          "updatedConsent": "Consentement Mis à Jour",
+          "requestedAssets": "Actifs Complets Demandés",
+          "commentedOnTalent": "Commenté sur un Talent",
+          "requestedCallback": "Rappel Demandé"
+        },
+        "hasComment": "A un Commentaire",
+        "clientContactDetails": "Coordonnées du Client",
+        "assetRequest": "Demande d'Actifs",
+        "fullName": "Nom Complet",
+        "emailAddress": "Adresse E-mail",
+        "personalMessage": "Message Personnel",
+        "notSpecified": "Non spécifié",
+        "consentUpdated": "Consentement mis à jour",
+        "close": "Fermer"
       }
     },
     "catalogs": {

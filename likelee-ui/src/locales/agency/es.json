@@ -3236,6 +3236,41 @@
         "edit": "Editar",
         "delete": "Eliminar",
         "sendToClient": "Enviar al Cliente"
+      },
+      "feedbackDialog": {
+        "title": "Actividad del Cliente",
+        "client": "Cliente",
+        "description": "Línea de tiempo detallada de las interacciones del cliente con",
+        "consent": "Consentimiento",
+        "consentStatus": {
+          "complete": "completo",
+          "missing": "faltante",
+          "expired": "expirado"
+        },
+        "noSelectionsYet": "Aún no hay selecciones",
+        "noFavoritesYet": "Aún no hay favoritos",
+        "noCallbacksYet": "Aún no hay devoluciones de llamada",
+        "loadingActivity": "Cargando actividad...",
+        "noActivityYet": "Aún no hay actividad",
+        "noActivityDescription": "El cliente aún no ha interactuado con este paquete.",
+        "unknownTalent": "Talento Desconocido",
+        "interactionTypes": {
+          "favoritedTalent": "Talento Favorito",
+          "selectedTalent": "Talento Seleccionado",
+          "updatedConsent": "Consentimiento Actualizado",
+          "requestedAssets": "Activos Completos Solicitados",
+          "commentedOnTalent": "Comentó sobre un Talento",
+          "requestedCallback": "Devolución de Llamada Solicitada"
+        },
+        "hasComment": "Tiene Comentario",
+        "clientContactDetails": "Detalles de Contacto del Cliente",
+        "assetRequest": "Solicitud de Activos",
+        "fullName": "Nombre Completo",
+        "emailAddress": "Dirección de Correo",
+        "personalMessage": "Mensaje Personal",
+        "notSpecified": "No especificado",
+        "consentUpdated": "Consentimiento actualizado",
+        "close": "Cerrar"
       }
     },
     "catalogs": {
