@@ -4287,14 +4287,34 @@
         "consentStatusBreakdown": "Répartition du statut de consentement",
         "complete": "Complet",
         "missing": "Manquant",
-        "expired": "Expiré"
+        "expired": "Expiré",
+        "of": "de",
+        "campaignStatus": {
+          "inProgress": "En Cours",
+          "readyToLaunch": "Prêt à Lancer",
+          "completed": "Terminé"
+        },
+        "aiUsageTypes": {
+          "image": "Image",
+          "video": "Vidéo",
+          "voice": "Voix"
+        },
+        "consentStatus": {
+          "complete": "Complet",
+          "missing": "Manquant",
+          "expired": "Expiré"
+        },
+        "chart": {
+          "earnings": "Revenus ($)",
+          "aiUsages": "Utilisations IA"
+        }
       },
       "rosterInsights": {
         "title": "Aperçus du Roster",
-        "topPerformer": "Meilleur performeur",
-        "highestFollowers": "Plus de followers",
+        "topPerformer": "Meilleur Performeur (Revenus)",
+        "highestFollowers": "Plus de Followers",
         "avgValue": "Valeur moyenne",
-        "noData": "Aucune donnée d'aperçu du roster disponible.",
+        "noData": "Aucune donnée disponible",
         "totalTalent": "Total des talents",
         "activeTalent": "Talents actifs",
         "performanceMetrics": "Métriques de performance",
@@ -4305,7 +4325,12 @@
         "talent": "Talent",
         "earnings30d": "Gains (30j)",
         "projected": "Projeté",
-        "status": "Statut"
+        "status": "Statut",
+        "earningsByTalent": "Revenus par Talent (30 Derniers Jours)",
+        "chart": {
+          "earnings30d": "Revenus 30J ($)",
+          "projected": "Projeté ($)"
+        }
       },
       "clientsCampaigns": {
         "title": "Clients et Campagnes",
@@ -4325,7 +4350,10 @@
         "earningsByClient": "Gains par client",
         "geographicDistribution": "Distribution géographique",
         "region": "Région",
-        "value": "Valeur"
+        "value": "Valeur",
+        "fromBookingToCompletion": "De la réservation à l'achèvement",
+        "newClientsLast30Days": "Nouveaux clients au cours des 30 derniers jours",
+        "ofTotal": "du total"
       },
       "compliance": {
         "title": "Conformité",
@@ -4334,7 +4362,7 @@
         "expiringSoon": "Expire bientôt",
         "assignedTalent": "Talent assigné",
         "renewLicense": "Renouveler la licence",
-        "noData": "Aucune donnée de conformité disponible.",
+        "noData": "Aucune licence expirée trouvée",
         "complianceScore": "Score de conformité",
         "documentsRequired": "Documents requis",
         "verificationsComplete": "Vérifications complètes",
@@ -4343,7 +4371,19 @@
         "expiryDate": "Date d'expiration",
         "noExpiredLicenses": "Aucune licence expirée trouvée",
         "refreshData": "Actualiser les données",
-        "lastUpdated": "Dernière mise à jour"
+        "lastUpdated": "Dernière mise à jour",
+        "renew": "Renouveler",
+        "expiredContractsMessage": "Les contrats expirés apparaîtront ici pour renouvellement.",
+        "refreshing": "Actualisation...",
+        "refresh": "Actualiser",
+        "expiredContracts": "Contrats expirés",
+        "verified": "vérifié",
+        "complete": "complet",
+        "terminatedOrExpired": "Résilié ou expiré",
+        "consentStatusDistribution": "Distribution du statut de consentement",
+        "comingSoon": "Bientôt disponible",
+        "expiredContractsAppearHere": "Les contrats expirés apparaîtront ici pour renouvellement.",
+        "likenessProtection": "Protection de l'Image"
       },
       "labels": {
         "growthPercent": "+{{value}}% croissance",
