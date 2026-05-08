@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -980,12 +981,16 @@ export function AgencyDeliverablesView() {
         file: null,
         sending: false,
       });
-      toast({ title: "Asset request sent" });
+      toast({
+        title: t("agencyDashboard.deliverables.requestAssetModal.sendRequest"),
+      });
       await listOfferAssetRequests(requestDialog.offerId);
     } catch (e: any) {
       toast({
-        title: "Request failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.deliverables.requestAssetModal.sendRequest"),
+        description:
+          e?.message ||
+          t("agencyDashboard.deliverables.requestAssetModal.sending"),
         variant: "destructive",
       });
       setRequestDialog((prev) => ({ ...prev, sending: false }));
@@ -1203,7 +1208,7 @@ export function AgencyDeliverablesView() {
             }}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            Collapse All
+            {t("agencyDashboard.deliverables.collapseAll")}
           </Button>
         </div>
         <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
@@ -1211,7 +1216,9 @@ export function AgencyDeliverablesView() {
 
       {offers.length === 0 ? (
         <Card className="p-12 text-center border-dashed border-2 bg-white/50 rounded-2xl">
-          <p className="text-gray-500 text-sm">No brand offers available.</p>
+          <p className="text-gray-500 text-sm">
+            {t("agencyDashboard.deliverables.noBrandOffers")}
+          </p>
         </Card>
       ) : (
         offers.map((offer, idx) => {
