@@ -232,9 +232,65 @@
         "loadingEntities": "{{entityPlural}} werden geladen...",
         "noEntities": "Keine {{entityPlural}} zum Anzeigen.",
         "empty": "—",
+        "unknown": "Unbekannt",
         "sending": "Wird gesendet...",
         "refreshing": "Aktualisieren",
         "uploading": "Wird hochgeladen..."
+      },
+      "advancedFilters": {
+        "title": "Erweiterte Filter",
+        "sections": {
+          "physical": "Physische Merkmale",
+          "appearance": "Aussehen",
+          "specialFeatures": "Besondere Merkmale"
+        },
+        "fields": {
+          "gender": "Geschlecht",
+          "heightRange": "Größenbereich",
+          "ageRange": "Altersbereich",
+          "hairColor": "Haarfarbe",
+          "eyeColor": "Augenfarbe",
+          "ethnicity": "Ethnizität",
+          "tattoos": "Tätowierungen",
+          "piercings": "Piercings"
+        },
+        "placeholders": {
+          "allGenders": "Alle Geschlechter",
+          "allHairColors": "Alle Haarfarben",
+          "allEyeColors": "Alle Augenfarben",
+          "allEthnicities": "Alle Ethnizitäten",
+          "minCm": "Min. (cm)",
+          "maxCm": "Max. (cm)",
+          "min": "Min.",
+          "max": "Max.",
+          "any": "Beliebig"
+        },
+        "options": {
+          "male": "Männlich",
+          "female": "Weiblich",
+          "nonBinary": "Nicht-binär",
+          "black": "Schwarz",
+          "brown": "Braun",
+          "blonde": "Blond",
+          "red": "Rot",
+          "gray": "Grau",
+          "other": "Andere",
+          "blue": "Blau",
+          "green": "Grün",
+          "hazel": "Hasel",
+          "white": "Weiß",
+          "asian": "Asiatisch",
+          "hispanic": "Hispanisch",
+          "middleEastern": "Nahost",
+          "mixed": "Gemischt",
+          "hasTattoos": "Hat Tätowierungen",
+          "noTattoos": "Keine Tätowierungen",
+          "hasPiercings": "Hat Piercings",
+          "noPiercings": "Keine Piercings"
+        },
+        "actions": {
+          "reset": "Erweiterte Filter zurücksetzen"
+        }
       },
       "analytics": {
         "title": "Analysen",
@@ -258,6 +314,22 @@
         "never": "Nie",
         "daysAgo": "vor {{count}} Tag",
         "daysAgo_other": "vor {{count}} Tagen",
+        "reminder": {
+          "subject": "Erinnerung zur Aktualisierung der Digitals",
+          "body": "Hallo {name},\n\nbitte lade deine neuesten Digitals hoch (schlichte Fotos, ohne Make-up), damit dein Profil aktuell bleibt.\n\nVielen Dank,\nLikelee",
+          "dialogTitle": "Digitals-Erinnerung senden",
+          "dialogDescription": "Sendet eine E-Mail an das ausgewählte {{entity}}. Erfordert eine SMTP-Konfiguration auf dem Server.",
+          "subjectLabel": "Betreff",
+          "messageLabel": "Nachricht",
+          "personalizeHint": "{name} zur Personalisierung verwenden.",
+          "noEmailsTitle": "Keine E-Mail-Adressen gefunden",
+          "noEmailsDescription": "Keines der ausgewählten {{entityPlural}} hat eine hinterlegte E-Mail-Adresse.",
+          "failedRecipient": "Senden an {{email}} fehlgeschlagen",
+          "emailNotSent": "E-Mail nicht gesendet",
+          "emailSendingFailed": "E-Mail-Versand fehlgeschlagen",
+          "sentTitle": "Erinnerungen gesendet",
+          "sentDescription": "Gesendet: {{sent}}, Fehlgeschlagen: {{failed}}"
+        },
         "photos": "{{count}} Foto",
         "photos_other": "{{count}} Fotos",
         "viewHistory": "Verlauf ansehen",
@@ -2341,6 +2413,16 @@
         "viewInvoice": "Rechnung anzeigen"
       }
     },
+    "support": {
+      "toasts": {
+        "missingDetails": "Fehlende Angaben",
+        "missingDetailsDescription": "Bitte fügen Sie einen Betreff und eine Nachricht hinzu.",
+        "messageSent": "Nachricht gesendet",
+        "messageSentDescription": "Der Support meldet sich in Kürze bei Ihnen.",
+        "failedToSend": "Senden fehlgeschlagen",
+        "failedToSendDescription": "Ihre Nachricht an den Support konnte nicht gesendet werden."
+      }
+    },
     "talentSideModal": {
       "toast": {
         "missingEmailTitle": "E-Mail fehlt",
@@ -3036,6 +3118,18 @@
       "placeholder": {
         "title": "In Entwicklung",
         "description": "Dieser Abschnitt ist derzeit in Entwicklung. Schauen Sie bald wieder für Updates vorbei."
+      },
+      "toasts": {
+        "refreshed": "Aktualisiert",
+        "refreshedDescription": "Die Lizenzablauf-Pipeline wurde erfolgreich aktualisiert. {{count}} abgelaufene Lizenzen gefunden.",
+        "refreshFailed": "Aktualisierung fehlgeschlagen",
+        "refreshFailedDescription": "Die Lizenzablauf-Pipeline konnte nicht aktualisiert werden.",
+        "reportExported": "Bericht exportiert",
+        "popupBlocked": "Popup blockiert",
+        "popupBlockedDescription": "Erlauben Sie Popups für diese Website und versuchen Sie es erneut.",
+        "pdfExportReady": "PDF-Export bereit",
+        "pdfExportReadyDescription": "Verwenden Sie im Druckdialog „Als PDF speichern“.",
+        "refreshExpired": "Abgelaufene Lizenzen aktualisieren"
       },
       "createPackage": {
         "title": "Neues Talent-Paket erstellen",

@@ -232,9 +232,65 @@
         "loadingEntities": "Loading {{entityPlural}}...",
         "noEntities": "No {{entityPlural}} to display.",
         "empty": "—",
+        "unknown": "Unknown",
         "sending": "Sending...",
         "refreshing": "Refreshing",
         "uploading": "Uploading..."
+      },
+      "advancedFilters": {
+        "title": "Advanced Filters",
+        "sections": {
+          "physical": "Physical Attributes",
+          "appearance": "Appearance",
+          "specialFeatures": "Special Features"
+        },
+        "fields": {
+          "gender": "Gender",
+          "heightRange": "Height Range",
+          "ageRange": "Age Range",
+          "hairColor": "Hair Color",
+          "eyeColor": "Eye Color",
+          "ethnicity": "Ethnicity",
+          "tattoos": "Tattoos",
+          "piercings": "Piercings"
+        },
+        "placeholders": {
+          "allGenders": "All Genders",
+          "allHairColors": "All Hair Colors",
+          "allEyeColors": "All Eye Colors",
+          "allEthnicities": "All Ethnicities",
+          "minCm": "Min (cm)",
+          "maxCm": "Max (cm)",
+          "min": "Min",
+          "max": "Max",
+          "any": "Any"
+        },
+        "options": {
+          "male": "Male",
+          "female": "Female",
+          "nonBinary": "Non-Binary",
+          "black": "Black",
+          "brown": "Brown",
+          "blonde": "Blonde",
+          "red": "Red",
+          "gray": "Gray",
+          "other": "Other",
+          "blue": "Blue",
+          "green": "Green",
+          "hazel": "Hazel",
+          "white": "White",
+          "asian": "Asian",
+          "hispanic": "Hispanic",
+          "middleEastern": "Middle Eastern",
+          "mixed": "Mixed",
+          "hasTattoos": "Has Tattoos",
+          "noTattoos": "No Tattoos",
+          "hasPiercings": "Has Piercings",
+          "noPiercings": "No Piercings"
+        },
+        "actions": {
+          "reset": "Reset Advanced Filters"
+        }
       },
       "analytics": {
         "title": "Analytics",
@@ -258,6 +314,22 @@
         "never": "Never",
         "daysAgo": "{{count}} day ago",
         "daysAgo_other": "{{count}} days ago",
+        "reminder": {
+          "subject": "Digitals update reminder",
+          "body": "Hi {name},\n\nPlease upload your latest digitals (plain photos, no makeup) to keep your profile up to date.\n\nThank you,\nLikelee",
+          "dialogTitle": "Send digitals reminder",
+          "dialogDescription": "Sends an email to the selected {{entity}}. Requires SMTP configuration on the server.",
+          "subjectLabel": "Subject",
+          "messageLabel": "Message",
+          "personalizeHint": "Use {name} to personalize.",
+          "noEmailsTitle": "No emails found",
+          "noEmailsDescription": "None of the selected {{entityPlural}} have an email address on file.",
+          "failedRecipient": "Failed to send to {{email}}",
+          "emailNotSent": "Email not sent",
+          "emailSendingFailed": "Email sending failed",
+          "sentTitle": "Reminders sent",
+          "sentDescription": "Sent: {{sent}}, Failed: {{failed}}"
+        },
         "photos": "{{count}} photo",
         "photos_other": "{{count}} photos",
         "viewHistory": "View History",
@@ -1794,6 +1866,16 @@
         "viewInvoice": "View invoice"
       }
     },
+    "support": {
+      "toasts": {
+        "missingDetails": "Missing details",
+        "missingDetailsDescription": "Please add a subject and message.",
+        "messageSent": "Message sent",
+        "messageSentDescription": "Support will get back to you shortly.",
+        "failedToSend": "Failed to send",
+        "failedToSendDescription": "Could not send your message to support."
+      }
+    },
     "talentSideModal": {
       "toast": {
         "missingEmailTitle": "Missing email",
@@ -2525,6 +2607,18 @@
       "placeholder": {
         "title": "Under Development",
         "description": "This section is currently under development. Check back soon for updates."
+      },
+      "toasts": {
+        "refreshed": "Refreshed",
+        "refreshedDescription": "License expiry pipeline updated successfully. Found {{count}} expired licenses.",
+        "refreshFailed": "Refresh failed",
+        "refreshFailedDescription": "Failed to update license expiry pipeline.",
+        "reportExported": "Report exported",
+        "popupBlocked": "Popup blocked",
+        "popupBlockedDescription": "Allow popups for this site and try again.",
+        "pdfExportReady": "PDF export ready",
+        "pdfExportReadyDescription": "Use 'Save as PDF' in the print dialog.",
+        "refreshExpired": "Refresh expired licenses"
       },
       "createPackage": {
         "title": "Create a New Talent Package",
