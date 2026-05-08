@@ -256,7 +256,7 @@
       },
       "analytics": {
         "title": "Analítica",
-        "comingSoonDescription": "Próximamente.",
+        "comingSoonDescription": "El panel de análisis para el modo IRL estará disponible pronto.",
         "comingSoonButton": "Próximamente",
         "exportReport": "Export Report",
         "tabs": {
@@ -267,7 +267,7 @@
         },
         "performanceMetrics": "Performance Metrics",
         "engagementRate": "Engagement Rate",
-        "comingSoon": "Demnächst verfügbar"
+        "comingSoon": "Próximamente"
       },
       "digitals": {
         "title": "Seguimiento de digitals",
@@ -308,7 +308,10 @@
           "sentDescription": "Gesendet: {{sent}}, Fehlgeschlagen: {{failed}}"
         },
         "history": {
-          "title": "Digitals-Verlauf"
+          "title": "Historial de Digitales"
+        },
+        "upload": {
+          "uploadDigitals": "Subir Digitales"
         }
       },
       "licenses": {
@@ -355,9 +358,10 @@
         "sentDescription": "Enviados: {{sent}}, Fallidos: {{failed}}"
       },
       "seats": {
-        "insufficientTitle": "¡Plazas insuficientes!",
+        "insufficientTitle": "¡Asientos insuficientes!",
         "insufficientDescription": "Tu plan actual permite {{count}} {{entity}}. Mejora tu plan para añadir más.",
-        "viewPlans": "Ver planes"
+        "viewPlans": "Ver planes",
+        "insufficientMessage": "Su plan actual permite {{count}} {{entity}}. Actualice para agregar más."
       },
       "upload": {
         "title": "Subir nuevos digitals - {{name}}",
@@ -4090,7 +4094,22 @@
       "mediaLaterHelp": "Siempre puedes anadir mas medios y actualizar detalles despues desde la pantalla de gestion del roster.",
       "addingEntity": "Anadiendo {{entityLower}}...",
       "addToRoster": "Anadir {{entityTitle}} al roster",
-      "photosUploadFailedDesc": "No se pudieron subir las fotos. {{entityTitle}} se creara sin fotos."
+      "photosUploadFailedDesc": "No se pudieron subir las fotos. {{entityTitle}} se creara sin fotos.",
+      "roleCategories": {
+        "model": "Modelo",
+        "actor": "Actor",
+        "creator": "Creador",
+        "voice": "Voz",
+        "athlete": "Atleta",
+        "music": "Música"
+      },
+      "genderOptions": {
+        "female": "Femenino",
+        "male": "Masculino",
+        "nonBinary": "No binario",
+        "genderFluid": "Género fluido",
+        "preferNotToSay": "Prefiero no decir"
+      }
     },
     "header": {
       "notifications": {
@@ -5622,7 +5641,7 @@
       }
     },
     "licenses": {
-      "comingSoon": "License management coming soon"
+      "comingSoon": "Gestión de licencias próximamente"
     },
     "campaigns": {
       "comingSoon": "Campaign tracking coming soon"
