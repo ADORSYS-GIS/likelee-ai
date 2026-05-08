@@ -6936,9 +6936,11 @@ pub async fn upload_offer_deliverable(
 
     let file_name = format!("{}_{}_{}.{}", offer_id, user.id, Uuid::new_v4(), ext);
     let path = format!("offer-deliverables/{}/{}", user.id, file_name);
+    // Store in the private bucket — deliverables are served exclusively through the
+    // authenticated /api/.../file endpoint which enforces payment and access gates.
     let storage_url = format!(
         "{}/storage/v1/object/{}/{}",
-        state.supabase_url, state.supabase_bucket_public, path
+        state.supabase_url, state.supabase_bucket_private, path
     );
 
     let client = Client::new();
@@ -6963,13 +6965,11 @@ pub async fn upload_offer_deliverable(
         ));
     }
 
-    let public_url = format!(
-        "{}/storage/v1/object/public/{}/{}",
-        state.supabase_url, state.supabase_bucket_public, path
-    );
+    // Return the storage path (not a public URL) — the frontend uses the secure
+    // /api/campaign-offers/:offer_id/deliverables/:id/file endpoint to display assets.
     Ok(Json(json!({
         "status": "ok",
-        "public_url": public_url,
+        "public_url": path,
         "file_name": file_name,
         "content_type": content_type,
     })))
@@ -7337,19 +7337,18 @@ pub async fn list_offer_deliverables(
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
-    // Normalize asset_url to consistently return the secure file endpoint
-    // for private deliverables instead of the storage path
+    // Always replace asset_url with the secure authenticated file endpoint.
+    // Deliverables are stored in the private bucket and must never be served
+    // via a direct public URL — all access goes through the backend which
+    // enforces payment gates, role checks, and download controls.
     for row in rows.iter_mut() {
         if let Some(obj) = row.as_object_mut() {
             if let Some(id) = obj.get("id").and_then(|v| v.as_str()) {
-                // Replace asset_url with the secure file endpoint URL
                 let secure_url =
                     format!("/api/campaign-offers/{}/deliverables/{}/file", offer_id, id);
                 obj.insert("asset_url".to_string(), json!(secure_url));
             }
-
-            // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
-            // for approval/download. Preview is allowed to support review workflows.
+            // If the brand hasn't paid yet, mark deliverables as locked
             if user.role == "brand" && payment_status != "paid" {
                 let meta = obj.get("meta").cloned().unwrap_or_else(|| json!({}));
                 let mut meta_obj = meta.as_object().cloned().unwrap_or_default();

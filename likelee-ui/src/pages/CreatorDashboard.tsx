@@ -557,6 +557,44 @@ export default function CreatorDashboard() {
     }
     return new URL(normalizedPath, normalizedBase).toString();
   };
+
+  // Fetch a list of deliverables with auth and cache as blob URLs.
+  // All deliverables are stored in the private bucket and served via the authenticated
+  // /api/.../file endpoint — plain <img src> won't work without this.
+  const fetchDeliverableBlobUrls = async (deliverables: any[]) => {
+    const session = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
+    const token = session.data.session?.access_token;
+    await Promise.all(
+      deliverables.map(async (d: any) => {
+        const id = String(d?.id || "");
+        const rawUrl = String(d?.asset_url || "");
+        if (!id || !rawUrl || deliverableBlobFetching.current.has(id)) return;
+        deliverableBlobFetching.current.add(id);
+        try {
+          const normalizedBase = API_BASE_ABS.endsWith("/")
+            ? API_BASE_ABS
+            : `${API_BASE_ABS}/`;
+          const normalizedPath = rawUrl.startsWith("/")
+            ? rawUrl.slice(1)
+            : rawUrl;
+          const fullUrl = rawUrl.startsWith("http")
+            ? rawUrl
+            : new URL(normalizedPath, normalizedBase).toString();
+          const res = await fetch(fullUrl, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (!res.ok) return;
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          setDeliverableBlobUrls((prev) => ({ ...prev, [id]: blobUrl }));
+        } catch {
+          // silently ignore
+        }
+      }),
+    );
+  };
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' | 'rules' | 'billing'
 
@@ -646,6 +684,12 @@ export default function CreatorDashboard() {
   const [deliverableUrlByOffer, setDeliverableUrlByOffer] = useState<
     Record<string, string>
   >({});
+  // deliverable_id → authenticated blob URL for <img>/<video> display
+  const [deliverableBlobUrls, setDeliverableBlobUrls] = useState<
+    Record<string, string>
+  >({});
+  const deliverableBlobFetching = useRef<Set<string>>(new Set());
+
   const [creatorContractHubRows, setCreatorContractHubRows] = useState<any[]>(
     [],
   );
@@ -1932,6 +1976,20 @@ export default function CreatorDashboard() {
     setBrandOffers(Array.isArray(offers) ? offers : []);
     setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
   };
+
+  // Fetch blob URLs whenever offerDeliverablesById changes
+  useEffect(() => {
+    const all = Object.values(offerDeliverablesById).flat();
+    if (all.length > 0) void fetchDeliverableBlobUrls(all);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offerDeliverablesById]);
+
+  // Fetch blob URLs whenever selectedOfferDeliverables changes
+  useEffect(() => {
+    if (selectedOfferDeliverables.length > 0)
+      void fetchDeliverableBlobUrls(selectedOfferDeliverables);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedOfferDeliverables]);
 
   const onRespond = async (id: string, action: "accept" | "decline") => {
     try {
@@ -8367,9 +8425,8 @@ export default function CreatorDashboard() {
                             )}
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                             {requestDeliverables.map((deliverable: any) => {
-                              const assetUrl = String(
-                                deliverable?.asset_url || "",
-                              );
+                              const id = String(deliverable?.id || "");
+                              const assetUrl = deliverableBlobUrls[id] || "";
                               const caption =
                                 String(deliverable?.caption || "").trim() ||
                                 String(
@@ -9615,11 +9672,11 @@ export default function CreatorDashboard() {
                                     t("brandConnections.sendDeliverable"),
                                 )}
                               </div>
-                              {deliverable?.asset_url && (
+                              {deliverableBlobUrls[String(deliverable?.id || "")] && (
                                 <div className="mt-2">
                                   {deliverableIsImage(deliverable) && (
                                     <img
-                                      src={String(deliverable.asset_url)}
+                                      src={deliverableBlobUrls[String(deliverable?.id || "")]}
                                       alt={String(
                                         deliverable?.caption ||
                                           deliverable?.meta?.original_name ||
@@ -9630,7 +9687,7 @@ export default function CreatorDashboard() {
                                   )}
                                   {deliverableIsVideo(deliverable) && (
                                     <video
-                                      src={String(deliverable.asset_url)}
+                                      src={deliverableBlobUrls[String(deliverable?.id || "")]}
                                       controls
                                       className="h-32 w-auto max-w-full rounded border border-gray-200 bg-black"
                                     />
