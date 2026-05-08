@@ -122,13 +122,20 @@
     "roster": {
       "entities": {
         "talent": "talento",
-        "talents": "talentos",
-        "talentTitle": "Talento",
-        "talentsTitle": "Talentos",
+        "talentPlural": "talentos",
         "athlete": "atleta",
-        "athletes": "atletas",
+        "athletePlural": "atletas",
+        "talentTitle": "Talent",
+        "talentsTitle": "Talentos",
         "athleteTitle": "Atleta",
-        "athletesTitle": "Atletas"
+        "athletesTitle": "Atletas",
+        "talents": "talentos",
+        "athletes": "atletas"
+      },
+      "statuses": {
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "pending": "Pendiente"
       },
       "header": {
         "verifiedAgency": "Agencia verificada",
@@ -2360,7 +2367,12 @@
         "archive": "Archivo",
         "brandRequests": "Solicitudes de marca"
       },
-      "filter": "Filtrar",
+      "filter": {
+        "title": "Filtrar solicitudes",
+        "status": "Estado",
+        "date": "Fecha",
+        "reset": "Restablecer filtros"
+      },
       "loading": "Cargando...",
       "loadFailed": "Error al cargar las solicitudes de licencia",
       "noActiveRequests": "No hay solicitudes de licencia activas",
@@ -2476,6 +2488,7 @@
       "status": {
         "active": "Activa",
         "expiring": "Venciendo",
+        "expiringSoon": "Próxima a vencer",
         "expired": "Vencida"
       },
       "headers": {

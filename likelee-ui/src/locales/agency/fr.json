@@ -121,13 +121,20 @@
     "roster": {
       "entities": {
         "talent": "talent",
-        "talents": "talents",
+        "talentPlural": "talent",
+        "athlete": "athlete",
+        "athletePlural": "athlètes",
         "talentTitle": "Talent",
         "talentsTitle": "Talents",
-        "athlete": "athlète",
-        "athletes": "athlètes",
         "athleteTitle": "Athlète",
-        "athletesTitle": "Athlètes"
+        "athletesTitle": "Athlètes",
+        "talents": "talents",
+        "athletes": "athlètes"
+      },
+      "statuses": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "pending": "En attente"
       },
       "header": {
         "verifiedAgency": "Agence vérifiée",
@@ -2378,6 +2385,13 @@
       "roleCategory": "Catégorie de rôle",
       "roleType": "Type de rôle",
       "genderIdentity": "Identité de genre",
+      "options": {
+        "female": "Femme",
+        "male": "Homme",
+        "nonBinary": "Non-binaire",
+        "genderFluid": "Genre fluide",
+        "preferNotToSay": "Préfère ne pas dire"
+      },
       "hairColor": "Couleur des cheveux",
       "eyeColor": "Couleur des yeux",
       "height": "Taille",
@@ -2417,7 +2431,12 @@
         "archive": "Archive",
         "brandRequests": "Demandes de marque"
       },
-      "filter": "Filtrer",
+      "filter": {
+        "title": "Filtrer les demandes",
+        "status": "Statut",
+        "date": "Date",
+        "reset": "Réinitialiser les filtres"
+      },
       "loading": "Chargement...",
       "loadFailed": "Échec du chargement des demandes de licence",
       "noActiveRequests": "Aucune demande de licence active",
@@ -2533,6 +2552,7 @@
       "status": {
         "active": "Active",
         "expiring": "Expirant",
+        "expiringSoon": "Bientôt expirée",
         "expired": "Expirée"
       },
       "headers": {
@@ -4144,20 +4164,8 @@
               "title": "Réservation créée",
               "desc": "Lorsqu’une nouvelle réservation est créée"
             },
-            "bookingConfirmed": {
-              "title": "Réservation confirmée",
-              "desc": "Lorsqu’une réservation passe au statut confirmé"
-            },
-            "paymentReceived": {
-              "title": "Paiement reçu",
-              "desc": "Lorsqu’un paiement est reçu d’un client"
-            },
-            "invoiceSent": {
-              "title": "Facture envoyée",
-              "desc": "Lorsqu’une facture est envoyée à un client"
-            },
-            "entityBookOut": {
-              "title": "{{entitySingular}} indisponible",
+            "talentUnavailable": {
+              "title": "Talent indisponible",
               "desc": "Lorsque {{entitySingularLower}} se marque comme indisponible"
             },
             "licenseExpiring": {

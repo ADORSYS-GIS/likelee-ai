@@ -122,13 +122,20 @@
     "roster": {
       "entities": {
         "talent": "Talent",
-        "talents": "Talente",
+        "talentPlural": "Talente",
         "talentTitle": "Talent",
         "talentsTitle": "Talente",
         "athlete": "Athlet",
-        "athletes": "Athleten",
+        "athletePlural": "Athleten",
         "athleteTitle": "Athlet",
-        "athletesTitle": "Athleten"
+        "athletesTitle": "Athleten",
+        "talents": "Talente",
+        "athletes": "Athleten"
+      },
+      "statuses": {
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "pending": "Ausstehend"
       },
       "header": {
         "verifiedAgency": "Verifizierte Agentur",
@@ -279,6 +286,8 @@
           "male": "Männlich",
           "female": "Weiblich",
           "nonBinary": "Nicht-binär",
+          "genderFluid": "Genderfluid",
+          "preferNotToSay": "Keine Angabe",
           "black": "Schwarz",
           "brown": "Braun",
           "blonde": "Blond",
@@ -304,8 +313,9 @@
       },
       "analytics": {
         "title": "Analysen",
-        "comingSoonDescription": "Kommt bald.",
-        "comingSoonButton": "Kommt bald"
+        "comingSoonDescription": "Demnächst verfügbar.",
+        "comingSoonButton": "Kommt bald",
+        "comingSoon": "Demnächst verfügbar"
       },
       "digitals": {
         "title": "Digitals-Tracking",
@@ -344,7 +354,10 @@
         "photos_other": "{{count}} Fotos",
         "viewHistory": "Verlauf ansehen",
         "sendReminder": "Erinnerung senden",
-        "uploadNew": "Neu hochladen"
+        "uploadNew": "Neu hochladen",
+        "history": {
+          "title": "Digitals-Verlauf"
+        }
       },
       "licenses": {
         "comingSoon": "Lizenzverwaltung kommt bald"
@@ -443,7 +456,14 @@
         "allAthletes": "Alle Athleten",
         "licensingRequests": "Lizenzanfragen",
         "activeLicenses": "Aktive Lizenzen",
-        "licenseSubmissions": "Lizenzeinreichungen",
+        "licenseSubmissions": {
+          "tabs": {
+            "active": "Aktiv",
+            "archive": "Archiv"
+          },
+          "title": "Lizenzübermittlungen",
+          "description": "Lizenzübermittlungen anzeigen und verwalten"
+        },
         "licenseTemplates": "Lizenzvorlagen",
         "jobInvites": "Job-Einladungen",
         "openJobBoard": "Offene Jobbörse",
@@ -469,7 +489,8 @@
       },
       "signOut": "Abmelden",
       "choosePlan": "Plan wählen",
-      "requiresPro": "Erfordert Pro"
+      "requiresPro": "Erfordert Pro",
+      "addIrlBooking": "IRL-Buchung hinzufügen"
     },
     "header": {
       "notifications": {
@@ -2536,7 +2557,12 @@
         "archive": "Archiv",
         "brandRequests": "Markenanfragen"
       },
-      "filter": "Filter",
+      "filter": {
+        "title": "Anfragen filtern",
+        "status": "Status",
+        "date": "Datum",
+        "reset": "Filter zurücksetzen"
+      },
       "loading": "Laden...",
       "loadFailed": "Laden der Lizenzanfragen fehlgeschlagen",
       "noActiveRequests": "Keine aktiven Lizenzanfragen",
@@ -2629,6 +2655,11 @@
       }
     },
     "activeLicenses": {
+      "status": {
+        "active": "Aktiv",
+        "expiring": "Läuft ab",
+        "expiringSoon": "Läuft bald ab"
+      },
       "title": "Aktive Lizenzen",
       "description": "Alle {{entity}}-Lizenzvereinbarungen verwalten",
       "exportReport": "Bericht exportieren",
@@ -2645,11 +2676,6 @@
       "searchPlaceholder": "Lizenzen suchen...",
       "filter": {
         "all": "Alle",
-        "active": "Aktiv",
-        "expiring": "Ablaufend",
-        "expired": "Abgelaufen"
-      },
-      "status": {
         "active": "Aktiv",
         "expiring": "Ablaufend",
         "expired": "Abgelaufen"
@@ -2912,6 +2938,13 @@
         "title": "Physische Attribute",
         "description": "Erzählen Sie uns über ihre physischen Merkmale",
         "gender": "Geschlechtsidentität",
+      "options": {
+        "female": "Weiblich",
+        "male": "Männlich",
+        "nonBinary": "Nicht-binär",
+        "genderFluid": "Genderfluid",
+        "preferNotToSay": "Keine Angabe"
+      },
         "ethnicity": "Rasse / Ethnizität",
         "hairColor": "Haarfarbe",
         "eyeColor": "Augenfarbe",
@@ -2983,7 +3016,7 @@
       "photosUploadFailedDesc": "Fotos konnten nicht hochgeladen werden. {{entityTitle}} wird ohne Fotos erstellt."
     },
     "compCard": {
-      "title": "Comp Card Generator",
+      "title": "Comp-Card-Generator",
       "description": "Erstellen, exportieren und teilen Sie Comp Cards mit ausgewählten Kunden.",
       "template": {
         "label": "Vorlage wählen",
@@ -4309,11 +4342,157 @@
           "preferences": "Benachrichtigungseinstellungen",
           "saveSuccess": "Einstellungen erfolgreich gespeichert",
           "saveFailed": "Speichern der Einstellungen fehlgeschlagen"
-        },
-        "common": {
-          "saving": "Speichern...",
-          "save": "Speichern"
         }
+      },
+      "team": {
+        "title": "Teamverwaltung",
+        "subtitle": "Verwalten Sie Teammitglieder, Rollen und Berechtigungen",
+        "invite": "Mitglied einladen",
+        "inviteUser": "Benutzer einladen",
+        "remove": "Mitglied entfernen",
+        "editPermissions": "Berechtigungen bearbeiten",
+        "activeMembers": "Aktive Teammitglieder",
+        "loadingMembers": "Teammitglieder werden geladen...",
+        "emptyMembers": "Noch keine aktiven Teammitglieder.",
+        "memberCount": "{{count}} Mitglieder",
+        "memberStatus": "Status",
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "pendingInvitations": {
+          "title": "Ausstehende Einladungen",
+          "description": "Einladungen an Teammitglieder, die noch nicht beigetreten sind.",
+          "pending": "ausstehend",
+          "empty": "Keine ausstehenden Einladungen.",
+          "expires": "Läuft ab"
+        },
+        "actions": {
+          "inviteUser": "Benutzer einladen",
+          "editRole": "Rolle bearbeiten"
+        },
+        "activity": {
+          "title": "Aktivität"
+        },
+        "roles": {
+          "owner": "Inhaber",
+          "admin": {
+            "label": "Administrator",
+            "description": "Voller Zugriff auf Agentureinstellungen und Teamverwaltung"
+          },
+          "projectManager": {
+            "label": "Projektmanager",
+            "description": "Kann Projekte, Buchungen und Kommunikation verwalten"
+          },
+          "reviewer": {
+            "label": "Prüfer",
+            "description": "Kann Inhalte prüfen und Aktivitäten verfolgen"
+          },
+          "unknown": "Unbekannte Rolle",
+          "manager": "Manager",
+          "member": "Mitglied"
+        },
+        "inviteSuccess": "Mitglied erfolgreich eingeladen",
+        "inviteFailed": "Einladung des Mitglieds fehlgeschlagen",
+        "removeSuccess": "Mitglied erfolgreich entfernt",
+        "removeFailed": "Entfernen des Mitglieds fehlgeschlagen"
+      },
+      "integrations": {
+        "title": "Integrationen",
+        "subtitle": "Verbinden Sie Ihre Agentur mit anderen Tools",
+        "addIntegration": "Integration hinzufügen",
+        "connectBankAccount": "Bankkonto verbinden",
+        "connectBankHint": "Verbinden Sie Ihr Bankkonto, um Kundenzahlungen zu erhalten und Auszahlungen zu verwalten.",
+        "connected": "Verbunden",
+        "notConnected": "Nicht verbunden",
+        "changeAccount": "Konto ändern",
+        "calendly": {
+          "title": "Calendly-Integration",
+          "enabledHint": "Automatisieren Sie die Terminplanung mit Ihren Kunden",
+          "lockedHint": "Verfügbar im Pro-Tarif mit dem IRL Booking Add-on",
+          "upgradeHint": "Aktivieren Sie das IRL Booking Add-on, um Calendly, Scouting, Client CRM, Buchungen und IRL-Buchhaltungsabläufe zu nutzen.",
+          "getAddon": "IRL Booking Add-on holen",
+          "buyAddon": "IRL Booking Add-on kaufen",
+          "tokenLabel": "Calendly Personal Access Token",
+          "getToken": "Token abrufen",
+          "tokenPlaceholder": "calendly_v2_...",
+          "publicLinkLabel": "Öffentlicher Calendly-Buchungslink",
+          "whereToFind": "Hier finden",
+          "publicLinkPlaceholder": "https://calendly.com/your-handle/your-event",
+          "publicLinkHelp": "Verwenden Sie den öffentlichen Calendly-Event-Link, der geöffnet werden soll, wenn eine Buchung über Calendly aus Likelee gesendet wird. Öffnen Sie in Calendly Ihre Scheduling-Seite, suchen Sie den Event-Typ und kopieren Sie dessen Link.",
+          "eventTypeLabel": "Calendly-Ereignistyp",
+          "eventTypeHint": "Wählen Sie den Calendly-Ereignistyp aus, den Likelee für Buchungseinladungen und Erinnerungen verwenden soll",
+          "selectEvent": "Calendly-Ereignis auswählen",
+          "leaveUnset": "Nicht festlegen",
+          "durationMins": "{{mins}} Min.",
+          "eventTypeUriPlaceholder": "https://api.calendly.com/event_types/...",
+          "eventTypeUriHelp": "Fügen Sie die vollständige Calendly-Ereignistyp-URI ein, die Likelee für Buchungen verwenden soll. Das funktioniert auch dann, wenn der Token Ereignistypen nicht automatisch auflisten kann.",
+          "noActiveTypes": "Keine aktiven Calendly-Ereignistypen für dieses Konto gefunden",
+          "saveValidToken": "Speichern Sie einen gültigen Calendly-Token, um Ereignistypen zu laden",
+          "saveConfiguration": "Calendly-Konfiguration speichern"
+        },
+        "stripe": "Stripe",
+        "connect": "Verbinden",
+        "disconnect": "Trennen",
+        "disabled": "Deaktiviert",
+        "locked": "Gesperrt",
+        "connectSuccess": "Integration erfolgreich verbunden",
+        "connectFailed": "Verbindung der Integration fehlgeschlagen",
+        "disconnectSuccess": "Integration erfolgreich getrennt",
+        "disconnectFailed": "Trennung der Integration fehlgeschlagen"
+      },
+      "billing": {
+        "title": "Abrechnung",
+        "plan": "Aktueller Plan",
+        "upgrade": "Plan upgraden",
+        "cancel": "Abonnement kündigen",
+        "paymentMethod": "Zahlungsmethode",
+        "invoices": "Rechnungen",
+        "downloadInvoice": "Rechnung herunterladen"
+      },
+      "notifications": {
+        "title": "Benachrichtigungen",
+        "subtitle": "Wählen Sie, wie Sie über wichtige Ereignisse benachrichtigt werden möchten",
+        "channels": {
+          "email": "E-Mail",
+          "sms": "SMS",
+          "push": "Push",
+          "comingSoon": "Demnächst"
+        },
+        "recipients": {
+          "title": "Benachrichtigungsempfänger",
+          "primaryEmail": "Primäre Benachrichtigungs-E-Mail",
+          "smsNumber": "SMS-Benachrichtigungsnummer",
+          "additional": "Zusätzliche Empfänger (kommagetrennt)"
+        },
+        "save": "Benachrichtigungseinstellungen speichern",
+        "events": {
+          "bookingCreated": {
+            "title": "Buchung erstellt",
+            "desc": "Wenn eine neue Buchung erstellt wird"
+          },
+          "bookingConfirmed": {
+            "title": "Buchung bestätigt",
+            "desc": "Wenn sich der Buchungsstatus auf bestätigt ändert"
+          },
+          "paymentReceived": {
+            "title": "Zahlung eingegangen",
+            "desc": "Wenn eine Zahlung von einem Kunden eingeht"
+          },
+          "invoiceSent": {
+            "title": "Rechnung gesendet",
+            "desc": "Wenn eine Rechnung an einen Kunden gesendet wird"
+          },
+          "entityBookOut": {
+            "title": "{{entitySingular}} nicht verfügbar",
+            "desc": "Wenn {{entitySingularLower}} sich als nicht verfügbar markiert"
+          },
+          "licenseExpiring": {
+            "title": "Lizenz läuft bald ab",
+            "desc": "Wenn eine Lizenz von {{entitySingularLower}} bald abläuft"
+          }
+        },
+        "preferences": "Benachrichtigungseinstellungen",
+        "saveSuccess": "Einstellungen erfolgreich gespeichert",
+        "saveFailed": "Speichern der Einstellungen fehlgeschlagen"
       }
     }
   }
