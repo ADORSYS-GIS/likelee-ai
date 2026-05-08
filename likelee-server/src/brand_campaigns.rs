@@ -11184,7 +11184,8 @@ pub async fn retry_creator_transfer(
     if escrow_status != "released" {
         return Err((
             StatusCode::BAD_REQUEST,
-            "escrow_not_released: The brand has not yet approved a deliverable for this offer.".to_string(),
+            "escrow_not_released: The brand has not yet approved a deliverable for this offer."
+                .to_string(),
         ));
     }
 
