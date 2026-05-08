@@ -133,6 +133,7 @@
       "header": {
         "verifiedAgency": "Agencia verificada",
         "upgradePlan": "Mejorar plan",
+        "upgradePlanAction": "Mejorar plan",
         "editProfile": "Editar perfil",
         "viewMarketplace": "Ver marketplace",
         "stripe": {
@@ -167,7 +168,8 @@
         "activeCampaigns": "Campañas activas",
         "acrossAllEntities": "en todos los {{entityPlural}}",
         "expiringLicenses": "Licencias por vencer",
-        "requireRenewal": "requieren renovación"
+        "requireRenewal": "requieren renovación",
+        "previous30d": "Últimos 30 días"
       },
       "tabs": {
         "roster": "Roster",
@@ -208,7 +210,8 @@
         "actor": "Actor",
         "creator": "Creador",
         "voice": "Voz",
-        "athlete": "Atleta"
+        "athlete": "Atleta",
+        "music": "Música"
       },
       "table": {
         "status": "Estado",
@@ -220,12 +223,19 @@
         "topBrand": "Marca principal",
         "licenseExpiry": "Vencimiento de licencia",
         "revenue30d": "Ingresos 30D",
-        "revenue": "Ingresos"
+        "revenue": "Ingresos",
+        "talentDetails": "Detalles del talento",
+        "licensing": "Licencias",
+        "confirmed": "Confirmado"
       },
       "aiUsage": {
         "video": "Video",
         "image": "Imagen",
-        "voice": "Voz"
+        "voice": "Voz",
+        "actor": "Actor",
+        "music": "Música",
+        "athlete": "Atleta",
+        "vice": "Vice"
       },
       "states": {
         "loading": "Cargando...",
@@ -1685,7 +1695,8 @@
       },
       "tabs": {
         "templates": "Plantillas",
-        "sent": "Paquetes enviados"
+        "sent": "Paquetes enviados",
+        "packagesSent": "Paquetes enviados"
       },
       "actions": {
         "useExisting": "Usar existente",
@@ -1695,7 +1706,9 @@
         "packagePlural": "Paquetes",
         "edit": "Editar",
         "delete": "Eliminar",
-        "sendToClient": "Enviar al cliente"
+        "sendToClient": "Enviar al cliente",
+        "createPackage": "Crear paquete",
+        "newPackage": "Nuevo paquete"
       },
       "offerBanner": {
         "title": "Envío para oferta",
@@ -1721,6 +1734,17 @@
       "toasts": {
         "deleted": "Paquete eliminado",
         "linkCopied": "¡Enlace copiado al portapapeles!"
+      },
+      "clientActivity": {
+        "title": "Actividad del cliente",
+        "description": "Ver las interacciones del cliente con este paquete",
+        "views": "Vistas",
+        "downloads": "Descargas",
+        "favorites": "Favoritos",
+        "comments": "Comentarios",
+        "lastViewed": "Visto por última vez",
+        "noActivity": "Sin actividad aún",
+        "close": "Cerrar"
       }
     },
     "catalogs": {
@@ -1733,6 +1757,7 @@
         "description": "Selecciona una solicitud pagada y prepara assets y grabaciones de voz para la entrega.",
         "steps": {
           "select-request": "Solicitud",
+          "selectRequest": "Solicitud",
           "info": "Detalles",
           "assets": "Assets",
           "voice": "Voz",
@@ -1948,10 +1973,15 @@
         "customOverride": "Ajuste personalizado",
         "tierDefault": "Valor predeterminado del nivel",
         "currentTier": "Nivel actual",
+        "talent": "Talent",
+        "commissionSource": "Fuente de comisión",
+        "effectiveRate": "Tarifa efectiva",
         "settingsRate": "Tarifa de ajustes (%)",
         "contractControlled": "Controlado por contrato",
         "marketplaceConnected": "Conectado al marketplace",
         "agencyManaged": "Gestionado por la agencia",
+        "agencyShare": "Parte de la agencia",
+        "premium": "Premium",
         "locked": "Bloqueado",
         "discardChange": "Descartar cambio",
         "resetToTierDefault": "Restablecer al valor del nivel",
@@ -2632,7 +2662,10 @@
         "commercials": "Condiciones comerciales",
         "durationDays": "Duración (días)",
         "territory": "Territorio",
-        "clientEmailRequired": "El correo del cliente es obligatorio"
+        "clientEmailRequired": "El correo del cliente es obligatorio",
+        "dealSpecificsModal": "Detalles del acuerdo",
+        "newContractTemplate": "Nueva plantilla de contrato",
+        "filterModal": "Filtro"
       },
       "form": {
         "templateIdentity": "Identidad de plantilla",
@@ -2907,18 +2940,32 @@
         "consentBreakdown": "Desglose de consentimientos",
         "noConsentData": "Sin datos de consentimiento",
         "withConsent": "Con consentimiento",
-        "withoutConsent": "Sin consentimiento"
+        "withoutConsent": "Sin consentimiento",
+        "totalRevenue": "Ingresos totales",
+        "revenueGrowth": "Crecimiento de ingresos",
+        "bookingsCompleted": "Reservas completadas",
+        "averageDealValue": "Valor promedio del acuerdo",
+        "topPerformers": "Mejor desempeño",
+        "recentActivity": "Actividad reciente"
       },
       "rosterInsights": {
         "title": "Perspectivas del Roster",
         "topPerformer": "Mejor desempeño (Ganancias)",
         "highestFollowers": "Más seguidores",
         "avgValue": "Valor promedio",
-        "noData": "No hay datos de perspectivas del roster disponibles."
+        "noData": "No hay datos de perspectivas del roster disponibles.",
+        "totalTalent": "Total de talentos",
+        "activeTalent": "Talentos activos",
+        "performanceMetrics": "Métricas de desempeño",
+        "engagementRate": "Tasa de compromiso"
       },
       "clientsCampaigns": {
         "title": "Clientes y Campañas",
-        "noData": "No hay datos de clientes o campañas disponibles."
+        "noData": "No hay datos de clientes o campañas disponibles.",
+        "totalClients": "Total de clientes",
+        "activeClients": "Clientes activos",
+        "campaignPerformance": "Desempeño de campaña",
+        "clientSatisfaction": "Satisfacción del cliente"
       },
       "compliance": {
         "title": "Cumplimiento",
@@ -2927,7 +2974,10 @@
         "expiringSoon": "Expira pronto",
         "assignedTalent": "Talent asignado",
         "renewLicense": "Renovar licencia",
-        "noData": "No hay datos de cumplimiento disponibles."
+        "noData": "No hay datos de cumplimiento disponibles.",
+        "complianceScore": "Puntuación de cumplimiento",
+        "documentsRequired": "Documentos requeridos",
+        "verificationsComplete": "Verificaciones completas"
       },
       "loading": "Cargando analíticas...",
       "error": "Error al cargar datos de analíticas",
@@ -2944,10 +2994,15 @@
         "fromTemplateSuffix": "",
         "steps": {
           "basic": "Información básica",
+          "basicInfo": "Información básica",
           "talent": "Seleccionar talentos",
+          "selectTalents": "Seleccionar talentos",
           "custom": "Personalizar",
+          "customize": "Personalizar",
           "consent": "Consentimientos",
-          "send": "Enviar"
+          "consents": "Consentimientos",
+          "send": "Enviar",
+          "review": "Revisar"
         },
         "basicInfo": {
           "title": "Información básica",
@@ -2962,14 +3017,19 @@
           "invalidFile": "Archivo inválido",
           "invalidFileDesc": "Por favor elija un archivo de imagen.",
           "coverUploaded": "Imagen de portada cargada",
-          "coverUploadFailed": "Error al cargar la portada"
+          "coverUploadFailed": "Error al cargar la portada",
+          "packageName": "Nombre del paquete",
+          "packageDescription": "Descripción del paquete"
         },
         "selectTalents": {
           "title": "Seleccionar talentos",
           "searchPlaceholder": "Buscar talentos...",
           "noTalentsSelected": "No hay talentos seleccionados",
           "selectedTalents": "Talentos seleccionados",
-          "addTalent": "Agregar talento"
+          "addTalent": "Agregar talento",
+          "selectAtLeastOne": "Seleccione al menos un talento",
+          "talentList": "Lista de talentos",
+          "availableTalents": "Talentos disponibles"
         },
         "customize": {
           "title": "Personalizar",
@@ -2980,13 +3040,18 @@
           "customMessagePlaceholder": "Agregar un mensaje personal",
           "allowComments": "Permitir comentarios",
           "allowFavorites": "Permitir favoritos",
-          "allowCallbacks": "Permitir devoluciones de llamada"
+          "allowCallbacks": "Permitir devoluciones de llamada",
+          "theme": "Tema",
+          "layout": "Diseño",
+          "branding": "Marca"
         },
         "consents": {
           "title": "Consentimientos",
           "consentItems": "Elementos de consentimiento",
           "addConsent": "Agregar consentimiento",
           "removeConsent": "Eliminar consentimiento",
+          "consentText": "Texto de consentimiento",
+          "consentRequired": "Consentimiento requerido",
           "defaultConsents": [
             "Use cada activo seleccionado solo para el objetivo de campaña y canales aprobados.",
             "No altere la imagen del atleta/talent de manera engañosa, dañina o difamatoria.",
@@ -3013,7 +3078,12 @@
           "selectBrandRequired": "Por favor seleccione una marca conectada",
           "selectConnectedBrand": "Por favor seleccione una marca conectada",
           "clientNameRequired": "El nombre del contacto del cliente es requerido",
-          "deliveryEmailRequired": "El correo de entrega es requerido"
+          "deliveryEmailRequired": "El correo de entrega es requerido",
+          "recipientEmail": "Correo del destinatario",
+          "message": "Mensaje",
+          "messagePlaceholder": "Agregar un mensaje al destinatario",
+          "expiresOn": "Expira el",
+          "neverExpires": "Nunca expira"
         },
         "validation": {
           "required": "Requerido",
@@ -3021,13 +3091,17 @@
           "empty": "Vacío",
           "selectTalent": "Por favor seleccione al menos un talento",
           "selectAthlete": "Por favor seleccione al menos un atleta",
-          "addConsent": "Agregue al menos un punto de consentimiento antes de continuar"
+          "addConsent": "Agregue al menos un punto de consentimiento antes de continuar",
+          "invalidEmail": "Dirección de correo inválida",
+          "fieldRequired": "Este campo es requerido"
         },
         "upload": {
           "invalidFile": "Archivo inválido",
           "invalidFileDesc": "Por favor seleccione un archivo de imagen",
           "imageUploaded": "Imagen subida",
-          "uploadFailed": "Error al subir"
+          "uploadFailed": "Error al subir",
+          "uploading": "Subiendo...",
+          "selectFile": "Seleccionar archivo"
         },
         "common": {
           "next": "Siguiente",
@@ -3035,13 +3109,18 @@
           "cancel": "Cancelar",
           "save": "Guardar",
           "delete": "Eliminar",
-          "loading": "Cargando..."
+          "loading": "Cargando...",
+          "submit": "Enviar",
+          "continue": "Continuar",
+          "finish": "Finalizar",
+          "close": "Cerrar"
         }
       },
       "deliverables": {
         "title": "Entregables",
         "subtitle": "Asigne talentos, solicite assets y revise entregables para ofertas de marca.",
         "collapseAll": "Contraer todo",
+        "expandAll": "Expandir todo",
         "noBrandOffers": "No hay ofertas de marca disponibles.",
         "addTalent": "Agregar talento",
         "assigned": "Asignado",
@@ -3066,7 +3145,12 @@
         },
         "actions": {
           "hide": "Ocultar",
-          "open": "Abrir"
+          "open": "Abrir",
+          "viewDetails": "Ver detalles",
+          "approve": "Aprobar",
+          "reject": "Rechazar",
+          "download": "Descargar",
+          "upload": "Subir"
         },
         "states": {
           "loadingAssignments": "Cargando asignaciones...",
@@ -3112,7 +3196,9 @@
           "submitted": "Enviado",
           "approved": "Aprobado",
           "rejected": "Rechazado",
-          "revisionRequested": "Revisión solicitada"
+          "revisionRequested": "Revisión solicitada",
+          "inReview": "En revisión",
+          "completed": "Completado"
         },
         "uploadSuccess": "Entregable subido exitosamente",
         "uploadFailed": "Error al subir el entregable",
@@ -3159,16 +3245,21 @@
           "chooseFile": "Elegir archivo",
           "noFileSelected": "Ningún archivo seleccionado",
           "sendRequest": "Enviar solicitud",
-          "selectedTalent": "Talento seleccionado"
+          "selectedTalent": "Talento seleccionado",
+          "cancel": "Cancelar",
+          "sending": "Enviando..."
         },
         "uploadDeliverableModal": {
           "title": "Subir entregable",
           "subtitle": "Agregue un título y suba uno o más archivos.",
           "captionPlaceholder": "Título",
+          "captionLabel": "Título",
           "chooseFiles": "Elegir archivos",
           "noFilesSelected": "Ningún archivo seleccionado",
           "filesSelected": "{count} archivo(s) seleccionado(s)",
-          "upload": "Subir"
+          "upload": "Subir",
+          "cancel": "Cancelar",
+          "uploading": "Subiendo..."
         },
         "viewOnly": {
           "title": "Modo solo lectura",
