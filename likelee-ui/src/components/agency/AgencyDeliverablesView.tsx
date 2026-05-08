@@ -712,7 +712,7 @@ export function AgencyDeliverablesView() {
             </Badge>
             {(agencyFeedback || brandFeedback) && (
               <Badge className="rounded-full border-0 bg-amber-500 text-white">
-                Feedback
+                {t("agencyDashboard.deliverables.deliverableCard.feedback")}
               </Badge>
             )}
           </div>
@@ -720,18 +720,28 @@ export function AgencyDeliverablesView() {
         <div className="p-4 space-y-3">
           <p className="text-xs text-gray-700 font-medium leading-relaxed line-clamp-2">
             {caption || (
-              <span className="text-gray-300 italic">No caption</span>
+              <span className="text-gray-300 italic">
+                {t("agencyDashboard.deliverables.deliverableCard.noCaption")}
+              </span>
             )}
           </p>
 
           {agencyFeedback && (
             <div className="p-2 bg-amber-50 border border-amber-100 text-[10px] text-amber-800 rounded-xl">
-              <strong>Your Feedback:</strong> {agencyFeedback}
+              <strong>
+                {t("agencyDashboard.deliverables.deliverableCard.yourFeedback")}
+              </strong>{" "}
+              {agencyFeedback}
             </div>
           )}
           {brandFeedback && (
             <div className="p-2 bg-blue-50 border border-blue-100 text-[10px] text-blue-800 rounded-xl">
-              <strong>Brand Feedback:</strong> {brandFeedback}
+              <strong>
+                {t(
+                  "agencyDashboard.deliverables.deliverableCard.brandFeedback",
+                )}
+              </strong>{" "}
+              {brandFeedback}
             </div>
           )}
 
@@ -758,13 +768,19 @@ export function AgencyDeliverablesView() {
                           }}
                           disabled={isFinalized || !canApproveDeliverables}
                         >
-                          Approve
+                          {t(
+                            "agencyDashboard.deliverables.deliverableCard.approve",
+                          )}
                         </Button>
                       </span>
                     </TooltipTrigger>
                     {!canApproveDeliverables && (
                       <TooltipContent>
-                        <p>Your role cannot approve deliverables</p>
+                        <p>
+                          {t(
+                            "agencyDashboard.deliverables.permissionCannotApprove",
+                          )}
+                        </p>
                       </TooltipContent>
                     )}
                   </Tooltip>
@@ -793,13 +809,19 @@ export function AgencyDeliverablesView() {
                         }}
                         disabled={isFinalized || !canApproveDeliverables}
                       >
-                        Revise
+                        {t(
+                          "agencyDashboard.deliverables.deliverableCard.revise",
+                        )}
                       </Button>
                     </span>
                   </TooltipTrigger>
                   {!canApproveDeliverables && (
                     <TooltipContent>
-                      <p>Your role cannot revise deliverables</p>
+                      <p>
+                        {t(
+                          "agencyDashboard.deliverables.permissionCannotRevise",
+                        )}
+                      </p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -825,13 +847,19 @@ export function AgencyDeliverablesView() {
                         }}
                         disabled={isFinalized || !canApproveDeliverables}
                       >
-                        Reject
+                        {t(
+                          "agencyDashboard.deliverables.deliverableCard.reject",
+                        )}
                       </Button>
                     </span>
                   </TooltipTrigger>
                   {!canApproveDeliverables && (
                     <TooltipContent>
-                      <p>Your role cannot reject deliverables</p>
+                      <p>
+                        {t(
+                          "agencyDashboard.deliverables.permissionCannotReject",
+                        )}
+                      </p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -1220,10 +1248,11 @@ export function AgencyDeliverablesView() {
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
           <Eye className="w-5 h-5 text-amber-600" />
           <div>
-            <p className="font-bold text-amber-800">View Only Mode</p>
+            <p className="font-bold text-amber-800">
+              {t("agencyDashboard.deliverables.viewOnlyMode")}
+            </p>
             <p className="text-sm text-amber-700">
-              Your role allows viewing deliverables but not approving or
-              managing them.
+              {t("agencyDashboard.deliverables.viewOnlyDescription")}
             </p>
           </div>
         </div>
@@ -1232,11 +1261,10 @@ export function AgencyDeliverablesView() {
         <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
-              Offer Deliverables
+              {t("agencyDashboard.deliverables.title")}
             </h2>
             <p className="mt-2 text-gray-400 text-sm">
-              Assign talents, request assets, and review deliverables for brand
-              offers.
+              {t("agencyDashboard.deliverables.description")}
             </p>
           </div>
           <Button
@@ -1423,8 +1451,13 @@ export function AgencyDeliverablesView() {
                             title: t(
                               "agencyDashboard.deliverables.toasts.assignmentsLocked",
                             ),
-                            description:
-                              "You can change assigned talents before the contract is sent. This offer is already sent, so assignments can’t be changed.",
+                            description: t(
+                              "agencyDashboard.deliverables.toasts.assignmentsLockedDescription",
+                              {
+                                defaultValue:
+                                  "You can change assigned talents before the contract is sent. This offer is already sent, so assignments cannot be changed.",
+                              },
+                            ),
                             variant: "warning",
                           });
                           return;
@@ -1447,9 +1480,10 @@ export function AgencyDeliverablesView() {
                 {offer?.status === "contract_fully_signed" && !isOfferPaid && (
                   <div className="mx-5 mb-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
                     <span className="text-amber-700 text-xs font-semibold">
-                      ⏳ Brand payment is still pending. You can upload and
-                      submit deliverables now, but you’ll need to confirm the
-                      unpaid status before submitting.
+                      {t("agencyDashboard.deliverables.paymentPendingBanner", {
+                        defaultValue:
+                          "Brand payment is still pending. You can upload and submit deliverables now, but you'll need to confirm the unpaid status before submitting.",
+                      })}
                     </span>
                   </div>
                 )}
@@ -1500,7 +1534,10 @@ export function AgencyDeliverablesView() {
                           "agencyDashboard.deliverables.retryTransferDialog.transferred",
                         );
                       if (r.transfer_status === "pending_retry")
-                        return "retrying\u2026";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.retrying",
+                          { defaultValue: "retrying..." },
+                        );
                       if (
                         r.transfer_status ===
                         t(
@@ -1510,8 +1547,15 @@ export function AgencyDeliverablesView() {
                         return t(
                           "agencyDashboard.deliverables.retryTransferDialog.failed",
                         );
-                      if (r.transfer_status === "reversed") return "reversed";
-                      return "not attempted";
+                      if (r.transfer_status === "reversed")
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.reversed",
+                          { defaultValue: "reversed" },
+                        );
+                      return t(
+                        "agencyDashboard.deliverables.payoutStatus.notAttempted",
+                        { defaultValue: "not attempted" },
+                      );
                     };
 
                     const friendlyReason = (reason: string) => {
@@ -1521,20 +1565,44 @@ export function AgencyDeliverablesView() {
                           "insufficient_capabilities_for_transfer",
                         )
                       )
-                        return "Stripe account not fully set up \u2014 transfers not enabled.";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.stripeTransfersNotEnabled",
+                          {
+                            defaultValue:
+                              "Stripe account not fully set up - transfers not enabled.",
+                          },
+                        );
                       if (reason.includes("transfers_not_allowed"))
                         return t(
                           "agencyDashboard.deliverables.retryTransferDialog.transfersNotAllowed",
                         );
                       if (reason.includes("payouts_not_allowed"))
-                        return "Payouts not allowed on this Stripe account.";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.payoutsNotAllowed",
+                          {
+                            defaultValue:
+                              "Payouts not allowed on this Stripe account.",
+                          },
+                        );
                       if (reason.includes("balance_insufficient"))
-                        return "Platform balance insufficient \u2014 contact support.";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.platformBalanceInsufficient",
+                          {
+                            defaultValue:
+                              "Platform balance insufficient - contact support.",
+                          },
+                        );
                       if (
                         reason.includes("no_stripe_account") ||
                         reason.includes("No Stripe Connect")
                       )
-                        return "No Stripe account connected. Ask them to complete Stripe onboarding.";
+                        return t(
+                          "agencyDashboard.deliverables.payoutStatus.noStripeConnected",
+                          {
+                            defaultValue:
+                              "No Stripe account connected. Ask them to complete Stripe onboarding.",
+                          },
+                        );
                       return reason.length > 120
                         ? reason.slice(0, 120) + "\u2026"
                         : reason;
@@ -1546,16 +1614,25 @@ export function AgencyDeliverablesView() {
                         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/60">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-gray-800">
-                              Payout Status
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.title",
+                                { defaultValue: "Payout Status" },
+                              )}
                             </span>
                             {allSucceeded && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                all transferred
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.allTransferred",
+                                  { defaultValue: "all transferred" },
+                                )}
                               </span>
                             )}
                             {hasFailedTransfers && (
                               <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                action required
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.actionRequired",
+                                  { defaultValue: "action required" },
+                                )}
                               </span>
                             )}
                           </div>
@@ -1570,7 +1647,10 @@ export function AgencyDeliverablesView() {
                               <RefreshCw
                                 className={`w-3 h-3 mr-1 ${isLoading ? "animate-spin" : ""}`}
                               />
-                              Refresh
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.refresh",
+                                { defaultValue: "Refresh" },
+                              )}
                             </Button>
                             {hasFailedTransfers && (
                               <Button
@@ -1584,7 +1664,10 @@ export function AgencyDeliverablesView() {
                                 ) : (
                                   <RotateCcw className="w-3 h-3" />
                                 )}
-                                Retry failed
+                                {t(
+                                  "agencyDashboard.deliverables.payoutStatus.retryFailed",
+                                  { defaultValue: "Retry failed" },
+                                )}
                               </Button>
                             )}
                           </div>
@@ -1595,12 +1678,21 @@ export function AgencyDeliverablesView() {
                           <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             <span className="text-xs">
-                              Loading payout status\u2026
+                              {t(
+                                "agencyDashboard.deliverables.payoutStatus.loading",
+                                { defaultValue: "Loading payout status..." },
+                              )}
                             </span>
                           </div>
                         ) : !ts ? (
                           <div className="px-4 py-4 text-xs text-gray-400 text-center">
-                            Click refresh to load payout status.
+                            {t(
+                              "agencyDashboard.deliverables.payoutStatus.clickRefresh",
+                              {
+                                defaultValue:
+                                  "Click refresh to load payout status.",
+                              },
+                            )}
                           </div>
                         ) : (
                           <div className="divide-y divide-gray-100">
@@ -1634,15 +1726,27 @@ export function AgencyDeliverablesView() {
                                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                         {!r.stripe_connected ? (
                                           <span className="text-[10px] text-red-600 font-semibold">
-                                            No Stripe account
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.noStripeAccount",
+                                              { defaultValue: "No Stripe account" },
+                                            )}
                                           </span>
                                         ) : !r.stripe_transfers_enabled ? (
                                           <span className="text-[10px] text-amber-600 font-semibold">
-                                            Transfers not enabled
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.transfersNotEnabled",
+                                              {
+                                                defaultValue:
+                                                  "Transfers not enabled",
+                                              },
+                                            )}
                                           </span>
                                         ) : (
                                           <span className="text-[10px] text-emerald-600 font-semibold">
-                                            Stripe ready
+                                            {t(
+                                              "agencyDashboard.deliverables.payoutStatus.stripeReady",
+                                              { defaultValue: "Stripe ready" },
+                                            )}
                                           </span>
                                         )}
                                         {r.retry_count > 0 && (
@@ -1688,15 +1792,25 @@ export function AgencyDeliverablesView() {
                                                 }
                                               >
                                                 <ArrowRight className="w-3 h-3" />
-                                                Fix your Stripe account
+                                                {t(
+                                                  "agencyDashboard.deliverables.payoutStatus.fixStripeAccount",
+                                                  {
+                                                    defaultValue:
+                                                      "Fix your Stripe account",
+                                                  },
+                                                )}
                                               </button>
                                             ) : (
                                               // Creator = talent's account → agency can't fix it, show guidance + message button
                                               <div className="mt-1.5 flex items-center gap-2 flex-wrap">
                                                 <p className="text-[11px] text-gray-500 leading-snug">
-                                                  Ask this talent to complete
-                                                  their Stripe onboarding in
-                                                  their portal.
+                                                  {t(
+                                                    "agencyDashboard.deliverables.payoutStatus.askTalentStripe",
+                                                    {
+                                                      defaultValue:
+                                                        "Ask this talent to complete their Stripe onboarding in their portal.",
+                                                    },
+                                                  )}
                                                 </p>
                                                 <button
                                                   className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline underline-offset-2 flex items-center gap-1 flex-shrink-0"
@@ -1707,7 +1821,13 @@ export function AgencyDeliverablesView() {
                                                   }
                                                 >
                                                   <Mail className="w-3 h-3" />
-                                                  Message talent
+                                                  {t(
+                                                    "agencyDashboard.deliverables.payoutStatus.messageTalent",
+                                                    {
+                                                      defaultValue:
+                                                        "Message talent",
+                                                    },
+                                                  )}
                                                 </button>
                                               </div>
                                             )}
@@ -1759,11 +1879,17 @@ export function AgencyDeliverablesView() {
                       <div className="p-4 space-y-4 bg-gray-50/50">
                         {loadingAssignments[offerId] ? (
                           <p className="text-xs text-gray-500">
-                            Loading assignments...
+                            {t(
+                              "agencyDashboard.deliverables.assignTalent.loadingAssignments",
+                              { defaultValue: "Loading assignments..." },
+                            )}
                           </p>
                         ) : assignments.length === 0 ? (
                           <p className="text-xs text-gray-500">
-                            No talents assigned yet.
+                            {t(
+                              "agencyDashboard.deliverables.assignTalent.noAssigned",
+                              { defaultValue: "No talents assigned yet." },
+                            )}
                           </p>
                         ) : (
                           <div className="space-y-2">
@@ -1805,7 +1931,10 @@ export function AgencyDeliverablesView() {
                                           )}
                                       </p>
                                       <p className="text-xs text-gray-500">
-                                        Assigned
+                                        {t(
+                                          "agencyDashboard.deliverables.assignTalent.assigned",
+                                          { defaultValue: "Assigned" },
+                                        )}
                                       </p>
                                     </div>
                                   </div>
@@ -1815,7 +1944,10 @@ export function AgencyDeliverablesView() {
                                         size="icon"
                                         variant="outline"
                                         className="h-8 w-8 border-red-200 text-red-600 hover:bg-red-50"
-                                        title="Unassign talent"
+                                        title={t(
+                                          "agencyDashboard.deliverables.assignTalent.unassignTalent",
+                                          { defaultValue: "Unassign talent" },
+                                        )}
                                         onClick={async (e) => {
                                           e.stopPropagation();
                                           if (!assignment?.id) return;
@@ -1880,7 +2012,10 @@ export function AgencyDeliverablesView() {
                                         })
                                       }
                                     >
-                                      Request Asset
+                                      {t(
+                                        "agencyDashboard.deliverables.requestAssetModal.requestAsset",
+                                        { defaultValue: "Request Asset" },
+                                      )}
                                     </Button>
                                   </div>
                                 </div>
@@ -1894,7 +2029,7 @@ export function AgencyDeliverablesView() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="text-sm font-semibold text-gray-900">
-                                  Deliverables
+                                  {t("agencyDashboard.deliverables.title")}
                                 </p>
                                 <p className="text-xs text-gray-500">
                                   {selectedAssignment?.creators?.full_name ||
@@ -1922,7 +2057,10 @@ export function AgencyDeliverablesView() {
                                   {submittingDrafts[offerId] ? (
                                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                                   ) : null}
-                                  Submit to Brand
+                                  {t(
+                                    "agencyDashboard.deliverables.submitToBrand",
+                                    { defaultValue: "Submit to Brand" },
+                                  )}
                                 </Button>
                                 <Button
                                   size="sm"
@@ -1938,24 +2076,37 @@ export function AgencyDeliverablesView() {
                                     })
                                   }
                                 >
-                                  <Upload className="w-4 h-4 mr-2" /> Upload
+                                  <Upload className="w-4 h-4 mr-2" />{" "}
+                                  {t(
+                                    "agencyDashboard.deliverables.upload",
+                                    { defaultValue: "Upload" },
+                                  )}
                                 </Button>
                               </div>
                             </div>
 
                             {loadingDeliverables[offerId] ? (
                               <p className="text-xs text-gray-500">
-                                Loading deliverables...
+                                {t(
+                                  "agencyDashboard.deliverables.loadingDeliverables",
+                                  { defaultValue: "Loading deliverables..." },
+                                )}
                               </p>
                             ) : (
                               <div className="space-y-6">
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
                                   <p className="text-sm font-semibold text-gray-900 mb-3">
-                                    Creator uploads
+                                    {t(
+                                      "agencyDashboard.deliverables.creatorUploads",
+                                      { defaultValue: "Creator uploads" },
+                                    )}
                                   </p>
                                   {creatorDeliverables.length === 0 ? (
                                     <p className="text-xs text-gray-400">
-                                      None yet.
+                                      {t(
+                                        "agencyDashboard.deliverables.noneYet",
+                                        { defaultValue: "None yet." },
+                                      )}
                                     </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -1976,11 +2127,17 @@ export function AgencyDeliverablesView() {
                                 </div>
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
                                   <p className="text-sm font-semibold text-gray-900 mb-3">
-                                    Agency uploads
+                                    {t(
+                                      "agencyDashboard.deliverables.agencyUploads",
+                                      { defaultValue: "Agency uploads" },
+                                    )}
                                   </p>
                                   {agencyDeliverables.length === 0 ? (
                                     <p className="text-xs text-gray-400">
-                                      None yet.
+                                      {t(
+                                        "agencyDashboard.deliverables.noneYet",
+                                        { defaultValue: "None yet." },
+                                      )}
                                     </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
@@ -2028,26 +2185,32 @@ export function AgencyDeliverablesView() {
         <DialogContent className="w-[96vw] max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl max-h-[90vh] overflow-hidden">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-              Assign Talent
+              {t("agencyDashboard.deliverables.assignTalent.title")}
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium mt-1">
-              Select one or more talents from your roster to assign to this
-              offer.
+              {t("agencyDashboard.deliverables.assignTalent.description", {
+                defaultValue:
+                  "Select one or more talents from your roster to assign to this offer.",
+              })}
             </p>
           </DialogHeader>
 
           <Alert className="mb-6 bg-blue-50 border-blue-200 rounded-xl">
             <AlertDescription className="text-sm text-blue-900 font-medium">
-              You can change assigned talents any time before the contract is
-              sent. Once you send the contract, assignments are locked.
+              {t("agencyDashboard.deliverables.assignTalent.lockHint", {
+                defaultValue:
+                  "You can change assigned talents any time before the contract is sent. Once you send the contract, assignments are locked.",
+              })}
             </AlertDescription>
           </Alert>
 
           {assignmentLockedForOffer ? (
             <Alert className="mb-6 bg-amber-50 border-amber-200 rounded-xl">
               <AlertDescription className="text-sm text-amber-900 font-semibold">
-                This offer’s contract has already been sent. Talent assignments
-                are locked.
+                {t("agencyDashboard.deliverables.assignTalent.lockedWarning", {
+                  defaultValue:
+                    "This offer's contract has already been sent. Talent assignments are locked.",
+                })}
               </AlertDescription>
             </Alert>
           ) : null}
@@ -2069,10 +2232,15 @@ export function AgencyDeliverablesView() {
               <div className="h-[420px] flex flex-col items-center justify-center text-center">
                 <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
                 <p className="text-sm font-bold text-gray-500">
-                  Loading talents…
+                  {t("agencyDashboard.deliverables.assignTalent.loadingTalents", {
+                    defaultValue: "Loading talents...",
+                  })}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Fetching your agency roster.
+                  {t(
+                    "agencyDashboard.deliverables.assignTalent.fetchingRoster",
+                    { defaultValue: "Fetching your agency roster." },
+                  )}
                 </p>
               </div>
             ) : (

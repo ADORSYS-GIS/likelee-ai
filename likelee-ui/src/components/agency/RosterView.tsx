@@ -2255,11 +2255,11 @@ const RosterView = ({
                             <span className="flex items-center gap-1.5">
                               <Clock className="w-3.5 h-3.5 text-gray-400" />
                               {t(
-                                "agencyDashboard.roster.history.lastUpdated",
+                                "agencyDashboard.roster.digitals.lastUpdated",
                               )}{" "}
                               {lastUpdated
                                 ? format(new Date(lastUpdated), "MMM d, yyyy")
-                                : t("agencyDashboard.roster.history.never")}
+                                : t("agencyDashboard.roster.digitals.never")}
                             </span>
                             <span className="text-gray-300">|</span>
                             {lastUpdated
@@ -2270,7 +2270,9 @@ const RosterView = ({
                             <span className="text-gray-300">|</span>
                             <span>
                               {totalPhotos || 0}{" "}
-                              {t("agencyDashboard.roster.history.photos")}
+                              {t("agencyDashboard.roster.digitals.photos", {
+                                count: totalPhotos || 0,
+                              })}
                             </span>
                           </div>
                         </div>
@@ -2283,7 +2285,7 @@ const RosterView = ({
                           className="h-8 gap-2 text-gray-700 border-gray-200 font-bold text-xs hover:bg-gray-50"
                         >
                           <Eye className="w-3 h-3" />{" "}
-                          {t("agencyDashboard.roster.history.viewHistory")}
+                          {t("agencyDashboard.roster.digitals.viewHistory")}
                         </Button>
                         <Button
                           variant="outline"
@@ -2307,7 +2309,8 @@ const RosterView = ({
                           }}
                           className="h-8 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs"
                         >
-                          <Upload className="w-3 h-3" /> Upload New
+                          <Upload className="w-3 h-3" />{" "}
+                          {t("agencyDashboard.roster.digitals.uploadNew")}
                         </Button>
                       </div>
                     </div>
@@ -2797,7 +2800,7 @@ const RosterView = ({
               <button
                 onClick={() => setUploadTalent(null)}
                 className="text-gray-400 hover:text-gray-600"
-                aria-label="Close"
+                aria-label={t("agencyDashboard.roster.actions.close")}
                 type="button"
               >
                 ✕
@@ -2900,7 +2903,8 @@ const RosterView = ({
               >
                 {uploadingDigitals ? (
                   <span className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Uploading…
+                    <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                    {t("agencyDashboard.roster.states.uploading")}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
@@ -2941,7 +2945,7 @@ const RosterView = ({
             {historyLoading ? (
               <div className="mt-6 flex items-center gap-2 text-sm text-gray-500 font-medium">
                 <Loader2 className="w-4 h-4 animate-spin" />{" "}
-                {t("agencyDashboard.roster.history.loading")}
+                {t("agencyDashboard.roster.digitals.loadingHistory")}
               </div>
             ) : (
               <div className="mt-6 space-y-6">
@@ -2974,7 +2978,7 @@ const RosterView = ({
 
                 <div>
                   <div className="text-sm font-bold text-gray-700 mb-3">
-                    {t("agencyDashboard.roster.history.previousUpdates")}
+                    {t("agencyDashboard.roster.digitals.previousUpdates")}
                   </div>
                   <div className="space-y-4">
                     {historyGroups.map((g) => {
@@ -2984,7 +2988,7 @@ const RosterView = ({
                       const label =
                         g.date !== "Unknown"
                           ? format(new Date(g.date), "MMMM d, yyyy")
-                          : "Unknown";
+                          : t("agencyDashboard.roster.history.unknown");
                       return (
                         <Card
                           key={g.date}
@@ -3000,7 +3004,9 @@ const RosterView = ({
                                 className="text-[10px] font-bold"
                               >
                                 {photos.length}{" "}
-                                {t("agencyDashboard.roster.history.photos")}
+                                {t("agencyDashboard.roster.digitals.photos", {
+                                  count: photos.length,
+                                })}
                               </Badge>
                             </div>
                             <Button
@@ -3009,7 +3015,7 @@ const RosterView = ({
                               className="h-8 gap-2 text-gray-700 border-gray-200 font-bold text-xs hover:bg-gray-50"
                             >
                               <Eye className="w-3 h-3" />{" "}
-                              {t("agencyDashboard.roster.history.view")}
+                              {t("agencyDashboard.roster.digitals.view")}
                             </Button>
                           </div>
                           <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
