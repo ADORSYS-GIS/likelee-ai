@@ -121,8 +121,7 @@ async fn generate_for_talent(
 
     if let Ok(vr_resp) = vr_resp {
         let vr_text = vr_resp.text().await.unwrap_or_else(|_| "[]".into());
-        let recordings: Vec<serde_json::Value> =
-            serde_json::from_str(&vr_text).unwrap_or_default();
+        let recordings: Vec<serde_json::Value> = serde_json::from_str(&vr_text).unwrap_or_default();
 
         for rec in recordings {
             let rec_id = rec["id"].as_str().unwrap_or("").to_string();
@@ -172,7 +171,10 @@ async fn generate_for_talent(
                         context_type: StorageContextType::LicensedDeliverable,
                         context_id: Some(deliverable_id.clone()),
                         visibility: StorageVisibility::Public,
-                        object_path: format!("licensed-deliverables/{}/{}", brand_id, deliverable_id),
+                        object_path: format!(
+                            "licensed-deliverables/{}/{}",
+                            brand_id, deliverable_id
+                        ),
                         original_file_name: Some(file_name.clone()),
                         mime_type: Some(mime_type.to_string()),
                         size_bytes,
@@ -213,7 +215,10 @@ async fn generate_for_talent(
 
         for item in items {
             let item_id = item["id"].as_str().unwrap_or("").to_string();
-            let title = item["title"].as_str().unwrap_or("Portfolio Image").to_string();
+            let title = item["title"]
+                .as_str()
+                .unwrap_or("Portfolio Image")
+                .to_string();
             let url = item["media_url"].as_str().unwrap_or("").to_string();
             let mime_type = item["mime_type"].as_str().unwrap_or("image/jpeg");
             let size_bytes = item["size_bytes"].as_i64();
@@ -255,7 +260,10 @@ async fn generate_for_talent(
                         context_type: StorageContextType::LicensedDeliverable,
                         context_id: Some(deliverable_id.clone()),
                         visibility: StorageVisibility::Public,
-                        object_path: format!("licensed-deliverables/{}/{}", brand_id, deliverable_id),
+                        object_path: format!(
+                            "licensed-deliverables/{}/{}",
+                            brand_id, deliverable_id
+                        ),
                         original_file_name: Some(format!("{}-{}.jpg", talent_name, title)),
                         mime_type: Some(mime_type.to_string()),
                         size_bytes,
@@ -332,7 +340,14 @@ pub async fn generate_licensed_deliverables(
         "Licensed Campaign".to_string()
     };
 
-    let total_created = generate_for_talent(state, brand_id, license_request_id, talent_id, &campaign_title).await;
+    let total_created = generate_for_talent(
+        state,
+        brand_id,
+        license_request_id,
+        talent_id,
+        &campaign_title,
+    )
+    .await;
 
     info!(
         brand_id = %brand_id,
@@ -396,8 +411,7 @@ pub async fn list_licensed_deliverables(
         ));
     }
 
-    let mut deliverables: Vec<serde_json::Value> =
-        serde_json::from_str(&text).unwrap_or_default();
+    let mut deliverables: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
     // Only keep deliverables from approved license requests
     deliverables.retain(|d| {

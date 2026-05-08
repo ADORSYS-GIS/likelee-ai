@@ -846,10 +846,7 @@ pub async fn update_status_for_agency(
                 // Only generate if talent_id is present (specific talent license)
                 // Agency-wide licenses need explicit talent tracking elsewhere
                 match crate::licensed_deliverables::generate_licensed_deliverables(
-                    &state,
-                    brand_id,
-                    req_id,
-                    talent_id,
+                    &state, brand_id, req_id, talent_id,
                 )
                 .await
                 {
