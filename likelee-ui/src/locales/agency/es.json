@@ -4288,14 +4288,34 @@
         "consentStatusBreakdown": "Desglose del estado de consentimiento",
         "complete": "Completo",
         "missing": "Faltante",
-        "expired": "Expirado"
+        "expired": "Expirado",
+        "of": "de",
+        "campaignStatus": {
+          "inProgress": "En Progreso",
+          "readyToLaunch": "Listo para Lanzar",
+          "completed": "Completado"
+        },
+        "aiUsageTypes": {
+          "image": "Imagen",
+          "video": "Video",
+          "voice": "Voz"
+        },
+        "consentStatus": {
+          "complete": "Completo",
+          "missing": "Faltante",
+          "expired": "Expirado"
+        },
+        "chart": {
+          "earnings": "Ganancias ($)",
+          "aiUsages": "Usos de IA"
+        }
       },
       "rosterInsights": {
         "title": "Información del Roster",
-        "topPerformer": "Mejor desempeño",
-        "highestFollowers": "Más seguidores",
+        "topPerformer": "Mejor Rendimiento (Ganancias)",
+        "highestFollowers": "Más Seguidores",
         "avgValue": "Valor promedio",
-        "noData": "No hay datos de perspectivas del roster disponibles.",
+        "noData": "No hay datos disponibles",
         "totalTalent": "Total de talentos",
         "activeTalent": "Talentos activos",
         "performanceMetrics": "Métricas de desempeño",
@@ -4306,7 +4326,12 @@
         "talent": "Talento",
         "earnings30d": "Ganancias (30d)",
         "projected": "Proyectado",
-        "status": "Estado"
+        "status": "Estado",
+        "earningsByTalent": "Ganancias por Talento (Últimos 30 Días)",
+        "chart": {
+          "earnings30d": "Ganancias 30D ($)",
+          "projected": "Proyectado ($)"
+        }
       },
       "clientsCampaigns": {
         "title": "Clientes y Campañas",
@@ -4326,7 +4351,10 @@
         "earningsByClient": "Ganancias por cliente",
         "geographicDistribution": "Distribución geográfica",
         "region": "Región",
-        "value": "Valor"
+        "value": "Valor",
+        "fromBookingToCompletion": "Desde reserva hasta finalización",
+        "newClientsLast30Days": "Nuevos clientes en los últimos 30 días",
+        "ofTotal": "del total"
       },
       "compliance": {
         "title": "Cumplimiento",
@@ -4335,7 +4363,7 @@
         "expiringSoon": "Expira pronto",
         "assignedTalent": "Talent asignado",
         "renewLicense": "Renovar licencia",
-        "noData": "No hay datos de cumplimiento disponibles.",
+        "noData": "No se encontraron licencias vencidas",
         "complianceScore": "Puntuación de cumplimiento",
         "documentsRequired": "Documentos requeridos",
         "verificationsComplete": "Verificaciones completas",
@@ -4344,7 +4372,19 @@
         "expiryDate": "Fecha de vencimiento",
         "noExpiredLicenses": "No se encontraron licencias vencidas",
         "refreshData": "Actualizar datos",
-        "lastUpdated": "Última actualización"
+        "lastUpdated": "Última actualización",
+        "renew": "Renovar",
+        "expiredContractsMessage": "Los contratos vencidos aparecerán aquí para renovación.",
+        "refreshing": "Actualizando...",
+        "refresh": "Actualizar",
+        "expiredContracts": "Contratos vencidos",
+        "verified": "verificado",
+        "complete": "completo",
+        "terminatedOrExpired": "Terminado o vencido",
+        "consentStatusDistribution": "Distribución del estado de consentimiento",
+        "comingSoon": "Próximamente",
+        "expiredContractsAppearHere": "Los contratos vencidos aparecerán aquí para renovación.",
+        "likenessProtection": "Protección de Imagen"
       },
       "loading": "Cargando analíticas...",
       "error": "Error al cargar datos de analíticas",
@@ -5511,11 +5551,11 @@
         "percentOfTotal": "{{value}}% of total",
         "topClientsPerformance": "Top Clients Performance",
         "geographicDistribution": "Geographic Distribution",
-        "complianceSummary": "Compliance Summary",
+        "complianceSummary": "Resumen de cumplimiento",
         "consentStatusDistribution": "Consent Status Distribution",
         "comingSoon": "Proximamente",
         "licenseExpiryPipeline": "License Expiry Pipeline",
-        "expiredOn": "Expired on {{date}}",
+        "expiredOn": "Vencido el {{date}}",
         "nextDays": "Next {{count}} days",
         "next10Days": "Next 10 days",
         "verified": "{{count}} of {{total}} verified",
