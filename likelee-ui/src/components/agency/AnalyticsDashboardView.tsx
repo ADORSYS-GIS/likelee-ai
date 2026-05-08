@@ -48,6 +48,7 @@ import {
   DashboardTabRail,
   DashboardTableSurface,
 } from "@/components/dashboard/DashboardResponsive";
+import { useTranslation } from "react-i18next";
 
 const formatLicenseDate = (dateStr?: string) => {
   if (!dateStr) return "N/A";
@@ -56,15 +57,19 @@ const formatLicenseDate = (dateStr?: string) => {
   return format(d, "MMM d, yyyy");
 };
 
-const PlaceholderView = ({ title }: { title: string }) => (
+const PlaceholderView = ({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) => (
   <div className="flex flex-col items-center justify-center h-full py-20 text-center">
     <div className="bg-gray-100 p-6 rounded-full mb-4">
       <Settings className="w-10 h-10 text-gray-400" />
     </div>
     <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
-    <p className="text-gray-500 max-w-sm">
-      This section is currently under development. Check back soon for updates.
-    </p>
+    <p className="text-gray-500 max-w-sm">{description}</p>
   </div>
 );
 
@@ -96,8 +101,16 @@ const AnalyticsDashboardView = ({
   }, [analyticsCacheKey]);
 
   const { toast } = useToast();
+  const { t } = useTranslation("agency");
   const analyticsModeQuery = agencyMode === "AI" ? "ai" : "irl";
-  const [activeTab, setActiveTab] = useState("Overview");
+  const tabKeys = useMemo(
+    () =>
+      agencyMode === "AI"
+        ? ["overview", "rosterInsights", "clientsCampaigns", "compliance"]
+        : ["overview", "rosterInsights", "clientsCampaigns"],
+    [agencyMode],
+  );
+  const [activeTab, setActiveTab] = useState(tabKeys[0]);
   const [analytics, setAnalytics] = useState<any>(
     initialHasWarmCache
       ? (globalThis as any)[analyticsCacheKey].analytics
@@ -121,7 +134,7 @@ const AnalyticsDashboardView = ({
 
   // Fetch expired licenses from DB when Compliance tab is active
   useEffect(() => {
-    if (activeTab !== "Compliance") return;
+    if (activeTab !== "compliance") return;
     let active = true;
 
     const fetchExpiredLicenses = async () => {
@@ -151,8 +164,11 @@ const AnalyticsDashboardView = ({
           // Show success toast when refresh is triggered manually
           if (refreshTrigger > 0) {
             toast({
-              title: "Refreshed",
-              description: `License expiry pipeline updated successfully. Found ${Array.isArray(data) ? data.length : 0} expired licenses.`,
+              title: t("agencyDashboard.analytics.toasts.refreshed"),
+              description: t(
+                "agencyDashboard.analytics.toasts.refreshedDescription",
+                { count: Array.isArray(data) ? data.length : 0 },
+              ),
               duration: 2000,
             });
           }
@@ -161,8 +177,10 @@ const AnalyticsDashboardView = ({
         console.error("Error fetching expired licenses:", error);
         if (refreshTrigger > 0) {
           toast({
-            title: "Refresh failed",
-            description: "Failed to update license expiry pipeline.",
+            title: t("agencyDashboard.analytics.toasts.refreshFailed"),
+            description: t(
+              "agencyDashboard.analytics.toasts.refreshFailedDescription",
+            ),
             variant: "destructive",
             duration: 3000,
           });
@@ -181,10 +199,7 @@ const AnalyticsDashboardView = ({
     };
   }, [activeTab, refreshTrigger, toast]);
 
-  const subTabs =
-    agencyMode === "AI"
-      ? ["Overview", "Roster Insights", "Clients & Campaigns", "Compliance"]
-      : ["Overview", "Roster Insights", "Clients & Campaigns"];
+  const subTabs = tabKeys;
 
   const handleExportReport = useCallback(() => {
     const now = new Date();
@@ -487,7 +502,7 @@ const AnalyticsDashboardView = ({
     a.click();
     URL.revokeObjectURL(url);
     toast({
-      title: "Report exported",
+      title: t("agencyDashboard.analytics.toasts.reportExported"),
       description: `analytics-report-${dateStr}.csv`,
     });
   }, [
@@ -498,6 +513,7 @@ const AnalyticsDashboardView = ({
     talentData,
     licenseComplianceData,
     agencyMode,
+    t,
     toast,
   ]);
 
@@ -826,8 +842,10 @@ const AnalyticsDashboardView = ({
     const win = window.open("", "_blank");
     if (!win) {
       toast({
-        title: "Popup blocked",
-        description: "Allow popups for this site and try again.",
+        title: t("agencyDashboard.analytics.toasts.popupBlocked"),
+        description: t(
+          "agencyDashboard.analytics.toasts.popupBlockedDescription",
+        ),
         variant: "destructive",
       });
       return;
@@ -839,8 +857,10 @@ const AnalyticsDashboardView = ({
       win.print();
     }, 400);
     toast({
-      title: "PDF export ready",
-      description: "Use 'Save as PDF' in the print dialog.",
+      title: t("agencyDashboard.analytics.toasts.pdfExportReady"),
+      description: t(
+        "agencyDashboard.analytics.toasts.pdfExportReadyDescription",
+      ),
     });
   }, [
     analytics,
@@ -850,6 +870,7 @@ const AnalyticsDashboardView = ({
     talentData,
     licenseComplianceData,
     agencyMode,
+    t,
     toast,
   ]);
 
@@ -926,7 +947,7 @@ const AnalyticsDashboardView = ({
         console.error(err);
         setError(err.message);
         toast({
-          title: "Analytics error",
+          title: t("agencyDashboard.analytics.toastError"),
           description: err.message,
           variant: "destructive",
         });
@@ -948,7 +969,9 @@ const AnalyticsDashboardView = ({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-gray-500">Loading analytics...</div>
+        <div className="text-gray-500">
+          {t("agencyDashboard.analytics.loading")}
+        </div>
       </div>
     );
   }
@@ -956,7 +979,9 @@ const AnalyticsDashboardView = ({
   if (error || !analytics) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-red-500">Failed to load analytics data</div>
+        <div className="text-red-500">
+          {t("agencyDashboard.analytics.error")}
+        </div>
       </div>
     );
   }
@@ -988,7 +1013,7 @@ const AnalyticsDashboardView = ({
     <div className="space-y-6 pb-20">
       <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
         <DashboardSectionHeader
-          title="Analytics Dashboard"
+          title={t("agencyDashboard.analytics.title")}
           actions={
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -998,7 +1023,7 @@ const AnalyticsDashboardView = ({
                   disabled={loading}
                 >
                   <Download className="w-4 h-4" />
-                  Export Report
+                  {t("agencyDashboard.analytics.exportReport")}
                   <ChevronDown className="w-3.5 h-3.5 ml-1 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
@@ -1008,14 +1033,14 @@ const AnalyticsDashboardView = ({
                   onClick={handleExportReport}
                 >
                   <Download className="w-4 h-4 text-gray-500" />
-                  Export as CSV
+                  CSV
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="gap-2 cursor-pointer"
                   onClick={handleExportPdf}
                 >
                   <FileText className="w-4 h-4 text-gray-500" />
-                  Export as PDF
+                  PDF
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1025,14 +1050,14 @@ const AnalyticsDashboardView = ({
           className="mt-5"
           items={subTabs.map((tab) => ({
             id: tab,
-            label: tab,
+            label: t(`agencyDashboard.analytics.tabs.${tab}`),
             active: activeTab === tab,
             onClick: () => setActiveTab(tab),
           }))}
         />
       </div>
 
-      {activeTab === "Overview" ? (
+      {activeTab === "overview" ? (
         <div className="space-y-6 animate-in fade-in duration-500">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Total Earnings */}
@@ -1517,7 +1542,7 @@ const AnalyticsDashboardView = ({
             </Card>
           </div>
         </div>
-      ) : activeTab === "Roster Insights" ? (
+      ) : activeTab === "rosterInsights" ? (
         rosterInsights ? (
           <div className="space-y-8 animate-in fade-in duration-500 pb-20">
             <h3 className="text-xl font-black text-gray-900 uppercase tracking-[0.15em] mb-10">
@@ -1614,7 +1639,12 @@ const AnalyticsDashboardView = ({
                   textColor: "text-green-600",
                 },
                 {
-                  label: `Most Active (${agencyMode === "AI" ? "Licenses" : "Campaigns"})`,
+                  label: t("agencyDashboard.analytics.labels.mostActive", {
+                    metric:
+                      agencyMode === "AI"
+                        ? t("agencyDashboard.analytics.labels.licenses")
+                        : t("agencyDashboard.analytics.labels.campaigns"),
+                  }),
                   data: rosterInsights.most_active,
                   borderColor: "border-indigo-500",
                   textColor: "text-blue-600",
@@ -1749,7 +1779,7 @@ const AnalyticsDashboardView = ({
             <div className="text-gray-500">Loading roster insights...</div>
           </div>
         )
-      ) : activeTab === "Clients & Campaigns" ? (
+      ) : activeTab === "clientsCampaigns" ? (
         clientsAnalytics ? (
           <div className="space-y-8 animate-in fade-in duration-500 pb-20">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1963,7 +1993,7 @@ const AnalyticsDashboardView = ({
             </div>
           </div>
         )
-      ) : activeTab === "Compliance" ? (
+      ) : activeTab === "compliance" ? (
         (() => {
           const totalContracts = analytics.consent_status.total;
           const totalTalents = analytics.consent_status.total_talents;
@@ -2181,7 +2211,7 @@ const AnalyticsDashboardView = ({
                     title={
                       isRefreshingExpired
                         ? "Refreshing..."
-                        : "Refresh expired licenses"
+                        : t("agencyDashboard.analytics.toasts.refreshExpired")
                     }
                   >
                     <RefreshCw
@@ -2194,7 +2224,7 @@ const AnalyticsDashboardView = ({
                   {effectiveExpired.length === 0 ? (
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
                       <p className="text-sm font-bold text-gray-900">
-                        No expired licenses
+                        {t("agencyDashboard.analytics.compliance.noData")}
                       </p>
                       <p className="text-xs font-medium text-gray-500 mt-1">
                         Expired contracts will appear here for renewal.
@@ -2227,7 +2257,9 @@ const AnalyticsDashboardView = ({
                                 "Unknown License"}
                             </p>
                             <p className="text-xs font-bold text-gray-500 truncate">
-                              Expired on {formatLicenseDate(license.end_date)}
+                              {t("agencyDashboard.analytics.labels.expiredOn", {
+                                date: formatLicenseDate(license.end_date),
+                              })}
                             </p>
                           </div>
                         </div>
@@ -2247,7 +2279,7 @@ const AnalyticsDashboardView = ({
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 xl:gap-12">
                   <div>
                     <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest mb-10">
-                      Compliance Summary
+                      {t("agencyDashboard.analytics.labels.complianceSummary")}
                     </h3>
                     <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
                       Consent Status Distribution
@@ -2345,7 +2377,10 @@ const AnalyticsDashboardView = ({
           );
         })()
       ) : (
-        <PlaceholderView title={activeTab} />
+        <PlaceholderView
+          title={t(`agencyDashboard.analytics.tabs.${activeTab}`)}
+          description={t("agencyDashboard.analytics.placeholder.description")}
+        />
       )}
     </div>
   );
