@@ -209,7 +209,7 @@ Before sending a DocuSeal contract, the agency UI checks Stripe readiness for al
 | Hard block | Agency OR any talent has no Stripe account connected | Contract cannot be sent |
 | Soft warning | All connected but some `transfers_enabled = false` | Can send with warning; retry transfers after onboarding |
 
-This prevents the escrow from getting stuck in `releasing` for new offers going forward.
+**Why the brand is never exposed to Stripe issues:** The brand's obligation ends when they pay and approve. Whether the agency or talent can receive a Stripe transfer is an internal operational matter between the platform and the payee — surfacing it to the brand would be confusing and damaging to trust. The readiness gate enforces this at the contract send step: by the time a brand is approving deliverables, all parties are guaranteed to have at least a connected Stripe account. The only remaining edge case (`transfers_enabled = false`) was explicitly shown to the agency before they sent the contract, and is resolved independently via the retry button — no brand involvement needed.
 
 ### API Endpoints
 
