@@ -6464,31 +6464,6 @@
         "transferred": "Transferred",
         "transfersNotAllowed": "Transfers not allowed on this Stripe account."
       }
-    },
-    "brandConnections": {
-      "title": "Brand Connections",
-      "tabs": {
-        "connections": "Connections",
-        "requests": "Requests",
-        "offers": "Offers",
-        "contractHub": "Contract Hub",
-        "deliverables": "Deliverables",
-        "feedback": "Feedback"
-      },
-      "toasts": {
-        "requestAccepted": "Request accepted",
-        "requestApproved": "Connection request approved",
-        "requestDeclined": "Request declined",
-        "requestDeclinedDesc": "Connection request declined",
-        "actionFailed": "Action failed",
-        "pleaseTryAgain": "Please try again",
-        "pleaseTryAgainShort": "Please try again",
-        "disconnected": "Disconnected",
-        "disconnectedDesc": "Brand connection removed",
-        "disconnectFailed": "Disconnect failed",
-        "messageSent": "Message sent",
-        "failedToSend": "Failed to send"
-      }
     }
   },
   "marketingAgencySolutions": "Marketing Agency Solutions",
