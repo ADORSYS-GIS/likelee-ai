@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import {
@@ -56,6 +57,7 @@ const LicensingRequestsView = ({
     talentName?: string;
   }) => void;
 }) => {
+  const { t } = useTranslation("agency");
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();
@@ -618,13 +620,19 @@ const LicensingRequestsView = ({
     // In this view, "Brand Requests" tab shows all pending brand requests.
   });
 
+  const tabLabels = {
+    Active: t("agencyDashboard.licensingRequests.tabs.active"),
+    Archive: t("agencyDashboard.licensingRequests.tabs.archive"),
+    "Brand Requests": t("agencyDashboard.licensingRequests.tabs.brandRequests"),
+  };
+
   return (
     <>
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
           <div className="flex flex-col gap-1">
             <h2 className="text-2xl font-bold text-gray-900">
-              Licensing Requests
+              {t("agencyDashboard.licensingRequests.title")}
             </h2>
             <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-gray-100 p-1 sm:flex sm:w-fit">
               {["Active", "Archive", "Brand Requests"].map((tab) => {
@@ -637,7 +645,6 @@ const LicensingRequestsView = ({
                     localStorage.getItem("regular_licensing_seen_count") || "0",
                     10,
                   );
-                  // While viewing, we show 0 badge
                   badgeCount =
                     activeRequestTab === "Active"
                       ? 0
@@ -650,7 +657,6 @@ const LicensingRequestsView = ({
                     localStorage.getItem("brand_licensing_seen_count") || "0",
                     10,
                   );
-                  // While viewing, we show 0 badge
                   badgeCount =
                     activeRequestTab === "Brand Requests"
                       ? 0
@@ -663,7 +669,7 @@ const LicensingRequestsView = ({
                     onClick={() => setActiveRequestTab(tab as any)}
                     className={`min-h-[44px] px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-2 text-center ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                   >
-                    {tab}
+                    {tabLabels[tab as keyof typeof tabLabels]}
                     {badgeCount > 0 && (
                       <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
                         {badgeCount}
@@ -690,7 +696,7 @@ const LicensingRequestsView = ({
               className={`flex w-full items-center justify-center gap-2 border-gray-300 font-bold text-gray-700 bg-white sm:w-auto ${hasActiveFilters ? "border-indigo-300 bg-indigo-50" : ""}`}
               onClick={() => setShowFilterDialog(true)}
             >
-              <Filter className="w-4 h-4" /> Filter
+              <Filter className="w-4 h-4" /> F
               {hasActiveFilters && (
                 <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-indigo-500 text-white rounded-full">
                   {
@@ -752,8 +758,8 @@ const LicensingRequestsView = ({
               <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
                 <div className="text-gray-500 font-medium">
                   {activeRequestTab === "Active"
-                    ? "No active licensing requests"
-                    : "No archived licensing requests"}
+                    ? t("agencyDashboard.licensingRequests.noActive")
+                    : t("agencyDashboard.licensingRequests.noArchived")}
                 </div>
               </Card>
             )}
@@ -952,7 +958,7 @@ const LicensingRequestsView = ({
             brandLicenseData.length === 0 && (
               <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
                 <div className="text-gray-500 font-medium">
-                  No active brand requests
+                  {t("agencyDashboard.licensingRequests.noActiveBrandRequests")}
                 </div>
               </Card>
             )}
@@ -1177,10 +1183,10 @@ const LicensingRequestsView = ({
                 onClick={clearFilters}
                 className="font-bold"
               >
-                Clear Filters
+                {t("agencyDashboard.licensingRequests.filter.clear")}
               </Button>
               <Button onClick={() => setShowFilterDialog(false)}>
-                Apply Filters
+                {t("agencyDashboard.licensingRequests.filterModal.apply")}
               </Button>
             </DialogFooter>
           </DialogContent>
