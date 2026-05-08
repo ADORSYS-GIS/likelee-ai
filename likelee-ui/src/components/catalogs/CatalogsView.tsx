@@ -39,7 +39,19 @@ export function CatalogsView({
 }: {
   isSportsAgency?: boolean;
 }) {
-  const { t } = useTranslation("agency");
+  const { t: baseT } = useTranslation("agency");
+  const t = (key: string, options?: Record<string, unknown>) => {
+    const aliases: Record<string, string> = {
+      "agencyDashboard.catalogs.header.title": "agencyDashboard.catalogs.title",
+      "agencyDashboard.catalogs.header.subtitle":
+        "agencyDashboard.catalogs.subtitle",
+      "agencyDashboard.catalogs.emptyState.title":
+        "agencyDashboard.catalogs.empty.title",
+      "agencyDashboard.catalogs.emptyState.description":
+        "agencyDashboard.catalogs.empty.description",
+    };
+    return baseT(aliases[key] || key, options);
+  };
   const entityPluralTitle = isSportsAgency
     ? t("agencyDashboard.catalogs.previewModal.fields.athletes")
     : t("agencyDashboard.catalogs.previewModal.fields.talents");
@@ -210,7 +222,7 @@ export function CatalogsView({
                         )}
                         {catalog.expires_at && (
                           <>
-                            {" • "}
+                            {" - "}
                             <span className="text-orange-500 font-medium">
                               {t("agencyDashboard.catalogs.card.expires")}{" "}
                               {new Date(
@@ -493,8 +505,8 @@ export function CatalogsView({
 
               {previewCatalog.notes && (
                 <div className="space-y-1.5">
-                  <span className="text-xs font-black uppercase tracking-widest text-gray-400">
-                    Internal Notes
+                      <span className="text-xs font-black uppercase tracking-widest text-gray-400">
+                    {t("agencyDashboard.catalogs.previewModal.internalNotes")}
                   </span>
                   <div className="p-4 bg-white border border-gray-100 rounded-xl text-sm text-gray-600 italic">
                     “{previewCatalog.notes}”
@@ -508,7 +520,7 @@ export function CatalogsView({
                   onClick={() => setPreviewCatalog(null)}
                   className="rounded-xl font-bold"
                 >
-                  Close
+                  {t("agencyDashboard.catalogs.previewModal.close")}
                 </Button>
                 <Button
                   onClick={() => {
@@ -518,7 +530,7 @@ export function CatalogsView({
                   className="bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold flex items-center gap-2"
                 >
                   <Copy className="w-4 h-4" />
-                  Copy Link
+                  {t("agencyDashboard.catalogs.previewModal.copyLink")}
                 </Button>
               </div>
             </div>

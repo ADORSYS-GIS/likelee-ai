@@ -64,7 +64,121 @@ export function CatalogBuilderWizard({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const { t } = useTranslation("agency");
+  const { t: baseT } = useTranslation("agency");
+  const t = (key: string, options?: Record<string, unknown>) => {
+    const aliases: Record<string, string> = {
+      "agencyDashboard.catalogs.wizard.steps.source":
+        "agencyDashboard.catalogs.builder.steps.selectRequest",
+      "agencyDashboard.catalogs.wizard.steps.details":
+        "agencyDashboard.catalogs.builder.steps.info",
+      "agencyDashboard.catalogs.wizard.steps.assets":
+        "agencyDashboard.catalogs.builder.steps.assets",
+      "agencyDashboard.catalogs.wizard.steps.voice":
+        "agencyDashboard.catalogs.builder.steps.voice",
+      "agencyDashboard.catalogs.wizard.steps.send":
+        "agencyDashboard.catalogs.builder.steps.review",
+      "agencyDashboard.catalogs.wizard.title":
+        "agencyDashboard.catalogs.builder.title",
+      "agencyDashboard.catalogs.wizard.description":
+        "agencyDashboard.catalogs.builder.description",
+      "agencyDashboard.catalogs.wizard.info.catalogTitle":
+        "agencyDashboard.catalogs.builder.fields.catalogTitle",
+      "agencyDashboard.catalogs.wizard.info.catalogTitlePlaceholder":
+        "agencyDashboard.catalogs.builder.placeholders.catalogTitleDetailed",
+      "agencyDashboard.catalogs.wizard.info.notes":
+        "agencyDashboard.catalogs.builder.fields.notesOptional",
+      "agencyDashboard.catalogs.wizard.info.notesPlaceholder":
+        "agencyDashboard.catalogs.builder.placeholders.notesDetailed",
+      "agencyDashboard.catalogs.wizard.info.catalogExpiration":
+        "agencyDashboard.catalogs.builder.fields.catalogExpiration",
+      "agencyDashboard.catalogs.wizard.info.expirationHelp":
+        "agencyDashboard.catalogs.builder.expirationHelpDetailed",
+      "agencyDashboard.catalogs.wizard.selectRequest.description":
+        "agencyDashboard.catalogs.builder.selectRequestDescriptionDetailed",
+      "agencyDashboard.catalogs.wizard.selectRequest.noRequests":
+        "agencyDashboard.catalogs.builder.empty.noSignedRequestsDetailed",
+      "agencyDashboard.catalogs.wizard.selectRequest.unnamedClient":
+        "agencyDashboard.catalogs.builder.empty.unnamedClient",
+      "agencyDashboard.catalogs.wizard.selectRequest.contractSigned":
+        "agencyDashboard.catalogs.builder.selectRequestEligibleDetailed",
+      "agencyDashboard.catalogs.wizard.selectRequest.paidOn":
+        "agencyDashboard.catalogs.wizard.selectRequest.paidOn",
+      "agencyDashboard.catalogs.wizard.selectRequest.unpaidWarning":
+        "agencyDashboard.catalogs.builder.unpaidRequestHelpDetailed",
+      "agencyDashboard.catalogs.wizard.assets.loading":
+        "agencyDashboard.catalogs.builder.loadingAssets",
+      "agencyDashboard.catalogs.wizard.assets.noTalents":
+        "agencyDashboard.catalogs.builder.empty.noTalentsAssetsDetailed",
+      "agencyDashboard.catalogs.wizard.assets.selected":
+        "agencyDashboard.catalogs.builder.selectedCount",
+      "agencyDashboard.catalogs.wizard.assets.noAssets":
+        "agencyDashboard.catalogs.builder.empty.noAssetsForTalentDetailed",
+      "agencyDashboard.catalogs.wizard.assets.upload":
+        "agencyDashboard.catalogs.builder.actions.upload",
+      "agencyDashboard.catalogs.wizard.voice.noTalents":
+        "agencyDashboard.catalogs.builder.empty.noTalentsVoiceDetailed",
+      "agencyDashboard.catalogs.wizard.voice.selected":
+        "agencyDashboard.catalogs.builder.selectedCount",
+      "agencyDashboard.catalogs.wizard.voice.uploadNew":
+        "agencyDashboard.catalogs.builder.actions.uploadNewRecording",
+      "agencyDashboard.catalogs.wizard.voice.recording":
+        "agencyDashboard.catalogs.builder.defaults.recording",
+      "agencyDashboard.catalogs.wizard.review.title":
+        "agencyDashboard.catalogs.preview.fields.title",
+      "agencyDashboard.catalogs.wizard.review.client":
+        "agencyDashboard.catalogs.preview.fields.client",
+      "agencyDashboard.catalogs.wizard.review.sendTo":
+        "agencyDashboard.catalogs.builder.review.sendTo",
+      "agencyDashboard.catalogs.wizard.review.talents":
+        "agencyDashboard.catalogs.builder.review.talents",
+      "agencyDashboard.catalogs.wizard.review.assets":
+        "agencyDashboard.catalogs.preview.fields.assets",
+      "agencyDashboard.catalogs.wizard.review.recordings":
+        "agencyDashboard.catalogs.builder.review.recordings",
+      "agencyDashboard.catalogs.wizard.review.linkedRequest":
+        "agencyDashboard.catalogs.builder.review.linkedRequest",
+      "agencyDashboard.catalogs.wizard.review.yes":
+        "agencyDashboard.catalogs.builder.review.yes",
+      "agencyDashboard.catalogs.wizard.review.no":
+        "agencyDashboard.catalogs.builder.review.no",
+      "agencyDashboard.catalogs.wizard.review.emailNotice":
+        "agencyDashboard.catalogs.builder.review.emailNotice",
+      "agencyDashboard.catalogs.wizard.review.noEmailWarning":
+        "agencyDashboard.catalogs.builder.review.noClientEmail",
+      "agencyDashboard.catalogs.wizard.actions.cancel":
+        "agencyDashboard.catalogs.actions.cancel",
+      "agencyDashboard.catalogs.wizard.actions.back":
+        "agencyDashboard.catalogs.builder.actions.back",
+      "agencyDashboard.catalogs.wizard.actions.next":
+        "agencyDashboard.catalogs.builder.actions.next",
+      "agencyDashboard.catalogs.wizard.actions.creating":
+        "agencyDashboard.catalogs.builder.actions.creating",
+      "agencyDashboard.catalogs.wizard.actions.createAndSend":
+        "agencyDashboard.catalogs.builder.actions.createAndSend",
+      "agencyDashboard.catalogs.toasts.assetUploaded":
+        "agencyDashboard.catalogs.builder.toasts.assetUploaded",
+      "agencyDashboard.catalogs.toasts.recordingUploaded":
+        "agencyDashboard.catalogs.builder.toasts.recordingUploaded",
+      "agencyDashboard.catalogs.toasts.catalogCreated":
+        "agencyDashboard.catalogs.builder.toasts.catalogCreated",
+      "agencyDashboard.catalogs.toasts.catalogSentTo":
+        "agencyDashboard.catalogs.builder.toasts.catalogSentTo",
+      "agencyDashboard.catalogs.toasts.catalogCreatedCopyLink":
+        "agencyDashboard.catalogs.builder.toasts.catalogCreatedShare",
+      "agencyDashboard.catalogs.toasts.failedToCreateCatalog":
+        "agencyDashboard.catalogs.builder.toasts.createFailed",
+    };
+    if (
+      key === "agencyDashboard.catalogs.wizard.assets.selected" ||
+      key === "agencyDashboard.catalogs.wizard.voice.selected"
+    ) {
+      return baseT(key, { defaultValue: "selected", ...options });
+    }
+    if (key === "agencyDashboard.catalogs.wizard.selectRequest.paidOn") {
+      return baseT(key, { defaultValue: "Paid on", ...options });
+    }
+    return baseT(aliases[key] || key, options);
+  };
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("select-request");
   const STEPS_TRANSLATED = [
@@ -194,8 +308,10 @@ export function CatalogBuilderWizard({
       toast({ title: t("agencyDashboard.catalogs.toasts.assetUploaded") });
     } catch (e: any) {
       toast({
-        title: "Upload failed",
-        description: e.message || "Something went wrong",
+        title: t("agencyDashboard.catalogs.builder.toasts.uploadFailed"),
+        description:
+          e.message ||
+          t("agencyDashboard.catalogs.builder.toasts.genericError"),
         variant: "destructive",
       });
     } finally {
@@ -244,8 +360,10 @@ export function CatalogBuilderWizard({
       toast({ title: t("agencyDashboard.catalogs.toasts.recordingUploaded") });
     } catch (e: any) {
       toast({
-        title: "Upload failed",
-        description: e.message || "Something went wrong",
+        title: t("agencyDashboard.catalogs.builder.toasts.uploadFailed"),
+        description:
+          e.message ||
+          t("agencyDashboard.catalogs.builder.toasts.genericError"),
         variant: "destructive",
       });
     } finally {
@@ -775,7 +893,9 @@ export function CatalogBuilderWizard({
                       {recordings.length === 0 ? (
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-gray-400 ml-6">
-                            No voice recordings uploaded by this talent yet.
+                            {t(
+                              "agencyDashboard.catalogs.builder.empty.noVoiceForTalentDetailed",
+                            )}
                           </p>
                           <label className="cursor-pointer">
                             <input
@@ -794,7 +914,9 @@ export function CatalogBuilderWizard({
                               ) : (
                                 <UploadCloud className="w-3.5 h-3.5" />
                               )}
-                              Upload
+                              {t(
+                                "agencyDashboard.catalogs.builder.actions.upload",
+                              )}
                             </div>
                           </label>
                         </div>
