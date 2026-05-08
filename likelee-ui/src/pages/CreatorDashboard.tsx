@@ -2067,17 +2067,10 @@ export default function CreatorDashboard() {
       (offer: any) => String(offer?.id || "") === sendDeliverableOfferId,
     );
     const selectedOfferBrandId = String(selectedOffer?.brand_id || "");
-    const isPaid =
-      String(selectedOffer?.payment_status || "").toLowerCase() === "paid";
 
-    if (selectedOffer && !isPaid && !sendDeliverableRequestId) {
-      toast({
-        title: "Payment required",
-        description:
-          "The brand must complete the payment for this offer before deliverables can be uploaded.",
-        variant: "destructive",
-      });
-      return;
+    if (selectedOffer && !sendDeliverableRequestId) {
+      // Payment status is no longer a gate — creators can submit deliverables
+      // regardless of payment status. The brand cannot download until they pay.
     }
     if (!selectedOffer) {
       toast({
@@ -13333,21 +13326,6 @@ export default function CreatorDashboard() {
                 </div>
               )}
               {(() => {
-                const selectedOffer = brandOffers.find(
-                  (o) => String(o.id) === sendDeliverableOfferId,
-                );
-                const isPaid =
-                  String(selectedOffer?.payment_status || "").toLowerCase() ===
-                  "paid";
-                if (sendDeliverableOfferId && !isPaid) {
-                  return (
-                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                      <span className="text-amber-700 text-sm font-semibold">
-                        {t("brandConnections.awaitingPayment")}
-                      </span>
-                    </div>
-                  );
-                }
                 return null;
               })()}
               <div className="space-y-2">
@@ -13552,18 +13530,7 @@ export default function CreatorDashboard() {
                 className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 onClick={sendDeliverable}
                 disabled={
-                  offerActionLoading ||
-                  (sendDeliverableOfferId &&
-                    (() => {
-                      const selectedOffer = brandOffers.find(
-                        (o) => String(o.id) === sendDeliverableOfferId,
-                      );
-                      return (
-                        String(
-                          selectedOffer?.payment_status || "",
-                        ).toLowerCase() !== "paid"
-                      );
-                    })())
+                  offerActionLoading
                 }
               >
                 {offerActionLoading

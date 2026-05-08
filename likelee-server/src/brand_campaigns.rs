@@ -6505,18 +6505,21 @@ pub async fn submit_offer_deliverable(
 
     // Payment gate: by default do not allow campaign deliverables to be submitted until the offer
     // is paid. Agencies may override this with an explicit confirmation flag.
+    // Creators are always allowed to submit regardless of payment status — the brand cannot
+    // download deliverables until they pay, so there is no risk in allowing early submission.
     let payment_status = _offer
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
     if payment_status != "paid" {
         let confirm_unpaid = payload.confirm_unpaid.unwrap_or(false);
-        if user.role != "agency" || !confirm_unpaid {
+        if (user.role != "agency" || !confirm_unpaid) && !is_creator_like(&user.role) {
             return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
         }
 
         // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
-        if !offer_status_is_signed(&_offer) {
+        // (Applies to agencies only — creators are always allowed through above.)
+        if !is_creator_like(&user.role) && !offer_status_is_signed(&_offer) {
             return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
         }
     }
@@ -6898,7 +6901,9 @@ pub async fn upload_offer_deliverable(
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
-    if payment_status != "paid" && user.role != "agency" {
+    // Creators can upload deliverables regardless of payment status.
+    // The brand cannot download until they pay, so there is no risk.
+    if payment_status != "paid" && user.role != "agency" && !is_creator_like(&user.role) {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
 
@@ -7371,7 +7376,9 @@ pub async fn upload_offer_deliverable_form(
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
-    if payment_status != "paid" && user.role != "agency" {
+    // Creators can upload deliverables regardless of payment status.
+    // The brand cannot download until they pay, so there is no risk.
+    if payment_status != "paid" && user.role != "agency" && !is_creator_like(&user.role) {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
 
@@ -7753,12 +7760,13 @@ pub async fn submit_draft_deliverables(
             .as_ref()
             .and_then(|p| p.confirm_unpaid)
             .unwrap_or(false);
-        if user.role != "agency" || !confirm_unpaid {
+        if (user.role != "agency" || !confirm_unpaid) && !is_creator_like(&user.role) {
             return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
         }
 
         // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
-        if !offer_status_is_signed(&_offer) {
+        // (Applies to agencies only — creators are always allowed through above.)
+        if !is_creator_like(&user.role) && !offer_status_is_signed(&_offer) {
             return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
         }
     }
