@@ -1748,13 +1748,13 @@ const BrandConnectionsView = ({
                                           )
                                         }
                                       >
-                                        Accept Offer
+                                        {tBrand("ui.acceptOffer")}
                                       </Button>
                                     </span>
                                   </TooltipTrigger>
                                   {!canManageConnections && (
                                     <TooltipContent>
-                                      Your role cannot accept offers
+                                      {tBrand("ui.noAcceptOfferPermission")}
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -1783,7 +1783,7 @@ const BrandConnectionsView = ({
                                   </TooltipTrigger>
                                   {!canManageConnections && (
                                     <TooltipContent>
-                                      Your role cannot decline offers
+                                      {tBrand("ui.noDeclineOfferPermission")}
                                     </TooltipContent>
                                   )}
                                 </Tooltip>
@@ -1842,7 +1842,7 @@ const BrandConnectionsView = ({
                                       );
                                     }}
                                   >
-                                    Build & Send Talent Package
+                                    {tBrand("ui.buildSendPackage")}
                                   </Button>
                                 );
                               })()}
@@ -1862,7 +1862,7 @@ const BrandConnectionsView = ({
                         <div className="rounded-xl border border-indigo-100 bg-white p-3 sm:p-4 space-y-3">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-bold text-gray-900">
-                              Assigned Talent
+                              {tBrand("ui.assignedTalent")}
                             </p>
                           </div>
                           {selectedOfferPackageFinalized ? (
@@ -1946,7 +1946,7 @@ const BrandConnectionsView = ({
                                               }
                                             }}
                                           >
-                                            Send Message
+                                            {tBrand("ui.sendMessage")}
                                           </Button>
                                         </div>
                                       </div>
@@ -2130,7 +2130,7 @@ const BrandConnectionsView = ({
                                     </TooltipTrigger>
                                     {!canManageConnections && (
                                       <TooltipContent>
-                                        Your role cannot accept offers
+                                        {tBrand("ui.noAcceptOfferPermission")}
                                       </TooltipContent>
                                     )}
                                   </Tooltip>
@@ -2158,7 +2158,7 @@ const BrandConnectionsView = ({
                                     </TooltipTrigger>
                                     {!canManageConnections && (
                                       <TooltipContent>
-                                        Your role cannot decline offers
+                                        {tBrand("ui.noDeclineOfferPermission")}
                                       </TooltipContent>
                                     )}
                                   </Tooltip>

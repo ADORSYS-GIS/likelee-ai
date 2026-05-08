@@ -873,7 +873,13 @@
           "accept": "Accept",
           "noAcceptRequestPermission": "You don’t have permission to accept requests.",
           "decline": "Decline",
-          "noDeclineRequestPermission": "You don’t have permission to decline requests."
+          "noDeclineRequestPermission": "You don’t have permission to decline requests.",
+          "acceptOffer": "Accept Offer",
+          "noAcceptOfferPermission": "Your role cannot accept offers",
+          "noDeclineOfferPermission": "Your role cannot decline offers",
+          "buildSendPackage": "Build & Send Talent Package",
+          "assignedTalent": "Assigned Talent",
+          "sendMessage": "Send Message"
         },
         "toasts": {
           "requestAccepted": "Request accepted",
