@@ -939,7 +939,10 @@ async fn fetch_brand_licensed_assets(
 
         let catalog = match catalog {
             Some(c) => c,
-            None => continue, // No catalog for this license
+            None => {
+                info!(license_id = %license_id, "no_catalog_found_for_license");
+                continue;
+            }
         };
 
         // Check if catalog is expired
@@ -953,6 +956,7 @@ async fn fetch_brand_licensed_assets(
 
         let catalog_id = catalog.get("id").and_then(|v| v.as_str()).unwrap_or("");
         if catalog_id.is_empty() {
+            info!(license_id = %license_id, "catalog_has_empty_id");
             continue;
         }
 
@@ -975,6 +979,13 @@ async fn fetch_brand_licensed_assets(
             Vec::new()
         };
 
+        info!(
+            license_id = %license_id,
+            catalog_id = %catalog_id,
+            items_count = items.len(),
+            "catalog_items_found"
+        );
+
         // 4. For each item, get assets and recordings
         for item in &items {
             let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
@@ -993,6 +1004,12 @@ async fn fetch_brand_licensed_assets(
                 if let Ok(text) = resp.text().await {
                     let cat_assets: Vec<serde_json::Value> =
                         serde_json::from_str(&text).unwrap_or_default();
+
+                    info!(
+                        item_id = %item_id,
+                        assets_count = cat_assets.len(),
+                        "catalog_assets_for_item"
+                    );
 
                     for cat_asset in cat_assets {
                         let asset_id = cat_asset
