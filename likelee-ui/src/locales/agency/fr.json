@@ -1572,14 +1572,7 @@
         "allAthletes": "Tous les athlètes",
         "licensingRequests": "Demandes de licence",
         "activeLicenses": "Licences actives",
-        "licenseSubmissions": {
-          "tabs": {
-            "active": "Active",
-            "archive": "Archive"
-          },
-          "title": "License Submissions",
-          "description": "View and manage license submissions"
-        },
+        "licenseSubmissions": "Soumissions de licence",
         "licenseTemplates": "Modèles de licence",
         "jobInvites": "Invitations de travail",
         "openJobBoard": "Offres d'emploi",
@@ -1606,7 +1599,11 @@
       "signOut": "Se déconnecter",
       "choosePlan": "Choisir un plan",
       "requiresPro": "Nécessite Pro",
-      "addIrlBooking": "Add IRL Booking"
+      "addIrlBooking": "Ajouter Réservation en Personne",
+      "getIrlBookingAddon": "Obtenir le module Réservation en Personne",
+      "buyIrlBookingAddon": "Acheter le module Réservation en Personne",
+      "irlBookingRequired": "Nécessite le module Réservation en Personne",
+      "enableIrlBookingMessage": "Activez le module Réservation en Personne pour utiliser Calendly, le scouting, le CRM client, les réservations et les flux de travail comptables en personne."
     },
     "header": {
       "notifications": {

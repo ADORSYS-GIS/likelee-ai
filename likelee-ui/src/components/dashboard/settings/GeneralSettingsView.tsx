@@ -3379,8 +3379,7 @@ const GeneralSettingsView = ({
               {!hasIrlBookingAddon && (
                 <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    Enable the IRL Booking add-on to use Calendly, scouting,
-                    client CRM, bookings, and IRL accounting workflows.
+                    {t("agencyDashboard.navigation.enableIrlBookingMessage")}
                   </div>
                   <Button
                     asChild
@@ -3388,7 +3387,7 @@ const GeneralSettingsView = ({
                     className="h-9 rounded-xl bg-amber-600 px-4 font-bold text-white hover:bg-amber-700"
                   >
                     <a href={createPageUrl("AgencySubscribe")}>
-                      Get IRL Booking Add-on
+                      {t("agencyDashboard.navigation.getIrlBookingAddon")}
                     </a>
                   </Button>
                 </div>
@@ -3710,7 +3709,7 @@ const GeneralSettingsView = ({
                       className="h-11 rounded-xl border-amber-300 px-6 font-bold text-amber-800 hover:bg-amber-50"
                     >
                       <a href={createPageUrl("AgencySubscribe")}>
-                        Buy IRL Booking Add-on
+                        {t("agencyDashboard.navigation.buyIrlBookingAddon")}
                       </a>
                     </Button>
                   )}

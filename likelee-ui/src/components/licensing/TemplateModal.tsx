@@ -94,6 +94,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   hideContract,
   readOnly = false,
 }) => {
+  const { t } = useTranslation("agency");
   const {
     register,
     handleSubmit,

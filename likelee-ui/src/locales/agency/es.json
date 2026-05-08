@@ -1573,14 +1573,7 @@
         "allAthletes": "Todos los atletas",
         "licensingRequests": "Solicitudes de licencia",
         "activeLicenses": "Licencias activas",
-        "licenseSubmissions": {
-          "tabs": {
-            "active": "Active",
-            "archive": "Archive"
-          },
-          "title": "License Submissions",
-          "description": "View and manage license submissions"
-        },
+        "licenseSubmissions": "Envíos de licencia",
         "licenseTemplates": "Plantillas de licencia",
         "jobInvites": "Invitaciones de trabajo",
         "openJobBoard": "Bolsa de trabajo",
@@ -1607,7 +1600,11 @@
       "signOut": "Cerrar sesión",
       "choosePlan": "Elegir un plan",
       "requiresPro": "Requiere Pro",
-      "addIrlBooking": "Add IRL Booking"
+      "addIrlBooking": "Agregar Reserva Presencial",
+      "getIrlBookingAddon": "Obtener complemento de Reserva Presencial",
+      "buyIrlBookingAddon": "Comprar complemento de Reserva Presencial",
+      "irlBookingRequired": "Requiere complemento de Reserva Presencial",
+      "enableIrlBookingMessage": "Habilite el complemento de Reserva Presencial para usar Calendly, scouting, CRM de clientes, reservas y flujos de trabajo de contabilidad presencial."
     },
     "settings": {
       "title": "Configuración",

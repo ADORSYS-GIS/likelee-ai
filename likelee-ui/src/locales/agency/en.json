@@ -792,7 +792,45 @@
           "revise": "Revise",
           "reject": "Reject",
           "deliverable": "Deliverable"
-        }
+        },
+        "offerCard": {
+          "offer": "Offer",
+          "brand": "Brand",
+          "hide": "Hide",
+          "open": "Open",
+          "assignTalent": "Assign Talent",
+          "addTalent": "Add Talent",
+          "signed": "Signed",
+          "notSigned": "Not signed",
+          "paid": "Paid",
+          "awaitingPayment": "Awaiting Payment"
+        },
+        "inviteRequiredDialog": {
+          "title": "Onboarding not completed",
+          "description": "{talentName} hasn't accepted their portal invite yet. They need to complete onboarding before they can be assigned to a contract.",
+          "goToRoster": "Go to Roster & Invite",
+          "cancel": "Cancel"
+        },
+        "retryTransferDialog": {
+          "title": "Transfer Retry Results",
+          "successCount": "{succeeded} of {total} transfers succeeded",
+          "transferred": "transferred",
+          "noAccount": "no account",
+          "failed": "failed",
+          "stripeNotSetup": "Stripe account not fully set up — transfers not enabled.",
+          "transfersNotAllowed": "Transfers not allowed on this Stripe account.",
+          "noStripeConnected": "No Stripe account connected.",
+          "noStripeYet": "No Stripe account connected yet.",
+          "agencyStripeGuidance": "Your Stripe account needs attention. Complete your Stripe onboarding to receive transfers.",
+          "creatorStripeGuidance": "One or more talents need to complete their Stripe onboarding before funds can be sent to them.",
+          "messageTalentButton": "Message {name}",
+          "fixStripeButton": "Fix your Stripe account",
+          "close": "Close"
+        },
+        "gallery": {
+          "cannotPreview": "This file cannot be previewed. Use download to open it."
+        },
+        "loadingOffers": "Loading offers..."
       },
       "brandConnections": {
         "title": "Brand Connections",
@@ -5845,14 +5883,7 @@
         "allAthletes": "All Athletes",
         "licensingRequests": "Licensing Requests",
         "activeLicenses": "Active Licenses",
-        "licenseSubmissions": {
-          "tabs": {
-            "active": "Active",
-            "archive": "Archive"
-          },
-          "title": "License Submissions",
-          "description": "View and manage license submissions"
-        },
+        "licenseSubmissions": "License Submissions",
         "licenseTemplates": "License Templates",
         "jobInvites": "Job Invites",
         "openJobBoard": "Open Job Board",
@@ -5879,7 +5910,11 @@
       "signOut": "Sign Out",
       "choosePlan": "Choose a plan",
       "requiresPro": "Requires Pro",
-      "addIrlBooking": "Add IRL Booking"
+      "addIrlBooking": "Add IRL Booking",
+      "getIrlBookingAddon": "Get IRL Booking Add-on",
+      "buyIrlBookingAddon": "Buy IRL Booking Add-on",
+      "irlBookingRequired": "Requires IRL Booking add-on",
+      "enableIrlBookingMessage": "Enable the IRL Booking add-on to use Calendly, scouting, client CRM, bookings, and IRL accounting workflows."
     },
     "marketplace": {
       "title": "Likelee Marketplace",

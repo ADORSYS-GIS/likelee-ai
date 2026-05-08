@@ -20794,7 +20794,7 @@ export default function AgencyDashboard() {
               "Campaigns",
             ],
             disabled: !irlAddonEntitlement,
-            disabledReason: "Requires IRL Booking add-on",
+            disabledReason: t("agencyDashboard.navigation.irlBookingRequired"),
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           {

@@ -1573,14 +1573,7 @@
         "allAthletes": "Alle Athleten",
         "licensingRequests": "Lizenzanfragen",
         "activeLicenses": "Aktive Lizenzen",
-        "licenseSubmissions": {
-          "tabs": {
-            "active": "Aktiv",
-            "archive": "Archiv"
-          },
-          "title": "Lizenzübermittlungen",
-          "description": "Lizenzübermittlungen anzeigen und verwalten"
-        },
+        "licenseSubmissions": "Lizenzübermittlungen",
         "licenseTemplates": "Lizenzvorlagen",
         "jobInvites": "Job-Einladungen",
         "openJobBoard": "Offene Jobbörse",
@@ -1607,7 +1600,11 @@
       "signOut": "Abmelden",
       "choosePlan": "Plan wählen",
       "requiresPro": "Erfordert Pro",
-      "addIrlBooking": "IRL-Buchung hinzufügen"
+      "addIrlBooking": "IRL-Buchung hinzufügen",
+      "getIrlBookingAddon": "IRL-Buchungs-Add-on erhalten",
+      "buyIrlBookingAddon": "IRL-Buchungs-Add-on kaufen",
+      "irlBookingRequired": "Erfordert IRL-Buchungs-Add-on",
+      "enableIrlBookingMessage": "Aktivieren Sie das IRL-Buchungs-Add-on, um Calendly, Scouting, Kunden-CRM, Buchungen und IRL-Buchhaltungsworkflows zu nutzen."
     },
     "header": {
       "notifications": {
