@@ -133,6 +133,7 @@
       "header": {
         "verifiedAgency": "Verified Agency",
         "upgradePlan": "Upgrade plan",
+        "upgradePlanAction": "Upgrade Plan",
         "editProfile": "Edit Profile",
         "viewMarketplace": "View Marketplace",
         "stripe": {
@@ -167,7 +168,8 @@
         "activeCampaigns": "Active Campaigns",
         "acrossAllEntities": "across all {{entityPlural}}",
         "expiringLicenses": "Expiring Licenses",
-        "requireRenewal": "require renewal"
+        "requireRenewal": "require renewal",
+        "previous30d": "Previous 30 days"
       },
       "tabs": {
         "roster": "Roster",
@@ -208,7 +210,8 @@
         "actor": "Actor",
         "creator": "Creator",
         "voice": "Voice",
-        "athlete": "Athlete"
+        "athlete": "Athlete",
+        "music": "Music"
       },
       "table": {
         "status": "Status",
@@ -220,12 +223,19 @@
         "topBrand": "Top Brand",
         "licenseExpiry": "License Expiry",
         "revenue30d": "30D Revenue",
-        "revenue": "Revenue"
+        "revenue": "Revenue",
+        "talentDetails": "Talent Details",
+        "licensing": "Licensing",
+        "confirmed": "Confirmed"
       },
       "aiUsage": {
         "video": "Video",
         "image": "Image",
-        "voice": "Voice"
+        "voice": "Voice",
+        "actor": "Actor",
+        "music": "Music",
+        "athlete": "Athlete",
+        "vice": "Vice"
       },
       "states": {
         "loading": "Loading...",
@@ -1304,7 +1314,8 @@
       },
       "tabs": {
         "templates": "Templates",
-        "sent": "Packages Sent"
+        "sent": "Packages Sent",
+        "packagesSent": "Packages Sent"
       },
       "actions": {
         "useExisting": "Use Existing",
@@ -1314,7 +1325,9 @@
         "packagePlural": "Packages",
         "edit": "Edit",
         "delete": "Delete",
-        "sendToClient": "Send to Client"
+        "sendToClient": "Send to Client",
+        "createPackage": "Create Package",
+        "newPackage": "New Package"
       },
       "offerBanner": {
         "title": "Sending for offer",
@@ -1340,6 +1353,17 @@
       "toasts": {
         "deleted": "Package deleted",
         "linkCopied": "Link copied to clipboard!"
+      },
+      "clientActivity": {
+        "title": "Client Activity",
+        "description": "View client interactions with this package",
+        "views": "Views",
+        "downloads": "Downloads",
+        "favorites": "Favorites",
+        "comments": "Comments",
+        "lastViewed": "Last Viewed",
+        "noActivity": "No activity yet",
+        "close": "Close"
       }
     },
     "catalogs": {
@@ -1352,6 +1376,7 @@
         "description": "Select a paid request and prepare assets and voice recordings for delivery.",
         "steps": {
           "select-request": "Request",
+          "selectRequest": "Request",
           "info": "Details",
           "assets": "Assets",
           "voice": "Voice",
@@ -1567,10 +1592,15 @@
         "customOverride": "Custom Override",
         "tierDefault": "Tier Default",
         "currentTier": "Current Tier",
+        "talent": "Talent",
+        "commissionSource": "Commission Source",
+        "effectiveRate": "Effective Rate",
         "settingsRate": "Settings Rate (%)",
         "contractControlled": "Contract Controlled",
         "marketplaceConnected": "Marketplace Connected",
         "agencyManaged": "Agency Managed",
+        "agencyShare": "Agency Share",
+        "premium": "Premium",
         "locked": "Locked",
         "discardChange": "Discard change",
         "resetToTierDefault": "Reset to tier default",
@@ -2287,7 +2317,10 @@
         "commercials": "Commercials",
         "preparing": "Preparing...",
         "finalize": "Finalize",
-        "nextStep": "Next Step"
+        "nextStep": "Next Step",
+        "dealSpecificsModal": "Deal Specifics",
+        "newContractTemplate": "New Contract Template",
+        "filterModal": "Filter"
       },
       "deleteModal": {
         "title": "Delete Template",
@@ -2523,18 +2556,32 @@
         "consentBreakdown": "Consent Breakdown",
         "noConsentData": "No Consent Data",
         "withConsent": "With Consent",
-        "withoutConsent": "Without Consent"
+        "withoutConsent": "Without Consent",
+        "totalRevenue": "Total Revenue",
+        "revenueGrowth": "Revenue Growth",
+        "bookingsCompleted": "Bookings Completed",
+        "averageDealValue": "Average Deal Value",
+        "topPerformers": "Top Performers",
+        "recentActivity": "Recent Activity"
       },
       "rosterInsights": {
         "title": "Roster Insights",
         "topPerformer": "Top Performer (Earnings)",
         "highestFollowers": "Highest Followers",
         "avgValue": "Avg Value",
-        "noData": "No roster insights data available."
+        "noData": "No roster insights data available.",
+        "totalTalent": "Total Talent",
+        "activeTalent": "Active Talent",
+        "performanceMetrics": "Performance Metrics",
+        "engagementRate": "Engagement Rate"
       },
       "clientsCampaigns": {
         "title": "Clients & Campaigns",
-        "noData": "No clients or campaigns data available."
+        "noData": "No clients or campaigns data available.",
+        "totalClients": "Total Clients",
+        "activeClients": "Active Clients",
+        "campaignPerformance": "Campaign Performance",
+        "clientSatisfaction": "Client Satisfaction"
       },
       "compliance": {
         "title": "Compliance",
@@ -2543,7 +2590,10 @@
         "expiringSoon": "Expiring Soon",
         "assignedTalent": "Assigned Talent",
         "renewLicense": "Renew License",
-        "noData": "No compliance data available."
+        "noData": "No compliance data available.",
+        "complianceScore": "Compliance Score",
+        "documentsRequired": "Documents Required",
+        "verificationsComplete": "Verifications Complete"
       },
       "labels": {
         "growthPercent": "+{{value}}% growth",
@@ -2584,7 +2634,14 @@
         "completeOfTotal": "{{count}} of {{total}} complete",
         "licensesLower": "licenses",
         "campaignsLower": "campaigns",
-        "30dEarnings": "30D Earnings"
+        "30dEarnings": "30D Earnings",
+        "totalBookings": "Total Bookings",
+        "conversionRate": "Conversion Rate",
+        "averageBookingValue": "Average Booking Value",
+        "topBookedTalent": "Top Booked Talent",
+        "bookingsByType": "Bookings by Type",
+        "revenueBySource": "Revenue by Source",
+        "performanceTrends": "Performance Trends"
       },
       "months": {
         "jan": "Jan",
@@ -2628,10 +2685,15 @@
         "fromTemplateSuffix": "template",
         "steps": {
           "basic": "Basic Info",
+          "basicInfo": "Basic Info",
           "talent": "Select Talents",
+          "selectTalents": "Select Talents",
           "custom": "Customize",
+          "customize": "Customize",
           "consent": "Consents",
-          "send": "Send"
+          "consents": "Consents",
+          "send": "Send",
+          "review": "Review"
         },
         "basicInfo": {
           "title": "Basic Info",
@@ -2646,14 +2708,19 @@
           "invalidFile": "Invalid file",
           "invalidFileDesc": "Please choose an image file.",
           "coverUploaded": "Cover image uploaded",
-          "coverUploadFailed": "Cover upload failed"
+          "coverUploadFailed": "Cover upload failed",
+          "packageName": "Package Name",
+          "packageDescription": "Package Description"
         },
         "selectTalents": {
           "title": "Select Talents",
           "searchPlaceholder": "Search talents...",
           "noTalentsSelected": "No talents selected",
           "selectedTalents": "Selected Talents",
-          "addTalent": "Add Talent"
+          "addTalent": "Add Talent",
+          "selectAtLeastOne": "Select at least one talent",
+          "talentList": "Talent List",
+          "availableTalents": "Available Talents"
         },
         "customize": {
           "title": "Customize",
@@ -2664,13 +2731,18 @@
           "customMessagePlaceholder": "Add a personal message",
           "allowComments": "Allow Comments",
           "allowFavorites": "Allow Favorites",
-          "allowCallbacks": "Allow Callbacks"
+          "allowCallbacks": "Allow Callbacks",
+          "theme": "Theme",
+          "layout": "Layout",
+          "branding": "Branding"
         },
         "consents": {
           "title": "Consents",
           "consentItems": "Consent Items",
           "addConsent": "Add Consent",
           "removeConsent": "Remove Consent",
+          "consentText": "Consent Text",
+          "consentRequired": "Consent Required",
           "defaultConsents": [
             "Use each selected asset only for the approved campaign objective and channels.",
             "Do not alter the athlete's/talent's likeness in misleading, harmful, or defamatory ways.",
@@ -2697,7 +2769,12 @@
           "selectBrandRequired": "Please select a connected brand",
           "selectConnectedBrand": "Please select a connected brand",
           "clientNameRequired": "Client Contact name is required",
-          "deliveryEmailRequired": "Delivery Email is required"
+          "deliveryEmailRequired": "Delivery Email is required",
+          "recipientEmail": "Recipient Email",
+          "message": "Message",
+          "messagePlaceholder": "Add a message to the recipient",
+          "expiresOn": "Expires On",
+          "neverExpires": "Never Expires"
         },
         "validation": {
           "required": "Required",
@@ -2705,27 +2782,37 @@
           "empty": "Empty",
           "selectTalent": "Please select at least one talent",
           "selectAthlete": "Please select at least one athlete",
-          "addConsent": "Add at least one consent point before continuing"
+          "addConsent": "Add at least one consent point before continuing",
+          "invalidEmail": "Invalid email address",
+          "fieldRequired": "This field is required"
         },
         "upload": {
           "invalidFile": "Invalid file",
           "invalidFileDesc": "Please select an image file",
           "imageUploaded": "Image uploaded",
-          "uploadFailed": "Upload failed"
+          "uploadFailed": "Upload failed",
+          "uploading": "Uploading...",
+          "selectFile": "Select File"
         },
         "common": {
           "next": "Next",
           "previous": "Previous",
+          "back": "Back",
           "cancel": "Cancel",
           "save": "Save",
           "delete": "Delete",
-          "loading": "Loading..."
+          "loading": "Loading...",
+          "submit": "Submit",
+          "continue": "Continue",
+          "finish": "Finish",
+          "close": "Close"
         }
       },
       "deliverables": {
         "title": "Deliverables",
         "subtitle": "Assign talents, request assets, and review deliverables for brand offers.",
         "collapseAll": "Collapse All",
+        "expandAll": "Expand All",
         "noBrandOffers": "No brand offers available.",
         "addTalent": "Add Talent",
         "assigned": "Assigned",
@@ -2750,7 +2837,12 @@
         },
         "actions": {
           "hide": "Hide",
-          "open": "Open"
+          "open": "Open",
+          "viewDetails": "View Details",
+          "approve": "Approve",
+          "reject": "Reject",
+          "download": "Download",
+          "upload": "Upload"
         },
         "states": {
           "loadingAssignments": "Loading assignments...",
@@ -2796,7 +2888,9 @@
           "submitted": "Submitted",
           "approved": "Approved",
           "rejected": "Rejected",
-          "revisionRequested": "Revision Requested"
+          "revisionRequested": "Revision Requested",
+          "inReview": "In Review",
+          "completed": "Completed"
         },
         "uploadSuccess": "Deliverable uploaded successfully",
         "uploadFailed": "Failed to upload deliverable",
@@ -2843,16 +2937,21 @@
           "chooseFile": "Choose File",
           "noFileSelected": "No file selected",
           "sendRequest": "Send Request",
-          "selectedTalent": "Selected talent"
+          "selectedTalent": "Selected talent",
+          "cancel": "Cancel",
+          "sending": "Sending..."
         },
         "uploadDeliverableModal": {
           "title": "Upload Deliverable",
           "subtitle": "Add a caption and upload one or more files.",
           "captionPlaceholder": "Caption",
+          "captionLabel": "Caption",
           "chooseFiles": "Choose Files",
           "noFilesSelected": "No files selected",
           "filesSelected": "{count} file(s) selected",
-          "upload": "Upload"
+          "upload": "Upload",
+          "cancel": "Cancel",
+          "uploading": "Uploading..."
         },
         "viewOnly": {
           "title": "View Only Mode",
