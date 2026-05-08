@@ -11,7 +11,6 @@ import {
   Clock,
   AlertCircle,
   DollarSign,
-  Lock,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,10 @@ const ActiveLicensesView = ({
     loading: accessLoading,
     context,
   } = useTeamAccess("agency");
-  const canViewLicenses = hasPermission("view_licenses");
+  // Let the backend be the source of truth for read access. Some existing
+  // agency sessions have stale team permission payloads, which incorrectly
+  // blocked owners from this tab before the API request could run.
+  const canViewLicenses = true;
   const canManageLicenses = hasPermission("manage_licenses");
   const isReadOnly = canViewLicenses && !canManageLicenses;
 
@@ -81,14 +83,14 @@ const ActiveLicensesView = ({
         if (searchTerm) params.search = searchTerm;
         return await getAgencyActiveLicenses(params);
       },
-      enabled: canViewLicenses,
+      enabled: true,
     },
   );
 
   const { data: stats } = useQuery({
     queryKey: ["agency", "active-licenses", "stats"],
     queryFn: () => getAgencyActiveLicensesStats(),
-    enabled: canViewLicenses,
+    enabled: true,
   });
 
   const statusColor = (status: string) => {
@@ -117,22 +119,6 @@ const ActiveLicensesView = ({
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!canViewLicenses) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 p-12 text-center">
-        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6">
-          <Lock className="w-10 h-10 text-red-600" />
-        </div>
-        <h2 className="text-2xl font-black text-gray-900 mb-2">
-          {t("agencyDashboard.activeLicenses.accessRestricted")}
-        </h2>
-        <p className="text-gray-500 font-medium max-w-md mx-auto">
-          {t("agencyDashboard.activeLicenses.accessRestrictedDescription")}
-        </p>
       </div>
     );
   }
