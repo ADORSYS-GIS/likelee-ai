@@ -442,10 +442,13 @@ export function CatalogBuilderWizard({
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label>
-                  Catalog Title <span className="text-red-500">*</span>
+                  {t("agencyDashboard.catalogs.wizard.info.catalogTitle")}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  placeholder="e.g. Spring Campaign – Voice Pack"
+                  placeholder={t(
+                    "agencyDashboard.catalogs.wizard.info.catalogTitlePlaceholder",
+                  )}
                   value={form.title}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, title: e.target.value }))
@@ -453,9 +456,11 @@ export function CatalogBuilderWizard({
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Notes (optional)</Label>
+                <Label>{t("agencyDashboard.catalogs.wizard.info.notes")}</Label>
                 <Textarea
-                  placeholder="Internal notes about this catalog..."
+                  placeholder={t(
+                    "agencyDashboard.catalogs.wizard.info.notesPlaceholder",
+                  )}
                   value={form.notes}
                   onChange={(e) =>
                     setForm((p) => ({ ...p, notes: e.target.value }))
@@ -465,7 +470,8 @@ export function CatalogBuilderWizard({
               </div>
               <div className="space-y-1.5">
                 <Label>
-                  Catalog Expiration <span className="text-red-500">*</span>
+                  {t("agencyDashboard.catalogs.wizard.info.catalogExpiration")}{" "}
+                  <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   type="datetime-local"
@@ -475,7 +481,7 @@ export function CatalogBuilderWizard({
                   }
                 />
                 <p className="text-[10px] text-gray-400">
-                  Public link will become inaccessible after this date/time.
+                  {t("agencyDashboard.catalogs.wizard.info.expirationHelp")}
                 </p>
               </div>
             </div>
@@ -485,9 +491,7 @@ export function CatalogBuilderWizard({
           {step === "select-request" && (
             <div className="space-y-3">
               <p className="text-sm text-gray-600 font-medium">
-                Select a signed licensing request to link this catalog to. Paid
-                and unpaid requests are both allowed. We will show the payment
-                status so you can decide whether to send the catalog yet.
+                {t("agencyDashboard.catalogs.wizard.selectRequest.description")}
               </p>
               {eligibleQuery.isLoading ? (
                 <div className="flex items-center justify-center py-10">
@@ -495,8 +499,9 @@ export function CatalogBuilderWizard({
                 </div>
               ) : eligibleRequests.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  No signed licensing requests available. You can still create a
-                  catalog without linking a request.
+                  {t(
+                    "agencyDashboard.catalogs.wizard.selectRequest.noRequests",
+                  )}
                 </div>
               ) : (
                 eligibleRequests.map((req: any) => {
@@ -517,7 +522,10 @@ export function CatalogBuilderWizard({
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="font-semibold text-gray-900 text-sm">
-                            {req.client_name || "Unnamed Client"}
+                            {req.client_name ||
+                              t(
+                                "agencyDashboard.catalogs.wizard.selectRequest.unnamedClient",
+                              )}
                           </p>
                           <p className="text-xs text-gray-500 mt-0.5">
                             {req.client_email}
@@ -534,7 +542,9 @@ export function CatalogBuilderWizard({
                               }
                             >
                               ${(req.total_amount_cents / 100).toFixed(2)}{" "}
-                              {isPaid ? "Paid" : "Unpaid"}
+                              {isPaid
+                                ? t("agencyDashboard.catalogs.status.paid")
+                                : t("agencyDashboard.catalogs.status.unpaid")}
                             </Badge>
                           )}
                           {!req.total_amount_cents && (
@@ -546,7 +556,9 @@ export function CatalogBuilderWizard({
                                   : "bg-amber-50 text-amber-700"
                               }
                             >
-                              {isPaid ? "Paid" : "Unpaid"}
+                              {isPaid
+                                ? t("agencyDashboard.catalogs.status.paid")
+                                : t("agencyDashboard.catalogs.status.unpaid")}
                             </Badge>
                           )}
                           {selected && (
@@ -558,11 +570,15 @@ export function CatalogBuilderWizard({
                       </div>
                       <div className="mt-1.5 space-y-1">
                         <p className="text-[11px] text-gray-400">
-                          Contract signed and eligible for catalog delivery.
+                          {t(
+                            "agencyDashboard.catalogs.wizard.selectRequest.contractSigned",
+                          )}
                         </p>
                         {req.paid_at ? (
                           <p className="text-[11px] text-green-600">
-                            Paid{" "}
+                            {t(
+                              "agencyDashboard.catalogs.wizard.selectRequest.paidOn",
+                            )}{" "}
                             {new Date(req.paid_at).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -571,8 +587,9 @@ export function CatalogBuilderWizard({
                           </p>
                         ) : (
                           <p className="text-[11px] text-amber-600">
-                            Unpaid request. You can still create the catalog,
-                            but payment has not been recorded yet.
+                            {t(
+                              "agencyDashboard.catalogs.wizard.selectRequest.unpaidWarning",
+                            )}
                           </p>
                         )}
                       </div>
@@ -590,13 +607,12 @@ export function CatalogBuilderWizard({
                 <div className="flex items-center justify-center py-10">
                   <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
                   <span className="ml-2 text-sm text-gray-500">
-                    Loading assets…
+                    {t("agencyDashboard.catalogs.wizard.assets.loading")}
                   </span>
                 </div>
               ) : selectedTalents.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  No talents linked. Go back and select a source request — or
-                  skip to the Voice step.
+                  {t("agencyDashboard.catalogs.wizard.assets.noTalents")}
                 </div>
               ) : (
                 selectedTalents.map((talent) => {
@@ -610,13 +626,16 @@ export function CatalogBuilderWizard({
                           {talent.name}
                         </p>
                         <Badge variant="secondary" className="text-[10px]">
-                          {selectedAssets.length} selected
+                          {selectedAssets.length}{" "}
+                          {t("agencyDashboard.catalogs.wizard.assets.selected")}
                         </Badge>
                       </div>
                       {assets.length === 0 ? (
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-gray-400 ml-6">
-                            No assets found for this talent.
+                            {t(
+                              "agencyDashboard.catalogs.wizard.assets.noAssets",
+                            )}
                           </p>
                           <label className="cursor-pointer">
                             <input
@@ -633,7 +652,9 @@ export function CatalogBuilderWizard({
                               ) : (
                                 <UploadCloud className="w-3.5 h-3.5" />
                               )}
-                              Upload
+                              {t(
+                                "agencyDashboard.catalogs.wizard.assets.upload",
+                              )}
                             </div>
                           </label>
                         </div>
@@ -654,7 +675,9 @@ export function CatalogBuilderWizard({
                               <UploadCloud className="w-6 h-6 mb-1 text-gray-400 group-hover:text-indigo-500" />
                             )}
                             <span className="text-[10px] font-semibold">
-                              Upload
+                              {t(
+                                "agencyDashboard.catalogs.wizard.assets.upload",
+                              )}
                             </span>
                           </label>
                           {assets.map((asset: any) => {
@@ -730,7 +753,7 @@ export function CatalogBuilderWizard({
                 </div>
               ) : selectedTalents.length === 0 ? (
                 <div className="p-6 border border-dashed border-gray-200 rounded-xl text-center text-sm text-gray-400">
-                  No talents linked. Go back and select a source request.
+                  {t("agencyDashboard.catalogs.wizard.voice.noTalents")}
                 </div>
               ) : (
                 selectedTalents.map((talent) => {
@@ -745,7 +768,8 @@ export function CatalogBuilderWizard({
                           {talent.name}
                         </p>
                         <Badge variant="secondary" className="text-[10px]">
-                          {selectedRecs.length} selected
+                          {selectedRecs.length}{" "}
+                          {t("agencyDashboard.catalogs.wizard.voice.selected")}
                         </Badge>
                       </div>
                       {recordings.length === 0 ? (
@@ -795,7 +819,9 @@ export function CatalogBuilderWizard({
                               )}
                             </div>
                             <span className="text-sm font-semibold">
-                              Upload New Recording
+                              {t(
+                                "agencyDashboard.catalogs.wizard.voice.uploadNew",
+                              )}
                             </span>
                           </label>
                           {recordings.map((rec: any) => {
@@ -830,7 +856,10 @@ export function CatalogBuilderWizard({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-semibold text-gray-900 capitalize">
-                                    {rec.emotion_tag ?? "Recording"}
+                                    {rec.emotion_tag ??
+                                      t(
+                                        "agencyDashboard.catalogs.wizard.voice.recording",
+                                      )}
                                   </p>
                                   <p className="text-[11px] text-gray-400 truncate mb-2">
                                     {rec.mime_type ?? "audio"}
@@ -868,31 +897,41 @@ export function CatalogBuilderWizard({
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Title</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.title")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {form.title}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Client</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.client")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {form.client_name || "—"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Send to</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.sendTo")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {form.client_email || "—"}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Talents</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.talents")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {selectedTalents.length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Assets</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.assets")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {Object.values(form.items).reduce(
                       (sum, item) => sum + item.asset_ids.length,
@@ -901,7 +940,9 @@ export function CatalogBuilderWizard({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-medium">Recordings</span>
+                  <span className="text-gray-500 font-medium">
+                    {t("agencyDashboard.catalogs.wizard.review.recordings")}
+                  </span>
                   <span className="font-semibold text-gray-900">
                     {Object.values(form.items).reduce(
                       (sum, item) => sum + item.recording_ids.length,
@@ -911,23 +952,25 @@ export function CatalogBuilderWizard({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500 font-medium">
-                    Linked Request
+                    {t("agencyDashboard.catalogs.wizard.review.linkedRequest")}
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {form.licensing_request_id ? "Yes" : "No"}
+                    {form.licensing_request_id
+                      ? t("agencyDashboard.catalogs.wizard.review.yes")
+                      : t("agencyDashboard.catalogs.wizard.review.no")}
                   </span>
                 </div>
               </div>
               {form.client_email ? (
                 <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-sm font-medium text-green-800 flex items-center gap-2">
                   <Send className="w-4 h-4" />
-                  The catalog link will be emailed to{" "}
-                  <strong>{form.client_email}</strong>.
+                  {t("agencyDashboard.catalogs.wizard.review.emailNotice", {
+                    email: form.client_email,
+                  })}
                 </div>
               ) : (
                 <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-sm font-medium text-amber-800">
-                  No client email set — you'll need to copy and share the link
-                  manually.
+                  {t("agencyDashboard.catalogs.wizard.review.noEmailWarning")}
                 </div>
               )}
             </div>
