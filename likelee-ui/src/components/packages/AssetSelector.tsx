@@ -22,6 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface Asset {
   id: string;
@@ -88,6 +89,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
   selectedAssets,
   onSelect,
 }) => {
+  const { t } = useTranslation("agency");
   const [tempSelection, setTempSelection] = React.useState<string[]>(
     selectedAssets.map((a) => a.id),
   );
@@ -228,10 +230,12 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
           <div className="flex justify-between items-center">
             <div>
               <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-                Select Assets for {talentName}
+                {t("agencyDashboard.packages.assetSelector.title", {
+                  talentName,
+                })}
               </DialogTitle>
               <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
-                Choose the best photos and videos to showcase in this package
+                {t("agencyDashboard.packages.assetSelector.description")}
               </DialogDescription>
             </div>
             <div className="flex items-center gap-4">
@@ -255,8 +259,10 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                   <Upload className="w-4 h-4 mr-2" />
                 )}
                 {uploadingCount > 0
-                  ? `Uploading (${uploadingCount})…`
-                  : "Upload Assets"}
+                  ? t("agencyDashboard.packages.assetSelector.uploading", {
+                      count: uploadingCount,
+                    })
+                  : t("agencyDashboard.packages.assetSelector.uploadAssets")}
               </Button>
               <Button
                 variant="ghost"
@@ -370,14 +376,16 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                 <div className="h-64 flex flex-col items-center justify-center text-gray-400 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-100">
                   <ImageIcon className="w-12 h-12 mb-4 opacity-20" />
                   <p className="text-sm font-medium">
-                    No assets found for this talent
+                    {t("agencyDashboard.packages.assetSelector.noAssetsFound")}
                   </p>
                   <Button
                     variant="link"
                     onClick={handleUploadClick}
                     className="text-indigo-600 font-bold mt-2"
                   >
-                    Upload your first asset
+                    {t(
+                      "agencyDashboard.packages.assetSelector.uploadFirstAsset",
+                    )}
                   </Button>
                 </div>
               )}
@@ -389,7 +397,10 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
           <div className="flex justify-between items-center w-full">
             <p className="text-sm font-black text-gray-400">
               {tempSelection.length}{" "}
-              {tempSelection.length === 1 ? "ASSET" : "ASSETS"} SELECTED
+              {tempSelection.length === 1
+                ? t("agencyDashboard.packages.assetSelector.asset")
+                : t("agencyDashboard.packages.assetSelector.assets")}{" "}
+              {t("agencyDashboard.packages.assetSelector.selected")}
             </p>
             <div className="flex gap-3">
               <Button
@@ -397,7 +408,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                 onClick={() => onOpenChange(false)}
                 className="rounded-xl font-bold px-6 border-none bg-white text-gray-500 hover:bg-gray-100"
               >
-                Cancel
+                {t("agencyDashboard.packages.assetSelector.cancel")}
               </Button>
               <Button
                 onClick={handleConfirm}
@@ -407,7 +418,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                 {isApplying ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : null}
-                Apply Selection
+                {t("agencyDashboard.packages.assetSelector.applySelection")}
               </Button>
             </div>
           </div>

@@ -3306,6 +3306,19 @@
         "notSpecified": "Non spécifié",
         "consentUpdated": "Consentement mis à jour",
         "close": "Fermer"
+      },
+      "assetSelector": {
+        "title": "Sélectionner des Actifs pour {{talentName}}",
+        "description": "Choisissez les meilleures photos et vidéos à présenter dans ce paquet",
+        "uploadAssets": "Télécharger des Actifs",
+        "uploading": "Téléchargement ({{count}})…",
+        "noAssetsFound": "Aucun actif trouvé pour ce talent",
+        "uploadFirstAsset": "Téléchargez votre premier actif",
+        "asset": "ACTIF",
+        "assets": "ACTIFS",
+        "selected": "SÉLECTIONNÉ",
+        "cancel": "Annuler",
+        "applySelection": "Appliquer la Sélection"
       }
     },
     "catalogs": {

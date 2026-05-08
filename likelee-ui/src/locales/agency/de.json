@@ -3307,6 +3307,19 @@
         "notSpecified": "Nicht angegeben",
         "consentUpdated": "Einwilligung aktualisiert",
         "close": "Schließen"
+      },
+      "assetSelector": {
+        "title": "Assets auswählen für {{talentName}}",
+        "description": "Wählen Sie die besten Fotos und Videos aus, um sie in diesem Paket zu präsentieren",
+        "uploadAssets": "Assets hochladen",
+        "uploading": "Wird hochgeladen ({{count}})…",
+        "noAssetsFound": "Keine Assets für dieses Talent gefunden",
+        "uploadFirstAsset": "Laden Sie Ihr erstes Asset hoch",
+        "asset": "ASSET",
+        "assets": "ASSETS",
+        "selected": "AUSGEWÄHLT",
+        "cancel": "Abbrechen",
+        "applySelection": "Auswahl anwenden"
       }
     },
     "catalogs": {

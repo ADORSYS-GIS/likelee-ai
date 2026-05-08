@@ -4895,6 +4895,19 @@
         "notSpecified": "Not specified",
         "consentUpdated": "Consent updated",
         "close": "Close"
+      },
+      "assetSelector": {
+        "title": "Select Assets for {{talentName}}",
+        "description": "Choose the best photos and videos to showcase in this package",
+        "uploadAssets": "Upload Assets",
+        "uploading": "Uploading ({{count}})…",
+        "noAssetsFound": "No assets found for this talent",
+        "uploadFirstAsset": "Upload your first asset",
+        "asset": "ASSET",
+        "assets": "ASSETS",
+        "selected": "SELECTED",
+        "cancel": "Cancel",
+        "applySelection": "Apply Selection"
       }
     },
     "payouts": {

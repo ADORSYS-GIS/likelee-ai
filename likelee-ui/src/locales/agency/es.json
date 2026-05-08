@@ -3271,6 +3271,19 @@
         "notSpecified": "No especificado",
         "consentUpdated": "Consentimiento actualizado",
         "close": "Cerrar"
+      },
+      "assetSelector": {
+        "title": "Seleccionar Activos para {{talentName}}",
+        "description": "Elija las mejores fotos y videos para mostrar en este paquete",
+        "uploadAssets": "Subir Activos",
+        "uploading": "Subiendo ({{count}})…",
+        "noAssetsFound": "No se encontraron activos para este talento",
+        "uploadFirstAsset": "Sube tu primer activo",
+        "asset": "ACTIVO",
+        "assets": "ACTIVOS",
+        "selected": "SELECCIONADO",
+        "cancel": "Cancelar",
+        "applySelection": "Aplicar Selección"
       }
     },
     "catalogs": {
