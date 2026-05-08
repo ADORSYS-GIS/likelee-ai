@@ -322,9 +322,9 @@
         },
         "performanceMetrics": "Performance Metrics",
         "engagementRate": "Engagement Rate",
-        "comingSoonDescription": "Demnächst verfügbar.",
+        "comingSoonDescription": "Analytics Dashboard for IRL Mode is coming soon.",
         "comingSoonButton": "Kommt bald",
-        "comingSoon": "Demnächst verfügbar"
+        "comingSoon": "Coming Soon"
       },
       "clientsCampaigns": {
         "title": "Clients & Campaigns",
@@ -1441,7 +1441,10 @@
         "sendReminder": "Erinnerung senden",
         "uploadNew": "Neu hochladen",
         "history": {
-          "title": "Digitals-Verlauf"
+          "title": "Digitals History"
+        },
+        "upload": {
+          "uploadDigitals": "Upload Digitals"
         }
       },
       "licenses": {
@@ -1488,9 +1491,10 @@
         "sentDescription": "Gesendet: {{sent}}, Fehlgeschlagen: {{failed}}"
       },
       "seats": {
-        "insufficientTitle": "Nicht genügend Plätze!",
+        "insufficientTitle": "Insufficient seats!",
         "insufficientDescription": "Ihr aktueller Plan erlaubt {{count}} {{entity}}. Upgraden Sie, um mehr hinzuzufügen.",
-        "viewPlans": "Pläne ansehen"
+        "viewPlans": "View plans",
+        "insufficientMessage": "Your current plan allows {{count}} {{entity}}. Upgrade to add more."
       },
       "upload": {
         "title": "Neue Digitals hochladen - {{name}}",
@@ -1756,7 +1760,22 @@
       "mediaLaterHelp": "You can always add more media and update details later from the roster management screen.",
       "addingEntity": "Adding {{entityLower}}...",
       "addToRoster": "Add {{entityTitle}} to Roster",
-      "photosUploadFailedDesc": "Could not upload photos. {{entityTitle}} will be created without photos."
+      "photosUploadFailedDesc": "Could not upload photos. {{entityTitle}} will be created without photos.",
+      "roleCategories": {
+        "model": "Model",
+        "actor": "Actor",
+        "creator": "Creator",
+        "voice": "Voice",
+        "athlete": "Athlete",
+        "music": "Music"
+      },
+      "genderOptions": {
+        "female": "Female",
+        "male": "Male",
+        "nonBinary": "Non-binary",
+        "genderFluid": "Gender fluid",
+        "preferNotToSay": "Prefer not to say"
+      }
     },
     "analytics": {
       "title": "Analytics Dashboard",
