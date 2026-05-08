@@ -1534,7 +1534,7 @@
       "collaborators": "Colaboradores",
       "noCollaborators": "Aún no hay colaboradores asignados.",
       "deliverablesFeedback": "Entregables y comentarios",
-      "approvalThresholdWarning": "Aprobar más de la mitad de los entregables activa el pago en escrow una vez y desbloquea las descargas de todos los entregables. Las aprobaciones son definitivas.",
+      "approvalThresholdWarning": "Aprobar 1 entregable activa el pago en escrow una vez y desbloquea las descargas de todos los entregables. Las aprobaciones son definitivas.",
       "assetsCount_one": "{{count}} asset",
       "assetsCount_other": "{{count}} assets",
       "videoLocked": "Video bloqueado",

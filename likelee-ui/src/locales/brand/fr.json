@@ -1595,7 +1595,7 @@
       "collaborators": "Collaborateurs",
       "noCollaborators": "Aucun collaborateur assigné pour le moment.",
       "deliverablesFeedback": "Livrables et feedback",
-      "approvalThresholdWarning": "L'approbation de plus de la moitié des livrables déclenche le paiement escrow une fois et débloque les téléchargements pour tous les livrables. Les approbations sont définitives.",
+      "approvalThresholdWarning": "L'approbation d'un seul livrable déclenche le paiement escrow une fois et débloque les téléchargements pour tous les livrables. Les approbations sont définitives.",
       "assetsCount_one": "{{count}} asset",
       "assetsCount_other": "{{count}} assets",
       "videoLocked": "Vidéo verrouillée",

@@ -68,10 +68,22 @@ Tokens are obtained via Supabase Auth (client-side login). The backend validates
 
 These endpoints are agency-only and require the `manage_billing` permission. They are only meaningful after `escrow_status = "released"` (i.e. after the brand has approved at least one deliverable).
 
-| Method | Path                                                        | Description                                                                 |
-| ------ | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
-| GET    | `/api/agency/campaign-offers/:offer_id/transfer-status`     | Live Stripe account health + transfer row status for every recipient        |
-| POST   | `/api/agency/campaign-offers/:offer_id/retry-transfers`     | Retry all failed Stripe transfers for an offer                              |
+| Method | Path                                                              | Description                                                                 |
+| ------ | ----------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| GET    | `/api/agency/campaign-offers/:offer_id/stripe-readiness`          | Pre-flight Stripe connectivity check for agency + all assigned talents      |
+| GET    | `/api/agency/campaign-offers/:offer_id/transfer-status`           | Live Stripe account health + transfer row status for every recipient        |
+| POST   | `/api/agency/campaign-offers/:offer_id/retry-transfers`           | Retry all failed Stripe transfers for an offer                              |
+
+#### Stripe Readiness Response
+
+Called before sending a contract. Returns per-party connectivity status and two aggregate flags:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `agency` | object | Agency party with `connected`, `transfers_enabled`, `details_submitted` |
+| `talents` | array | One entry per assigned talent, same fields |
+| `all_connected` | bool | `false` → hard block, contract cannot be sent |
+| `all_transfers_enabled` | bool | `false` (but `all_connected = true`) → soft warning, can send |
 
 #### Transfer Status Response Fields (per recipient)
 

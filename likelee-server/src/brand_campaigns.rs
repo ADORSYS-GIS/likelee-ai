@@ -6,7 +6,6 @@ use crate::{
         brand_allows_campaign_collaboration, brand_campaign_limit, get_brand_plan_tier, PlanTier,
     },
     errors::sanitize_db_error,
-    pricing_defaults::should_default_visibility_on,
     services::docuseal::{DocuSealClient, Submitter},
     storage::{
         canonical_object_path, delete_object, download_object, insert_asset_record,
@@ -2439,28 +2438,12 @@ pub async fn list_offer_options(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    // Connected creators are always shown regardless of their public visibility settings.
+    // The brand-creator connection itself is the authorization — a creator who has connected
+    // with this brand should always appear in the offer collaborator list even if their
+    // public profile is set to private.
     let items: Vec<serde_json::Value> = rows
         .into_iter()
-        .filter(|r| {
-            let public_profile_visible = r.get("public_profile_visible").and_then(|v| v.as_bool());
-            let visibility = r
-                .get("visibility")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_lowercase();
-            match public_profile_visible {
-                Some(true) => true,
-                Some(false) => should_default_visibility_on(r),
-                None => {
-                    visibility.is_empty()
-                        || visibility == "public"
-                        || visibility == "brands"
-                        || visibility == "visible_to_brands"
-                        || visibility == "true"
-                }
-            }
-        })
         .map(|r| {
             let monthly = r
                 .get("base_weekly_price_cents")
@@ -4595,6 +4578,77 @@ pub async fn download_offer_contract_document(
             )
         })?;
 
+    // DocuSeal pre-signed file URLs expire after a few hours. If the stored URL
+    // returns 401/403, fall back to fetching a fresh URL via the submissions API.
+    let upstream = if upstream.status().as_u16() == 401
+        || upstream.status().as_u16() == 403
+        || upstream.status().as_u16() == 404
+    {
+        tracing::info!(
+            contract_id = %contract_id,
+            status = %upstream.status(),
+            "Stored DocuSeal document URL expired; fetching fresh URL via submissions API"
+        );
+        let submission_id = contract
+            .get("docuseal_submission_id")
+            .and_then(|v| v.as_i64())
+            .unwrap_or_default();
+        if submission_id <= 0 || state.docuseal_api_key.trim().is_empty() {
+            return Err((
+                StatusCode::NOT_FOUND,
+                "Signed contract PDF is no longer available. Please contact support.".to_string(),
+            ));
+        }
+        let docuseal = DocuSealClient::new(
+            state.docuseal_api_key.clone(),
+            state.docuseal_api_url.clone(),
+        );
+        let fresh_url = match docuseal.get_submission(submission_id as i32).await {
+            Ok(details) => details
+                .documents
+                .first()
+                .map(|doc| doc.url.trim().to_string())
+                .filter(|u| !u.is_empty()),
+            Err(e) => {
+                tracing::warn!(contract_id = %contract_id, error = %e, "Failed to refresh DocuSeal document URL");
+                None
+            }
+        };
+        let fresh_url = fresh_url.ok_or((
+            StatusCode::NOT_FOUND,
+            "Signed contract PDF is no longer available from DocuSeal.".to_string(),
+        ))?;
+
+        // Persist the fresh URL so subsequent downloads don't need to re-fetch
+        let _ = state
+            .pg
+            .from("campaign_offer_contracts")
+            .eq("id", &contract_id)
+            .update(
+                json!({
+                    "signed_document_url": fresh_url,
+                    "updated_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+
+        Client::new()
+            .get(&fresh_url)
+            .header("X-Auth-Token", state.docuseal_api_key.clone())
+            .send()
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::BAD_GATEWAY,
+                    format!("Failed to fetch refreshed contract PDF: {e}"),
+                )
+            })?
+    } else {
+        upstream
+    };
+
     if !upstream.status().is_success() {
         let upstream_status = upstream.status();
         let upstream_body = upstream.text().await.unwrap_or_default();
@@ -6451,19 +6505,48 @@ pub async fn submit_offer_deliverable(
 
     // Payment gate: by default do not allow campaign deliverables to be submitted until the offer
     // is paid. Agencies may override this with an explicit confirmation flag.
+    // Creators are always allowed to submit regardless of payment status — the brand cannot
+    // download deliverables until they pay, so there is no risk in allowing early submission.
     let payment_status = _offer
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
     if payment_status != "paid" {
         let confirm_unpaid = payload.confirm_unpaid.unwrap_or(false);
-        if user.role != "agency" || !confirm_unpaid {
+        if (user.role != "agency" || !confirm_unpaid) && !is_creator_like(&user.role) {
             return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
         }
 
         // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
-        if !offer_status_is_signed(&_offer) {
+        // (Applies to agencies only — creators are always allowed through above.)
+        if !is_creator_like(&user.role) && !offer_status_is_signed(&_offer) {
             return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
+        }
+    }
+
+    // Stripe readiness gate for independent creator offers.
+    // Creators must have a connected Stripe account before submitting deliverables.
+    // This ensures the escrow transfer will succeed when the brand approves.
+    // We check connectivity (account exists) as a hard block, and warn on transfers_enabled = false.
+    if is_creator_like(&user.role) {
+        let target_type = _offer
+            .get("target_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+        if target_type == "creator" {
+            let resolved_creator = resolve_effective_creator_id(&state, &user).await;
+            if !resolved_creator.is_empty() {
+                let stripe_account = get_creator_stripe_account(&state, &resolved_creator)
+                    .await
+                    .unwrap_or_default();
+                if stripe_account.is_empty() {
+                    return Err((
+                        StatusCode::PAYMENT_REQUIRED,
+                        "stripe_account_required: Connect your Stripe account in Payouts before submitting deliverables. This ensures you get paid when the brand approves your work.".to_string(),
+                    ));
+                }
+            }
         }
     }
 
@@ -6818,7 +6901,9 @@ pub async fn upload_offer_deliverable(
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
-    if payment_status != "paid" && user.role != "agency" {
+    // Creators can upload deliverables regardless of payment status.
+    // The brand cannot download until they pay, so there is no risk.
+    if payment_status != "paid" && user.role != "agency" && !is_creator_like(&user.role) {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
 
@@ -6851,9 +6936,11 @@ pub async fn upload_offer_deliverable(
 
     let file_name = format!("{}_{}_{}.{}", offer_id, user.id, Uuid::new_v4(), ext);
     let path = format!("offer-deliverables/{}/{}", user.id, file_name);
+    // Store in the private bucket — deliverables are served exclusively through the
+    // authenticated /api/.../file endpoint which enforces payment and access gates.
     let storage_url = format!(
         "{}/storage/v1/object/{}/{}",
-        state.supabase_url, state.supabase_bucket_public, path
+        state.supabase_url, state.supabase_bucket_private, path
     );
 
     let client = Client::new();
@@ -6878,13 +6965,11 @@ pub async fn upload_offer_deliverable(
         ));
     }
 
-    let public_url = format!(
-        "{}/storage/v1/object/public/{}/{}",
-        state.supabase_url, state.supabase_bucket_public, path
-    );
+    // Return the storage path (not a public URL) — the frontend uses the secure
+    // /api/campaign-offers/:offer_id/deliverables/:id/file endpoint to display assets.
     Ok(Json(json!({
         "status": "ok",
-        "public_url": public_url,
+        "public_url": path,
         "file_name": file_name,
         "content_type": content_type,
     })))
@@ -7252,19 +7337,18 @@ pub async fn list_offer_deliverables(
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
-    // Normalize asset_url to consistently return the secure file endpoint
-    // for private deliverables instead of the storage path
+    // Always replace asset_url with the secure authenticated file endpoint.
+    // Deliverables are stored in the private bucket and must never be served
+    // via a direct public URL — all access goes through the backend which
+    // enforces payment gates, role checks, and download controls.
     for row in rows.iter_mut() {
         if let Some(obj) = row.as_object_mut() {
             if let Some(id) = obj.get("id").and_then(|v| v.as_str()) {
-                // Replace asset_url with the secure file endpoint URL
                 let secure_url =
                     format!("/api/campaign-offers/{}/deliverables/{}/file", offer_id, id);
                 obj.insert("asset_url".to_string(), json!(secure_url));
             }
-
-            // If the brand hasn't paid yet, keep deliverables visible but mark them as locked
-            // for approval/download. Preview is allowed to support review workflows.
+            // If the brand hasn't paid yet, mark deliverables as locked
             if user.role == "brand" && payment_status != "paid" {
                 let meta = obj.get("meta").cloned().unwrap_or_else(|| json!({}));
                 let mut meta_obj = meta.as_object().cloned().unwrap_or_default();
@@ -7291,7 +7375,9 @@ pub async fn upload_offer_deliverable_form(
         .get("payment_status")
         .and_then(|v| v.as_str())
         .unwrap_or("unpaid");
-    if payment_status != "paid" && user.role != "agency" {
+    // Creators can upload deliverables regardless of payment status.
+    // The brand cannot download until they pay, so there is no risk.
+    if payment_status != "paid" && user.role != "agency" && !is_creator_like(&user.role) {
         return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
     }
 
@@ -7673,13 +7759,37 @@ pub async fn submit_draft_deliverables(
             .as_ref()
             .and_then(|p| p.confirm_unpaid)
             .unwrap_or(false);
-        if user.role != "agency" || !confirm_unpaid {
+        if (user.role != "agency" || !confirm_unpaid) && !is_creator_like(&user.role) {
             return Err((StatusCode::PAYMENT_REQUIRED, "offer_unpaid".to_string()));
         }
 
         // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
-        if !offer_status_is_signed(&_offer) {
+        // (Applies to agencies only — creators are always allowed through above.)
+        if !is_creator_like(&user.role) && !offer_status_is_signed(&_offer) {
             return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
+        }
+    }
+
+    // Stripe readiness gate for independent creator offers (same as submit_offer_deliverable).
+    if is_creator_like(&user.role) {
+        let target_type = _offer
+            .get("target_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+        if target_type == "creator" {
+            let resolved_creator = resolve_effective_creator_id(&state, &user).await;
+            if !resolved_creator.is_empty() {
+                let stripe_account = get_creator_stripe_account(&state, &resolved_creator)
+                    .await
+                    .unwrap_or_default();
+                if stripe_account.is_empty() {
+                    return Err((
+                        StatusCode::PAYMENT_REQUIRED,
+                        "stripe_account_required: Connect your Stripe account in Payouts before submitting deliverables. This ensures you get paid when the brand approves your work.".to_string(),
+                    ));
+                }
+            }
         }
     }
 
@@ -8377,13 +8487,60 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    // Guard against already-released or in-progress releasing state
-    if escrow_status == "released" || escrow_status == "releasing" {
+    // Guard against already-released or in-progress releasing state.
+    // Exception: if escrow is "releasing" but transfers have failed, it means
+    // a previous attempt was interrupted. Allow recovery by treating it as
+    // "holding" so the release can be retried. A genuinely in-flight "releasing"
+    // (no failed transfers yet) is still protected from race conditions.
+    if escrow_status == "released" {
         return Ok(EscrowReleaseOutcome {
             payment_status: payment_status.to_string(),
             escrow_status: escrow_status.to_string(),
             released_now: false,
         });
+    }
+    if escrow_status == "releasing" {
+        // Check whether any transfer for this offer has failed — if so, the
+        // "releasing" state is stale and we should allow a retry.
+        let has_failed_transfers: bool = async {
+            let resp = match state
+                .pg
+                .from("campaign_offer_transfers")
+                .select("id")
+                .eq("offer_id", offer_id)
+                .eq("status", "failed")
+                .limit(1)
+                .execute()
+                .await
+            {
+                Ok(r) => r,
+                Err(_) => return false,
+            };
+            if !resp.status().is_success() {
+                return false;
+            }
+            let text = match resp.text().await {
+                Ok(t) => t,
+                Err(_) => return false,
+            };
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            !rows.is_empty()
+        }
+        .await;
+
+        if !has_failed_transfers {
+            // Genuinely in-flight — protect from concurrent release attempts.
+            return Ok(EscrowReleaseOutcome {
+                payment_status: payment_status.to_string(),
+                escrow_status: escrow_status.to_string(),
+                released_now: false,
+            });
+        }
+        // Has failed transfers — fall through and retry the release.
+        tracing::info!(
+            offer_id = %offer_id,
+            "Escrow is in 'releasing' state with failed transfers; retrying release"
+        );
     }
 
     // Escrow releases when at least ONE deliverable is approved.
@@ -8735,7 +8892,10 @@ async fn try_release_campaign_offer_escrow(
         });
     }
 
-    // Execute transfers BEFORE marking as released. If transfers fail, escrow stays in "releasing" state.
+    // Execute all transfers best-effort. Individual failures are recorded in
+    // campaign_offer_transfers and retryable via the retry-transfers endpoint.
+    // The escrow is marked "released" regardless — it signals that the brand
+    // has approved and funds should flow, not that all transfers succeeded.
     release_campaign_offer_transfers(state, offer_id, agency_id, billing_request_id).await?;
 
     // Only mark as "released" AFTER transfers succeed
@@ -8809,35 +8969,59 @@ async fn release_campaign_offer_transfers(
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
 
+    // ── Agency transfer ───────────────────────────────────────────────────────
+    // Best-effort: a failed agency transfer is recorded and retryable but must
+    // NOT abort the talent transfers. Funds are held in escrow until retried.
     if agency_amount_cents > 0 {
-        let agency_account_id = get_agency_stripe_account(state, agency_id)
-            .await
-            .map_err(|e| format!("Failed to get agency Stripe account: {}", e))?;
+        match get_agency_stripe_account(state, agency_id).await {
+            Err(e) => {
+                tracing::warn!(
+                    offer_id = %offer_id,
+                    agency_id = %agency_id,
+                    error = %e,
+                    "Skipping agency transfer — Stripe account not found; retryable"
+                );
+            }
+            Ok(agency_account_id) => {
+                let metadata = std::collections::HashMap::from([
+                    ("offer_id".to_string(), offer_id.to_string()),
+                    ("agency_id".to_string(), agency_id.to_string()),
+                    ("type".to_string(), "agency_commission".to_string()),
+                ]);
 
-        let metadata = std::collections::HashMap::from([
-            ("offer_id".to_string(), offer_id.to_string()),
-            ("agency_id".to_string(), agency_id.to_string()),
-            ("type".to_string(), "agency_commission".to_string()),
-        ]);
-
-        crate::payouts::execute_and_record_stripe_transfer(
-            state,
-            &client,
-            &currency,
-            currency_enum,
-            "agency",
-            agency_id,
-            &agency_account_id,
-            agency_amount_cents,
-            metadata,
-            "record_campaign_offer_transfer",
-            "p_offer_id",
-            offer_id,
-        )
-        .await
-        .map_err(|e| format!("Stripe transfer to agency failed: {}", e))?;
+                if let Err(e) = crate::payouts::execute_and_record_stripe_transfer(
+                    state,
+                    &client,
+                    &currency,
+                    currency_enum,
+                    "agency",
+                    agency_id,
+                    &agency_account_id,
+                    agency_amount_cents,
+                    metadata,
+                    "record_campaign_offer_transfer",
+                    "p_offer_id",
+                    offer_id,
+                )
+                .await
+                {
+                    // Failure is already recorded in campaign_offer_transfers by
+                    // execute_and_record_stripe_transfer. Log and continue so
+                    // talent transfers are not blocked.
+                    tracing::warn!(
+                        offer_id = %offer_id,
+                        agency_id = %agency_id,
+                        error = %e,
+                        "Agency Stripe transfer failed; recorded as failed, continuing to talent transfers"
+                    );
+                }
+            }
+        }
     }
 
+    // ── Talent transfers ──────────────────────────────────────────────────────
+    // Each talent split is attempted independently. A failure on one talent
+    // does not block others. All failures are recorded and retryable.
     let talent_splits = payout
         .get("talent_splits")
         .and_then(|v| v.as_array())
@@ -8889,7 +9073,7 @@ async fn release_campaign_offer_transfers(
                     creator_id = %creator_id,
                     talent_id = %talent_id,
                     error = %e,
-                    "Skipping talent split — Stripe account not connected"
+                    "Skipping talent split — Stripe account not connected; retryable"
                 );
                 continue;
             }
@@ -8904,7 +9088,7 @@ async fn release_campaign_offer_transfers(
             metadata.insert("talent_id".to_string(), talent_id.to_string());
         }
 
-        crate::payouts::execute_and_record_stripe_transfer(
+        if let Err(e) = crate::payouts::execute_and_record_stripe_transfer(
             state,
             &client,
             &currency,
@@ -8919,7 +9103,15 @@ async fn release_campaign_offer_transfers(
             offer_id,
         )
         .await
-        .map_err(|e| format!("Stripe transfer to talent failed: {}", e))?;
+        {
+            tracing::warn!(
+                offer_id = %offer_id,
+                creator_id = %creator_id,
+                talent_id = %talent_id,
+                error = %e,
+                "Talent Stripe transfer failed; recorded as failed, continuing to next split"
+            );
+        }
     }
 
     Ok(())
@@ -9712,6 +9904,366 @@ pub async fn ensure_campaign_billing_stub(
 }
 
 // =============================================================================
+// GET /api/agency/campaign-offers/:offer_id/stripe-readiness
+//
+// Pre-flight check called by the agency UI before sending a DocuSeal contract.
+// Returns Stripe connectivity + transfer-capability status for:
+//   - the agency itself
+//   - every talent currently assigned to the offer
+//
+// Two-tier result:
+//   all_connected = false  → HARD BLOCK: at least one party has no Stripe account
+//   all_connected = true,
+//   all_transfers_enabled = false → SOFT WARNING: everyone connected but some
+//                                   transfers not yet enabled (can still send)
+//
+// Stripe API calls are made in parallel (tokio::join!) to keep latency low.
+// Only the owning agency can call this endpoint.
+// =============================================================================
+
+#[derive(Debug, Serialize)]
+pub struct StripeReadinessParty {
+    /// "agency" | "creator"
+    pub party_type: String,
+    pub id: String,
+    pub name: String,
+    pub connected: bool,
+    pub transfers_enabled: bool,
+    pub details_submitted: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct OfferStripeReadinessResponse {
+    pub offer_id: String,
+    pub agency: StripeReadinessParty,
+    pub talents: Vec<StripeReadinessParty>,
+    /// true only when agency AND every talent have a connected Stripe account
+    pub all_connected: bool,
+    /// true only when all_connected AND every party has transfers_enabled
+    pub all_transfers_enabled: bool,
+}
+
+pub async fn get_offer_stripe_readiness(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(offer_id): Path<String>,
+) -> Result<Json<OfferStripeReadinessResponse>, (StatusCode, String)> {
+    // Agency-only — must have billing visibility to see payout readiness
+    let access = team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let agency_id = access.organization_id.clone();
+
+    // Verify the offer belongs to this agency
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,target_type,target_id")
+        .eq("id", &offer_id)
+        .eq("target_type", "agency")
+        .eq("target_id", &agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            offer_resp.status().as_u16(),
+            offer_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    if offer_rows.is_empty() {
+        return Err((StatusCode::NOT_FOUND, "offer_not_found".to_string()));
+    }
+
+    // Load all assigned talents for this offer
+    let assignments_resp = state
+        .pg
+        .from("offer_talent_assignments")
+        .select("creator_id,talent_id")
+        .eq("offer_id", &offer_id)
+        .eq("agency_id", &agency_id)
+        .eq("status", "assigned")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let assignments_text = assignments_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".into());
+    let assignment_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&assignments_text).unwrap_or_default();
+
+    // Collect unique creator_ids from assignments
+    let mut creator_ids: Vec<String> = assignment_rows
+        .iter()
+        .filter_map(|r| {
+            r.get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
+        .collect();
+    creator_ids.sort();
+    creator_ids.dedup();
+
+    // Resolve talent names — try agency_users first (has stage_name / full_legal_name),
+    // then fall back to creators.full_name for connected creators who have no agency_users row.
+    let mut name_by_creator_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+
+        // 1) agency_users — preferred source (has stage_name / full_legal_name)
+        if let Ok(au_resp) = state
+            .pg
+            .from("agency_users")
+            .select("creator_id,full_legal_name,stage_name")
+            .eq("agency_id", &agency_id)
+            .in_("creator_id", creator_refs.clone())
+            .execute()
+            .await
+        {
+            if au_resp.status().is_success() {
+                let au_text = au_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let au_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&au_text).unwrap_or_default();
+                for row in &au_rows {
+                    let cid = row
+                        .get("creator_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+                    if cid.is_empty() {
+                        continue;
+                    }
+                    let name = row
+                        .get("full_legal_name")
+                        .or_else(|| row.get("stage_name"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or_else(|| "Talent".to_string());
+                    name_by_creator_id.insert(cid, name);
+                }
+            }
+        }
+
+        // 2) creators table — fallback for connected creators without an agency_users row,
+        //    and also the source for stripe_connect_account_id (fetched together to save a round-trip).
+        //    We only need names for creator_ids not already resolved above.
+        let missing_name_ids: Vec<&str> = creator_refs
+            .iter()
+            .copied()
+            .filter(|id| !name_by_creator_id.contains_key(*id))
+            .collect();
+
+        if !missing_name_ids.is_empty() {
+            if let Ok(cr_name_resp) = state
+                .pg
+                .from("creators")
+                .select("id,full_name,email")
+                .in_("id", missing_name_ids)
+                .execute()
+                .await
+            {
+                if cr_name_resp.status().is_success() {
+                    let cr_name_text = cr_name_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let cr_name_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&cr_name_text).unwrap_or_default();
+                    for row in &cr_name_rows {
+                        let cid = row
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        if cid.is_empty() {
+                            continue;
+                        }
+                        // Prefer full_name, fall back to email prefix, then "Creator"
+                        let name = row
+                            .get("full_name")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.trim().to_string())
+                            .filter(|s| !s.is_empty())
+                            .or_else(|| {
+                                row.get("email")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .filter(|s| !s.is_empty())
+                            })
+                            .unwrap_or_else(|| "Creator".to_string());
+                        name_by_creator_id.insert(cid, name);
+                    }
+                }
+            }
+        }
+    }
+
+    // Resolve Stripe account IDs for all creators in one DB round-trip
+    let mut stripe_account_by_creator_id: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    if !creator_ids.is_empty() {
+        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        if let Ok(cr_resp) = state
+            .pg
+            .from("creators")
+            .select("id,stripe_connect_account_id")
+            .in_("id", creator_refs)
+            .execute()
+            .await
+        {
+            if cr_resp.status().is_success() {
+                let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let cr_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&cr_text).unwrap_or_default();
+                for row in &cr_rows {
+                    let cid = row
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+                    let acct = row
+                        .get("stripe_connect_account_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string();
+                    if !cid.is_empty() {
+                        stripe_account_by_creator_id.insert(cid, acct);
+                    }
+                }
+            }
+        }
+    }
+
+    // Resolve agency name + Stripe account
+    let agency_stripe_account = get_agency_stripe_account(&state, &agency_id)
+        .await
+        .unwrap_or_default();
+    let agency_name = {
+        let resp = state
+            .pg
+            .from("agencies")
+            .select("agency_name")
+            .eq("id", &agency_id)
+            .limit(1)
+            .execute()
+            .await;
+        if let Ok(r) = resp {
+            let t = r.text().await.unwrap_or_else(|_| "[]".into());
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&t).unwrap_or_default();
+            rows.first()
+                .and_then(|r| r.get("agency_name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Agency")
+                .to_string()
+        } else {
+            "Agency".to_string()
+        }
+    };
+
+    // -------------------------------------------------------------------------
+    // Fire all Stripe account health checks in parallel.
+    // We build a flat list of (id, account_id) pairs, check them concurrently,
+    // then reassemble the results.
+    // -------------------------------------------------------------------------
+    let stripe_client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    // Inline helper — same logic as the one inside get_offer_transfer_status
+    async fn check_stripe_health(
+        client: &stripe_sdk::Client,
+        account_id: &str,
+    ) -> (bool, bool, bool) {
+        // Returns (connected, transfers_enabled, details_submitted)
+        if account_id.is_empty() {
+            return (false, false, false);
+        }
+        match account_id.parse::<stripe_sdk::AccountId>() {
+            Ok(aid) => match stripe_sdk::Account::retrieve(client, &aid, &[]).await {
+                Ok(acct) => {
+                    let transfers_enabled = acct
+                        .capabilities
+                        .as_ref()
+                        .and_then(|c| c.transfers.as_ref())
+                        .map(|s| s == &stripe_sdk::CapabilityStatus::Active)
+                        .unwrap_or(false);
+                    let details_submitted = acct.details_submitted.unwrap_or(false);
+                    (true, transfers_enabled, details_submitted)
+                }
+                // Account exists in DB but Stripe returned an error — treat as
+                // connected (account ID is present) but not transfer-ready.
+                Err(_) => (true, false, false),
+            },
+            // Malformed account ID stored in DB — treat as not connected.
+            Err(_) => (false, false, false),
+        }
+    }
+
+    // Agency health check
+    let (ag_connected, ag_transfers, ag_details) =
+        check_stripe_health(&stripe_client, &agency_stripe_account).await;
+
+    let agency_party = StripeReadinessParty {
+        party_type: "agency".to_string(),
+        id: agency_id.clone(),
+        name: agency_name,
+        connected: ag_connected,
+        transfers_enabled: ag_transfers,
+        details_submitted: ag_details,
+    };
+
+    // Per-talent health checks — run concurrently
+    let talent_futures: Vec<_> = creator_ids
+        .iter()
+        .map(|cid| {
+            let acct = stripe_account_by_creator_id
+                .get(cid)
+                .cloned()
+                .unwrap_or_default();
+            let name = name_by_creator_id
+                .get(cid)
+                .cloned()
+                .unwrap_or_else(|| "Talent".to_string());
+            let cid = cid.clone();
+            let client = stripe_client.clone();
+            async move {
+                let (connected, transfers_enabled, details_submitted) =
+                    check_stripe_health(&client, &acct).await;
+                StripeReadinessParty {
+                    party_type: "creator".to_string(),
+                    id: cid,
+                    name,
+                    connected,
+                    transfers_enabled,
+                    details_submitted,
+                }
+            }
+        })
+        .collect();
+
+    let talent_parties: Vec<StripeReadinessParty> = futures::future::join_all(talent_futures).await;
+
+    // Compute aggregate flags
+    let all_connected = ag_connected && talent_parties.iter().all(|p| p.connected);
+    let all_transfers_enabled =
+        all_connected && ag_transfers && talent_parties.iter().all(|p| p.transfers_enabled);
+
+    Ok(Json(OfferStripeReadinessResponse {
+        offer_id,
+        agency: agency_party,
+        talents: talent_parties,
+        all_connected,
+        all_transfers_enabled,
+    }))
+}
+
+// =============================================================================
 // GET /api/agency/campaign-offers/:offer_id/transfer-status
 //
 // Returns the Stripe account health + transfer row status for every recipient
@@ -10417,6 +10969,9 @@ pub struct CreatorTransferRow {
     pub stripe_transfer_id: Option<String>,
     pub escrow_status: String,
     pub paid_at: Option<String>,
+    /// "creator" = independent offer (creator can self-service retry)
+    /// "agency"  = talent split from agency offer (agency handles retry)
+    pub target_type: String,
 }
 
 pub async fn get_creator_transfer_status(
@@ -10465,11 +11020,12 @@ pub async fn get_creator_transfer_status(
         .into_iter()
         .collect();
 
-    // Fetch offer metadata in one query
+    // Fetch offer metadata in one query — include target_type to distinguish
+    // independent creator offers from agency talent-split offers
     let offers_resp = state
         .pg
         .from("campaign_offers")
-        .select("id,offer_title,escrow_status,paid_at,brands(company_name),brand_campaigns(name)")
+        .select("id,offer_title,escrow_status,paid_at,target_type,brands(company_name),brand_campaigns(name)")
         .in_(
             "id",
             offer_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
@@ -10558,8 +11114,221 @@ pub async fn get_creator_transfer_status(
                 .get("paid_at")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string()),
+            target_type: offer
+                .get("target_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("agency")
+                .to_string(),
         });
     }
 
     Ok(Json(json!({ "transfers": result })))
+}
+
+// =============================================================================
+// POST /api/talent/campaign-offers/:offer_id/retry-transfer
+//
+// Self-service retry for independent creator offers where the Stripe transfer
+// failed (e.g. transfers_enabled was false at the time of escrow release).
+//
+// Guards:
+//   - Creator must own the offer (target_type=creator, target_id=creator_id)
+//   - escrow_status must be "released" (brand already approved)
+//   - A failed transfer row must exist for this creator on this offer
+// =============================================================================
+
+pub async fn retry_creator_transfer(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(offer_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if !is_creator_like(&user.role) {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let creator_id = resolve_effective_creator_id(&state, &user).await;
+    if creator_id.is_empty() {
+        return Err((StatusCode::UNAUTHORIZED, "creator_not_found".to_string()));
+    }
+
+    // Verify the offer belongs to this creator
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,target_type,target_id,escrow_status,payment_status,budget_snapshot")
+        .eq("id", &offer_id)
+        .eq("target_type", "creator")
+        .eq("target_id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            offer_resp.status().as_u16(),
+            offer_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    let offer = offer_rows
+        .first()
+        .ok_or_else(|| (StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
+
+    // Hard gate: escrow must be released (brand approved)
+    let escrow_status = offer
+        .get("escrow_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("holding");
+    if escrow_status != "released" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "escrow_not_released: The brand has not yet approved a deliverable for this offer."
+                .to_string(),
+        ));
+    }
+
+    // Find the failed transfer row for this creator
+    let transfer_resp = state
+        .pg
+        .from("campaign_offer_transfers")
+        .select("id,amount_cents,currency,status,retry_count")
+        .eq("offer_id", &offer_id)
+        .eq("recipient_type", "creator")
+        .eq("recipient_id", &creator_id)
+        .eq("status", "failed")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !transfer_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            transfer_resp.status().as_u16(),
+            transfer_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let transfer_text = transfer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let transfer_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&transfer_text).unwrap_or_default();
+
+    if transfer_rows.is_empty() {
+        return Ok(Json(json!({
+            "status": "ok",
+            "nothing_to_retry": true,
+            "message": "No failed transfer found for this offer."
+        })));
+    }
+
+    let transfer = &transfer_rows[0];
+    let amount_cents = transfer
+        .get("amount_cents")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+
+    if amount_cents <= 0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid_transfer_amount".to_string(),
+        ));
+    }
+
+    // Resolve the creator's current Stripe account (may have been updated since original failure)
+    let stripe_account_id = get_creator_stripe_account(&state, &creator_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("stripe_account_not_connected: {}", e),
+            )
+        })?;
+
+    // Resolve currency from the transfer row, fall back to budget_snapshot
+    let currency = transfer
+        .get("currency")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            offer
+                .get("budget_snapshot")
+                .and_then(|v| v.get("currency_code"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_else(|| "USD".to_string());
+
+    let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase()).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("unsupported_currency: {}", currency),
+        )
+    })?;
+
+    // Mark as pending_retry before attempting
+    let _ = state
+        .pg
+        .rpc(
+            "mark_transfer_pending_retry",
+            json!({
+                "p_offer_id": offer_id,
+                "p_recipient_type": "creator",
+                "p_recipient_id": creator_id,
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let metadata = std::collections::HashMap::from([
+        ("offer_id".to_string(), offer_id.clone()),
+        ("creator_id".to_string(), creator_id.clone()),
+        ("type".to_string(), "creator_earnings_retry".to_string()),
+    ]);
+
+    match crate::payouts::execute_and_record_stripe_transfer(
+        &state,
+        &client,
+        &currency,
+        currency_enum,
+        "creator",
+        &creator_id,
+        &stripe_account_id,
+        amount_cents,
+        metadata,
+        "record_campaign_offer_transfer",
+        "p_offer_id",
+        &offer_id,
+    )
+    .await
+    {
+        Ok(transfer_id) => {
+            tracing::info!(
+                offer_id = %offer_id,
+                creator_id = %creator_id,
+                transfer_id = %transfer_id,
+                "creator self-service transfer retry succeeded"
+            );
+            Ok(Json(json!({
+                "status": "ok",
+                "transfer_id": transfer_id,
+                "message": "Transfer succeeded. Funds are on their way to your Stripe account."
+            })))
+        }
+        Err(e) => {
+            tracing::warn!(
+                offer_id = %offer_id,
+                creator_id = %creator_id,
+                error = %e,
+                "creator self-service transfer retry failed"
+            );
+            Err((
+                StatusCode::BAD_GATEWAY,
+                format!("transfer_failed: {}. Please ensure your Stripe account has completed onboarding and try again.", e),
+            ))
+        }
+    }
 }
