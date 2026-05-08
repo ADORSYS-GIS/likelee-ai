@@ -30,6 +30,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 const DEFAULT_ROSTER_MODELS = 10;
 const MIN_ROSTER_MODELS = 2;
@@ -81,6 +82,7 @@ function describePlan(plan: "basic" | "pro", interval: "month" | "year") {
 
 export default function AgencySubscribe() {
   const { initialized, authenticated, profile } = useAuth();
+  const { t } = useTranslation("agency");
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -425,17 +427,18 @@ export default function AgencySubscribe() {
         role: "agency",
       });
       toast({
-        title: "Sign in required",
-        description:
-          "Sign in with your agency account to continue to checkout.",
+        title: t("agencyDashboard.subscribe.toasts.signInRequired"),
+        description: t("agencyDashboard.subscribe.toasts.signInDescription"),
       });
       navigate(`/Login?${loginParams.toString()}`);
       return;
     }
     if (!isAgencyUser) {
       toast({
-        title: "Agency account required",
-        description: "Use an agency account to start a subscription checkout.",
+        title: t("agencyDashboard.subscribe.toasts.agencyRequired"),
+        description: t(
+          "agencyDashboard.subscribe.toasts.agencyRequiredDescription",
+        ),
         variant: "destructive",
       });
       return;
@@ -458,8 +461,8 @@ export default function AgencySubscribe() {
       const url = (resp as any)?.checkout_url as string | undefined;
       if (!url) {
         toast({
-          title: "Checkout failed",
-          description: "No checkout URL returned.",
+          title: t("agencyDashboard.subscribe.toasts.checkoutFailed"),
+          description: t("agencyDashboard.subscribe.toasts.noCheckoutUrl"),
           variant: "destructive",
         });
         return;
@@ -478,9 +481,10 @@ export default function AgencySubscribe() {
           setRosterInput(String(rosterOverLimit));
         }
         toast({
-          title: "Contact Sales",
-          description:
-            "Self-serve plans support 2 to 1,000 models. Larger rosters use custom pricing.",
+          title: t("agencyDashboard.subscribe.toasts.contactSales"),
+          description: t(
+            "agencyDashboard.subscribe.toasts.contactSalesDescription",
+          ),
         });
         onContact();
         return;
@@ -497,23 +501,27 @@ export default function AgencySubscribe() {
         setRosterModels(currentRoster);
         setRosterInput(String(currentRoster));
         toast({
-          title: "Roster updated",
-          description: `Your current roster is ${formatNumber(currentRoster)} models. Pricing has been updated to match.`,
+          title: t("agencyDashboard.subscribe.toasts.rosterUpdated"),
+          description: t(
+            "agencyDashboard.subscribe.toasts.rosterUpdatedDescription",
+            { count: formatNumber(currentRoster) },
+          ),
         });
         return;
       }
       if (msg.includes("downgrade_not_allowed")) {
         toast({
-          title: "Downgrades unavailable",
-          description:
-            "This billing flow only supports upgrades. Contact support if you need a downgrade.",
+          title: t("agencyDashboard.subscribe.toasts.downgradeUnavailable"),
+          description: t(
+            "agencyDashboard.subscribe.toasts.downgradeDescription",
+          ),
           variant: "destructive",
         });
         return;
       }
       toast({
-        title: "Checkout failed",
-        description: msg || "Please try again.",
+        title: t("agencyDashboard.subscribe.toasts.checkoutFailed"),
+        description: msg || t("agencyDashboard.subscribe.toasts.tryAgain"),
         variant: "destructive",
       });
     } finally {
@@ -1915,7 +1923,9 @@ export default function AgencySubscribe() {
 
           <div className="mt-6 rounded-[24px] border border-[#D9E4F1] bg-[#F6F8FB] p-5">
             <div className="flex items-center justify-between gap-4 text-sm">
-              <span className="font-bold text-gray-500">Current plan</span>
+              <span className="font-bold text-gray-500">
+                {t("agencyDashboard.subscribe.upgradeDialog.currentPlan")}
+              </span>
               <span className="font-black text-[#1B1C23]">
                 {describePlan(
                   currentPlanTier === "pro" ? "pro" : "basic",
