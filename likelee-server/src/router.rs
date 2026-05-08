@@ -1166,6 +1166,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::get_creator_transfer_status),
         )
         .route(
+            "/api/talent/campaign-offers/:offer_id/retry-transfer",
+            post(crate::brand_campaigns::retry_creator_transfer),
+        )
+        .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
             post(crate::licensing_requests::create_for_brand_campaign),
         )

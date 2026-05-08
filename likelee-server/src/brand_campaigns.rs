@@ -6538,6 +6538,32 @@ pub async fn submit_offer_deliverable(
         }
     }
 
+    // Stripe readiness gate for independent creator offers.
+    // Creators must have a connected Stripe account before submitting deliverables.
+    // This ensures the escrow transfer will succeed when the brand approves.
+    // We check connectivity (account exists) as a hard block, and warn on transfers_enabled = false.
+    if is_creator_like(&user.role) {
+        let target_type = _offer
+            .get("target_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+        if target_type == "creator" {
+            let resolved_creator = resolve_effective_creator_id(&state, &user).await;
+            if !resolved_creator.is_empty() {
+                let stripe_account = get_creator_stripe_account(&state, &resolved_creator)
+                    .await
+                    .unwrap_or_default();
+                if stripe_account.is_empty() {
+                    return Err((
+                        StatusCode::PAYMENT_REQUIRED,
+                        "stripe_account_required: Connect your Stripe account in Payouts before submitting deliverables. This ensures you get paid when the brand approves your work.".to_string(),
+                    ));
+                }
+            }
+        }
+    }
+
     let offer_brand_id = _offer
         .get("brand_id")
         .and_then(|v| v.as_str())
@@ -7751,6 +7777,29 @@ pub async fn submit_draft_deliverables(
         // Additional restriction: unpaid deliverables may only be submitted after the offer is signed.
         if !offer_status_is_signed(&_offer) {
             return Err((StatusCode::BAD_REQUEST, "offer_not_signed".to_string()));
+        }
+    }
+
+    // Stripe readiness gate for independent creator offers (same as submit_offer_deliverable).
+    if is_creator_like(&user.role) {
+        let target_type = _offer
+            .get("target_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+        if target_type == "creator" {
+            let resolved_creator = resolve_effective_creator_id(&state, &user).await;
+            if !resolved_creator.is_empty() {
+                let stripe_account = get_creator_stripe_account(&state, &resolved_creator)
+                    .await
+                    .unwrap_or_default();
+                if stripe_account.is_empty() {
+                    return Err((
+                        StatusCode::PAYMENT_REQUIRED,
+                        "stripe_account_required: Connect your Stripe account in Payouts before submitting deliverables. This ensures you get paid when the brand approves your work.".to_string(),
+                    ));
+                }
+            }
         }
     }
 
@@ -10930,6 +10979,9 @@ pub struct CreatorTransferRow {
     pub stripe_transfer_id: Option<String>,
     pub escrow_status: String,
     pub paid_at: Option<String>,
+    /// "creator" = independent offer (creator can self-service retry)
+    /// "agency"  = talent split from agency offer (agency handles retry)
+    pub target_type: String,
 }
 
 pub async fn get_creator_transfer_status(
@@ -10978,11 +11030,12 @@ pub async fn get_creator_transfer_status(
         .into_iter()
         .collect();
 
-    // Fetch offer metadata in one query
+    // Fetch offer metadata in one query — include target_type to distinguish
+    // independent creator offers from agency talent-split offers
     let offers_resp = state
         .pg
         .from("campaign_offers")
-        .select("id,offer_title,escrow_status,paid_at,brands(company_name),brand_campaigns(name)")
+        .select("id,offer_title,escrow_status,paid_at,target_type,brands(company_name),brand_campaigns(name)")
         .in_(
             "id",
             offer_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
@@ -11071,8 +11124,220 @@ pub async fn get_creator_transfer_status(
                 .get("paid_at")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string()),
+            target_type: offer
+                .get("target_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("agency")
+                .to_string(),
         });
     }
 
     Ok(Json(json!({ "transfers": result })))
+}
+
+// =============================================================================
+// POST /api/talent/campaign-offers/:offer_id/retry-transfer
+//
+// Self-service retry for independent creator offers where the Stripe transfer
+// failed (e.g. transfers_enabled was false at the time of escrow release).
+//
+// Guards:
+//   - Creator must own the offer (target_type=creator, target_id=creator_id)
+//   - escrow_status must be "released" (brand already approved)
+//   - A failed transfer row must exist for this creator on this offer
+// =============================================================================
+
+pub async fn retry_creator_transfer(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(offer_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if !is_creator_like(&user.role) {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let creator_id = resolve_effective_creator_id(&state, &user).await;
+    if creator_id.is_empty() {
+        return Err((StatusCode::UNAUTHORIZED, "creator_not_found".to_string()));
+    }
+
+    // Verify the offer belongs to this creator
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,target_type,target_id,escrow_status,payment_status,budget_snapshot")
+        .eq("id", &offer_id)
+        .eq("target_type", "creator")
+        .eq("target_id", &creator_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            offer_resp.status().as_u16(),
+            offer_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    let offer = offer_rows
+        .first()
+        .ok_or_else(|| (StatusCode::NOT_FOUND, "offer_not_found".to_string()))?;
+
+    // Hard gate: escrow must be released (brand approved)
+    let escrow_status = offer
+        .get("escrow_status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("holding");
+    if escrow_status != "released" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "escrow_not_released: The brand has not yet approved a deliverable for this offer.".to_string(),
+        ));
+    }
+
+    // Find the failed transfer row for this creator
+    let transfer_resp = state
+        .pg
+        .from("campaign_offer_transfers")
+        .select("id,amount_cents,currency,status,retry_count")
+        .eq("offer_id", &offer_id)
+        .eq("recipient_type", "creator")
+        .eq("recipient_id", &creator_id)
+        .eq("status", "failed")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !transfer_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            transfer_resp.status().as_u16(),
+            transfer_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let transfer_text = transfer_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let transfer_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&transfer_text).unwrap_or_default();
+
+    if transfer_rows.is_empty() {
+        return Ok(Json(json!({
+            "status": "ok",
+            "nothing_to_retry": true,
+            "message": "No failed transfer found for this offer."
+        })));
+    }
+
+    let transfer = &transfer_rows[0];
+    let amount_cents = transfer
+        .get("amount_cents")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+
+    if amount_cents <= 0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid_transfer_amount".to_string(),
+        ));
+    }
+
+    // Resolve the creator's current Stripe account (may have been updated since original failure)
+    let stripe_account_id = get_creator_stripe_account(&state, &creator_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("stripe_account_not_connected: {}", e),
+            )
+        })?;
+
+    // Resolve currency from the transfer row, fall back to budget_snapshot
+    let currency = transfer
+        .get("currency")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            offer
+                .get("budget_snapshot")
+                .and_then(|v| v.get("currency_code"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_else(|| "USD".to_string());
+
+    let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase()).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("unsupported_currency: {}", currency),
+        )
+    })?;
+
+    // Mark as pending_retry before attempting
+    let _ = state
+        .pg
+        .rpc(
+            "mark_transfer_pending_retry",
+            json!({
+                "p_offer_id": offer_id,
+                "p_recipient_type": "creator",
+                "p_recipient_id": creator_id,
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let metadata = std::collections::HashMap::from([
+        ("offer_id".to_string(), offer_id.clone()),
+        ("creator_id".to_string(), creator_id.clone()),
+        ("type".to_string(), "creator_earnings_retry".to_string()),
+    ]);
+
+    match crate::payouts::execute_and_record_stripe_transfer(
+        &state,
+        &client,
+        &currency,
+        currency_enum,
+        "creator",
+        &creator_id,
+        &stripe_account_id,
+        amount_cents,
+        metadata,
+        "record_campaign_offer_transfer",
+        "p_offer_id",
+        &offer_id,
+    )
+    .await
+    {
+        Ok(transfer_id) => {
+            tracing::info!(
+                offer_id = %offer_id,
+                creator_id = %creator_id,
+                transfer_id = %transfer_id,
+                "creator self-service transfer retry succeeded"
+            );
+            Ok(Json(json!({
+                "status": "ok",
+                "transfer_id": transfer_id,
+                "message": "Transfer succeeded. Funds are on their way to your Stripe account."
+            })))
+        }
+        Err(e) => {
+            tracing::warn!(
+                offer_id = %offer_id,
+                creator_id = %creator_id,
+                error = %e,
+                "creator self-service transfer retry failed"
+            );
+            Err((
+                StatusCode::BAD_GATEWAY,
+                format!("transfer_failed: {}. Please ensure your Stripe account has completed onboarding and try again.", e),
+            ))
+        }
+    }
 }

@@ -66,6 +66,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  ContractPrecheckModal,
+  type ContractPrecheckAction,
+} from "@/components/agency/StripeReadinessGateModal";
+import {
   Upload,
   Instagram,
   Mic,
@@ -3254,6 +3258,16 @@ export default function CreatorDashboard() {
   const [requestPayoutAmount, setRequestPayoutAmount] = useState("");
   const [creatorTransfers, setCreatorTransfers] = useState<any[]>([]);
   const [loadingCreatorTransfers, setLoadingCreatorTransfers] = useState(false);
+  // Tracks which offer_id is currently being retried (one at a time)
+  const [retryingTransferOfferId, setRetryingTransferOfferId] = useState<string | null>(null);
+  // Stripe readiness gate modal for deliverable submission
+  const [stripeGateModalOpen, setStripeGateModalOpen] = useState(false);
+  const [stripeGateModalConfig, setStripeGateModalConfig] = useState<{
+    severity: "block" | "warning" | "info";
+    title: string;
+    description: string;
+    actions: ContractPrecheckAction[];
+  }>({ severity: "block", title: "", description: "", actions: [] });
 
   const fetchPayoutStatus = async () => {
     if (!initialized || !authenticated || !user?.id) return;
@@ -3292,6 +3306,59 @@ export default function CreatorDashboard() {
       // best-effort
     } finally {
       setLoadingCreatorTransfers(false);
+    }
+  };
+
+  const retryCreatorTransfer = async (offerId: string) => {
+    if (retryingTransferOfferId) return;
+    setRetryingTransferOfferId(offerId);
+    try {
+      const resp = await base44.post<{ status: string; transfer_id?: string; message?: string }>(
+        `/api/talent/campaign-offers/${encodeURIComponent(offerId)}/retry-transfer`,
+        {},
+      );
+      if (resp?.status === "ok") {
+        setStripeGateModalConfig({
+          severity: "info",
+          title: "Transfer succeeded",
+          description: resp.message || "Funds are on their way to your Stripe account.",
+          actions: [
+            {
+              label: "Done",
+              onClick: () => setStripeGateModalOpen(false),
+            },
+          ],
+        });
+        setStripeGateModalOpen(true);
+        await refreshCreatorTransfers();
+      }
+    } catch (err: any) {
+      const msg = String(err?.message || "");
+      const isNotConnected = msg.includes("stripe_account_not_connected");
+      setStripeGateModalConfig({
+        severity: "block",
+        title: isNotConnected ? "Stripe account not connected" : "Transfer failed",
+        description: isNotConnected
+          ? "Your Stripe account is not connected. Go to Payouts to complete setup, then try again."
+          : "The transfer could not be completed. Ensure your Stripe account has completed onboarding and try again.",
+        actions: [
+          {
+            label: "Go to Payouts",
+            onClick: () => {
+              setStripeGateModalOpen(false);
+              setShowPayoutSettings(true);
+            },
+          },
+          {
+            label: "Close",
+            variant: "outline",
+            onClick: () => setStripeGateModalOpen(false),
+          },
+        ],
+      });
+      setStripeGateModalOpen(true);
+    } finally {
+      setRetryingTransferOfferId(null);
     }
   };
 
@@ -9412,6 +9479,60 @@ export default function CreatorDashboard() {
                 <Button
                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                   onClick={() => {
+                    // Stripe readiness gate for independent creator offers.
+                    if (!payoutAccountStatus?.connected) {
+                      setStripeGateModalConfig({
+                        severity: "block",
+                        title: "Connect Stripe to submit deliverables",
+                        description:
+                          "You need to connect your Stripe account before submitting deliverables. This ensures you get paid when the brand approves your work.",
+                        actions: [
+                          {
+                            label: "Go to Payouts",
+                            onClick: () => {
+                              setStripeGateModalOpen(false);
+                              setShowPayoutSettings(true);
+                            },
+                          },
+                          {
+                            label: "Cancel",
+                            variant: "outline",
+                            onClick: () => setStripeGateModalOpen(false),
+                          },
+                        ],
+                      });
+                      setStripeGateModalOpen(true);
+                      return;
+                    }
+                    if (payoutAccountStatus?.connected && !payoutAccountStatus?.transfers_enabled) {
+                      setStripeGateModalConfig({
+                        severity: "warning",
+                        title: "Stripe transfers not fully enabled",
+                        description:
+                          "Your Stripe account is connected but transfers are not yet enabled. Complete your Stripe onboarding in Payouts to ensure you get paid on time. You can still submit deliverables now.",
+                        actions: [
+                          {
+                            label: "Submit anyway",
+                            onClick: () => {
+                              setStripeGateModalOpen(false);
+                              setSendDeliverableRequestId("");
+                              setSendDeliverableRequestMeta(null);
+                              setSendDeliverableOpen(true);
+                            },
+                          },
+                          {
+                            label: "Go to Payouts",
+                            variant: "outline",
+                            onClick: () => {
+                              setStripeGateModalOpen(false);
+                              setShowPayoutSettings(true);
+                            },
+                          },
+                        ],
+                      });
+                      setStripeGateModalOpen(true);
+                      return;
+                    }
                     setSendDeliverableRequestId("");
                     setSendDeliverableRequestMeta(null);
                     setSendDeliverableOpen(true);
@@ -9532,6 +9653,118 @@ export default function CreatorDashboard() {
                 );
               })}
             </div>
+
+            {/* Payout Status Panel — independent creator offers with released escrow */}
+            {(() => {
+              const independentTransfers = creatorTransfers.filter(
+                (t: any) => t.target_type === "creator",
+              );
+              if (independentTransfers.length === 0) return null;
+              return (
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-gray-900">
+                      Payout Status
+                    </h4>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700"
+                      onClick={refreshCreatorTransfers}
+                      disabled={loadingCreatorTransfers}
+                    >
+                      <RefreshCw
+                        className={`w-3 h-3 mr-1 ${loadingCreatorTransfers ? "animate-spin" : ""}`}
+                      />
+                      Refresh
+                    </Button>
+                  </div>
+                  {independentTransfers.map((transfer: any) => {
+                    const isFailed = transfer.transfer_status === "failed";
+                    const isCreated = transfer.transfer_status === "created";
+                    const isPendingRetry = transfer.transfer_status === "pending_retry";
+                    return (
+                      <div
+                        key={transfer.offer_id}
+                        className="p-4 rounded-xl border border-gray-200 bg-gray-50/50"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 min-w-0">
+                            {isCreated ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                            ) : isFailed || isPendingRetry ? (
+                              <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                            ) : (
+                              <Clock className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 truncate">
+                                {transfer.offer_title}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {transfer.brand_name}
+                              </p>
+                              {isFailed && transfer.failure_reason && (
+                                <p className="text-[11px] text-amber-700 mt-1 leading-snug">
+                                  {transfer.failure_reason.includes(
+                                    "insufficient_capabilities_for_transfer",
+                                  )
+                                    ? "Stripe account not fully set up — transfers not enabled"
+                                    : transfer.failure_reason.length > 100
+                                      ? transfer.failure_reason.slice(0, 100) + "…"
+                                      : transfer.failure_reason}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-sm font-bold text-gray-900">
+                              ${((transfer.amount_cents ?? 0) / 100).toFixed(2)}
+                            </span>
+                            <span
+                              className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+                                isCreated
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : isFailed
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : isPendingRetry
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : "bg-gray-50 text-gray-500 border-gray-200"
+                              }`}
+                            >
+                              {isCreated
+                                ? "Paid"
+                                : isFailed
+                                  ? "Failed"
+                                  : isPendingRetry
+                                    ? "Retrying"
+                                    : "Pending"}
+                            </span>
+                            {isFailed && (
+                              <Button
+                                size="sm"
+                                className="h-7 px-3 text-xs bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg gap-1"
+                                disabled={retryingTransferOfferId === transfer.offer_id}
+                                onClick={() => retryCreatorTransfer(transfer.offer_id)}
+                              >
+                                {retryingTransferOfferId === transfer.offer_id ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Retrying…
+                                  </>
+                                ) : (
+                                  "Claim payment"
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </Card>
         )}
 
@@ -11186,6 +11419,24 @@ export default function CreatorDashboard() {
                           >
                             {statusLabel}
                           </span>
+                          {transfer.transfer_status === "failed" &&
+                            transfer.target_type === "creator" && (
+                            <Button
+                              size="sm"
+                              className="h-7 px-3 text-xs bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-lg gap-1"
+                              disabled={retryingTransferOfferId === transfer.offer_id}
+                              onClick={() => retryCreatorTransfer(transfer.offer_id)}
+                            >
+                              {retryingTransferOfferId === transfer.offer_id ? (
+                                <>
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                  Retrying…
+                                </>
+                              ) : (
+                                "Claim payment"
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -13011,6 +13262,16 @@ export default function CreatorDashboard() {
           {activeSection === "brand-connection" && renderBrandConnection()}
           {activeSection === "talent-portal" && renderTalentPortal()}
         </div>
+
+        {/* Stripe readiness gate modal — deliverable submission + retry transfer feedback */}
+        <ContractPrecheckModal
+          open={stripeGateModalOpen}
+          onOpenChange={setStripeGateModalOpen}
+          severity={stripeGateModalConfig.severity}
+          title={stripeGateModalConfig.title}
+          description={stripeGateModalConfig.description}
+          actions={stripeGateModalConfig.actions}
+        />
 
         <Dialog
           open={sendDeliverableOpen}
