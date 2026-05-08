@@ -127,9 +127,9 @@ const BrandConnectionsView = ({
   feedbackCount?: number;
 }) => {
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t } = useTranslation("agency");
   const tBrand = (path: string, options?: Record<string, unknown>) =>
-    t(`agencyDashboard.analytics.brandConnections.${path}`, options);
+    t(`agencyDashboard.brandConnections.${path}`, options);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -676,11 +676,18 @@ const BrandConnectionsView = ({
         file: null,
         sending: false,
       });
-      toast({ title: "Message sent" });
+      toast({
+        title: t("agencyDashboard.support.toasts.messageSent", {
+          defaultValue: "Nachricht gesendet",
+        }),
+      });
     } catch (e: any) {
       toast({
-        title: "Message failed",
-        description: e?.message || "Please try again.",
+        title: t("agencyDashboard.support.toasts.failedToSend", {
+          defaultValue: "Senden fehlgeschlagen",
+        }),
+        description:
+          e?.message || t("agencyDashboard.subscribe.toasts.tryAgain"),
         variant: "destructive",
       });
       setMessageDialog((prev) => ({ ...prev, sending: false }));
@@ -1385,7 +1392,7 @@ const BrandConnectionsView = ({
                         <p className="text-sm text-gray-600">
                           {email ||
                             t(
-                              "agencyDashboard.analytics.brandConnections.ui.noEmailProvided",
+                              "agencyDashboard.brandConnections.ui.noEmailProvided",
                             )}
                         </p>
                       </div>
@@ -1402,7 +1409,7 @@ const BrandConnectionsView = ({
                                   }
                                   onClick={() => disconnectBrand(brandId)}
                                   aria-label={t(
-                                    "agencyDashboard.analytics.brandConnections.ui.disconnectFromBrand",
+                                    "agencyDashboard.brandConnections.ui.disconnectFromBrand",
                                   )}
                                   className="disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
@@ -1413,7 +1420,7 @@ const BrandConnectionsView = ({
                             {!canDisconnectBrands && (
                               <TooltipContent>
                                 {t(
-                                  "agencyDashboard.analytics.brandConnections.ui.noDisconnectPermission",
+                                  "agencyDashboard.brandConnections.ui.noDisconnectPermission",
                                 )}
                               </TooltipContent>
                             )}
@@ -1494,7 +1501,7 @@ const BrandConnectionsView = ({
                           <p className="text-sm text-gray-600">
                             {email ||
                               t(
-                                "agencyDashboard.analytics.brandConnections.ui.noEmailProvided",
+                                "agencyDashboard.brandConnections.ui.noEmailProvided",
                               )}
                           </p>
                         </div>

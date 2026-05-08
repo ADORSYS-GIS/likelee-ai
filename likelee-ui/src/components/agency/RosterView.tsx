@@ -157,8 +157,10 @@ const RosterView = ({
     const normalized = String(value || "")
       .trim()
       .toLowerCase();
-    if (!normalized) return "Unknown";
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+    if (!normalized) return t("agencyDashboard.roster.states.unknown");
+    return t(`agencyDashboard.roster.filters.${normalized}`, {
+      defaultValue: normalized.charAt(0).toUpperCase() + normalized.slice(1),
+    });
   };
 
   const openSeatBreakdown = async () => {
@@ -247,10 +249,10 @@ const RosterView = ({
   const [reminderOpen, setReminderOpen] = useState(false);
   const [reminderTargetIds, setReminderTargetIds] = useState<string[]>([]);
   const [reminderSubject, setReminderSubject] = useState(
-    "Digitals update reminder",
+    t("agencyDashboard.roster.digitals.reminder.subject"),
   );
   const [reminderBody, setReminderBody] = useState(
-    "Hi {name},\n\nPlease upload your latest digitals (plain photos, no makeup) to keep your profile up to date.\n\nThank you,\nLikelee",
+    t("agencyDashboard.roster.digitals.reminder.body"),
   );
   const [sendingReminder, setSendingReminder] = useState(false);
 
@@ -356,19 +358,38 @@ const RosterView = ({
       : 0;
     if (!prev) {
       if (!current) {
-        return { label: "0% vs previous 30d", positive: true, pct: 0 };
+        return {
+          label: t("agencyDashboard.roster.stats.previous30d", {
+            value: "0%",
+          }),
+          positive: true,
+          pct: 0,
+        };
       }
-      return { label: "+100% vs previous 30d", positive: true, pct: 100 };
+      return {
+        label: t("agencyDashboard.roster.stats.previous30d", {
+          value: "+100%",
+        }),
+        positive: true,
+        pct: 100,
+      };
     }
     const pct = ((current - prev) / Math.abs(prev)) * 100;
     const rounded = Math.round(pct);
     const sign = rounded > 0 ? "+" : "";
     return {
-      label: `${sign}${rounded}% vs previous 30d`,
+      label: t("agencyDashboard.roster.stats.previous30d", {
+        value: `${sign}${rounded}%`,
+      }),
       positive: rounded >= 0,
       pct: rounded,
     };
-  }, [earnings30dTotalCents, earningsPrev30dTotalCents, totalMonthlyEarnings]);
+  }, [
+    earnings30dTotalCents,
+    earningsPrev30dTotalCents,
+    t,
+    totalMonthlyEarnings,
+  ]);
 
   // Digitals tracking calculations
   const calculateDaysSinceUpdate = (lastUpdated: string | null | undefined) => {
@@ -455,17 +476,15 @@ const RosterView = ({
 
   const openReminderModal = (talentIds: string[], mode: "single" | "all") => {
     setReminderTargetIds(talentIds);
-    setReminderSubject("Digitals update reminder");
+    setReminderSubject(t("agencyDashboard.roster.digitals.reminder.subject"));
     if (mode === "single") {
-      setReminderBody(
-        "Hi {name},\n\nPlease upload your latest digitals (plain photos, no makeup) to keep your profile up to date.\n\nThank you,\nLikelee",
-      );
+      setReminderBody(t("agencyDashboard.roster.digitals.reminder.body"));
       setReminderOpen(true);
     } else {
       // Remind All: send one default message without opening composer.
       void sendReminders(talentIds, {
-        subject: "Digitals update reminder",
-        body: "Hi {name},\n\nPlease upload your latest digitals (plain photos, no makeup) to keep your profile up to date.\n\nThank you,\nLikelee",
+        subject: t("agencyDashboard.roster.digitals.reminder.subject"),
+        body: t("agencyDashboard.roster.digitals.reminder.body"),
       });
     }
   };
@@ -493,8 +512,11 @@ const RosterView = ({
 
     if (!targets.length) {
       toast({
-        title: "No emails found",
-        description: `None of the selected ${pluralLabel} have an email address on file.`,
+        title: t("agencyDashboard.roster.digitals.reminder.noEmailsTitle"),
+        description: t(
+          "agencyDashboard.roster.digitals.reminder.noEmailsDescription",
+          { entityPlural: pluralLabel },
+        ),
         variant: "destructive",
       });
       return;
@@ -519,22 +541,35 @@ const RosterView = ({
         } catch (e: any) {
           failed += 1;
           const msg = String(e?.message || "");
-          failures.push(msg || `Failed to send to ${target.email}`);
+          failures.push(
+            msg ||
+              t("agencyDashboard.roster.digitals.reminder.failedRecipient", {
+                email: target.email,
+              }),
+          );
         }
       }
 
       if (failed && !sent) {
         toast({
-          title: "Email not sent",
-          description: failures[0] || "Email sending failed",
+          title: t("agencyDashboard.roster.digitals.reminder.emailNotSent"),
+          description:
+            failures[0] ||
+            t("agencyDashboard.roster.digitals.reminder.emailSendingFailed"),
           variant: "destructive",
         });
         return;
       }
 
       toast({
-        title: "Reminders sent",
-        description: `Sent: ${sent}${failed ? `, Failed: ${failed}` : ""}`,
+        title: t("agencyDashboard.roster.digitals.reminder.sentTitle"),
+        description: t(
+          "agencyDashboard.roster.digitals.reminder.sentDescription",
+          {
+            sent,
+            failed,
+          },
+        ),
         ...(failed ? { variant: "destructive" as const } : {}),
       });
     } finally {
@@ -545,7 +580,9 @@ const RosterView = ({
   const onSendReminderFromModal = async () => {
     if (!reminderTargetIds.length) return;
     await sendReminders(reminderTargetIds, {
-      subject: reminderSubject.trim() || "Digitals update reminder",
+      subject:
+        reminderSubject.trim() ||
+        t("agencyDashboard.roster.digitals.reminder.subject"),
       body: reminderBody,
     });
     setReminderOpen(false);
@@ -945,7 +982,8 @@ const RosterView = ({
     });
     for (const row of rows) {
       const key =
-        (row?.uploaded_at || row?.created_at || "").slice(0, 10) || "Unknown";
+        (row?.uploaded_at || row?.created_at || "").slice(0, 10) ||
+        t("agencyDashboard.roster.states.unknown");
       const existing = groups.get(key) || [];
       existing.push(row);
       groups.set(key, existing);
@@ -1448,11 +1486,15 @@ const RosterView = ({
                   {isLoading && filteredTalent.length === 0 ? (
                     <div className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium py-8">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      {`Loading ${pluralLabel}...`}
+                      {t("agencyDashboard.roster.states.loadingEntities", {
+                        entityPlural: pluralLabel,
+                      })}
                     </div>
                   ) : filteredTalent.length === 0 ? (
                     <div className="text-center text-sm text-gray-500 font-medium py-8">
-                      {`No ${pluralLabel} to display.`}
+                      {t("agencyDashboard.roster.states.noEntities", {
+                        entityPlural: pluralLabel,
+                      })}
                     </div>
                   ) : (
                     filteredTalent.map((talent) => {
@@ -1511,9 +1553,13 @@ const RosterView = ({
                             <Badge
                               variant="secondary"
                               className={`shrink-0 border px-2.5 py-1 text-[10px] font-bold ${
-                                displayStatus === "Active"
+                                displayStatus ===
+                                t("agencyDashboard.roster.filters.active")
                                   ? "border-green-200 bg-green-50 text-green-700"
-                                  : displayStatus === "Pending"
+                                  : displayStatus ===
+                                      t(
+                                        "agencyDashboard.roster.filters.pending",
+                                      )
                                     ? "border-amber-200 bg-amber-50 text-amber-700"
                                     : "border-slate-200 bg-slate-100 text-slate-700"
                               }`}
@@ -1525,7 +1571,7 @@ const RosterView = ({
                           <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-sm">
                             <div>
                               <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                Followers
+                                {t("agencyDashboard.roster.table.followers")}
                               </div>
                               <div className="mt-1 text-base font-bold text-slate-900">
                                 {formatNumber(Number(talent.followers || 0))}
@@ -1534,8 +1580,10 @@ const RosterView = ({
                             <div>
                               <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                                 {agencyMode === "IRL"
-                                  ? "Assets"
-                                  : "30D Revenue"}
+                                  ? t("agencyDashboard.roster.table.assets")
+                                  : t(
+                                      "agencyDashboard.roster.table.revenue30d",
+                                    )}
                               </div>
                               <div className="mt-1 text-base font-bold text-slate-900">
                                 {agencyMode === "IRL"
@@ -1549,7 +1597,7 @@ const RosterView = ({
                               <>
                                 <div>
                                   <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Top Brand
+                                    {t("agencyDashboard.roster.table.topBrand")}
                                   </div>
                                   <div className="mt-1 truncate text-sm font-semibold text-slate-900">
                                     {talent.top_brand || "—"}
@@ -1557,7 +1605,9 @@ const RosterView = ({
                                 </div>
                                 <div>
                                   <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    License Expiry
+                                    {t(
+                                      "agencyDashboard.roster.table.licenseExpiry",
+                                    )}
                                   </div>
                                   <div className="mt-1 text-sm font-semibold text-slate-900">
                                     {talent.expiry || "—"}
@@ -1569,7 +1619,9 @@ const RosterView = ({
                               <>
                                 <div>
                                   <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Organization
+                                    {t(
+                                      "agencyDashboard.roster.table.organization",
+                                    )}
                                   </div>
                                   <div className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900">
                                     {talent.organization ||
@@ -1579,7 +1631,7 @@ const RosterView = ({
                                 </div>
                                 <div>
                                   <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                    Sports
+                                    {t("agencyDashboard.roster.table.sports")}
                                   </div>
                                   <div className="mt-1 line-clamp-2 text-sm font-semibold text-slate-900">
                                     {sportsLabel}
@@ -1589,7 +1641,7 @@ const RosterView = ({
                             ) : (
                               <div>
                                 <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                  Assets
+                                  {t("agencyDashboard.roster.table.assets")}
                                 </div>
                                 <div className="mt-1 text-sm font-semibold text-slate-900">
                                   {formatNumber(Number(talent.assets || 0))}
@@ -1603,7 +1655,7 @@ const RosterView = ({
                             talent.ai_usage.length > 0 && (
                               <div className="mt-3">
                                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                  AI Usage
+                                  {t("agencyDashboard.roster.table.aiUsage")}
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                   {talent.ai_usage.map((usage: string) => {
@@ -1657,12 +1709,12 @@ const RosterView = ({
                                 onClick={() => handleSort("status")}
                                 className="flex items-center gap-1 cursor-pointer pointer-events-auto"
                               >
-                                Status{" "}
+                                {t("agencyDashboard.roster.table.status")}{" "}
                                 <ArrowUpDown className="w-3 h-3 text-gray-500" />
                               </button>
                             </th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              AI Usage
+                              {t("agencyDashboard.roster.table.aiUsage")}
                             </th>
                           </>
                         )}
@@ -1672,31 +1724,31 @@ const RosterView = ({
                             onClick={() => handleSort("followers_val")}
                             className="flex items-center gap-1 cursor-pointer pointer-events-auto"
                           >
-                            Followers{" "}
+                            {t("agencyDashboard.roster.table.followers")}{" "}
                             <ArrowUpDown className="w-3 h-3 text-gray-500" />
                           </button>
                         </th>
                         {isSportsAgency ? (
                           <>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              Organization
+                              {t("agencyDashboard.roster.table.organization")}
                             </th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              Sports
+                              {t("agencyDashboard.roster.table.sports")}
                             </th>
                           </>
                         ) : (
                           <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                            Assets
+                            {t("agencyDashboard.roster.table.assets")}
                           </th>
                         )}
                         {agencyMode !== "IRL" && (
                           <>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              Top Brand
+                              {t("agencyDashboard.roster.table.topBrand")}
                             </th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                              License Expiry
+                              {t("agencyDashboard.roster.table.licenseExpiry")}
                             </th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
                               <button
@@ -2585,31 +2637,35 @@ const RosterView = ({
         <DialogContent className="w-[95vw] max-w-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
-              Send digitals reminder
+              {t("agencyDashboard.roster.digitals.reminder.dialogTitle")}
             </DialogTitle>
             <DialogDescription>
-              {`Sends an email to the selected ${singularLabel}. Requires SMTP configuration on the server.`}
+              {t("agencyDashboard.roster.digitals.reminder.dialogDescription", {
+                entity: singularLabel,
+              })}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-1">
-                Subject
+                {t("agencyDashboard.roster.digitals.reminder.subjectLabel")}
               </label>
               <Input
                 value={reminderSubject}
                 onChange={(e) => setReminderSubject(e.target.value)}
-                placeholder="Digitals update reminder"
+                placeholder={t(
+                  "agencyDashboard.roster.digitals.reminder.subject",
+                )}
               />
             </div>
 
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-1">
-                Message
+                {t("agencyDashboard.roster.digitals.reminder.messageLabel")}
               </label>
               <p className="text-xs text-gray-500 mb-2">
-                Use {"{name}"} to personalize.
+                {t("agencyDashboard.roster.digitals.reminder.personalizeHint")}
               </p>
               <textarea
                 value={reminderBody}
@@ -2624,14 +2680,16 @@ const RosterView = ({
                 onClick={() => setReminderOpen(false)}
                 disabled={sendingReminder}
               >
-                Cancel
+                {t("agencyDashboard.roster.actions.cancel")}
               </Button>
               <Button
                 onClick={onSendReminderFromModal}
                 disabled={sendingReminder}
                 className="font-bold"
               >
-                {sendingReminder ? "Sending..." : "Send"}
+                {sendingReminder
+                  ? t("agencyDashboard.roster.states.sending")
+                  : t("agencyDashboard.roster.actions.send")}
               </Button>
             </div>
           </div>
