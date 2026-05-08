@@ -6,7 +6,6 @@ use crate::{
         brand_allows_campaign_collaboration, brand_campaign_limit, get_brand_plan_tier, PlanTier,
     },
     errors::sanitize_db_error,
-    pricing_defaults::should_default_visibility_on,
     services::docuseal::{DocuSealClient, Submitter},
     storage::{
         canonical_object_path, delete_object, download_object, insert_asset_record,
@@ -2439,28 +2438,12 @@ pub async fn list_offer_options(
         return Err(sanitize_db_error(status.as_u16(), text));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    // Connected creators are always shown regardless of their public visibility settings.
+    // The brand-creator connection itself is the authorization — a creator who has connected
+    // with this brand should always appear in the offer collaborator list even if their
+    // public profile is set to private.
     let items: Vec<serde_json::Value> = rows
         .into_iter()
-        .filter(|r| {
-            let public_profile_visible = r.get("public_profile_visible").and_then(|v| v.as_bool());
-            let visibility = r
-                .get("visibility")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .trim()
-                .to_lowercase();
-            match public_profile_visible {
-                Some(true) => true,
-                Some(false) => should_default_visibility_on(r),
-                None => {
-                    visibility.is_empty()
-                        || visibility == "public"
-                        || visibility == "brands"
-                        || visibility == "visible_to_brands"
-                        || visibility == "true"
-                }
-            }
-        })
         .map(|r| {
             let monthly = r
                 .get("base_weekly_price_cents")
