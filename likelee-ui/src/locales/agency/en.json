@@ -183,7 +183,8 @@
         "digitalsTracking": "Digitals Tracking",
         "campaigns": "Campaigns",
         "licenses": "Licenses",
-        "analytics": "Analytics"
+        "analytics": "Analytics",
+        "analyticsPro": "Analytics Pro"
       },
       "actions": {
         "exportCsv": "Export CSV",
@@ -1523,53 +1524,53 @@
       "comingSoon": "Coming soon",
       "comingSoonDescription": "Coming soon.",
       "digitals": {
-        "title": "Digitals-Tracking",
-        "subtitle": "Verwalten Sie die Digitals von {{entity}} (schlichte Fotos, kein Make-up)",
-        "remindAll": "Alle erinnern",
+        "title": "Digitals Tracking",
+        "subtitle": "Manage {{entity}} digitals (plain photos, no makeup)",
+        "remindAll": "Remind All",
         "loading": "Loading...",
-        "current": "Aktuell",
-        "upToDate": "Aktuell",
-        "reminderDue": "Erinnerung fällig",
-        "daysOld75to89": "75-89 Tage alt",
-        "outdated": "Veraltet",
-        "daysOld90Plus": "90+ Tage alt",
-        "totalEntities": "{{entityPlural}} gesamt",
-        "inRoster": "Im Roster",
+        "current": "Current",
+        "upToDate": "Up to date",
+        "reminderDue": "Reminder due",
+        "daysOld75to89": "75-89 days old",
+        "outdated": "Outdated",
+        "daysOld90Plus": "90+ days old",
+        "totalEntities": "Total {{entityPlural}}",
+        "inRoster": "In roster",
         "lastUpdated": "Last updated:",
         "never": "Never",
-        "daysAgo": "vor {{count}} Tag",
-        "daysAgo_other": "vor {{count}} Tagen",
+        "daysAgo": "{{count}} day ago",
+        "daysAgo_other": "{{count}} days ago",
         "reminder": {
-          "subject": "Erinnerung zur Aktualisierung der Digitals",
-          "body": "Hallo {name},\n\nbitte lade deine neuesten Digitals hoch (schlichte Fotos, ohne Make-up), damit dein Profil aktuell bleibt.\n\nVielen Dank,\nLikelee",
-          "dialogTitle": "Digitals-Erinnerung senden",
-          "dialogDescription": "Sendet eine E-Mail an das ausgewählte {{entity}}. Erfordert eine SMTP-Konfiguration auf dem Server.",
-          "subjectLabel": "Betreff",
-          "messageLabel": "Nachricht",
-          "personalizeHint": "{name} zur Personalisierung verwenden.",
-          "noEmailsTitle": "Keine E-Mail-Adressen gefunden",
-          "noEmailsDescription": "Keines der ausgewählten {{entityPlural}} hat eine hinterlegte E-Mail-Adresse.",
-          "failedRecipient": "Senden an {{email}} fehlgeschlagen",
-          "emailNotSent": "E-Mail nicht gesendet",
-          "emailSendingFailed": "E-Mail-Versand fehlgeschlagen",
-          "sentTitle": "Erinnerungen gesendet",
-          "sentDescription": "Gesendet: {{sent}}, Fehlgeschlagen: {{failed}}"
+          "subject": "Digitals update reminder",
+          "body": "Hi {name},\n\nPlease upload your latest digitals (plain photos, no makeup) so your profile stays current.\n\nThank you,\nLikelee",
+          "dialogTitle": "Send digitals reminder",
+          "dialogDescription": "Sends an email to the selected {{entity}}. Requires SMTP configuration on the server.",
+          "subjectLabel": "Subject",
+          "messageLabel": "Message",
+          "personalizeHint": "Use {name} to personalize.",
+          "noEmailsTitle": "No email addresses found",
+          "noEmailsDescription": "None of the selected {{entityPlural}} have an email address on file.",
+          "failedRecipient": "Failed to send to {{email}}",
+          "emailNotSent": "Email not sent",
+          "emailSendingFailed": "Email sending failed",
+          "sentTitle": "Reminders sent",
+          "sentDescription": "Sent: {{sent}}, Failed: {{failed}}"
         },
-        "photos": "photos",
-        "photos_other": "{{count}} Fotos",
+        "photos": "{{count}} photo",
+        "photos_other": "{{count}} photos",
         "viewHistory": "View History",
-        "sendReminder": "Erinnerung senden",
-        "uploadNew": "Neu hochladen",
+        "sendReminder": "Send Reminder",
+        "uploadNew": "Upload New",
         "history": {
           "title": "Digitals History"
         },
         "upload": {
           "uploadDigitals": "Upload Digitals"
         },
-        "view": "view",
+        "view": "View",
         "uploadPhoto": "Upload photo",
         "previousUpdates": "Previous Updates",
-        "loadingHistory": "loading history..."
+        "loadingHistory": "Loading history..."
       },
       "licenses": {
         "comingSoon": "Lizenzverwaltung kommt bald"
@@ -1817,7 +1818,10 @@
       "autoRenew": "Auto-renew",
       "daysLeft": "{{days}} days left",
       "expiresToday": "Expires today",
-      "expired": "Expired"
+      "expired": "Expired",
+      "tryAdjustingFilters": "Try adjusting your filters.",
+      "to": "to {{date}}",
+      "cannotRenew": "Cannot renew"
     },
     "addTalent": {
       "title": "Add New {{entityTitle}}",
@@ -4468,12 +4472,12 @@
       },
       "outboundContracts": "Outbound Contracts",
       "status": {
-        "signed": "signed",
-        "sent": "sent",
-        "opened": "opened",
-        "agencyPending": "agency_pending",
-        "clientPending": "client_pending",
-        "archived": "archived",
+        "signed": "Signed",
+        "sent": "Sent",
+        "opened": "Opened",
+        "agencyPending": "Agency pending",
+        "clientPending": "Client pending",
+        "archived": "Archived",
         "declined": "Declined",
         "expired": "Expired"
       },
@@ -4529,7 +4533,8 @@
       "resend": "Resend",
       "resending": "Resending...",
       "agencyLink": "Agency link",
-      "clientLink": "Client link"
+      "clientLink": "Client link",
+      "loadingTable": "Loading..."
     },
     "licenseTemplates": {
       "title": "License Templates",
@@ -4612,7 +4617,10 @@
         "customTerms": "Custom Terms",
         "customTermsPlaceholder": "Any extra conditions...",
         "modificationsAllowed": "Modifications Allowed",
-        "selectOption": "Select option"
+        "selectOption": "Select option",
+        "territoryPlaceholder": "Worldwide",
+        "yes": "Yes",
+        "no": "No"
       },
       "useModal": {
         "title": "Use Contract: {{name}}",
@@ -4681,7 +4689,10 @@
       "delete": {
         "title": "Delete Template"
       },
-      "useContract": "Use Contract"
+      "useContract": "Use Contract",
+      "messages": {
+        "close": "Close"
+      }
     },
     "licensingRequests": {
       "title": "Licensing Requests",
@@ -4832,7 +4843,14 @@
         "licenseFee": "License Fee",
         "duration": "Duration",
         "apply": "Apply",
-        "clear": "Clear"
+        "clear": "Clear",
+        "any": "Any",
+        "days0to7": "0-7 days",
+        "days8to30": "8-30 days",
+        "days31to90": "31-90 days",
+        "days90Plus": "90+ days",
+        "clearFilters": "Clear Filters",
+        "applyFilters": "Apply Filters"
       },
       "messages": {
         "recovering": "Recovering...",
@@ -4869,7 +4887,9 @@
         "yesDecline": "Yes, Decline",
         "declining": "Declining...",
         "sendCounterOffer": "Send Counter Offer",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "paymentLinkEmailed": "The payment link has been emailed to the client.",
+        "paymentLinkGeneratedManual": "Payment link generated. No client email found - please share the link manually."
       },
       "deleteModal": {
         "title": "Delete Licensing Request",
@@ -4900,7 +4920,10 @@
         "close": "Close",
         "messageTalent": "Message Talent",
         "messageAthlete": "Message Athlete"
-      }
+      },
+      "fromDate": "From {{date}}",
+      "days": "{{count}} day",
+      "days_other": "{{count}} days"
     },
     "packages": {
       "card": {
@@ -6431,12 +6454,24 @@
       },
       "payoutStatus": {
         "agency": "agency",
-        "talent": "talent"
+        "talent": "talent",
+        "title": "Payout Status",
+        "allTransferred": "All transferred",
+        "actionRequired": "Action required",
+        "refresh": "Refresh",
+        "retryFailed": "Retry failed",
+        "loading": "Loading payout status...",
+        "clickRefresh": "Click refresh to load payout status.",
+        "retry": "retry",
+        "retries": "retries"
       },
       "retryTransferDialog": {
         "failed": "failed",
         "transferred": "Transferred",
-        "transfersNotAllowed": "Transfers not allowed on this Stripe account."
+        "transfersNotAllowed": "Transfers not allowed on this Stripe account.",
+        "noAccount": "No account",
+        "noStripeConnected": "No Stripe account connected. Ask them to complete Stripe onboarding.",
+        "stripeNotSetup": "Stripe account not fully set up - transfers not enabled."
       },
       "toasts": {
         "assignmentsLocked": "Assignments locked",
@@ -6462,6 +6497,89 @@
         "reviewFailed": "Review failed",
         "deliverableDeleted": "Deliverable deleted",
         "deleteFailed": "Delete failed"
+      },
+      "title": "Offer Deliverables",
+      "description": "Assign talents, request assets, and review deliverables for brand offers.",
+      "collapseAll": "Collapse All",
+      "noBrandOffers": "No brand offers found.",
+      "delete": "Delete",
+      "viewOnlyMode": "View Only Mode",
+      "viewOnlyDescription": "Your role allows viewing deliverables but not approving or managing them.",
+      "feedback": "Feedback",
+      "noCaption": "No caption",
+      "approve": "Approve",
+      "revise": "Revise",
+      "reject": "Reject",
+      "permissionCannotApprove": "Your role cannot approve deliverables",
+      "permissionCannotRevise": "Your role cannot revise deliverables",
+      "permissionCannotReject": "Your role cannot reject deliverables",
+      "assignTalent": {
+        "title": "Assign Talent",
+        "filterPlaceholder": "Search talent by name or email...",
+        "talentFallback": "Talent",
+        "selectedTalent": "Selected talent",
+        "inviteRequired": "Portal invite required",
+        "inviteRequiredDescription": "This talent needs a creator portal account before they can be assigned to deliverables.",
+        "openRoster": "Open roster",
+        "confirmTitle": "Confirm talent assignment?",
+        "confirmDescription": "You can update assigned talents before the contract is sent. After you send the contract, assignments are locked.",
+        "confirm": "Confirm assignment"
+      },
+      "requestAssetModal": {
+        "title": "Request Asset",
+        "description": "Send a clear brief and optional PDF to guide the talent.",
+        "titleLabel": "Title",
+        "titlePlaceholder": "e.g. Campaign product shot",
+        "detailsLabel": "Details",
+        "detailsPlaceholder": "Describe what you need from the talent...",
+        "briefPdf": "Brief PDF (optional)",
+        "chooseFile": "Choose File",
+        "noFileSelected": "No file selected",
+        "selectedTalent": "Selected talent",
+        "sendRequest": "Send Request",
+        "sending": "Sending..."
+      },
+      "uploadDeliverableModal": {
+        "title": "Upload Deliverable",
+        "description": "Add a caption and upload one or more files.",
+        "captionPlaceholder": "Add a caption...",
+        "chooseFiles": "Choose Files",
+        "noFilesSelected": "No files selected",
+        "filesSelected": "{{count}} file(s) selected",
+        "upload": "Upload"
+      },
+      "reviewModal": {
+        "approveTitle": "Approve Deliverable",
+        "rejectTitle": "Reject Deliverable",
+        "requestChangesTitle": "Request Changes",
+        "approveDescription": "Approve this deliverable for final submission.",
+        "rejectDescription": "Reject this deliverable and provide feedback.",
+        "requestChangesDescription": "Send feedback and request changes from the talent.",
+        "optionalNoteLabel": "Optional note",
+        "feedbackLabel": "Feedback",
+        "feedbackPlaceholder": "Add feedback...",
+        "sendFeedbackAction": "Send Feedback",
+        "cancel": "Cancel"
+      },
+      "deleteModal": {
+        "title": "Delete Deliverable",
+        "description": "This will permanently remove the deliverable. Continue?",
+        "cancel": "Cancel"
+      },
+      "unassignTalent": {
+        "title": "Unassign talent?",
+        "description": "Remove {{name}} from this offer. You can change assigned talents before the contract is sent. After you send the contract, assignments are locked.",
+        "unassign": "Unassign",
+        "unassigning": "Unassigning..."
+      },
+      "gates": {
+        "unpaidBanner": "Brand payment is still pending. You can upload and submit deliverables now, but you will need to confirm the unpaid status before submitting.",
+        "notSignedTitle": "Contract not signed yet",
+        "notSignedDescription": "This offer is not fully signed yet. You can upload drafts, but cannot submit them to the brand until the contract is signed.",
+        "unpaidTitle": "Submit before payment?",
+        "unpaidDescription": "Brand payment is still pending. Confirm that you want to submit these deliverables anyway.",
+        "submitAnyway": "Submit anyway",
+        "cancel": "Cancel"
       }
     }
   },

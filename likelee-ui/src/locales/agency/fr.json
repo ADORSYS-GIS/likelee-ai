@@ -182,7 +182,8 @@
         "digitalsTracking": "Suivi des digitals",
         "campaigns": "Campagnes",
         "licenses": "Licences",
-        "analytics": "Analytique"
+        "analytics": "Analytique",
+        "analyticsPro": "Analytics Pro"
       },
       "actions": {
         "exportCsv": "Exporter CSV",
@@ -312,10 +313,10 @@
         "upload": {
           "uploadDigitals": "Télécharger des Digitales"
         },
-        "view": "view",
-        "uploadPhoto": "Upload photo",
-        "previousUpdates": "Previous Updates",
-        "loadingHistory": "loading history..."
+  "view": "Voir",
+  "uploadPhoto": "Téléverser une photo",
+  "previousUpdates": "Mises à jour précédentes",
+  "loadingHistory": "Chargement de l'historique..."
       },
       "licenses": {
         "comingSoon": "La gestion des licences arrive bientôt"
@@ -4109,7 +4110,7 @@
       "title": "Demandes de licence",
       "tabs": {
         "active": "Actif",
-        "archive": "Archive",
+        "archive": "Archiver",
         "brandRequests": "Demandes de marque"
       },
       "filter": {
@@ -4117,9 +4118,9 @@
         "status": "Statut",
         "date": "Date",
         "reset": "Réinitialiser les filtres",
-        "button": "Filter",
-        "clear": "Clear",
-        "apply": "Apply"
+        "button": "Filtrer",
+        "clear": "Effacer",
+        "apply": "Appliquer"
       },
       "loading": "Chargement...",
       "loadFailed": "Échec du chargement des demandes de licence",
@@ -4169,7 +4170,7 @@
         "messagePlaceholder": "Entrez votre message de contre-offre...",
         "send": "Envoyer la contre-offre",
         "cancel": "Annuler",
-        "messageLabel": "Message to Client"
+        "messageLabel": "Message au client"
       },
       "declineModal": {
         "title": "Refuser la demande",
@@ -4177,10 +4178,10 @@
         "reasonPlaceholder": "Entrez la raison du refus...",
         "decline": "Refuser la demande",
         "cancel": "Annuler",
-        "confirmQuestion": "You are about to decline the request from",
-        "thisBrand": "this brand",
-        "yesDecline": "Yes, Decline",
-        "declining": "Declining..."
+        "confirmQuestion": "Vous êtes sur le point de refuser la demande de",
+        "thisBrand": "cette marque",
+        "yesDecline": "Oui, refuser",
+        "declining": "Refus en cours..."
       },
       "status": {
         "approved": "Approuvé",
@@ -4203,7 +4204,7 @@
       },
       "brandRequests": {
         "unknownBrand": "Marque inconnue",
-        "noDescription": "Aucune description",
+        "noDescription": "Aucune description fournie",
         "licenseFee": "Frais de licence",
         "territory": "Territoire",
         "exclusivity": "Exclusivité",
@@ -4217,112 +4218,124 @@
         "declined": "Refusé"
       },
       "filterModal": {
-        "title": "Filter Licensing Requests",
-        "description": "Narrow down your licensing requests by status, license fee, and duration.",
-        "status": "Status",
-        "allStatuses": "All Statuses",
-        "licenseFee": "License Fee",
-        "duration": "Duration",
-        "apply": "Apply",
-        "clear": "Clear"
+        "title": "Filtrer les demandes de licence",
+        "description": "Affinez vos demandes par statut, frais de licence et durée.",
+        "status": "Statut",
+        "allStatuses": "Tous les statuts",
+        "licenseFee": "Frais de licence",
+        "duration": "Durée",
+        "apply": "Appliquer",
+        "clear": "Effacer",
+        "any": "Tous",
+        "days0to7": "0-7 jours",
+        "days8to30": "8-30 jours",
+        "days31to90": "31-90 jours",
+        "days90Plus": "90+ jours",
+        "clearFilters": "Effacer les filtres",
+        "applyFilters": "Appliquer les filtres"
       },
-      "archiveNotice": "Licensing requests past their end date are automatically moved to the Archive tab.",
-      "noActive": "No active licensing requests",
-      "noArchived": "No archived licensing requests",
+      "archiveNotice": "Les demandes de licence passées après leur date de fin sont automatiquement déplacées vers l’onglet Archives.",
+      "noActive": "Aucune demande de licence active",
+      "noArchived": "Aucune demande de licence archivée",
       "statusLabels": {
-        "approved": "Approved",
-        "declined": "Declined",
-        "pending": "Pending"
+        "approved": "Approuvé",
+        "declined": "Refusé",
+        "pending": "En attente"
       },
       "actions": {
-        "decline": "Decline",
-        "approve": "Approve",
-        "counterOffer": "Counter Offer",
-        "sendPaymentLink": "Send payment link",
-        "resendPaymentLink": "Resend payment link",
-        "recoverToActive": "Recover to Active",
-        "deletePermanently": "Delete Permanently",
-        "acceptWriteContract": "Accept & Write Contract"
+        "decline": "Refuser",
+        "approve": "Approuver",
+        "counterOffer": "Contre-offre",
+        "sendPaymentLink": "Envoyer le lien de paiement",
+        "resendPaymentLink": "Renvoyer le lien de paiement",
+        "recoverToActive": "Rétablir en actif",
+        "deletePermanently": "Supprimer définitivement",
+        "acceptWriteContract": "Accepter et rédiger le contrat"
       },
       "fields": {
-        "licenseFee": "License Fee",
-        "regions": "Regions",
-        "usageScope": "Usage Scope",
-        "deadline": "Deadline",
-        "duration": "Duration",
-        "timeline": "Timeline",
-        "modsAllowed": "Mods Allowed",
-        "contractPhase": "Contract Phase",
-        "territory": "Territory",
-        "exclusivity": "Exclusivity"
+        "licenseFee": "Frais de licence",
+        "regions": "Régions",
+        "usageScope": "Portée d'utilisation",
+        "deadline": "Date limite",
+        "duration": "Durée",
+        "timeline": "Chronologie",
+        "modsAllowed": "Modifications autorisées",
+        "contractPhase": "Phase du contrat",
+        "territory": "Territoire",
+        "exclusivity": "Exclusivité"
       },
       "messages": {
-        "recovering": "Recovering...",
-        "deleting": "Deleting...",
-        "sending": "Sending...",
-        "sendingCounterOffer": "Sending...",
-        "counterOfferSent": "Counter offer sent",
-        "clientNotified": "The client has been notified.",
-        "failedToSendCounterOffer": "Failed to send counter offer",
-        "couldNotSendCounterOffer": "Could not send counter offer",
-        "updateFailed": "Update failed",
-        "couldNotFindIds": "Could not find licensing request IDs to update. Please refresh and try again.",
-        "requestDeclined": "Request declined",
-        "requestDeclinedDescription": "The licensing request has been declined.",
-        "requestApproved": "Request approved",
-        "requestApprovedDescription": "The licensing request has been approved.",
-        "couldNotUpdate": "Could not update licensing request",
-        "paymentLinkSent": "Payment link sent",
-        "paymentLinkGenerated": "Payment link generated and sent.",
-        "paymentLinkSentSimple": "Payment link sent.",
-        "sendPaymentLinkFailed": "Send payment link failed",
-        "couldNotGenerateSendPaymentLink": "Could not generate/send payment link",
-        "recovered": "Recovered",
-        "recoveredDescription": "Licensing request has been moved back to active.",
-        "recoveryFailed": "Recovery failed",
-        "couldNotRecover": "Could not recover licensing request",
-        "deleted": "Deleted",
-        "deletedDescription": "Licensing request(s) permanently deleted.",
-        "deleteFailed": "Delete failed",
-        "couldNotDelete": "Could not delete licensing request",
-        "close": "Close",
-        "messageTalent": "Message Talent",
-        "messageAthlete": "Message Athlete",
-        "yesDecline": "Yes, Decline",
-        "declining": "Declining...",
-        "sendCounterOffer": "Send Counter Offer",
-        "cancel": "Cancel"
+        "recovering": "Rétablissement...",
+        "deleting": "Suppression...",
+        "sending": "Envoi...",
+        "sendingCounterOffer": "Envoi...",
+        "counterOfferSent": "Contre-offre envoyée",
+        "clientNotified": "Le client a été notifié.",
+        "failedToSendCounterOffer": "Échec de l'envoi de la contre-offre",
+        "couldNotSendCounterOffer": "Impossible d'envoyer la contre-offre",
+        "updateFailed": "Échec de la mise à jour",
+        "couldNotFindIds": "Impossible de trouver les ID des demandes de licence à mettre à jour. Actualisez la page et réessayez.",
+        "requestDeclined": "Demande refusée",
+        "requestDeclinedDescription": "La demande de licence a été refusée.",
+        "requestApproved": "Demande approuvée",
+        "requestApprovedDescription": "La demande de licence a été approuvée.",
+        "couldNotUpdate": "Impossible de mettre à jour la demande de licence",
+        "paymentLinkSent": "Lien de paiement envoyé",
+        "paymentLinkGenerated": "Lien de paiement généré et envoyé.",
+        "paymentLinkSentSimple": "Lien de paiement envoyé.",
+        "sendPaymentLinkFailed": "Échec de l'envoi du lien de paiement",
+        "couldNotGenerateSendPaymentLink": "Impossible de générer/envoyer le lien de paiement",
+        "recovered": "Rétablie",
+        "recoveredDescription": "La demande de licence a été remise en actif.",
+        "recoveryFailed": "Échec du rétablissement",
+        "couldNotRecover": "Impossible de rétablir la demande de licence",
+        "deleted": "Supprimée",
+        "deletedDescription": "Demande(s) de licence supprimée(s) définitivement.",
+        "deleteFailed": "Échec de la suppression",
+        "couldNotDelete": "Impossible de supprimer la demande de licence",
+        "close": "Fermer",
+        "messageTalent": "Message au talent",
+        "messageAthlete": "Message à l'athlète",
+        "yesDecline": "Oui, refuser",
+        "declining": "Refus en cours...",
+        "sendCounterOffer": "Envoyer la contre-offre",
+        "cancel": "Annuler",
+        "paymentLinkEmailed": "Le lien de paiement a été envoyé au client par e-mail.",
+        "paymentLinkGeneratedManual": "Lien de paiement généré. Aucun e-mail client trouvé - partagez le lien manuellement."
       },
       "deleteModal": {
-        "title": "Delete Licensing Request",
-        "description": "This will permanently delete this archived licensing request. This action cannot be undone.",
-        "descriptionActive": "This will archive and then permanently delete this licensing request. This action cannot be undone.",
-        "confirmQuestion": "Are you sure you want to delete the licensing request for",
-        "unknownBrand": "Unknown brand",
-        "cancel": "Cancel",
-        "delete": "Delete Permanently",
-        "deleting": "Deleting..."
+        "title": "Supprimer la demande de licence",
+        "description": "Cela supprimera définitivement cette demande de licence archivée. Cette action est irréversible.",
+        "descriptionActive": "Cela archivera puis supprimera définitivement cette demande de licence. Cette action est irréversible.",
+        "confirmQuestion": "Voulez-vous vraiment supprimer la demande de licence pour",
+        "unknownBrand": "Marque inconnue",
+        "cancel": "Annuler",
+        "delete": "Supprimer définitivement",
+        "deleting": "Suppression..."
       },
       "detailsModal": {
-        "title": "Licensing Request Details",
+        "title": "Détails de la demande de licence",
         "description": "Description",
-        "campaign": "Campaign",
-        "category": "Category",
-        "exclusivity": "Exclusivity",
-        "offerAmount": "Offer Amount",
-        "customTerms": "Custom Terms",
-        "modificationsAllowed": "Modifications Allowed"
+        "campaign": "Campagne",
+        "category": "Catégorie",
+        "exclusivity": "Exclusivité",
+        "offerAmount": "Montant de l'offre",
+        "customTerms": "Conditions personnalisées",
+        "modificationsAllowed": "Modifications autorisées"
       },
       "paymentReadinessModal": {
-        "title": "Talent setup required",
-        "titleAthlete": "Athlete setup required",
-        "description": "The following talents need to complete their account setup before a payment link can be sent.",
-        "descriptionAthlete": "The following athletes need to complete their account setup before a payment link can be sent.",
-        "accountSetupIncomplete": "Account setup incomplete",
-        "close": "Close",
-        "messageTalent": "Message Talent",
-        "messageAthlete": "Message Athlete"
-      }
+        "title": "Configuration du talent requise",
+        "titleAthlete": "Configuration de l'athlète requise",
+        "description": "Les talents suivants doivent terminer la configuration de leur compte avant l'envoi d'un lien de paiement.",
+        "descriptionAthlete": "Les athlètes suivants doivent terminer la configuration de leur compte avant l'envoi d'un lien de paiement.",
+        "accountSetupIncomplete": "Configuration du compte incomplète",
+        "close": "Fermer",
+        "messageTalent": "Message au talent",
+        "messageAthlete": "Message à l'athlète"
+      },
+      "fromDate": "À partir du {{date}}",
+      "days": "{{count}} jour",
+      "days_other": "{{count}} jours"
     },
     "activeLicenses": {
       "title": "Licences actives",
@@ -4391,7 +4404,10 @@
       "autoRenew": "Renouvellement automatique",
       "daysLeft": "{{days}} jours restants",
       "expiresToday": "Expire aujourd'hui",
-      "expired": "Expirée"
+      "expired": "Expirée",
+      "tryAdjustingFilters": "Essayez d’ajuster vos filtres.",
+      "to": "jusqu’au {{date}}",
+      "cannotRenew": "Renouvellement impossible"
     },
     "licenseSubmissions": {
       "title": "Soumissions de licence",
@@ -4400,22 +4416,22 @@
         "active": "Actif",
         "archive": "Archive"
       },
-      "outboundContracts": "Outbound Contracts",
+      "outboundContracts": "Contrats sortants",
       "status": {
-        "signed": "signed",
-        "sent": "sent",
-        "opened": "opened",
-        "agencyPending": "agency_pending",
-        "clientPending": "client_pending",
-        "archived": "archived",
+        "signed": "Signé",
+        "sent": "Envoyé",
+        "opened": "Ouvert",
+        "agencyPending": "En attente agence",
+        "clientPending": "En attente client",
+        "archived": "Archivé",
         "declined": "Refusé",
         "expired": "Expiré"
       },
       "table": {
         "client": "Client",
-        "template": "Template",
-        "status": "Status",
-        "sentDate": "Sent Date",
+        "template": "Modèle",
+        "status": "Statut",
+        "sentDate": "Date d'envoi",
         "actions": "Actions"
       },
       "reason": "Raison :",
@@ -4443,27 +4459,28 @@
         "recover": "Récupérer",
         "signHere": "Signer ici",
         "download": "Télécharger",
-        "downloadPdf": "Download PDF",
+        "downloadPdf": "Télécharger le PDF",
         "moreActions": "Plus d'actions",
         "openAgencySigningLink": "Ouvrir le lien de signature de l'agence",
-        "openAgencyLink": "Open Agency Link",
-        "openClientLink": "Open Client Link",
-        "copyClientLink": "Copy Client Link",
-        "copyAgencyLink": "Copy Agency Link",
+        "openAgencyLink": "Ouvrir le lien agence",
+        "openClientLink": "Ouvrir le lien client",
+        "copyClientLink": "Copier le lien client",
+        "copyAgencyLink": "Copier le lien agence",
         "viewDocument": "Voir le document",
-        "recoverToActive": "Recover to Active"
+        "recoverToActive": "Rétablir en actif"
       },
       "noSubmissions": "Aucune soumission trouvée",
       "noActiveSubmissions": "Aucune soumission active trouvée.",
       "noArchivedSubmissions": "Aucune soumission archivée trouvée.",
       "searchPlaceholder": "Rechercher des soumissions...",
-      "resendingContractEmail": "Resending contract email",
-      "refreshingSubmissions": "Refreshing submissions so the updated send appears here.",
-      "signHere": "Sign here",
-      "resend": "Resend",
-      "resending": "Resending...",
-      "agencyLink": "Agency link",
-      "clientLink": "Client link"
+      "resendingContractEmail": "Renvoi de l'e-mail de contrat",
+      "refreshingSubmissions": "Actualisation des soumissions pour que l'envoi mis à jour apparaisse ici.",
+      "signHere": "Signer ici",
+      "resend": "Renvoyer",
+      "resending": "Renvoi...",
+      "agencyLink": "Lien agence",
+      "clientLink": "Lien client",
+      "loadingTable": "Chargement..."
     },
     "licenseTemplates": {
       "title": "Modèles de licence",
@@ -4546,7 +4563,10 @@
         "customTerms": "Conditions personnalisées",
         "customTermsPlaceholder": "Conditions supplémentaires...",
         "modificationsAllowed": "Modifications autorisées",
-        "selectOption": "Sélectionner une option"
+        "selectOption": "Sélectionner une option",
+        "territoryPlaceholder": "Monde entier",
+        "yes": "Oui",
+        "no": "Non"
       },
       "useModal": {
         "title": "Utiliser le contrat : {{name}}",
@@ -4615,7 +4635,10 @@
       "delete": {
         "title": "Delete Template"
       },
-      "useContract": "Use Contract"
+      "useContract": "Use Contract",
+      "messages": {
+        "close": "Fermer"
+      }
     },
     "addTalent": {
       "title": "Ajouter un nouveau {{entityTitle}}",
@@ -6457,13 +6480,57 @@
       },
       "payoutStatus": {
         "agency": "agency",
-        "talent": "talent"
+        "talent": "talent",
+        "retry": "réessai",
+        "retries": "réessais"
       },
       "retryTransferDialog": {
         "failed": "failed",
         "transferred": "Transferred",
-        "transfersNotAllowed": "Transfers not allowed on this Stripe account."
-      }
+        "transfersNotAllowed": "Transfers not allowed on this Stripe account.",
+        "noAccount": "Aucun compte",
+        "noStripeConnected": "Aucun compte Stripe connecté.",
+        "stripeNotSetup": "Compte Stripe incomplet - transferts non activés."
+      },
+      "title": "Livrables des offres",
+      "description": "Assignez des talents, demandez des fichiers et validez les livrables des offres de marque.",
+      "collapseAll": "Tout réduire",
+      "noBrandOffers": "Aucune offre de marque trouvée.",
+      "delete": "Supprimer",
+      "viewOnlyMode": "Mode lecture seule",
+      "viewOnlyDescription": "Votre rôle permet de voir les livrables, mais pas de les approuver ni de les gérer.",
+      "assignTalent": {
+        "filterPlaceholder": "Rechercher un talent par nom ou e-mail...",
+        "talentFallback": "Talent"
+      },
+      "requestAssetModal": {
+        "selectedTalent": "Talent sélectionné",
+        "sendRequest": "Envoyer la demande",
+        "sending": "Envoi...",
+        "titlePlaceholder": "ex. Photo produit de campagne",
+        "detailsPlaceholder": "Décrivez ce dont vous avez besoin...",
+        "noFileSelected": "Aucun fichier sélectionné"
+      },
+      "uploadDeliverableModal": {
+        "captionPlaceholder": "Ajouter une légende...",
+        "noFilesSelected": "Aucun fichier sélectionné"
+      },
+      "reviewModal": {
+        "approveDescription": "Approuver ce livrable.",
+        "rejectDescription": "Rejeter ce livrable et ajouter un retour.",
+        "requestChangesDescription": "Envoyer un retour et demander des modifications.",
+        "optionalNoteLabel": "Note facultative",
+        "feedbackLabel": "Retour",
+        "feedbackPlaceholder": "Ajouter un retour...",
+        "sendFeedbackAction": "Envoyer le retour"
+      },
+      "unassignTalent": {
+        "unassign": "Retirer",
+        "unassigning": "Retrait..."
+      },
+      "permissionCannotApprove": "Votre rôle ne peut pas approuver les livrables",
+      "permissionCannotRevise": "Votre rôle ne peut pas demander de révision des livrables",
+      "permissionCannotReject": "Votre rôle ne peut pas rejeter les livrables"
     }
   },
   "marketingAgencySolutions": "Marketing Agency Solutions",
