@@ -745,6 +745,53 @@
         },
         "deleteDialog": {
           "title": "Delete Deliverable"
+        },
+        "toasts": {
+          "assignmentsLocked": "Assignments locked",
+          "contractAlreadySigned": "Contract is already signed and you can't change assigned talents.",
+          "cantChangeAfterSent": "You can't change assigned talents after the contract is sent.",
+          "talentUnassigned": "Talent unassigned",
+          "talentRemoved": "Talent was removed from this offer.",
+          "unassignFailed": "Unassign failed",
+          "pleaseTryAgain": "Please try again.",
+          "nothingToRetry": "Nothing to retry",
+          "allTransfersSuccessful": "All transfers are already successful.",
+          "notYetAvailable": "Not yet available",
+          "retryAfterApproval": "Transfers can only be retried after the brand approves the deliverables.",
+          "retryFailed": "Retry failed",
+          "talentAssigned": "Talent assigned",
+          "deliverablesUploaded": "Deliverables uploaded",
+          "uploadFailed": "Upload failed",
+          "permissionRequired": "Permission required",
+          "cannotSubmitDeliverables": "Your role cannot submit deliverables for approval.",
+          "submittedToBrand": "Submitted to brand",
+          "submitFailed": "Submit failed",
+          "cannotReviewDeliverables": "Your role cannot review deliverables.",
+          "reviewSubmitted": "Review submitted",
+          "reviewFailed": "Review failed",
+          "deliverableDeleted": "Deliverable deleted",
+          "deleteFailed": "Delete failed"
+        },
+        "statusLabels": {
+          "draft": "Draft",
+          "sentToBrand": "Sent to Brand",
+          "brandApproved": "Brand Approved",
+          "new": "New",
+          "contractSigned": "Contract Signed",
+          "contractSent": "Contract Sent",
+          "sent": "Sent",
+          "accepted": "Accepted",
+          "open": "Open"
+        },
+        "deliverableCard": {
+          "feedback": "Feedback",
+          "noCaption": "No caption",
+          "yourFeedback": "Your Feedback:",
+          "brandFeedback": "Brand Feedback:",
+          "approve": "Approve",
+          "revise": "Revise",
+          "reject": "Reject",
+          "deliverable": "Deliverable"
         }
       },
       "brandConnections": {

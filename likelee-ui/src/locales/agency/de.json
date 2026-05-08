@@ -6087,6 +6087,55 @@
       "loading": "Loading history...",
       "previousUpdates": "Previous Updates",
       "unknown": "Unknown"
+    },
+    "deliverables": {
+      "toasts": {
+        "assignmentsLocked": "Zuweisungen gesperrt",
+        "contractAlreadySigned": "Der Vertrag ist bereits unterzeichnet und Sie können die zugewiesenen Talente nicht ändern.",
+        "cantChangeAfterSent": "Sie können die zugewiesenen Talente nicht ändern, nachdem der Vertrag gesendet wurde.",
+        "talentUnassigned": "Talent nicht zugewiesen",
+        "talentRemoved": "Talent wurde von diesem Angebot entfernt.",
+        "unassignFailed": "Zuweisung aufheben fehlgeschlagen",
+        "pleaseTryAgain": "Bitte versuchen Sie es erneut.",
+        "nothingToRetry": "Nichts zu wiederholen",
+        "allTransfersSuccessful": "Alle Überweisungen sind bereits erfolgreich.",
+        "notYetAvailable": "Noch nicht verfügbar",
+        "retryAfterApproval": "Überweisungen können nur wiederholt werden, nachdem die Marke die Lieferungen genehmigt hat.",
+        "retryFailed": "Wiederholung fehlgeschlagen",
+        "talentAssigned": "Talent zugewiesen",
+        "deliverablesUploaded": "Lieferungen hochgeladen",
+        "uploadFailed": "Upload fehlgeschlagen",
+        "permissionRequired": "Berechtigung erforderlich",
+        "cannotSubmitDeliverables": "Ihre Rolle kann keine Lieferungen zur Genehmigung einreichen.",
+        "submittedToBrand": "An Marke gesendet",
+        "submitFailed": "Einreichung fehlgeschlagen",
+        "cannotReviewDeliverables": "Ihre Rolle kann Lieferungen nicht überprüfen.",
+        "reviewSubmitted": "Überprüfung eingereicht",
+        "reviewFailed": "Überprüfung fehlgeschlagen",
+        "deliverableDeleted": "Lieferung gelöscht",
+        "deleteFailed": "Löschen fehlgeschlagen"
+      },
+      "statusLabels": {
+        "draft": "Entwurf",
+        "sentToBrand": "An Marke gesendet",
+        "brandApproved": "Von Marke genehmigt",
+        "new": "Neu",
+        "contractSigned": "Vertrag unterzeichnet",
+        "contractSent": "Vertrag gesendet",
+        "sent": "Gesendet",
+        "accepted": "Akzeptiert",
+        "open": "Offen"
+      },
+      "deliverableCard": {
+        "feedback": "Feedback",
+        "noCaption": "Keine Beschriftung",
+        "yourFeedback": "Ihr Feedback:",
+        "brandFeedback": "Marken-Feedback:",
+        "approve": "Genehmigen",
+        "revise": "Überarbeiten",
+        "reject": "Ablehnen",
+        "deliverable": "Lieferung"
+      }
     }
   }
 }

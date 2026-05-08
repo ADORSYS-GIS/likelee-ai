@@ -6086,6 +6086,55 @@
         "failedToSend": "Failed to send",
         "failedToSendDescription": "Could not send your message to support."
       }
+    },
+    "deliverables": {
+      "toasts": {
+        "assignmentsLocked": "Affectations verrouillées",
+        "contractAlreadySigned": "Le contrat est déjà signé et vous ne pouvez pas modifier les talents assignés.",
+        "cantChangeAfterSent": "Vous ne pouvez pas modifier les talents assignés après l'envoi du contrat.",
+        "talentUnassigned": "Talent non assigné",
+        "talentRemoved": "Le talent a été retiré de cette offre.",
+        "unassignFailed": "Échec de la désaffectation",
+        "pleaseTryAgain": "Veuillez réessayer.",
+        "nothingToRetry": "Rien à réessayer",
+        "allTransfersSuccessful": "Tous les transferts sont déjà réussis.",
+        "notYetAvailable": "Pas encore disponible",
+        "retryAfterApproval": "Les transferts ne peuvent être réessayés qu'après l'approbation des livrables par la marque.",
+        "retryFailed": "Échec de la nouvelle tentative",
+        "talentAssigned": "Talent assigné",
+        "deliverablesUploaded": "Livrables téléchargés",
+        "uploadFailed": "Échec du téléchargement",
+        "permissionRequired": "Permission requise",
+        "cannotSubmitDeliverables": "Votre rôle ne peut pas soumettre de livrables pour approbation.",
+        "submittedToBrand": "Soumis à la marque",
+        "submitFailed": "Échec de la soumission",
+        "cannotReviewDeliverables": "Votre rôle ne peut pas examiner les livrables.",
+        "reviewSubmitted": "Examen soumis",
+        "reviewFailed": "Échec de l'examen",
+        "deliverableDeleted": "Livrable supprimé",
+        "deleteFailed": "Échec de la suppression"
+      },
+      "statusLabels": {
+        "draft": "Brouillon",
+        "sentToBrand": "Envoyé à la Marque",
+        "brandApproved": "Approuvé par la Marque",
+        "new": "Nouveau",
+        "contractSigned": "Contrat Signé",
+        "contractSent": "Contrat Envoyé",
+        "sent": "Envoyé",
+        "accepted": "Accepté",
+        "open": "Ouvert"
+      },
+      "deliverableCard": {
+        "feedback": "Commentaires",
+        "noCaption": "Pas de légende",
+        "yourFeedback": "Vos Commentaires :",
+        "brandFeedback": "Commentaires de la Marque :",
+        "approve": "Approuver",
+        "revise": "Réviser",
+        "reject": "Rejeter",
+        "deliverable": "Livrable"
+      }
     }
   },
   "marketingAgencySolutions": "Marketing Agency Solutions"

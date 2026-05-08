@@ -6087,6 +6087,55 @@
         "failedToSend": "Failed to send",
         "failedToSendDescription": "Could not send your message to support."
       }
+    },
+    "deliverables": {
+      "toasts": {
+        "assignmentsLocked": "Asignaciones bloqueadas",
+        "contractAlreadySigned": "El contrato ya está firmado y no puede cambiar los talentos asignados.",
+        "cantChangeAfterSent": "No puede cambiar los talentos asignados después de enviar el contrato.",
+        "talentUnassigned": "Talento no asignado",
+        "talentRemoved": "El talento fue eliminado de esta oferta.",
+        "unassignFailed": "Error al desasignar",
+        "pleaseTryAgain": "Por favor, inténtelo de nuevo.",
+        "nothingToRetry": "Nada que reintentar",
+        "allTransfersSuccessful": "Todas las transferencias ya son exitosas.",
+        "notYetAvailable": "Aún no disponible",
+        "retryAfterApproval": "Las transferencias solo se pueden reintentar después de que la marca apruebe los entregables.",
+        "retryFailed": "Reintento fallido",
+        "talentAssigned": "Talento asignado",
+        "deliverablesUploaded": "Entregables subidos",
+        "uploadFailed": "Subida fallida",
+        "permissionRequired": "Permiso requerido",
+        "cannotSubmitDeliverables": "Su rol no puede enviar entregables para aprobación.",
+        "submittedToBrand": "Enviado a la marca",
+        "submitFailed": "Envío fallido",
+        "cannotReviewDeliverables": "Su rol no puede revisar entregables.",
+        "reviewSubmitted": "Revisión enviada",
+        "reviewFailed": "Revisión fallida",
+        "deliverableDeleted": "Entregable eliminado",
+        "deleteFailed": "Eliminación fallida"
+      },
+      "statusLabels": {
+        "draft": "Borrador",
+        "sentToBrand": "Enviado a la Marca",
+        "brandApproved": "Aprobado por la Marca",
+        "new": "Nuevo",
+        "contractSigned": "Contrato Firmado",
+        "contractSent": "Contrato Enviado",
+        "sent": "Enviado",
+        "accepted": "Aceptado",
+        "open": "Abierto"
+      },
+      "deliverableCard": {
+        "feedback": "Comentarios",
+        "noCaption": "Sin descripción",
+        "yourFeedback": "Sus Comentarios:",
+        "brandFeedback": "Comentarios de la Marca:",
+        "approve": "Aprobar",
+        "revise": "Revisar",
+        "reject": "Rechazar",
+        "deliverable": "Entregable"
+      }
     }
   }
 }
