@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -63,8 +64,31 @@ export function CatalogBuilderWizard({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useTranslation("agency");
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("select-request");
+  const STEPS_TRANSLATED = [
+    {
+      id: "select-request" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.source"),
+    },
+    {
+      id: "info" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.details"),
+    },
+    {
+      id: "assets" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.assets"),
+    },
+    {
+      id: "voice" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.voice"),
+    },
+    {
+      id: "review" as Step,
+      label: t("agencyDashboard.catalogs.wizard.steps.send"),
+    },
+  ];
   const [sourceId, setSourceId] = useState<string>("");
   const [form, setForm] = useState<FormState>({
     title: "",
@@ -167,7 +191,7 @@ export function CatalogBuilderWizard({
         ...prev,
         [talentId]: (res as any)?.data ?? res ?? [],
       }));
-      toast({ title: "Asset uploaded successfully" });
+      toast({ title: t("agencyDashboard.catalogs.toasts.assetUploaded") });
     } catch (e: any) {
       toast({
         title: "Upload failed",
@@ -217,7 +241,7 @@ export function CatalogBuilderWizard({
         ...prev,
         [talentId]: recs,
       }));
-      toast({ title: "Recording uploaded successfully" });
+      toast({ title: t("agencyDashboard.catalogs.toasts.recordingUploaded") });
     } catch (e: any) {
       toast({
         title: "Upload failed",
@@ -235,16 +259,16 @@ export function CatalogBuilderWizard({
     onSuccess: (res: any) => {
       const email = form.client_email.trim();
       toast({
-        title: "Catalog created!",
+        title: t("agencyDashboard.catalogs.toasts.catalogCreated"),
         description: email
-          ? `Catalog sent to ${email}.`
-          : "Catalog created. Copy the link to share.",
+          ? t("agencyDashboard.catalogs.toasts.catalogSentTo", { email })
+          : t("agencyDashboard.catalogs.toasts.catalogCreatedCopyLink"),
       });
       onCreated();
     },
     onError: (e: any) => {
       toast({
-        title: "Failed to create catalog",
+        title: t("agencyDashboard.catalogs.toasts.failedToCreateCatalog"),
         description: String(e?.message || e),
         variant: "destructive" as any,
       });
@@ -345,16 +369,16 @@ export function CatalogBuilderWizard({
   };
 
   // -------------------------------- Step nav ---------------------------------
-  const stepIndex = STEPS.findIndex((s) => s.id === step);
+  const stepIndex = STEPS_TRANSLATED.findIndex((s) => s.id === step);
   const goNext = async () => {
     if (step === "select-request") {
       await loadTalentData(selectedTalents);
     }
-    const next = STEPS[stepIndex + 1];
+    const next = STEPS_TRANSLATED[stepIndex + 1];
     if (next) setStep(next.id);
   };
   const goPrev = () => {
-    const prev = STEPS[stepIndex - 1];
+    const prev = STEPS_TRANSLATED[stepIndex - 1];
     if (prev) setStep(prev.id);
   };
 
@@ -371,16 +395,16 @@ export function CatalogBuilderWizard({
       <DialogContent className="max-w-4xl w-full h-[min(92vh,860px)] rounded-2xl p-0 overflow-hidden flex flex-col">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-0">
           <DialogTitle className="text-xl font-bold text-gray-900">
-            Create Asset Catalog
+            {t("agencyDashboard.catalogs.wizard.title")}
           </DialogTitle>
           <DialogDescription className="text-gray-500 font-medium">
-            Bundle approved assets and voice recordings for client delivery.
+            {t("agencyDashboard.catalogs.wizard.description")}
           </DialogDescription>
         </DialogHeader>
 
         {/* Step indicator */}
         <div className="shrink-0 flex items-center gap-1 px-6 pt-4">
-          {STEPS.map((s, i) => (
+          {STEPS_TRANSLATED.map((s, i) => (
             <React.Fragment key={s.id}>
               <div
                 className={`flex items-center gap-1.5 text-xs font-semibold ${
@@ -404,7 +428,7 @@ export function CatalogBuilderWizard({
                 </div>
                 <span className="hidden sm:inline">{s.label}</span>
               </div>
-              {i < STEPS.length - 1 && (
+              {i < STEPS_TRANSLATED.length - 1 && (
                 <div className="flex-1 h-px bg-gray-200 mx-1" />
               )}
             </React.Fragment>
@@ -918,10 +942,11 @@ export function CatalogBuilderWizard({
             className="h-10 px-5 rounded-xl font-semibold"
           >
             {stepIndex === 0 ? (
-              "Cancel"
+              t("agencyDashboard.catalogs.wizard.actions.cancel")
             ) : (
               <>
-                <ChevronLeft className="w-4 h-4 mr-1" /> Back
+                <ChevronLeft className="w-4 h-4 mr-1" />{" "}
+                {t("agencyDashboard.catalogs.wizard.actions.back")}
               </>
             )}
           </Button>
@@ -932,7 +957,8 @@ export function CatalogBuilderWizard({
               disabled={!canNext()}
               className="h-10 px-5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700"
             >
-              Next <ChevronRight className="w-4 h-4 ml-1" />
+              {t("agencyDashboard.catalogs.wizard.actions.next")}{" "}
+              <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
             <Button
@@ -942,11 +968,13 @@ export function CatalogBuilderWizard({
             >
               {createMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Creating…
+                  <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                  {t("agencyDashboard.catalogs.wizard.actions.creating")}
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" /> Create & Send
+                  <Send className="w-4 h-4" />{" "}
+                  {t("agencyDashboard.catalogs.wizard.actions.createAndSend")}
                 </>
               )}
             </Button>
