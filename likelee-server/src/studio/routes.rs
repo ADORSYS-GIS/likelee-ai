@@ -872,15 +872,87 @@ async fn fetch_brand_licensed_assets(
 ) -> Vec<serde_json::Value> {
     let mut assets: Vec<serde_json::Value> = Vec::new();
 
-    // 1. Get approved licensing_requests for this brand
-    let lr_resp = state
+    // 0. Get brand's stripe_customer_id to filter by payment
+    let brand_resp = state
+        .pg
+        .from("brands")
+        .select("stripe_customer_id")
+        .eq("id", brand_id)
+        .single()
+        .execute()
+        .await;
+
+    let stripe_customer_id: Option<String> = match brand_resp {
+        Ok(resp) => {
+            if let Ok(text) = resp.text().await {
+                if let Ok(brand) = serde_json::from_str::<serde_json::Value>(&text) {
+                    brand.get("stripe_customer_id").and_then(|v| v.as_str()).map(|s| s.to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
+    };
+
+    // 1. Get approved licensing_requests for this brand, filtered by payment
+    let mut lr_req = state
         .pg
         .from("licensing_requests")
         .select("id,talent_id,talent_name,campaign_title,status")
         .eq("brand_id", brand_id)
-        .eq("status", "approved")
-        .execute()
-        .await;
+        .eq("status", "approved");
+
+    // If brand has stripe_customer_id, only include licenses with active payment
+    let mut has_active_payment = false;
+    if let Some(ref sc_id) = stripe_customer_id {
+        // Check licensing_access_grants for active subscription
+        let grants_resp = state
+            .pg
+            .from("licensing_access_grants")
+            .select("id")
+            .eq("stripe_customer_id", sc_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+            .await;
+
+        if let Ok(resp) = grants_resp {
+            if let Ok(text) = resp.text().await {
+                let grants: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                has_active_payment = !grants.is_empty();
+            }
+        }
+
+        // Also check licensing_checkout_sessions for completed payments
+        if !has_active_payment {
+            let sessions_resp = state
+                .pg
+                .from("licensing_checkout_sessions")
+                .select("id")
+                .eq("stripe_customer_id", sc_id)
+                .eq("status", "completed")
+                .limit(1)
+                .execute()
+                .await;
+
+            if let Ok(resp) = sessions_resp {
+                if let Ok(text) = resp.text().await {
+                    let sessions: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                    has_active_payment = !sessions.is_empty();
+                }
+            }
+        }
+
+        // If no active payment, skip licensing_requests path entirely
+        if !has_active_payment {
+            lr_req = lr_req.limit(0);
+        }
+    }
+
+    let lr_resp = lr_req.execute().await;
 
     let approved_licenses: Vec<serde_json::Value> = if let Ok(resp) = lr_resp {
         if let Ok(text) = resp.text().await {
@@ -891,12 +963,6 @@ async fn fetch_brand_licensed_assets(
     } else {
         Vec::new()
     };
-
-    info!(
-        brand_id = %brand_id,
-        approved_licenses = approved_licenses.len(),
-        "brand_approved_licenses_found"
-    );
 
     // 2. For each approved license, find its catalog
     for license in &approved_licenses {
@@ -939,10 +1005,7 @@ async fn fetch_brand_licensed_assets(
 
         let catalog = match catalog {
             Some(c) => c,
-            None => {
-                info!(license_id = %license_id, "no_catalog_found_for_license");
-                continue;
-            }
+            None => continue,
         };
 
         // Check if catalog is expired
@@ -956,7 +1019,6 @@ async fn fetch_brand_licensed_assets(
 
         let catalog_id = catalog.get("id").and_then(|v| v.as_str()).unwrap_or("");
         if catalog_id.is_empty() {
-            info!(license_id = %license_id, "catalog_has_empty_id");
             continue;
         }
 
@@ -979,13 +1041,6 @@ async fn fetch_brand_licensed_assets(
             Vec::new()
         };
 
-        info!(
-            license_id = %license_id,
-            catalog_id = %catalog_id,
-            items_count = items.len(),
-            "catalog_items_found"
-        );
-
         // 4. For each item, get assets and recordings
         for item in &items {
             let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
@@ -1004,12 +1059,6 @@ async fn fetch_brand_licensed_assets(
                 if let Ok(text) = resp.text().await {
                     let cat_assets: Vec<serde_json::Value> =
                         serde_json::from_str(&text).unwrap_or_default();
-
-                    info!(
-                        item_id = %item_id,
-                        assets_count = cat_assets.len(),
-                        "catalog_assets_for_item"
-                    );
 
                     for cat_asset in cat_assets {
                         let asset_id = cat_asset
@@ -1125,12 +1174,6 @@ async fn fetch_brand_licensed_assets(
         }
     }
 
-    info!(
-        brand_id = %brand_id,
-        lr_assets_count = assets.len(),
-        "licensed_assets_from_lr_path"
-    );
-
     // 6. Get campaign offer deliverables for paid offers
     let cod_resp = state
         .pg
@@ -1147,14 +1190,7 @@ async fn fetch_brand_licensed_assets(
                 let deliverables: Vec<serde_json::Value> =
                     serde_json::from_str(&text).unwrap_or_default();
 
-                info!(
-                    brand_id = %brand_id,
-                    count = deliverables.len(),
-                    "campaign_offer_deliverables_fetched"
-                );
-
                 for del in deliverables {
-                    let del_id = del.get("id").and_then(|v| v.as_str()).unwrap_or("");
                     let offer = del.get("campaign_offers");
                     let payment_status = offer
                         .and_then(|o| o.get("payment_status"))
@@ -1164,20 +1200,11 @@ async fn fetch_brand_licensed_assets(
                         .and_then(|o| o.get("expires_at"))
                         .and_then(|v| v.as_str());
 
-                    info!(
-                        deliverable_id = %del_id,
-                        payment_status = %payment_status,
-                        expires_at = ?expires_at,
-                        "campaign_deliverable_checking"
-                    );
-
                     if payment_status != "paid" {
-                        info!(deliverable_id = %del_id, payment_status = %payment_status, "campaign_deliverable_skipped_not_paid");
                         continue;
                     }
                     if let Some(exp) = expires_at {
                         if exp < now {
-                            info!(deliverable_id = %del_id, expires_at = %exp, "campaign_deliverable_skipped_expired");
                             continue;
                         }
                     }
@@ -1206,13 +1233,6 @@ async fn fetch_brand_licensed_assets(
                             _ => "image",
                         };
 
-                        info!(
-                            deliverable_id = %del_id,
-                            offer_id = %offer_id,
-                            asset_type = %type_str,
-                            "campaign_deliverable_added"
-                        );
-
                         assets.push(json!({
                             "id": format!("campaign-deliverable-{}", del_id),
                             "type": type_str,
@@ -1233,12 +1253,6 @@ async fn fetch_brand_licensed_assets(
             );
         }
     }
-
-    info!(
-        brand_id = %brand_id,
-        total_assets = assets.len(),
-        "licensed_assets_final"
-    );
 
     assets
 }
