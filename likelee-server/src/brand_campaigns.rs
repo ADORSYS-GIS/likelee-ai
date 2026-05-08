@@ -8413,8 +8413,7 @@ async fn try_release_campaign_offer_escrow(
                 Ok(t) => t,
                 Err(_) => return false,
             };
-            let rows: Vec<serde_json::Value> =
-                serde_json::from_str(&text).unwrap_or_default();
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
             !rows.is_empty()
         }
         .await;
@@ -9840,8 +9839,7 @@ pub async fn get_offer_stripe_readiness(
     Path(offer_id): Path<String>,
 ) -> Result<Json<OfferStripeReadinessResponse>, (StatusCode, String)> {
     // Agency-only — must have billing visibility to see payout readiness
-    let access =
-        team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
+    let access = team::require_agency_permission(&state, &user, Permission::ManageBilling).await?;
     let agency_id = access.organization_id.clone();
 
     // Verify the offer belongs to this agency
@@ -10139,8 +10137,7 @@ pub async fn get_offer_stripe_readiness(
         })
         .collect();
 
-    let talent_parties: Vec<StripeReadinessParty> =
-        futures::future::join_all(talent_futures).await;
+    let talent_parties: Vec<StripeReadinessParty> = futures::future::join_all(talent_futures).await;
 
     // Compute aggregate flags
     let all_connected = ag_connected && talent_parties.iter().all(|p| p.connected);

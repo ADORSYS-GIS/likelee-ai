@@ -64,8 +64,8 @@ export interface OfferStripeReadiness {
 // ---------------------------------------------------------------------------
 
 export type ReadinessGate =
-  | "ok"            // all connected + all transfers enabled → no modal needed
-  | "hard_block"    // ≥1 party not connected → cannot send
+  | "ok" // all connected + all transfers enabled → no modal needed
+  | "hard_block" // ≥1 party not connected → cannot send
   | "soft_warning"; // all connected, but ≥1 transfers disabled → can send with warning
 
 export function deriveGate(data: OfferStripeReadiness): ReadinessGate {
@@ -251,10 +251,8 @@ export function StripeReadinessGateModal({
           {/* Explanation */}
           <div className="px-6 pb-2">
             <p className="text-xs text-gray-500 leading-relaxed">
-              Ask{" "}
-              {unconnectedParties.map((p) => p.name).join(", ")}{" "}
-              to go to their{" "}
-              <span className="font-semibold text-gray-700">Payouts</span>{" "}
+              Ask {unconnectedParties.map((p) => p.name).join(", ")} to go to
+              their <span className="font-semibold text-gray-700">Payouts</span>{" "}
               section and complete Stripe onboarding. Once connected, you can
               send this contract.{" "}
               {unconnectedTalents.length > 0 && (
@@ -354,10 +352,14 @@ export function StripeReadinessGateModal({
         {/* Info callout */}
         <div className="mx-6 mb-4 rounded-xl border border-blue-100 bg-blue-50 p-3.5">
           <p className="text-xs text-blue-800 leading-relaxed">
-            <span className="font-semibold">You can still send this contract.</span>{" "}
+            <span className="font-semibold">
+              You can still send this contract.
+            </span>{" "}
             The brand will be able to pay and funds will be held in escrow. Once
             the affected{" "}
-            {transferDisabledParties.length === 1 ? "party completes" : "parties complete"}{" "}
+            {transferDisabledParties.length === 1
+              ? "party completes"
+              : "parties complete"}{" "}
             Stripe onboarding, you can retry the escrow release from the
             Deliverables tab.
           </p>
@@ -455,7 +457,9 @@ export function ContractPrecheckModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[440px] p-0 overflow-hidden gap-0">
         {/* Header band */}
-        <div className={`bg-gradient-to-br ${cfg.gradient} px-6 pt-8 pb-6 text-white`}>
+        <div
+          className={`bg-gradient-to-br ${cfg.gradient} px-6 pt-8 pb-6 text-white`}
+        >
           <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center mb-4">
             {cfg.icon}
           </div>
@@ -484,7 +488,13 @@ export function ContractPrecheckModal({
           {actions.map((a, idx) => (
             <Button
               key={`${a.label}-${idx}`}
-              variant={a.variant === "outline" ? "outline" : a.variant === "destructive" ? "destructive" : "default"}
+              variant={
+                a.variant === "outline"
+                  ? "outline"
+                  : a.variant === "destructive"
+                    ? "destructive"
+                    : "default"
+              }
               onClick={a.onClick}
               className={
                 a.variant !== "outline" && a.variant !== "destructive"

@@ -210,7 +210,8 @@ const BrandConnectionsView = ({
 
   // Stripe readiness gate state
   const [stripeGateOpen, setStripeGateOpen] = useState(false);
-  const [stripeGateData, setStripeGateData] = useState<OfferStripeReadiness | null>(null);
+  const [stripeGateData, setStripeGateData] =
+    useState<OfferStripeReadiness | null>(null);
   const [stripeGate, setStripeGate] = useState<ReadinessGate>("ok");
   const [stripeGatePendingOffer, setStripeGatePendingOffer] = useState<{
     offerId: string;
@@ -2812,9 +2813,13 @@ const BrandConnectionsView = ({
                                                         cId,
                                                       )
                                                     }
-                                                    disabled={isBusy || stripeReadinessLoading}
+                                                    disabled={
+                                                      isBusy ||
+                                                      stripeReadinessLoading
+                                                    }
                                                   >
-                                                    {isBusy || stripeReadinessLoading ? (
+                                                    {isBusy ||
+                                                    stripeReadinessLoading ? (
                                                       <Loader2 className="w-4 h-4 animate-spin" />
                                                     ) : (
                                                       <>
