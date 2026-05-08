@@ -4654,6 +4654,207 @@
         "lastViewed": "Last Viewed",
         "noActivity": "No activity yet",
         "close": "Close"
+      },
+      "view": {
+        "stats": {
+          "totalPackages": "Total Packages",
+          "activeShares": "Active Shares",
+          "totalViews": "Total Views"
+        },
+        "tabs": {
+          "templates": "Templates",
+          "packagesSent": "Packages Sent"
+        },
+        "search": {
+          "templates": "Search templates...",
+          "sent": "Search sent packages..."
+        },
+        "buttons": {
+          "template": "Template",
+          "package": "Package",
+          "useExisting": "Use Existing",
+          "createNew": "Create New"
+        },
+        "empty": {
+          "noTemplatesFound": "No Templates Found",
+          "noPackagesFound": "No Packages Found",
+          "templatesDescription": "Create reusable templates to send to multiple clients.",
+          "packagesDescription": "Start by creating your first {{entity}} portfolio for a client."
+        },
+        "offerBanner": {
+          "sendingForOffer": "Sending for offer",
+          "chooseDescription": "Choose whether to send an existing package/template or create a new one.",
+          "pickTemplate": "Pick a template (or resend an existing package) below, then click \"Send\" to send it to the brand inbox for this offer."
+        },
+        "packageCard": {
+          "created": "Created",
+          "expires": "Expires",
+          "noExpiry": "No Expiry",
+          "views": "Views",
+          "expired": "Expired",
+          "active": "Active",
+          "campaignOffer": "Campaign Offer",
+          "resend": "Resend",
+          "activity": "Activity",
+          "editPackage": "Edit Package",
+          "delete": "Delete"
+        },
+        "pagination": {
+          "previous": "Previous",
+          "next": "Next"
+        },
+        "deleteDialog": {
+          "title": "Are you sure?",
+          "description": "This action cannot be undone. This will permanently delete the package \"{{title}}\".",
+          "cancel": "Cancel",
+          "confirm": "Delete"
+        },
+        "toasts": {
+          "packageDeleted": "Package deleted",
+          "linkCopied": "Link copied to clipboard!"
+        }
+      },
+      "wizard": {
+        "title": "Create a New {{entity}} Package",
+        "editTitle": "Edit {{entity}} Package",
+        "subtitle": "Build a beautiful portfolio package to showcase your {{entity}} to clients",
+        "templateBanner": "Creating new package from \"{{title}}\" template",
+        "steps": {
+          "basicInfo": "Basic Info",
+          "selectTalents": "Select {{entities}}",
+          "customize": "Customize",
+          "consents": "Consents",
+          "send": "Send"
+        },
+        "basicInfo": {
+          "title": "Package Title *",
+          "titlePlaceholder": "e.g. Summer Campaign 2026",
+          "introductionNote": "Introduction Note",
+          "introductionPlaceholder": "Share the vision for this selection...",
+          "coverImage": "Cover Image",
+          "coverImageDescription": "JPG, PNG, or GIF. Maximum {{maxMB}}MB.",
+          "coverImagePlaceholder": "https://images.unsplash.com/...",
+          "upload": "Upload",
+          "uploading": "Uploading...",
+          "agencyBranding": "Agency Branding",
+          "primaryAccent": "Primary Accent",
+          "secondaryAccent": "Secondary Accent",
+          "customFooterMessage": "Custom Footer Message",
+          "customFooterPlaceholder": "A personal note for the client..."
+        },
+        "selectTalents": {
+          "title": "Selected {{entities}}",
+          "description": "Select {{entities}} and pick their best assets for this package",
+          "addButton": "Add {{entity}}",
+          "assets": "Assets",
+          "selected": "Selected",
+          "updateSelection": "Update Selection",
+          "selectAssets": "Select Assets",
+          "noTalentsAdded": "No {{entities}} added yet",
+          "noTalentsDescription": "Add {{entity}} from your roster to start building the package",
+          "searchPlaceholder": "Filter by name or category...",
+          "confirmSelection": "Confirm Selection ({{count}})",
+          "inviteRequired": "Invite Required",
+          "connected": "Connected"
+        },
+        "customize": {
+          "title": "Package Controls",
+          "description": "Fine-tune the client experience and permissions",
+          "clientFeedback": "Client Feedback",
+          "clientFeedbackDesc": "Allow clients to leave notes on specific {{entities}}",
+          "interestTracking": "Interest Tracking",
+          "interestTrackingDesc": "Let clients favorite {{entities}} to shortlist them",
+          "callbackRequests": "Callback Requests",
+          "callbackRequestsDesc": "Clients can directly request inquiries or callbacks",
+          "accessControl": "Access Control",
+          "accessControlDesc": "Secure this package with a private password",
+          "gatewayPassword": "Gateway Password",
+          "passwordPlaceholder": "Create a secure password...",
+          "hidePassword": "Hide password",
+          "showPassword": "Show password",
+          "privacyExpiration": "Privacy Expiration",
+          "expirationDescription": "Leave empty for an evergreen package link"
+        },
+        "consents": {
+          "title": "Consent Checklist",
+          "description": "Default points are prefilled. Edit, remove, or add custom points for this package.",
+          "addPoint": "Add Point",
+          "consentPlaceholder": "Consent point {{number}}",
+          "defaultConsents": {
+            "0": "Use each selected asset only for the approved campaign objective and channels.",
+            "1": "Do not alter the athlete's/talent's likeness in misleading, harmful, or defamatory ways.",
+            "2": "Do not sublicense, resell, transfer, or share raw files with third parties.",
+            "3": "Do not use the assets for political, adult, tobacco, gambling, or illegal content.",
+            "4": "Stop all usage immediately after package or license expiry unless renewed in writing."
+          }
+        },
+        "send": {
+          "title": "Ready to send?",
+          "description": "Complete the recipient details to publish the package",
+          "offerDescription": "Confirm the brand recipient for this offer package",
+          "passwordMissing": "Password Missing",
+          "passwordMissingDescription": "This package has access control enabled but no password is set. Please go back to the Customize step to set one.",
+          "recipientBrand": "Recipient Brand *",
+          "selectBrand": "Select a brand…",
+          "brandDeliveryNote": "This package will be delivered to the brand's dashboard inbox for this offer.",
+          "permissionRequired": "Permission Required: You do not have access to view brand connections.",
+          "clientContact": "Client Contact *",
+          "clientContactPlaceholder": "e.g. John Doe",
+          "deliveryEmail": "Delivery Email *",
+          "deliveryEmailPlaceholder": "client@company.com",
+          "deliveryEmailNote": "Delivered via inbox (email is informational).",
+          "livePreviewSummary": "Live Preview Summary",
+          "untitledSelection": "Untitled Selection",
+          "noIntroduction": "No introduction note provided.",
+          "activeExperience": "Active Experience",
+          "favorites": "Favorites",
+          "notes": "Notes",
+          "callbacks": "Callbacks",
+          "locked": "Locked",
+          "lockedSet": "Locked (Set)",
+          "lockedEmpty": "Locked (Empty!)",
+          "consent": "Consent",
+          "brandingApplied": "Branding applied"
+        },
+        "buttons": {
+          "cancel": "Cancel",
+          "back": "Back",
+          "continue": "Continue",
+          "saveTemplate": "Save Template",
+          "done": "Done",
+          "publishAndSend": "Publish & Send"
+        },
+        "toasts": {
+          "required": "Required",
+          "titleRequired": "Title is required",
+          "empty": "Empty",
+          "selectAtLeastOne": "Please select at least one {{entity}}",
+          "consentRequired": "Consent Required",
+          "consentDescription": "Add at least one consent point before continuing.",
+          "clientNameRequired": "Client Contact name is required.",
+          "deliveryEmailRequired": "Delivery Email is required.",
+          "invalidEmail": "Invalid Email",
+          "invalidEmailDescription": "Please enter a valid email address for delivery.",
+          "passwordRequired": "Password Required",
+          "passwordDescription": "Please set a password for this protected package in the 'Customize' step.",
+          "missingOffer": "Missing offer",
+          "offerDescription": "This package is not linked to an offer.",
+          "selectBrandRequired": "Please select a connected brand.",
+          "invalidFile": "Invalid file",
+          "invalidFileDescription": "Please select an image file.",
+          "fileTooLarge": "File too large",
+          "fileTooLargeDescription": "Package cover image must be {{maxMB}}MB or less. Your file is {{fileSizeMB}}MB. Please compress or resize your image and try again.",
+          "imageUploaded": "Image uploaded",
+          "uploadFailed": "Upload failed",
+          "uploadFailedDescription": "Please try again."
+        },
+        "inviteModal": {
+          "title": "Invite Required",
+          "description": "{{name}} hasn't accepted their portal invite yet. They need to complete onboarding before they can be added to a package or assigned to a contract.",
+          "whyMatters": "Why this matters",
+          "whyMattersDescription": "Without portal access, this {{entity}} can't receive payments, sign contracts, or communicate through the platform.",
+          "goToRoster": "Go to Roster & Invite"
+        }
       }
     },
     "payouts": {
