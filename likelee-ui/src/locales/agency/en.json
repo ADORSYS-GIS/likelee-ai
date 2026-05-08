@@ -702,6 +702,7 @@
           "filesSelected": "{count} file(s) selected",
           "upload": "Upload",
           "cancel": "Cancel",
+          "uploading": "Uploading...",
           "uploading": "Uploading..."
         },
         "viewOnly": {
@@ -720,7 +721,8 @@
         },
         "notSignedDialog": {
           "title": "Offer not signed yet",
-          "description": "The offer must be fully signed before you can submit deliverables. Once signed, you can submit even if payment is still pending (with confirmation)."
+          "description": "The offer must be fully signed before you can submit deliverables. Once signed, you can submit even if payment is still pending (with confirmation).",
+          "ok": "OK"
         },
         "unpaidSubmitDialog": {
           "title": "Submit deliverables before payment?",
@@ -741,7 +743,8 @@
           "feedbackPlaceholder": "What exactly should be changed?",
           "approveAction": "Approve",
           "rejectAction": "Reject",
-          "sendFeedbackAction": "Send Feedback"
+          "sendFeedbackAction": "Send Feedback",
+          "cancel": "Cancel"
         },
         "deleteDialog": {
           "title": "Delete Deliverable"
@@ -760,6 +763,8 @@
           "retryAfterApproval": "Transfers can only be retried after the brand approves the deliverables.",
           "retryFailed": "Retry failed",
           "talentAssigned": "Talent assigned",
+          "assignmentFailed": "Assignment failed",
+          "offerInProgress": "This offer is already in progress, so talent assignments can't be changed anymore.",
           "deliverablesUploaded": "Deliverables uploaded",
           "uploadFailed": "Upload failed",
           "permissionRequired": "Permission required",
