@@ -148,4 +148,4 @@ package_full.json
 raw_rpc_output.json
 rpc_output.json
 
-.kilo
+.kilo.env.prod

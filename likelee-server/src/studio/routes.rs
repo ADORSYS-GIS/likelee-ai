@@ -865,7 +865,11 @@ pub async fn list_licensed_assets(
 }
 
 /// Fetch licensed assets for a brand from approved license requests and agency catalogs
-async fn fetch_brand_licensed_assets(state: &AppState, brand_id: &str, now: &str) -> Vec<serde_json::Value> {
+async fn fetch_brand_licensed_assets(
+    state: &AppState,
+    brand_id: &str,
+    now: &str,
+) -> Vec<serde_json::Value> {
     let mut assets: Vec<serde_json::Value> = Vec::new();
 
     // 1. Get approved licensing_requests for this brand
@@ -897,8 +901,16 @@ async fn fetch_brand_licensed_assets(state: &AppState, brand_id: &str, now: &str
     // 2. For each approved license, find its catalog
     for license in &approved_licenses {
         let license_id = license.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        let talent_name = license.get("talent_name").and_then(|v| v.as_str()).unwrap_or("Talent").to_string();
-        let campaign_name = license.get("campaign_title").and_then(|v| v.as_str()).unwrap_or("Licensed Campaign").to_string();
+        let talent_name = license
+            .get("talent_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Talent")
+            .to_string();
+        let campaign_name = license
+            .get("campaign_title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Licensed Campaign")
+            .to_string();
 
         if license_id.is_empty() {
             continue;
@@ -1113,8 +1125,16 @@ async fn fetch_brand_licensed_assets(state: &AppState, brand_id: &str, now: &str
 
             for blr in blr_rows {
                 let req_id = blr.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                let talent_name = blr.get("talent_name").and_then(|v| v.as_str()).unwrap_or("Talent").to_string();
-                let campaign_name = blr.get("campaign_title").and_then(|v| v.as_str()).unwrap_or("Licensed Campaign").to_string();
+                let talent_name = blr
+                    .get("talent_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Talent")
+                    .to_string();
+                let campaign_name = blr
+                    .get("campaign_title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Licensed Campaign")
+                    .to_string();
 
                 // Get deliverables for this license request
                 let del_resp = state
@@ -1133,16 +1153,27 @@ async fn fetch_brand_licensed_assets(state: &AppState, brand_id: &str, now: &str
 
                         for del in deliverables {
                             let del_id = del.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                            let asset_type = del.get("asset_type").and_then(|v| v.as_str()).unwrap_or("image");
-                            let asset_name = del.get("asset_name").and_then(|v| v.as_str()).unwrap_or("Asset").to_string();
-                            let asset_url = del.get("asset_url").and_then(|v| v.as_str()).unwrap_or("");
-                            let mime_type = del.get("mime_type").and_then(|v| v.as_str()).unwrap_or("");
+                            let asset_type = del
+                                .get("asset_type")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("image");
+                            let asset_name = del
+                                .get("asset_name")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("Asset")
+                                .to_string();
+                            let asset_url =
+                                del.get("asset_url").and_then(|v| v.as_str()).unwrap_or("");
+                            let mime_type =
+                                del.get("mime_type").and_then(|v| v.as_str()).unwrap_or("");
 
                             if asset_url.is_empty() {
                                 continue;
                             }
 
-                            let type_str = if asset_type == "voice_recording" || mime_type.starts_with("audio/") {
+                            let type_str = if asset_type == "voice_recording"
+                                || mime_type.starts_with("audio/")
+                            {
                                 "audio"
                             } else {
                                 "image"
@@ -1200,7 +1231,10 @@ async fn fetch_brand_licensed_assets(state: &AppState, brand_id: &str, now: &str
 
                 let del_id = del.get("id").and_then(|v| v.as_str()).unwrap_or("");
                 let offer_id = del.get("offer_id").and_then(|v| v.as_str()).unwrap_or("");
-                let asset_type = del.get("asset_type").and_then(|v| v.as_str()).unwrap_or("file");
+                let asset_type = del
+                    .get("asset_type")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("file");
                 let campaign_name = del
                     .get("brand_campaigns")
                     .and_then(|bc| bc.get("name"))
@@ -1272,7 +1306,8 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
     );
 
     // 2. Get talent names for these creators
-    let mut talent_names: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut talent_names: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
     for talent_id in &talent_ids {
         let creator_resp = state
             .pg
@@ -1288,7 +1323,11 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
                 let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
                 if let Some(row) = rows.into_iter().next() {
                     if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
-                        let name = row.get("full_name").and_then(|v| v.as_str()).unwrap_or("Talent").to_string();
+                        let name = row
+                            .get("full_name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Talent")
+                            .to_string();
                         talent_names.insert(id.to_string(), name);
                     }
                 }
@@ -1298,7 +1337,10 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
 
     // 3. Get portfolio items for each talent
     for talent_id in &talent_ids {
-        let talent_name = talent_names.get(*talent_id).cloned().unwrap_or_else(|| "Talent".to_string());
+        let talent_name = talent_names
+            .get(*talent_id)
+            .cloned()
+            .unwrap_or_else(|| "Talent".to_string());
 
         // 3a. Talent portfolio items
         let portfolio_resp = state
@@ -1317,9 +1359,18 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
 
                 for item in items {
                     let item_id = item.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                    let public_url = item.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
-                    let bucket = item.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
-                    let path = item.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+                    let public_url = item
+                        .get("public_url")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let bucket = item
+                        .get("storage_bucket")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let path = item
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
 
                     let url = if !public_url.is_empty() {
                         public_url.to_string()
@@ -1359,13 +1410,20 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
 
         if let Ok(resp) = ref_images_resp {
             if let Ok(text) = resp.text().await {
-                let images: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                let images: Vec<serde_json::Value> =
+                    serde_json::from_str(&text).unwrap_or_default();
 
                 for img in images {
                     let img_id = img.get("id").and_then(|v| v.as_str()).unwrap_or("");
                     let public_url = img.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
-                    let bucket = img.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
-                    let path = img.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+                    let bucket = img
+                        .get("storage_bucket")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let path = img
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
 
                     let url = if !public_url.is_empty() {
                         public_url.to_string()
@@ -1406,13 +1464,23 @@ async fn fetch_agency_talent_assets(state: &AppState, agency_id: &str) -> Vec<se
 
         if let Ok(resp) = recordings_resp {
             if let Ok(text) = resp.text().await {
-                let recordings: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                let recordings: Vec<serde_json::Value> =
+                    serde_json::from_str(&text).unwrap_or_default();
 
                 for rec in recordings {
                     let rec_id = rec.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                    let bucket = rec.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
-                    let path = rec.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
-                    let emotion_tag = rec.get("emotion_tag").and_then(|v| v.as_str()).unwrap_or("Voice");
+                    let bucket = rec
+                        .get("storage_bucket")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let path = rec
+                        .get("storage_path")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let emotion_tag = rec
+                        .get("emotion_tag")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Voice");
 
                     if bucket.is_empty() || path.is_empty() {
                         continue;
@@ -1461,8 +1529,14 @@ async fn resolve_asset_url(state: &AppState, asset_id: &str) -> Option<String> {
                 if !pu.is_empty() {
                     return Some(pu.to_string());
                 }
-                let bucket = ri.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
-                let path = ri.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+                let bucket = ri
+                    .get("storage_bucket")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let path = ri
+                    .get("storage_path")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if !bucket.is_empty() && !path.is_empty() {
                     return Some(format!(
                         "{}/storage/v1/object/public/{}/{}",
@@ -1493,8 +1567,14 @@ async fn resolve_asset_url(state: &AppState, asset_id: &str) -> Option<String> {
                 if !pu.is_empty() {
                     return Some(pu.to_string());
                 }
-                let bucket = af.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
-                let path = af.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+                let bucket = af
+                    .get("storage_bucket")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let path = af
+                    .get("storage_path")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if !bucket.is_empty() && !path.is_empty() {
                     return Some(format!(
                         "{}/storage/v1/object/public/{}/{}",

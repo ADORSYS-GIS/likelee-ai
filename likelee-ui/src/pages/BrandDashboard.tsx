@@ -729,7 +729,7 @@ export default function BrandDashboard() {
       try {
         const parsed = JSON.parse(saved);
         const hasOldCollections = parsed.some(
-          (c: any) => c.name === "Holiday 2024" || c.name === "Evergreen"
+          (c: any) => c.name === "Holiday 2024" || c.name === "Evergreen",
         );
         if (hasOldCollections) {
           localStorage.removeItem("studio-collections");
@@ -1734,10 +1734,12 @@ export default function BrandDashboard() {
               console.error("Failed to load generations:", e);
               return [];
             }),
-            listBrandStorageFilesPaged({ limit: 100, root_only: false }).catch((e) => {
-              console.error("Failed to load brand files:", e);
-              return [];
-            }),
+            listBrandStorageFilesPaged({ limit: 100, root_only: false }).catch(
+              (e) => {
+                console.error("Failed to load brand files:", e);
+                return [];
+              },
+            ),
             listBrandStorageFoldersPaged().catch((e) => {
               console.error("Failed to load brand folders:", e);
               return [];
@@ -1954,8 +1956,12 @@ export default function BrandDashboard() {
       if (
         studioSearchQuery &&
         !lic.name.toLowerCase().includes(studioSearchQuery.toLowerCase()) &&
-        !lic.campaign_name?.toLowerCase().includes(studioSearchQuery.toLowerCase()) &&
-        !lic.talent_name?.toLowerCase().includes(studioSearchQuery.toLowerCase())
+        !lic.campaign_name
+          ?.toLowerCase()
+          .includes(studioSearchQuery.toLowerCase()) &&
+        !lic.talent_name
+          ?.toLowerCase()
+          .includes(studioSearchQuery.toLowerCase())
       )
         continue;
       assets.push({
@@ -2191,10 +2197,12 @@ export default function BrandDashboard() {
             console.error("Failed to load generations:", e);
             return [];
           }),
-          listBrandStorageFilesPaged({ limit: 100, root_only: false }).catch((e) => {
-            console.error("Failed to load brand files:", e);
-            return [];
-          }),
+          listBrandStorageFilesPaged({ limit: 100, root_only: false }).catch(
+            (e) => {
+              console.error("Failed to load brand files:", e);
+              return [];
+            },
+          ),
           listBrandStorageFoldersPaged().catch((e) => {
             console.error("Failed to load brand folders:", e);
             return [];

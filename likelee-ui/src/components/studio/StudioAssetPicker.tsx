@@ -444,7 +444,10 @@ export function StudioAssetPicker({
                         {/* Talent sub-groups */}
                         {Object.entries(talentGroups).map(
                           ([talentKey, group]) => (
-                            <div key={talentKey} className="flex flex-col gap-2">
+                            <div
+                              key={talentKey}
+                              className="flex flex-col gap-2"
+                            >
                               {/* Talent header */}
                               <div className="flex items-center gap-2 pl-2">
                                 <svg

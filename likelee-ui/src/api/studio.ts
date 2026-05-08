@@ -148,6 +148,8 @@ export type LicensedAsset = {
 };
 
 export async function listLicensedAssets(): Promise<LicensedAsset[]> {
-  const { assets } = await base44.get<{ assets: LicensedAsset[] }>("/studio/licensed-assets");
+  const { assets } = await base44.get<{ assets: LicensedAsset[] }>(
+    "/studio/licensed-assets",
+  );
   return assets || [];
 }
